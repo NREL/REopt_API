@@ -1,0 +1,24 @@
+MaxStorageSizeKW: [
+ 100 
+]
+MaxStorageSizeKWH: [
+ 100 
+]
+MinStorageSizeKWH: [
+ 0 
+]
+
+StorageMinChargePcent: [
+ 0.2 
+]
+EtaStor: [
+1,
+1,
+1,
+ 0.925        ,
+1,
+1,
+1,
+ 0.925        ,
+]
+

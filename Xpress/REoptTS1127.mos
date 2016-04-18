@@ -1,0 +1,520 @@
+!    NOTES
+! 1.  All energy referred to in model is RATED energy -- use ProdFactor to determine actual energy produced
+      
+model "REopt"
+		
+uses "mmxprs"   !Xpress optimizer
+uses "mmetc"    ! Defines Disk Data procedure -- not used for this model
+uses "mmsystem" !for timing function
+uses "mmnl" 
+
+parameters
+  LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api\\Xpress\\"
+  TimeStepScaling =1.0  !how much actual time does each timestep represent.  For 288, it is 365 / 12
+     !Note that the type (integer, real, text string or Boolean) of a parameter is implied by its default value.
+     !Do not commit TimeStepScaling = 1, instead commit 1.0 to force the type to real
+  TimeStepCount =8760 
+  Obj = 1  !1 for minimize LCC, 2 for maximize rated production, 3 for maximize production
+  NumRatchets = 24  
+  SiteCount = 1  !number of sites.  Currently used to determine how many sites get to NZ
+  DAT1 = "DatLibrary\\LoadSize\\LoadSize.dat"
+  DAT2 = "DatLibrary\\OM\\PVOM20.dat"
+  DAT3 = "DatLibrary\\BatteryCost\\KW\\BCostKW1000.dat"
+  DAT4 = "DatLibrary\\BatteryCost\\KWH\\BCostKWH600.dat"
+  DAT5 = "DatLibrary\\LoadProfiles\\Load.dat"
+  DAT6 = "DatLibrary\\PVcost\\PVCost2.0.dat"
+  DAT7 = "DatLibrary\\SolarResource\\SResource1.dat"
+  DAT8 = "DatLibrary\\Constant\\ActiveTechs.dat"
+  DAT9 = "DatLibrary\\Constant\\FuelIsActive.dat"
+  DAT10 = "DatLibrary\\Constant\\MaxSystemSize.dat"
+  DAT11 = "DatLibrary\\Constant\\TechIs.dat"
+  
+  DAT12 = "DatLibrary\\Utility\\Utility1\\DPeriods1.dat"
+  DAT13 = "DatLibrary\\Utility\\Utility1\\DRate1.dat"
+  DAT14 = "DatLibrary\\Utility\\Utility1\\ERate1.dat"
+  DAT15 = "DatLibrary\\Utility\\Utility1\\Export1.dat"
+  DAT16 = "DatLibrary\\Constant\\Storage.dat"
+  DAT17 = "DatLibrary\\PWF\\PWFElec\\PWFElec.dat"
+  DAT18 = "DatLibrary\\PWF\\PWFOM\\PWFOM.dat"
+  DAT19 = "DatLibrary\\DiscountRates\\Owner\\Owner0.1.dat"
+  DAT20 = "DatLibrary\\DiscountRates\\Offtaker\\Offtaker0.031.dat"
+  
+  OUTFILE = "OUT.csv"
+ end-parameters
+
+declarations
+  Month = 1..12    
+  Ratchets = 1..NumRatchets
+  
+  StartTime: real
+  EndTime: real
+  TimeStepRatchets: array(Ratchets) of set of integer  !same as above, but omits the first hour, so 2-24, 26-48....  
+  
+  Tech: set of string   
+  TimeStep = 1..TimeStepCount    !8760 would be true hourly
+  TimeStep0 = 0..TimeStepCount    !includes 0 in the set
+  
+  Load: set of string    !the load being served, electric retail / wholesale, then fuel 1...N  retail / wholesale
+  AnnualElecLoad: real   !electricity used at that location for the year
+  
+  MaxSize: array (Tech) of real  !Max system size.  Usually limited by land area, MSW/Bio available, etc
+  CapCostSlope: array (Tech) of real
+  ProdFactor: array (Tech,Load,TimeStep) of real  !Production Factor.  Combination of resource, efficiency, availability
+  OMperUnitSize: array (Tech) of real  !O&M per unit of system size.  $10 / KW for example.
+  ExportRates: array (Tech,Load,TimeStep) of real  !retail / wholesale rate for all electricity / fuels
+  LoadProfile: array (Load,TimeStep) of real       !electricity / fuel load profile by TimeStep
+   												
+  !next for elec only biomass, WTE, and LG  
+  TechIsGrid:  array(Tech) of real    
+  
+  dvSystemSize: array (Tech) of mpvar  
+  dvRatedProd:  array (Tech,Load,TimeStep) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
+ 
+  !Can only have one tech per techclass
+  dvPeakDemandE: array (Ratchets) of mpvar  !Peak electric demand for the month 
+
+  !dvPeakDemandSummer: array (Loc) of mpvar  !Peak electric demand for the month    !uncomment for RMI
+  DemandRates1: array (Ratchets) of real !Demand rate for the quarter
+  
+  dvElecToStor: array(TimeStep) of mpvar  !Electricity going to the storage system during each timestep
+  dvElecFromStor: array (TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
+  dvStoredEnergy: array(0..TimeStepCount) of mpvar  !State of charge of the storage system
+  dvStorageSizeKWH: mpvar   !Physical size of the storage system
+  dvStorageSizeKW:  mpvar  !maximum amount of energy charging / discharging storage.  Basically the size of the inverter.
+  !dvStorageThroughput: array(Loc) of mpvar  !number of kWh per analysis period going through storage
+  dvMeanSOC:  mpvar
+  binBattCharge: array(TimeStep) of mpvar
+  binBattDischarge: array(TimeStep) of mpvar
+  
+  EtaStor: array(Tech,Load) of real !round trip storage efficiency
+  MaxStorageSizeKWH:  real !the max size of storage
+  MinStorageSizeKWH:  real !the min size of storage
+  MaxStorageSizeKW: real !the max size of the charge / discharge per time step, basically the inverter
+  StorageCostPerKWH:  real !Storage cost per KWH
+  StorageCostPerKW:  real !Storage cost per KW.  Cost of inverter.
+  StorageMinChargePcent:  real !Min charge on the storage device as a percent of the total
+  !SOCt0: array(Loc) of real	
+  	  	
+  dvFuelCost: array(Tech) of mpvar	
+  FuelRate: array(Tech,TimeStep) of real  !cost per unit for fuel
+  EscE: real
+  EscOM: real
+  r_owner: real
+  pwf_owner: real
+  r_offtaker: real
+  pwf_offtaker: real
+  TwoParty: real
+  
+end-declarations  
+
+!Confirm that we are in the proper directory  
+writeln ("REopt running from", LocalPath)
+
+!setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
+!setparam("XPRS_FEASTOL",5e-5)  !default is 5e-5
+setparam("XPRS_MIPRELSTOP",.02)
+!setparam("XPRS_MAXTIME",180)
+
+!This file contains initilizations of variables that are setup by VBA  
+!include "Xpress\\REoptInitializations.mos"
+!include "C:\\Users\\dcutler\\REopt\\REO_dev\\REopt_UI\\Xpress\\REoptInitializations.mos" 
+
+StartTime:= gettime
+
+initializations from DAT8
+	Tech
+end-initializations
+initializations from DAT9
+	Load
+end-initializations
+
+!include "REoptInitializations.mos"
+
+initializations from DAT1
+	AnnualElecLoad
+end-initializations
+
+initializations from DAT2
+	OMperUnitSize
+end-initializations
+
+initializations from DAT3
+	StorageCostPerKW 
+end-initializations
+
+initializations from DAT4
+	StorageCostPerKWH
+end-initializations
+
+initializations from DAT5
+	LoadProfile 
+end-initializations
+
+initializations from DAT6
+	CapCostSlope
+end-initializations
+
+initializations from DAT7
+	ProdFactor
+end-initializations
+
+initializations from DAT10
+	MaxSize
+end-initializations
+initializations from DAT11
+	TechIsGrid
+end-initializations
+initializations from DAT12
+	TimeStepRatchets
+end-initializations
+initializations from DAT13
+	DemandRates1
+end-initializations
+initializations from DAT14
+	FuelRate
+end-initializations
+initializations from DAT15
+	ExportRates
+end-initializations
+initializations from DAT16
+	MaxStorageSizeKW
+	MaxStorageSizeKWH
+	MinStorageSizeKWH
+	StorageMinChargePcent
+	EtaStor
+end-initializations
+initializations from DAT17
+	EscE
+end-initializations
+initializations from DAT18
+	EscOM
+end-initializations
+initializations from DAT19
+	r_owner
+	pwf_owner
+end-initializations
+initializations from DAT20
+	r_offtaker
+	pwf_offtaker
+end-initializations
+
+
+
+!Start timing
+
+TwoParty := pwf_offtaker / pwf_owner
+
+!"exist" formatting
+!forall (t in Tech,LD in Load,ts in TimeStep | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (l,t,LD,ts))
+!	create (dvRatedProd (t,LD,ts)) 	
+
+!!!! Fuel tracking
+
+!FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
+forall (t in Tech ) do 
+     sum (ts in TimeStep, LD in Load |exists (dvRatedProd (t,LD,ts))) 
+     	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts) *TimeStepScaling * FuelRate(t,ts)*EscE = dvFuelCost(t)
+end-do
+
+!the state of the storage system at the beginning is 0
+
+	! boundary condition.  State of charge must begin and end the same.
+dvStoredEnergy(0) = StorageMinChargePcent * dvStorageSizeKWH / TimeStepScaling !SOCt0(l) !dvStoredEnergy(l,TimeStepCount)
+dvStorageSizeKWH <=  MaxStorageSizeKWH
+dvStorageSizeKWH >=  MinStorageSizeKWH
+dvStorageSizeKW <=  MaxStorageSizeKW  !
+
+
+forall (ts in TimeStep) do   
+	! Electricity to be stored is the sum of the electricity in the S-bin for that timestep
+	dvElecToStor(ts) = sum(t in Tech) ProdFactor(t,"1S",ts) * dvRatedProd(t,"1S",ts) * EtaStor(t,"1S")
+	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out 
+	dvStoredEnergy(ts) =   dvStoredEnergy(ts-1) +  dvElecToStor(ts) - dvElecFromStor(ts)
+	! energy coming out of the storage system cannot be greater than the current state of charge
+	dvElecFromStor(ts) <=  dvStoredEnergy(ts-1 )
+	! the state of charge always has to be greater than 0
+	dvStoredEnergy(ts) >=  StorageMinChargePcent * dvStorageSizeKWH / TimeStepScaling  ! / TimeStepScaling 
+	dvElecFromStor(ts) >= 0
+end-do
+
+forall (ts in TimeStep )  do
+	dvStorageSizeKW >=  dvElecToStor(ts)
+	dvStorageSizeKW >=  dvElecFromStor(ts)	
+end-do
+
+
+!	dvStorageThroughput(l) = sum(ts in TimeStep) dvElecToStor(l,ts)
+	dvMeanSOC = sum(ts in TimeStep) dvStoredEnergy(ts) / TimeStepCount
+
+
+! the physical size of the storage system is the max amount of charge at any timestep.  
+forall ( ts in TimeStep) do
+	dvStorageSizeKWH >=  dvStoredEnergy(ts) * TimeStepScaling
+end-do
+
+!Prevent storage from charging and discharging within same timestep
+forall (ts in TimeStep) do
+  dvElecToStor(ts) <= MaxStorageSizeKW * binBattCharge(ts)
+  dvElecFromStor(ts) <= MaxStorageSizeKW * binBattDischarge(ts)
+  binBattDischarge(ts) + binBattCharge(ts) <= 1
+  binBattCharge (ts) is_binary
+  binBattDischarge (ts) is_binary
+end-do
+    
+ !!System size cannot exceed MaxSize
+ !CONSTRAINT 27
+forall (t in Tech )  dvSystemSize (t) <=  MaxSize (t) 
+
+!Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on 
+! electric output of a CoGen with mandatory thermal tech
+!For most techs, Rated Production across all loads cannot exceed System size
+!CONSTRAINT 33A
+forall (t in Tech,ts in TimeStep)  
+	 sum (LD in Load |exists (dvRatedProd (t,LD,ts))) dvRatedProd (t,LD,ts) <= dvSystemSize (t)
+
+!CONSTRAINT 35
+! sum of everything but retail electric produced by all techs must be less than max load for each fuel type
+!TS 31513 should this exclude SHW?
+forall (LD in Load,ts in TimeStep | LD <> "1R" and LD <>"1S") do
+  sum (t in Tech |exists (dvRatedProd (t,LD,ts)) )  
+  		 ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts) <= LoadProfile (LD,ts) 
+end-do
+
+!CONSTRAINT 38
+!companion to the above.  Electric load can be met from generation OR from the storage
+forall (LD in Load,ts in TimeStep  | LD = "1R") do
+  sum (t in Tech |exists (dvRatedProd (t,LD,ts))) dvRatedProd (t,LD,ts) * ProdFactor (t,LD,ts) + dvElecFromStor(ts) >= 
+  		  LoadProfile (LD,ts)
+end-do
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!! End system size and production constraints 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!  Demand Rate Module
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!! Demand Rates
+
+forall (LD in Load, r in Ratchets, ts in TimeStepRatchets(r))  do
+	dvPeakDemandE(r) >=  LoadProfile("1R",ts) + sum(t in Tech | t = "UTIL1") (dvRatedProd (t,"1S",ts)*ProdFactor(t,"1S",ts)) - 1*
+   				(sum(t in Tech | t <> "UTIL1") (dvRatedProd (t,"1R",ts)*ProdFactor(t,"1R",ts)) + dvElecFromStor(ts))
+end-do
+
+!! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.  
+!! Once site load is met, excess electricity goes into X bin with lower sellback rate
+!!4313 TS.  Adding elec penalty to annual site load
+!!41513 TS.  Excluding Grid.
+
+   sum (t in Tech, LD in Load, ts in TimeStep | exists (dvRatedProd(t,LD,ts)) and (LD="1R" or LD="1W") and TechIsGrid(t) = 0) 
+ 		dvRatedProd (t,LD,ts)*ProdFactor(t,LD,ts) * TimeStepScaling <=  AnnualElecLoad
+
+
+TotCapCosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!! OBJECTIVE FUNCTION VALUE
+
+!Capital Costs
+RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
+
+ !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
+sum (t in Tech,LD in Load,ts in TimeStep | exists (dvRatedProd(t,LD,ts))) 
+	dvRatedProd (t,LD,ts)* TimeStepScaling *ProdFactor(t,LD,ts)* ExportRates(t,LD,ts)*EscE+
+
+!Demand Rates
+ !sum(l in Loc, m in Month) dvPeakDemandE(l, m) * DemandRates(l, m) +
+ sum(r in Ratchets) dvPeakDemandE(r) * DemandRates1(r) *EscE +
+ 
+!Cost of batteries
+dvStorageSizeKWH * StorageCostPerKWH * TwoParty + 
+	 dvStorageSizeKW *  StorageCostPerKW *TwoParty +  
+
+!O&M cost based on system size
+sum(t in Tech) OMperUnitSize(t) * dvSystemSize(t) *EscOM * TwoParty +
+
+sum(t in Tech) dvFuelCost(t)
+
+!! END OBJECTIVE FUNCTION VALUE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!  Objectives   -- chose only 1, and comment the others
+!!!  1.  Minimize LCC
+!!!  2.  Maximize rated electric production project size
+!!!  3.  Maximzie electric production project size
+
+if Obj = 1 then
+	! to minimize RE LCC, uncomment this line  (and comment others)
+	minimize (RECosts)
+elif Obj = 5 then
+	! Keep SOC high
+	minimize (RECosts - 1*dvMeanSOC) 
+end-if
+
+!End timing
+EndTime:= gettime
+
+writeln ("LCC = ", getsol(RECosts))   
+writeln("elapsed time = ", EndTime-StartTime, " seconds")
+forall (t in Tech) do
+	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
+end-do
+writeln ("Batt size KW = ", getsol (dvStorageSizeKW))
+writeln ("BattSize= KWH = ", getsol (dvStorageSizeKWH))
+
+fopen(OUTFILE,F_OUTPUT)
+writeln ("LCC = ", getsol(RECosts))   
+writeln("elapsed time = ", EndTime-StartTime, " seconds")
+forall (t in Tech) do
+	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
+end-do
+writeln ("Batt size KW = ", getsol (dvStorageSizeKW))
+writeln ("BattSize= KWH = ", getsol (dvStorageSizeKWH))
+
+end-model 
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!  Output Module
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!******************
+!SystemSize output 
+forall  (t in Tech, l in Loc,s in Seg |getsol ( dvSystemSize(l,t,s)) > .1 and TechIsGrid(t)=0)  do
+   writeln (l,",",t," seg ",s, " = ", getsol (dvSystemSize(l,t,s)))
+end-do
+
+forall  (t in Tech, l in Loc,s in Seg |getsol (dvSystemSize(l,t,s)) <> 0 and TechIsGrid(t)=1) do
+   writeln (l,",",t," seg ",s, " = ", getsol (dvSystemSize(l,t,s)))
+end-do
+
+!Battery output 
+forall  (l in Loc |getsol ( dvStorageSizeKWH(l)) <> 0)  do
+   writeln ( "BattSize= ", getsol (dvStorageSizeKWH(l)))
+end-do
+
+!Battery output 
+forall  (l in Loc |getsol ( dvStorageSizeKW(l)) <> 0)  do
+   writeln ( "Batt size KW (inverter)= ", getsol (dvStorageSizeKW(l)))
+end-do
+
+!CapCost plus LFG pipeline cost output 
+forall (l in Loc) do
+	writeln (l, " Cap Costs = ", 
+	sum(t in Tech,s in Seg) (CapCostSlope (l,t,s) * getsol(dvSystemSize(l,t,s))) + getsol(dvStorageSizeKWH(l)) * StorageCostPerKWH(l) + getsol(dvStorageSizeKW(l)) * StorageCostPerKW(l) )
+end-do
+
+!demand output
+forall  (l in Loc, r in Ratchets)  do
+   writeln (l, " ", r,  " PeakDeamand = ", getsol(dvPeakDemandE(l,r)))
+end-do
+
+! End CapCost output
+!****************
+writeln("elapsed time = ", EndTime-StartTime, " seconds")
+writeln ("Done")
+
+!!!! Write outputs to files
+! Output the RE LCS to a file
+fopen(LocalPath + "\\Output\\TempResults\\REOresults.csv",F_OUTPUT)
+writeln ("RECosts, ", getsol(RECosts)) 
+!this writes the time elapsed  
+writeln("Time, ", EndTime-StartTime)
+ ! Write system size information to a file
+ 
+forall  (l in Loc |getsol ( dvStorageSizeKWH(l)   ) <> 0)  do 
+   writeln (l, ",", "BattSize, ", getsol (dvStorageSizeKWH(l)))
+end-do
+
+forall  (l in Loc |getsol ( dvStorageSizeKW(l)   ) <> 0)  do 
+   writeln (l, ",", "BattSizekW, ", getsol (dvStorageSizeKW(l)))
+end-do
+
+forall  (t in Tech, l in Loc,s in Seg |getsol ( dvSystemSize(l,t,s)   ) <> 0 )  do
+   writeln (l, ",", t, ", ", getsol ( dvSystemSize(l,t,s)   )     )
+end-do
+
+fclose(F_OUTPUT)
+
+!Peak Demand Output
+fopen(LocalPath + "\\Output\\TempResults\\PeakDemands.csv",F_OUTPUT)
+writeln ("RECosts, ", getsol(RECosts)) 
+forall  (l in Loc, r in Ratchets)  do
+   writeln (l, " ", r,  " PeakDeamand , ", getsol(dvPeakDemandE(l,r)))
+end-do
+fclose(F_OUTPUT)
+
+!Time series dispatch output 
+fopen(LocalPath + "\\Output\\TempResults\\DispatchHourly.csv",F_OUTPUT)
+forall (l in Loc,t in Tech,LD in Load, ts in TimeStep )     do   
+   writeln ( t,",", LD, "," ,ts ,",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (l,t,LD,ts,s,fb)))      getsol (dvRatedProd (l,t,LD,ts,s,fb)))
+end-do
+fclose(F_OUTPUT)
+
+!Time series dispatch output 
+fopen(LocalPath + "\\Output\\TempResults\\ElecToStore.csv",F_OUTPUT)
+forall (l in Loc, ts in TimeStep )     do   
+   writeln (     getsol (dvElecToStor (l,ts)))
+end-do
+fclose(F_OUTPUT)
+
+!Time series dispatch output 
+fopen(LocalPath + "\\Output\\TempResults\\ElecFromStore.csv",F_OUTPUT)
+forall (l in Loc, ts in TimeStep )     do   
+   writeln (    getsol (dvElecFromStor (l,ts)))
+end-do
+fclose(F_OUTPUT)
+
+!Time series dispatch output 
+fopen(LocalPath + "\\Output\\TempResults\\StoredEnergy.csv",F_OUTPUT)
+forall (l in Loc, ts in TimeStep )     do   
+   writeln (   getsol (dvStoredEnergy (l,ts)))
+end-do
+fclose(F_OUTPUT)
+
+forall (l in Loc, ts in TimeStep )     do   
+	Demand(l,ts) := LoadProfile(l,"1R",ts) + sum(t in Tech, s in Seg, fb in FuelBin | t = "UTIL1") (dvRatedProd (l,t,"1S",ts,s,fb)*ProdFactor(l,t,"1S",ts)) - 1*
+   				(sum(t in Tech, s in Seg, fb in FuelBin | t <> "UTIL1") (dvRatedProd (l,t,"1R",ts,s,fb)*ProdFactor(l,t,"1R",ts)) + dvElecFromStor(l, ts))
+end-do
+
+!Time series demand output 
+fopen(LocalPath + "\\Output\\TempResults\\Demand.csv",F_OUTPUT)
+forall (l in Loc, ts in TimeStep )     do   
+	writeln(getsol(Demand(l,ts)))
+end-do
+fclose(F_OUTPUT)
+
+!!!! Write outputs to files
+! Output the RE LCS to a file
+fopen(LocalPath + "\\Output\\TempResults\\Production.csv",F_OUTPUT)
+
+!this writes the time elapsed  
+writeln("Time, ", EndTime-StartTime)
+ ! Write system size information to a file
+forall  (t in Tech, l in Loc,s in Seg |getsol ( dvSystemSize(l,t,s)   ) <> 0 )  do
+   writeln (t, ", ", getsol ( dvSystemSize(l,t,s)   )     )
+end-do
+fclose(F_OUTPUT)
+
+
+!!!! Write outputs to files
+! Output the RE LCS to a file
+fopen(LocalPath + "\\Output\\TempResults\\813.csv",F_OUTPUT)
+!Write LCC
+writeln ("LCC, ", getsol(RECosts) / 1e6) 
+
+!Capital costs
+writeln ("TotCapCosts, ",    getsol (TotCapCosts)/1e6) 
+!Electrical Production
+
+forall  (l in Loc)  do
+   writeln ( "BattSize, ", getsol (dvStorageSizeKWH(l)))
+end-do
+
+fclose(F_OUTPUT)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!  End Output Module
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+end-model
