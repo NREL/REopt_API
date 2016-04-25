@@ -3,6 +3,7 @@ from django.contrib import admin
 from reo.api import REoptRunResource
 
 reopt_resource = REoptRunResource()
+
 urlpatterns = [
     # Examples:
     # url(r'^$', 'bookstore.views.home', name='home'),

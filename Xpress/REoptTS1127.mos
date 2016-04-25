@@ -39,7 +39,7 @@ parameters
   DAT19 = "DatLibrary\\DiscountRates\\Owner\\Owner0.1.dat"
   DAT20 = "DatLibrary\\DiscountRates\\Offtaker\\Offtaker0.031.dat"
   
-  OUTFILE = "OUT.csv"
+  OUTFILE = "OUT.txt"
  end-parameters
 
 declarations
