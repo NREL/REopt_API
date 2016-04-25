@@ -9,7 +9,7 @@ import os
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
     def __init__(self, id=None, latitude=None, longitude=None, load_size=None, lcc=None):
-        self.id = id #don't know what to do with this
+        self.id = id
         self.latitude = latitude
         self.longitude = longitude
         self.load_size = load_size
@@ -83,7 +83,7 @@ class REoptRunResource(Resource):
                 lcc = line[eq_ind+2:len(line)]
 
         results = []
-        new_obj = REoptObject("10",latitude, longitude, load_size, lcc)
+        new_obj = REoptObject("optimize",latitude, longitude, load_size, lcc)
         results.append(new_obj)
         return results
 
