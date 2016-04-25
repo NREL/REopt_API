@@ -8,19 +8,27 @@ import os
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
-    def __init__(self, id=None, latitude=None, longitude=None, lcc=None):
+    def __init__(self, id=None, latitude=None, longitude=None, load_size=None, lcc=None):
         self.id = id #don't know what to do with this
         self.latitude = latitude
         self.longitude = longitude
+        self.load_size = load_size
         self.lcc = lcc
 
 class REoptRunResource(Resource):
     # Just like a Django ``Form`` or ``Model``, we're defining all the
     # fields we're going to handle with the API here.
+
+    # mandatory inputs
+    load_size = fields.FloatField(attribute="load_size")
+
+    # currently unhandled
     id = fields.CharField(attribute='id')
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
-    lcc = fields.FloatField(attribute="lcc")
+
+    #outputs
+    lcc = fields.FloatField(attribute="lcc",null=True)
 
     class Meta:
         resource_name = 'reopt'
@@ -40,18 +48,33 @@ class REoptRunResource(Resource):
         return kwargs
 
     def get_object_list(self, request):
+        # note, running process is from reopt_api head
+        # i.e, C:\Nick\Projects\api\env\src\reopt_api
+
         latitude = request.GET.get("latitude")
         longitude = request.GET.get("longitude")
+        load_size = request.GET.get("load_size")
 
+        # update inputs
+        go = os.path.join("Xpress","Go.bat")
+        dat_libary_path = os.path.join("Xpress","DatLibrary")
 
-        # note, running process is from reopt_api head
-        # i.e, C:\Nick\Projects\api\env\src\reopt\api
+        if load_size > 0:
+            load_size_file = open(os.path.join(dat_libary_path,"LoadSize","LoadSize.dat"),'w')
+            load_size_file.write("AnnualElecLoad: [\n")
+            load_size_file.write(str(load_size) + "\t,\n")
+            load_size_file.write("]")
+            load_size_file.close()
+
+        # remove old output
         output_file = os.path.join("Xpress","OUT.txt")
         if os.path.exists(output_file):
             os.remove(output_file)
-        go = os.path.join("Xpress","Go.bat")
+
+        # call express
         subprocess.call(go)
 
+        # parse outputs
         lcc = []
         output = open(output_file,'r')
         for line in output:
@@ -60,7 +83,7 @@ class REoptRunResource(Resource):
                 lcc = line[eq_ind+2:len(line)]
 
         results = []
-        new_obj = REoptObject("10",latitude, longitude, lcc)
+        new_obj = REoptObject("10",latitude, longitude, load_size, lcc)
         results.append(new_obj)
         return results
 
