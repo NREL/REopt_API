@@ -1,1 +1,1 @@
-mosel -c "exec ..\Xpress\REoptTS1127"
+mosel -c "exec Xpress\REoptTS1127"
