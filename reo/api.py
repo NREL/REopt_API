@@ -3,8 +3,9 @@ from tastypie.authorization import Authorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 
-import subprocess
 import os
+import library
+import random
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
@@ -21,11 +22,11 @@ class REoptRunResource(Resource):
 
     # mandatory inputs
     load_size = fields.FloatField(attribute="load_size")
-
-    # currently unhandled
-    id = fields.CharField(attribute='id')
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
+
+    # internally generated
+    id = fields.IntegerField(attribute='id')
 
     #outputs
     lcc = fields.FloatField(attribute="lcc",null=True)
@@ -51,39 +52,23 @@ class REoptRunResource(Resource):
         # note, running process is from reopt_api head
         # i.e, C:\Nick\Projects\api\env\src\reopt_api
 
+        # generate a unique id for this run
+        run_id = random.randint(0, 1000000)
+
         latitude = request.GET.get("latitude")
         longitude = request.GET.get("longitude")
         load_size = request.GET.get("load_size")
 
-        # update inputs
-        go = os.path.join("Xpress","Go.bat")
-        dat_libary_path = os.path.join("Xpress","DatLibrary")
+        path_xpress = "Xpress"
+        run_set = library.dat_library(run_id, path_xpress, latitude, longitude, load_size)
+        outputs = run_set.run()
 
-        if load_size > 0:
-            load_size_file = open(os.path.join(dat_libary_path,"LoadSize","LoadSize.dat"),'w')
-            load_size_file.write("AnnualElecLoad: [\n")
-            load_size_file.write(str(load_size) + "\t,\n")
-            load_size_file.write("]")
-            load_size_file.close()
-
-        # remove old output
-        output_file = os.path.join("Xpress","OUT.txt")
-        if os.path.exists(output_file):
-            os.remove(output_file)
-
-        # call express
-        subprocess.call(go)
-
-        # parse outputs
-        lcc = []
-        output = open(output_file,'r')
-        for line in output:
-            if "LCC" in line:
-                eq_ind = line.index("=")
-                lcc = line[eq_ind+2:len(line)]
+        lcc = 0
+        if 'lcc' in outputs:
+            lcc = outputs['lcc']
 
         results = []
-        new_obj = REoptObject("optimize",latitude, longitude, load_size, lcc)
+        new_obj = REoptObject(run_id, latitude, longitude, load_size, lcc)
         results.append(new_obj)
         return results
 
