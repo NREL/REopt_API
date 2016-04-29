@@ -3,16 +3,17 @@ from tastypie.authorization import Authorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 
-import os
 import library
 import random
 
+
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
-    def __init__(self, id=None, latitude=None, longitude=None, load_size=None, pv_om=None, batt_cost_kw=None, batt_cost_kwh=None,
+    def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None, batt_cost_kw=None, batt_cost_kwh=None,
                  load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, lcc=None):
         self.id = id
 
+        self.analysis_period = analysis_period
         self.latitude = latitude
         self.longitude = longitude
         self.load_size = load_size
@@ -31,9 +32,10 @@ class REoptRunResource(Resource):
     # fields we're going to handle with the API here.
 
     # inputs
-    load_size = fields.FloatField(attribute='load_size')
+    analysis_period = fields.IntegerField(attribute='analysis_period', null=True)
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
+    load_size = fields.FloatField(attribute='load_size')
     pv_om = fields.FloatField(attribute='pv_om', null=True)
     batt_cost_kw = fields.FloatField(attribute='batt_cost_kw', null=True)
     batt_cost_kwh = fields.FloatField(attribute='batt_cost_kwh', null=True)
@@ -72,6 +74,7 @@ class REoptRunResource(Resource):
         # generate a unique id for this run
         run_id = random.randint(0, 1000000)
 
+        analysis_period = request.GET.get("analysis_period")
         latitude = request.GET.get("latitude")
         longitude = request.GET.get("longitude")
         load_size = request.GET.get("load_size")
@@ -84,7 +87,7 @@ class REoptRunResource(Resource):
         offtaker_discount_rate = request.GET.get("offtaker_discount_rate")
 
         path_xpress = "Xpress"
-        run_set = library.dat_library(run_id, path_xpress, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate)
+        run_set = library.dat_library(run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate)
         outputs = run_set.run()
 
         lcc = 0
@@ -92,7 +95,7 @@ class REoptRunResource(Resource):
             lcc = outputs['lcc']
 
         results = []
-        new_obj = REoptObject(run_id, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate, lcc)
+        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate, lcc)
         results.append(new_obj)
         return results
 

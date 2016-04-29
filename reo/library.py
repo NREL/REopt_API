@@ -1,5 +1,6 @@
 import os
 import subprocess
+import utilities
 
 # currently setup not using a database, that might improve performance
 class dat_library:
@@ -10,6 +11,7 @@ class dat_library:
     outputs = {}
 
     # variables that user can pass
+    analysis_period = 25
     latitude = []
     longitude = []
     load_size = []
@@ -42,10 +44,14 @@ class dat_library:
     # DAT files to overwrite
     DAT = [None] * 20
 
-    def __init__(self, run_id, path_xpress, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate):
+    def __init__(self, run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate):
         self.path_xpress = path_xpress
 
         self.run_id = run_id
+
+        if analysis_period and analysis_period > 0:
+            self.analysis_period = analysis_period
+
         self.latitude = latitude
         self.longitude = longitude
         self.load_size = load_size
@@ -69,7 +75,8 @@ class dat_library:
         return self.outputs
 
     def define_paths(self):
-        self.path_dat_library = os.path.join(self.path_xpress,"DatLibrary")
+
+        self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_load_size = os.path.join(self.path_dat_library, "LoadSize")
         self.path_pv_om = os.path.join(self.path_dat_library, "OM")
         self.path_batt_cost_kwh = os.path.join(self.path_dat_library, "BatteryCost", "KWH")
@@ -80,7 +87,6 @@ class dat_library:
         self.path_offtaker_discount_rate = os.path.join(self.path_dat_library, "DiscountRates", "Offtaker")
 
         self.path_solar_resource = os.path.join(self.path_dat_library, "SolarResource")
-
 
         self.path_output = os.path.join(self.path_dat_library, "Output")
 
@@ -139,8 +145,11 @@ class dat_library:
 
     def write_var(self, f, dat_var, var):
         f.write(dat_var + ": [\n")
-        for i in var:
-            f.write(str(i) + "\t,\n")
+        if isinstance(var, list):
+            for i in var:
+                f.write(str(i) + "\t,\n")
+        else:
+            f.write(str(var) + "\t,\n")
         f.write("]\n")
 
     def write_single_variable(self, path, filename, dat_var, var):
@@ -150,9 +159,9 @@ class dat_library:
             self.write_var(f, dat_var, var)
             f.close()
 
-    def write_two_variables(self, path, filename, dat_var, var, dat_var2, var2):
+    def write_two_variables(self, path, filename, dat_var, var, dat_var2, var2, overwrite=False):
         filename_path = os.path.join(path, filename)
-        if filename not in os.listdir(path):
+        if filename not in os.listdir(path) or overwrite:
             f = open(filename_path, 'w')
             self.write_var(f, dat_var, var)
             self.write_var(f, dat_var2, var2)
@@ -221,25 +230,31 @@ class dat_library:
     def create_owner_discount_rate(self):
         path = self.path_owner_discount_rate
         var1 = self.owner_discount_rate
-        var2 = 25 #NEED TO DEFINE PWF OWNER
+        var2 = utilities.present_worth_factor(int(self.analysis_period), 0., float(var1))
+        #var2.replace('\n', '')
         filename = "Owner" + var1 + ".dat"
         dat_var1 = "r_owner"
         dat_var2 = "pwf_owner"
         self.DAT[18] = "DAT19=" + "'" + os.path.join(path, filename) + "'"
+        # overwrite anytime we compute present worth factor
+        overwrite = True
 
-        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2)
+        self.write_two_variables(path, filename, dat_var1, var1, dat_var2, var2, overwrite)
 
     # DAT20 - Offtaker Discount Rate
     def create_offtaker_discount_rate(self):
         path = self.path_offtaker_discount_rate
         var1 = self.offtaker_discount_rate
-        var2 = 25  # NEED TO DEFINE PWF OFFTAKER
+        var2 = utilities.present_worth_factor(int(self.analysis_period), 0., float(var1))
+        #var2.replace('\n', '')
         filename = "Offtaker" + var1 + ".dat"
         dat_var1 = "r_offtaker"
         dat_var2 = "pwf_offtaker"
         self.DAT[19] = "DAT20=" + "'" + os.path.join(path, filename) + "'"
 
-        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2)
+        overwrite = True
+
+        self.write_two_variables(path, filename, dat_var1, var1, dat_var2, var2, overwrite)
 
 
     # SResource, hookup PVWatts
@@ -250,6 +265,8 @@ class dat_library:
     # DAT10 - MaxSystemSize
     # DAT11 - TechIS
     # DAT16 - Storage
+
+
     # Utility rates, hookup urdb processor
 
     # Calculate PWFs from discount rate, or use defaults
