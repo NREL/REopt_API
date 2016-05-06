@@ -3,20 +3,25 @@
 
 <h3>Django API for REopt tool</h3>
 
-Under development, will provide api to REopt model for performing solar plus storage optimization
-Note, the project has been developed in Windows but should be easy to administrate in Linux/OSX if preferred
-Instructions will assume a Windows based install where you have administrator privleges or access to the C:/ via command prompt
+Under development, will provide api to REopt model for performing solar plus storage optimization  
+Note, the project has been developed in Windows but should be easy to administrate in Linux/OSX if preferred  
+Instructions will assume a Windows based install where you have administrator privleges or access to the C:/ via command prompt  
 
 
 <h4>If setting up from scratch:</h4>
 
-1. You will need Python 2.7 installed.  You can get it here: https://www.python.org/download/releases/2.7/
-   Python will generally install in C:\Python27\, which will get added to your PATH environmental variable.
-   If python has successfully been installed and added to your path, you should be able to open a command prompt and type: python
-   If you see: 'python' is not recognized as an internal or external command, you need to add C:\Python27\ to your PATH
+1. You will need Python 2.7 installed.  You can get it here: `https://www.python.org/download/releases/2.7/`  
+   Python will generally install in `C:\Python27\`, which will get added to your `PATH` environmental variable.  
+   If python has successfully been installed and added to your path, you should be able to open a command prompt and type: `python`  
 
-2. Python packages are installed using pip.  This is a package which should be included with Python, within C:\Python27\Scripts\
-   Add C:\Python27\Scripts\ to your PATH
+   If you see: 
+   `'python' is not recognized as an internal or external command`  
+   Then:
+   `set PATH=%PATH%;C:\Python27\`  
+
+2. Python packages are installed using `pip`.  This is a package which should be included with Python, within `C:\Python27\Scripts\`  
+
+   `set PATH=%PATH%;C:\Python27\Scripts\`  
 
 3. The Django project will be installed within a virtual environment. Install the package with pip
    
@@ -39,7 +44,7 @@ Instructions will assume a Windows based install where you have administrator pr
 7. Check out the git repository into the virtual environment. 
    Note the 'git' command must be done from a git bash prompt rather than windows command prompt.  
    Alternatively, you can download and extract the files.  
-   This should result in a structure env/src/reopt_api
+   This should result in a structure `env/src/reopt_api`  
       
    `mkdir src`  
    `cd src`  
@@ -50,14 +55,19 @@ Instructions will assume a Windows based install where you have administrator pr
    `cd reopt_api`  
    `python manage.py runserver`  
    
-9. Navigate to 127.0.0.1:8000/reopt, should see landing page
-   To use API, navigate to: 127.0.0.1:8000/api/v1/reopt/?format=json
-   This will activate a call to the Xpress backend.  Additional parameters will be required to fully query the API.  For example:
-   127.0.0.1:8000/api/v1/reopt/?format=json&latitude=40&longitude=-115&load_size=10000
+9. Navigate to `127.0.0.1:8000/reopt`, should see landing page  
+   To use API, navigate to: `127.0.0.1:8000/api/v1/reopt/?format=json`  
+   This will activate a call to the Xpress backend.  Additional parameters will be required to fully query the API.  For example:  
 
+   `127.0.0.1:8000/api/v1/reopt/?format=json&latitude=40&longitude=-115&load_size=10000`  
+   
+   Returns:
+   ```
+   {"meta": {"limit": 20, "next": null, "offset": 0, "previous": null, "total_count": 1}, "objects": [{"analysis_period": null, "batt_cost_kw": null, "batt_cost_kwh": null, "id": 260394, "latitude": 40.0, "lcc": 2.85481, "load_profile": null, "load_size": 1000000.0, "longitude": -115.0, "offtaker_discount_rate": null, "owner_discount_rate": null, "pv_cost": null, "pv_om": null, "resource_uri": "/api/v1/reopt/260394/"}]}
+   ```
 
-<h4>If running from iac-129986:</h4>
-* Navigate to C:\Nick\Projects\api\env\
+<h4>If running from the REopt default server `iac-129986`:</h4>
+* Navigate to `C:\Nick\Projects\api\env\`   
 ```
   Scripts\activate.bat
   cd src\reopt_api
