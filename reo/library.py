@@ -143,7 +143,7 @@ class dat_library:
         os.remove(self.output_file)
         os.remove(self.run_file)
 
-    def write_var(self, f, dat_var, var):
+    def write_var(self, f, var, dat_var):
         f.write(dat_var + ": [\n")
         if isinstance(var, list):
             for i in var:
@@ -152,11 +152,11 @@ class dat_library:
             f.write(str(var) + "\t,\n")
         f.write("]\n")
 
-    def write_single_variable(self, path, filename, dat_var, var):
+    def write_single_variable(self, path, filename, var, dat_var):
         filename_path = os.path.join(path, filename)
         if filename not in os.listdir(path):
             f = open(filename_path, 'w')
-            self.write_var(f, dat_var, var)
+            self.write_var(f, var, dat_var)
             f.close()
 
     def write_two_variables(self, path, filename, dat_var, var, dat_var2, var2, overwrite=False):
@@ -175,7 +175,7 @@ class dat_library:
         dat_var = "AnnualElecLoad"
         self.DAT[0] = "DAT1=" + "'" + os.path.join(path, filename) + "'"
 
-        self.write_single_variable(path, filename, dat_var, var)
+        self.write_single_variable(path, filename, var, dat_var)
 
 
     # DAT2 - PVOM
