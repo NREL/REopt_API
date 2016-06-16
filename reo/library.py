@@ -159,12 +159,12 @@ class dat_library:
             self.write_var(f, var, dat_var)
             f.close()
 
-    def write_two_variables(self, path, filename, dat_var, var, dat_var2, var2, overwrite=False):
+    def write_two_variables(self, path, filename, var, dat_var, var2, dat_var2, overwrite=False):
         filename_path = os.path.join(path, filename)
         if filename not in os.listdir(path) or overwrite:
             f = open(filename_path, 'w')
-            self.write_var(f, dat_var, var)
-            self.write_var(f, dat_var2, var2)
+            self.write_var(f, var, dat_var)
+            self.write_var(f, var2, dat_var2)
             f.close()
 
     # DAT1 - LoadSize
@@ -239,7 +239,7 @@ class dat_library:
         # overwrite anytime we compute present worth factor
         overwrite = True
 
-        self.write_two_variables(path, filename, dat_var1, var1, dat_var2, var2, overwrite)
+        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2, overwrite)
 
     # DAT20 - Offtaker Discount Rate
     def create_offtaker_discount_rate(self):
@@ -254,7 +254,7 @@ class dat_library:
 
         overwrite = True
 
-        self.write_two_variables(path, filename, dat_var1, var1, dat_var2, var2, overwrite)
+        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2, overwrite)
 
 
     # SResource, hookup PVWatts
