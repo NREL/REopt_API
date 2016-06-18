@@ -1,9 +1,13 @@
 import os
 import subprocess
 import utilities
+import pandas as pd
 
 # currently setup not using a database, that might improve performance
 class dat_library:
+
+    # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
+    debug = False
 
     run_id = []
     run_file = []
@@ -110,7 +114,7 @@ class dat_library:
 
     def create_run_file(self):
         go_file = "Go_" + str(self.run_id) + ".bat"
-        output_file = "Out_" + str(self.run_id) + ".txt"
+        output_file = "Out_" + str(self.run_id) + ".csv"
         header = 'mosel -c "exec ' + os.path.join(self.path_xpress, 'REoptTS1127')
 
         self.output_file = os.path.join(self.path_output, output_file)
@@ -132,16 +136,23 @@ class dat_library:
         f.close()
 
     def parse_outputs(self):
-        output = open(self.output_file, 'r')
 
-        for line in output:
-            if "LCC" in line:
-                eq_ind = line.index("=")
-                self.outputs['lcc'] = line[eq_ind + 2:len(line)]
+        df = pd.read_csv(self.output_file, header=None, index_col=0)
+        df = df.transpose()
+
+        if 'LCC' in df.columns:
+            self.outputs['lcc'] = df['LCC']
+        if 'Batt size KW' in df.columns:
+            self.outputs['batt_size_kw'] = df['Batt size KW']
+        if 'Batt size KWH' in df.columns:
+            self.outputs['batt_size_kwh'] = df['Batt size KWH']
+        if 'PVNM size KW' in df.columns:
+            self.outputs['pv_kw'] = df['PVNM size KW']
 
     def cleanup(self):
-        os.remove(self.output_file)
-        os.remove(self.run_file)
+        if not self.debug:
+            os.remove(self.output_file)
+            os.remove(self.run_file)
 
     def write_var(self, f, var, dat_var):
         f.write(dat_var + ": [\n")

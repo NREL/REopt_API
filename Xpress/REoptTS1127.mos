@@ -361,16 +361,19 @@ forall (t in Tech) do
 	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
 end-do
 writeln ("Batt size KW = ", getsol (dvStorageSizeKW))
-writeln ("BattSize= KWH = ", getsol (dvStorageSizeKWH))
+writeln ("Batt size KWH = ", getsol (dvStorageSizeKWH))
 
+!Output to CSV
 fopen(OUTFILE,F_OUTPUT)
-writeln ("LCC = ", getsol(RECosts))   
-writeln("elapsed time = ", EndTime-StartTime, " seconds")
+writeln ("LCC,", getsol(RECosts))   
+writeln("elapsed time,", EndTime-StartTime, " seconds")
 forall (t in Tech) do
-	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
+	writeln (t, " size KW,", getsol (dvSystemSize(t)))
 end-do
-writeln ("Batt size KW = ", getsol (dvStorageSizeKW))
-writeln ("BattSize= KWH = ", getsol (dvStorageSizeKWH))
+writeln ("Batt size KW,", getsol (dvStorageSizeKW))
+writeln ("Batt size KWH,", getsol (dvStorageSizeKWH))
+
+
 
 end-model 
 

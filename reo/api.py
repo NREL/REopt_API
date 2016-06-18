@@ -10,7 +10,7 @@ import random
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
     def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None, batt_cost_kw=None, batt_cost_kwh=None,
-                 load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, lcc=None):
+                 load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
         self.id = id
 
         self.analysis_period = analysis_period
@@ -25,7 +25,13 @@ class REoptObject(object):
         self.owner_discount_rate = owner_discount_rate
         self.offtaker_discount_rate = offtaker_discount_rate
 
+        #outputs
         self.lcc = lcc
+        self.utility_kwh = utility_kwh
+        self.pv_kw = pv_kw
+        self.batt_kw = batt_kw
+        self.batt_kwh = batt_kwh
+
 
 class REoptRunResource(Resource):
     # Just like a Django ``Form`` or ``Model``, we're defining all the
@@ -49,6 +55,10 @@ class REoptRunResource(Resource):
 
     #outputs
     lcc = fields.FloatField(attribute="lcc", null=True)
+    utility_kwh = fields.FloatField(attribute="utility_kwh", null=True)
+    pv_kw = fields.FloatField(attribute="pv_kw", null=True)
+    batt_kw = fields.FloatField(attribute="batt_kw", null=True)
+    batt_kwh = fields.FloatField(attribute="batt_kwh", null=True)
 
     class Meta:
         resource_name = 'reopt'
@@ -91,11 +101,26 @@ class REoptRunResource(Resource):
         outputs = run_set.run()
 
         lcc = 0
+        utility_kwh = 0
+        pv_kw = 0
+        batt_kw = 0
+        batt_kwh = 0
+
         if 'lcc' in outputs:
             lcc = outputs['lcc']
+        if 'utility_kwh' in outputs:
+            utility_kwh = outputs['utility_kwh']
+        if 'pv_kw' in outputs:
+            pv_kw = outputs['pv_kw']
+        if 'batt_kw' in outputs:
+            batt_kw = outputs['batt_kw']
+        if 'batt_kwh' in outputs:
+            batt_kwh = outputs['batt_kwh']
 
         results = []
-        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate, lcc)
+        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+                              batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate, lcc,
+                              utility_kwh, pv_kw, batt_kw, batt_kwh)
         results.append(new_obj)
         return results
 
