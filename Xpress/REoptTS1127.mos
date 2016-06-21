@@ -23,7 +23,7 @@ parameters
   DAT4 = "Xpress\\DatLibrary\\BatteryCost\\KWH\\BCostKWH600.dat"
   DAT5 = "Xpress\\DatLibrary\\LoadProfiles\\Load.dat"
   DAT6 = "Xpress\\DatLibrary\\PVcost\\PVCost2.0.dat"
-  DAT7 = "Xpress\\DatLibrary\\SolarResource\\SResource1.dat"
+  DAT7 = "Xpress\\DatLibrary\\SolarResource\\SResource_demo.dat"
   DAT8 = "Xpress\\DatLibrary\\Constant\\ActiveTechs.dat"
   DAT9 = "Xpress\\DatLibrary\\Constant\\FuelIsActive.dat"
   DAT10 = "Xpress\\DatLibrary\\Constant\\MaxSystemSize.dat"
@@ -74,7 +74,7 @@ declarations
   dvPeakDemandE: array (Ratchets) of mpvar  !Peak electric demand for the month 
 
   !dvPeakDemandSummer: array (Loc) of mpvar  !Peak electric demand for the month    !uncomment for RMI
-  DemandRates1: array (Ratchets) of real !Demand rate for the quarter
+  DemandRates: array (Ratchets) of real !Demand rate for the quarter
   
   dvElecToStor: array(TimeStep) of mpvar  !Electricity going to the storage system during each timestep
   dvElecFromStor: array (TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
@@ -112,7 +112,7 @@ writeln ("REopt running from", LocalPath)
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
 !setparam("XPRS_FEASTOL",5e-5)  !default is 5e-5
-setparam("XPRS_MIPRELSTOP",.02)
+setparam("XPRS_MIPRELSTOP",.001)
 !setparam("XPRS_MAXTIME",180)
 
 !This file contains initilizations of variables that are setup by VBA  
@@ -168,7 +168,7 @@ initializations from DAT12
 	TimeStepRatchets
 end-initializations
 initializations from DAT13
-	DemandRates1
+	DemandRates
 end-initializations
 initializations from DAT14
 	FuelRate
@@ -325,7 +325,7 @@ sum (t in Tech,LD in Load,ts in TimeStep | exists (dvRatedProd(t,LD,ts)))
 
 !Demand Rates
  !sum(l in Loc, m in Month) dvPeakDemandE(l, m) * DemandRates(l, m) +
- sum(r in Ratchets) dvPeakDemandE(r) * DemandRates1(r) *EscE +
+ sum(r in Ratchets) dvPeakDemandE(r) * DemandRates(r) *EscE +
  
 !Cost of batteries
 dvStorageSizeKWH * StorageCostPerKWH * TwoParty + 

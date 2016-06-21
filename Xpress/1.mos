@@ -9,7 +9,7 @@ initializations from '..\..\DatLibary\LoadProfiles\Load1_1.dat'
 end-initializations
 
 initializations from '..\..\DatLibary\Utility\Utility1\DRates1.dat'
-   DemandRates1 
+   DemandRates 
 end-initializations
 
 initializations from '..\..\DatLibary\BatteryCost\KW\BCostKW1000.dat'

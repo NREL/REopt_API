@@ -43,7 +43,7 @@ class REoptRunResource(Resource):
     analysis_period = fields.IntegerField(attribute='analysis_period', null=True)
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
-    load_size = fields.FloatField(attribute='load_size')
+    load_size = fields.FloatField(attribute='load_size', null=True)
     pv_om = fields.FloatField(attribute='pv_om', null=True)
     batt_cost_kw = fields.FloatField(attribute='batt_cost_kw', null=True)
     batt_cost_kwh = fields.FloatField(attribute='batt_cost_kwh', null=True)

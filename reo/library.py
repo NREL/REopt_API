@@ -31,8 +31,10 @@ class dat_library:
 
 
     # default load profiles
-    default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice', 'MediumOffice', 'MidriseApartment', 'Outpatient',
-                             'PrimarySchool', 'RetailStore', 'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall','Supermarket','Warehouse']
+    default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
+                             'MediumOffice', 'MidriseApartment', 'Outpatient', 'PrimarySchool', 'RetailStore',
+                             'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse',
+                             'Demo']
 
     # directory structure
     path_xpress = []
@@ -74,6 +76,11 @@ class dat_library:
         self.offtaker_discount_rate = offtaker_discount_rate
         self.utility_name = utility_name
         self.rate_name = rate_name
+
+        lower_case_profile = []
+        for profile in self.default_load_profiles:
+            lower_case_profile.append(profile.lower())
+        self.default_load_profiles = lower_case_profile
 
     def run(self):
         self.define_paths()
@@ -231,7 +238,7 @@ class dat_library:
     def create_load_profile(self):
         path = self.path_load_profile
         var = self.load_profile
-        if var in self.default_load_profiles:
+        if var.lower() in self.default_load_profiles:
             filename = "Load8760_" + var + ".dat"
             self.DAT[4] = "DAT5=" + "'" + os.path.join(path, filename) + "'"
 
