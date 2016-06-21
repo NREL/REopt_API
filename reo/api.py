@@ -10,7 +10,7 @@ import random
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
     def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None, batt_cost_kw=None, batt_cost_kwh=None,
-                 load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
+                 load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, utility_name=None, rate_name=None, lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
         self.id = id
 
         self.analysis_period = analysis_period
@@ -24,6 +24,8 @@ class REoptObject(object):
         self.pv_cost = pv_cost
         self.owner_discount_rate = owner_discount_rate
         self.offtaker_discount_rate = offtaker_discount_rate
+        self.utility_name = utility_name
+        self.rate_name = rate_name
 
         #outputs
         self.lcc = lcc
@@ -49,6 +51,8 @@ class REoptRunResource(Resource):
     pv_cost = fields.FloatField(attribute='pv_cost', null=True)
     owner_discount_rate = fields.FloatField(attribute='owner_discount_rate', null=True)
     offtaker_discount_rate = fields.FloatField(attribute='offtaker_discount_rate', null=True)
+    utility_name = fields.CharField(attribute='utility_name', null=True)
+    rate_name = fields.CharField(attribute='rate_name', null=True)
 
     # internally generated
     id = fields.IntegerField(attribute='id')
@@ -95,9 +99,13 @@ class REoptRunResource(Resource):
         pv_cost = request.GET.get("pv_cost")
         owner_discount_rate = request.GET.get("owner_discount_rate")
         offtaker_discount_rate = request.GET.get("offtaker_discount_rate")
+        utility_name = request.GET.get("utility_name")
+        rate_name = request.GET.get("rate_name")
 
         path_xpress = "Xpress"
-        run_set = library.dat_library(run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate)
+        run_set = library.dat_library(run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om,
+                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
+                                      offtaker_discount_rate, utility_name, rate_name)
         outputs = run_set.run()
 
         lcc = 0
@@ -119,8 +127,8 @@ class REoptRunResource(Resource):
 
         results = []
         new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
-                              batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate, lcc,
-                              utility_kwh, pv_kw, batt_kw, batt_kwh)
+                              batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
+                              utility_name, rate_name, lcc, utility_kwh, pv_kw, batt_kw, batt_kwh)
         results.append(new_obj)
         return results
 

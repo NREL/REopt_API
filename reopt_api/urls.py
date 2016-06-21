@@ -12,8 +12,8 @@ urlpatterns = [
     # Examples:
     # url(r'^$', 'bookstore.views.home', name='home'),
     # url(r'^blog/', include('blog.urls')),
-    url(r'^$',include('reo.urls'),name='reopt'),
-    url(r'^reopt/',include('reo.urls'),name='reopt'),
+    url(r'^$', include('reo.urls'), name='reopt'),
+    url(r'^reopt/', include('reo.urls'), name='reopt'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
 

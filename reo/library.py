@@ -26,6 +26,9 @@ class dat_library:
     pv_cost = []
     owner_discount_rate = []
     offtaker_discount_rate = []
+    utility_name = []
+    rate_name = []
+
 
     # default load profiles
     default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice', 'MediumOffice', 'MidriseApartment', 'Outpatient',
@@ -43,12 +46,15 @@ class dat_library:
     path_owner_discount_rate = []
     path_offtaker_discount_rate = []
     path_solar_resource = []
+    path_utility_rate = []
     path_output = []
 
     # DAT files to overwrite
     DAT = [None] * 20
 
-    def __init__(self, run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate):
+    def __init__(self, run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+                 batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
+                 utility_name, rate_name):
         self.path_xpress = path_xpress
 
         self.run_id = run_id
@@ -66,6 +72,8 @@ class dat_library:
         self.pv_cost = pv_cost
         self.owner_discount_rate = owner_discount_rate
         self.offtaker_discount_rate = offtaker_discount_rate
+        self.utility_name = utility_name
+        self.rate_name = rate_name
 
     def run(self):
         self.define_paths()
@@ -89,8 +97,8 @@ class dat_library:
         self.path_pv_cost = os.path.join(self.path_dat_library, "PVcost")
         self.path_owner_discount_rate = os.path.join(self.path_dat_library, "DiscountRates", "Owner")
         self.path_offtaker_discount_rate = os.path.join(self.path_dat_library, "DiscountRates", "Offtaker")
-
         self.path_solar_resource = os.path.join(self.path_dat_library, "SolarResource")
+        self.path_utility_rate = os.path.join(self.path_dat_library, "Utility")
 
         self.path_output = os.path.join(self.path_dat_library, "Output")
 
@@ -236,6 +244,15 @@ class dat_library:
         self.DAT[5] = "DAT6=" + "'" + os.path.join(path, filename) + "'"
 
         self.write_single_variable(path, filename, [var, 0], dat_var)
+
+    # DAT12 - DAT15 - Utility Rates
+    # Currently depends on files being present in directory structure
+    def create_utility_rate(self):
+        rate_path = os.path.join(self.path_utility_rate, self.utility_name, self.rate_name)
+        self.DAT[11] = "DAT12=" + "'" + os.path.join(rate_path, "DPeriods.dat")
+        self.DAT[12] = "DAT13=" + "'" + os.path.join(rate_path, "DRate.dat")
+        self.DAT[13] = "DAT14=" + "'" + os.path.join(rate_path, "ERate.dat")
+        self.DAT[14] = "DAT15=" + "'" + os.path.join(rate_path, "Export.dat")
 
     # DAT19 - Owner Discount Rate
     def create_owner_discount_rate(self):
