@@ -1,8 +1,8 @@
 MaxStorageSizeKW: [
- 100 
+ 10000 
 ]
 MaxStorageSizeKWH: [
- 100 
+ 10000 
 ]
 MinStorageSizeKWH: [
  0 

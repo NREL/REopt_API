@@ -89,7 +89,7 @@ class dat_library:
 
         subprocess.call(self.run_file)
         self.parse_outputs()
-        self.cleanup()
+        #self.cleanup()
 
         return self.outputs
 
