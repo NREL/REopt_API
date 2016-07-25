@@ -101,7 +101,6 @@ class REoptRunResource(Resource):
         offtaker_discount_rate = request.GET.get("offtaker_discount_rate")
         utility_name = request.GET.get("utility_name")
         rate_name = request.GET.get("rate_name")
-
         path_xpress = "Xpress"
         run_set = library.dat_library(run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om,
                                       batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,

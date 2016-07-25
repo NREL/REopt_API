@@ -1,0 +1,10 @@
+MaxSize: [
+ 20000        ,
+ 12000000    ,
+]
+MaxStorageSizeKW: [
+ 10000
+]
+MaxStorageSizeKWH: [
+ 10000
+]

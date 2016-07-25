@@ -15,31 +15,23 @@ parameters
      !Do not commit TimeStepScaling = 1, instead commit 1.0 to force the type to real
   TimeStepCount =8760 
   Obj = 1  !1 for minimize LCC, 2 for maximize rated production, 3 for maximize production
-  NumRatchets = 24  
+  NumRatchets = 28
   SiteCount = 1  !number of sites.  Currently used to determine how many sites get to NZ
-  DAT1 = "Xpress\\DatLibrary\\LoadSize\\LoadSize.dat"
-  DAT2 = "Xpress\\DatLibrary\\OM\\PVOM20.dat"
-  DAT3 = "Xpress\\DatLibrary\\BatteryCost\\KW\\BCostKW1000.dat"
-  DAT4 = "Xpress\\DatLibrary\\BatteryCost\\KWH\\BCostKWH600.dat"
-  DAT5 = "Xpress\\DatLibrary\\LoadProfiles\\Load8760_demo.dat"
-  DAT6 = "Xpress\\DatLibrary\\PVcost\\PVCost_demo.dat"
-  DAT7 = "Xpress\\DatLibrary\\SolarResource\\SResource_demo.dat"
-  DAT8 = "Xpress\\DatLibrary\\Constant\\ActiveTechs.dat"
-  DAT9 = "Xpress\\DatLibrary\\Constant\\FuelIsActive.dat"
-  DAT10 = "Xpress\\DatLibrary\\Constant\\MaxSystemSize.dat"
-  DAT11 = "Xpress\\DatLibrary\\Constant\\TechIs.dat"
   
-  DAT12 = "Xpress\\DatLibrary\\Utility\\Utility1\\Rate1\\DPeriods.dat"
-  DAT13 = "Xpress\\DatLibrary\\Utility\\Utility1\\Rate1\\DRate.dat"
-  DAT14 = "Xpress\\DatLibrary\\Utility\\Utility1\\Rate1\\ERate.dat"
-  DAT15 = "Xpress\\DatLibrary\\Utility\\Utility1\\Rate1\\Export.dat"
-  DAT16 = "Xpress\\DatLibrary\\Constant\\Storage.dat"
-  DAT17 = "Xpress\\DatLibrary\\PWF\\PWFElec\\PWFElec.dat"
-  DAT18 = "Xpress\\DatLibrary\\PWF\\PWFOM\\PWFOM.dat"
-  DAT19 = "Xpress\\DatLibrary\\DiscountRates\\Owner\\Owner0.1.dat"
-  DAT20 = "Xpress\\DatLibrary\\DiscountRates\\Offtaker\\Offtaker0.031.dat"
+  DAT1 = "Xpress\\DatLibrary\\Various\\Constant.dat"
+  DAT2 = "Xpress\\DatLibrary\\Economics\\Economics.dat"
+  DAT3 = "Xpress\\DatLibrary\\LoadSize\\LoadSize_722950_LosAngeles_MidriseApartment.dat"
+  DAT4 = "Xpress\\DatLibrary\\LoadProfiles\\Load8760_722950_raw_LosAngeles_MidriseApartment.dat"
+  DAT5 = "Xpress\\DatLibrary\\GISdata\\SResource_33.933_-118.4.dat"
+  DAT6 = "Xpress\\DatLibrary\\Various\\Storage.dat"
+  DAT7 = "Xpress\\DatLibrary\\Various\\Maxsizes.dat"
+  DAT8 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\TimeStepsDemand.dat"
+  DAT9 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\DemandRate.dat"
+  DAT10 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\FuelCost.dat"
+  DAT11 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\Export.dat"
   
-  OUTFILE = "Xpress\\OUT.txt"
+  OUTFILE = "OUT.csv"
+    
  end-parameters
 
 declarations
@@ -68,7 +60,7 @@ declarations
   TechIsGrid:  array(Tech) of real    
   
   dvSystemSize: array (Tech) of mpvar  
-  dvRatedProd:  array (Tech,Load,TimeStep) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
+  dvRatedProd:  dynamic array (Tech,Load,TimeStep) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
  
   !Can only have one tech per techclass
   dvPeakDemandE: array (Ratchets) of mpvar  !Peak electric demand for the month 
@@ -96,15 +88,18 @@ declarations
   !SOCt0: array(Loc) of real	
   	  	
   dvFuelCost: array(Tech) of mpvar	
+  dvFuelUsed: array(Tech) of mpvar	    !fuel consumed by tech
+  FuelBurnRateM: array(Tech,Load) of real   !slope of the fuel rate curve
   FuelRate: array(Tech,TimeStep) of real  !cost per unit for fuel
-  EscE: real
-  EscOM: real
-  r_owner: real
+  pwf_e: real
+  pwf_om: real
+  pwf_op: real
   pwf_owner: real
-  r_offtaker: real
   pwf_offtaker: real
+  r_owner: real
+  r_offtaker: real
   TwoParty: real
-  
+  TechToLoadMatrix: array (Tech,Load) of real          !describes which Techs can serve which loads
 end-declarations  
 
 !Confirm that we are in the proper directory  
@@ -112,7 +107,7 @@ writeln ("REopt running from", LocalPath)
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
 !setparam("XPRS_FEASTOL",5e-5)  !default is 5e-5
-setparam("XPRS_MIPRELSTOP",.001)
+setparam("XPRS_MIPRELSTOP",.02)
 !setparam("XPRS_MAXTIME",180)
 
 !This file contains initilizations of variables that are setup by VBA  
@@ -121,99 +116,77 @@ setparam("XPRS_MIPRELSTOP",.001)
 
 StartTime:= gettime
 
-initializations from DAT8
+initializations from DAT1 ! constants
 	Tech
-end-initializations
-initializations from DAT9
 	Load
+	TechIsGrid
+	TechToLoadMatrix
+	FuelBurnRateM
 end-initializations
 
-!include "REoptInitializations.mos"
-
-initializations from DAT1
-	AnnualElecLoad
-end-initializations
-
-initializations from DAT2
-	OMperUnitSize
-end-initializations
-
-initializations from DAT3
-	StorageCostPerKW 
-end-initializations
-
-initializations from DAT4
+initializations from DAT2 ! economics
+	pwf_owner
+	pwf_offtaker
+	pwf_om
+	pwf_e
+	pwf_op
+	StorageCostPerKW
 	StorageCostPerKWH
-end-initializations
-
-initializations from DAT5
-	LoadProfile 
-end-initializations
-
-initializations from DAT6
+	OMperUnitSize
 	CapCostSlope
 end-initializations
 
-initializations from DAT7
-	ProdFactor
+initializations from DAT3
+	AnnualElecLoad
 end-initializations
 
-initializations from DAT10
-	MaxSize
+initializations from DAT4
+	LoadProfile
 end-initializations
-initializations from DAT11
-	TechIsGrid
+
+initializations from DAT5
+	ProdFactor 
 end-initializations
-initializations from DAT12
-	TimeStepRatchets
-end-initializations
-initializations from DAT13
-	DemandRates
-end-initializations
-initializations from DAT14
-	FuelRate
-end-initializations
-initializations from DAT15
-	ExportRates
-end-initializations
-initializations from DAT16
-	MaxStorageSizeKW
-	MaxStorageSizeKWH
+
+initializations from DAT6
 	MinStorageSizeKWH
 	StorageMinChargePcent
 	EtaStor
 end-initializations
-initializations from DAT17
-	EscE
-end-initializations
-initializations from DAT18
-	EscOM
-end-initializations
-initializations from DAT19
-	r_owner
-	pwf_owner
-end-initializations
-initializations from DAT20
-	r_offtaker
-	pwf_offtaker
+
+initializations from DAT7
+	MaxSize
+	MaxStorageSizeKW
+	MaxStorageSizeKWH
 end-initializations
 
-
+initializations from DAT8
+	TimeStepRatchets
+end-initializations
+initializations from DAT9
+	DemandRates
+end-initializations
+initializations from DAT10
+	FuelRate
+end-initializations
+initializations from DAT11
+	ExportRates
+end-initializations
 
 !Start timing
 
 TwoParty := pwf_offtaker / pwf_owner
 
 !"exist" formatting
-!forall (t in Tech,LD in Load,ts in TimeStep | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (l,t,LD,ts))
-!	create (dvRatedProd (t,LD,ts)) 	
+forall (t in Tech,LD in Load,ts in TimeStep | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (l,t,LD,ts))
+	create (dvRatedProd (t,LD,ts)) 	
 
 !!!! Fuel tracking
 
 !FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
 forall (t in Tech ) do 
      sum (ts in TimeStep, LD in Load |exists (dvRatedProd (t,LD,ts))) 
-     	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts) *TimeStepScaling * FuelRate(t,ts)*EscE = dvFuelCost(t)
+     	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts) * FuelBurnRateM(t,LD) * TimeStepScaling * FuelRate(t,ts)*pwf_e = dvFuelCost(t)
 end-do
 
 !the state of the storage system at the beginning is 0
@@ -321,18 +294,18 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 
  !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
 sum (t in Tech,LD in Load,ts in TimeStep | exists (dvRatedProd(t,LD,ts))) 
-	dvRatedProd (t,LD,ts)* TimeStepScaling *ProdFactor(t,LD,ts)* ExportRates(t,LD,ts)*EscE+
+	dvRatedProd (t,LD,ts)* TimeStepScaling *ProdFactor(t,LD,ts)* ExportRates(t,LD,ts)*pwf_e+
 
 !Demand Rates
  !sum(l in Loc, m in Month) dvPeakDemandE(l, m) * DemandRates(l, m) +
- sum(r in Ratchets) dvPeakDemandE(r) * DemandRates(r) *EscE +
+ sum(r in Ratchets) dvPeakDemandE(r) * DemandRates(r) *pwf_e +
  
 !Cost of batteries
 dvStorageSizeKWH * StorageCostPerKWH * TwoParty + 
 	 dvStorageSizeKW *  StorageCostPerKW *TwoParty +  
 
 !O&M cost based on system size
-sum(t in Tech) OMperUnitSize(t) * dvSystemSize(t) *EscOM * TwoParty +
+sum(t in Tech) OMperUnitSize(t) * dvSystemSize(t) *pwf_om * TwoParty +
 
 sum(t in Tech) dvFuelCost(t)
 
@@ -361,19 +334,18 @@ forall (t in Tech) do
 	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
 end-do
 writeln ("Batt size KW = ", getsol (dvStorageSizeKW))
-writeln ("Batt size KWH = ", getsol (dvStorageSizeKWH))
+writeln ("BattSize= KWH = ", getsol (dvStorageSizeKWH))
+writeln ("NumRatchets = ", NumRatchets)
 
-!Output to CSV
 fopen(OUTFILE,F_OUTPUT)
-writeln ("LCC,", getsol(RECosts))   
-writeln("elapsed time,", EndTime-StartTime, " seconds")
+writeln ("LCC,", getsol(RECosts))
+writeln("elapsed time = ", EndTime-StartTime, " seconds")
 forall (t in Tech) do
 	writeln (t, " size KW,", getsol (dvSystemSize(t)))
 end-do
 writeln ("Batt size KW,", getsol (dvStorageSizeKW))
-writeln ("Batt size KWH,", getsol (dvStorageSizeKWH))
-
-
+writeln ("BattSize= KWH,", getsol (dvStorageSizeKWH))
+fclose(F_OUTPUT)
 
 end-model 
 
@@ -383,12 +355,12 @@ end-model
 
 !******************
 !SystemSize output 
-forall  (t in Tech, l in Loc,s in Seg |getsol ( dvSystemSize(l,t,s)) > .1 and TechIsGrid(t)=0)  do
-   writeln (l,",",t," seg ",s, " = ", getsol (dvSystemSize(l,t,s)))
+forall  (t in Tech |getsol ( dvSystemSize(t)) > .1 and TechIsGrid(t)=0)  do
+   writeln (t " = ", getsol (dvSystemSize(t)))
 end-do
 
-forall  (t in Tech, l in Loc,s in Seg |getsol (dvSystemSize(l,t,s)) <> 0 and TechIsGrid(t)=1) do
-   writeln (l,",",t," seg ",s, " = ", getsol (dvSystemSize(l,t,s)))
+forall  (t in Tech |getsol (dvSystemSize(t)) <> 0 and TechIsGrid(t)=1) do
+   writeln (t, " = ", getsol (dvSystemSize(t)))
 end-do
 
 !Battery output 
@@ -404,7 +376,7 @@ end-do
 !CapCost plus LFG pipeline cost output 
 forall (l in Loc) do
 	writeln (l, " Cap Costs = ", 
-	sum(t in Tech,s in Seg) (CapCostSlope (l,t,s) * getsol(dvSystemSize(l,t,s))) + getsol(dvStorageSizeKWH(l)) * StorageCostPerKWH(l) + getsol(dvStorageSizeKW(l)) * StorageCostPerKW(l) )
+	sum(t in Tech) (CapCostSlope (t) * getsol(dvSystemSize(t))) + getsol(dvStorageSizeKWH(l)) * StorageCostPerKWH(l) + getsol(dvStorageSizeKW(l)) * StorageCostPerKW(l) )
 end-do
 
 !demand output
@@ -433,8 +405,8 @@ forall  (l in Loc |getsol ( dvStorageSizeKW(l)   ) <> 0)  do
    writeln (l, ",", "BattSizekW, ", getsol (dvStorageSizeKW(l)))
 end-do
 
-forall  (t in Tech, l in Loc,s in Seg |getsol ( dvSystemSize(l,t,s)   ) <> 0 )  do
-   writeln (l, ",", t, ", ", getsol ( dvSystemSize(l,t,s)   )     )
+forall  (t in Tech |getsol ( dvSystemSize(t)   ) <> 0 )  do
+   writeln ( t, ", ", getsol ( dvSystemSize(t)   )     )
 end-do
 
 fclose(F_OUTPUT)
@@ -449,8 +421,8 @@ fclose(F_OUTPUT)
 
 !Time series dispatch output 
 fopen(LocalPath + "\\Output\\TempResults\\DispatchHourly.csv",F_OUTPUT)
-forall (l in Loc,t in Tech,LD in Load, ts in TimeStep )     do   
-   writeln ( t,",", LD, "," ,ts ,",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (l,t,LD,ts,s,fb)))      getsol (dvRatedProd (l,t,LD,ts,s,fb)))
+forall (t in Tech,LD in Load, ts in TimeStep )     do   
+   writeln ( t,",", LD, "," ,ts ,",", sum ( exists (dvRatedProd (t,LD,ts)))      getsol (dvRatedProd (t,LD,ts)))
 end-do
 fclose(F_OUTPUT)
 
@@ -475,9 +447,9 @@ forall (l in Loc, ts in TimeStep )     do
 end-do
 fclose(F_OUTPUT)
 
-forall (l in Loc, ts in TimeStep )     do   
-	Demand(l,ts) := LoadProfile(l,"1R",ts) + sum(t in Tech, s in Seg, fb in FuelBin | t = "UTIL1") (dvRatedProd (l,t,"1S",ts,s,fb)*ProdFactor(l,t,"1S",ts)) - 1*
-   				(sum(t in Tech, s in Seg, fb in FuelBin | t <> "UTIL1") (dvRatedProd (l,t,"1R",ts,s,fb)*ProdFactor(l,t,"1R",ts)) + dvElecFromStor(l, ts))
+forall ( ts in TimeStep )     do   
+	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech | t = "UTIL1") (dvRatedProd (t,"1S",ts)*ProdFactor(t,"1S",ts)) - 1*
+   				(sum(t in Tech | t <> "UTIL1") (dvRatedProd (t,"1R",ts)*ProdFactor(t,"1R",ts)) + dvElecFromStor( ts))
 end-do
 
 !Time series demand output 

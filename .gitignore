@@ -88,3 +88,6 @@ ENV/
 .ropeproject
 
 *.sqlite3
+
+# Dat files
+*.dat
