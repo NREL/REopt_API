@@ -9,65 +9,62 @@ uses "mmsystem" !for timing function
 uses "mmnl" 
 
 parameters
-  LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api\\Xpress\\"
+ LocalPath = "C:\\Python27\\Lib\\site-packages\\win32"
   TimeStepScaling =1.0  !how much actual time does each timestep represent.  For 288, it is 365 / 12
-     !Note that the type (integer, real, text string or Boolean) of a parameter is implied by its default value.
-     !Do not commit TimeStepScaling = 1, instead commit 1.0 to force the type to real
-  TimeStepCount =8760 
+  TimeStepCount =8760
   Obj = 1  !1 for minimize LCC, 2 for maximize rated production, 3 for maximize production
   NumRatchets = 28
   SiteCount = 1  !number of sites.  Currently used to determine how many sites get to NZ
-  
-  DAT1 = "Xpress\\DatLibrary\\Various\\Constant.dat"
-  DAT2 = "Xpress\\DatLibrary\\Economics\\Economics.dat"
-  DAT3 = "Xpress\\DatLibrary\\LoadSize\\LoadSize_722950_LosAngeles_MidriseApartment.dat"
-  DAT4 = "Xpress\\DatLibrary\\LoadProfiles\\Load8760_722950_raw_LosAngeles_MidriseApartment.dat"
-  DAT5 = "Xpress\\DatLibrary\\GISdata\\SResource_33.933_-118.4.dat"
-  DAT6 = "Xpress\\DatLibrary\\Various\\Storage.dat"
-  DAT7 = "Xpress\\DatLibrary\\Various\\Maxsizes.dat"
-  DAT8 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\TimeStepsDemand.dat"
-  DAT9 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\DemandRate.dat"
-  DAT10 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\FuelCost.dat"
-  DAT11 = "Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\Export.dat"
-  
+
+  DAT1 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Various\\Constant.dat"
+  DAT2 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Economics\\Economics.dat"
+  DAT3 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\LoadSize\\LoadSize_722950_LosAngeles_MidriseApartment.dat"
+  DAT4 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\LoadProfiles\\Load8760_722950_raw_LosAngeles_MidriseApartment.dat"
+  DAT5 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\GISdata\\SResource_33.933_-118.4.dat"
+  DAT6 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Various\\Storage.dat"
+  DAT7 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Various\\Maxsizes.dat"
+  DAT8 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\TimeStepsDemand.dat"
+  DAT9 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\DemandRate.dat"
+  DAT10 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\FuelCost.dat"
+  DAT11 = "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\Utility\\Los Angeles Department of Water & Power\\55fc80e7682bea28da643abc\\Export.dat"
+
   OUTFILE = "OUT.csv"
-    
  end-parameters
 
 declarations
-  Month = 1..12    
+  Month = 1..12
   Ratchets = 1..NumRatchets
-  
+
   StartTime: real
   EndTime: real
-  TimeStepRatchets: array(Ratchets) of set of integer  !same as above, but omits the first hour, so 2-24, 26-48....  
-  
-  Tech: set of string   
+  TimeStepRatchets: array(Ratchets) of set of integer  !same as above, but omits the first hour, so 2-24, 26-48....
+
+  Tech: set of string
   TimeStep = 1..TimeStepCount    !8760 would be true hourly
   TimeStep0 = 0..TimeStepCount    !includes 0 in the set
-  
+
   Load: set of string    !the load being served, electric retail / wholesale, then fuel 1...N  retail / wholesale
   AnnualElecLoad: real   !electricity used at that location for the year
-  
+
   MaxSize: array (Tech) of real  !Max system size.  Usually limited by land area, MSW/Bio available, etc
   CapCostSlope: array (Tech) of real
   ProdFactor: array (Tech,Load,TimeStep) of real  !Production Factor.  Combination of resource, efficiency, availability
   OMperUnitSize: array (Tech) of real  !O&M per unit of system size.  $10 / KW for example.
   ExportRates: array (Tech,Load,TimeStep) of real  !retail / wholesale rate for all electricity / fuels
   LoadProfile: array (Load,TimeStep) of real       !electricity / fuel load profile by TimeStep
-   												
-  !next for elec only biomass, WTE, and LG  
-  TechIsGrid:  array(Tech) of real    
-  
-  dvSystemSize: array (Tech) of mpvar  
+
+  !next for elec only biomass, WTE, and LG
+  TechIsGrid:  array(Tech) of real
+
+  dvSystemSize: array (Tech) of mpvar
   dvRatedProd:  dynamic array (Tech,Load,TimeStep) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
- 
+
   !Can only have one tech per techclass
-  dvPeakDemandE: array (Ratchets) of mpvar  !Peak electric demand for the month 
+  dvPeakDemandE: array (Ratchets) of mpvar  !Peak electric demand for the month
 
   !dvPeakDemandSummer: array (Loc) of mpvar  !Peak electric demand for the month    !uncomment for RMI
   DemandRates: array (Ratchets) of real !Demand rate for the quarter
-  
+
   dvElecToStor: array(TimeStep) of mpvar  !Electricity going to the storage system during each timestep
   dvElecFromStor: array (TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
   dvStoredEnergy: array(0..TimeStepCount) of mpvar  !State of charge of the storage system
@@ -77,7 +74,7 @@ declarations
   dvMeanSOC:  mpvar
   binBattCharge: array(TimeStep) of mpvar
   binBattDischarge: array(TimeStep) of mpvar
-  
+
   EtaStor: array(Tech,Load) of real !round trip storage efficiency
   MaxStorageSizeKWH:  real !the max size of storage
   MinStorageSizeKWH:  real !the min size of storage
@@ -85,9 +82,9 @@ declarations
   StorageCostPerKWH:  real !Storage cost per KWH
   StorageCostPerKW:  real !Storage cost per KW.  Cost of inverter.
   StorageMinChargePcent:  real !Min charge on the storage device as a percent of the total
-  !SOCt0: array(Loc) of real	
-  	  	
-  dvFuelCost: array(Tech) of mpvar	
+  !SOCt0: array(Loc) of real
+
+  dvFuelCost: array(Tech) of mpvar
   dvFuelUsed: array(Tech) of mpvar	    !fuel consumed by tech
   FuelBurnRateM: array(Tech,Load) of real   !slope of the fuel rate curve
   FuelRate: array(Tech,TimeStep) of real  !cost per unit for fuel
@@ -100,9 +97,9 @@ declarations
   r_offtaker: real
   TwoParty: real
   TechToLoadMatrix: array (Tech,Load) of real          !describes which Techs can serve which loads
-end-declarations  
+end-declarations
 
-!Confirm that we are in the proper directory  
+!Confirm that we are in the proper directory
 writeln ("REopt running from", LocalPath)
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
@@ -110,9 +107,9 @@ writeln ("REopt running from", LocalPath)
 setparam("XPRS_MIPRELSTOP",.02)
 !setparam("XPRS_MAXTIME",180)
 
-!This file contains initilizations of variables that are setup by VBA  
+!This file contains initilizations of variables that are setup by VBA
 !include "Xpress\\REoptInitializations.mos"
-!include "C:\\Users\\dcutler\\REopt\\REO_dev\\REopt_UI\\Xpress\\REoptInitializations.mos" 
+!include "C:\\Users\\dcutler\\REopt\\REO_dev\\REopt_UI\\Xpress\\REoptInitializations.mos"
 
 StartTime:= gettime
 
@@ -145,7 +142,7 @@ initializations from DAT4
 end-initializations
 
 initializations from DAT5
-	ProdFactor 
+	ProdFactor
 end-initializations
 
 initializations from DAT6
@@ -179,13 +176,13 @@ TwoParty := pwf_offtaker / pwf_owner
 
 !"exist" formatting
 forall (t in Tech,LD in Load,ts in TimeStep | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (l,t,LD,ts))
-	create (dvRatedProd (t,LD,ts)) 	
+	create (dvRatedProd (t,LD,ts))
 
 !!!! Fuel tracking
 
 !FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
-forall (t in Tech ) do 
-     sum (ts in TimeStep, LD in Load |exists (dvRatedProd (t,LD,ts))) 
+forall (t in Tech ) do
+     sum (ts in TimeStep, LD in Load |exists (dvRatedProd (t,LD,ts)))
      	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts) * FuelBurnRateM(t,LD) * TimeStepScaling * FuelRate(t,ts)*pwf_e = dvFuelCost(t)
 end-do
 
@@ -198,21 +195,21 @@ dvStorageSizeKWH >=  MinStorageSizeKWH
 dvStorageSizeKW <=  MaxStorageSizeKW  !
 
 
-forall (ts in TimeStep) do   
+forall (ts in TimeStep) do
 	! Electricity to be stored is the sum of the electricity in the S-bin for that timestep
 	dvElecToStor(ts) = sum(t in Tech) ProdFactor(t,"1S",ts) * dvRatedProd(t,"1S",ts) * EtaStor(t,"1S")
-	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out 
+	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out
 	dvStoredEnergy(ts) =   dvStoredEnergy(ts-1) +  dvElecToStor(ts) - dvElecFromStor(ts)
 	! energy coming out of the storage system cannot be greater than the current state of charge
 	dvElecFromStor(ts) <=  dvStoredEnergy(ts-1 )
 	! the state of charge always has to be greater than 0
-	dvStoredEnergy(ts) >=  StorageMinChargePcent * dvStorageSizeKWH / TimeStepScaling  ! / TimeStepScaling 
+	dvStoredEnergy(ts) >=  StorageMinChargePcent * dvStorageSizeKWH / TimeStepScaling  ! / TimeStepScaling
 	dvElecFromStor(ts) >= 0
 end-do
 
 forall (ts in TimeStep )  do
 	dvStorageSizeKW >=  dvElecToStor(ts)
-	dvStorageSizeKW >=  dvElecFromStor(ts)	
+	dvStorageSizeKW >=  dvElecFromStor(ts)
 end-do
 
 
@@ -220,7 +217,7 @@ end-do
 	dvMeanSOC = sum(ts in TimeStep) dvStoredEnergy(ts) / TimeStepCount
 
 
-! the physical size of the storage system is the max amount of charge at any timestep.  
+! the physical size of the storage system is the max amount of charge at any timestep.
 forall ( ts in TimeStep) do
 	dvStorageSizeKWH >=  dvStoredEnergy(ts) * TimeStepScaling
 end-do
@@ -233,35 +230,35 @@ forall (ts in TimeStep) do
   binBattCharge (ts) is_binary
   binBattDischarge (ts) is_binary
 end-do
-    
+
  !!System size cannot exceed MaxSize
  !CONSTRAINT 27
-forall (t in Tech )  dvSystemSize (t) <=  MaxSize (t) 
+forall (t in Tech )  dvSystemSize (t) <=  MaxSize (t)
 
-!Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on 
+!Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on
 ! electric output of a CoGen with mandatory thermal tech
 !For most techs, Rated Production across all loads cannot exceed System size
 !CONSTRAINT 33A
-forall (t in Tech,ts in TimeStep)  
+forall (t in Tech,ts in TimeStep)
 	 sum (LD in Load |exists (dvRatedProd (t,LD,ts))) dvRatedProd (t,LD,ts) <= dvSystemSize (t)
 
 !CONSTRAINT 35
 ! sum of everything but retail electric produced by all techs must be less than max load for each fuel type
 !TS 31513 should this exclude SHW?
 forall (LD in Load,ts in TimeStep | LD <> "1R" and LD <>"1S") do
-  sum (t in Tech |exists (dvRatedProd (t,LD,ts)) )  
-  		 ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts) <= LoadProfile (LD,ts) 
+  sum (t in Tech |exists (dvRatedProd (t,LD,ts)) )
+  		 ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts) <= LoadProfile (LD,ts)
 end-do
 
 !CONSTRAINT 38
 !companion to the above.  Electric load can be met from generation OR from the storage
 forall (LD in Load,ts in TimeStep  | LD = "1R") do
-  sum (t in Tech |exists (dvRatedProd (t,LD,ts))) dvRatedProd (t,LD,ts) * ProdFactor (t,LD,ts) + dvElecFromStor(ts) >= 
+  sum (t in Tech |exists (dvRatedProd (t,LD,ts))) dvRatedProd (t,LD,ts) * ProdFactor (t,LD,ts) + dvElecFromStor(ts) >=
   		  LoadProfile (LD,ts)
 end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!! End system size and production constraints 
+!! End system size and production constraints
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -275,12 +272,12 @@ forall (LD in Load, r in Ratchets, ts in TimeStepRatchets(r))  do
    				(sum(t in Tech | t <> "UTIL1") (dvRatedProd (t,"1R",ts)*ProdFactor(t,"1R",ts)) + dvElecFromStor(ts))
 end-do
 
-!! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.  
+!! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
 !! Once site load is met, excess electricity goes into X bin with lower sellback rate
 !!4313 TS.  Adding elec penalty to annual site load
 !!41513 TS.  Excluding Grid.
 
-   sum (t in Tech, LD in Load, ts in TimeStep | exists (dvRatedProd(t,LD,ts)) and (LD="1R" or LD="1W") and TechIsGrid(t) = 0) 
+   sum (t in Tech, LD in Load, ts in TimeStep | exists (dvRatedProd(t,LD,ts)) and (LD="1R" or LD="1W") and TechIsGrid(t) = 0)
  		dvRatedProd (t,LD,ts)*ProdFactor(t,LD,ts) * TimeStepScaling <=  AnnualElecLoad
 
 
@@ -293,16 +290,16 @@ TotCapCosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)
 RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 
  !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
-sum (t in Tech,LD in Load,ts in TimeStep | exists (dvRatedProd(t,LD,ts))) 
+sum (t in Tech,LD in Load,ts in TimeStep | exists (dvRatedProd(t,LD,ts)))
 	dvRatedProd (t,LD,ts)* TimeStepScaling *ProdFactor(t,LD,ts)* ExportRates(t,LD,ts)*pwf_e+
 
 !Demand Rates
  !sum(l in Loc, m in Month) dvPeakDemandE(l, m) * DemandRates(l, m) +
  sum(r in Ratchets) dvPeakDemandE(r) * DemandRates(r) *pwf_e +
- 
+
 !Cost of batteries
-dvStorageSizeKWH * StorageCostPerKWH * TwoParty + 
-	 dvStorageSizeKW *  StorageCostPerKW *TwoParty +  
+dvStorageSizeKWH * StorageCostPerKWH * TwoParty +
+	 dvStorageSizeKW *  StorageCostPerKW *TwoParty +
 
 !O&M cost based on system size
 sum(t in Tech) OMperUnitSize(t) * dvSystemSize(t) *pwf_om * TwoParty +
@@ -322,13 +319,13 @@ if Obj = 1 then
 	minimize (RECosts)
 elif Obj = 5 then
 	! Keep SOC high
-	minimize (RECosts - 1*dvMeanSOC) 
+	minimize (RECosts - 1*dvMeanSOC)
 end-if
 
 !End timing
 EndTime:= gettime
 
-writeln ("LCC = ", getsol(RECosts))   
+writeln ("LCC = ", getsol(RECosts))
 writeln("elapsed time = ", EndTime-StartTime, " seconds")
 forall (t in Tech) do
 	writeln (t, " size KW = ", getsol (dvSystemSize(t)))
@@ -339,7 +336,7 @@ writeln ("NumRatchets = ", NumRatchets)
 
 fopen(OUTFILE,F_OUTPUT)
 writeln ("LCC,", getsol(RECosts))
-writeln("elapsed time = ", EndTime-StartTime, " seconds")
+writeln("elapsed time,", EndTime-StartTime, " seconds")
 forall (t in Tech) do
 	writeln (t, " size KW,", getsol (dvSystemSize(t)))
 end-do

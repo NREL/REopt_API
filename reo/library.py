@@ -46,7 +46,7 @@ def log(level, message):
 class dat_library:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
 
     run_id = []
@@ -211,7 +211,6 @@ class dat_library:
 
         self.run_file = os.path.join(self.path_xpress, go_file)
 
-        log("DEBUG", "Current directory: " + os.getcwd())
         f = open(self.run_file, 'w')
         f.write(outline)
         f.close()
@@ -230,6 +229,9 @@ class dat_library:
                 self.outputs['batt_size_kwh'] = df['Batt size KWH']
             if 'PVNM size KW' in df.columns:
                 self.outputs['pv_kw'] = df['PVNM size KW']
+        else:
+            log("DEBUG", "Current directory: " + os.getcwd())
+            log("WARNING", "Output file: " + self.output_file + " + doesn't exist!")
 
     def cleanup(self):
         if not self.debug:
