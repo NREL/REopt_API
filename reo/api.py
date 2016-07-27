@@ -5,6 +5,7 @@ from tastypie.bundle import Bundle
 
 import library
 import random
+import os
 
 
 # We need a generic object to shove data in and to get data from.
@@ -85,6 +86,9 @@ class REoptRunResource(Resource):
         # note, running process is from reopt_api head
         # i.e, C:\Nick\Projects\api\env\src\reopt_api
 
+        # when deployed, runs from egg file, need to update if version changes!
+        path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+
         # generate a unique id for this run
         run_id = random.randint(0, 1000000)
 
@@ -101,8 +105,7 @@ class REoptRunResource(Resource):
         offtaker_discount_rate = request.GET.get("offtaker_discount_rate")
         utility_name = request.GET.get("utility_name")
         rate_name = request.GET.get("rate_name")
-        path_xpress = "Xpress"
-        run_set = library.dat_library(run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om,
+        run_set = library.dat_library(run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                       batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
                                       offtaker_discount_rate, utility_name, rate_name)
         outputs = run_set.run()

@@ -1,15 +1,53 @@
 import os
 import subprocess
 import traceback
-
-import utilities
+import logging
+import inspect
 import pandas as pd
 
-# currently setup not using a database, that might improve performance
+import utilities
+
+
+# logging utility
+def log(level, message):
+    func = inspect.currentframe().f_back.f_code
+    if level == "DEBUG":
+        logging.debug("%s: %s in %s" % (
+            message,
+            func.co_name,
+            func.co_filename
+        ))
+    elif level == "INFO":
+        logging.info("%s: %s in %s" % (
+            message,
+            func.co_name,
+            func.co_filename
+        ))
+    elif level == "WARNING":
+        logging.warning("%s: %s in %s" % (
+            message,
+            func.co_name,
+            func.co_filename
+        ))
+    elif level == "ERROR":
+        logging.error("%s: %s in %s" % (
+            message,
+            func.co_name,
+            func.co_filename
+        ))
+    elif level == "CRITICAL":
+        logging.critical("%s: %s in %s" % (
+            message,
+            func.co_name,
+            func.co_filename
+        ))
+
+
 class dat_library:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
+    logfile = "reopt_api.log"
 
     run_id = []
     run_file = []
@@ -39,7 +77,9 @@ class dat_library:
                              'Demo']
 
     # directory structure
+    path_egg = []
     path_xpress = []
+    path_logfile = []
     path_dat_library = []
     path_various = []
     path_load_size = []
@@ -58,14 +98,12 @@ class dat_library:
     # DAT files to overwrite
     DAT = [None] * 20
 
-    def __init__(self, run_id, path_xpress, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+    def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                  batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
                  utility_name, rate_name):
 
-        self.path_xpress = path_xpress
-
         self.run_id = run_id
-
+        self.path_egg = path_egg
         if analysis_period and analysis_period > 0:
             self.analysis_period = analysis_period
 
@@ -89,6 +127,7 @@ class dat_library:
 
     def run(self):
         self.define_paths()
+        self.setup_logging()
         self.create_or_load()
         self.create_run_file()
 
@@ -104,8 +143,15 @@ class dat_library:
 
         return self.outputs
 
-    def define_paths(self):
+    def setup_logging(self):
+        logging.basicConfig(filename=self.path_logfile,
+                            format='%(asctime)s - %(levelname)s - %(message)s',
+                            datefmt='%m/%d/%Y %I:%M%S %p',
+                            level=logging.DEBUG)
 
+    def define_paths(self):
+        self.path_xpress = os.path.join(self.path_egg, "Xpress")
+        self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_various = os.path.join(self.path_dat_library, "Various")
         self.path_economics = os.path.join(self.path_dat_library, "Economics")
@@ -144,6 +190,10 @@ class dat_library:
     def create_run_file(self):
         go_file = "Go_" + str(self.run_id) + ".bat"
         output_file = "Out_" + str(self.run_id) + ".csv"
+
+        log("DEBUG", "Created run file: " + go_file)
+        log("DEBUG", "Created output file: " + output_file)
+
         header = 'mosel -c "exec ' + os.path.join(self.path_xpress, 'REoptTS1127')
 
         self.output_file = os.path.join(self.path_output, output_file)
@@ -160,6 +210,8 @@ class dat_library:
         outline = '  '.join([header, outline]) + '\n'
 
         self.run_file = os.path.join(self.path_xpress, go_file)
+
+        log("DEBUG", "Current directory: " + os.getcwd())
         f = open(self.run_file, 'w')
         f.write(outline)
         f.close()

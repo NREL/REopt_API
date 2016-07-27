@@ -1,0 +1,4 @@
+include requirements.txt
+recursive-include Xpress *
+recursive-include reo *
+recursive-include reopt_api *
