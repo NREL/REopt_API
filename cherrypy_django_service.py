@@ -27,7 +27,7 @@ class MyService(win32serviceutil.ServiceFramework):
                 'server.socket_host': '0.0.0.0',
                 'server.socket_port': 80,
                 'log.screen': False,
-                'log.error_file': 'C:\\Nick\\Projects\\api\env\\src\\reopt_api\\cherry.log',
+                'log.error_file': 'C:\\Python27\\Lib\\site-packages\\reopt_api-1.0-py2.7.egg\\reopt_api\\cherry.log',
                 'engine.autoreload.on': False,
                 'engine.SIGHUP': None,
                 'engine.SIGTERM': None
