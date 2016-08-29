@@ -10,8 +10,11 @@ import os
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
-    def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None, batt_cost_kw=None, batt_cost_kwh=None,
-                 load_profile=None, pv_cost=None, owner_discount_rate=None, offtaker_discount_rate=None, utility_name=None, rate_name=None, lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
+    def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None,
+                 batt_cost_kw=None, batt_cost_kwh=None, load_profile=None, pv_cost=None, owner_discount_rate=None,
+                 offtaker_discount_rate=None, utility_name=None, rate_name=None,
+                 lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
+
         self.id = id
 
         self.analysis_period = analysis_period
@@ -87,7 +90,11 @@ class REoptRunResource(Resource):
         # i.e, C:\Nick\Projects\api\env\src\reopt_api
 
         # when deployed, runs from egg file, need to update if version changes!
-        path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+        #path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+
+        # when not deployed (running from 127.0.0.1:8000)
+        path_egg = os.getcwd()
+        print path_egg
 
         # generate a unique id for this run
         run_id = random.randint(0, 1000000)
@@ -105,7 +112,8 @@ class REoptRunResource(Resource):
         offtaker_discount_rate = request.GET.get("offtaker_discount_rate")
         utility_name = request.GET.get("utility_name")
         rate_name = request.GET.get("rate_name")
-        run_set = library.dat_library(run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om,
+
+        run_set = library.DatLibrary(run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                       batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
                                       offtaker_discount_rate, utility_name, rate_name)
         outputs = run_set.run()

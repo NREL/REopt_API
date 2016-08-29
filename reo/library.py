@@ -3,6 +3,7 @@ import subprocess
 import traceback
 import logging
 import inspect
+import economics
 import pandas as pd
 
 import utilities
@@ -43,11 +44,12 @@ def log(level, message):
         ))
 
 
-class dat_library:
+class DatLibrary:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = False
     logfile = "reopt_api.log"
+    xpress_model = "REoptTS1127_PVBATT72916.mos"
 
     run_id = []
     run_file = []
@@ -55,20 +57,40 @@ class dat_library:
     outputs = {}
 
     # variables that user can pass
-    analysis_period = 25
-    latitude = []
-    longitude = []
-    load_size = []
-    pv_om = []
-    batt_cost_kw = []
-    batt_cost_kwh = []
-    load_profile = []
-    pv_cost = []
-    owner_discount_rate = []
-    offtaker_discount_rate = []
-    utility_name = []
-    rate_name = []
+    latitude = None
+    longitude = None
+    load_size = None
+    load_profile = None
+    utility_name = None
+    utility_rate_name = None
 
+    # Economics.dat
+    analysis_period = None
+
+    rate_owner_discount = None
+    rate_offtaker_discount = None
+    rate_inflation = None
+    rate_escalation = None
+    rate_tax = None
+    rate_ITC = None
+    rate_degradation = None
+
+    cost_batt_kW = None
+    cost_batt_kWh = None
+    cost_pv = None
+    cost_pv_om = None
+    cost_batt_replacement_kW = None
+    cost_batt_replacement_kWh = None
+
+    flag_macrs = None
+    flag_ITC = None
+    flag_bonus = None
+    flag_replace_batt = None
+
+    macrs_years = []
+    macrs_ITC_reduction = None
+    bonus_fraction = None
+    batt_replacement_year = None
 
     # default load profiles
     default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
@@ -85,21 +107,15 @@ class dat_library:
     path_load_size = []
     path_load_profile = []
     path_economics = []
-    path_pv_om = []
-    path_batt_cost_kwh = []
-    path_batt_cost_kw = []
-    path_pv_cost = []
-    path_owner_discount_rate = []
-    path_offtaker_discount_rate = []
-    path_solar_resource = []
-    path_utility_rate = []
+    path_gis_data = []
+    path_utility = []
     path_output = []
 
     # DAT files to overwrite
     DAT = [None] * 20
 
-    def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
-                 batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
+    def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, cost_pv_om, cost_batt_kw,
+                 cost_batt_kwh, load_profile, cost_pv, rate_owner_discount, rate_offtaker_discount,
                  utility_name, rate_name):
 
         self.run_id = run_id
@@ -111,14 +127,14 @@ class dat_library:
         self.longitude = longitude
         self.load_size = load_size
         self.load_profile = load_profile
-        self.pv_om = pv_om
-        self.batt_cost_kw = batt_cost_kw
-        self.batt_cost_kwh = batt_cost_kwh
-        self.pv_cost = pv_cost
-        self.owner_discount_rate = owner_discount_rate
-        self.offtaker_discount_rate = offtaker_discount_rate
+        self.cost_pv_om = cost_pv_om
+        self.cost_batt_kw = cost_batt_kw
+        self.cost_batt_kwh = cost_batt_kwh
+        self.cost_pv = cost_pv
+        self.rate_owner_discount = rate_owner_discount
+        self.rate_offtaker_discount = rate_offtaker_discount
         self.utility_name = utility_name
-        self.rate_name = rate_name
+        self.utility_rate_name = rate_name
 
         lower_case_profile = []
         for profile in self.default_load_profiles:
@@ -132,14 +148,13 @@ class dat_library:
         self.create_run_file()
 
         #print ('New subprocess')
-
         #tracefile = open('traceback.txt', 'a')
         #traceback.print_stack(limit=5, file=tracefile)
         subprocess.call(self.run_file)
         # print ('Subprocess done')
 
         self.parse_outputs()
-        self.cleanup()
+        #self.cleanup()
 
         return self.outputs
 
@@ -150,26 +165,26 @@ class dat_library:
                             level=logging.DEBUG)
 
     def define_paths(self):
+
+        # absolute
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_various = os.path.join(self.path_dat_library, "Various")
-        self.path_economics = os.path.join(self.path_dat_library, "Economics")
-        self.path_load_size = os.path.join(self.path_dat_library, "LoadSize")
-        self.path_load_profile = os.path.join(self.path_dat_library, "LoadProfiles")
-        self.path_solar_resource = os.path.join(self.path_dat_library, "GISdata")
-        self.path_utility_rate = os.path.join(self.path_dat_library, "Utility", "Los Angeles Department of Water & Power")
-        self.path_output = os.path.join(self.path_dat_library, "Output")
 
-        # Going away
-        self.path_pv_om = os.path.join(self.path_dat_library, "OM")
-        self.path_batt_cost_kwh = os.path.join(self.path_dat_library, "BatteryCost", "KWH")
-        self.path_batt_cost_kw = os.path.join(self.path_dat_library, "BatteryCost", "KW")
-        self.path_pv_cost = os.path.join(self.path_dat_library, "PVcost")
-        self.path_owner_discount_rate = os.path.join(self.path_dat_library, "DiscountRates", "Owner")
-        self.path_offtaker_discount_rate = os.path.join(self.path_dat_library, "DiscountRates", "Offtaker")
+        # relative
+        self.path_various = os.path.join("Various")
+        self.path_economics = os.path.join("Economics")
+        self.path_load_size = os.path.join("LoadSize")
+        self.path_load_profile = os.path.join("LoadProfiles")
+        self.path_gis_data = os.path.join("GISdata")
+        self.path_utility = os.path.join("Utility")
+        self.path_output = os.path.join("..", "Output")
 
     def create_or_load(self):
+
+        self.create_economics()
+
+        '''
         if self.load_size and self.load_size > 0:
             self.create_load_size()
         if self.pv_om and self.pv_om >= 0:
@@ -186,20 +201,20 @@ class dat_library:
             self.create_owner_discount_rate()
         if self.offtaker_discount_rate and self.offtaker_discount_rate >=0:
             self.create_offtaker_discount_rate()
+        '''
 
     def create_run_file(self):
+
         go_file = "Go_" + str(self.run_id) + ".bat"
-        output_file = "Out_" + str(self.run_id) + ".csv"
+        output_dir = os.path.join("..", "Run_" + str(self.run_id))
+        os.mkdir(output_dir)
 
         log("DEBUG", "Created run file: " + go_file)
-        log("DEBUG", "Created output file: " + output_file)
+        log("DEBUG", "Created output directory: " + output_dir)
 
-        header = 'mosel -c "exec ' + os.path.join(self.path_xpress, 'REoptTS1127')
+        header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model)
 
-        self.output_file = os.path.join(self.path_output, output_file)
-        self.output_file.replace('\n', '')
-
-        output = "OUTFILE=" + "'" + self.output_file + "'"
+        output = "OUTDIR=" + "'" + output_dir + "'"
         outline = ''
 
         for dat_file in self.DAT:
@@ -210,6 +225,7 @@ class dat_library:
         outline = '  '.join([header, outline]) + '\n'
 
         self.run_file = os.path.join(self.path_xpress, go_file)
+        self.output_file = os.path.join(output_dir, "summary.csv")
 
         f = open(self.run_file, 'w')
         f.write(outline)
@@ -223,20 +239,22 @@ class dat_library:
 
             if 'LCC' in df.columns:
                 self.outputs['lcc'] = df['LCC']
-            if 'Batt size KW' in df.columns:
-                self.outputs['batt_size_kw'] = df['Batt size KW']
-            if 'Batt size KWH' in df.columns:
-                self.outputs['batt_size_kwh'] = df['Batt size KWH']
-            if 'PVNM size KW' in df.columns:
-                self.outputs['pv_kw'] = df['PVNM size KW']
+            if 'BattSize_kW' in df.columns:
+                self.outputs['batt_size_kw'] = df['BattSize_kW']
+            if 'BattSize_kWh' in df.columns:
+                self.outputs['batt_size_kwh'] = df['BattSize_kWh']
+            if 'PVNMsize_kW' in df.columns:
+                self.outputs['pv_kw'] = df['PVNMsize_kW']
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.output_file + " + doesn't exist!")
 
     def cleanup(self):
+        #not working
         if not self.debug:
             if os.path.exists(self.output_file):
                 os.remove(self.output_file)
+                os.removedirs(os.path.join(self.path_output, "Run_" + str(self.run_id)))
             if os.path.exists(self.run_file):
                 os.remove(self.run_file)
 
@@ -266,6 +284,20 @@ class dat_library:
 
     # DAT1 - Constant
     # DAT2 - Economics
+    def create_economics(self):
+
+        path = self.path_economics
+        file_name = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '.dat')
+        file_path = os.path.join(self.path_dat_library, file_name)
+
+        economics.Economics(file_path, self.flag_macrs, self.flag_ITC, self.flag_bonus, self.flag_replace_batt,
+                            self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
+                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_ITC,
+                            self.macrs_years, self.macrs_ITC_reduction, self.bonus_fraction, self.cost_pv,
+                            self.cost_pv_om, self.rate_degradation, self.cost_batt_kW, self.cost_batt_kWh,
+                            self.batt_replacement_year, self.cost_batt_replacement_kW, self.cost_batt_replacement_kWh)
+
+        self.DAT[1] = "DAT2=" + "'" + file_name + "'"
 
     # DAT3 - LoadSize
     def create_load_size(self):
