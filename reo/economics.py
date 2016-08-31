@@ -20,7 +20,8 @@
 #           currently does not include passing any constants (eg discount rates)
 # ==============================================================================
 import os
-
+from log_levels import log
+import logging
 
 def annuity(y, esc, disc):
     '''this formulation assumes cost growth in first period
@@ -193,6 +194,7 @@ class Economics:
             args["StorageCostPerKW"] = round(
                 self.batt_price_kW - batt_kW_tax_shield - self.ITC_rate * self.batt_price_kW / (1 + self.r_owner) \
                 - bonus_batt_kW / (1 + self.r_owner), 4)
+
             args["StorageCostPerKWH"] = round(
                 self.batt_price_kWh - batt_kWh_tax_shield - self.ITC_rate * self.batt_price_kWh / (1 + self.r_owner) \
                 - bonus_batt_kWh / (1 + self.r_owner), 4)

@@ -1,49 +1,12 @@
 import os
 import subprocess
 import traceback
-import logging
-import inspect
 import economics
 import shutil
+from log_levels import log
+import logging
 
 import pandas as pd
-
-
-
-# logging utility
-def log(level, message):
-    func = inspect.currentframe().f_back.f_code
-    if level == "DEBUG":
-        logging.debug("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "INFO":
-        logging.info("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "WARNING":
-        logging.warning("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "ERROR":
-        logging.error("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "CRITICAL":
-        logging.critical("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-
 
 class DatLibrary:
 
@@ -88,7 +51,7 @@ class DatLibrary:
     flag_bonus = None
     flag_replace_batt = None
 
-    macrs_years = []
+    macrs_years = None
     macrs_ITC_reduction = None
     bonus_fraction = None
     batt_replacement_year = None
@@ -247,10 +210,10 @@ class DatLibrary:
 
             if 'LCC' in df.columns:
                 self.outputs['lcc'] = df['LCC']
-            if 'BattSize_kW' in df.columns:
-                self.outputs['batt_size_kw'] = df['BattSize_kW']
+            if 'BattInverter_kW' in df.columns:
+                self.outputs['batt_kw'] = df['BattInverter_kW']
             if 'BattSize_kWh' in df.columns:
-                self.outputs['batt_size_kwh'] = df['BattSize_kWh']
+                self.outputs['batt_kwh'] = df['BattSize_kWh']
             if 'PVNMsize_kW' in df.columns:
                 self.outputs['pv_kw'] = df['PVNMsize_kW']
         else:

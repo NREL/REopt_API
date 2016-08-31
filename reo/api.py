@@ -74,7 +74,6 @@ class REoptRunResource(Resource):
         object_class = REoptObject
         authorization = Authorization()
 
-
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
 
