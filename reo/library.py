@@ -4,9 +4,10 @@ import traceback
 import logging
 import inspect
 import economics
+import shutil
+
 import pandas as pd
 
-import utilities
 
 
 # logging utility
@@ -154,7 +155,7 @@ class DatLibrary:
         # print ('Subprocess done')
 
         self.parse_outputs()
-        #self.cleanup()
+        self.cleanup()
 
         return self.outputs
 
@@ -178,7 +179,7 @@ class DatLibrary:
         self.path_load_profile = os.path.join("LoadProfiles")
         self.path_gis_data = os.path.join("GISdata")
         self.path_utility = os.path.join("Utility")
-        self.path_output = os.path.join("..", "Output")
+        self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
 
     def create_or_load(self):
 
@@ -206,11 +207,13 @@ class DatLibrary:
     def create_run_file(self):
 
         go_file = "Go_" + str(self.run_id) + ".bat"
-        output_dir = os.path.join("..", "Run_" + str(self.run_id))
-        os.mkdir(output_dir)
+        output_dir = self.path_output
 
+        log("DEBUG", "Current Directory: " + os.getcwd())
+        log("DEBUG", "Creating output directory: " + output_dir)
         log("DEBUG", "Created run file: " + go_file)
-        log("DEBUG", "Created output directory: " + output_dir)
+
+        os.mkdir(output_dir)
 
         header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model)
 
@@ -250,11 +253,10 @@ class DatLibrary:
             log("WARNING", "Output file: " + self.output_file + " + doesn't exist!")
 
     def cleanup(self):
-        #not working
+
         if not self.debug:
-            if os.path.exists(self.output_file):
-                os.remove(self.output_file)
-                os.removedirs(os.path.join(self.path_output, "Run_" + str(self.run_id)))
+            if os.path.exists(self.path_output):
+                shutil.rmtree(self.path_output, ignore_errors=True)
             if os.path.exists(self.run_file):
                 os.remove(self.run_file)
 
