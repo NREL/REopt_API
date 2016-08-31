@@ -107,10 +107,12 @@ class DatLibrary:
     path_various = []
     path_load_size = []
     path_load_profile = []
-    path_economics = []
     path_gis_data = []
     path_utility = []
     path_output = []
+
+    path_dat_library_relative = []
+    file_economics = []
 
     # DAT files to overwrite
     DAT = [None] * 20
@@ -173,13 +175,16 @@ class DatLibrary:
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
 
         # relative
+        self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
+
         self.path_various = os.path.join("Various")
-        self.path_economics = os.path.join("Economics")
         self.path_load_size = os.path.join("LoadSize")
         self.path_load_profile = os.path.join("LoadProfiles")
         self.path_gis_data = os.path.join("GISdata")
         self.path_utility = os.path.join("Utility")
         self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
+
+        self.file_economics = os.path.join("Economics", 'economics_' + str(self.run_id) + '.dat')
 
     def create_or_load(self):
 
@@ -259,6 +264,8 @@ class DatLibrary:
                 shutil.rmtree(self.path_output, ignore_errors=True)
             if os.path.exists(self.run_file):
                 os.remove(self.run_file)
+            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_economics)):
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_economics))
 
     def write_var(self, f, var, dat_var):
         f.write(dat_var + ": [\n")
@@ -288,9 +295,7 @@ class DatLibrary:
     # DAT2 - Economics
     def create_economics(self):
 
-        path = self.path_economics
-        file_name = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '.dat')
-        file_path = os.path.join(self.path_dat_library, file_name)
+        file_path = os.path.join(self.path_dat_library, self.file_economics)
 
         economics.Economics(file_path, self.flag_macrs, self.flag_ITC, self.flag_bonus, self.flag_replace_batt,
                             self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
@@ -299,7 +304,7 @@ class DatLibrary:
                             self.cost_pv_om, self.rate_degradation, self.cost_batt_kW, self.cost_batt_kWh,
                             self.batt_replacement_year, self.cost_batt_replacement_kW, self.cost_batt_replacement_kWh)
 
-        self.DAT[1] = "DAT2=" + "'" + file_name + "'"
+        self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
     # DAT3 - LoadSize
     def create_load_size(self):

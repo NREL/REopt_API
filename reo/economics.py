@@ -304,6 +304,9 @@ class Economics:
                     if "OMperUnitSize" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
                         f.write(str(v) + ',\n')
                         f.write(str(0) + ',\n')
+                    if "LevelizationFactor" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
+                        f.write(str(v) + ',\n')
+                        f.write(str(1.0) + ',\n')
                     f.write(']\n')
                 except:
                     print '\033[91merror writing economics\033[0m'

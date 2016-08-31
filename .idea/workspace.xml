@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="005db6fa-72b9-4d30-b1e1-28d4c2f323b0" name="Default" comment="">
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Xpress/REoptTS1127.bdg" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Xpress/REoptTS1127.bim" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/Xpress/REoptTS1127.mos" afterPath="" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reo/economics.py" afterPath="$PROJECT_DIR$/reo/economics.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reo/library.py" afterPath="$PROJECT_DIR$/reo/library.py" />
     </list>
     <ignored path="reopt_api.iws" />
@@ -30,7 +27,7 @@
               <entry file="file://$PROJECT_DIR$/reopt_api/reopt_api.log">
                 <provider selected="true" editor-type-id="text-editor">
                   <state relative-caret-position="633">
-                    <caret line="89" column="74" selection-start-line="89" selection-start-column="74" selection-end-line="89" selection-end-column="74" />
+                    <caret line="95" column="74" selection-start-line="95" selection-start-column="74" selection-end-line="95" selection-end-column="74" />
                     <folding />
                   </state>
                 </provider>
@@ -62,8 +59,8 @@
       <file leaf-file-name="library.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/reo/library.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1802">
-              <caret line="247" column="43" selection-start-line="247" selection-start-column="43" selection-end-line="247" selection-end-column="43" />
+            <state relative-caret-position="485">
+              <caret line="243" column="44" selection-start-line="243" selection-start-column="44" selection-end-line="243" selection-end-column="44" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -112,13 +109,13 @@
         <option value="$PROJECT_DIR$/setup.py" />
         <option value="$PROJECT_DIR$/cherrypy_django_service.py" />
         <option value="$PROJECT_DIR$/Xpress/REoptTS1127.mos" />
-        <option value="$PROJECT_DIR$/reo/economics.py" />
         <option value="$PROJECT_DIR$/tests/tests_economics.py" />
         <option value="$PROJECT_DIR$/reo/api.py" />
         <option value="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos" />
         <option value="$PROJECT_DIR$/Xpress/Go_126341.bat" />
         <option value="$PROJECT_DIR$/Xpress/Go_887722.bat" />
         <option value="$PROJECT_DIR$/reopt_api/reopt_api.log" />
+        <option value="$PROJECT_DIR$/reo/economics.py" />
         <option value="$PROJECT_DIR$/reo/library.py" />
       </list>
     </option>
@@ -182,7 +179,61 @@
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
             <PATH_ELEMENT>
+              <option name="myItemId" value="reo" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
               <option name="myItemId" value="Xpress" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Xpress" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="DatLibrary" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Xpress" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="DatLibrary" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Economics" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -585,13 +636,6 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Xpress/Go_395721.bat" />
-    <entry file="file://$PROJECT_DIR$/reo/economics.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1431">
-          <caret line="104" column="31" selection-start-line="104" selection-start-column="31" selection-end-line="104" selection-end-column="31" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Xpress/Go_713371.bat" />
     <entry file="file://$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos">
       <provider selected="true" editor-type-id="text-editor">
@@ -640,15 +684,23 @@
     <entry file="file://$PROJECT_DIR$/reopt_api/reopt_api.log">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="633">
-          <caret line="89" column="74" selection-start-line="89" selection-start-column="74" selection-end-line="89" selection-end-column="74" />
+          <caret line="95" column="74" selection-start-line="95" selection-start-column="74" selection-end-line="95" selection-end-column="74" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/reo/economics.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="640">
+          <caret line="310" column="23" selection-start-line="310" selection-start-column="23" selection-end-line="310" selection-end-column="23" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/reo/library.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1802">
-          <caret line="247" column="43" selection-start-line="247" selection-start-column="43" selection-end-line="247" selection-end-column="43" />
+        <state relative-caret-position="485">
+          <caret line="243" column="44" selection-start-line="243" selection-start-column="44" selection-end-line="243" selection-end-column="44" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>
