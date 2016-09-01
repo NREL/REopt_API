@@ -11,7 +11,7 @@ import pandas as pd
 class DatLibrary:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = False
+    debug = True
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
 
@@ -36,23 +36,23 @@ class DatLibrary:
     rate_inflation = None
     rate_escalation = None
     rate_tax = None
-    rate_ITC = None
+    rate_itc = None
     rate_degradation = None
 
-    cost_batt_kW = None
-    cost_batt_kWh = None
-    cost_pv = None
-    cost_pv_om = None
-    cost_batt_replacement_kW = None
-    cost_batt_replacement_kWh = None
+    batt_cost_kw = None
+    batt_cost_kwh = None
+    pv_cost = None
+    pv_om = None
+    batt_replacement_cost_kw = None
+    batt_replacement_cost_kwh = None
 
     flag_macrs = None
-    flag_ITC = None
+    flag_itc = None
     flag_bonus = None
     flag_replace_batt = None
 
     macrs_years = None
-    macrs_ITC_reduction = None
+    macrs_itc_reduction = None
     bonus_fraction = None
     batt_replacement_year = None
 
@@ -93,10 +93,10 @@ class DatLibrary:
         self.longitude = longitude
         self.load_size = load_size
         self.load_profile = load_profile
-        self.cost_pv_om = cost_pv_om
-        self.cost_batt_kw = cost_batt_kw
-        self.cost_batt_kwh = cost_batt_kwh
-        self.cost_pv = cost_pv
+        self.pv_om = cost_pv_om
+        self.batt_cost_kw = cost_batt_kw
+        self.batt_cost_kwh = cost_batt_kwh
+        self.pv_cost = cost_pv
         self.rate_owner_discount = rate_owner_discount
         self.rate_offtaker_discount = rate_offtaker_discount
         self.utility_name = utility_name
@@ -107,7 +107,29 @@ class DatLibrary:
             lower_case_profile.append(profile.lower())
         self.default_load_profiles = lower_case_profile
 
+    def update_types(self):
+
+        if self.latitude is not None:
+            self.latitude = float(self.latitude)
+        if self.longitude is not None:
+            self.longitude = float(self.longitude)
+        if self.load_size is not None:
+            self.load_size = float(self.load_size)
+        if self.pv_om is not None:
+            self.pv_om = float(self.pv_om)
+        if self.batt_cost_kw is not None:
+            self.batt_cost_kw = float(self.batt_cost_kw)
+        if self.batt_cost_kwh is not None:
+            self.batt_cost_kwh = float(self.batt_cost_kwh)
+        if self.pv_cost is not None:
+            self.pv_cost = float(self.pv_cost)
+        if self.rate_owner_discount is not None:
+            self.rate_owner_discount = float(self.rate_owner_discount)
+        if self.rate_offtaker_discount is not None:
+            self.rate_offtaker_discount = float(self.rate_offtaker_discount)
+
     def run(self):
+        self.update_types()
         self.define_paths()
         self.setup_logging()
         self.create_or_load()
@@ -259,13 +281,13 @@ class DatLibrary:
     def create_economics(self):
 
         file_path = os.path.join(self.path_dat_library, self.file_economics)
-
-        economics.Economics(file_path, self.flag_macrs, self.flag_ITC, self.flag_bonus, self.flag_replace_batt,
+        print self.batt_cost_kw
+        economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
                             self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
-                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_ITC,
-                            self.macrs_years, self.macrs_ITC_reduction, self.bonus_fraction, self.cost_pv,
-                            self.cost_pv_om, self.rate_degradation, self.cost_batt_kW, self.cost_batt_kWh,
-                            self.batt_replacement_year, self.cost_batt_replacement_kW, self.cost_batt_replacement_kWh)
+                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
+                            self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
+                            self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
+                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh)
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 

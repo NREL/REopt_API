@@ -152,12 +152,12 @@ declarations
   !pwf_op: real
   !pwf_owner: real
   !pwf_offtaker: real
-  LevelizationFactor: real
+  LevelizationFactor: array(Tech) of real
 
 end-declarations  
 
 !Confirm that we are in the proper directory  
-writeln ("REopt running from", LocalPath)
+writeln ("REopt running from ", LocalPath)
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
 !setparam("XPRS_MIPRELSTOP",.001)
@@ -182,7 +182,7 @@ initializations from DatLibraryPath+DAT2 ! economics
 	pwf_om
 	pwf_e
 	!pwf_op
-	LevelizationFactor ! need to remove from all GIS dats and then multiply ProdFactor * LevelizationFactor
+	LevelizationFactor
 	StorageCostPerKW
 	StorageCostPerKWH
 	OMperUnitSize
@@ -200,7 +200,7 @@ initializations from DatLibraryPath+DAT4
 	LoadProfile
 end-initializations
 
-initializations from DatLibraryPath+DAT5
+initializations from DatLibraryPath+DAT5 ! GIS
 	ProdFactor
 end-initializations
 
@@ -265,7 +265,7 @@ forall (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | MaxSize(t)* LoadPro
 !FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
 forall (t in Tech, fb in FuelBin ) do 
      sum (ts in TimeStep, LD in Load |exists (dvRatedProd (t,LD,ts,fb))) 
-     	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -282,7 +282,7 @@ end-do
 
 forall ( ts in TimeStep) do   
 	! Electricity to be stored is the sum of the electricity in the S-bin for that timestep
-	dvElecToStor( ts) = (sum(t in Tech,  fb in FuelBin | exists (dvRatedProd(t,"1S",ts,fb))) ProdFactor(t,"1S",ts) * dvRatedProd (t,"1S",ts,fb) * EtaStor(t,"1S"))
+	dvElecToStor( ts) = (sum(t in Tech,  fb in FuelBin | exists (dvRatedProd(t,"1S",ts,fb))) ProdFactor(t,"1S",ts) * LevelizationFactor(t) * dvRatedProd (t,"1S",ts,fb) * EtaStor(t,"1S"))
 	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out 
 	dvStoredEnergy(ts) =   dvStoredEnergy(ts-1) +  dvElecToStor( ts) - dvElecFromStor(ts)
 	! energy coming out of the storage system cannot be greater than the current state of charge
@@ -314,7 +314,7 @@ forall ( ts in TimeStep) do
 end-do
 
 forall ( t in Tech) do
-	ElecToBatt(t) := sum(ts in TimeStep,  fb in FuelBin) dvRatedProd(t,"1S",ts,fb) * ProdFactor(t,"1S",ts)
+	ElecToBatt(t) := sum(ts in TimeStep,  fb in FuelBin) dvRatedProd(t,"1S",ts,fb) * ProdFactor(t,"1S",ts) * LevelizationFactor(t)
 end-do
 
 forall ( b in BattLevel) do
@@ -365,7 +365,7 @@ forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t)
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep,  fb in FuelBin |exists (dvRatedProd (t,LD,ts,fb))) 
-     	ProdFactor(t,LD,ts) * dvRatedProd (t,LD,ts,fb) * TimeStepScaling * ProdIncentRate (t, LD)
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,fb) * TimeStepScaling * ProdIncentRate (t, LD)
 end-do   
 
 !CONSTRAINT 24
@@ -405,13 +405,13 @@ forall (t in Tech,ts in TimeStep)  !for variable effiency gensets
 !TS 31513 should this exclude SHW?
 forall (LD in Load,ts in TimeStep | LD <> "1R" and LD <>"1S") do
   sum (t in Tech, fb in FuelBin |exists (dvRatedProd (t,LD,ts,fb)))  
-  		 ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts,fb) <= LoadProfile (LD,ts) 
+  		 ProdFactor (t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,fb) <= LoadProfile (LD,ts) 
 end-do
 
 !CONSTRAINT 38
 !companion to the above.  Electric load can be met from generation OR from the storage
 forall (LD in Load,ts in TimeStep  | LD = "1R") do
-  sum (t in Tech, fb in FuelBin |exists (dvRatedProd (t,LD,ts,fb)) ) dvRatedProd (t,LD,ts,fb) * ProdFactor (t,LD,ts) + dvElecFromStor( ts) >= 
+  sum (t in Tech, fb in FuelBin |exists (dvRatedProd (t,LD,ts,fb)) ) dvRatedProd (t,LD,ts,fb) * ProdFactor (t,LD,ts) * LevelizationFactor(t) + dvElecFromStor( ts) >= 
   		  LoadProfile (LD,ts)  	  
 end-do
 
@@ -487,7 +487,7 @@ end-do
 !!41513 TS.  Excluding Grid.
 
    (sum (t in Tech, LD in Load, ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb)) and (LD="1R" or LD="1W") and TechIsGrid(t) = 0) 
- 		dvRatedProd (t,LD,ts,fb)*ProdFactor(t,LD,ts) * TimeStepScaling) <=  AnnualElecLoad
+ 		dvRatedProd (t,LD,ts,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling) <=  AnnualElecLoad
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!  End Electric Net Zero Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -513,7 +513,7 @@ TotalDemandCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db)
 
 ! For Sunlamp (S&S only), TotElecRatedProd is redundant with PV system size
 !TotElecRatedProd := sum( t in Tech | TechToTechClassMatrix (t, "PV") = 1) dvSystemSize (t) * TurbineDerate(t) 
-TotElecProd := sum( t in Tech,  fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,fb)*ProdFactor(t,LD,ts) * TimeStepScaling
+TotElecProd := sum( t in Tech,  fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
 TotCapCosts := sum(t in Tech,  fb in FuelBin) (CapCostSlope(t) * dvSystemSize(t))
 
@@ -525,7 +525,7 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 
  !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
 (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb))) 
-	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  ExportRates(t,LD,ts)) * pwf_e +
+	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e +
 
 !Demand Rates
  !sum( m in Month) dvPeakDemandE( m) * DemandRates( m) * pwf_e +
@@ -563,8 +563,7 @@ end-if
 !End timing
 EndTime:= gettime
 
-
-	
+ 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -684,8 +683,8 @@ fclose(F_OUTPUT)
 
 !Time series demand output
 forall ( ts in TimeStep )     do
-	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,fb)*ProdFactor(t,"1S",ts)) - 1*
-   				(sum(t in Tech,  fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,fb)*ProdFactor(t,"1R",ts)) + dvElecFromStor( ts))
+	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
+   				(sum(t in Tech,  fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
 end-do
 fopen(OUTDIR + "\\DemandHourly.csv",F_OUTPUT)
 forall ( ts in TimeStep )     do
