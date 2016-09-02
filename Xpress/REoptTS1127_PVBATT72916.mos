@@ -27,7 +27,7 @@ parameters
   
 
   DAT1 = "Various\\constant.dat"
-  DAT2 = "Economics\\economics.dat"
+  DAT2 = "Economics\\economics_667975.dat"
 
   NumRatchets = 24
   DAT3 = "LoadSize\\LoadSize_722020_Miami_Hospital.dat"

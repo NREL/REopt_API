@@ -5,10 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="005db6fa-72b9-4d30-b1e1-28d4c2f323b0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.bim" afterPath="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.bim" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos" afterPath="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reo/economics.py" afterPath="$PROJECT_DIR$/reo/economics.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reo/library.py" afterPath="$PROJECT_DIR$/reo/library.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tests/tests_economics.py" afterPath="$PROJECT_DIR$/tests/tests_economics.py" />
     </list>
     <ignored path="reopt_api.iws" />
@@ -57,21 +53,11 @@
       <file leaf-file-name="tests_economics.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/tests/tests_economics.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="697">
-              <caret line="43" column="25" selection-start-line="43" selection-start-column="25" selection-end-line="43" selection-end-column="25" />
+            <state relative-caret-position="270">
+              <caret line="16" column="32" selection-start-line="16" selection-start-column="32" selection-end-line="16" selection-end-column="32" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="economics_789271.dat" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Xpress/DatLibrary/Economics/economics_789271.dat">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="340">
-              <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="21" selection-end-column="1" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -136,8 +122,8 @@
         <option value="$PROJECT_DIR$/reopt_api/reopt_api.log" />
         <option value="$PROJECT_DIR$/reo/economics.py" />
         <option value="$PROJECT_DIR$/reo/library.py" />
-        <option value="$PROJECT_DIR$/tests/tests_economics.py" />
         <option value="$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos" />
+        <option value="$PROJECT_DIR$/tests/tests_economics.py" />
       </list>
     </option>
   </component>
@@ -233,6 +219,28 @@
             </PATH_ELEMENT>
             <PATH_ELEMENT>
               <option name="myItemId" value="DatLibrary" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+          </PATH>
+          <PATH>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.ProjectViewProjectNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="reopt_api" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Xpress" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="DatLibrary" />
+              <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
+            </PATH_ELEMENT>
+            <PATH_ELEMENT>
+              <option name="myItemId" value="Various" />
               <option name="myItemType" value="com.intellij.ide.projectView.impl.nodes.PsiDirectoryNode" />
             </PATH_ELEMENT>
           </PATH>
@@ -436,10 +444,10 @@
     <servers />
   </component>
   <component name="ToolWindowManager">
-    <frame x="-4" y="-4" width="1928" height="1044" extended-state="6" />
-    <editor active="true" />
+    <frame x="-4" y="-4" width="1928" height="1044" extended-state="7" />
+    <editor active="false" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.14114584" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="true" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16979167" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.34177214" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -471,10 +479,16 @@
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/tests_economics.py</url>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="1" />
+      <option name="time" value="2" />
     </breakpoint-manager>
     <watches-manager />
   </component>
@@ -740,14 +754,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Xpress/DatLibrary/Economics/economics_789271.dat">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="340">
-          <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="21" selection-end-column="1" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Xpress/REoptTS1127_PVBATT72916.mos">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="638">
@@ -756,10 +762,18 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/Xpress/DatLibrary/Economics/economics_789271.dat">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="21" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/tests/tests_economics.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="697">
-          <caret line="43" column="25" selection-start-line="43" selection-start-column="25" selection-end-line="43" selection-end-column="25" />
+        <state relative-caret-position="270">
+          <caret line="16" column="32" selection-start-line="16" selection-start-column="32" selection-end-line="16" selection-end-column="32" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

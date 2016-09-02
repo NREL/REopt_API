@@ -10,9 +10,9 @@ class EconomicsTestCase(TestCase):
     file_test = []
     file_base = []
 
-    pv_OM = None
-    pv_OM_default = 20
-    batt_replacement_kWh = 3000
+    pv_om = None
+    pv_om_default = 20
+    batt_replacement_cost_kwh = 3000
 
     # mimic user passing in info
     def setUp(self):
@@ -51,16 +51,17 @@ class EconomicsTestCase(TestCase):
     # Does the Economics class initialize correctly
     def test_economics_initialization(self):
         self.initialize_economics(self.file_test, None, None, None, None, None, None, None, None, None, None, None,
-                                  None, None, None, None, None, None, None, None, None, None, self.batt_replacement_kWh)
+                                  None, None, None, None, None, None, None, None, None, None,
+                                  self.batt_replacement_cost_kwh)
 
-        batt_replacement_kwh = self.economics.batt_replacement_cost_kwh
+        batt_replacement_cost_kwh = self.economics.batt_replacement_cost_kwh
         pv_om = self.economics.pv_om
 
         # should have overwritten default
-        self.assertEqual(self.batt_replacement_kWh, batt_replacement_kwh)
+        self.assertEqual(self.batt_replacement_cost_kwh, batt_replacement_cost_kwh)
 
         # should have used default
-        self.assertEqual(self.pv_OM_default, pv_om)
+        self.assertEqual(self.pv_om_default, pv_om)
 
     # Does the economics file get created
     def test_economics_file(self):
