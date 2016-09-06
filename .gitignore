@@ -90,4 +90,4 @@ ENV/
 *.sqlite3
 
 # Dat files
-*.dat
+#*.dat
