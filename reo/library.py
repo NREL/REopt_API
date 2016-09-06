@@ -2,7 +2,6 @@ import os
 import csv
 import subprocess
 import traceback
-import economics
 import shutil
 from log_levels import log
 import logging
@@ -10,12 +9,15 @@ import math
 
 import pandas as pd
 
+import economics
+import pvwatts
+
 class DatLibrary:
 
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = False
+    debug = True
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
 
@@ -191,6 +193,7 @@ class DatLibrary:
 
         self.create_economics()
         self.create_loads()
+        self.create_GIS()
 
         '''
         if self.load_size and self.load_size > 0:
@@ -385,7 +388,11 @@ class DatLibrary:
 
         return min_index
 
+    def create_GIS(self):
 
+        if self.latitude is not None and self.longitude is not None:
+            GIS = pvwatts.PVWatts(self.path_dat_library_relative, self.run_id, self.latitude, self.longitude)
+            self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
 
 
 
