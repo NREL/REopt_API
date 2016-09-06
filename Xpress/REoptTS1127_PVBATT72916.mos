@@ -30,8 +30,8 @@ parameters
   DAT2 = "Economics\\economics_667975.dat"
 
   NumRatchets = 24
-  DAT3 = "LoadSize\\LoadSize_722020_Miami_Hospital.dat"
-  DAT4 = "LoadProfiles\\Load8760_722020_raw_Miami_Hospital.dat"
+  DAT3 = "LoadSize\\LoadSize_Miami_Hospital.dat"
+  DAT4 = "LoadProfiles\\Load8760_raw_Miami_Hospital.dat"
   DAT5 = "GISdata\\GIS_Miami.dat"
   UtilName = "Florida Power & Light Co"
   UtilRate = "GLSDT-1_(General_Service_Large_Demand_-_Time-Of-Use)"

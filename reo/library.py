@@ -1,4 +1,5 @@
 import os
+import csv
 import subprocess
 import traceback
 import economics
@@ -9,6 +10,8 @@ import logging
 import pandas as pd
 
 class DatLibrary:
+
+    max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
@@ -174,6 +177,7 @@ class DatLibrary:
     def create_or_load(self):
 
         self.create_economics()
+        self.create_loads()
 
         '''
         if self.load_size and self.load_size > 0:
@@ -291,24 +295,63 @@ class DatLibrary:
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
-    # DAT3 - LoadSize
-    def create_load_size(self):
-        path = self.path_load_size
-        var = self.load_size
-        filename = "LoadSize_" + var + ".dat"
-        dat_var = "AnnualElecLoad"
-        self.DAT[2] = "DAT3=" + "'" + os.path.join(path, filename) + "'"
+    #DAT3 & DAT4 LoadSize, LoadProfile
+    def create_loads(self):
 
-        self.write_single_variable(path, filename, var, dat_var)
+        filename_profile = []
+        filename_size = []
 
-    # DAT4 - Load
-    def create_load_profile(self):
-        path = self.path_load_profile
-        var = self.load_profile
-        if var.lower() in self.default_load_profiles:
-            filename = "Load8760_" + var + ".dat"
-            self.DAT[3] = "DAT4=" + "'" + os.path.join(path, filename) + "'"
+        default_city = "Miami"
+        default_building = "Hospital"
+        default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
+        default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
+        default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"
 
+        if self.load_size is None:
+
+            # Load profile with no load size
+            if self.load_profile is not None:
+                if self.load_profile.lower() in self.default_load_profiles:
+                    filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile + ".dat"
+                    filename_size = "LoadSize_" + default_city + "_" + self.load_profile + ".dat"
+            # No load profile or size specified
+            else:
+                filename_profile = default_load_profile
+                filename_size = default_load_size
+        else:
+            path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_size)
+
+            filename_profile = "Load8760_" + str(self.run_id) + ".dat"
+            filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+            self.write_single_variable(path_load_profile, filename_size, self.load_size, "AnnualElecLoad")
+
+            # Load profile specified, with load size specified
+            if self.load_profile is not None:
+                if self.load_profile.lower() in self.default_load_profiles:
+                    tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
+                    self.scale_load(tmp_profile, filename_profile)
+            # Load size specified, no profile
+            else:
+                self.scale_load(default_load_profile_norm, filename_profile)
+
+        self.DAT[2] = "DAT3=" + "'" + os.path.join(self.path_load_size, filename_size) + "'"
+        self.DAT[3] = "DAT4=" + "'" + os.path.join(self.path_load_profile, filename_profile) + "'"
+
+    def scale_load(self, file_norm, filename_profile):
+        path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_profile)
+        load_profile = []
+        print os.getcwd()
+        f = open(os.path.join(path_load_profile, file_norm), 'r')
+        for line in f:
+            load_profile.append(float(line.strip('\n')) * self.load_size)
+
+        # fill in W, X, S bins
+        for _ in range(8760*3):
+            load_profile.append(self.max_big_number)
+
+        self.write_single_variable(path_load_profile, filename_profile, load_profile, "LoadProfile")
+
+'''
     # DAT5 - Solar Resource
     # DAT6 - Storage
     # DAT7 - Max Sizes
@@ -323,93 +366,10 @@ class DatLibrary:
         self.DAT[10] = "DAT11=" + "'" + os.path.join(rate_path, "Export.dat")
 
 
-    '''
-    # DAT2 - PVOM
-    def create_pv_om(self):
-        path = self.path_pv_om
-        var = self.pv_om
-        filename = "PVOM" + var + ".dat"
-        dat_var = "OMperUnitSize"
-        self.DAT[1] = "DAT2=" + "'" + os.path.join(path, filename) + "'"
-
-        self.write_single_variable(path, filename, [var, 0], dat_var)
-
-    # DAT3 - BCostKW
-    def create_batt_kw(self):
-        path = self.path_batt_cost_kw
-        var = self.batt_cost_kw
-        filename = "BCostKW" + var + ".dat"
-        dat_var = "StorageCostPerKW"
-        self.DAT[2] = "DAT3=" + "'" + os.path.join(path, filename) + "'"
-
-        self.write_single_variable(path, filename, var, dat_var)
-
-    # DAT4 - BCostKWH
-    def create_batt_kwh(self):
-        path = self.path_batt_cost_kwh
-        var = self.batt_cost_kwh
-        filename = "BCostKWH" + var + ".dat"
-        dat_var = "StorageCostPerKWH"
-        self.DAT[3] = "DAT4=" + "'" + os.path.join(path, filename) + "'"
-
-        self.write_single_variable(path, filename, var, dat_var)
-
-
-    # DAT6 - PVCost
-    def create_pv_cost(self):
-        path = self.path_pv_cost
-        var = self.pv_cost
-        filename = "PVCost" + var + ".dat"
-        dat_var = "CapCostSlope"
-        self.DAT[5] = "DAT6=" + "'" + os.path.join(path, filename) + "'"
-
-        self.write_single_variable(path, filename, [var, 0], dat_var)
-
-
-    # DAT19 - Owner Discount Rate
-    def create_owner_discount_rate(self):
-        path = self.path_owner_discount_rate
-        var1 = self.owner_discount_rate
-        var2 = utilities.present_worth_factor(int(self.analysis_period), 0., float(var1))
-        #var2.replace('\n', '')
-        filename = "Owner" + var1 + ".dat"
-        dat_var1 = "r_owner"
-        dat_var2 = "pwf_owner"
-        self.DAT[18] = "DAT19=" + "'" + os.path.join(path, filename) + "'"
-        # overwrite anytime we compute present worth factor
-        overwrite = True
-
-        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2, overwrite)
-
-    # DAT20 - Offtaker Discount Rate
-    def create_offtaker_discount_rate(self):
-        path = self.path_offtaker_discount_rate
-        var1 = self.offtaker_discount_rate
-        var2 = utilities.present_worth_factor(int(self.analysis_period), 0., float(var1))
-        #var2.replace('\n', '')
-        filename = "Offtaker" + var1 + ".dat"
-        dat_var1 = "r_offtaker"
-        dat_var2 = "pwf_offtaker"
-        self.DAT[19] = "DAT20=" + "'" + os.path.join(path, filename) + "'"
-
-        overwrite = True
-
-        self.write_two_variables(path, filename, var1, dat_var1, var2, dat_var2, overwrite)
-
-
     # SResource, hookup PVWatts
-
-    # Constants don't envision messing with
-    # DAT8 - ActiveTechs
-    # DAT9 - FuelIsActive
-    # DAT10 - MaxSystemSize
-    # DAT11 - TechIS
-    # DAT16 - Storage
-
 
     # Utility rates, hookup urdb processor
 
-    # Calculate PWFs from discount rate, or use defaults
     '''
 
 
