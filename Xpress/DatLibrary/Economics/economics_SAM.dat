@@ -1,0 +1,58 @@
+pwf_op: [
+1,
+]
+StorageCostPerKW: [
+1320.0,
+]
+StorageCostPerKWH: [
+550.0,
+]
+CapCostSlope: [
+1512.0,
+1512.0,
+0,
+]
+pwf_e: [
+1,
+]
+LevelizationFactor: [
+1.0,
+]
+pwf_offtaker: [
+1,
+]
+pwf_owner: [
+1,
+]
+OMperUnitSize: [
+20,
+20,
+0,
+]
+pwf_om: [
+1,
+]
+MaxSizeForProdIncent: [
+0,
+0,
+0,
+]
+ProdIncentRate: [
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+0,
+]
+MaxProdIncent: [
+0,
+0,
+0,
+]

@@ -1,0 +1,16 @@
+MinStorageSizeKWH: [
+ 0
+]
+StorageMinChargePcent: [
+ 0.2
+]
+EtaStor: [
+1,
+1,
+1,
+ 0.82944       ,
+]
+BattLevelCoef: [
+-1,
+0,
+]

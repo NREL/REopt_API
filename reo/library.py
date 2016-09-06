@@ -6,6 +6,7 @@ import economics
 import shutil
 from log_levels import log
 import logging
+import math
 
 import pandas as pd
 
@@ -14,7 +15,7 @@ class DatLibrary:
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
 
@@ -62,8 +63,20 @@ class DatLibrary:
     # default load profiles
     default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
                              'MediumOffice', 'MidriseApartment', 'Outpatient', 'PrimarySchool', 'RetailStore',
-                             'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse',
-                             'Demo']
+                             'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse']
+
+    # default locations
+    default_city = ['Miami', 'Houston', 'Phoenix', 'Atlanta', 'LosAngeles', 'SanFrancisco', 'LasVegas', 'Baltimore',
+                    'Albuquerque', 'Seattle', 'Chicago', 'Boulder', 'Minneapolis', 'Helena', 'Duluth', 'Fairbanks']
+
+    # default latitudes
+    default_latitudes = [25.761680, 29.760427, 33.448377, 33.748995, 34.052234, 37.774929, 36.114707, 39.290385,
+                         35.085334, 47.606209, 41.878114, 40.014986, 44.977753, 46.588371, 46.786672, 64.837778]
+
+    #default longitudes
+    default_longitudes = [-80.191790, -95.369803, -112.074037, -84.387982, -118.243685, -122.419416, -115.172850,
+                          -76.612189, -106.605553, -122.332071, -87.629798, -105.270546, -93.265011, -112.024505,
+                          -92.100485, -147.716389]
 
     # directory structure
     path_egg = []
@@ -285,7 +298,6 @@ class DatLibrary:
     def create_economics(self):
 
         file_path = os.path.join(self.path_dat_library, self.file_economics)
-        print self.batt_cost_kw
         economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
                             self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
                             self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
@@ -301,7 +313,9 @@ class DatLibrary:
         filename_profile = []
         filename_size = []
 
-        default_city = "Miami"
+        if self.latitude is not None and self.longitude is not None:
+            default_city = self.default_city[self.localize_load()]
+
         default_building = "Hospital"
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
@@ -340,7 +354,6 @@ class DatLibrary:
     def scale_load(self, file_norm, filename_profile):
         path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_profile)
         load_profile = []
-        print os.getcwd()
         f = open(os.path.join(path_load_profile, file_norm), 'r')
         for line in f:
             load_profile.append(float(line.strip('\n')) * self.load_size)
@@ -350,6 +363,31 @@ class DatLibrary:
             load_profile.append(self.max_big_number)
 
         self.write_single_variable(path_load_profile, filename_profile, load_profile, "LoadProfile")
+
+    def localize_load(self):
+
+        min_distance = self.max_big_number
+        min_index = 0
+
+        idx = 0
+        for _ in self.default_city:
+            lat = self.default_latitudes[idx]
+            lon = self.default_longitudes[idx]
+            lat_dist = self.latitude - lat
+            lon_dist = self.longitude - lon
+
+            distance = math.sqrt(math.pow(lat_dist, 2) + math.pow(lon_dist, 2))
+            if distance < min_distance:
+                min_distance = distance
+                min_index = idx
+
+            idx += 1
+
+        return min_index
+
+
+
+
 
 '''
     # DAT5 - Solar Resource
