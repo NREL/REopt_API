@@ -316,6 +316,7 @@ class DatLibrary:
         filename_profile = []
         filename_size = []
 
+        default_city = self.default_city[0]
         if self.latitude is not None and self.longitude is not None:
             default_city = self.default_city[self.localize_load()]
 
@@ -397,10 +398,6 @@ class DatLibrary:
 
 
 '''
-    # DAT5 - Solar Resource
-    # DAT6 - Storage
-    # DAT7 - Max Sizes
-
     # DAT8 - DAT11 - Utility Rates
     # Currently depends on files being present in directory structure
     def create_utility_rate(self):
