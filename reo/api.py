@@ -1,12 +1,14 @@
+from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import Authorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
+from tastypie.serializers import Serializer
 
 import library
 import random
 import os
-
+import json
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
@@ -43,6 +45,18 @@ class REoptRunResource(Resource):
     # Just like a Django ``Form`` or ``Model``, we're defining all the
     # fields we're going to handle with the API here.
 
+    # note, running process is from reopt_api head
+    # i.e, C:\Nick\Projects\api\env\src\reopt_api
+
+    # when deployed, runs from egg file, need to update if version changes!
+    # path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+
+    # when not deployed (running from 127.0.0.1:8000)
+    path_egg = os.getcwd()
+
+    # generate a unique id for this run
+    run_id = random.randint(0, 1000000)
+
     # inputs
     analysis_period = fields.IntegerField(attribute='analysis_period', null=True)
     latitude = fields.FloatField(attribute='latitude', null=True)
@@ -70,9 +84,11 @@ class REoptRunResource(Resource):
 
     class Meta:
         resource_name = 'reopt'
-        allowed_methods = ['get']
+        allowed_methods = ['get', 'post']
         object_class = REoptObject
         authorization = Authorization()
+        serializer = Serializer(formats=['json'])
+        always_return_data = True
 
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -85,18 +101,6 @@ class REoptRunResource(Resource):
         return kwargs
 
     def get_object_list(self, request):
-        # note, running process is from reopt_api head
-        # i.e, C:\Nick\Projects\api\env\src\reopt_api
-
-        # when deployed, runs from egg file, need to update if version changes!
-        #path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
-
-        # when not deployed (running from 127.0.0.1:8000)
-        path_egg = os.getcwd()
-        print path_egg
-
-        # generate a unique id for this run
-        run_id = random.randint(0, 1000000)
 
         analysis_period = request.GET.get("analysis_period")
         latitude = request.GET.get("latitude")
@@ -112,9 +116,9 @@ class REoptRunResource(Resource):
         utility_name = request.GET.get("utility_name")
         rate_name = request.GET.get("rate_name")
 
-        run_set = library.DatLibrary(run_id, path_egg, analysis_period, latitude, longitude, load_size, pv_om,
-                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
-                                      offtaker_discount_rate, utility_name, rate_name)
+        run_set = library.DatLibrary(self.run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
+                                     batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
+                                     offtaker_discount_rate, utility_name, rate_name)
         outputs = run_set.run()
 
         lcc = 0
@@ -135,13 +139,74 @@ class REoptRunResource(Resource):
             batt_kwh = outputs['batt_kwh']
 
         results = []
-        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+        new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                               batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
                               utility_name, rate_name, lcc, utility_kwh, pv_kw, batt_kw, batt_kwh)
         results.append(new_obj)
         return results
 
     def obj_get_list(self, bundle, **kwargs):
-        # filtering disabled for brevity
         return self.get_object_list(bundle.request)
 
+    # POST
+    def obj_create(self, bundle, **kwargs):
+
+        analysis_period = latitude = longitude = load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = None
+        load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = pv_cost = owner_discount_rate = None
+        offtaker_discount_rate = utility_name = rate_name = None
+
+        # bundle is an object containing the posted json (within .data)
+        data = bundle.data
+        if "analysis_period" in data:
+            analysis_period = data["analysis_period"]
+        if "latitude" in data:
+            latitude = data["latitude"]
+        if "longitude" in data:
+            longitude = data["longitude"]
+        if "load_size" in data:
+            load_size = data["load_size"]
+        if "pv_om" in data:
+            pv_om = data["pv_om"]
+        if "batt_cost_kw" in data:
+            batt_cost_kw = data["batt_cost_kw"]
+        if "batt_cost_kwh" in data:
+            batt_cost_kwh = data["batt_cost_kwh"]
+        if "load_profile" in data:
+            load_profile = data["load_profile"]
+        if "pv_cost" in data:
+            pv_cost = data["pv_cost"]
+        if "owner_discount_rate" in data:
+            owner_discount_rate = data["owner_discount_rate"]
+        if "offtaker_discount_rate" in data:
+            offtaker_discount_rate = data["offtaker_discount_rate"]
+        if "utility_name" in data:
+            utility_name = data["utility_name"]
+        if "rate_name" in data:
+            rate_name = data["rate_name"]
+
+        run_set = library.DatLibrary(self.run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
+                                     batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
+                                     offtaker_discount_rate, utility_name, rate_name)
+
+        outputs = run_set.run()
+
+        lcc = utility_kwh = pv_kw = batt_kw = batt_kwh = 0
+        if 'lcc' in outputs:
+            lcc = outputs['lcc']
+        if 'utility_kwh' in outputs:
+            utility_kwh = outputs['utility_kwh']
+        if 'pv_kw' in outputs:
+            pv_kw = outputs['pv_kw']
+        if 'batt_kw' in outputs:
+            batt_kw = outputs['batt_kw']
+        if 'batt_kwh' in outputs:
+            batt_kwh = outputs['batt_kwh']
+
+        new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+                              batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
+                              utility_name, rate_name, lcc, utility_kwh, pv_kw, batt_kw, batt_kwh)
+
+        # package the bundle to return
+        bundle.obj = new_obj
+        bundle = self.full_hydrate(bundle)
+        return bundle
