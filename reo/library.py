@@ -18,7 +18,7 @@ class DatLibrary:
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     year = 2017
@@ -97,10 +97,32 @@ class DatLibrary:
     path_output = []
 
     path_dat_library_relative = []
+
     file_economics = []
+    file_gis = []
+    file_gis_bau = []
+    file_load_size = []
+    file_load_profile = []
 
     # DAT files to overwrite
     DAT = [None] * 20
+
+    @staticmethod
+    def write_var(f, var, dat_var):
+        f.write(dat_var + ": [\n")
+        if isinstance(var, list):
+            for i in var:
+                f.write(str(i) + "\t,\n")
+        else:
+            f.write(str(var) + "\t,\n")
+        f.write("]\n")
+
+    def write_single_variable(self, path, filename, var, dat_var):
+        filename_path = os.path.join(path, filename)
+        if filename not in os.listdir(path):
+            f = open(filename_path, 'w')
+            self.write_var(f, var, dat_var)
+            f.close()
 
     def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, cost_pv_om, cost_batt_kw,
                  cost_batt_kwh, load_profile, cost_pv, rate_owner_discount, rate_offtaker_discount,
@@ -198,6 +220,10 @@ class DatLibrary:
         self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
 
         self.file_economics = os.path.join("Economics", 'economics_' + str(self.run_id) + '.dat')
+        self.file_gis = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '.dat')
+        self.file_gis_bau = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '_bau.dat')
+        self.file_load_size = os.path.join(self.path_load_size, 'LoadSize_' + str(self.run_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_load_profile, 'Load8760_' + str(self.run_id) + '.dat')
 
     def create_or_load(self):
 
@@ -264,32 +290,14 @@ class DatLibrary:
                 os.remove(self.run_file)
             if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_economics)):
                 os.remove(os.path.join(self.path_dat_library_relative, self.file_economics))
+            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_gis)):
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_gis))
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_gis_bau))
+            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_load_profile)):
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_load_profile))
+            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_load_size)):
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_load_size))
 
-    def write_var(self, f, var, dat_var):
-        f.write(dat_var + ": [\n")
-        if isinstance(var, list):
-            for i in var:
-                f.write(str(i) + "\t,\n")
-        else:
-            f.write(str(var) + "\t,\n")
-        f.write("]\n")
-
-    def write_single_variable(self, path, filename, var, dat_var):
-        filename_path = os.path.join(path, filename)
-        if filename not in os.listdir(path):
-            f = open(filename_path, 'w')
-            self.write_var(f, var, dat_var)
-            f.close()
-
-    def write_two_variables(self, path, filename, var, dat_var, var2, dat_var2, overwrite=False):
-        filename_path = os.path.join(path, filename)
-        if filename not in os.listdir(path) or overwrite:
-            f = open(filename_path, 'w')
-            self.write_var(f, var, dat_var)
-            self.write_var(f, var2, dat_var2)
-            f.close()
-
-    # DAT1 - Constant
     # DAT2 - Economics
     def create_economics(self):
 
@@ -429,3 +437,6 @@ class DatLibrary:
 
         self.utility_name = utility_name
         self.utility_rate_name = rate_name
+
+
+
