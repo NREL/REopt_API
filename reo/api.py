@@ -1,14 +1,13 @@
-from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import Authorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
+from urdb_parse import *
 
 import library
 import random
 import os
-import json
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
@@ -153,36 +152,68 @@ class REoptRunResource(Resource):
 
         analysis_period = latitude = longitude = load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = None
         load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = pv_cost = owner_discount_rate = None
-        offtaker_discount_rate = utility_name = rate_name = None
+        offtaker_discount_rate = utility_name = rate_name = blended_utility_rate = demand_charge = urdb_rate = None
+
+        use_urdb = True
 
         # bundle is an object containing the posted json (within .data)
         data = bundle.data
-        if "analysis_period" in data:
-            analysis_period = data["analysis_period"]
-        if "latitude" in data:
-            latitude = data["latitude"]
-        if "longitude" in data:
-            longitude = data["longitude"]
-        if "load_size" in data:
-            load_size = data["load_size"]
-        if "pv_om" in data:
-            pv_om = data["pv_om"]
-        if "batt_cost_kw" in data:
-            batt_cost_kw = data["batt_cost_kw"]
-        if "batt_cost_kwh" in data:
-            batt_cost_kwh = data["batt_cost_kwh"]
-        if "load_profile" in data:
-            load_profile = data["load_profile"]
-        if "pv_cost" in data:
-            pv_cost = data["pv_cost"]
-        if "owner_discount_rate" in data:
-            owner_discount_rate = data["owner_discount_rate"]
-        if "offtaker_discount_rate" in data:
-            offtaker_discount_rate = data["offtaker_discount_rate"]
-        if "utility_name" in data:
-            utility_name = data["utility_name"]
-        if "rate_name" in data:
-            rate_name = data["rate_name"]
+        if 'analysis_period' in data:
+            analysis_period = data['analysis_period']
+        if 'latitude' in data:
+            latitude = data['latitude']
+        if 'longitude' in data:
+            longitude = data['longitude']
+        if 'load_size' in data:
+            load_size = data['load_size']
+        if 'pv_om' in data:
+            pv_om = data['pv_om']
+        if 'batt_cost_kw' in data:
+            batt_cost_kw = data['batt_cost_kw']
+        if 'batt_cost_kwh' in data:
+            batt_cost_kwh = data['batt_cost_kwh']
+        if 'load_profile' in data:
+            load_profile = data['load_profile']
+        if 'pv_cost' in data:
+            pv_cost = data['pv_cost']
+        if 'owner_discount_rate' in data:
+            owner_discount_rate = data['owner_discount_rate']
+        if 'offtaker_discount_rate' in data:
+            offtaker_discount_rate = data['offtaker_discount_rate']
+        if 'utility_name' in data:
+            utility_name = data['utility_name']
+        if 'rate_name' in data:
+            rate_name = data['rate_name']
+        if "blended_utility_rate" in data:
+            blended_utility_rate = data["blended_utility_rate"]
+        if 'demand_charge' in data:
+            demand_charge = data['demand_charge']
+        if 'urdb_rate' in data:
+            urdb_rate = data['urdb_rate']
+            use_urdb = True
+
+        if use_urdb is True:
+            utility_name = urdb_rate['utility'].replace(',', '')
+            rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
+
+            dat_library_root = os.path.join(self.path_egg, 'Xpress', 'DatLibrary')
+            folder_name = os.path.join(utility_name, rate_name)
+            rate_output_folder = os.path.join(dat_library_root, "Utility", folder_name)
+
+            if not os.path.isdir(rate_output_folder):
+                os.makedirs(rate_output_folder)
+            with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
+                json.dump(urdb_rate, outfile)
+                outfile.close()
+            with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
+                outfile.write(str(rate_name).replace(' ', '_'))
+                outfile.close()
+
+            year = 2017
+            time_steps_per_hour = 1
+            log_root = os.path.join(self.path_egg, 'reopt_api')
+            urdb_parse = UrdbParse(dat_library_root, log_root, year, time_steps_per_hour)
+            urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         run_set = library.DatLibrary(self.run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,

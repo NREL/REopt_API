@@ -85,6 +85,7 @@ class DatLibrary:
     path_xpress = []
     path_logfile = []
     path_dat_library = []
+    path_util_rate = []
     path_various = []
     path_load_size = []
     path_load_profile = []
@@ -145,6 +146,10 @@ class DatLibrary:
             self.rate_owner_discount = float(self.rate_owner_discount)
         if self.rate_offtaker_discount is not None:
             self.rate_offtaker_discount = float(self.rate_offtaker_discount)
+        if self.utility_name is not None:
+            self.utility_name = str(self.utility_name)
+        if self.utility_rate_name is not None:
+            self.utility_rate_name = str(self.utility_rate_name)
 
     def run(self):
         self.update_types()
@@ -176,6 +181,7 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
+        self.path_util_rate = os.path.join(self.path_dat_library, "Utility", self.utility_name, self.utility_rate_name)
 
         # relative
         self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
@@ -194,25 +200,7 @@ class DatLibrary:
         self.create_economics()
         self.create_loads()
         self.create_GIS()
-
-        '''
-        if self.load_size and self.load_size > 0:
-            self.create_load_size()
-        if self.pv_om and self.pv_om >= 0:
-            self.create_pv_om()
-        if self.batt_cost_kw and self.batt_cost_kw >= 0:
-            self.create_batt_kw()
-        if self.batt_cost_kwh and self.batt_cost_kwh >= 0:
-            self.create_batt_kwh()
-        if self.load_profile:
-            self.create_load_profile()
-        if self.pv_cost and self.pv_cost >= 0:
-            self.create_pv_cost()
-        if self.owner_discount_rate and self.owner_discount_rate >=0:
-            self.create_owner_discount_rate()
-        if self.offtaker_discount_rate and self.offtaker_discount_rate >=0:
-            self.create_offtaker_discount_rate()
-        '''
+        self.create_utility()
 
     def create_run_file(self):
 
@@ -232,7 +220,8 @@ class DatLibrary:
 
         for dat_file in self.DAT:
             if dat_file is not None:
-                outline = ', '.join([outline, dat_file])
+                print dat_file.strip('\n')
+                outline = ', '.join([outline, dat_file.strip('\n')])
         outline = ', '.join([outline, output])
         outline.replace('\n', '')
         outline = '  '.join([header, outline]) + '\n'
@@ -395,23 +384,19 @@ class DatLibrary:
             GIS = pvwatts.PVWatts(self.path_dat_library_relative, self.run_id, self.latitude, self.longitude)
             self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
 
+    def create_utility(self):
 
+        if self.utility_name is not None and self.utility_rate_name is not None:
 
-'''
-    # DAT8 - DAT11 - Utility Rates
-    # Currently depends on files being present in directory structure
-    def create_utility_rate(self):
-        rate_path = os.path.join(self.path_utility_rate, self.utility_name, self.rate_name)
-        self.DAT[7] = "DAT8=" + "'" + os.path.join(rate_path, "TimeStepsDemand.dat")
-        self.DAT[8] = "DAT9=" + "'" + os.path.join(rate_path, "DemandRate.dat")
-        self.DAT[9] = "DAT10=" + "'" + os.path.join(rate_path, "FuelCost.dat")
-        self.DAT[10] = "DAT11=" + "'" + os.path.join(rate_path, "Export.dat")
+            with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
+                num_ratchets = str(f.readline())
+            with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
+                fuel_bin_count = str(f.readline())
+                demand_bin_count = str(f.readline())
 
-
-    # SResource, hookup PVWatts
-
-    # Utility rates, hookup urdb processor
-
-    '''
-
+            self.DAT[7] = num_ratchets
+            self.DAT[8] = "UtilName=" + "'" + str(self.utility_name) + "'"
+            self.DAT[9] = "UtilRate=" + "'" + str(self.utility_rate_name) + "'"
+            self.DAT[10] = fuel_bin_count
+            self.DAT[11] = demand_bin_count
 
