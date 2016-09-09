@@ -11,6 +11,7 @@ import pandas as pd
 
 import economics
 import pvwatts
+from urdb_parse import *
 
 class DatLibrary:
 
@@ -20,6 +21,8 @@ class DatLibrary:
     debug = True
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
+    year = 2017
+    time_steps_per_hour = 1
 
     run_id = []
     run_file = []
@@ -126,6 +129,10 @@ class DatLibrary:
             lower_case_profile.append(profile.lower())
         self.default_load_profiles = lower_case_profile
 
+        self.update_types()
+        self.define_paths()
+        self.setup_logging()
+
     def update_types(self):
 
         if self.latitude is not None:
@@ -152,9 +159,7 @@ class DatLibrary:
             self.utility_rate_name = str(self.utility_rate_name)
 
     def run(self):
-        self.update_types()
-        self.define_paths()
-        self.setup_logging()
+
         self.create_or_load()
         self.create_run_file()
 
@@ -181,7 +186,6 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_util_rate = os.path.join(self.path_dat_library, "Utility", self.utility_name, self.utility_rate_name)
 
         # relative
         self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
@@ -387,6 +391,8 @@ class DatLibrary:
     def create_utility(self):
 
         if self.utility_name is not None and self.utility_rate_name is not None:
+            self.path_util_rate = os.path.join(self.path_dat_library, self.path_utility,
+                                               self.utility_name, self.utility_rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
@@ -400,3 +406,26 @@ class DatLibrary:
             self.DAT[10] = fuel_bin_count
             self.DAT[11] = demand_bin_count
 
+    def parse_urdb(self, urdb_rate):
+
+        utility_name = urdb_rate['utility'].replace(',', '')
+        rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
+        folder_name = os.path.join(utility_name, rate_name)
+
+        rate_output_folder = os.path.join(self.path_dat_library, self.path_utility, folder_name)
+
+        if not os.path.isdir(rate_output_folder):
+            os.makedirs(rate_output_folder)
+        with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
+            json.dump(urdb_rate, outfile)
+            outfile.close()
+        with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
+            outfile.write(str(rate_name).replace(' ', '_'))
+            outfile.close()
+
+        log_root = os.path.join(self.path_egg, 'reopt_api')
+        urdb_parse = UrdbParse(self.path_dat_library, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse.parse_specific_rates([utility_name], [rate_name])
+
+        self.utility_name = utility_name
+        self.utility_rate_name = rate_name
