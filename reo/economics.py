@@ -55,6 +55,7 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
 class Economics:
 
     out_name = 'economics.dat'
+    business_as_usual = False
 
     # flags
     flag_macrs = 1  # 0 == do not depreciate
@@ -91,7 +92,7 @@ class Economics:
     def __init__(self, out_name, flag_macrs, flag_itc, flag_bonus, flag_replace_batt, analysis_period, rate_inflation,
                  rate_offtaker, rate_owner, rate_escalation, rate_tax, rate_itc, macrs_yrs, macrs_itc_reduction,
                  bonus_fraction, pv_price, pv_om, annual_degradation, batt_cost_kw, batt_cost_kwh, batt_replacement_year,
-                 batt_replacement_cost_kw, batt_replacement_cost_kwh):
+                 batt_replacement_cost_kw, batt_replacement_cost_kwh, business_as_usual):
 
         if out_name is not None:
             self.out_name = out_name
@@ -139,6 +140,8 @@ class Economics:
             self.batt_replacement_cost_kw = batt_replacement_cost_kw
         if batt_replacement_cost_kwh is not None:
             self.batt_replacement_cost_kwh = batt_replacement_cost_kwh
+        if business_as_usual is not None:
+            self.business_as_usual = business_as_usual
 
         if self.macrs_yrs == 5:
             self.macrs_schedule = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
@@ -156,6 +159,7 @@ class Economics:
         args["pwf_om"] = annuity(self.analysis_period, self.rate_inflation, self.rate_owner)
         args["pwf_e"] = annuity(self.analysis_period, self.rate_escalation, self.rate_offtaker)
         args["pwf_op"] = annuity(self.analysis_period, self.rate_escalation, self.rate_owner)
+
 
         args["LevelizationFactor"] = round(
             annuity_degr(self.analysis_period, self.rate_escalation, self.rate_offtaker, -self.rate_degradation) / args["pwf_e"], 5)
@@ -284,6 +288,14 @@ class Economics:
             args["StorageCostPerKW"] += round(self.batt_replacement_cost_kw / (1 + self.rate_owner) ** self.batt_replacement_year, 4)
             args["StorageCostPerKWH"] += round(self.batt_replacement_cost_kwh / (1 + self.rate_owner) ** self.batt_replacement_year, 4)
 
+        if self.business_as_usual:
+            args['CapCostSlope'] = 0
+            args['LevelizationFactor'] = 1.0
+            args['OMperUnitSize'] = 0
+            incentives['ProdIncentRate'] = 4 * [0]
+            incentives['MaxProdIncent'] = [0]
+            incentives['MaxSizeForProdIncent'] = [0]
+
         self.output_args = args
         self.incentives = incentives
 
@@ -301,19 +313,20 @@ class Economics:
         with open(self.out_name, 'w') as f:
             for _ in range(len(args)):
                 try:
-                    k = key.next();
+                    k = key.next()
                     v = value.next()
                     f.write(k + ': [\n')
                     f.write(str(v) + ',\n')
-                    if "CapCostSlope" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                        f.write(str(v) + ',\n')
-                        f.write(str(0) + ',\n')
-                    if "OMperUnitSize" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                        f.write(str(v) + ',\n')
-                        f.write(str(0) + ',\n')
-                    if "LevelizationFactor" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                        f.write(str(v) + ',\n')
-                        f.write(str(1.0) + ',\n')
+                    if not self.business_as_usual:
+                        if "CapCostSlope" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
+                            f.write(str(v) + ',\n')
+                            f.write(str(0) + ',\n')
+                        if "OMperUnitSize" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
+                            f.write(str(v) + ',\n')
+                            f.write(str(0) + ',\n')
+                        if "LevelizationFactor" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
+                            f.write(str(v) + ',\n')
+                            f.write(str(1.0) + ',\n')
                     f.write(']\n')
                 except:
                     print '\033[91merror writing economics\033[0m'

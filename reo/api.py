@@ -13,7 +13,7 @@ class REoptObject(object):
     def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None,
                  batt_cost_kw=None, batt_cost_kwh=None, load_profile=None, pv_cost=None, owner_discount_rate=None,
                  offtaker_discount_rate=None, utility_name=None, rate_name=None,
-                 lcc=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
+                 lcc=None, npv=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None):
 
         self.id = id
 
@@ -33,6 +33,7 @@ class REoptObject(object):
 
         #outputs
         self.lcc = lcc
+        self.npv = npv
         self.utility_kwh = utility_kwh
         self.pv_kw = pv_kw
         self.batt_kw = batt_kw
@@ -75,6 +76,7 @@ class REoptRunResource(Resource):
 
     #outputs
     lcc = fields.FloatField(attribute="lcc", null=True)
+    npv = fields.FloatField(attribute="npv", null=True)
     utility_kwh = fields.FloatField(attribute="utility_kwh", null=True)
     pv_kw = fields.FloatField(attribute="pv_kw", null=True)
     batt_kw = fields.FloatField(attribute="batt_kw", null=True)
@@ -120,6 +122,7 @@ class REoptRunResource(Resource):
         outputs = run_set.run()
 
         lcc = 0
+        npv = 0
         utility_kwh = 0
         pv_kw = 0
         batt_kw = 0
@@ -127,6 +130,8 @@ class REoptRunResource(Resource):
 
         if 'lcc' in outputs:
             lcc = outputs['lcc']
+        if 'npv' in outputs:
+            npv = outputs['lcc']
         if 'utility_kwh' in outputs:
             utility_kwh = outputs['utility_kwh']
         if 'pv_kw' in outputs:
@@ -139,7 +144,7 @@ class REoptRunResource(Resource):
         results = []
         new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                               batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
-                              utility_name, rate_name, lcc, utility_kwh, pv_kw, batt_kw, batt_kwh)
+                              utility_name, rate_name, lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh)
         results.append(new_obj)
         return results
 
@@ -200,9 +205,11 @@ class REoptRunResource(Resource):
 
         outputs = run_set.run()
 
-        lcc = utility_kwh = pv_kw = batt_kw = batt_kwh = 0
+        lcc = npv = utility_kwh = pv_kw = batt_kw = batt_kwh = 0
         if 'lcc' in outputs:
             lcc = outputs['lcc']
+        if 'npv' in outputs:
+            npv = outputs['npv']
         if 'utility_kwh' in outputs:
             utility_kwh = outputs['utility_kwh']
         if 'pv_kw' in outputs:
@@ -214,7 +221,7 @@ class REoptRunResource(Resource):
 
         new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                               batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
-                              utility_name, rate_name, lcc, utility_kwh, pv_kw, batt_kw, batt_kwh)
+                              utility_name, rate_name, lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh)
 
         # package the bundle to return
         bundle.obj = new_obj

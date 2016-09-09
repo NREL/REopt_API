@@ -21,12 +21,11 @@ class DatLibrary:
     debug = False
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
+    xpress_model_bau = "REoptTS1127_Util_Only.mos"
     year = 2017
     time_steps_per_hour = 1
 
     run_id = []
-    run_file = []
-    output_file = []
     outputs = {}
 
     # variables that user can pass
@@ -93,12 +92,18 @@ class DatLibrary:
     path_load_size = []
     path_load_profile = []
     path_gis_data = []
+    path_economics = []
     path_utility = []
     path_output = []
-
+    path_output_bau = []
     path_dat_library_relative = []
 
+    file_run = []
+    file_run_bau = []
+    file_output = []
+    file_output_bau = []
     file_economics = []
+    file_economics_bau = []
     file_gis = []
     file_gis_bau = []
     file_load_size = []
@@ -106,6 +111,7 @@ class DatLibrary:
 
     # DAT files to overwrite
     DAT = [None] * 20
+    DAT_bau = [None] * 20
 
     @staticmethod
     def write_var(f, var, dat_var):
@@ -188,7 +194,8 @@ class DatLibrary:
         #print ('New subprocess')
         #tracefile = open('traceback.txt', 'a')
         #traceback.print_stack(limit=5, file=tracefile)
-        subprocess.call(self.run_file)
+        subprocess.call(self.file_run)
+        subprocess.call(self.file_run_bau)
         # print ('Subprocess done')
 
         self.parse_outputs()
@@ -211,15 +218,21 @@ class DatLibrary:
 
         # relative
         self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
-
         self.path_various = os.path.join("Various")
         self.path_load_size = os.path.join("LoadSize")
         self.path_load_profile = os.path.join("LoadProfiles")
+        self.path_economics = os.path.join("Economics")
         self.path_gis_data = os.path.join("GISdata")
         self.path_utility = os.path.join("Utility")
         self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
+        self.path_output_bau = os.path.join(self.path_output, "bau")
 
-        self.file_economics = os.path.join("Economics", 'economics_' + str(self.run_id) + '.dat')
+        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + ".bat")
+        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + "._bau.bat")
+        self.file_output = os.path.join(self.path_output, "summary.csv")
+        self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
+        self.file_economics = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '.dat')
+        self.file_economics_bau = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '_bau.dat')
         self.file_gis = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '.dat')
         self.file_gis_bau = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '_bau.dat')
         self.file_load_size = os.path.join(self.path_load_size, 'LoadSize_' + str(self.run_id) + '.dat')
@@ -227,6 +240,7 @@ class DatLibrary:
 
     def create_or_load(self):
 
+        self.create_constant_bau()
         self.create_economics()
         self.create_loads()
         self.create_GIS()
@@ -234,21 +248,36 @@ class DatLibrary:
 
     def create_run_file(self):
 
-        go_file = "Go_" + str(self.run_id) + ".bat"
-        output_dir = self.path_output
-
         log("DEBUG", "Current Directory: " + os.getcwd())
-        log("DEBUG", "Creating output directory: " + output_dir)
-        log("DEBUG", "Created run file: " + go_file)
+        log("DEBUG", "Creating output directory: " + self.path_output)
+        log("DEBUG", "Created run file: " + self.file_run)
 
-        os.mkdir(output_dir)
+        os.mkdir(self.path_output)
+        os.mkdir(self.path_output_bau)
 
+
+        # RE case
         header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model)
-
-        output = "OUTDIR=" + "'" + output_dir + "'"
+        output = "OUTDIR=" + "'" + self.path_output + "'"
         outline = ''
 
         for dat_file in self.DAT:
+            if dat_file is not None:
+                outline = ', '.join([outline, dat_file.strip('\n')])
+        outline = ', '.join([outline, output])
+        outline.replace('\n', '')
+        outline = '  '.join([header, outline]) + '\n'
+
+        f = open(self.file_run, 'w')
+        f.write(outline)
+        f.close()
+
+        #BAU
+        header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model_bau)
+        output = "OUTDIR=" + "'" + self.path_output_bau + "'"
+        outline = ''
+
+        for dat_file in self.DAT_bau:
             if dat_file is not None:
                 print dat_file.strip('\n')
                 outline = ', '.join([outline, dat_file.strip('\n')])
@@ -256,17 +285,14 @@ class DatLibrary:
         outline.replace('\n', '')
         outline = '  '.join([header, outline]) + '\n'
 
-        self.run_file = os.path.join(self.path_xpress, go_file)
-        self.output_file = os.path.join(output_dir, "summary.csv")
-
-        f = open(self.run_file, 'w')
+        f = open(self.file_run_bau, 'w')
         f.write(outline)
         f.close()
 
     def parse_outputs(self):
 
-        if os.path.exists(self.output_file):
-            df = pd.read_csv(self.output_file, header=None, index_col=0)
+        if os.path.exists(self.file_output):
+            df = pd.read_csv(self.file_output, header=None, index_col=0)
             df = df.transpose()
 
             if 'LCC' in df.columns:
@@ -281,15 +307,24 @@ class DatLibrary:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.output_file + " + doesn't exist!")
 
+        if os.path.exists(self.file_output_bau):
+            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
+            df = df.transpose()
+
+            if 'LCC' in df.columns:
+                self.outputs['npv'] = float(df['LCC']) - float(self.outputs['lcc'])
+
     def cleanup(self):
 
         if not self.debug:
             if os.path.exists(self.path_output):
                 shutil.rmtree(self.path_output, ignore_errors=True)
-            if os.path.exists(self.run_file):
-                os.remove(self.run_file)
+            if os.path.exists(self.file_run):
+                os.remove(self.file_run)
+                os.remove(self.file_run_bau)
             if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_economics)):
                 os.remove(os.path.join(self.path_dat_library_relative, self.file_economics))
+                os.remove(os.path.join(self.path_dat_library_relative, self.file_economics_bau))
             if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_gis)):
                 os.remove(os.path.join(self.path_dat_library_relative, self.file_gis))
                 os.remove(os.path.join(self.path_dat_library_relative, self.file_gis_bau))
@@ -298,18 +333,39 @@ class DatLibrary:
             if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_load_size)):
                 os.remove(os.path.join(self.path_dat_library_relative, self.file_load_size))
 
+    # BAU files
+    def create_constant_bau(self):
+        self.DAT_bau[0] = "DAT1=" + "'" + os.path.join(self.path_various, 'constant_bau.dat') + "'"
+        self.DAT_bau[5] = "DAT6=" + "'" + os.path.join(self.path_various, 'storage_bau.dat') + "'"
+        self.DAT_bau[6] = "DAT7=" + "'" + os.path.join(self.path_various, 'maxsizes_bau.dat') + "'"
+
     # DAT2 - Economics
     def create_economics(self):
 
         file_path = os.path.join(self.path_dat_library, self.file_economics)
+        business_as_usual = False
         economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
                             self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
                             self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
                             self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
                             self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
-                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh)
+                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh,
+                            business_as_usual)
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
+
+        file_path = os.path.join(self.path_dat_library, self.file_economics_bau)
+        business_as_usual = True
+        economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
+                            self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
+                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
+                            self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
+                            self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
+                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh,
+                            business_as_usual)
+
+        self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
+
 
     #DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
@@ -354,7 +410,9 @@ class DatLibrary:
                 self.scale_load(default_load_profile_norm, filename_profile)
 
         self.DAT[2] = "DAT3=" + "'" + os.path.join(self.path_load_size, filename_size) + "'"
+        self.DAT_bau[2] = self.DAT[2]
         self.DAT[3] = "DAT4=" + "'" + os.path.join(self.path_load_profile, filename_profile) + "'"
+        self.DAT_bau[3] = self.DAT[3]
 
     def scale_load(self, file_norm, filename_profile):
         path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_profile)
@@ -395,6 +453,7 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
             GIS = pvwatts.PVWatts(self.path_dat_library_relative, self.run_id, self.latitude, self.longitude)
             self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
+            self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
 
     def create_utility(self):
 
@@ -409,10 +468,15 @@ class DatLibrary:
                 demand_bin_count = str(f.readline())
 
             self.DAT[7] = num_ratchets
+            self.DAT_bau[7] = self.DAT[7]
             self.DAT[8] = "UtilName=" + "'" + str(self.utility_name) + "'"
+            self.DAT_bau[8] = self.DAT[8]
             self.DAT[9] = "UtilRate=" + "'" + str(self.utility_rate_name) + "'"
+            self.DAT_bau[9] = self.DAT[9]
             self.DAT[10] = fuel_bin_count
+            self.DAT_bau[10] = self.DAT[10]
             self.DAT[11] = demand_bin_count
+            self.DAT_bau[11] = self.DAT[11]
 
     def parse_urdb(self, urdb_rate):
 
