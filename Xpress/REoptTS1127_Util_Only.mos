@@ -9,14 +9,15 @@ uses "mmsystem" !for timing function
 uses "mmnl" 
 
 parameters
-  ! When running deployed
-  !LocalPath = "C:\\Python27\\Lib\\site-packages\\win32"
-  !DatLibraryPath = LocalPath + "..\\reopt_api-1.0-py2.7.egg\\Xpress\\DatLibrary\\"
+  ! When running deployed, working directory is C:\Python27\Lib\site-packages\win32
+  LocalPath = "C:\\Python27\\Lib\\site-packages\\reopt_api-1.0-py2.7.egg\\"
+  DatLibraryPath = LocalPath + "Xpress\\DatLibrary\\"
 
   ! When running local
-  LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api"
-  DatLibraryPath = LocalPath + "\\Xpress\\DatLibrary\\"
+  !LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api"
+  !DatLibraryPath = LocalPath + "\\Xpress\\DatLibrary\\"
   OUTDIR = "Output"
+  OutputDir = LocalPath + OUTDIR
   
   FuelBinCount = 1
   DemandBinCount = 1
@@ -613,11 +614,11 @@ writeln ("****************************** End Results ***************************
 
 
 !************************** Writing to files ************************************
-fopen(OUTDIR + "\\summary.csv",F_OUTPUT)
+fopen(OutputDir + "\\summary.csv",F_OUTPUT)
 writeln ("LCC,", getsol(RECosts))
-writeln ("Cap_Cost,", 
-    sum(t in Tech) CapCostSlope (t) * getsol(dvSystemSize(t)) + 
-	sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) * StorageCostPerKWH(b) + 
+writeln ("Cap_Cost,",
+    sum(t in Tech) CapCostSlope (t) * getsol(dvSystemSize(t)) +
+	sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) * StorageCostPerKWH(b) +
 	sum(b in BattLevel) getsol(dvStorageSizeKW(b)) *  StorageCostPerKW(b) )
 writeln ("Bulk_kWh_costs,", getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)))
 writeln ("Total_Demand_cost,", getsol(TotalDemandCharges))
@@ -639,7 +640,7 @@ writeln ("Year1DemandCost,",getsol(TotalDemandCharges) / pwf_e)
 
 fclose(F_OUTPUT)
 
-fopen(OUTDIR + "\\dat_files.csv", F_OUTPUT)
+fopen(OutputDir + "\\dat_files.csv", F_OUTPUT)
 writeln (DAT1, ",")
 writeln (DAT2, ",")
 writeln (DAT3, ",")
@@ -654,28 +655,28 @@ fclose(F_OUTPUT)
 
 !******************
 !Time series dispatch output
-fopen(OUTDIR + "\\DispatchHourly.csv",F_OUTPUT)
+fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
 forall (t in Tech,LD in Load, ts in TimeStep, fb in FuelBin )     do
    writeln ( t,",", LD, "," ,ts ,",",    getsol (dvRatedProd (t,LD,ts,fb)))
 end-do
 fclose(F_OUTPUT)
 
 !Time series dispatch output
-fopen(OUTDIR + "\\ElecToStore.csv",F_OUTPUT)
+fopen(OutputDir + "\\ElecToStore.csv",F_OUTPUT)
 forall (ts in TimeStep )     do
    writeln (     getsol (dvElecToStor (ts)))
 end-do
 fclose(F_OUTPUT)
 
 !Time series dispatch output
-fopen(OUTDIR + "\\ElecFromStore.csv",F_OUTPUT)
+fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
 forall (ts in TimeStep )     do
    writeln (    getsol (dvElecFromStor (ts)))
 end-do
 fclose(F_OUTPUT)
 
 !Time series dispatch output
-fopen(OUTDIR + "\\StoredEnergy.csv",F_OUTPUT)
+fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
 forall (ts in TimeStep )     do
    writeln (   getsol (dvStoredEnergy (ts)))
 end-do
@@ -686,14 +687,14 @@ forall ( ts in TimeStep )     do
 	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
    				(sum(t in Tech,  fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
 end-do
-fopen(OUTDIR + "\\DemandHourly.csv",F_OUTPUT)
+fopen(OutputDir + "\\DemandHourly.csv",F_OUTPUT)
 forall ( ts in TimeStep )     do
 	writeln(getsol(Demand(ts)))
 end-do
 fclose(F_OUTPUT)
 
 !demand output
-fopen(OUTDIR + "\\DemandPeaks.csv",F_OUTPUT)
+fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
 writeln ("Ratchet,DemandTier,PeakDemand")
 forall  ( r in Ratchets, db in DemandBin)  do
    writeln (r, ",", db, ",", getsol(dvPeakDemandE(r,db)),",")

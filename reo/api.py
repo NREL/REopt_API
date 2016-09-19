@@ -4,6 +4,9 @@ from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 
+from log_levels import log
+import logging
+
 import library
 import random
 import os
@@ -48,15 +51,12 @@ class REoptRunResource(Resource):
     # i.e, C:\Nick\Projects\api\env\src\reopt_api
 
     # when deployed, runs from egg file, need to update if version changes!
-    # path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+    path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
 
     # when not deployed (running from 127.0.0.1:8000)
-    path_egg = os.getcwd()
+    # path_egg = os.getcwd()
 
-    # generate a unique id for this run
-    run_id = random.randint(0, 1000000)
-
-    # inputs
+    # input
     analysis_period = fields.IntegerField(attribute='analysis_period', null=True)
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
@@ -102,6 +102,9 @@ class REoptRunResource(Resource):
 
     def get_object_list(self, request):
 
+        # generate a unique id for this run
+        run_id = random.randint(0, 1000000)
+
         analysis_period = request.GET.get("analysis_period")
         latitude = request.GET.get("latitude")
         longitude = request.GET.get("longitude")
@@ -116,7 +119,7 @@ class REoptRunResource(Resource):
         utility_name = request.GET.get("utility_name")
         rate_name = request.GET.get("rate_name")
 
-        run_set = library.DatLibrary(self.run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
+        run_set = library.DatLibrary(run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
                                      offtaker_discount_rate, utility_name, rate_name)
         outputs = run_set.run()
@@ -142,7 +145,7 @@ class REoptRunResource(Resource):
             batt_kwh = outputs['batt_kwh']
 
         results = []
-        new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                               batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
                               utility_name, rate_name, lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh)
         results.append(new_obj)
@@ -153,6 +156,9 @@ class REoptRunResource(Resource):
 
     # POST
     def obj_create(self, bundle, **kwargs):
+
+        # generate a unique id for this run
+        run_id = random.randint(0, 1000000)
 
         analysis_period = latitude = longitude = load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = None
         load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = pv_cost = owner_discount_rate = None
@@ -196,7 +202,7 @@ class REoptRunResource(Resource):
             urdb_rate = data['urdb_rate']
             use_urdb = True
 
-        run_set = library.DatLibrary(self.run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
+        run_set = library.DatLibrary(run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
                                      offtaker_discount_rate, utility_name, rate_name)
 
@@ -219,7 +225,7 @@ class REoptRunResource(Resource):
         if 'batt_kwh' in outputs:
             batt_kwh = outputs['batt_kwh']
 
-        new_obj = REoptObject(self.run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
+        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
                               batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
                               utility_name, rate_name, lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh)
 

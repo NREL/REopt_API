@@ -211,7 +211,7 @@ class DatLibrary:
 
     def define_paths(self):
 
-        # absolute
+        # absolute (anything that needs written out)
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
@@ -219,11 +219,11 @@ class DatLibrary:
         # relative
         self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
         self.path_various = os.path.join("Various")
-        self.path_load_size = os.path.join("LoadSize")
-        self.path_load_profile = os.path.join("LoadProfiles")
         self.path_economics = os.path.join("Economics")
         self.path_gis_data = os.path.join("GISdata")
         self.path_utility = os.path.join("Utility")
+        self.path_load_size = os.path.join("LoadSize")
+        self.path_load_profile = os.path.join("LoadProfiles")
         self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
         self.path_output_bau = os.path.join(self.path_output, "bau")
 
@@ -252,9 +252,14 @@ class DatLibrary:
         log("DEBUG", "Creating output directory: " + self.path_output)
         log("DEBUG", "Created run file: " + self.file_run)
 
-        os.mkdir(self.path_output)
-        os.mkdir(self.path_output_bau)
+        path_output = os.path.join(self.path_egg, self.path_output)
+        path_output_bau = os.path.join(self.path_egg, self.path_output_bau)
 
+        if os.path.exists(path_output):
+            shutil.rmtree(path_output)
+
+        os.mkdir(path_output)
+        os.mkdir(path_output_bau)
 
         # RE case
         header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model)
@@ -291,8 +296,8 @@ class DatLibrary:
 
     def parse_outputs(self):
 
-        if os.path.exists(self.file_output):
-            df = pd.read_csv(self.file_output, header=None, index_col=0)
+        if os.path.exists(os.path.join(self.path_egg, self.file_output)):
+            df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
             df = df.transpose()
 
             if 'LCC' in df.columns:
@@ -305,10 +310,10 @@ class DatLibrary:
                 self.outputs['pv_kw'] = df['PVNMsize_kW']
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", "Output file: " + self.output_file + " + doesn't exist!")
+            log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
-        if os.path.exists(self.file_output_bau):
-            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
+        if os.path.exists(os.path.join(self.path_egg, self.file_output_bau)):
+            df = pd.read_csv(os.path.join(self.path_egg, self.file_output_bau), header=None, index_col=0)
             df = df.transpose()
 
             if 'LCC' in df.columns:
@@ -316,22 +321,25 @@ class DatLibrary:
 
     def cleanup(self):
 
+        log("DEBUG", "Cleaning up folders from: " + os.getcwd())
+        log("DEBUG", "Output folder: " + self.path_output)
+
         if not self.debug:
-            if os.path.exists(self.path_output):
-                shutil.rmtree(self.path_output, ignore_errors=True)
+            if os.path.exists(os.path.join(self.path_egg, self.path_output)):
+                shutil.rmtree(os.path.join(self.path_egg, self.path_output), ignore_errors=True)
             if os.path.exists(self.file_run):
                 os.remove(self.file_run)
                 os.remove(self.file_run_bau)
-            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_economics)):
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_economics))
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_economics_bau))
-            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_gis)):
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_gis))
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_gis_bau))
-            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_load_profile)):
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_load_profile))
-            if os.path.exists(os.path.join(self.path_dat_library_relative, self.file_load_size)):
-                os.remove(os.path.join(self.path_dat_library_relative, self.file_load_size))
+            if os.path.exists(os.path.join(self.path_dat_library, self.file_economics)):
+                os.remove(os.path.join(self.path_dat_library, self.file_economics))
+                os.remove(os.path.join(self.path_dat_library, self.file_economics_bau))
+            if os.path.exists(os.path.join(self.path_dat_library, self.file_gis)):
+                os.remove(os.path.join(self.path_dat_library, self.file_gis))
+                os.remove(os.path.join(self.path_dat_library, self.file_gis_bau))
+            if os.path.exists(os.path.join(self.path_dat_library, self.file_load_profile)):
+                os.remove(os.path.join(self.path_dat_library, self.file_load_profile))
+            if os.path.exists(os.path.join(self.path_dat_library, self.file_load_size)):
+                os.remove(os.path.join(self.path_dat_library, self.file_load_size))
 
     # BAU files
     def create_constant_bau(self):
@@ -394,11 +402,11 @@ class DatLibrary:
                 filename_profile = default_load_profile
                 filename_size = default_load_size
         else:
-            path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_size)
 
             filename_profile = "Load8760_" + str(self.run_id) + ".dat"
             filename_size = "LoadSize_" + str(self.run_id) + ".dat"
-            self.write_single_variable(path_load_profile, filename_size, self.load_size, "AnnualElecLoad")
+            self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
+                                       filename_size, self.load_size, "AnnualElecLoad")
 
             # Load profile specified, with load size specified
             if self.load_profile is not None:
@@ -415,7 +423,7 @@ class DatLibrary:
         self.DAT_bau[3] = self.DAT[3]
 
     def scale_load(self, file_norm, filename_profile):
-        path_load_profile = os.path.join(self.path_dat_library_relative, self.path_load_profile)
+        path_load_profile = os.path.join(self.path_dat_library, self.path_load_profile)
         load_profile = []
         f = open(os.path.join(path_load_profile, file_norm), 'r')
         for line in f:
@@ -451,7 +459,7 @@ class DatLibrary:
     def create_GIS(self):
 
         if self.latitude is not None and self.longitude is not None:
-            GIS = pvwatts.PVWatts(self.path_dat_library_relative, self.run_id, self.latitude, self.longitude)
+            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, self.latitude, self.longitude)
             self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
 
