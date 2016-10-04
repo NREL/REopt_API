@@ -37,6 +37,7 @@ Instructions will assume a Windows based install where you have administrator pr
 
 6. Install requirements
    ```
+   pip install requests
    pip install django==1.8
    pip install django-tastypie==0.13.3
    pip install numpy==1.11.0
