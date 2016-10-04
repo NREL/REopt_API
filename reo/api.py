@@ -164,7 +164,7 @@ class REoptRunResource(Resource):
         load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = pv_cost = owner_discount_rate = None
         offtaker_discount_rate = utility_name = rate_name = blended_utility_rate = demand_charge = urdb_rate = None
 
-        use_urdb = True
+        use_urdb = False
 
         # bundle is an object containing the posted json (within .data)
         data = bundle.data
@@ -207,6 +207,9 @@ class REoptRunResource(Resource):
                                      offtaker_discount_rate, utility_name, rate_name)
 
         if use_urdb:
+            run_set.parse_urdb(urdb_rate)
+        else:
+            urdb_rate = run_set.make_urdb_rate(blended_utility_rate, demand_charge)
             run_set.parse_urdb(urdb_rate)
 
         outputs = run_set.run()

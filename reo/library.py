@@ -18,7 +18,7 @@ class DatLibrary:
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = False
+    debug = True
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
@@ -125,6 +125,7 @@ class DatLibrary:
 
     def write_single_variable(self, path, filename, var, dat_var):
         filename_path = os.path.join(path, filename)
+        log("DEBUG", "Writing " + dat_var + " to " + filename_path)
         if filename not in os.listdir(path):
             f = open(filename_path, 'w')
             self.write_var(f, var, dat_var)
@@ -142,7 +143,7 @@ class DatLibrary:
         self.latitude = latitude
         self.longitude = longitude
         self.load_size = load_size
-        self.load_profile = load_profile
+        self.load_profile = load_profile.replace(" ", "")
         self.pv_om = cost_pv_om
         self.batt_cost_kw = cost_batt_kw
         self.batt_cost_kwh = cost_batt_kwh
@@ -228,7 +229,7 @@ class DatLibrary:
         self.path_output_bau = os.path.join(self.path_output, "bau")
 
         self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + ".bat")
-        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + "._bau.bat")
+        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + "_bau.bat")
         self.file_output = os.path.join(self.path_output, "summary.csv")
         self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
         self.file_economics = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '.dat')
@@ -374,8 +375,7 @@ class DatLibrary:
 
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
 
-
-    #DAT3 & DAT4 LoadSize, LoadProfile
+    # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
 
         filename_profile = []
@@ -389,6 +389,10 @@ class DatLibrary:
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
         default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"
+
+        log("DEBUG", "Creating loads.  "
+                     "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
+                     " LoadProfile: " + ("None" if self.load_profile is None else self.load_profile))
 
         if self.load_size is None:
 
@@ -510,5 +514,40 @@ class DatLibrary:
         self.utility_name = utility_name
         self.utility_rate_name = rate_name
 
+    def make_urdb_rate(self, blended_utility_rate, demand_charge):
 
+        urdb_rate = {}
 
+        # energy rate
+        energyratestructure = []
+        schedule = []
+        for month in range(0, 12):
+            rate = {'rate': blended_utility_rate[month], 'unit': 'kWh'}
+            tier = [rate]
+            energyratestructure.append(tier)
+
+            tmp = [month] * 24
+            schedule.append(tmp)
+
+        # demand rate
+        flatdemandmonths = []
+        flatdemandstructure = []
+
+        for month in range(0, 12):
+            flatdemandmonths.append(month)
+            rate = {'rate': demand_charge[month]}
+            tier = [rate]
+            flatdemandstructure.append(tier)
+
+        # ouput
+        urdb_rate['energyweekdayschedule'] = schedule
+        urdb_rate['energyweekendschedule'] = schedule
+        urdb_rate['energyratestructure'] = energyratestructure
+        urdb_rate['flatdemandstructure'] = flatdemandstructure
+        urdb_rate['flatdemandmonths'] = flatdemandmonths
+        urdb_rate['flatdemandunit'] = 'kW'
+        urdb_rate['label'] = self.run_id
+        urdb_rate['name'] = "Custom_rate_" + str(self.run_id)
+        urdb_rate['utility'] = "Custom_utility_" + str(self.run_id)
+
+        return urdb_rate
