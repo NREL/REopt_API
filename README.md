@@ -37,9 +37,12 @@ Instructions will assume a Windows based install where you have administrator pr
 
 6. Install requirements
    ```
+   pip install requests
    pip install django==1.8
    pip install django-tastypie==0.13.3
    pip install numpy==1.11.0
+   pip install pandas==0.18.1  (may need Visual C++ compiler, install from http://aka.ms/vcpython27)
+   install pywin32==220 from: https://sourceforge.net/projects/pywin32/files/pywin32/Build%20220/pywin32-220.win-amd64-py2.7.exe/download
    ```
 7. Check out the git repository into the virtual environment. 
    Note the 'git' command must be done from a git bash prompt rather than windows command prompt.  
@@ -83,7 +86,7 @@ The process (modified from: https://baxeico.wordpress.com/2013/10/13/django-on-w
 
 1. Install CherryPy
    
-   `pip install CherryPy`
+   `pip install CherryPy==6.0.1`
 2. Verify CherryPy install
    `cd C:\Python27\Lib\site-packages\cherrypy\tutorial`
    `python tut01_helloworld.py`
