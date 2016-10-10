@@ -18,7 +18,7 @@ class DatLibrary:
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
@@ -143,7 +143,11 @@ class DatLibrary:
         self.latitude = latitude
         self.longitude = longitude
         self.load_size = load_size
-        self.load_profile = load_profile.replace(" ", "")
+
+        self.load_profile = load_profile
+        if load_profile is not None:
+            self.load_profile = load_profile.replace(" ", "")
+
         self.pv_om = cost_pv_om
         self.batt_cost_kw = cost_batt_kw
         self.batt_cost_kwh = cost_batt_kwh
@@ -534,10 +538,12 @@ class DatLibrary:
         flatdemandstructure = []
 
         for month in range(0, 12):
-            flatdemandmonths.append(month)
+            #flatdemandmonths.append(month)
+            flatdemandmonths.append(0)
             rate = {'rate': demand_charge[month]}
             tier = [rate]
-            flatdemandstructure.append(tier)
+            if month == 0:
+                flatdemandstructure.append(tier)
 
         # ouput
         urdb_rate['energyweekdayschedule'] = schedule

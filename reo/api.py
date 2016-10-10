@@ -208,7 +208,7 @@ class REoptRunResource(Resource):
 
         if use_urdb:
             run_set.parse_urdb(urdb_rate)
-        else:
+        elif (blended_utility_rate is not None) and (demand_charge is not None):
             urdb_rate = run_set.make_urdb_rate(blended_utility_rate, demand_charge)
             run_set.parse_urdb(urdb_rate)
 
