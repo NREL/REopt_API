@@ -5,7 +5,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="005db6fa-72b9-4d30-b1e1-28d4c2f323b0" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reo/library.py" afterPath="$PROJECT_DIR$/reo/library.py" />
     </list>
     <ignored path="reopt_api.iws" />
@@ -41,8 +40,8 @@
       <file leaf-file-name="library.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/reo/library.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="698">
-              <caret line="588" column="60" selection-start-line="588" selection-start-column="60" selection-end-line="588" selection-end-column="60" />
+            <state relative-caret-position="392">
+              <caret line="543" column="34" selection-start-line="543" selection-start-column="34" selection-end-line="543" selection-end-column="34" />
               <folding>
                 <element signature="e#0#9#0" expanded="true" />
               </folding>
@@ -727,8 +726,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/reo/library.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="698">
-          <caret line="588" column="60" selection-start-line="588" selection-start-column="60" selection-end-line="588" selection-end-column="60" />
+        <state relative-caret-position="392">
+          <caret line="543" column="34" selection-start-line="543" selection-start-column="34" selection-end-line="543" selection-end-column="34" />
           <folding>
             <element signature="e#0#9#0" expanded="true" />
           </folding>

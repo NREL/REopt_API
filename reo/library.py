@@ -530,30 +530,6 @@ class DatLibrary:
         flatdemandstructure = []
         flatdemandmonths = []
 
-        ''' Approach 1
-        for month in range(0, 12):
-            rate = {'rate': blended_utility_rate[month], 'unit': 'kWh'}
-            tier = [rate]
-            energyratestructure.append(tier)
-
-            tmp = [month] * 24
-            schedule.append(tmp)
-
-        # demand rate
-        flatdemandmonths = []
-        flatdemandstructure = []
-
-        for month in range(0, 12):
-            #flatdemandmonths.append(month)
-            flatdemandmonths.append(0)
-            rate = {'rate': demand_charge[month]}
-            tier = [rate]
-            if month == 0:
-                flatdemandstructure.append(tier)
-
-        '''
-
-        ''' Approach 2'''
         unique_energy_rate = set(blended_utility_rate)
         unique_demand_rate = set(demand_charge)
 
