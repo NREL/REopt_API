@@ -374,13 +374,24 @@ class DatLibrary:
 
         file_path = os.path.join(self.path_dat_library, self.file_economics)
         business_as_usual = False
-        economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
+        econ = economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
                             self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
                             self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
                             self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
                             self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
                             self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh,
                             business_as_usual)
+
+        # Save outputs to illustrate defaults
+        self.analysis_period = econ.analysis_period
+        self.pv_cost = econ.pv_cost
+        self.pv_om = econ.pv_om
+        self.batt_cost_kw = econ.batt_cost_kw
+        self.batt_cost_kwh = econ.batt_cost_kwh
+        self.batt_replacement_cost_kw = econ.batt_replacement_cost_kw
+        self.batt_replacement_cost_kwh = econ.batt_replacement_cost_kwh
+        self.rate_owner_discount = econ.rate_owner
+        self.rate_offtaker_discount = econ.rate_offtaker
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 

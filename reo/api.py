@@ -37,7 +37,7 @@ class REoptObject(object):
         self.load_8760_kwh = load_8760_kwh
         self.load_monthly_kwh = load_monthly_kwh
 
-        #outputs
+        # outputs
         self.lcc = lcc
         self.npv = npv
         self.utility_kwh = utility_kwh
@@ -238,12 +238,24 @@ class REoptRunResource(Resource):
         if 'batt_kwh' in outputs:
             batt_kwh = outputs['batt_kwh']
 
-        new_obj = REoptObject(run_id, analysis_period, latitude, longitude, load_size, pv_om, batt_cost_kw,
-                              batt_cost_kwh, load_profile, pv_cost, owner_discount_rate, offtaker_discount_rate,
-                              utility_name, rate_name, lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh, load_8760_kwh,
+        new_obj = REoptObject(run_id, run_set.analysis_period, latitude, longitude, run_set.load_size, run_set.pv_om,
+                              run_set.batt_cost_kw, run_set.batt_cost_kwh, load_profile, run_set.pv_cost,
+                              run_set.rate_owner_discount, run_set.rate_offtaker_discount, utility_name, rate_name,
+                              lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh, load_8760_kwh,
                               load_monthly_kwh)
 
         # package the bundle to return
         bundle.obj = new_obj
+
+        # update fields with what was used
+        bundle.data['load_size'] = new_obj.load_size
+        bundle.data['pv_cost'] = new_obj.pv_cost
+        bundle.data['pv_om'] = new_obj.pv_om
+        bundle.data['batt_cost_kw'] = new_obj.batt_cost_kw
+        bundle.data['batt_cost_kwh'] = new_obj.batt_cost_kwh
+        bundle.data['owner_discount_rate'] = new_obj.owner_discount_rate
+        bundle.data['offtaker_discount_rate'] = new_obj.offtaker_discount_rate
+        bundle.data['analysis_period'] = new_obj.analysis_period
+
         bundle = self.full_hydrate(bundle)
         return bundle
