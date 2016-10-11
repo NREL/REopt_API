@@ -13,12 +13,15 @@ import economics
 import pvwatts
 from urdb_parse import *
 
+import calendar
+from datetime import datetime, timedelta
+
 class DatLibrary:
 
     max_big_number = 100000000
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = False
+    debug = True
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
@@ -33,6 +36,8 @@ class DatLibrary:
     longitude = None
     load_size = None
     load_profile = None
+    load_8760_kwh = None
+    load_monthly_kwh = None
     utility_name = None
     utility_rate_name = None
 
@@ -133,7 +138,7 @@ class DatLibrary:
 
     def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, cost_pv_om, cost_batt_kw,
                  cost_batt_kwh, load_profile, cost_pv, rate_owner_discount, rate_offtaker_discount,
-                 utility_name, rate_name):
+                 utility_name, rate_name, load_8760_kwh, load_monthly_kwh):
 
         self.run_id = run_id
         self.path_egg = path_egg
@@ -147,6 +152,8 @@ class DatLibrary:
         self.load_profile = load_profile
         if load_profile is not None:
             self.load_profile = load_profile.replace(" ", "")
+        self.load_8760_kwh = load_8760_kwh
+        self.load_monthly_kwh = load_monthly_kwh
 
         self.pv_om = cost_pv_om
         self.batt_cost_kw = cost_batt_kw
@@ -190,6 +197,16 @@ class DatLibrary:
             self.utility_name = str(self.utility_name)
         if self.utility_rate_name is not None:
             self.utility_rate_name = str(self.utility_rate_name)
+        if self.load_8760_kwh is not None:
+            tmp = []
+            for i in self.load_8760_kwh:
+                tmp.append(float(i))
+            self.load_8760_kwh = tmp
+        if self.load_monthly_kwh is not None:
+            tmp = []
+            for i in self.load_monthly_kwh:
+                tmp.append(float(i))
+            self.load_monthly_kwh = tmp
 
     def run(self):
 
@@ -396,46 +413,123 @@ class DatLibrary:
 
         log("DEBUG", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
-                     " LoadProfile: " + ("None" if self.load_profile is None else self.load_profile))
+                     ", LoadProfile: " + ("None" if self.load_profile is None else self.load_profile) +
+                     ", Load 8760 Specified: " + ("No" if self.load_8760_kwh is None else "Yes") +
+                     ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        if self.load_size is None:
-
-            # Load profile with no load size
-            if self.load_profile is not None:
-                if self.load_profile.lower() in self.default_load_profiles:
-                    filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile + ".dat"
-                    filename_size = "LoadSize_" + default_city + "_" + self.load_profile + ".dat"
-            # No load profile or size specified
+        custom_profile = False
+        if self.load_8760_kwh is not None:
+            if len(self.load_8760_kwh) == 8760:
+                custom_profile = True
+                load_size = sum(self.load_8760_kwh)
+                self.load_size = load_size
+                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
+                                           filename_size, load_size, "AnnualElecLoad")
+                filename_profile = "LoadProfile_" + str(self.run_id) + ".dat"
+                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_profile),
+                                           filename_profile, self.load_8760_kwh, "LoadProfile")
             else:
-                filename_profile = default_load_profile
-                filename_size = default_load_size
-        else:
+                log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kwh) + " values, 8760 required")
 
-            filename_profile = "Load8760_" + str(self.run_id) + ".dat"
-            filename_size = "LoadSize_" + str(self.run_id) + ".dat"
-            self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
-                                       filename_size, self.load_size, "AnnualElecLoad")
-
-            # Load profile specified, with load size specified
-            if self.load_profile is not None:
-                if self.load_profile.lower() in self.default_load_profiles:
-                    tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
-                    self.scale_load(tmp_profile, filename_profile)
-            # Load size specified, no profile
+        if self.load_monthly_kwh is not None:
+            if len(self.load_monthly_kwh) == 12:
+                custom_profile = True
+                load_size = float(sum(self.load_monthly_kwh))
+                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+                filename_profile = "LoadProfile_" + str(self.run_id) + ".dat"
+                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
+                                           filename_size, load_size, "AnnualElecLoad")
+                self.load_size = load_size
+                if self.load_profile is not None:
+                    if self.load_profile.lower() in self.default_load_profiles:
+                        tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
+                        self.scale_load_by_month(tmp_profile, filename_profile)
+                else:
+                    self.scale_load_by_month(default_load_profile_norm, filename_profile)
             else:
-                self.scale_load(default_load_profile_norm, filename_profile)
+                log("ERROR", "Load profile uploaded contains: " + len(self.load_monthly_kwh) + " values, 12 required")
+
+        if not custom_profile:
+            if self.load_size is None:
+
+                # Load profile with no load size
+                if self.load_profile is not None:
+                    if self.load_profile.lower() in self.default_load_profiles:
+                        filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile + ".dat"
+                        filename_size = "LoadSize_" + default_city + "_" + self.load_profile + ".dat"
+                # No load profile or size specified
+                else:
+                    filename_profile = default_load_profile
+                    filename_size = default_load_size
+            else:
+
+                filename_profile = "Load8760_" + str(self.run_id) + ".dat"
+                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
+                                           filename_size, self.load_size, "AnnualElecLoad")
+
+                # Load profile specified, with load size specified
+                if self.load_profile is not None:
+                    if self.load_profile.lower() in self.default_load_profiles:
+                        tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
+                        self.scale_load(tmp_profile, filename_profile, self.load_size)
+                # Load size specified, no profile
+                else:
+                    self.scale_load(default_load_profile_norm, filename_profile, self.load_size)
 
         self.DAT[2] = "DAT3=" + "'" + os.path.join(self.path_load_size, filename_size) + "'"
         self.DAT_bau[2] = self.DAT[2]
         self.DAT[3] = "DAT4=" + "'" + os.path.join(self.path_load_profile, filename_profile) + "'"
         self.DAT_bau[3] = self.DAT[3]
 
-    def scale_load(self, file_norm, filename_profile):
+    def scale_load(self, file_norm, filename_profile, scale_factor):
         path_load_profile = os.path.join(self.path_dat_library, self.path_load_profile)
         load_profile = []
         f = open(os.path.join(path_load_profile, file_norm), 'r')
         for line in f:
-            load_profile.append(float(line.strip('\n')) * self.load_size)
+            load_profile.append(float(line.strip('\n')) * scale_factor)
+
+        # fill in W, X, S bins
+        for _ in range(8760*3):
+            load_profile.append(self.max_big_number)
+
+        self.write_single_variable(path_load_profile, filename_profile, load_profile, "LoadProfile")
+
+    def scale_load_by_month(self, file_norm, filename_profile):
+        path_load_profile = os.path.join(self.path_dat_library, self.path_load_profile)
+        load_profile = []
+        f = open(os.path.join(path_load_profile, file_norm), 'r')
+
+        datetime_current = datetime(self.year, 1, 1, 0)
+        month_total = 0
+        month_scale_factor = []
+        normalized_load = []
+
+        for line in f:
+            month = datetime_current.month
+            normalized_load.append(float(line.strip('\n')))
+            month_total += self.load_size * float(line.strip('\n'))
+
+            # add an hour
+            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
+
+            if month != datetime_current.month:
+                month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
+                month_total = 0
+
+                log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
+                    ", Month scale factor: " + str(month_scale_factor[month - 1]) +
+                    ", Annual load: " + str(self.load_size))
+
+        datetime_current = datetime(self.year, 1, 1, 0)
+        for load in normalized_load:
+            month = datetime_current.month
+
+            load_profile.append(self.load_size * load * month_scale_factor[month - 1])
+
+            # add an hour
+            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
 
         # fill in W, X, S bins
         for _ in range(8760*3):
