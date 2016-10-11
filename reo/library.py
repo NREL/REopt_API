@@ -330,6 +330,8 @@ class DatLibrary:
                 self.outputs['batt_kwh'] = df['BattSize_kWh']
             if 'PVNMsize_kW' in df.columns:
                 self.outputs['pv_kw'] = df['PVNMsize_kW']
+            if 'Utility_kWh' in df.columns:
+                self.outputs['utility_kwh'] = df['Utility_kWh']
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")

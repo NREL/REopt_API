@@ -614,6 +614,19 @@ writeln ("****************************** End Results ***************************
 
 
 !************************** Writing to files ************************************
+
+!Time series demand output
+forall ( ts in TimeStep )     do
+	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
+   				(sum(t in Tech,  fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
+end-do
+fopen(OutputDir + "\\DemandHourly.csv",F_OUTPUT)
+forall ( ts in TimeStep )     do
+	writeln(getsol(Demand(ts)))
+end-do
+fclose(F_OUTPUT)
+
+! Summary
 fopen(OutputDir + "\\summary.csv",F_OUTPUT)
 writeln ("LCC,", getsol(RECosts))
 writeln ("Cap_Cost,",
@@ -631,6 +644,7 @@ end-do
 forall (t in Tech | TechIsGrid(t)=0)  do
 	writeln (t, "size_kW,", getsol (dvSystemSize(t)))
 end-do
+writeln ("Utility_kWh, ", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
 writeln ("utility,",UtilName)
 writeln ("rate,",UtilRate)
 writeln("Optimization_time_seconds,", EndTime-StartTime)
@@ -679,17 +693,6 @@ fclose(F_OUTPUT)
 fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
 forall (ts in TimeStep )     do
    writeln (   getsol (dvStoredEnergy (ts)))
-end-do
-fclose(F_OUTPUT)
-
-!Time series demand output
-forall ( ts in TimeStep )     do
-	Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
-   				(sum(t in Tech,  fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
-end-do
-fopen(OutputDir + "\\DemandHourly.csv",F_OUTPUT)
-forall ( ts in TimeStep )     do
-	writeln(getsol(Demand(ts)))
 end-do
 fclose(F_OUTPUT)
 
