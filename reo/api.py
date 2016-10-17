@@ -15,7 +15,7 @@ class REoptObject(object):
     def __init__(self, id=None, analysis_period=None, latitude=None, longitude=None, load_size=None, pv_om=None,
                  batt_cost_kw=None, batt_cost_kwh=None, load_profile=None, pv_cost=None, owner_discount_rate=None,
                  offtaker_discount_rate=None, utility_name=None, rate_name=None,
-                 lcc=None, npv=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None, load_8760_kwh=None,
+                 lcc=None, npv=None, utility_kwh=None, pv_kw=None, batt_kw=None, batt_kwh=None, load_8760_kw=None,
                  load_monthly_kwh=None):
 
         self.id = id
@@ -33,7 +33,7 @@ class REoptObject(object):
         self.offtaker_discount_rate = offtaker_discount_rate
         self.utility_name = utility_name
         self.rate_name = rate_name
-        self.load_8760_kwh = load_8760_kwh
+        self.load_8760_kw = load_8760_kw
         self.load_monthly_kwh = load_monthly_kwh
 
         # outputs
@@ -63,7 +63,7 @@ class REoptRunResource(Resource):
     latitude = fields.FloatField(attribute='latitude', null=True)
     longitude = fields.FloatField(attribute='longitude', null=True)
     load_size = fields.FloatField(attribute='load_size', null=True)
-    load_8760_kwh = fields.ListField(attribute='load_8760_kwh', null=True)
+    load_8760_kw = fields.ListField(attribute='load_8760_kw', null=True)
     load_monthly_kwh = fields.ListField(attribute='load_monthly_kwh', null=True)
     pv_om = fields.FloatField(attribute='pv_om', null=True)
     batt_cost_kw = fields.FloatField(attribute='batt_cost_kw', null=True)
@@ -167,7 +167,7 @@ class REoptRunResource(Resource):
         analysis_period = latitude = longitude = load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = None
         load_size = pv_om = batt_cost_kw = batt_cost_kwh = load_profile = pv_cost = owner_discount_rate = None
         offtaker_discount_rate = utility_name = rate_name = blended_utility_rate = demand_charge = urdb_rate = None
-        load_8760_kwh = load_monthly_kwh = None
+        load_8760_kw = load_monthly_kwh = None
 
         use_urdb = False
 
@@ -189,8 +189,8 @@ class REoptRunResource(Resource):
             batt_cost_kwh = data['batt_cost_kwh']
         if 'load_profile' in data:
             load_profile = data['load_profile']
-        if 'load_8760_kwh' in data:
-            load_8760_kwh = data['load_8760_kwh']
+        if 'load_8760_kw' in data:
+            load_8760_kw = data['load_8760_kw']
         if 'load_monthly_kwh' in data:
             load_monthly_kwh = data['load_monthly_kwh']
         if 'pv_cost' in data:
@@ -213,7 +213,7 @@ class REoptRunResource(Resource):
 
         run_set = library.DatLibrary(run_id, self.path_egg, analysis_period, latitude, longitude, load_size, pv_om,
                                      batt_cost_kw, batt_cost_kwh, load_profile, pv_cost, owner_discount_rate,
-                                     offtaker_discount_rate, utility_name, rate_name, load_8760_kwh, load_monthly_kwh)
+                                     offtaker_discount_rate, utility_name, rate_name, load_8760_kw, load_monthly_kwh)
 
         if use_urdb:
             run_set.parse_urdb(urdb_rate)
@@ -245,7 +245,7 @@ class REoptRunResource(Resource):
         new_obj = REoptObject(run_id, run_set.analysis_period, latitude, longitude, run_set.load_size, run_set.pv_om,
                               run_set.batt_cost_kw, run_set.batt_cost_kwh, load_profile, run_set.pv_cost,
                               run_set.rate_owner_discount, run_set.rate_offtaker_discount, utility_name, rate_name,
-                              lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh, load_8760_kwh,
+                              lcc, npv, utility_kwh, pv_kw, batt_kw, batt_kwh, load_8760_kw,
                               load_monthly_kwh)
 
         # package the bundle to return

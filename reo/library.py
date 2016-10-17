@@ -40,7 +40,7 @@ class DatLibrary:
     longitude = None
     load_size = None
     load_profile = None
-    load_8760_kwh = None
+    load_8760_kw = None
     load_monthly_kwh = None
     utility_name = None
     utility_rate_name = None
@@ -142,7 +142,7 @@ class DatLibrary:
 
     def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, cost_pv_om, cost_batt_kw,
                  cost_batt_kwh, load_profile, cost_pv, rate_owner_discount, rate_offtaker_discount,
-                 utility_name, rate_name, load_8760_kwh, load_monthly_kwh):
+                 utility_name, rate_name, load_8760_kw, load_monthly_kwh):
 
         self.run_id = run_id
         self.path_egg = path_egg
@@ -156,7 +156,7 @@ class DatLibrary:
         self.load_profile = load_profile
         if load_profile is not None:
             self.load_profile = load_profile.replace(" ", "")
-        self.load_8760_kwh = load_8760_kwh
+        self.load_8760_kw = load_8760_kw
         self.load_monthly_kwh = load_monthly_kwh
 
         self.pv_om = cost_pv_om
@@ -205,11 +205,11 @@ class DatLibrary:
             self.utility_name = str(self.utility_name)
         if self.utility_rate_name is not None:
             self.utility_rate_name = str(self.utility_rate_name)
-        if self.load_8760_kwh is not None:
+        if self.load_8760_kw is not None:
             tmp = []
-            for i in self.load_8760_kwh:
+            for i in self.load_8760_kw:
                 tmp.append(float(i))
-            self.load_8760_kwh = tmp
+            self.load_8760_kw = tmp
         if self.load_monthly_kwh is not None:
             tmp = []
             for i in self.load_monthly_kwh:
@@ -442,23 +442,23 @@ class DatLibrary:
         log("DEBUG", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
                      ", LoadProfile: " + ("None" if self.load_profile is None else self.load_profile) +
-                     ", Load 8760 Specified: " + ("No" if self.load_8760_kwh is None else "Yes") +
+                     ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
                      ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
         custom_profile = False
-        if self.load_8760_kwh is not None:
-            if len(self.load_8760_kwh) == 8760:
+        if self.load_8760_kw is not None:
+            if len(self.load_8760_kw) == 8760:
                 custom_profile = True
-                load_size = sum(self.load_8760_kwh)
+                load_size = sum(self.load_8760_kw)
                 self.load_size = load_size
                 filename_size = "LoadSize_" + str(self.run_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
                                            filename_size, load_size, "AnnualElecLoad")
                 filename_profile = "LoadProfile_" + str(self.run_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_profile),
-                                           filename_profile, self.load_8760_kwh, "LoadProfile")
+                                           filename_profile, self.load_8760_kw, "LoadProfile")
             else:
-                log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kwh) + " values, 8760 required")
+                log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
 
         if self.load_monthly_kwh is not None:
             if len(self.load_monthly_kwh) == 12:
