@@ -17,12 +17,13 @@ class EconomicsTestCase(TestCase):
     # mimic user passing in info
     def setUp(self):
         self.file_test = os.path.join(os.getcwd(), 'tests', 'economics_test.dat')
-        self.file_base = os.path.join(os.getcwd(), 'tests', 'economics.dat')
+        self.file_base = os.path.join('Xpress', 'DatLibrary', 'Economics', 'economics.dat')
 
     def initialize_economics(self, out_name, flag_macrs, flag_itc, flag_bonus, flag_replace_batt, analysis_period,
                              rate_inflation, rate_offtaker, rate_owner, rate_escalation, rate_tax, rate_itc, macrs_yrs,
                              macrs_itc_reduction, bonus_fraction, pv_cost, pv_om, annual_degradation, batt_cost_kw,
-                             batt_cost_kwh, batt_replacement_year, batt_replacement_cost_kw, batt_replacement_cost_kwh):
+                             batt_cost_kwh, batt_replacement_year, batt_replacement_cost_kw, batt_replacement_cost_kwh,
+                             business_as_usual):
 
         self.economics = Economics(out_name,
                                    flag_macrs,
@@ -46,13 +47,14 @@ class EconomicsTestCase(TestCase):
                                    batt_cost_kwh,
                                    batt_replacement_year,
                                    batt_replacement_cost_kw,
-                                   batt_replacement_cost_kwh)
+                                   batt_replacement_cost_kwh,
+                                   business_as_usual)
 
     # Does the Economics class initialize correctly
     def test_economics_initialization(self):
         self.initialize_economics(self.file_test, None, None, None, None, None, None, None, None, None, None, None,
                                   None, None, None, None, None, None, None, None, None, None,
-                                  self.batt_replacement_cost_kwh)
+                                  self.batt_replacement_cost_kwh, None)
 
         batt_replacement_cost_kwh = self.economics.batt_replacement_cost_kwh
         pv_om = self.economics.pv_om
@@ -70,7 +72,5 @@ class EconomicsTestCase(TestCase):
     # Does passing no values result in the correct default file
     def test_base_case(self):
         self.initialize_economics(self.file_test, None, None, None, None, None, None, None, None, None, None, None,
-                                  None,None, None, None, None, None, None, None, None, None, None)
-
+                                  None, None, None, None, None, None, None, None, None, None, None, None)
         self.assertTrue(filecmp.cmp(self.file_base, self.file_test))
-

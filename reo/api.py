@@ -3,6 +3,8 @@ from tastypie.authorization import Authorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
+from tastypie.exceptions import ImmediateHttpResponse
+from tastypie.http import HttpApplicationError
 
 from log_levels import log
 import logging
@@ -223,6 +225,11 @@ class REoptRunResource(Resource):
             run_set.parse_urdb(urdb_rate)
 
         outputs = run_set.run()
+
+        if run_set.timed_out:
+            raise ImmediateHttpResponse(
+                HttpApplicationError("Optimization model taking too long to respond!")
+            )
 
         lcc = npv = utility_kwh = pv_kw = batt_kw = batt_kwh = 0
         if 'lcc' in outputs:

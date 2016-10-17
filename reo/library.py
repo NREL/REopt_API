@@ -1,6 +1,6 @@
 import os
 import csv
-import subprocess
+import subprocess32
 import traceback
 import shutil
 from log_levels import log
@@ -19,10 +19,14 @@ from datetime import datetime, timedelta
 class DatLibrary:
 
     max_big_number = 100000000
+    timeout = 60
+    timed_out = False
+
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
     logfile = "reopt_api.log"
+    process_logfile = "process.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
     year = 2017
@@ -91,6 +95,7 @@ class DatLibrary:
     path_egg = []
     path_xpress = []
     path_logfile = []
+    path_process_log = []
     path_dat_library = []
     path_util_rate = []
     path_various = []
@@ -103,6 +108,7 @@ class DatLibrary:
     path_output_bau = []
     path_dat_library_relative = []
 
+    file_process_log = []
     file_run = []
     file_run_bau = []
     file_output = []
@@ -173,6 +179,9 @@ class DatLibrary:
         self.define_paths()
         self.setup_logging()
 
+    def __del__(self):
+        self.file_process_log.close()
+
     def update_types(self):
 
         if self.latitude is not None:
@@ -216,8 +225,15 @@ class DatLibrary:
         #print ('New subprocess')
         #tracefile = open('traceback.txt', 'a')
         #traceback.print_stack(limit=5, file=tracefile)
-        subprocess.call(self.file_run)
-        subprocess.call(self.file_run_bau)
+
+        try:
+            subprocess32.check_output(self.file_run, stderr=self.file_process_log, timeout=self.timeout)
+            subprocess32.check_output(self.file_run_bau, stderr=self.file_process_log, timeout=self.timeout)
+        except subprocess32.TimeoutExpired:
+            self.timed_out = True
+
+        #subprocess.call(self.file_run)
+        #subprocess.call(self.file_run_bau)
         # print ('Subprocess done')
 
         self.parse_outputs()
@@ -236,6 +252,7 @@ class DatLibrary:
         # absolute (anything that needs written out)
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
+        self.path_process_log = os.path.join(self.path_egg, 'reopt_api', self.process_logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
 
         # relative
@@ -249,6 +266,7 @@ class DatLibrary:
         self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
         self.path_output_bau = os.path.join(self.path_output, "bau")
 
+        self.file_process_log = open(self.path_process_log, 'w')
         self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + ".bat")
         self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + "_bau.bat")
         self.file_output = os.path.join(self.path_output, "summary.csv")
