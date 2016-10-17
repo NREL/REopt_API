@@ -626,6 +626,24 @@ forall ( ts in TimeStep )     do
 end-do
 fclose(F_OUTPUT)
 
+! REO Results - for plotting mostly
+fopen(OutputDir + "\\REOresults.csv",F_OUTPUT)
+writeln ("RECosts, ", getsol(RECosts))
+writeln("Time, ", EndTime-StartTime)
+
+forall  (b in BattLevel |getsol ( dvStorageSizeKWH(b)   ) <> 0)  do
+   writeln (1, ",", "BattSize, ", getsol (dvStorageSizeKWH(b)))
+end-do
+
+forall  (b in BattLevel |getsol ( dvStorageSizeKW(b)   ) <> 0)  do
+   writeln (1, ",", "BattSizekW, ", getsol (dvStorageSizeKW(b)))
+end-do
+
+forall  (t in Tech |getsol ( dvSystemSize(t)   ) <> 0 )  do
+   writeln (1, ",", t, ", ", getsol ( dvSystemSize(t)   )     )
+end-do
+fclose(F_OUTPUT)
+
 ! Summary
 fopen(OutputDir + "\\summary.csv",F_OUTPUT)
 writeln ("LCC,", getsol(RECosts))
@@ -670,8 +688,8 @@ fclose(F_OUTPUT)
 !******************
 !Time series dispatch output
 fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
-forall (t in Tech,LD in Load, ts in TimeStep, fb in FuelBin )     do
-   writeln ( t,",", LD, "," ,ts ,",",    getsol (dvRatedProd (t,LD,ts,fb)))
+forall (t in Tech,LD in Load, ts in TimeStep)     do
+   writeln ( t,",", LD, "," ,ts ,",",sum (fb in FuelBin | exists (dvRatedProd (t,LD,ts,fb)))      getsol (dvRatedProd (t,LD,ts,fb)),",", sum (fb in FuelBin | exists (dvRatedProd (t,LD,ts,fb)))      getsol (dvRatedProd (t,LD,ts,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
 end-do
 fclose(F_OUTPUT)
 
@@ -686,6 +704,13 @@ fclose(F_OUTPUT)
 fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
 forall (ts in TimeStep )     do
    writeln (    getsol (dvElecFromStor (ts)))
+end-do
+fclose(F_OUTPUT)
+
+!Time series dispatch output
+fopen(OutputDir + "\\Load.csv",F_OUTPUT)
+forall (ts in TimeStep )     do
+   writeln (   getsol (LoadProfile("1R",ts)))
 end-do
 fclose(F_OUTPUT)
 

@@ -321,7 +321,6 @@ class DatLibrary:
 
         for dat_file in self.DAT_bau:
             if dat_file is not None:
-                print dat_file.strip('\n')
                 outline = ', '.join([outline, dat_file.strip('\n')])
         outline = ', '.join([outline, output])
         outline.replace('\n', '')
@@ -337,6 +336,7 @@ class DatLibrary:
             df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
             df = df.transpose()
 
+            pv_size = 0
             if 'LCC' in df.columns:
                 self.outputs['lcc'] = df['LCC']
             if 'BattInverter_kW' in df.columns:
@@ -344,9 +344,15 @@ class DatLibrary:
             if 'BattSize_kWh' in df.columns:
                 self.outputs['batt_kwh'] = df['BattSize_kWh']
             if 'PVNMsize_kW' in df.columns:
-                self.outputs['pv_kw'] = df['PVNMsize_kW']
+                pv_size += float(df['PVNMsize_kW'])
+            if 'PVsize_kW' in df.columns:
+                pv_size += float(df['PVsize_kW'])
             if 'Utility_kWh' in df.columns:
                 self.outputs['utility_kwh'] = df['Utility_kWh']
+
+            if pv_size > 0:
+                self.outputs['pv_kw'] = str(round(pv_size, 0))
+
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
