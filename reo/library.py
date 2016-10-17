@@ -1,20 +1,21 @@
 # python libraries
 import os
-import subprocess
-import threading
 import traceback
 import shutil
-from log_levels import log
-import logging
 import math
 import pandas as pd
 from datetime import datetime, timedelta
+
+# logging
+from log_levels import log
+import logging
 
 # user defined
 import economics
 import pvwatts
 from urdb_parse import *
 from exceptions import SubprocessTimeoutError
+from utilities import Command
 
 
 class DatLibrary:
@@ -226,39 +227,24 @@ class DatLibrary:
         self.create_or_load()
         self.create_run_file()
 
+        command = Command(self.file_run)
+        command_bau = Command(self.file_run_bau)
+
         try:
-            self.run_command_with_timeout(self.file_run, self.timeout)
-            self.run_command_with_timeout(self.file_run_bau, self.timeout)
+            command.run(self.timeout)
         except SubprocessTimeoutError:
             self.timed_out = True
+
+        if not self.timed_out:
+            try:
+                command_bau.run(self.timeout)
+            except SubprocessTimeoutError:
+                self.timed_out = True
 
         self.parse_outputs()
         self.cleanup()
 
         return self.outputs
-
-    def run_command_with_timeout(self, cmd, timeout_sec):
-        """Execute `cmd` in a subprocess and enforce timeout `timeout_sec` seconds.
-
-        Return subprocess exit code on natural completion of the subprocess.
-        Raise an exception if timeout expires before subprocess completes."""
-        proc = subprocess.Popen(cmd)
-        proc_thread = threading.Thread(target=proc.communicate)
-        proc_thread.start()
-        proc_thread.join(timeout_sec)
-        if proc_thread.is_alive():
-            # Process still running - kill it and raise timeout error
-            try:
-                proc.kill()
-            except OSError, e:
-                # The process finished between the `is_alive()` and `kill()`
-                return proc.returncode
-            # OK, the process was definitely killed
-            error_message = 'Process #%d killed after %f seconds' % (proc.pid, timeout_sec)
-            log('Error', error_message)
-            raise SubprocessTimeoutError(error_message)
-        # Process completed naturally - return exit code
-        return proc.returncode
 
     def setup_logging(self):
         logging.basicConfig(filename=self.path_logfile,
