@@ -6,9 +6,6 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
 
-from log_levels import log
-import logging
-
 import library
 import random
 import os

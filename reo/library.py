@@ -1,27 +1,27 @@
+# python libraries
 import os
-import csv
-import subprocess32
+import subprocess
+import threading
 import traceback
 import shutil
 from log_levels import log
 import logging
 import math
-
 import pandas as pd
+from datetime import datetime, timedelta
 
+# user defined
 import economics
 import pvwatts
 from urdb_parse import *
+from exceptions import SubprocessTimeoutError
 
-import calendar
-from datetime import datetime, timedelta
 
 class DatLibrary:
 
     max_big_number = 100000000
     timeout = 60
     timed_out = False
-
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
@@ -200,8 +200,12 @@ class DatLibrary:
             self.pv_cost = float(self.pv_cost)
         if self.rate_owner_discount is not None:
             self.rate_owner_discount = float(self.rate_owner_discount)
+            if self.rate_owner_discount > 1.:
+                self.rate_owner_discount *= 0.01
         if self.rate_offtaker_discount is not None:
             self.rate_offtaker_discount = float(self.rate_offtaker_discount)
+            if self.rate_offtaker_discount > 1.:
+                self.rate_offtaker_discount *= 0.01
         if self.utility_name is not None:
             self.utility_name = str(self.utility_name)
         if self.utility_rate_name is not None:
@@ -222,24 +226,39 @@ class DatLibrary:
         self.create_or_load()
         self.create_run_file()
 
-        #print ('New subprocess')
-        #tracefile = open('traceback.txt', 'a')
-        #traceback.print_stack(limit=5, file=tracefile)
-
         try:
-            subprocess32.check_output(self.file_run, stderr=self.file_process_log, timeout=self.timeout)
-            subprocess32.check_output(self.file_run_bau, stderr=self.file_process_log, timeout=self.timeout)
-        except subprocess32.TimeoutExpired:
+            self.run_command_with_timeout(self.file_run, self.timeout)
+            self.run_command_with_timeout(self.file_run_bau, self.timeout)
+        except SubprocessTimeoutError:
             self.timed_out = True
-
-        #subprocess.call(self.file_run)
-        #subprocess.call(self.file_run_bau)
-        # print ('Subprocess done')
 
         self.parse_outputs()
         self.cleanup()
 
         return self.outputs
+
+    def run_command_with_timeout(self, cmd, timeout_sec):
+        """Execute `cmd` in a subprocess and enforce timeout `timeout_sec` seconds.
+
+        Return subprocess exit code on natural completion of the subprocess.
+        Raise an exception if timeout expires before subprocess completes."""
+        proc = subprocess.Popen(cmd)
+        proc_thread = threading.Thread(target=proc.communicate)
+        proc_thread.start()
+        proc_thread.join(timeout_sec)
+        if proc_thread.is_alive():
+            # Process still running - kill it and raise timeout error
+            try:
+                proc.kill()
+            except OSError, e:
+                # The process finished between the `is_alive()` and `kill()`
+                return proc.returncode
+            # OK, the process was definitely killed
+            error_message = 'Process #%d killed after %f seconds' % (proc.pid, timeout_sec)
+            log('Error', error_message)
+            raise SubprocessTimeoutError(error_message)
+        # Process completed naturally - return exit code
+        return proc.returncode
 
     def setup_logging(self):
         logging.basicConfig(filename=self.path_logfile,

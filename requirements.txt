@@ -3,8 +3,10 @@ Django==1.8
 django-tastypie==0.13.3
 numpy==1.11.0
 pandas==0.18.1
+pypiwin32==219
 python-dateutil==2.5.2
 python-mimeparse==1.5.1
 pytz==2016.4
 pywin32==220
+requests==2.11.1
 six==1.10.0
