@@ -13,10 +13,11 @@ import logging
 # user defined
 import economics
 import pvwatts
+from api_definitions import *
+
 from urdb_parse import *
 from exceptions import SubprocessTimeoutError
 from utilities import Command
-
 
 class DatLibrary:
 
@@ -31,65 +32,6 @@ class DatLibrary:
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
     year = 2017
     time_steps_per_hour = 1
-
-    run_id = []
-    outputs = {}
-
-    # variables that user can pass
-    latitude = None
-    longitude = None
-    load_size = None
-    load_profile = None
-    load_8760_kw = None
-    load_monthly_kwh = None
-    utility_name = None
-    utility_rate_name = None
-
-    # Economics.dat
-    analysis_period = None
-
-    rate_owner_discount = None
-    rate_offtaker_discount = None
-    rate_inflation = None
-    rate_escalation = None
-    rate_tax = None
-    rate_itc = None
-    rate_degradation = None
-
-    batt_cost_kw = None
-    batt_cost_kwh = None
-    pv_cost = None
-    pv_om = None
-    batt_replacement_cost_kw = None
-    batt_replacement_cost_kwh = None
-
-    flag_macrs = None
-    flag_itc = None
-    flag_bonus = None
-    flag_replace_batt = None
-
-    macrs_years = None
-    macrs_itc_reduction = None
-    bonus_fraction = None
-    batt_replacement_year = None
-
-    # default load profiles
-    default_load_profiles = ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
-                             'MediumOffice', 'MidriseApartment', 'Outpatient', 'PrimarySchool', 'RetailStore',
-                             'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse']
-
-    # default locations
-    default_city = ['Miami', 'Houston', 'Phoenix', 'Atlanta', 'LosAngeles', 'SanFrancisco', 'LasVegas', 'Baltimore',
-                    'Albuquerque', 'Seattle', 'Chicago', 'Boulder', 'Minneapolis', 'Helena', 'Duluth', 'Fairbanks']
-
-    # default latitudes
-    default_latitudes = [25.761680, 29.760427, 33.448377, 33.748995, 34.052234, 37.774929, 36.114707, 39.290385,
-                         35.085334, 47.606209, 41.878114, 40.014986, 44.977753, 46.588371, 46.786672, 64.837778]
-
-    #default longitudes
-    default_longitudes = [-80.191790, -95.369803, -112.074037, -84.387982, -118.243685, -122.419416, -115.172850,
-                          -76.612189, -106.605553, -122.332071, -87.629798, -105.270546, -93.265011, -112.024505,
-                          -92.100485, -147.716389]
 
     # directory structure
     path_egg = []
@@ -140,38 +82,23 @@ class DatLibrary:
             self.write_var(f, var, dat_var)
             f.close()
 
-    def __init__(self, run_id, path_egg, analysis_period, latitude, longitude, load_size, cost_pv_om, cost_batt_kw,
-                 cost_batt_kwh, load_profile, cost_pv, rate_owner_discount, rate_offtaker_discount,
-                 utility_name, rate_name, load_8760_kw, load_monthly_kwh):
+    def __init__(self, inputs, internals):
 
-        self.run_id = run_id
-        self.path_egg = path_egg
-        if analysis_period and analysis_period > 0:
-            self.analysis_period = analysis_period
+        for k in internals().keys():
+            setattr(self, k, internals.get(k))
 
-        self.latitude = latitude
-        self.longitude = longitude
-        self.load_size = load_size
+        for k,v in inputs(full_list=True):
+            setattr(self, k, internals.get(k))
 
-        self.load_profile = load_profile
-        if load_profile is not None:
-            self.load_profile = load_profile.replace(" ", "")
-        self.load_8760_kw = load_8760_kw
-        self.load_monthly_kwh = load_monthly_kwh
+            if k=='analysis_period' and internals.get(k) < 0:
+                setattr(self, k, None)
 
-        self.pv_om = cost_pv_om
-        self.batt_cost_kw = cost_batt_kw
-        self.batt_cost_kwh = cost_batt_kwh
-        self.pv_cost = cost_pv
-        self.rate_owner_discount = rate_owner_discount
-        self.rate_offtaker_discount = rate_offtaker_discount
-        self.utility_name = utility_name
-        self.utility_rate_name = rate_name
+            elif k == 'load_profile' and internals.get(k) is not None:
+                setattr(self, k, internals.get(k).replace(" ", ""))
 
-        lower_case_profile = []
-        for profile in self.default_load_profiles:
-            lower_case_profile.append(profile.lower())
-        self.default_load_profiles = lower_case_profile
+            setattr(self, k, internals.get(k))
+
+        self.default_load_profiles = [p.lower() for p in default_load_profiles()]
 
         self.update_types()
         self.define_paths()
@@ -179,42 +106,36 @@ class DatLibrary:
 
     def update_types(self):
 
-        if self.latitude is not None:
-            self.latitude = float(self.latitude)
-        if self.longitude is not None:
-            self.longitude = float(self.longitude)
-        if self.load_size is not None:
-            self.load_size = float(self.load_size)
-        if self.pv_om is not None:
-            self.pv_om = float(self.pv_om)
-        if self.batt_cost_kw is not None:
-            self.batt_cost_kw = float(self.batt_cost_kw)
-        if self.batt_cost_kwh is not None:
-            self.batt_cost_kwh = float(self.batt_cost_kwh)
-        if self.pv_cost is not None:
-            self.pv_cost = float(self.pv_cost)
-        if self.rate_owner_discount is not None:
-            self.rate_owner_discount = float(self.rate_owner_discount)
-            if self.rate_owner_discount > 1.:
-                self.rate_owner_discount *= 0.01
-        if self.rate_offtaker_discount is not None:
-            self.rate_offtaker_discount = float(self.rate_offtaker_discount)
-            if self.rate_offtaker_discount > 1.:
-                self.rate_offtaker_discount *= 0.01
-        if self.utility_name is not None:
-            self.utility_name = str(self.utility_name)
-        if self.utility_rate_name is not None:
-            self.utility_rate_name = str(self.utility_rate_name)
-        if self.load_8760_kw is not None:
-            tmp = []
-            for i in self.load_8760_kw:
-                tmp.append(float(i))
-            self.load_8760_kw = tmp
-        if self.load_monthly_kwh is not None:
-            tmp = []
-            for i in self.load_monthly_kwh:
-                tmp.append(float(i))
-            self.load_monthly_kwh = tmp
+        for k,v in inputs(full_list=True):
+
+            if v['type']==float:
+                value = float(getattr(self,k))
+                if v['pct']:
+                    if value > 1.0:
+                        setattr(self, k, value*0.01)
+                else:
+                    setattr(self,k,value)
+
+            if v['type']==int:
+                setattr(self,k,int(getattr(self,k)))
+
+            if v['type'] == str:
+                setattr(self, k, str(getattr(self, k)))
+
+            if v['type'] == list:
+                value = [float(i) for i in getattr(self, k)]
+                setattr(self, k, value)
+
+    def get_subtask_inputs(self,name):
+        output = {}
+        defaults = inputs(filter=name)
+
+        for k in defaults.keys():
+            output[k] = getattr(self,k)
+            if output[k] is None:
+                output[k] = defaults[k]['default']
+
+        return output
 
     def run(self):
 
@@ -335,7 +256,7 @@ class DatLibrary:
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):
             df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
             df = df.transpose()
-
+            self.outputs = {}
             pv_size = 0
             if 'LCC' in df.columns:
                 self.outputs['lcc'] = df['LCC']
@@ -370,21 +291,19 @@ class DatLibrary:
         log("DEBUG", "Output folder: " + self.path_output)
 
         if not self.debug:
-            if os.path.exists(os.path.join(self.path_egg, self.path_output)):
-                shutil.rmtree(os.path.join(self.path_egg, self.path_output), ignore_errors=True)
-            if os.path.exists(self.file_run):
-                os.remove(self.file_run)
-                os.remove(self.file_run_bau)
-            if os.path.exists(os.path.join(self.path_dat_library, self.file_economics)):
-                os.remove(os.path.join(self.path_dat_library, self.file_economics))
-                os.remove(os.path.join(self.path_dat_library, self.file_economics_bau))
-            if os.path.exists(os.path.join(self.path_dat_library, self.file_gis)):
-                os.remove(os.path.join(self.path_dat_library, self.file_gis))
-                os.remove(os.path.join(self.path_dat_library, self.file_gis_bau))
-            if os.path.exists(os.path.join(self.path_dat_library, self.file_load_profile)):
-                os.remove(os.path.join(self.path_dat_library, self.file_load_profile))
-            if os.path.exists(os.path.join(self.path_dat_library, self.file_load_size)):
-                os.remove(os.path.join(self.path_dat_library, self.file_load_size))
+            for f in [os.path.join(self.path_egg, self.path_output)]:
+                if os.path.exists(f):
+                    shutil.rmtree(f, ignore_errors=True)
+
+            for p in [self.file_run, self.file_run_bau,
+                        os.path.join(self.path_dat_library, self.file_economics),
+                        os.path.join(self.path_dat_library, self.file_economics_bau),
+                        os.path.join(self.path_dat_library, self.file_gis),
+                        os.path.join(self.path_dat_library, self.file_gis_bau),
+                        os.path.join(self.path_dat_library, self.file_load_profile),
+                        os.path.join(self.path_dat_library, self.file_load_size)]:
+                if os.path.exists(p):
+                    os.remove(p)
 
     # BAU files
     def create_constant_bau(self):
@@ -395,39 +314,20 @@ class DatLibrary:
     # DAT2 - Economics
     def create_economics(self):
 
-        file_path = os.path.join(self.path_dat_library, self.file_economics)
-        business_as_usual = False
-        econ = economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
-                            self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
-                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
-                            self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
-                            self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
-                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh,
-                            business_as_usual)
+        econ_inputs = self.get_subtask_inputs('economics')
 
-        # Save outputs to illustrate defaults
-        self.analysis_period = econ.analysis_period
-        self.pv_cost = econ.pv_cost
-        self.pv_om = econ.pv_om
-        self.batt_cost_kw = econ.batt_cost_kw
-        self.batt_cost_kwh = econ.batt_cost_kwh
-        self.batt_replacement_cost_kw = econ.batt_replacement_cost_kw
-        self.batt_replacement_cost_kwh = econ.batt_replacement_cost_kwh
-        self.rate_owner_discount = econ.rate_owner
-        self.rate_offtaker_discount = econ.rate_offtaker
+        file_path = os.path.join(self.path_dat_library, self.file_economics)
+        econ = economics.Economics(econ_inputs, file_path=file_path,business_as_usual=False)
+
+        for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
+                  'batt_replacement_cost_kwh','owner_discount_rate','offtaker_discount_rate']:
+           setattr(self, k, getattr(econ,k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
-        file_path = os.path.join(self.path_dat_library, self.file_economics_bau)
-        business_as_usual = True
-        economics.Economics(file_path, self.flag_macrs, self.flag_itc, self.flag_bonus, self.flag_replace_batt,
-                            self.analysis_period, self.rate_inflation, self.rate_offtaker_discount,
-                            self.rate_owner_discount, self.rate_escalation, self.rate_tax, self.rate_itc,
-                            self.macrs_years, self.macrs_itc_reduction, self.bonus_fraction, self.pv_cost,
-                            self.pv_om, self.rate_degradation, self.batt_cost_kw, self.batt_cost_kwh,
-                            self.batt_replacement_year, self.batt_replacement_cost_kw, self.batt_replacement_cost_kwh,
-                            business_as_usual)
 
+        file_path = os.path.join(self.path_dat_library, self.file_economics_bau)
+        econ = economics.Economics(econ_inputs, file_path=file_path, business_as_usual=True)
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
 
     # DAT3 & DAT4 LoadSize, LoadProfile
@@ -436,11 +336,11 @@ class DatLibrary:
         filename_profile = []
         filename_size = []
 
-        default_city = self.default_city[0]
+        default_city = default_cities()[0]
         if self.latitude is not None and self.longitude is not None:
-            default_city = self.default_city[self.localize_load()]
+            default_city = default_cities()[self.localize_load()]
 
-        default_building = "Hospital"
+        default_building = inputs(full_list=True)['building_type']
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
         default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"
@@ -577,9 +477,9 @@ class DatLibrary:
         min_index = 0
 
         idx = 0
-        for _ in self.default_city:
-            lat = self.default_latitudes[idx]
-            lon = self.default_longitudes[idx]
+        for _ in default_cities():
+            lat = default_latitudes()[idx]
+            lon = default_longitudes()[idx]
             lat_dist = self.latitude - lat
             lon_dist = self.longitude - lon
 
@@ -595,15 +495,19 @@ class DatLibrary:
     def create_GIS(self):
 
         if self.latitude is not None and self.longitude is not None:
-            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, self.latitude, self.longitude)
+
+            pv_inputs = self.get_subtask_inputs('pv_watts')
+
+            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, pv_inputs)
+
             self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
 
     def create_utility(self):
 
-        if self.utility_name is not None and self.utility_rate_name is not None:
+        if self.utility_name is not None and self.rate_name is not None:
             self.path_util_rate = os.path.join(self.path_dat_library, self.path_utility,
-                                               self.utility_name, self.utility_rate_name)
+                                               self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
@@ -615,7 +519,7 @@ class DatLibrary:
             self.DAT_bau[7] = self.DAT[7]
             self.DAT[8] = "UtilName=" + "'" + str(self.utility_name) + "'"
             self.DAT_bau[8] = self.DAT[8]
-            self.DAT[9] = "UtilRate=" + "'" + str(self.utility_rate_name) + "'"
+            self.DAT[9] = "UtilRate=" + "'" + str(self.rate_name) + "'"
             self.DAT_bau[9] = self.DAT[9]
             self.DAT[10] = fuel_bin_count
             self.DAT_bau[10] = self.DAT[10]
@@ -644,7 +548,7 @@ class DatLibrary:
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
-        self.utility_rate_name = rate_name
+        self.rate_name = rate_name
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):
 

@@ -11,7 +11,7 @@
 import requests
 import json
 import os, csv
-
+from api_definitions import *
 
 class PVWatts:
     # API specific
@@ -35,12 +35,6 @@ class PVWatts:
     losses = 14
     radius = 0
 
-    # Base url; lat, lon, and tilt=lat added in "download_locations"
-    url_base = base + "?api_key=" + key + "&azimuth=" + str(azimuth) + "&system_capacity=" + str(system_capacity) + \
-               "&losses=" + str(losses) + "&array_type=" + str(array_type) + "&module_type=" + str(module_type) + \
-               "&timeframe=" + timeframe + "&dc_ac_ratio=" + str(dc_ac_ratio) + "&inv_eff=" + str(inv_eff) + \
-               "&radius=" + str(radius) + "&dataset=" + dataset
-
     # Time
     steps_per_hour = 1
 
@@ -52,18 +46,24 @@ class PVWatts:
     filename_GIS = []
     filename_GIS_bau = []
 
-    def __init__(self, output_root, run_id, latitude, longitude, steps_per_hour=1):
+    def __init__(self, output_root, run_id, pvwatts_inputs, steps_per_hour=1):
         self.steps_per_hour = steps_per_hour
         self.output_root = output_root
         self.run_id = run_id
 
-        self.latitude = latitude
-        self.longitude = longitude
+        for k,v in pvwatts_inputs.items():
+            setattr(self,k,v)
 
         self.download_locations()
 
+    def make_url(self):
+        return  base + "?api_key=" + key + "&azimuth=" + str(self.azimuth) + "&system_capacity=" + str(self.system_capacity) + \
+                   "&losses=" + str(self.losses) + "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
+                   "&timeframe=" + self.timeframe + "&dc_ac_ratio=" + str(self.dc_ac_ratio) + "&inv_eff=" + str(self.inv_eff) + \
+                   "&radius=" + str(self.radius) + "&dataset=" + self.dataset + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.latitude)
+
     def download_locations(self):
-        url = self.url_base + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.latitude)
+        url = self.make_url()
         print url
         r = requests.get(url, verify=False)
         data = json.loads(r.text)
