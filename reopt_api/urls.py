@@ -3,10 +3,10 @@ from django.contrib import admin
 from reo.api import REoptRunResource
 from tastypie.api import Api
 
-reopt_resource = REoptRunResource()
-
 v1_api = Api(api_name='v1')
-v1_api.register(reopt_resource)
+
+v1_api.register(REoptRunResource())
+
 
 urlpatterns = [
     # Examples:
@@ -16,5 +16,4 @@ urlpatterns = [
     url(r'^reopt/', include('reo.urls'), name='reopt'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
-
 ]

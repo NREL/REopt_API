@@ -35,6 +35,7 @@ class REoptObject(object):
                 else:
                     print k, group['values'].get(k)
                     setattr(self, k, group['values'].get(k))
+
         self.id = id
         self.path_egg = get_egg()
 
@@ -72,9 +73,7 @@ class REoptRunResource(Resource):
     def get_object_list(self, request):
 
         id =  self.get_id()
-
         parsed_inputs = dict({i:request.GET.get(i) for i in inputs(just_required=True).keys()})
-
         run_set = library.DatLibrary(id,parsed_inputs)
 
         run_outputs = run_set.run()
@@ -93,23 +92,11 @@ class REoptRunResource(Resource):
         # Bundle is an object containing the posted json (within .data)
         data = bundle.data
         # Format Inputs for Optimization Run
-        response_inputs = dict({k: data.get(k) for k in inputs(just_required=True).keys()})
-
-        # Handle Rate Data
-        blended_utility_rate = data.get('blended_utility_rate')
-        demand_charge = data.get('demand_charge')
-        urdb_rate = data.get('urdb_rate')
+        response_inputs = dict({k: data.get(k) for k in inputs(just_required=True).keys() if k in data.keys()})
 
         # Create Dictionary
         id = self.get_id()
         run_set = library.DatLibrary(id, response_inputs)
-
-        if urdb_rate is not None:
-            run_set.parse_urdb(urdb_rate)
-
-        elif (blended_utility_rate is not None) and (demand_charge is not None):
-            urdb_rate = run_set.make_urdb_rate(blended_utility_rate, demand_charge)
-            run_set.parse_urdb(urdb_rate)
 
         # Run Optimization
         run_outputs = run_set.run()

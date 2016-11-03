@@ -99,6 +99,14 @@ class DatLibrary:
 
             else:
                 setattr(self, k, d_inputs.get(k))
+
+            if k == 'urdb_rate':
+                run_set.parse_urdb(d_inputs.get(k))
+
+        if hasattr(self,'blended_utility_rate') and hasattr(self,'demand_charge'):
+            urdb_rate = run_set.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
+            run_set.parse_urdb(urdb_rate)
+
         for k, v in outputs().items():
             setattr(self, k, None)
         self.default_load_profiles = []
