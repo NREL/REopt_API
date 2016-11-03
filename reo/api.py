@@ -23,29 +23,27 @@ def default_dict_to_value(key_list,reference_dictionary, output_dictionary, defa
 
 # We need a generic object to shove data in and to get data from.
 class REoptObject(object):
-    def __init__(self,inputDict, outputDict, internalDict):
+    def __init__(self,id=None, inputDict=None, outputDict=None):
 
         inputs_ = {'source':inputs(just_required=True), "values":inputDict}
-        internal_ = {'source': internals(), "values": internalDict}
         outputs_ = {'source': outputs(), "values": outputDict}
 
-        for group in [inputs_,internal_,outputs_]:
+        for group in [inputs_,outputs_]:
             for k in group['source'].keys():
-                setattr(self, k, group['values'][k])
+                if group['values'] == None:
+                    setattr(self, k, None)
+                else:
+                    setattr(self, k, group['values'].get(k))
+        self.id = id
+        self.path_egg = get_egg()
 
-class REoptRunResource(Resource,egg="reopt_api-1.0-py2.7.egg"):
+class REoptRunResource(Resource):
     # Just like a Django ``Form`` or ``Model``, we're defining all the fields we're going to handle with the API here.
 
     # note, running process is from reopt_api head
     # i.e, C:\Nick\Projects\api\env\src\reopt_api
 
-    # when deployed, runs from egg file, need to update if version changes!
-    path_egg = os.path.join("..", egg)
-
-    # when not deployed (running from 127.0.0.1:8000)  path_egg = os.getcwd()
-
     input_fields = create_fields(inputs(just_required=True))
-    internal_fields = create_fields(internals())
     output_fields = create_fields(outputs())
 
     class Meta:
@@ -66,17 +64,23 @@ class REoptRunResource(Resource,egg="reopt_api-1.0-py2.7.egg"):
 
         return kwargs
 
+    def get_id(self):
+        return random.randint(0, 1000000)
+
+
     def get_object_list(self, request):
+
+        id =  self.get_id()
 
         parsed_inputs = dict({i:request.GET.get(i) for i in inputs(just_required=True).keys()})
 
-        run_set = library.DatLibrary(parsed_inputs, set_internal(path_egg))
+        run_set = library.DatLibrary(id,parsed_inputs)
 
         run_outputs = run_set.run()
 
         formatted_outputs = default_dict_to_value(outputs(),run_outputs,{},0)
 
-        results = [REoptObject(run_id, parsed_inputs, formatted_outputs)]
+        results = [REoptObject(id, parsed_inputs, formatted_outputs)]
 
         return results
 
@@ -85,7 +89,6 @@ class REoptRunResource(Resource,egg="reopt_api-1.0-py2.7.egg"):
 
     # POST
     def obj_create(self, bundle, **kwargs):
-
         # Bundle is an object containing the posted json (within .data)
         data = bundle.data
         # Format Inputs for Optimization Run
@@ -97,7 +100,8 @@ class REoptRunResource(Resource,egg="reopt_api-1.0-py2.7.egg"):
         urdb_rate = data.get('urdb_rate')
 
         # Create Dictionary
-        run_set = library.DatLibrary(response_inputs,set_internal(path_egg))
+        id = self.get_id()
+        run_set = library.DatLibrary(id, response_inputs)
 
         if urdb_rate is not None:
             run_set.parse_urdb(urdb_rate)
@@ -116,14 +120,14 @@ class REoptRunResource(Resource,egg="reopt_api-1.0-py2.7.egg"):
             )
 
         # Process Outputs
-        formatted_inputs = dict({k:run_set.get(k) for k in inputs(just_required=True).keys()})
+        formatted_inputs = dict({k:getattr(run_set, k) for k in inputs(just_required=True).keys()})
         formatted_outputs = default_dict_to_value(outputs(),run_outputs,{},0)
 
         # Package the bundle to return
-        bundle.obj = REoptObject(formatted_inputs, formatted_outputs, internal)
+        bundle.obj = REoptObject(id, formatted_inputs, formatted_outputs)
 
         # update fields with what was used
         for k in updates().keys():
-            bundle.data[k] = bundle.obj.get(k)
+            bundle.data[k] = getattr(bundle.obj,k)
 
         return self.full_hydrate(bundle)

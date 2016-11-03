@@ -1,3 +1,5 @@
+from keys import *
+
 """
 Django settings for reopt_api project.
 
@@ -22,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'f@$yxa_85#u_=tkejqe0urg=&k*f9(dhj%@fcv9m1tf^uy9kvl'
+SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

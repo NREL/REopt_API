@@ -22,8 +22,7 @@
 import os
 from log_levels import log
 import logging
-import api_definitions
-
+from api_definitions import  *
 
 def annuity(analysis_period, rate_escalation, rate_discount):
     '''this formulation assumes cost growth in first period
@@ -58,21 +57,21 @@ class Economics:
     output_args = {}
     incentives = {}
 
-    def __init__(self,econ_inputs,out_name='economics.dat', business_as_usual=False):
+    def __init__(self,econ_inputs,file_path='economics.dat', business_as_usual=False):
 
-        self.out_name = out_name
-
-        econ_list = inputs(filter="economics")
-
-        for k in econ_list.keys:
-            setattr(self,i, econ_inputs.get(k))
-
+        self.out_name = file_path
         self.business_as_usual = business_as_usual
 
-        if self.macrs_yrs == 5:
+
+        econ_list = inputs(filter="economics")
+        for k in econ_list.keys():
+            setattr(self,k, econ_inputs.get(k))
+
+        if self.macrs_years == 5:
             self.macrs_schedule = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
         else:
             self.macrs_schedule = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]  # IRS pub 946
+
 
         self.prepare_economics()
         self.output_economics()

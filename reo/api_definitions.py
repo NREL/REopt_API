@@ -1,71 +1,73 @@
 from tastypie import fields
+import os
 
 def inputs(filter='',full_list=False,just_required=False):
 
-    output = {'analysis_period': {'type': int, 'null': True, 'pct': False,"needed_for":['economics'],'default':25},
-            'latitude': {'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts']},
-            'longitude': {'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts']},
+    output = {'analysis_period': {'req':True, 'type': int, 'null': True, 'pct': False,"needed_for":['economics'],'default':25},
+            'latitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts']},
+            'longitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts']},
 
-            'load_profile': {'type': str, 'null': True, 'pct': False, "needed_for": ['economics']},
-            'load_size': {'type': float, 'null': True,'pct': False,"needed_for":['economics']},
-            'load_8760_kw': {'type': list, 'null': True,'pct': False,"needed_for":['economics']},
-            'load_monthly_kwh': {'type': list, 'null': True,'pct': False,"needed_for":['economics']},
+            'load_profile': {'req':True,'type': str, 'null': True, 'pct': False, "needed_for": ['economics']},
+            'load_size': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics']},
+            'load_8760_kw': {'req':True,'type': list, 'null': True,'pct': False,"needed_for":['economics']},
+            'load_monthly_kwh': {'req':True,'type': list, 'null': True,'pct': False,"needed_for":['economics']},
 
-            'pv_cost': {'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'default':2160},# nominal price in $/kW
-            'pv_om': {'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':20},# $/kW/year
-            'batt_cost_kw': {'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':1600},# nominal price in $/kW (inverter)
-            'batt_cost_kwh': {'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':500},# nominal price in $/kWh
+            'pv_cost': {'req':True,'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'default':2160},# nominal price in $/kW
+            'pv_om': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':20},# $/kW/year
+            'batt_cost_kw': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':1600},# nominal price in $/kW (inverter)
+            'batt_cost_kwh': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':500},# nominal price in $/kWh
 
 
-            'owner_discount_rate': {'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
-            'offtaker_discount_rate': {'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
+            'owner_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
+            'offtaker_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
 
-            'utility_name': {'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
-            'rate_name': {'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
-            'rate_degradation': {'type': float, 'null': False, 'pct': True, "needed_for": ['economics'], 'default': 0.005}, # 0.5% annual degradation for solar panels, accounted for in LevelizationFactor
+            'utility_name': {'req':False,'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
+            'rate_name': {'req':False,'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
+            'rate_degradation': {'req':False,'type': float, 'null': False, 'pct': True, "needed_for": ['economics'], 'default': 0.005}, # 0.5% annual degradation for solar panels, accounted for in LevelizationFactor
 
             #Not Required
-            'rate_inflation': {'type': float, 'null': False, 'pct': True,"needed_for":['economics'],'default':0.02},  # percent/year inflation
-            'rate_escalation':  {'type': float, 'null': False, 'pct': True,"needed_for":['economics'],'default':0.0039}, # percent/year electricity escalation rate
-            'rate_tax':  {'type': float, 'null': True, 'pct': False,"needed_for":['economics'],'default':0.35},
-            'rate_itc':  {'type': float, 'null': True, 'pct': False,"needed_for":['economics'],'default':0.30},
+            'rate_inflation': {'req':False,'type': float, 'null': False, 'pct': True,"needed_for":['economics'],'default':0.02},  # percent/year inflation
+            'rate_escalation':  {'req':False,'type': float, 'null': False, 'pct': True,"needed_for":['economics'],'default':0.0039}, # percent/year electricity escalation rate
+            'rate_tax':  {'req':False,'type': float, 'null': True, 'pct': False,"needed_for":['economics'],'default':0.35},
+            'rate_itc':  {'req':False,'type': float, 'null': True, 'pct': False,"needed_for":['economics'],'default':0.30},
 
 
-            'batt_replacement_cost_kw': {'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':200},# $/kW to replace battery inverter
-            'batt_replacement_cost_kwh': {'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':200},# $/kWh to replace battery
-            'batt_replacement_year': {'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],'default':10},
+            'batt_replacement_cost_kw': {'req':False,'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':200},# $/kW to replace battery inverter
+            'batt_replacement_cost_kwh': {'req':False,'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':200},# $/kWh to replace battery
+            'batt_replacement_year': {'req':False,'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],'default':10},
 
-            'flag_macrs': {'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
-            'flag_itc': {'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
-            'flag_bonus': {'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
-            'flag_replace_batt': {'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
+            'flag_macrs': {'req':False,'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
+            'flag_itc': {'req':False,'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
+            'flag_bonus': {'req':False,'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
+            'flag_replace_batt': {'req':False,'type': bool, 'null': False, 'pct': False,"needed_for":['economics'],'default':1},
 
-            'macrs_years': {'type': int, 'null': False, 'pct': False,"needed_for":['economics'],'default':5},# 5 or 7 year shedules, taken for both PV and storage
-            'macrs_itc_reduction': {'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':0.5}, # if ITC is taken with macrs, the depreciable value is reduced by this fraction of the ITC
-            'bonus_fraction': {'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default': 0.5}, # this fraction of the depreciable value is taken in year 1 in addition to MACRS
+            'macrs_years': {'req':False,'type': int, 'null': False, 'pct': False,"needed_for":['economics'],'default':5},# 5 or 7 year shedules, taken for both PV and storage
+            'macrs_itc_reduction': {'req':False,'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default':0.5}, # if ITC is taken with macrs, the depreciable value is reduced by this fraction of the ITC
+            'bonus_fraction': {'req':False,'type': float, 'null': False, 'pct': False,"needed_for":['economics'],'default': 0.5}, # this fraction of the depreciable value is taken in year 1 in addition to MACRS
 
-            'dataset': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default':"tmy3"},# Default: tmy2 Options: tmy2 , tmy3, intl
-            'inv_eff': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 92},# or 96?
-            'dc_ac_ratio': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 1.1},
-            'azimuth': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 180},
-            'system_capacity': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 1},# kw to get prod factor
-            'array_type': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0}, # fixed open rack
-            'module_type': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0},# standard
-            'timeframe': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 'hourly'},
-            'losses': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 14},
-            'radius': {'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0}
+            'dataset': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default':"tmy3"},# Default: tmy2 Options: tmy2 , tmy3, intl
+            'inv_eff': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 92},# or 96?
+            'dc_ac_ratio': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 1.1},
+            'azimuth': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 180},
+            'system_capacity': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 1},# kw to get prod factor
+            'array_type': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0}, # fixed open rack
+            'module_type': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0},# standard
+            'timeframe': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 'hourly'},
+            'losses': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 14},
+            'radius': {'req':False,'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],'default': 0},
+
+            'building_type': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['loads'],'default': "Hospital"}
               }
 
     if full_list:
         return output
-    elif just_required:
-        return dict((k, v) for k, v in output.items() if v['null'])
-    elif filter != '':
-        return dict((k,v) for k,v in output.items() if filter in v['needed_for'])
 
-def internals():
-    return {'id': {'type': int, 'null': False},
-            'path_egg': {'type': int, 'null': False}}
+    if filter != '':
+        output = {k:v for k, v in output.items() if filter in v['needed_for'] }
+
+    if just_required:
+        output = dict((k, v) for k, v in output.items() if v['req'])
+    return output
 
 def updates():
     return {'load_size':{},
@@ -94,11 +96,13 @@ def create_fields(inputs):
             output[f] = fields.ListField(attribute=f, null=meta['null'])
         if meta['type'] == str:
             output[f] = fields.CharField(attribute=f, null=meta['null'])
-def get_id():
-    return random.randint(0, 1000000)
 
-def set_internal(path_egg):
-    return {"id":get_id(),"path_egg":path_egg}
+def get_egg():
+    # when deployed, runs from egg file, need to update if version changes!
+    # path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+
+    # when not deployed (running from 127.0.0.1:8000)
+    return os.getcwd()
 
 # default load profiles
 def default_load_profiles():

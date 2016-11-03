@@ -82,49 +82,54 @@ class DatLibrary:
             self.write_var(f, var, dat_var)
             f.close()
 
-    def __init__(self, inputs, internals):
+    def __init__(self,run_id, d_inputs):
 
-        for k in internals().keys():
-            setattr(self, k, internals.get(k))
+        self.run_id = run_id
+        self.path_egg = get_egg()
 
-        for k,v in inputs(full_list=True):
-            setattr(self, k, internals.get(k))
+        required_inputs = inputs(full_list=True)
+        for k,v in required_inputs.items():
+            setattr(self, k, d_inputs.get(k))
 
-            if k=='analysis_period' and internals.get(k) < 0:
+            if k=='analysis_period' and d_inputs.get(k) < 0:
                 setattr(self, k, None)
 
-            elif k == 'load_profile' and internals.get(k) is not None:
-                setattr(self, k, internals.get(k).replace(" ", ""))
+            elif k == 'load_profile' and d_inputs.get(k) is not None:
+                setattr(self, k, d_inputs.get(k).replace(" ", ""))
 
-            setattr(self, k, internals.get(k))
+            else:
+                setattr(self, k, d_inputs.get(k))
 
-        self.default_load_profiles = [p.lower() for p in default_load_profiles()]
+        self.default_load_profiles = []
+        for p in default_load_profiles():
+            self.default_load_profiles = [p.lower()]
 
         self.update_types()
         self.define_paths()
         self.setup_logging()
 
+
     def update_types(self):
 
-        for k,v in inputs(full_list=True):
+        for k,v in inputs(full_list=True).items():
+            value = getattr(self,k)
+            if value is not None:
+                if v['type']==float:
+                    if v['pct']:
+                        if value > 1.0:
+                            setattr(self, k, float(value)*0.01)
+                    else:
+                        setattr(self,k,float(value))
 
-            if v['type']==float:
-                value = float(getattr(self,k))
-                if v['pct']:
-                    if value > 1.0:
-                        setattr(self, k, value*0.01)
-                else:
-                    setattr(self,k,value)
+                if v['type']==int:
+                    setattr(self,k,int(value))
 
-            if v['type']==int:
-                setattr(self,k,int(getattr(self,k)))
+                if v['type'] == str:
+                    setattr(self, k, str(value))
 
-            if v['type'] == str:
-                setattr(self, k, str(getattr(self, k)))
-
-            if v['type'] == list:
-                value = [float(i) for i in getattr(self, k)]
-                setattr(self, k, value)
+                if v['type'] == list:
+                    value = [float(i) for i in getattr(self, k)]
+                    setattr(self, k, value)
 
     def get_subtask_inputs(self,name):
         output = {}
@@ -133,7 +138,9 @@ class DatLibrary:
         for k in defaults.keys():
             output[k] = getattr(self,k)
             if output[k] is None:
-                output[k] = defaults[k]['default']
+                default = defaults[k].get('default')
+                if default is not None:
+                    output[k] = default
 
         return output
 
@@ -252,11 +259,10 @@ class DatLibrary:
         f.close()
 
     def parse_outputs(self):
-
+        self.outputs = {}
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):
             df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
             df = df.transpose()
-            self.outputs = {}
             pv_size = 0
             if 'LCC' in df.columns:
                 self.outputs['lcc'] = df['LCC']
@@ -316,8 +322,8 @@ class DatLibrary:
 
         econ_inputs = self.get_subtask_inputs('economics')
 
-        file_path = os.path.join(self.path_dat_library, self.file_economics)
-        econ = economics.Economics(econ_inputs, file_path=file_path,business_as_usual=False)
+        fp = os.path.join(self.path_dat_library, self.file_economics)
+        econ = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
 
         for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh','owner_discount_rate','offtaker_discount_rate']:
@@ -325,9 +331,8 @@ class DatLibrary:
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
-
-        file_path = os.path.join(self.path_dat_library, self.file_economics_bau)
-        econ = economics.Economics(econ_inputs, file_path=file_path, business_as_usual=True)
+        fp = os.path.join(self.path_dat_library, self.file_economics_bau)
+        econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
 
     # DAT3 & DAT4 LoadSize, LoadProfile
@@ -340,7 +345,8 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
             default_city = default_cities()[self.localize_load()]
 
-        default_building = inputs(full_list=True)['building_type']
+        default_building = inputs(full_list=True)['building_type']['default']
+        print default_building
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
         default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"
@@ -496,7 +502,8 @@ class DatLibrary:
 
         if self.latitude is not None and self.longitude is not None:
 
-            pv_inputs = self.get_subtask_inputs('pv_watts')
+            pv_inputs = self.get_subtask_inputs('pvwatts')
+            print  pv_inputs
 
             GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, pv_inputs)
 
@@ -504,7 +511,6 @@ class DatLibrary:
             self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
 
     def create_utility(self):
-
         if self.utility_name is not None and self.rate_name is not None:
             self.path_util_rate = os.path.join(self.path_dat_library, self.path_utility,
                                                self.utility_name, self.rate_name)
@@ -530,6 +536,7 @@ class DatLibrary:
 
         utility_name = urdb_rate['utility'].replace(',', '')
         rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
+
         folder_name = os.path.join(utility_name, rate_name)
 
         rate_output_folder = os.path.join(self.path_dat_library, self.path_utility, folder_name)

@@ -3,7 +3,7 @@ from django.contrib import admin
 from reo.api import REoptRunResource
 from tastypie.api import Api
 
-reopt_resource = REoptRunResource("reopt_api-1.0-py2.7_ted.egg")
+reopt_resource = REoptRunResource()
 
 v1_api = Api(api_name='v1')
 v1_api.register(reopt_resource)

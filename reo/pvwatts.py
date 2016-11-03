@@ -14,9 +14,6 @@ import os, csv
 from api_definitions import *
 
 class PVWatts:
-    # API specific
-    key = "EkVFWynUReFEH8HT1L1RAe4C32RUx4w1AEtiN78J"
-    base = "https://developer.nrel.gov/api/pvwatts/v5.json"
 
     # Input data
     latitude = []
@@ -24,16 +21,16 @@ class PVWatts:
     run_id = []
 
     # Assume defaults
-    dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
-    inv_eff = 92  # or 96?
-    dc_ac_ratio = 1.1
-    azimuth = 180
-    system_capacity = 1  # kw to get prod factor
-    array_type = 0  # fixed open rack
-    module_type = 0  # standard
-    timeframe = "hourly"
-    losses = 14
-    radius = 0
+    #dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
+    #inv_eff = 92  # or 96?
+    #dc_ac_ratio = 1.1
+    #azimuth = 180
+    #system_capacity = 1  # kw to get prod factor
+    #array_type = 0  # fixed open rack
+   # module_type = 0  # standard
+  #  timeframe = "hourly"
+  #  losses = 14
+  #  radius = 0
 
     # Time
     steps_per_hour = 1
@@ -56,8 +53,13 @@ class PVWatts:
 
         self.download_locations()
 
+    def api(self):
+        # API specific
+        return {'key' : "EkVFWynUReFEH8HT1L1RAe4C32RUx4w1AEtiN78J",
+        'base' : "https://developer.nrel.gov/api/pvwatts/v5.json"}
+
     def make_url(self):
-        return  base + "?api_key=" + key + "&azimuth=" + str(self.azimuth) + "&system_capacity=" + str(self.system_capacity) + \
+        return  self.api()['base'] + "?api_key=" + self.api()['key'] + "&azimuth=" + str(self.azimuth) + "&system_capacity=" + str(self.system_capacity) + \
                    "&losses=" + str(self.losses) + "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
                    "&timeframe=" + self.timeframe + "&dc_ac_ratio=" + str(self.dc_ac_ratio) + "&inv_eff=" + str(self.inv_eff) + \
                    "&radius=" + str(self.radius) + "&dataset=" + self.dataset + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.latitude)
