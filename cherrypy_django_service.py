@@ -8,7 +8,7 @@ import win32serviceutil
 import win32service
 import os
 from reopt_api import settings
-from  djangoplugin import DjangoAppPlugin
+from djangoplugin import DjangoAppPlugin
 
 class MyService(win32serviceutil.ServiceFramework):
     """NT Service."""
