@@ -92,4 +92,4 @@ ENV/
 # Dat files
 #*.dat
 
-keys.py
+.keys.py
