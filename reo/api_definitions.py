@@ -80,12 +80,12 @@ def updates():
             'analysis_period':{}}
 
 def outputs():
-    return {'lcc': {'type': float, 'null': True},
-           'npv': {'type': str, 'null': True},
-           'utility_kwh': {'type': str, 'null': True},
-           'pv_kw': {'type': str, 'null': True},
-           'batt_kw': {'type': str, 'null': True},
-           'batt_kwh': {'type': str, 'null': True}}
+    return {'lcc': {'type': float, 'null': True,'pct': False},
+           'npv': {'type': float, 'null': True,'pct': False},
+           'utility_kwh': {'type': float, 'null': True,'pct': False},
+           'pv_kw': {'type': float, 'null': True,'pct': False},
+           'batt_kw': {'type': float, 'null': True,'pct': False},
+           'batt_kwh': {'type': float, 'null': True,'pct': False}}
 
 def create_fields(inputs):
     output = {}
@@ -99,10 +99,13 @@ def create_fields(inputs):
 
 def get_egg():
     # when deployed, runs from egg file, need to update if version changes!
-    # path_egg = os.path.join("..", "reopt_api-1.0-py2.7.egg")
+    egg_name =  "reopt_api-1.0-py2.7.egg"
+    wd  = os.getcwd()
+    if os.path.basename(wd)==egg_name:
+        return wd
+    else:
+        return os.path.join("..", egg_name)
 
-    # when not deployed (running from 127.0.0.1:8000)
-    return os.getcwd()
 
 # default load profiles
 def default_load_profiles():

@@ -99,7 +99,8 @@ class DatLibrary:
 
             else:
                 setattr(self, k, d_inputs.get(k))
-
+        for k, v in outputs().items():
+            setattr(self, k, None)
         self.default_load_profiles = []
         for p in default_load_profiles():
             self.default_load_profiles = [p.lower()]
@@ -110,26 +111,26 @@ class DatLibrary:
 
 
     def update_types(self):
+        for group in [inputs(full_list=True),outputs()]:
+            for k,v in group.items():
+                value = getattr(self,k)
+                if value is not None:
+                    if v['type']==float:
+                        if v['pct']:
+                            if value > 1.0:
+                                setattr(self, k, float(value)*0.01)
+                        else:
+                            setattr(self,k,float(value))
 
-        for k,v in inputs(full_list=True).items():
-            value = getattr(self,k)
-            if value is not None:
-                if v['type']==float:
-                    if v['pct']:
-                        if value > 1.0:
-                            setattr(self, k, float(value)*0.01)
-                    else:
-                        setattr(self,k,float(value))
+                    if v['type']==int:
+                        setattr(self,k,int(value))
 
-                if v['type']==int:
-                    setattr(self,k,int(value))
+                    if v['type'] == str:
+                        setattr(self, k, str(value))
 
-                if v['type'] == str:
-                    setattr(self, k, str(value))
-
-                if v['type'] == list:
-                    value = [float(i) for i in getattr(self, k)]
-                    setattr(self, k, value)
+                    if v['type'] == list:
+                        value = [float(i) for i in getattr(self, k)]
+                        setattr(self, k, value)
 
     def get_subtask_inputs(self,name):
         output = {}
@@ -165,8 +166,6 @@ class DatLibrary:
 
         self.parse_outputs()
         self.cleanup()
-
-        return self.outputs
 
     def setup_logging(self):
         logging.basicConfig(filename=self.path_logfile,
@@ -259,26 +258,30 @@ class DatLibrary:
         f.close()
 
     def parse_outputs(self):
-        self.outputs = {}
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):
             df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
             df = df.transpose()
             pv_size = 0
+
             if 'LCC' in df.columns:
-                self.outputs['lcc'] = df['LCC']
+                self.lcc = df['LCC'].values[0]
             if 'BattInverter_kW' in df.columns:
-                self.outputs['batt_kw'] = df['BattInverter_kW']
+                self.batt_kw = df['BattInverter_kW'].values[0]
             if 'BattSize_kWh' in df.columns:
-                self.outputs['batt_kwh'] = df['BattSize_kWh']
+                self.batt_kwh = df['BattSize_kWh'].values[0]
             if 'PVNMsize_kW' in df.columns:
-                pv_size += float(df['PVNMsize_kW'])
+                pv_size += float(df['PVNMsize_kW'].values[0])
             if 'PVsize_kW' in df.columns:
-                pv_size += float(df['PVsize_kW'])
+                pv_size += float(df['PVsize_kW'].values[0])
             if 'Utility_kWh' in df.columns:
-                self.outputs['utility_kwh'] = df['Utility_kWh']
+                self.utility_kwh = df['Utility_kWh'].values[0]
+
+            self.update_types()
 
             if pv_size > 0:
-                self.outputs['pv_kw'] = str(round(pv_size, 0))
+                self.pv_kw = str(round(pv_size, 0))
+            else:
+                self.pv_kw = 0
 
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
@@ -289,7 +292,7 @@ class DatLibrary:
             df = df.transpose()
 
             if 'LCC' in df.columns:
-                self.outputs['npv'] = float(df['LCC']) - float(self.outputs['lcc'])
+                self.npv = float(df['LCC'].values[0]) - float(self.lcc)
 
     def cleanup(self):
 

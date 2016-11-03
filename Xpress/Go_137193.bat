@@ -1,0 +1,1 @@
+mosel -c "exec ..\reopt_api-1.0-py2.7.egg\Xpress\REoptTS1127_PVBATT72916.mos  , DAT2='Economics\economics_137193.dat', DAT3='LoadSize\LoadSize_137193.dat', DAT4='LoadProfiles\LoadProfile_137193.dat', DAT5='GISdata\GIS_137193.dat', NumRatchets=12, UtilName='Custom_utility_137193', UtilRate='Custom_rate_137193', FuelBinCount=1, DemandBinCount=1, OUTDIR='Xpress\Output\Run_137193'

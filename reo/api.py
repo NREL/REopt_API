@@ -16,7 +16,7 @@ def default_dict_to_value(key_list,reference_dictionary, output_dictionary, defa
         if k in reference_dictionary.keys():
             output_dictionary[k] = reference_dictionary.get(k)
 
-        if output_dictionary.get(k) == None:
+        if output_dictionary.get(k) is None:
             output_dictionary[k] = default
 
     return output_dictionary
@@ -28,11 +28,12 @@ class REoptObject(object):
         inputs_ = {'source':inputs(just_required=True), "values":inputDict}
         outputs_ = {'source': outputs(), "values": outputDict}
 
-        for group in [inputs_,outputs_]:
+        for group in [outputs_,inputs_]:
             for k in group['source'].keys():
                 if group['values'] == None:
                     setattr(self, k, None)
                 else:
+                    print k, group['values'].get(k)
                     setattr(self, k, group['values'].get(k))
         self.id = id
         self.path_egg = get_egg()
@@ -80,7 +81,7 @@ class REoptRunResource(Resource):
 
         formatted_outputs = default_dict_to_value(outputs(),run_outputs,{},0)
 
-        results = [REoptObject(id, parsed_inputs, formatted_outputs)]
+        results = [REoptObject(id=id, inputDict=parsed_inputs, outputDict=formatted_outputs)]
 
         return results
 
@@ -121,13 +122,18 @@ class REoptRunResource(Resource):
 
         # Process Outputs
         formatted_inputs = dict({k:getattr(run_set, k) for k in inputs(just_required=True).keys()})
-        formatted_outputs = default_dict_to_value(outputs(),run_outputs,{},0)
+        formatted_outputs = dict({k:getattr(run_set, k) for k in outputs().keys()})
+        formatted_outputs = default_dict_to_value(outputs(),formatted_outputs,{},0)
 
         # Package the bundle to return
-        bundle.obj = REoptObject(id, formatted_inputs, formatted_outputs)
+        bundle.obj = REoptObject(id=id, inputDict=formatted_inputs, outputDict=formatted_outputs)
 
         # update fields with what was used
         for k in updates().keys():
             bundle.data[k] = getattr(bundle.obj,k)
+
+        # update fields with what was used
+        for k in outputs().keys():
+            bundle.data[k] = formatted_outputs.get(k)
 
         return self.full_hydrate(bundle)
