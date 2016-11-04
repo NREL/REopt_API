@@ -1,0 +1,95 @@
+from tastypie.validation import Validation
+from api_definitions import *
+from api_input_validation import *
+
+class REoptResourceValidation(Validation):
+    def is_valid(self, bundle, request=None):
+
+        errors = {}
+
+        missing_required = self.missing_required(bundle.data.keys())
+
+        if missing_required:
+            message = [self.get_missing_required_message(m) for  m in missing_required]
+            errors = self.append_errors(errors,"Missing_Required",message)
+
+        missing_dependencies = self.missing_dependencies(bundle.data.keys(),exclude=missing_required)
+        if missing_dependencies:
+            message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
+            errors = self.append_errors(errors, "Missing_Dependencies", message)
+
+        for key, value in bundle.data.items():
+            if key not in inputs(full_list=True):
+                errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+            else:
+                format_errors =  self.check_input_format(key,value)
+                #specific_errors =  locals()["check_"+key](value)
+           #     errors = self.append_errors(errors, key, format_errors+specific_errors)
+
+        return errors
+
+    def check_input_format(self,key,value):
+        return []
+
+
+    def append_errors(self, errors, key, value):
+        if 'Error:' in errors.keys():
+            if key not in errors["Error:"].keys():
+                errors["Error:"][key] = value
+            else:
+                errors["Error:"][key] += value
+        else:
+            errors['Error:']  =  {key: value}
+        return errors
+
+    def get_missing_required_message(self, input):
+        definition_values = inputs(full_list=True)[input]
+        swap = definition_values.get('swap_for')
+
+        message = input
+        if swap is not None:
+            message +=  " (OR %s)" % (" and ".join(definition_values['swap_for']))
+        return message
+
+    def get_missing_dependency_message(self, input):
+        definition_values = inputs(full_list=True)[input]
+
+        dependency_of = []
+        for k, v in inputs(full_list=True).items():
+            value = v.get('depends_on')
+            if value is not None:
+                if input in value:
+                    dependency_of.append(k)
+        return "%s (%s depend(s) on  this input.)" % (input, "  and ".join(dependency_of))
+
+    def missing_dependencies(self, key_list,exclude=[]):
+        # Check if field depends on non-required fields
+        missing = []
+        for f in inputs(full_list=True).keys():
+
+            if not self.swaps_exists(key_list,f):
+                dependent = inputs(full_list=True)[f].get('depends_on')
+                if dependent is not None and f  not in exclude:
+                    for d in dependent:
+                        if d not in key_list:
+                            missing.append(d)
+        return missing
+
+    def swaps_exists(self,key_list, f):
+        swap = inputs(full_list=True)[f].get('swap_for')
+        swap_exists = False
+        if swap is not None:
+            swap_exists = True
+            for ff in swap:
+                if ff not in key_list:
+                    swap_exists = False
+        return swap_exists
+
+    def missing_required(self,key_list):
+        missing =  list(set(inputs(just_required=True)) - set(key_list))
+        output =[]
+        for  field  in  missing:
+            #Check if field can  be  swappedout  for others
+            if not self.swaps_exists(key_list,field):
+                output.append(field)
+        return output

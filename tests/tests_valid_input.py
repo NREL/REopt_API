@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
+from reo.validators import *
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -15,13 +16,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
 
-        self.url_base = "api/v1/reopt/?format=json"
+        self.url_base = '/api/v1/reopt/'
 
     def make_url(self,string):
         return self.url_base + string
 
-    def get_default(self,field):
-        return inputs(full_list=True)[field]['default']
+    def get_defaults_from_list(self,list):
+        return {k:inputs(full_list=True)[k]['default'] for k in list}
 
     def list_to_default_string(self,list_inputs):
         output  = ""
@@ -30,20 +31,32 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return output
 
     def test_required(self):
-        for f in self.required:
-            list = [i for i in  self.required if i!=f] + ['urdb_rate']
-            test_string = self.list_to_default_string(list)
-            url = self.make_url(test_string)
-            print test_string
-            resp = self.api_client.get(url, format='json')
-            self.assertValidJSONResponse(resp)
-            self.assertEqual(self.deserialize(resp)['Error'], 'Missing  Required Field :' + f )
+        swaps = [['urdb_rate'],['demand_charge','blended_utility_rate']]
+        for add in swaps :
+            #Test  Requiring Inputs
+            for f in self.required:
+                list = [i for i in self.required if i!=f and i not in sum(swaps, []) ] + add
+                data = self.get_defaults_from_list(list)
+                resp = self.api_client.post(self.url_base, format='json', data=data)
+                f =  REoptResourceValidation().get_missing_required_message(f)
+                self.assertEqual(self.deserialize(resp), {r"reopt":{"Error:":{"Missing_Required":[f]}}} )
 
-        for f in self.required:
-            list = [i for i in self.required if i != f] + ['demand_charge','blended_utility_rate']
-            test_string = self.list_to_default_string(list)
-            url = self.make_url(test_string)
-            print test_string
-            resp = self.api_client.get(url, format='json')
-            self.assertValidJSONResponse(resp)
-            self.assertEqual(self.deserialize(resp)['Error'], 'Missing  Required Field :' + f)
+            # Test All  Data and  Valid Rate Inputs
+            data = self.get_defaults_from_list(self.required + add)
+            resp = self.api_client.post(self.url_base, format='json', data=data)
+            self.assertHttpCreated(resp)
+
+            # Test Bad Data Types
+            for k,v in inputs(just_required=True).items():
+                dummy_data = 1
+                if v['type'] in [float,int]:
+                    dummy_data  = "A"
+                list = [i for i in self.required if i not in sum(swaps, [])] + add
+                data = self.get_defaults_from_list(list)
+                data[k]=dummy_data
+                print k,  dummy_data
+                resp = self.api_client.post(self.url_base, format='json', data=data)
+                self.assertEqual(self.deserialize(resp), {r"reopt": {"Error:": {k: ["Invalid Format"]}}})
+
+
+

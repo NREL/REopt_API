@@ -10,6 +10,7 @@ import library
 import random
 import os
 from api_definitions import *
+from validators import  *
 
 def default_dict_to_value(key_list,reference_dictionary, output_dictionary, default ):
     for k in key_list.keys():
@@ -25,7 +26,7 @@ def default_dict_to_value(key_list,reference_dictionary, output_dictionary, defa
 class REoptObject(object):
     def __init__(self,id=None, inputDict=None, outputDict=None):
 
-        inputs_ = {'source':inputs(just_required=True), "values":inputDict}
+        inputs_ = {'source':inputs(full_list=True), "values":inputDict}
         outputs_ = {'source': outputs(), "values": outputDict}
 
         for group in [outputs_,inputs_]:
@@ -33,8 +34,8 @@ class REoptObject(object):
                 if group['values'] == None:
                     setattr(self, k, None)
                 else:
-                    print k, group['values'].get(k)
-                    setattr(self, k, group['values'].get(k))
+                    if k in group['values'].keys():
+                        setattr(self, k, group['values'].get(k))
 
         self.id = id
         self.path_egg = get_egg()
@@ -55,6 +56,7 @@ class REoptRunResource(Resource):
         authorization = Authorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
+        validation = REoptResourceValidation()
 
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -89,38 +91,44 @@ class REoptRunResource(Resource):
 
     # POST
     def obj_create(self, bundle, **kwargs):
+        # Validate Bundle
+        self.is_valid(bundle)
+        if bundle.errors:
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
+
         # Bundle is an object containing the posted json (within .data)
         data = bundle.data
+
         # Format Inputs for Optimization Run
-        response_inputs = dict({k: data.get(k) for k in inputs(just_required=True).keys() if k in data.keys()})
-
-        # Create Dictionary
-        id = self.get_id()
-        run_set = library.DatLibrary(id, response_inputs)
-
-        # Run Optimization
-        run_outputs = run_set.run()
-
-        # Handle Errors
-        if run_set.timed_out:
-            raise ImmediateHttpResponse(
-                HttpApplicationError("Optimization model taking too long to respond!")
-            )
-
-        # Process Outputs
-        formatted_inputs = dict({k:getattr(run_set, k) for k in inputs(just_required=True).keys()})
-        formatted_outputs = dict({k:getattr(run_set, k) for k in outputs().keys()})
-        formatted_outputs = default_dict_to_value(outputs(),formatted_outputs,{},0)
-
-        # Package the bundle to return
-        bundle.obj = REoptObject(id=id, inputDict=formatted_inputs, outputDict=formatted_outputs)
-
-        # update fields with what was used
-        for k in updates().keys():
-            bundle.data[k] = getattr(bundle.obj,k)
-
-        # update fields with what was used
-        for k in outputs().keys():
-            bundle.data[k] = formatted_outputs.get(k)
-
+        # response_inputs = dict({k: data.get(k) for k in inputs(just_required=True).keys() if k in data.keys()})
+        #
+        # # Create Dictionary
+        # id = self.get_id()
+        # run_set = library.DatLibrary(id, response_inputs)
+        #
+        # # Run Optimization
+        # run_outputs = run_set.run()
+        #
+        # # Handle Errors
+        # if run_set.timed_out:
+        #     raise ImmediateHttpResponse(
+        #         HttpApplicationError("Optimization model taking too long to respond!")
+        #     )
+        #
+        # # Process Outputs
+        # formatted_inputs = dict({k:getattr(run_set, k) for k in inputs(filter='output').keys()})
+        # formatted_outputs = dict({k:getattr(run_set, k) for k in outputs().keys()})
+        # formatted_outputs = default_dict_to_value(outputs(),formatted_outputs,{},0)
+        #
+        # # Package the bundle to return
+        # bundle.obj = REoptObject(id=id, inputDict=formatted_inputs, outputDict=formatted_outputs)
+        #
+        # # update fields with what was used
+        # for k in updates().keys():
+        #     bundle.data[k] = getattr(bundle.obj,k)
+        #
+        # # update fields with what was used
+        # for k in outputs().keys():
+        #     bundle.data[k] = formatted_outputs.get(k)
+        #
         return self.full_hydrate(bundle)

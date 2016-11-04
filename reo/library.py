@@ -5,6 +5,7 @@ import shutil
 import math
 import pandas as pd
 from datetime import datetime, timedelta
+import urllib2
 
 # logging
 from log_levels import log
@@ -84,8 +85,10 @@ class DatLibrary:
 
     def __init__(self,run_id, d_inputs):
 
+
         self.run_id = run_id
         self.path_egg = get_egg()
+        self.define_paths()
 
         required_inputs = inputs(full_list=True)
         for k,v in required_inputs.items():
@@ -100,12 +103,12 @@ class DatLibrary:
             else:
                 setattr(self, k, d_inputs.get(k))
 
-            if k == 'urdb_rate':
-                run_set.parse_urdb(d_inputs.get(k))
+            if k == 'urdb_rate' and d_inputs.get(k) != None:
+                self.parse_urdb(d_inputs.get(k))
 
-        if hasattr(self,'blended_utility_rate') and hasattr(self,'demand_charge'):
-            urdb_rate = run_set.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
-            run_set.parse_urdb(urdb_rate)
+        if None not in [self.blended_utility_rate,  self.demand_charge]:
+            urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
+            self.parse_urdb(urdb_rate)
 
         for k, v in outputs().items():
             setattr(self, k, None)
@@ -114,7 +117,6 @@ class DatLibrary:
             self.default_load_profiles = [p.lower()]
 
         self.update_types()
-        self.define_paths()
         self.setup_logging()
 
 
@@ -357,7 +359,6 @@ class DatLibrary:
             default_city = default_cities()[self.localize_load()]
 
         default_building = inputs(full_list=True)['building_type']['default']
-        print default_building
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
         default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"
@@ -403,7 +404,6 @@ class DatLibrary:
 
         if not custom_profile:
             if self.load_size is None:
-
                 # Load profile with no load size
                 if self.load_profile is not None:
                     if self.load_profile.lower() in self.default_load_profiles:
@@ -413,6 +413,7 @@ class DatLibrary:
                 else:
                     filename_profile = default_load_profile
                     filename_size = default_load_size
+
             else:
 
                 filename_profile = "Load8760_" + str(self.run_id) + ".dat"
@@ -514,7 +515,6 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
 
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            print  pv_inputs
 
             GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, pv_inputs)
 
@@ -549,7 +549,6 @@ class DatLibrary:
         rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
 
         folder_name = os.path.join(utility_name, rate_name)
-
         rate_output_folder = os.path.join(self.path_dat_library, self.path_utility, folder_name)
 
         if not os.path.isdir(rate_output_folder):

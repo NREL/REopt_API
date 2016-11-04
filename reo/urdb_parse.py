@@ -238,7 +238,6 @@ class UrdbParse:
         output = os.path.join(self.output_root, 'Utility')
         log_file = open(self.log_path, 'w')
         for utility in utilities:
-            print utility
             for rate in rates:
                 print rate
                 rate_dir = os.path.join(output, utility, rate)

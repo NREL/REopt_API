@@ -3,30 +3,30 @@ import os
 
 def inputs(filter='',full_list=False,just_required=False):
 
-    output = {'analysis_period': {'req':True, 'type': int, 'null': True, 'pct': False,"needed_for":['economics'],'default':25},
-            'latitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts'],'default':default_latitudes()[0]},
-            'longitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics','gis','loads','pvwatts'],'default':default_longitudes()[0]},
+    output = {'analysis_period': {'req':False, 'type': int, 'null': True, 'pct': False,"needed_for":['output','economics'],'default':25},
+            'latitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'default':default_latitudes()[0]},
+            'longitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'default':default_longitudes()[0]},
 
-            'load_profile': {'req':False,'type': str, 'null': True, 'pct': False, "needed_for": ['economics']},
-            'load_size': {'req':False,'type': float, 'null': True,'pct': False,"needed_for":['economics']},
-            'load_8760_kw': {'req':False,'type': list, 'null': True,'pct': False,"needed_for":['economics']},
-            'load_monthly_kwh': {'req':False,'type': list, 'null': True,'pct': False,"needed_for":['economics']},
+            'load_profile': {'req':False,'type': str, 'null': True, 'pct': False, "needed_for": ['output','economics']},
+            'load_size': {'req':False,'type': float, 'null': True,'pct': False,"needed_for":['output','economics']},
+            'load_8760_kw': {'req':False,'type': list, 'null': True,'pct': False,"needed_for":['output','economics']},
+            'load_monthly_kwh': {'req':False,'type': list, 'null': True,'pct': False,"needed_for":['output','economics']},
 
-            'pv_cost': {'req':True,'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'default':2160},# nominal price in $/kW
-            'pv_om': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':20},# $/kW/year
-            'batt_cost_kw': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':1600},# nominal price in $/kW (inverter)
-            'batt_cost_kwh': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['economics'],'default':500},# nominal price in $/kWh
+            'pv_cost': {'req':True,'type': float, 'null': True, 'pct': False, "needed_for": ['output','economics'], 'default':2160},# nominal price in $/kW
+            'pv_om': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics'],'default':20},# $/kW/year
+            'batt_cost_kw': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics'],'default':1600},# nominal price in $/kW (inverter)
+            'batt_cost_kwh': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics'],'default':500},# nominal price in $/kWh
 
-            'owner_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
-            'offtaker_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['economics'],'default': 0.08},
+            'owner_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['output','economics'],'default': 0.08},
+            'offtaker_discount_rate': {'req':True,'type': float, 'null': True,'pct': True,"needed_for":['output','economics'],'default': 0.08},
 
-            'blended_utility_rate': {'req': True, 'sub':['urdb_rate'], 'type': list, 'null': True, 'pct': False,"needed_for": ['economics', 'utility'],'default':default_blended_rate()},
-            'demand_charge': {'req': True,'sub':['urdb_rate'], 'type': list, 'null': True, 'pct': False,"needed_for": ['economics', 'utility'],'default': default_demand_charge()},
-            'urdb_rate': {'req': True, 'sub':['demand_charge','blended_utility_rate'],'type': dict, 'null': False, 'pct': True, "needed_for": ['economics'],'default': default_urdb_rate()},
+            'blended_utility_rate': {'req': True, 'depends_on':['demand_charge'], 'swap_for':['urdb_rate'], 'type': list, 'null': True, 'pct': False,"needed_for": ['output','economics', 'utility'],'default':default_blended_rate()},
+            'demand_charge': {'req': True,'depends_on':['blended_utility_rate'],'swap_for':['urdb_rate'], 'type': list, 'null': True, 'pct': False,"needed_for": ['output','economics', 'utility'],'default': default_demand_charge()},
+            'urdb_rate': {'req': True, 'swap_for':['demand_charge','blended_utility_rate'],'type': dict, 'null': False, 'pct': True, "needed_for": ['output','economics'],'default': default_urdb_rate()},
 
             'utility_name': {'req':False,'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
             'rate_name': {'req':False,'type': str, 'null': True,'pct': False,"needed_for":['economics','utility']},
-            'rate_degradation': {'req':False,'type': float, 'null': False, 'pct': True, "needed_for": ['economics'], 'default': 0.005}, # 0.5% annual degradation for solar panels, accounted for in LevelizationFactor
+            'rate_degradation': {'req':False,'type': float, 'null': False, 'pct': True, "needed_for": ['output','economics'], 'default': 0.005}, # 0.5% annual degradation for solar panels, accounted for in LevelizationFactor
 
             #Not Required
             'rate_inflation': {'req':False,'type': float, 'null': False, 'pct': True,"needed_for":['economics'],'default':0.02},  # percent/year inflation
@@ -1133,7 +1133,7 @@ def default_urdb_rate():
       ]
     ],
     "energycomments": "Rate includes Energy base charge and fuel charge || Adjustment includes storm and environmental",
-    "approved": true,
+    "approved": True,
     "peakkwcapacitymax": 2000,
     "country": "USA",
     "energyweekdayschedule": [
