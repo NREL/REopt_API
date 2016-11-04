@@ -24,12 +24,26 @@ class REoptResourceValidation(Validation):
             else:
                 format_errors =  self.check_input_format(key,value)
                 #specific_errors =  locals()["check_"+key](value)
-           #     errors = self.append_errors(errors, key, format_errors+specific_errors)
+                if format_errors:
+                    errors = self.append_errors(errors, key, format_errors)
 
         return errors
 
     def check_input_format(self,key,value):
-        return []
+        field_definition = inputs(full_list=True)[key]
+        try:
+            new_value = field_definition['type'](value)
+            if value != new_value:
+                return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]
+
+            if not field_definition['null']:
+                if value in [None,'null']:
+                    return ['Invalid format: Input cannot be null']
+
+            return []
+        except Exception as e:
+            return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]
+
 
 
     def append_errors(self, errors, key, value):

@@ -50,13 +50,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for k,v in inputs(just_required=True).items():
                 dummy_data = 1
                 if v['type'] in [float,int]:
-                    dummy_data  = "A"
+                    dummy_data  = u"A"
                 list = [i for i in self.required if i not in sum(swaps, [])] + add
                 data = self.get_defaults_from_list(list)
                 data[k]=dummy_data
-                print k,  dummy_data
                 resp = self.api_client.post(self.url_base, format='json', data=data)
-                self.assertEqual(self.deserialize(resp), {r"reopt": {"Error:": {k: ["Invalid Format"]}}})
+                self.assertEqual(self.deserialize(resp), {r"reopt": {"Error:": {k: ['Invalid format: Expected %s, got %s'%(v['type'], type(dummy_data))]}}})
 
 
 
