@@ -124,23 +124,20 @@ class DatLibrary:
         for group in [inputs(full_list=True),outputs()]:
             for k,v in group.items():
                 value = getattr(self,k)
+
                 if value is not None:
                     if v['type']==float:
                         if v['pct']:
                             if value > 1.0:
                                 setattr(self, k, float(value)*0.01)
-                        else:
-                            setattr(self,k,float(value))
 
-                    if v['type']==int:
-                        setattr(self,k,int(value))
-
-                    if v['type'] == str:
-                        setattr(self, k, str(value))
-
-                    if v['type'] == list:
+                    elif v['type'] == list:
                         value = [float(i) for i in getattr(self, k)]
                         setattr(self, k, value)
+
+                    else:
+                        setattr(self,k,v['type'](value))
+
 
     def get_subtask_inputs(self,name):
         output = {}

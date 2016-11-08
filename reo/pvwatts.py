@@ -60,8 +60,8 @@ class PVWatts:
 
     def make_url(self):
         return  self.api()['base'] + "?api_key=" + self.api()['key'] + "&azimuth=" + str(self.azimuth) + "&system_capacity=" + str(self.system_capacity) + \
-                   "&losses=" + str(self.losses) + "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
-                   "&timeframe=" + self.timeframe + "&dc_ac_ratio=" + str(self.dc_ac_ratio) + "&inv_eff=" + str(self.inv_eff) + \
+                   "&losses=" + str(self.losses*100) + "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
+                   "&timeframe=" + self.timeframe + "&dc_ac_ratio=" + str(self.dc_ac_ratio) + "&inv_eff=" + str(self.inv_eff*100) + \
                    "&radius=" + str(self.radius) + "&dataset=" + self.dataset + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.latitude)
 
     def download_locations(self):
