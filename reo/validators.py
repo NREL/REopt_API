@@ -24,14 +24,12 @@ class REoptResourceValidation(Validation):
             else:
                 field_def = inputs(full_list=True)[key]
                 format_errors =  self.check_input_format(key,value,field_def)
-
                 if not format_errors:
-
-                    if field_def.get('max'):
-                        format_errors += self.check_min(key, value, field_def)
-
-                    if field_def.get('min'):
+                    if field_def.get('max') is not None:
                         format_errors += self.check_max(key, value, field_def)
+
+                    if field_def.get('min') is not None:
+                        format_errors += self.check_min(key, value, field_def)
 
                     if field_def.get('restrict_to'):
                         format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
@@ -57,27 +55,29 @@ class REoptResourceValidation(Validation):
             return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]
 
     def check_min(self, key, value, fd):
-        if bool(fd.get('pct')):
+        new_value = value
+        if fd.get('pct')  is True:
             if value > 1:
-                value = value*0.01
+                new_value = value*0.01
 
-        if value < fd['min']:
+        if new_value < fd['min']:
             if not fd.get('pct'):
-                return ['Invalid value: %s is less than the minimum, %s' % (value, max)]
+                return ['Invalid value: %s is less than the minimum, %s' % (value, fd['min'])]
             else:
-                return ['Invalid value: %s is less than the minimum, %s %%' % (value, max * 100)]
+                return ['Invalid value: %s is less than the minimum, %s %%' % (value, fd['min'] * 100)]
         return []
 
     def check_max(self, key, value, fd):
-        if bool(fd.get('pct')):
+        new_value = value
+        if fd.get('pct') is True:
             if value > 1:
-                value = value * 0.01
+                new_value = value * 0.01
 
-        if value > fd['max']:
+        if new_value > fd['max']:
             if not fd.get('pct'):
-                return ['Invalid value: %s is greater than the  maximum, %s' % (value, max)]
+                return ['Invalid value: %s is greater than the  maximum, %s' % (value, fd['max'])]
             else:
-                return ['Invalid value: %s is greater than the  maximum, %s %%' % (value, max*100)]
+                return ['Invalid value: %s is greater than the  maximum, %s %%' % (value, fd['max']*100)]
         return []
 
     def check_restrict_to(self,key, value, range):

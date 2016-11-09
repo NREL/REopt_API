@@ -4,8 +4,8 @@ import os
 def inputs(filter='',full_list=False,just_required=False):
 
     output = {'analysis_period': {'req':False, 'type': int, 'null': True, 'pct': False,"needed_for":['output','economics'],'default':25,'min':0,'max':None},
-            'latitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'min':0,'max':None,'default':default_latitudes()[0]},
-            'longitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'min':0,'max':None,'default':default_longitudes()[0]},
+            'latitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'default':default_latitudes()[0]},
+            'longitude': {'req':True,'type': float, 'null': True,'pct': False,"needed_for":['output','economics','gis','loads','pvwatts'],'default':default_longitudes()[0]},
 
             'load_profile': {'req':False,'type': str, 'null': True, 'pct': False, "needed_for": ['output','economics']},
             'load_size': {'req':False,'type': float, 'null': True,'pct': False,"needed_for":['output','economics'],'min':0,'max':None},
