@@ -11,14 +11,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name='reoptrun',
-            old_name='net_present_value',
-            new_name='lcc',
-        ),
         migrations.AddField(
-            model_name='reoptrun',
-            name='npv',
-            field=models.FloatField(default=0.0),
+            model_name='runoutput',
+            name='longitude',
+            field=models.FloatField(null=True, blank=True),
         ),
     ]

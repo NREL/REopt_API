@@ -5,6 +5,8 @@ from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
+from tastypie.resources import ModelResource
+from models import RunInput
 
 import library
 import random
@@ -12,47 +14,12 @@ import os
 from api_definitions import *
 from validators import  *
 
-def default_dict_to_value(key_list,reference_dictionary, output_dictionary, default ):
-    for k in key_list.keys():
-        if k in reference_dictionary.keys():
-            output_dictionary[k] = reference_dictionary.get(k)
-
-        if output_dictionary.get(k) is None:
-            output_dictionary[k] = default
-
-    return output_dictionary
-
-# We need a generic object to shove data in and to get data from.
-class REoptObject(object):
-    def __init__(self,id=None, inputDict=None, outputDict=None):
-
-        inputs_ = {'source':inputs(full_list=True), "values":inputDict}
-        outputs_ = {'source': outputs(), "values": outputDict}
-
-        for group in [outputs_,inputs_]:
-            for k in group['source'].keys():
-                if group['values'] == None:
-                    setattr(self, k, None)
-                else:
-                    if k in group['values'].keys():
-                        setattr(self, k, group['values'].get(k))
-
-        self.id = id
-        self.path_egg = get_egg()
-
-class REoptRunResource(Resource):
-    # Just like a Django ``Form`` or ``Model``, we're defining all the fields we're going to handle with the API here.
-
-    # note, running process is from reopt_api head
-    # i.e, C:\Nick\Projects\api\env\src\reopt_api
-
-    input_fields = create_fields(inputs(just_required=True))
-    output_fields = create_fields(outputs())
-
+class RunInputResource(ModelResource):
     class Meta:
+        queryset = RunInput.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['get', 'post']
-        object_class = REoptObject
+        object_class = RunInput
         authorization = Authorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
@@ -68,67 +35,28 @@ class REoptRunResource(Resource):
 
         return kwargs
 
-    def get_id(self):
-        return random.randint(0, 1000000)
-
-
     def get_object_list(self, request):
-
-        id =  self.get_id()
-        parsed_inputs = dict({i:request.GET.get(i) for i in inputs(just_required=True).keys()})
-        run_set = library.DatLibrary(id,parsed_inputs)
-
-        run_outputs = run_set.run()
-
-        formatted_outputs = default_dict_to_value(outputs(),run_outputs,{},0)
-
-        results = [REoptObject(id=id, inputDict=parsed_inputs, outputDict=formatted_outputs)]
-
-        return results
+        return [request]
 
     def obj_get_list(self, bundle, **kwargs):
         return self.get_object_list(bundle.request)
 
-    # POST
     def obj_create(self, bundle, **kwargs):
-        # Validate Bundle
+        #Validate Inputs
         self.is_valid(bundle)
         if bundle.errors:
             raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
-        # Bundle is an object containing the posted json (within .data)
-        data = bundle.data
+        # Format  and  Save Inputs
+        model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
+        run = RunInput(**model_inputs)
+        run.save()
 
-        # Format Inputs for Optimization Run
-        # response_inputs = dict({k: data.get(k) for k in inputs(just_required=True).keys() if k in data.keys()})
-        #
-        # # Create Dictionary
-        # id = self.get_id()
-        # run_set = library.DatLibrary(id, response_inputs)
-        #
-        # # Run Optimization
-        # run_outputs = run_set.run()
-        #
-        # # Handle Errors
-        # if run_set.timed_out:
-        #     raise ImmediateHttpResponse(
-        #         HttpApplicationError("Optimization model taking too long to respond!")
-        #     )
-        #
-        # # Process Outputs
-        # formatted_inputs = dict({k:getattr(run_set, k) for k in inputs(filter='output').keys()})
-        # formatted_outputs = dict({k:getattr(run_set, k) for k in outputs().keys()})
-        # formatted_outputs = default_dict_to_value(outputs(),formatted_outputs,{},0)
-        #
-        # # Package the bundle to return
-        # bundle.obj = REoptObject(id=id, inputDict=formatted_inputs, outputDict=formatted_outputs)
-        #
-        # # update fields with what was used
-        # for k in updates().keys():
-        #     bundle.data[k] = getattr(bundle.obj,k)
-        #
-        # # update fields with what was used
-        # for k in outputs().keys():
-        #     bundle.data[k] = formatted_outputs.get(k)
-        #
+        # Return  Results
+        output_obj = run.create_output(model_inputs.keys())
+        bundle.obj = output_obj
+        bundle.data = output_obj.to_dictionary()
+
         return self.full_hydrate(bundle)
+
+

@@ -5,7 +5,6 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
 
-
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):

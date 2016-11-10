@@ -83,42 +83,45 @@ class DatLibrary:
             self.write_var(f, var, dat_var)
             f.close()
 
-    def __init__(self,run_id, d_inputs):
+    def get_egg(self):
+        # when deployed, runs from egg file, need to update if version changes!
+        egg_name = "reopt_api-1.0-py2.7.egg"
+        wd = os.getcwd()
+        if os.path.basename(wd) == egg_name:
+            return wd
+        else:
+            return os.path.join("..", egg_name)
 
+    def __init__(self,run_input_id, lib_inputs):
 
-        self.run_id = run_id
-        self.path_egg = get_egg()
+        self.run_input_id = run_input_id
+        self.path_egg = self.get_egg()
         self.define_paths()
 
-        required_inputs = inputs(full_list=True)
-        for k,v in required_inputs.items():
-            setattr(self, k, d_inputs.get(k))
+        all_inputs = inputs(full_list=True)
+        for k,v in all_inputs.items():
+            if k == 'load_profile' and lib_inputs.get(k) is not None:
+                setattr(self, k, lib_inputs.get(k).replace(" ", ""))
 
-            if k=='analysis_period' and d_inputs.get(k) < 0:
-                setattr(self, k, None)
-
-            elif k == 'load_profile' and d_inputs.get(k) is not None:
-                setattr(self, k, d_inputs.get(k).replace(" ", ""))
+            elif lib_inputs.get(k) is  None:
+                setattr(self, k, all_inputs[k].get('default'))
 
             else:
-                setattr(self, k, d_inputs.get(k))
+                setattr(self, k, lib_inputs.get(k))
 
-            if k == 'urdb_rate' and d_inputs.get(k) != None:
-                self.parse_urdb(d_inputs.get(k))
+        if self.urdb_rate is not None:
+            self.parse_urdb(self.urdb_rate)
+        else:
+            if None not in [self.blended_utility_rate, self.demand_charge]:
+                urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
+                self.parse_urdb(urdb_rate)
 
-        if None not in [self.blended_utility_rate,  self.demand_charge]:
-            urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
-            self.parse_urdb(urdb_rate)
+        self.default_load_profiles = [p.lower() for p in default_load_profiles()]
 
-        for k, v in outputs().items():
+        for k in outputs() :
             setattr(self, k, None)
-        self.default_load_profiles = []
-        for p in default_load_profiles():
-            self.default_load_profiles = [p.lower()]
-
         self.update_types()
         self.setup_logging()
-
 
     def update_types(self):
         for group in [inputs(full_list=True),outputs()]:
@@ -154,7 +157,11 @@ class DatLibrary:
 
     def run(self):
 
-        self.create_or_load()
+        self.create_constant_bau()
+        self.create_economics()
+        self.create_loads()
+        self.create_GIS()
+        self.create_utility()
         self.create_run_file()
 
         command = Command(self.file_run)
@@ -173,6 +180,16 @@ class DatLibrary:
 
         self.parse_outputs()
         self.cleanup()
+        return self.output()
+
+    def output(self):
+        output =  {'run_input_id':self.run_input_id}
+        for k in inputs(full_list=True).keys()  +  outputs().keys():
+            if hasattr(self,k):
+                output[k] = getattr(self,k)
+            else:
+                output[k] = None
+        return output
 
     def setup_logging(self):
         logging.basicConfig(filename=self.path_logfile,
@@ -195,27 +212,19 @@ class DatLibrary:
         self.path_utility = os.path.join("Utility")
         self.path_load_size = os.path.join("LoadSize")
         self.path_load_profile = os.path.join("LoadProfiles")
-        self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_id))
+        self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_input_id))
         self.path_output_bau = os.path.join(self.path_output, "bau")
 
-        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + ".bat")
-        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_id) + "_bau.bat")
+        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + ".bat")
+        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + "_bau.bat")
         self.file_output = os.path.join(self.path_output, "summary.csv")
         self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
-        self.file_economics = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '.dat')
-        self.file_economics_bau = os.path.join(self.path_economics, 'economics_' + str(self.run_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_load_size, 'LoadSize_' + str(self.run_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_load_profile, 'Load8760_' + str(self.run_id) + '.dat')
-
-    def create_or_load(self):
-
-        self.create_constant_bau()
-        self.create_economics()
-        self.create_loads()
-        self.create_GIS()
-        self.create_utility()
+        self.file_economics = os.path.join(self.path_economics, 'economics_' + str(self.run_input_id) + '.dat')
+        self.file_economics_bau = os.path.join(self.path_economics, 'economics_' + str(self.run_input_id) + '_bau.dat')
+        self.file_gis = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_input_id) + '.dat')
+        self.file_gis_bau = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_input_id) + '_bau.dat')
+        self.file_load_size = os.path.join(self.path_load_size, 'LoadSize_' + str(self.run_input_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_load_profile, 'Load8760_' + str(self.run_input_id) + '.dat')
 
     def create_run_file(self):
 
@@ -372,10 +381,10 @@ class DatLibrary:
                 custom_profile = True
                 load_size = sum(self.load_8760_kw)
                 self.load_size = load_size
-                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
                                            filename_size, load_size, "AnnualElecLoad")
-                filename_profile = "LoadProfile_" + str(self.run_id) + ".dat"
+                filename_profile = "LoadProfile_" + str(self.run_input_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_profile),
                                            filename_profile, self.load_8760_kw, "LoadProfile")
             else:
@@ -385,8 +394,8 @@ class DatLibrary:
             if len(self.load_monthly_kwh) == 12:
                 custom_profile = True
                 load_size = float(sum(self.load_monthly_kwh))
-                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
-                filename_profile = "LoadProfile_" + str(self.run_id) + ".dat"
+                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
+                filename_profile = "LoadProfile_" + str(self.run_input_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
                                            filename_size, load_size, "AnnualElecLoad")
                 self.load_size = load_size
@@ -413,8 +422,8 @@ class DatLibrary:
 
             else:
 
-                filename_profile = "Load8760_" + str(self.run_id) + ".dat"
-                filename_size = "LoadSize_" + str(self.run_id) + ".dat"
+                filename_profile = "Load8760_" + str(self.run_input_id) + ".dat"
+                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
                 self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
                                            filename_size, self.load_size, "AnnualElecLoad")
 
@@ -513,7 +522,7 @@ class DatLibrary:
 
             pv_inputs = self.get_subtask_inputs('pvwatts')
 
-            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_id, pv_inputs)
+            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_input_id, pv_inputs)
 
             self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
@@ -611,8 +620,8 @@ class DatLibrary:
             urdb_rate['flatdemandmonths'] = flatdemandmonths
             urdb_rate['flatdemandunit'] = 'kW'
 
-        urdb_rate['label'] = self.run_id
-        urdb_rate['name'] = "Custom_rate_" + str(self.run_id)
-        urdb_rate['utility'] = "Custom_utility_" + str(self.run_id)
+        urdb_rate['label'] = self.run_input_id
+        urdb_rate['name'] = "Custom_rate_" + str(self.run_input_id)
+        urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
 
         return urdb_rate

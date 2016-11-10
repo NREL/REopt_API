@@ -7,11 +7,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0002_auto_20160419_1046'),
+        ('reo', '0002_runoutput_longitude'),
     ]
 
     operations = [
-        migrations.DeleteModel(
-            name='REoptRun',
+        migrations.AddField(
+            model_name='runoutput',
+            name='user_id',
+            field=models.TextField(default=b'', blank=True),
         ),
     ]
