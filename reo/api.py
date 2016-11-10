@@ -14,6 +14,9 @@ import os
 from api_definitions import *
 from validators import  *
 
+def get_current_api():
+    return "version 0.0.1"
+
 class RunInputResource(ModelResource):
     class Meta:
         queryset = RunInput.objects.all()
@@ -49,6 +52,8 @@ class RunInputResource(ModelResource):
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
+        model_inputs['api_version'] = get_current_api()
+
         run = RunInput(**model_inputs)
         run.save()
 

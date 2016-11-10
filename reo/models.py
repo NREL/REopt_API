@@ -8,6 +8,7 @@ from library import *
 # Create your models here.
 class RunInput(models.Model):
     user_id = models.TextField(blank=True,default='')
+    api_version = models.TextField(blank=True, default='',null=False)
 
     # Required
     analysis_period = models.IntegerField(null=True,blank=True)
@@ -64,14 +65,17 @@ class RunInput(models.Model):
     radius = models.FloatField(null=True,blank=True)
     building_type = models.TextField(blank=True,default='')
 
+    created = models.DateTimeField(auto_now_add=True)
+
     def create_output(self, fields):
         response_inputs = {f:getattr(self,f) for f in fields}
-        print response_inputs
+
         run_set = DatLibrary(self.id, response_inputs)
 
         # Run Optimization
         run_set.run()
         output_dictionary = run_set.run()
+        output_dictionary['api_version'] = self.api_version
 
         # Handle Errors
         if run_set.timed_out:
@@ -87,6 +91,7 @@ class RunInput(models.Model):
 class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(blank=True, default='')
+    api_version = models.TextField(blank=True, default='')
 
     # Required
     analysis_period = models.IntegerField(null=True, blank=True)
@@ -149,6 +154,8 @@ class RunOutput(models.Model):
     pv_kw = models.FloatField(null=True, blank=True)
     batt_kw = models.FloatField(null=True, blank=True)
     batt_kwh = models.FloatField(null=True, blank=True)
+
+    created =  models.DateTimeField(auto_now_add=True)
 
     def to_dictionary(self):
         output = {'run_input_id': self.run_input_id}
