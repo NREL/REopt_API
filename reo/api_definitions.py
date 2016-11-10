@@ -74,16 +74,6 @@ def inputs(filter='',full_list=False,just_required=False):
         output = dict((k, v) for k, v in output.items() if v['req'])
     return output
 
-def updates():
-    return {'load_size':{},
-            'pv_cost':{},
-            'pv_om':{},
-            'batt_cost_kw':{},
-            'batt_cost_kwh':{},
-            'owner_discount_rate':{},
-            'offtaker_discount_rate':{},
-            'analysis_period':{}}
-
 def outputs():
     return {'lcc': {'type': float, 'null': True,'pct': False},
            'npv': {'type': float, 'null': True,'pct': False},
@@ -91,17 +81,6 @@ def outputs():
            'pv_kw': {'type': float, 'null': True,'pct': False},
            'batt_kw': {'type': float, 'null': True,'pct': False},
            'batt_kwh': {'type': float, 'null': True,'pct': False}}
-
-def create_fields(inputs):
-    output = {}
-    for f, meta in inputs.items():
-        if meta['type'] == float:
-            output[f] = fields.FloatField(attribute=f, null=meta['null'])
-        if meta['type'] == list:
-            output[f] = fields.ListField(attribute=f, null=meta['null'])
-        if meta['type'] == str:
-            output[f] = fields.CharField(attribute=f, null=meta['null'])
-
 
 # default load profiles
 def default_load_profiles():

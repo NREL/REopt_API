@@ -51,6 +51,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for add in swaps:
             # Test All  Data and  Valid Rate Inputs
             data = self.get_defaults_from_list(self.required + add)
+            data['user_id']="abc123"
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
 
