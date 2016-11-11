@@ -5,7 +5,6 @@ import shutil
 import math
 import pandas as pd
 from datetime import datetime, timedelta
-import urllib2
 
 # logging
 from log_levels import log
@@ -109,6 +108,9 @@ class DatLibrary:
             else:
                 setattr(self, k, lib_inputs.get(k))
 
+        if self.tilt is None:
+            self.tilt = self.latitude
+
         if self.urdb_rate is not None:
             self.parse_urdb(self.urdb_rate)
         else:
@@ -117,6 +119,7 @@ class DatLibrary:
                 self.parse_urdb(urdb_rate)
 
         self.default_load_profiles = [p.lower() for p in default_load_profiles()]
+        self.default_building = default_building()
 
         for k in outputs() :
             setattr(self, k, None)
@@ -364,7 +367,7 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
             default_city = default_cities()[self.localize_load()]
 
-        default_building = inputs(full_list=True)['building_type']['default']
+        default_building = self.default_building
         default_load_profile = "Load8760_raw_" + default_city + "_" + default_building + ".dat"
         default_load_profile_norm = "Load8760_norm_" + default_city + "_" + default_building + ".dat"
         default_load_size = "LoadSize_" + default_city + "_" + default_building + ".dat"

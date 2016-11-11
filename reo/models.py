@@ -63,7 +63,8 @@ class RunInput(models.Model):
     timeframe = models.TextField(blank=True,default='')
     losses = models.FloatField(null=True,blank=True)
     radius = models.FloatField(null=True,blank=True)
-    building_type = models.TextField(blank=True,default='')
+    tilt = models.FloatField(null=True, blank=True)
+    gcr = models.FloatField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
 
@@ -146,7 +147,8 @@ class RunOutput(models.Model):
     timeframe = models.TextField(blank=True,default='')
     losses = models.FloatField(null=True, blank=True)
     radius = models.FloatField(null=True, blank=True)
-    building_type = models.TextField(blank=True,default='')
+    tilt = models.FloatField(null=True, blank=True)
+    gcr = models.FloatField(null=True, blank=True)
 
     lcc = models.FloatField(null=True, blank=True)
     npv = models.FloatField(null=True, blank=True)
@@ -158,7 +160,8 @@ class RunOutput(models.Model):
     created =  models.DateTimeField(auto_now_add=True)
 
     def to_dictionary(self):
-        output = {'run_input_id': self.run_input_id}
+        output = {'run_input_id': self.run_input_id,
+                  'api_version': self.api_version}
 
         for k in inputs(full_list=True).keys() + outputs().keys():
             if hasattr(self, k):
