@@ -74,11 +74,10 @@ class DatLibrary:
             f.write(str(var) + "\t,\n")
         f.write("]\n")
 
-    def write_single_variable(self, path, filename, var, dat_var):
-        filename_path = os.path.join(path, filename)
-        log("DEBUG", "Writing " + dat_var + " to " + filename_path)
-        if filename not in os.listdir(path):
-            f = open(filename_path, 'w')
+    def write_single_variable(self, path, var, dat_var):
+        log("DEBUG", "Writing " + dat_var + " to " + path)
+        if not os.path.exists(path):
+            f = open(path, 'w')
             self.write_var(f, var, dat_var)
             f.close()
 
@@ -97,7 +96,7 @@ class DatLibrary:
 
         all_inputs = inputs(full_list=True)
         for k,v in all_inputs.items():
-            if k == 'load_profile' and lib_inputs.get(k) is not None:
+            if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
 
             elif lib_inputs.get(k) is  None:
@@ -163,10 +162,12 @@ class DatLibrary:
         self.create_loads()
         self.create_GIS()
         self.create_utility()
-        self.create_run_file()
 
-        command = Command(self.file_run)
-        command_bau = Command(self.file_run_bau)
+	run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
+	run_command_bau = self.create_run_command(self.path_output, self.xpress_model, self.DAT_bau )
+        
+        command = Command(run_command)
+        command_bau = Command(run_command_bau)
 
         try:
             command.run(self.timeout)
@@ -204,75 +205,51 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.path_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
+        self.path_output = os.path.join(self.path_xpress,"Output")
+        self.path_output_bau = os.path.join(self.path_output,"\bau")
 
-        # relative
-        self.path_dat_library_relative = os.path.join("Xpress", "DatLibrary")
-        self.path_various = os.path.join("Various")
-        self.path_economics = os.path.join("Economics")
-        self.path_gis_data = os.path.join("GISdata")
-        self.path_utility = os.path.join("Utility")
-        self.path_load_size = os.path.join("LoadSize")
-        self.path_load_profile = os.path.join("LoadProfiles")
-        self.path_output = os.path.join("Xpress", "Output", "Run_" + str(self.run_input_id))
-        self.path_output_bau = os.path.join(self.path_output, "bau")
-
-        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + ".bat")
-        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + "_bau.bat")
+        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + ".txt")
+        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + "_bau.txt")
         self.file_output = os.path.join(self.path_output, "summary.csv")
         self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
-        self.file_economics = os.path.join(self.path_economics, 'economics_' + str(self.run_input_id) + '.dat')
-        self.file_economics_bau = os.path.join(self.path_economics, 'economics_' + str(self.run_input_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_input_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_gis_data, 'GIS_' + str(self.run_input_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_load_size, 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_load_profile, 'Load8760_' + str(self.run_input_id) + '.dat')
+        
+	self.path_utility  = os.path.join(self.path_dat_library,"Utility")
+        self.path_various = os.path.join(self.path_dat_library, "Various")
+        self.file_economics = os.path.join(self.path_dat_library,"Economics",'economics_' + str(self.run_input_id) + '.dat')
+        self.file_economics_bau = os.path.join(self.path_dat_library,"Economics", 'economics_' + str(self.run_input_id) + '_bau.dat')
+        self.file_gis = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '.dat')
+        self.file_gis_bau = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '_bau.dat')
+        self.file_load_size = os.path.join(self.path_dat_library,"LoadSize" 'LoadSize_' + str(self.run_input_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_dat_library,"LoadProfile", 'Load8760_' + str(self.run_input_id) + '.dat')
 
-    def create_run_file(self):
+    def create_run_command(self, path_output, xpress_model, DATs ):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + self.path_output)
-        log("DEBUG", "Created run file: " + self.file_run)
-
-        path_output = os.path.join(self.path_egg, self.path_output)
-        path_output_bau = os.path.join(self.path_egg, self.path_output_bau)
 
         if os.path.exists(path_output):
             shutil.rmtree(path_output)
 
         os.mkdir(path_output)
-        os.mkdir(path_output_bau)
 
         # RE case
-        header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model)
-        output = "OUTDIR=" + "'" + self.path_output + "'"
+        header = 'mosel -c "exec '
+        header += os.path.join(self.path_xpress,xpress_model)
+        
+        output = "OUTDIR=" + "'" + path_output + "'"
+        
         outline = ''
 
-        for dat_file in self.DAT:
+        for dat_file in DATs:
             if dat_file is not None:
                 outline = ', '.join([outline, dat_file.strip('\n')])
+        
         outline = ', '.join([outline, output])
         outline.replace('\n', '')
-        outline = '  '.join([header, outline]) + '\n'
+	outline += '"'
+        outline = '  '.join([header, outline]) 
 
-        f = open(self.file_run, 'w')
-        f.write(outline)
-        f.close()
-
-        #BAU
-        header = 'mosel -c "exec ' + os.path.join(self.path_xpress, self.xpress_model_bau)
-        output = "OUTDIR=" + "'" + self.path_output_bau + "'"
-        outline = ''
-
-        for dat_file in self.DAT_bau:
-            if dat_file is not None:
-                outline = ', '.join([outline, dat_file.strip('\n')])
-        outline = ', '.join([outline, output])
-        outline.replace('\n', '')
-        outline = '  '.join([header, outline]) + '\n'
-
-        f = open(self.file_run_bau, 'w')
-        f.write(outline)
-        f.close()
+        return outline
 
     def parse_outputs(self):
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):
@@ -322,12 +299,12 @@ class DatLibrary:
                     shutil.rmtree(f, ignore_errors=True)
 
             for p in [self.file_run, self.file_run_bau,
-                        os.path.join(self.path_dat_library, self.file_economics),
-                        os.path.join(self.path_dat_library, self.file_economics_bau),
-                        os.path.join(self.path_dat_library, self.file_gis),
-                        os.path.join(self.path_dat_library, self.file_gis_bau),
-                        os.path.join(self.path_dat_library, self.file_load_profile),
-                        os.path.join(self.path_dat_library, self.file_load_size)]:
+                        self.file_economics,
+                        self.file_economics_bau,
+                        self.file_gis,
+                        self.file_gis_bau,
+                        self.file_load_profile,
+                        self.file_load_size]:
                 if os.path.exists(p):
                     os.remove(p)
 
@@ -358,9 +335,6 @@ class DatLibrary:
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
 
-        filename_profile = []
-        filename_size = []
-
         default_city = default_cities()[0]
         if self.latitude is not None and self.longitude is not None:
             default_city = default_cities()[self.localize_load()]
@@ -372,80 +346,76 @@ class DatLibrary:
 
         log("DEBUG", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
-                     ", LoadProfile: " + ("None" if self.load_profile is None else self.load_profile) +
+                     ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
                      ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
                      ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        custom_profile = False
         if self.load_8760_kw is not None:
             if len(self.load_8760_kw) == 8760:
-                custom_profile = True
-                load_size = sum(self.load_8760_kw)
-                self.load_size = load_size
-                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
-                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
-                                           filename_size, load_size, "AnnualElecLoad")
-                filename_profile = "LoadProfile_" + str(self.run_input_id) + ".dat"
-                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_profile),
-                                           filename_profile, self.load_8760_kw, "LoadProfile")
+                self.load_size = sum(self.load_8760_kw)
+                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+                self.write_single_variable(self.file_load_profile, self.load_8760_kw, "LoadProfile")
+               
             else:
                 log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
 
         if self.load_monthly_kwh is not None:
             if len(self.load_monthly_kwh) == 12:
-                custom_profile = True
-                load_size = float(sum(self.load_monthly_kwh))
-                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
-                filename_profile = "LoadProfile_" + str(self.run_input_id) + ".dat"
-                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
-                                           filename_size, load_size, "AnnualElecLoad")
-                self.load_size = load_size
-                if self.load_profile is not None:
-                    if self.load_profile.lower() in self.default_load_profiles:
-                        tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
-                        self.scale_load_by_month(tmp_profile, filename_profile)
+                self.load_size = float(sum(self.load_monthly_kwh))
+                self.write_single_variable(self.file_load_size,self.load_size, "AnnualElecLoad")
+                
+                if (self.load_profile_name is not None) and (self.load_profile_name.lower() in self.default_load_profiles):
+                        name = "Load8760_norm_" + default_city + "_" + self.load_profile_name + ".dat"
+                        path = os.path.join( os.path.dirname(self.path_load_profile), name )
+                        load_profile = self.scale_load_by_month(path)
                 else:
-                    self.scale_load_by_month(default_load_profile_norm, filename_profile)
+                    path = os.path.join( os.path.dirname(self.path_load_profile), default_load_profile_norm)
+                    load_profile = self.scale_load_by_month(path)
+
+		self.write_single_variable(self.path_load_profile, load_profile, "LoadProfile"  )
+            
             else:
                 log("ERROR", "Load profile uploaded contains: " + len(self.load_monthly_kwh) + " values, 12 required")
 
-        if not custom_profile:
+        if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
+
+	        self.file_load_size = os.path.join( self.path_dat_library, default_load_size)
+                self.file_load_profile = os.path.join( self.path_dat_library, default_load_profile) 
+
                 # Load profile with no load size
-                if self.load_profile is not None:
-                    if self.load_profile.lower() in self.default_load_profiles:
-                        filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile + ".dat"
-                        filename_size = "LoadSize_" + default_city + "_" + self.load_profile + ".dat"
-                # No load profile or size specified
-                else:
-                    filename_profile = default_load_profile
-                    filename_size = default_load_size
-
+                if self.load_profile_name is not None:
+                    if self.load_profile_name.lower() in self.default_load_profiles:
+                        filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile_name + ".dat"
+                        filename_size = "LoadSize_" + default_city + "_" + self.load_profile_name + ".dat"
+                        self.file_load_size = os.path.join( self.path_dat_library, filename_size)
+                        self.file_load_profile = os.path.join( self.path_dat_library, filename_profile)
+                
             else:
-
-                filename_profile = "Load8760_" + str(self.run_input_id) + ".dat"
-                filename_size = "LoadSize_" + str(self.run_input_id) + ".dat"
-                self.write_single_variable(os.path.join(self.path_dat_library, self.path_load_size),
-                                           filename_size, self.load_size, "AnnualElecLoad")
-
+                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+		
                 # Load profile specified, with load size specified
-                if self.load_profile is not None:
-                    if self.load_profile.lower() in self.default_load_profiles:
-                        tmp_profile = "Load8760_norm_" + default_city + "_" + self.load_profile + ".dat"
-                        self.scale_load(tmp_profile, filename_profile, self.load_size)
-                # Load size specified, no profile
+                if self.load_profile_name is not None:
+                    if self.load_profile_name.lower() in self.default_load_profiles:
+                        tmp_profile = os.path.join(os.path.dirname(self.path_load_profile),"Load8760_norm_" + default_city + "_" + self.load_profile_name + ".dat")
+                        load_profile = self.scale_load(tmp_profile, self.load_size)
+                
+                #Load size specified, no profile
                 else:
-                    self.scale_load(default_load_profile_norm, filename_profile, self.load_size)
+		    p = os.path.join(os.path.dirname(self.path_load_profile), default_load_profile)
+                    load_profile = self.scale_load(p, self.load_size)
 
-        self.DAT[2] = "DAT3=" + "'" + os.path.join(self.path_load_size, filename_size) + "'"
+		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+
+        self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
         self.DAT_bau[2] = self.DAT[2]
-        self.DAT[3] = "DAT4=" + "'" + os.path.join(self.path_load_profile, filename_profile) + "'"
+        self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
         self.DAT_bau[3] = self.DAT[3]
 
-    def scale_load(self, file_norm, filename_profile, scale_factor):
-        path_load_profile = os.path.join(self.path_dat_library, self.path_load_profile)
+    def scale_load(self, file_load_profile, scale_factor):
+        
         load_profile = []
-        f = open(os.path.join(path_load_profile, file_norm), 'r')
+        f = open(file_load_profile, 'r')
         for line in f:
             load_profile.append(float(line.strip('\n')) * scale_factor)
 
@@ -453,12 +423,12 @@ class DatLibrary:
         for _ in range(8760*3):
             load_profile.append(self.max_big_number)
 
-        self.write_single_variable(path_load_profile, filename_profile, load_profile, "LoadProfile")
+        return load_profile
 
-    def scale_load_by_month(self, file_norm, filename_profile):
-        path_load_profile = os.path.join(self.path_dat_library, self.path_load_profile)
+    def scale_load_by_month(self, profile_file):
+      
         load_profile = []
-        f = open(os.path.join(path_load_profile, file_norm), 'r')
+        f = open(profile_file, 'r')
 
         datetime_current = datetime(self.year, 1, 1, 0)
         month_total = 0
@@ -494,7 +464,7 @@ class DatLibrary:
         for _ in range(8760*3):
             load_profile.append(self.max_big_number)
 
-        self.write_single_variable(path_load_profile, filename_profile, load_profile, "LoadProfile")
+        return load_profile
 
     def localize_load(self):
 
@@ -522,11 +492,10 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
 
             pv_inputs = self.get_subtask_inputs('pvwatts')
-
             GIS = pvwatts.PVWatts(self.path_dat_library, self.run_input_id, pv_inputs)
 
-            self.DAT[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS) + "'"
-            self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.path_gis_data, GIS.filename_GIS_bau) + "'"
+            self.DAT[4] = "DAT5=" + "'" + os.path.join(self.file_gis, GIS.filename_GIS) + "'"
+            self.DAT_bau[4] = "DAT5=" + "'" + os.path.join(self.file_gis, GIS.filename_GIS_bau) + "'"
 
     def create_utility(self):
         if self.utility_name is not None and self.rate_name is not None:

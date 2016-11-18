@@ -27,7 +27,7 @@ class RunInput(models.Model):
     urdb_rate =  PickledObjectField()
 
     # Not Required
-    load_profile  = models.TextField(null=True,blank=True,default='')
+    load_profile_name  = models.TextField(null=True,blank=True,default='')
     load_size = models.FloatField(null=True,blank=True)
     load_8760_kw =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     load_monthly_kwh =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
@@ -111,7 +111,7 @@ class RunOutput(models.Model):
     urdb_rate = models.TextField(blank=True,default='')
 
     # Not Required
-    load_profile = models.TextField(null=True,blank=True,default='')
+    load_profile_name = models.TextField(null=True,blank=True,default='')
     load_size = models.FloatField(null=True, blank=True)
     load_8760_kw =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     load_monthly_kwh =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])

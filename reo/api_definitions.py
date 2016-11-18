@@ -58,7 +58,7 @@ def inputs(filter='',full_list=False,just_required=False):
                     'pct': False, "needed_for": ['economics'], 'default': default_urdb_rate()},
 
       # Not Required
-      'load_profile': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
+      'load_profile_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Generic  Load Profile Type",
                        'restrict_to': default_load_profiles()+[None]},
 
