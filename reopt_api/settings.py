@@ -84,8 +84,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'reopt_api',
-        'USER': 'reopt_api',
-        'PASSWORD': 'reopt_api',
+        'USER': 'reopt_admin',
+        'PASSWORD': 'reopt',
         'HOST': 'localhost',
         'PORT': '',
     }

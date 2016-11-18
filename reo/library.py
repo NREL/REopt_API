@@ -84,12 +84,10 @@ class DatLibrary:
 
     def get_egg(self):
         # when deployed, runs from egg file, need to update if version changes!
-        egg_name = "reopt_api-1.0-py2.7.egg"
+        #egg_name = "reopt_api-1.0-py2.7.egg"
         wd = os.getcwd()
-        if os.path.basename(wd) == egg_name:
-            return wd
-        else:
-            return os.path.join("..", egg_name)
+        return wd
+       
 
     def __init__(self,run_input_id, lib_inputs):
 
