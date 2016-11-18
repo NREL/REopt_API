@@ -1,0 +1,54 @@
+Tech: [
+PV,
+PVNM,
+UTIL1,
+]
+TechIsGrid: [
+0,
+0,
+1,
+]
+Load: [
+"1R",
+"1W",
+"1X",
+"1S",
+]
+TechToLoadMatrix: [
+1,
+1,
+1,
+1,
+1,
+1,
+1,
+1,
+1,
+0,
+0,
+1,
+]
+TechClass: [
+PV            ,
+UTIL          ,
+]
+NMILRegime: [
+BelowNM       ,
+NMtoIL        ,
+AboveIL       ,
+]
+TechToNMILMapping: [
+1,0,0,
+0,1,0,
+0,0,0,
+]
+TurbineDerate: [
+1,
+1,
+0,
+]
+TechToTechClassMatrix: [
+1,0,
+1,0,
+0,0,
+]
