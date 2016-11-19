@@ -60,11 +60,11 @@ class DatLibrary:
         wd = os.getcwd()
         return wd
     
-    def inputs(self):
-        return inputs
+    def inputs(self,**args):
+        return inputs(**args)
 
-    def outputs(self):
-        return outputs
+    def outputs(self,**args):
+        return outputs(**args)
 
     def __init__(self,run_input_id, lib_inputs):
 
@@ -90,15 +90,15 @@ class DatLibrary:
         self.file_gis = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '.dat')
         self.file_gis_bau = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '_bau.dat')
         self.file_load_size = os.path.join(self.path_dat_library,"LoadSize", 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_dat_library,"LoadProfile", 'Load8760_' + str(self.run_input_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_dat_library,"LoadProfiles", 'Load8760_' + str(self.run_input_id) + '.dat')
 
  	
-        for k,v in self.inputs(full_list=true).items()
+        for k,v in self.inputs(full_list=True).items():
             if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
 
             elif lib_inputs.get(k) is  None:
-                setattr(self, k, all_inputs[k].get('default'))
+                setattr(self, k, self.inputs()[k].get('default'))
 
             else:
                 setattr(self, k, lib_inputs.get(k))
@@ -199,7 +199,7 @@ class DatLibrary:
                             datefmt='%m/%d/%Y %I:%M%S %p',
                             level=logging.DEBUG)
 
-   def create_run_command(self, path_output, xpress_model, DATs ):
+    def create_run_command(self, path_output, xpress_model, DATs ):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + path_output)
@@ -353,16 +353,16 @@ class DatLibrary:
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
 
-	        self.file_load_size = os.path.join( self.path_dat_library, default_load_size)
-                self.file_load_profile = os.path.join( self.path_dat_library, default_load_profile) 
+	        self.file_load_size = os.path.join( os.path.dirname(self.file_load_size), default_load_size)
+                self.file_load_profile = os.path.join( os.path.dirname(self.file_load_profile), default_load_profile) 
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
                         filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile_name + ".dat"
                         filename_size = "LoadSize_" + default_city + "_" + self.load_profile_name + ".dat"
-                        self.file_load_size = os.path.join( self.path_dat_library, filename_size)
-                        self.file_load_profile = os.path.join( self.path_dat_library, filename_profile)
+                        self.file_load_size = os.path.join(os.path.dirname(self.file_load_size) , filename_size)
+                        self.file_load_profile = os.path.join(os.path.dirname(self.file_load_profile) , filename_profile)
                 
             else:
                 self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
@@ -494,7 +494,7 @@ class DatLibrary:
 
     def parse_urdb(self, urdb_rate):
 
-        utility_name = urdb_rate['utility'].replace(',', '')
+        utility_name = urdb_rate['utility'].replace(',', '').replace(" ","")
         rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
 
         folder_name = os.path.join(utility_name, rate_name)

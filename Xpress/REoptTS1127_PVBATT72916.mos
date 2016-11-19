@@ -16,7 +16,7 @@ parameters
   ! When running local
   !LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api"
   !DatLibraryPath = LocalPath + "\\Xpress\\DatLibrary\\"
-  OutputDir = "\\home\\vagrant\\reopt\\Xpress\\Output"
+  OutputDir = "\\home\\vagrant\\reopt\\Xpress\\Ouput"
 
   FuelBinCount = 1
   DemandBinCount = 1
@@ -250,7 +250,6 @@ end-initializations
 initializations from DAT17
 	NMILLimits
 end-initializations
-
 
 
 !Start timing

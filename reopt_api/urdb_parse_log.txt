@@ -1,1 +1,1 @@
-Processing: Florida Power & Light Co., GLSDT-1_(General_Service_Large_Demand_-_Time-Of-Use)
+Processing: FloridaPower&LightCo., GLSDT-1_(General_Service_Large_Demand_-_Time-Of-Use)
