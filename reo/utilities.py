@@ -1,5 +1,5 @@
 import numpy as np
-import subprocess32
+import subprocess,threading,datetime
 import psutil
 from exceptions import SubprocessTimeoutError
 
@@ -16,22 +16,21 @@ class Command(object):
 
     def __init__(self, cmd):
         self.cmd = cmd
+	self.process = None
 
-    def kill(self, proc_pid):
-        process = psutil.Process(proc_pid)
-        for proc in process.children(recursive=True):
-            proc.kill()
-            log('ERROR', 'Killed process %d' % proc.pid)
-        process.kill()
+    def timeout( p ):
+        if p.poll() is None:
+            try:
+                p.kill()
+                print 'Error: process taking too long to complete--terminating'
+            except OSError as e:
+                if e.errno != errno.ESRCH:
+                    raise
 
-    def run(self, timeout):
-        proc = subprocess32.Popen(self.cmd)
-
-        try:
-            proc.wait(timeout=timeout)
-        except subprocess32.TimeoutExpired:
-            error_message = 'Initiating killing process %d after timeout of %d seconds' % (proc.pid, int(timeout))
-            self.kill(proc.pid)
-            log('ERROR', error_message)
-            raise SubprocessTimeoutError(error_message)
-
+    def run(self,to):   
+        p  = subprocess.Popen(self.cmd, shell=True,universal_newlines=True,
+            	stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        print self.cmd
+        t = threading.Timer(10.0, to, [p])
+        t.start()
+	t.join()   

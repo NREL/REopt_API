@@ -171,15 +171,10 @@ class DatLibrary:
 
         try:
             command.run(self.timeout)
-        except SubprocessTimeoutError:
-            self.timed_out = True
+            command_bau.run(self.timeout)
 
-        if not self.timed_out:
-            try:
-                command_bau.run(self.timeout)
-            except SubprocessTimeoutError:
-                self.timed_out = True
-
+        except Exception as e:
+            print e
         self.parse_run_outputs()
         self.cleanup()
         return self.lib_output()
@@ -212,22 +207,19 @@ class DatLibrary:
         # RE case
         header = 'mosel -c "exec '
         header += os.path.join(self.path_xpress,xpress_model)
-        
-        output = "OUTDIR=" + "'" + path_output + "'"
-        
+           
         outline = ''
 
         for dat_file in DATs:
             if dat_file is not None:
                 outline = ', '.join([outline, dat_file.strip('\n')])
         
-        outline = ', '.join([outline, output])
-        outline.replace('\n', '')
-	outline += '"'
-        outline = '  '.join([header, outline]) 
+        outline.replace('\n', '') 
         
-        print outline
-        return outline
+        output = r"%s %s, OutputDir='%s'" % (header, outline,path_output)
+     	output += '"'
+
+        return output
 
     def parse_run_outputs(self):
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):
