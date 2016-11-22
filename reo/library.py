@@ -165,16 +165,13 @@ class DatLibrary:
 
 	run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
 	run_command_bau = self.create_run_command(self.path_output, self.xpress_model, self.DAT_bau )
-        
+      
         command = Command(run_command)
         command_bau = Command(run_command_bau)
+    
+        command.run(self.timeout)
+        command_bau.run(self.timeout)
 
-        try:
-            command.run(self.timeout)
-            command_bau.run(self.timeout)
-
-        except Exception as e:
-            print e
         self.parse_run_outputs()
         self.cleanup()
         return self.lib_output()
@@ -205,7 +202,7 @@ class DatLibrary:
         os.mkdir(path_output)
 
         # RE case
-        header = 'mosel -c "exec '
+        header = 'exec '
         header += os.path.join(self.path_xpress,xpress_model)
            
         outline = ''
@@ -217,9 +214,9 @@ class DatLibrary:
         outline.replace('\n', '') 
         
         output = r"%s %s, OutputDir='%s'" % (header, outline,path_output)
-     	output += '"'
-
-        return output
+     	output_txt = """ "%s " """ % (output)
+        
+        return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
         if os.path.exists(os.path.join(self.path_egg, self.file_output)):

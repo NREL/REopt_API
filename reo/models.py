@@ -76,13 +76,7 @@ class RunInput(models.Model):
         # Run Optimization
         run_set.run()
         output_dictionary = run_set.run()
-        output_dictionary['api_version'] = self.api_version
-
-        # Handle Errors
-        if run_set.timed_out:
-            raise ImmediateHttpResponse(
-                HttpApplicationError("Optimization model taking too long to respond!")
-            )
+        output_dictionary['api_version'] = self.api_version 
 
         result = RunOutput(**output_dictionary)
         result.save()

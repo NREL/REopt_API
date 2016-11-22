@@ -49,10 +49,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_valid_test_defaults(self):
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
         for add in swaps:
+            
             # Test All  Data and  Valid Rate Inputs
             data = self.get_defaults_from_list(self.required + add)
             data['user_id']="abc123"
             resp = self.api_client.post(self.url_base, format='json', data=data)
+            print resp
             self.assertHttpCreated(resp)
 
     def test_valid_data_types(self):

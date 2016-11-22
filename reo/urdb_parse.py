@@ -239,11 +239,11 @@ class UrdbParse:
         log_file = open(self.log_path, 'w')
         for utility in utilities:
             for rate in rates:
-                print rate
+               
                 rate_dir = os.path.join(output, utility, rate)
                 self.utility_dat_files = UtilityDatFiles(rate_dir)
                 name_file = os.path.join(rate_dir, 'rate_name.txt')
-                print name_file
+    
                 if os.path.exists(name_file):
                     rate_name = open(name_file, 'r')
                     for file in os.listdir(rate_dir):
@@ -253,7 +253,7 @@ class UrdbParse:
                             # with open(json_path, encoding='utf-8') as json_file:
                             with open(json_path,'r') as json_file:
                                 log_string = "Processing: " + utility + ", " + rate_name.read()
-                                print log_string
+                       
                                 log_file.write(log_string + '\n')
 
                                 data = json.loads(json_file.read())

@@ -1,6 +1,8 @@
 import numpy as np
-import subprocess,threading,datetime
+import datetime, time, threading, signal
+from subprocess import Popen, PIPE
 import psutil
+from tastypie.exceptions import ImmediateHttpResponse
 from exceptions import SubprocessTimeoutError
 
 from log_levels import log
@@ -18,19 +20,16 @@ class Command(object):
         self.cmd = cmd
 	self.process = None
 
-    def timeout( p ):
-        if p.poll() is None:
-            try:
-                p.kill()
-                print 'Error: process taking too long to complete--terminating'
-            except OSError as e:
-                if e.errno != errno.ESRCH:
-                    raise
+    def run(self, timeout):
+        def target():
+            self.process = Popen(self.cmd)
+            self.process.communicate()
 
-    def run(self,to):   
-        p  = subprocess.Popen(self.cmd, shell=True,universal_newlines=True,
-            	stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print self.cmd
-        t = threading.Timer(10.0, to, [p])
-        t.start()
-	t.join()   
+        thread = threading.Thread(target=target)
+        thread.start()
+
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+            raise ImmediateHttpResponse("Process Timed Out")        
