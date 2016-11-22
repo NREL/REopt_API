@@ -5,7 +5,7 @@ import shutil
 import math
 import pandas as pd
 from datetime import datetime, timedelta
-
+import re
 # logging
 from log_levels import log
 import logging
@@ -18,6 +18,10 @@ from api_definitions import *
 from urdb_parse import *
 from exceptions import SubprocessTimeoutError
 from utilities import Command
+
+def alphanum(s):
+    return re.sub(r'\W+', '', s)
+
 
 class DatLibrary:
 
@@ -213,7 +217,7 @@ class DatLibrary:
         
         outline.replace('\n', '') 
         
-        output = r"%s %s, OutputDir='%s'" % (header, outline,path_output)
+        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', LocalPath='%s'" % (header, outline, path_output, self.path_dat_library, self.path_egg)
      	output_txt = """ "%s " """ % (output)
         
         return ['mosel', '-c', output]
@@ -461,8 +465,7 @@ class DatLibrary:
 
     def create_utility(self):
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility,
-                                               self.utility_name, self.rate_name)
+            self.path_util_rate = os.path.join(self.path_utility,self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
@@ -483,9 +486,9 @@ class DatLibrary:
 
     def parse_urdb(self, urdb_rate):
 
-        utility_name = urdb_rate['utility'].replace(',', '').replace(" ","")
-        rate_name = urdb_rate['name'].replace(' ', '_').replace(':', '').replace(',', '')
-
+        utility_name = alphanum(urdb_rate['utility'])
+        rate_name = alphanum(urdb_rate['name'])
+    
         folder_name = os.path.join(utility_name, rate_name)
         rate_output_folder = os.path.join(self.path_utility, folder_name)
 
