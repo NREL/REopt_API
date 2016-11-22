@@ -54,7 +54,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             data = self.get_defaults_from_list(self.required + add)
             data['user_id']="abc123"
             resp = self.api_client.post(self.url_base, format='json', data=data)
-            print resp
             self.assertHttpCreated(resp)
 
     def test_valid_data_types(self):
