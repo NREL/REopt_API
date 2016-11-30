@@ -109,8 +109,8 @@ class DatLibrary:
 
         if self.tilt is None:
             self.tilt = self.latitude
-
-        if self.urdb_rate is not None:
+     
+        if self.urdb_rate != None:
             self.parse_urdb(self.urdb_rate)
         else:
             if None not in [self.blended_utility_rate, self.demand_charge]:
@@ -341,7 +341,7 @@ class DatLibrary:
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile"  )
             
             else:
-                log("ERROR", "Load profile uploaded contains: " + len(self.load_monthly_kwh) + " values, 12 required")
+                log("ERROR", "Load profile uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
 
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
@@ -352,8 +352,8 @@ class DatLibrary:
                 # Load profile with no load size
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
-                        filename_profile = "Load8760_raw_" + default_city + "_" + self.load_profile_name + ".dat"
-                        filename_size = "LoadSize_" + default_city + "_" + self.load_profile_name + ".dat"
+                        filename_profile = "Load8760_raw_" + self.default_city + "_" + self.load_profile_name + ".dat"
+                        filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         self.file_load_size = os.path.join(os.path.dirname(self.file_load_size) , filename_size)
                         self.file_load_profile = os.path.join(os.path.dirname(self.file_load_profile) , filename_profile)
                 

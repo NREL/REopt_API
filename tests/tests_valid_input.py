@@ -1,3 +1,4 @@
+import json
 import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
@@ -21,8 +22,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return self.url_base + string
 
     def get_defaults_from_list(self,list):
-        return {k:inputs(full_list=True)[k]['default'] for k in list}
-
+        base = {k:inputs(full_list=True)[k].get('default') for k in list}
+        base['user_id'] = 'abc321'
+        if 'latitude' in list:
+            base['latitude'] = default_latitudes()[0]
+        if 'longitude' in list:
+            base['longitude'] = default_longitudes()[0]
+        if 'urdb_rate' in list:
+            base['urdb_rate'] = default_urdb_rate()
+        if 'demand_charge' in list:
+            base['demand_charge'] = default_demand_charge()
+            base['blended_utility_rate'] = default_blended_rate() 
+        return base
     def list_to_default_string(self,list_inputs):
         output  = ""
         for f in list_inputs:
@@ -51,10 +62,29 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for add in swaps:
             
             # Test All  Data and  Valid Rate Inputs
-            data = self.get_defaults_from_list(self.required + add)
+            data = {}
             data['user_id']="abc123"
+            data['latitude'] = 25.7616798
+            data['longitude'] = -80.19179020000001
+            data['pv_om'] = 20
+            data['batt_cost_kw'] = 1600
+            data['batt_cost_kwh'] = 500
+            data['load_profile_name'] = "Hospital"
+            data['pv_cost'] = 2160
+            data['owner_discount_rate'] = 8
+            data['offtaker_discount_rate'] = 8
+	    if add == ['urdb_rate']:
+                data['urdb_rate'] = default_urdb_rate()
+            else:
+                data['load_monthly_kwh'] = default_load_monthly()
+                data['blended_utility_rate'] = default_blended_rate()
+                data['demand_charge'] = default_demand_charge()                    
+
+
+   
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
+            print json.loads(resp.content)
 
     def test_valid_data_types(self):
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]

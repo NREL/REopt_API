@@ -1,12 +1,12 @@
-LCC,8.47785e+06
+LCC,2012.63
 Cap_Cost,0
-Bulk_kWh_costs,5.23785e+06
-Total_Demand_cost,3.24e+06
+Bulk_kWh_costs,1906.52
+Total_Demand_cost,106.106
 BattSize_kWh, 0
 BattInverter_kW,0
-Utility_kWh, 10062042.7800
-utility,FloridaPowerLightCo
-rate,GLSDT1GeneralServiceLargeDemandTimeOfUse
-Optimization_time_seconds,0.226
-Year1EnergyCost,473211
-Year1DemandCost,292717
+Utility_kWh,  3400.0000
+utility,Custom_utility_2
+rate,Custom_rate_2
+Optimization_time_seconds,0.209
+Year1EnergyCost,172.244
+Year1DemandCost,9.58614

@@ -24,7 +24,7 @@ class RunInput(models.Model):
 
     blended_utility_rate = ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     demand_charge =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    urdb_rate =  PickledObjectField()
+    urdb_rate =  PickledObjectField(null=True)
 
     # Not Required
     load_profile_name  = models.TextField(null=True,blank=True,default='')
@@ -102,7 +102,7 @@ class RunOutput(models.Model):
 
     blended_utility_rate =   ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     demand_charge =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    urdb_rate = models.TextField(blank=True,default='')
+    urdb_rate = PickledObjectField(null=True)
 
     # Not Required
     load_profile_name = models.TextField(null=True,blank=True,default='')

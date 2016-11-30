@@ -4,19 +4,19 @@ import os
 def inputs(filter='',full_list=False,just_required=False):
 
     output = {
-      'user_id': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": [], 'default': None,
-                  "description": "User ID", "units":None},
+      'user_id': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": [], 'default':None
+                  ,"description": "User ID", "units":None},
 
       # Required
       'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
                           'default': 25, 'min': 0, 'max': None,
                           "description": "Period of Analysis", "units": 'years'},
       'latitude': {'req': True, 'type': float, 'null': True, 'pct': False,
-                   "needed_for": ['economics', 'gis', 'loads', 'pvwatts'], 'default': default_latitudes()[0],
+                   "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                    "description": "Site Latitude", "units": 'degrees'},
 
       'longitude': {'req': True, 'type': float, 'null': True, 'pct': False,
-                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'], 'default': default_longitudes()[0],
+                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                     "description": "Site Longitude", "units": 'degrees'},
 
       'pv_cost': {'req': True, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
@@ -45,21 +45,19 @@ def inputs(filter='',full_list=False,just_required=False):
 
       'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                               'default': default_blended_rate(),
-                               "description": "Blended Utility Rate", "units": '$/kWh'},
+                                "description": "Blended Utility Rate", "units": '$/kWh'},
 
 
       'demand_charge': {'req': True, 'depends_on': ['blended_utility_rate'], 'swap_for': ['urdb_rate'], 'type': list,
                         'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                        'default': default_demand_charge(),
                         "description": "Demand Charge", "units": '$/kW'},
 
       'urdb_rate': {'req': True, 'swap_for': ['demand_charge', 'blended_utility_rate'], 'type': dict, 'null': False,
-                    'pct': False, "needed_for": ['economics'], 'default': default_urdb_rate()},
+                    'pct': False, "needed_for": ['economics']},
 
       # Not Required
       'load_profile_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
-                       "description": "Generic  Load Profile Type",
+                       "description": "Generic Load Profile Type",
                        'restrict_to': default_load_profiles()+[None]},
 
       'load_size': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
@@ -238,6 +236,9 @@ def default_blended_rate():
 
 def default_demand_charge():
     return [10.11,11.11,12.11,13.11,14.11,15.11,16.11,17.11,18.11,19.11,20.11,21.11]
+
+def default_load_monthly():
+    return [100,200,250,300,350,350,400,400,350,250,250,200]
 
 def default_urdb_rate():
     return {
