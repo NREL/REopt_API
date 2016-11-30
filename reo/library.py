@@ -53,10 +53,9 @@ class DatLibrary:
 
     def write_single_variable(self, path, var, dat_var):
         log("DEBUG", "Writing " + dat_var + " to " + path)
-        if not os.path.exists(path):
-            f = open(path, 'w')
-            self.write_var(f, var, dat_var)
-            f.close()
+        f = open(path, 'w')
+        self.write_var(f, var, dat_var)
+        f.close()
 
     def get_egg(self):
         # when deployed, runs from egg file, need to update if version changes!
@@ -79,10 +78,8 @@ class DatLibrary:
         self.file_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_output = os.path.join(self.path_xpress,"Output")
-        self.path_output_bau = os.path.join(self.path_output,"\bau")
+        self.path_output_bau = os.path.join(self.path_output,"bau")
 
-        self.file_run = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + ".txt")
-        self.file_run_bau = os.path.join(self.path_xpress, "Go_" + str(self.run_input_id) + "_bau.txt")
         self.file_output = os.path.join(self.path_output, "summary.csv")
         self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
         
@@ -168,7 +165,7 @@ class DatLibrary:
         self.create_utility()
 
 	run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
-	run_command_bau = self.create_run_command(self.path_output, self.xpress_model, self.DAT_bau )
+	run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
       
         command = Command(run_command)
         command_bau = Command(run_command_bau)
@@ -223,23 +220,23 @@ class DatLibrary:
         return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
-        if os.path.exists(os.path.join(self.path_egg, self.file_output)):
-            df = pd.read_csv(os.path.join(self.path_egg, self.file_output), header=None, index_col=0)
+        if os.path.exists(self.file_output):
+            df = pd.read_csv(self.file_output, header=None, index_col=0)
             df = df.transpose()
             pv_size = 0
 
             if 'LCC' in df.columns:
-                self.lcc = df['LCC'].values[0]
+                self.lcc = float(df['LCC'].values[0])
             if 'BattInverter_kW' in df.columns:
-                self.batt_kw = df['BattInverter_kW'].values[0]
+                self.batt_kw = float(df['BattInverter_kW'].values[0])
             if 'BattSize_kWh' in df.columns:
-                self.batt_kwh = df['BattSize_kWh'].values[0]
+                self.batt_kwh = float(df['BattSize_kWh'].values[0])
             if 'PVNMsize_kW' in df.columns:
                 pv_size += float(df['PVNMsize_kW'].values[0])
             if 'PVsize_kW' in df.columns:
                 pv_size += float(df['PVsize_kW'].values[0])
             if 'Utility_kWh' in df.columns:
-                self.utility_kwh = df['Utility_kWh'].values[0]
+                self.utility_kwh = float(df['Utility_kWh'].values[0])
 
             self.update_types()
 
@@ -252,13 +249,14 @@ class DatLibrary:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
-        if os.path.exists(os.path.join(self.path_egg, self.file_output_bau)):
-            df = pd.read_csv(os.path.join(self.path_egg, self.file_output_bau), header=None, index_col=0)
+        if os.path.exists(self.file_output_bau):
+            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
             df = df.transpose()
-
+           
             if 'LCC' in df.columns:
                 self.npv = float(df['LCC'].values[0]) - float(self.lcc)
-
+            else:
+                self.npv = 0
     def cleanup(self):
 
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
@@ -269,8 +267,7 @@ class DatLibrary:
                 if os.path.exists(f):
                     shutil.rmtree(f, ignore_errors=True)
 
-            for p in [self.file_run, self.file_run_bau,
-                        self.file_economics,
+            for p in [  self.file_economics,
                         self.file_economics_bau,
                         self.file_gis,
                         self.file_gis_bau,
@@ -290,7 +287,7 @@ class DatLibrary:
 
         econ_inputs = self.get_subtask_inputs('economics')
 
-        fp = os.path.join(self.path_dat_library, self.file_economics)
+        fp = self.file_economics
         econ = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
 
         for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
@@ -299,7 +296,7 @@ class DatLibrary:
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
-        fp = os.path.join(self.path_dat_library, self.file_economics_bau)
+        fp = self.file_economics_bau
         econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
 
@@ -558,5 +555,5 @@ class DatLibrary:
         urdb_rate['label'] = self.run_input_id
         urdb_rate['name'] = "Custom_rate_" + str(self.run_input_id)
         urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
-
+        print urdb_rate
         return urdb_rate

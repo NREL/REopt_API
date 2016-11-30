@@ -69,12 +69,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             data['pv_om'] = 20
             data['batt_cost_kw'] = 1600
             data['batt_cost_kwh'] = 500
-            data['load_profile_name'] = "Hospital"
             data['pv_cost'] = 2160
             data['owner_discount_rate'] = 8
             data['offtaker_discount_rate'] = 8
 	    if add == ['urdb_rate']:
+                data['load_size'] = 10000000
                 data['urdb_rate'] = default_urdb_rate()
+                data['load_profile_name'] = 'Hospital'
             else:
                 data['load_monthly_kwh'] = default_load_monthly()
                 data['blended_utility_rate'] = default_blended_rate()
@@ -84,7 +85,25 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
    
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
-            print json.loads(resp.content)
+            print resp
+            if add != ['urdb_rate']:
+                d = json.loads(resp.content)
+                self.assertEqual(str(d['lcc']),'1973.33')
+                self.assertEqual(str(d['npv']),'0.0')
+                self.assertEqual(str(d['pv_kw']),'0')
+                self.assertEqual(str(d['batt_kw']),'0.0')
+                self.assertEqual(str(d['batt_kwh']),'0.0')
+                self.assertEqual(str(d['utility_kwh']),'3400.0')
+            
+            if add == ['urdb_rate']:
+                d = json.loads(resp.content)
+                self.assertEqual(str(d['lcc']),str(8413330.0))
+                self.assertEqual(str(d['npv']),str(12250.0))
+                self.assertEqual(str(d['pv_kw']),str(59.0))
+                self.assertEqual(str(d['batt_kw']),str(28.1348))
+                self.assertEqual(str(d['batt_kwh']),str(54.9747))
+                self.assertEqual(int(float(d['utility_kwh'])),9978797)
+
 
     def test_valid_data_types(self):
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
