@@ -30,7 +30,7 @@ class DatLibrary:
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
     xpress_model = "REoptTS1127_PVBATT72916.mos"
     xpress_model_bau = "REoptTS1127_Util_Only.mos"
@@ -77,7 +77,7 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_output = os.path.join(self.path_xpress,"Output")
+        self.path_output = os.path.join(self.path_xpress,"Output"+str(self.run_input_id))
         self.path_output_bau = os.path.join(self.path_output,"bau")
 
         self.file_output = os.path.join(self.path_output, "summary.csv")
@@ -257,23 +257,21 @@ class DatLibrary:
                 self.npv = float(df['LCC'].values[0]) - float(self.lcc)
             else:
                 self.npv = 0
+
     def cleanup(self):
 
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
         log("DEBUG", "Output folder: " + self.path_output)
 
         if not self.debug:
-            for f in [os.path.join(self.path_egg, self.path_output)]:
+            for f in [self.path_output]:
                 if os.path.exists(f):
                     shutil.rmtree(f, ignore_errors=True)
 
-            for p in [  self.file_economics,
-                        self.file_economics_bau,
-                        self.file_gis,
-                        self.file_gis_bau,
-                        self.file_load_profile,
-                        self.file_load_size]:
+            for p in [self.file_economics,self.file_economics_bau, self.file_gis, self.file_gis_bau, self.file_load_profile, self.file_load_size]:
+               
                 if os.path.exists(p):
+                  
                     os.remove(p)
 
     # BAU files
