@@ -83,10 +83,13 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'reopt_api',
-        'USER': 'reopt_admin',
-        'PASSWORD': 'reopt',
-        'HOST': 'localhost',
+        'OPTIONS': {
+            'options': '-c search_path=reopt_api'
+        },
+        'NAME': 'reopt_development',
+        'USER': 'reopt_api',
+        'PASSWORD': 'password',
+        'HOST': 'reopt-dev-db1.nrel.gov',
         'PORT': '',
     }
 }
