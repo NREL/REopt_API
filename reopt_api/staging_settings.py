@@ -81,19 +81,17 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default':{
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'HOST': 'reopt-stage-db1.nrel.gov',
+        'NAME': 'reopt_staging',
         'OPTIONS': {
             'options': '-c search_path=reopt_api'
         },
-        'NAME': 'reopt_development',
-        'USER': 'reopt_api',
-        'PASSWORD': 'password',
-        'HOST': 'reopt-dev-db1.nrel.gov',
-        'PORT': '',
+        'USER': staging_user,
+        'PASSWORD': staging_user_password,
     }
 }
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
