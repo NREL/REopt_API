@@ -6,6 +6,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
 from tastypie.resources import ModelResource
+from tastypie.resources import csrf_exempt
 from models import RunInput
 
 import library
@@ -37,6 +38,14 @@ class RunInputResource(ModelResource):
             kwargs['pk'] = bundle_or_obj['id']
 
         return kwargs
+
+    def wrap_view(self, view):
+        @csrf_exempt
+        def wrapper(request, *args, **kwargs):
+            request.format = kwargs.pop('format', None)
+            wrapped_view = super(RunInputResource, self).wrap_view(view)
+            return wrapped_view(request, *args, **kwargs)
+        return wrapper
 
     def get_object_list(self, request):
         return [request]
