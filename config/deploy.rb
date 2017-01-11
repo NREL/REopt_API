@@ -16,9 +16,6 @@ set :file_permissions_users, ["www-data-local"]
 # Don't replace github.nrel.gov references for internal servers.
 set :bundle_swap_nrel_git_references, false
 
-# Symlink the virtualenv across deploys.
-set :linked_dirs, fetch(:linked_dirs, []).push("env")
-
 namespace :app do
   task :pip_install do
     on roles(:app) do
