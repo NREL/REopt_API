@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+keys.py
+.idea
+
+
 # C extensions
 *.so
 
@@ -91,3 +95,4 @@ ENV/
 
 # Dat files
 #*.dat
+

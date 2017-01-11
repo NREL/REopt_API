@@ -1,6 +1,8 @@
 import numpy as np
-import subprocess32
+import datetime, time, threading, signal
+from subprocess import Popen, PIPE
 import psutil
+from tastypie.exceptions import ImmediateHttpResponse
 from exceptions import SubprocessTimeoutError
 
 from log_levels import log
@@ -16,22 +18,18 @@ class Command(object):
 
     def __init__(self, cmd):
         self.cmd = cmd
-
-    def kill(self, proc_pid):
-        process = psutil.Process(proc_pid)
-        for proc in process.children(recursive=True):
-            proc.kill()
-            log('ERROR', 'Killed process %d' % proc.pid)
-        process.kill()
+	self.process = None
 
     def run(self, timeout):
-        proc = subprocess32.Popen(self.cmd)
+        def target():
+            self.process = Popen(self.cmd)
+            self.process.communicate()
 
-        try:
-            proc.wait(timeout=timeout)
-        except subprocess32.TimeoutExpired:
-            error_message = 'Initiating killing process %d after timeout of %d seconds' % (proc.pid, int(timeout))
-            self.kill(proc.pid)
-            log('ERROR', error_message)
-            raise SubprocessTimeoutError(error_message)
+        thread = threading.Thread(target=target)
+        thread.start()
 
+        thread.join(timeout)
+        if thread.is_alive():
+            self.process.terminate()
+            thread.join()
+            raise ImmediateHttpResponse("Process Timed Out")        

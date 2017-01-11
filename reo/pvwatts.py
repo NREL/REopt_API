@@ -11,12 +11,9 @@
 import requests
 import json
 import os, csv
-
+from api_definitions import *
 
 class PVWatts:
-    # API specific
-    key = "EkVFWynUReFEH8HT1L1RAe4C32RUx4w1AEtiN78J"
-    base = "https://developer.nrel.gov/api/pvwatts/v5.json"
 
     # Input data
     latitude = []
@@ -24,22 +21,16 @@ class PVWatts:
     run_id = []
 
     # Assume defaults
-    dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
-    inv_eff = 92  # or 96?
-    dc_ac_ratio = 1.1
-    azimuth = 180
-    system_capacity = 1  # kw to get prod factor
-    array_type = 0  # fixed open rack
-    module_type = 0  # standard
-    timeframe = "hourly"
-    losses = 14
-    radius = 0
-
-    # Base url; lat, lon, and tilt=lat added in "download_locations"
-    url_base = base + "?api_key=" + key + "&azimuth=" + str(azimuth) + "&system_capacity=" + str(system_capacity) + \
-               "&losses=" + str(losses) + "&array_type=" + str(array_type) + "&module_type=" + str(module_type) + \
-               "&timeframe=" + timeframe + "&dc_ac_ratio=" + str(dc_ac_ratio) + "&inv_eff=" + str(inv_eff) + \
-               "&radius=" + str(radius) + "&dataset=" + dataset
+    #dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
+    #inv_eff = 92  # or 96?
+    #dc_ac_ratio = 1.1
+    #azimuth = 180
+    #system_capacity = 1  # kw to get prod factor
+    #array_type = 0  # fixed open rack
+   # module_type = 0  # standard
+  #  timeframe = "hourly"
+  #  losses = 14
+  #  radius = 0
 
     # Time
     steps_per_hour = 1
@@ -52,20 +43,30 @@ class PVWatts:
     filename_GIS = []
     filename_GIS_bau = []
 
-    def __init__(self, output_root, run_id, latitude, longitude, steps_per_hour=1):
+    def __init__(self, output_root, run_id, pvwatts_inputs, steps_per_hour=1):
         self.steps_per_hour = steps_per_hour
         self.output_root = output_root
         self.run_id = run_id
 
-        self.latitude = latitude
-        self.longitude = longitude
+        for k,v in pvwatts_inputs.items():
+            setattr(self,k,v)
 
         self.download_locations()
 
+    def api(self):
+        # API specific
+        return {'key' : "EkVFWynUReFEH8HT1L1RAe4C32RUx4w1AEtiN78J",
+        'base' : "https://developer.nrel.gov/api/pvwatts/v5.json"}
+
+    def make_url(self):
+        return  self.api()['base'] + "?api_key=" + self.api()['key'] + "&azimuth=" + str(self.azimuth) + "&system_capacity=" + str(self.system_capacity) + \
+                   "&losses=" + str(self.losses*100) + "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
+                   "&timeframe=" + self.timeframe +"&gcr=" + str(self.gcr) +  "&dc_ac_ratio=" + str(self.dc_ac_ratio) + "&inv_eff=" + str(self.inv_eff*100) + \
+                   "&radius=" + str(self.radius) + "&dataset=" + self.dataset + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.tilt)
+
     def download_locations(self):
-        url = self.url_base + "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.latitude)
-        print url
-        r = requests.get(url, verify=False)
+        url = self.make_url()
+        r = requests.get(url, verify=True)
         data = json.loads(r.text)
         self.compute_prod_factor(data)
         self.write_output()

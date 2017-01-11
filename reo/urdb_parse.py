@@ -176,10 +176,10 @@ class RateData:
     demandwindow = []
     demandreactivepowercharge = []
 
-    # coincident rates 
-    coincidentrateunit = []
-    coincidentratestructure = []
-    coincidentrateschedule = []
+    # coincmd5 rates 
+    coincmd5rateunit = []
+    coincmd5ratestructure = []
+    coincmd5rateschedule = []
 
     # energy charges
     peakkwhusagemin = []
@@ -238,13 +238,12 @@ class UrdbParse:
         output = os.path.join(self.output_root, 'Utility')
         log_file = open(self.log_path, 'w')
         for utility in utilities:
-            print utility
             for rate in rates:
-                print rate
+               
                 rate_dir = os.path.join(output, utility, rate)
                 self.utility_dat_files = UtilityDatFiles(rate_dir)
                 name_file = os.path.join(rate_dir, 'rate_name.txt')
-                print name_file
+    
                 if os.path.exists(name_file):
                     rate_name = open(name_file, 'r')
                     for file in os.listdir(rate_dir):
@@ -254,7 +253,7 @@ class UrdbParse:
                             # with open(json_path, encoding='utf-8') as json_file:
                             with open(json_path,'r') as json_file:
                                 log_string = "Processing: " + utility + ", " + rate_name.read()
-                                print log_string
+                       
                                 log_file.write(log_string + '\n')
 
                                 data = json.loads(json_file.read())
@@ -342,13 +341,13 @@ class UrdbParse:
         if ('energycomments' in rate):
             current_rate.energycomments = rate['energycomments']
 
-            # coincident rates
-        if ('coincidentrateunit' in rate):
-            current_rate.coincidentrateunit = rate['coincidentrateunit']
-        if ('coincidentratestructure' in rate):
-            current_rate.coincidentratestructure = rate['coincidentratestructure']
-        if ('coincidentrateschedule' in rate):
-            current_rate.coincidentrateschedule = rate['coincidentrateschedule']
+            # coincmd5 rates
+        if ('coincmd5rateunit' in rate):
+            current_rate.coincmd5rateunit = rate['coincmd5rateunit']
+        if ('coincmd5ratestructure' in rate):
+            current_rate.coincmd5ratestructure = rate['coincmd5ratestructure']
+        if ('coincmd5rateschedule' in rate):
+            current_rate.coincmd5rateschedule = rate['coincmd5rateschedule']
 
         # other charges
         if ('fixedmonthlycharge' in rate):
@@ -575,7 +574,7 @@ class UrdbParse:
             log_file.write(log_string + '\n')
             n_tiers = max(demand_tier_set)
 
-            # make the number of tiers the same across all periods by appending on identical tiers
+            # make the number of tiers the same across all periods by appending on md5ical tiers
             for r in range(n_tou):
                 demand_rate = current_rate.demandratestructure[r]
                 demand_rate_new = demand_rate
