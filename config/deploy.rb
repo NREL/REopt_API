@@ -3,8 +3,6 @@ lock "3.7.0"
 
 set :application, "reopt_api"
 set :repo_url, "git@github.nrel.gov:ndiorio/reopt_api.git"
-# FIXME: Remove to go back to deploying from master once we merge things in.
-set :branch, "deploy"
 
 # Set the base deployment directory.
 set :deploy_to_base, "/srv/data/apps"
