@@ -23,10 +23,7 @@ namespace :app do
   task :pip_install do
     on roles(:app) do
       within release_path do
-        unless test("[ -f #{release_path}/env/bin/python ]")
-          execute "virtualenv", "env"
-        end
-
+        execute "virtualenv", "env"
         execute "./env/bin/pip", "install", "-r", "requirements.txt"
       end
     end
