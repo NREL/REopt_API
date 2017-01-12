@@ -1,6 +1,14 @@
 import cherrypy
 import os
-from reopt_api import settings
+
+env = os.environ['APP_ENV']
+if env == 'development':
+    from reopt_api import dev_settings as settings
+elif env == 'staging':
+    from reopt_api import staging_settings as settings
+else:
+    raise TypeError('Unknown APP_ENV')
+
 from djangoplugin import DjangoAppPlugin
 
 class DjangoApplication(object):
@@ -14,7 +22,6 @@ class DjangoApplication(object):
                 }
             })
 
-        os.environ['DJANGO_SETTINGS_MODULE'] = 'reopt_api.settings'
         DjangoAppPlugin(cherrypy.engine, settings).subscribe()
 
         cherrypy.engine.start()

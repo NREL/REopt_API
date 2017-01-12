@@ -112,5 +112,5 @@ USE_TZ = True
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.staging_settings")
 django.setup()
