@@ -1,5 +1,5 @@
 # config valid only for current version of Capistrano
-lock "3.7.0"
+lock "3.7.1"
 
 set :application, "reopt_api"
 set :repo_url, "git@github.nrel.gov:ndiorio/reopt_api.git"
