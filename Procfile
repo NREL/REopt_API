@@ -1,1 +1,1 @@
-web: $DEPLOY_CURRENT_PATH/env/bin/python2.7 manage.py runserver 127.0.0.1:7801
+web: $DEPLOY_CURRENT_PATH/env/bin/python2.7 cherrypy_django_service_linux.py

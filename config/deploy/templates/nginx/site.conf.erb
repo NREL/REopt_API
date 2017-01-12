@@ -16,7 +16,7 @@ upstream <%= fetch(:deploy_name) %>-http {
 }
 
 upstream <%= fetch(:deploy_name) %>-django_backend {
-  server 127.0.0.1:7801;
+  server unix:<%= current_path %>/tmp/cherrypy.sock;
   keepalive 10;
 }
 

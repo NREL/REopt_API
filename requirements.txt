@@ -1,4 +1,4 @@
-#CherryPy==6.0.1
+CherryPy==8.8.0
 Django==1.8
 django-tastypie==0.13.3
 numpy==1.11.0
