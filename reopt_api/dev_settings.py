@@ -24,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'f@$yxa_85#u_=tkejqe0urg=&k*f9(dhj%@fcv9m1tf^uy9kvl'
+SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -88,8 +88,8 @@ DATABASES = {
         'OPTIONS': {
             'options': '-c search_path=reopt_api'
         },
-        'USER': 'reopt_api',
-        'PASSWORD': 'password',
+        'USER': dev_user,
+        'PASSWORD': dev_user_password,
     }
 }
 
@@ -105,6 +105,7 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)
