@@ -2,7 +2,7 @@ from tastypie import fields
 import os
 
 def null_input_values():
-  return ['null']
+  return ['null','NULL']
 
 def inputs(filter='',full_list=False,just_required=False):
 
