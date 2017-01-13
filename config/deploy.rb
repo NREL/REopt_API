@@ -18,7 +18,7 @@ set :bundle_swap_nrel_git_references, false
 set :linked_dirs, fetch(:linked_dirs, []).push("tmp")
 
 # Allow the web user to write files for Xpress
-set :file_permissions_paths, fetch(:file_permissions_paths, []).push("Xpress/DatLibrary", "urdb_parse_log.txt")
+set :file_permissions_paths, fetch(:file_permissions_paths, []).push("Xpress/DatLibrary")
 
 namespace :app do
   task :pip_install do
@@ -26,12 +26,6 @@ namespace :app do
       within release_path do
         execute "virtualenv", "env"
         execute "./env/bin/pip", "install", "-r", "requirements.txt"
-
-        # FIXME: Create this file so we can setup the file permissions for it.
-        # However, we should probably try and shift this output into the log
-        # directory so we can do log rotation on it more easily along with the
-        # other log files being output by the web server and nginx.
-        execute "touch", "urdb_parse_log.txt"
       end
     end
   end

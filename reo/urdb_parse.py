@@ -217,7 +217,7 @@ class UrdbParse:
         self.year = year
         self.output_root = output_root
         self.log_root = log_root
-        self.log_path = os.path.join(log_root, 'urdb_parse_log.txt')
+        self.log_path = os.path.join(log_root, 'urdb_parse.log')
         self.time_steps_per_hour = time_steps_per_hour
 
         # Count the leap day

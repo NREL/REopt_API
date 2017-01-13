@@ -496,7 +496,7 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        log_root = os.path.join(self.path_egg, 'reopt_api')
+        log_root = os.path.join(self.path_egg, 'log')
         urdb_parse = UrdbParse(self.path_dat_library, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
