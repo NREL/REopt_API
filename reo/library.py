@@ -83,7 +83,7 @@ class DatLibrary:
         self.file_output = os.path.join(self.path_output, "summary.csv")
         self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
         
-	self.path_utility  = os.path.join(self.path_dat_library,"Utility")
+        self.path_utility  = os.path.join(self.path_dat_library,"Utility")
         self.path_various = os.path.join(self.path_dat_library, "Various")
         
         self.file_economics = os.path.join(self.path_dat_library,"Economics",'economics_' + str(self.run_input_id) + '.dat')
@@ -164,13 +164,15 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-	run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
-	run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
+        run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
       
         command = Command(run_command)
         command_bau = Command(run_command_bau)
-    
+        
+        log("DEBUG", "Running Command 1")
         command.run(self.timeout)
+        log("DEBUG", "Running BAU")
         command_bau.run(self.timeout)
 
         self.parse_run_outputs()

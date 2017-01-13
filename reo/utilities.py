@@ -23,7 +23,7 @@ class Command(object):
     def run(self, timeout):
         def target():
             self.process = Popen(self.cmd)
-            self.process.communicate()
+            log("DEBUG", "XPRESS", self.process.communicate())
 
         thread = threading.Thread(target=target)
         thread.start()
