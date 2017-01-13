@@ -75,7 +75,7 @@ class DatLibrary:
         self.path_egg = self.get_egg()
 
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
-        self.file_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
+        self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_output = os.path.join(self.path_xpress,"Output"+str(self.run_input_id))
         self.path_output_bau = os.path.join(self.path_output,"bau")
@@ -496,7 +496,7 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        log_root = os.path.join(self.path_egg, 'reopt_api')
+        log_root = os.path.join(self.path_egg, 'log')
         urdb_parse = UrdbParse(self.path_dat_library, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 

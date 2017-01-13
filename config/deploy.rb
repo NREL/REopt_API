@@ -17,6 +17,9 @@ set :bundle_swap_nrel_git_references, false
 # Symlink other directories across deploys.
 set :linked_dirs, fetch(:linked_dirs, []).push("tmp")
 
+# Allow the web user to write files for Xpress
+set :file_permissions_paths, fetch(:file_permissions_paths, []).push("Xpress")
+
 namespace :app do
   task :pip_install do
     on roles(:app) do

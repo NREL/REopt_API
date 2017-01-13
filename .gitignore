@@ -96,4 +96,5 @@ ENV/
 # Dat files
 #*.dat
 
-tmp/*
+/tmp/*
+/log/*
