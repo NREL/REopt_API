@@ -75,7 +75,7 @@ class DatLibrary:
         self.path_egg = self.get_egg()
 
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
-        self.file_logfile = os.path.join(self.path_egg, 'reopt_api', self.logfile)
+        self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_output = os.path.join(self.path_xpress,"Output"+str(self.run_input_id))
         self.path_output_bau = os.path.join(self.path_output,"bau")
