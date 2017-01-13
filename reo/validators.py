@@ -19,8 +19,6 @@ class REoptResourceValidation(Validation):
             errors = self.append_errors(errors, "Missing_Dependencies", message)
 
         for key, value in bundle.data.items():
-            if value in null_input_values():
-                value = None
 
             if key not in inputs(full_list=True):
                 errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
