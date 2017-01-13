@@ -259,7 +259,7 @@ class DatLibrary:
                 self.npv = 0
 
     def cleanup(self):
-
+        return
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
         log("DEBUG", "Output folder: " + self.path_output)
 
