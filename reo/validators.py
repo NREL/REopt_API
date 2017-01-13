@@ -45,19 +45,20 @@ class REoptResourceValidation(Validation):
         return errors
 
     def check_input_format(self,key,value,field_definition):
+        invalid_msg = 'Invalid format: Expected %s, got %s'%(str(field_definition['type']), str(type(value)))
         try:
-
-            new_value = field_definition['type'](value)
-            if value != new_value:
-                return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]
-
             if not field_definition['null']:
                 if value in [None,'null']:
                     return ['Invalid format: Input cannot be null']
+            
+            new_value = field_definition['type'](value)
+            
+            if value != new_value:
+                return [invalid_msg]
 
             return []
         except Exception as e:
-            return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]
+            return [invalid_msg]
 
     def check_min(self, key, value, fd):
         new_value = value
