@@ -23,18 +23,19 @@ class Command(object):
     def run(self, timeout):
         def target():
             self.process = Popen(self.cmd)
-            log("DEBUG", "XPRESS", self.process.communicate())
-        log("DEBUG", "XPRESS", "Creating Thread")
+            log("DEBUG", "XPRESS" + self.process.communicate())
+       
+        log("DEBUG", "XPRESS Creating Thread")
         thread = threading.Thread(target=target)
 
-        log("DEBUG", "XPRESS", "Starting Thread")
+        log("DEBUG", "XPRESS Starting Thread")
         thread.start()
 
-        log("DEBUG", "XPRESS", "Join Thread")
+        log("DEBUG", "XPRESS Join Thread")
         thread.join(timeout)
         
         if thread.is_alive():
-            log("ERROR", "XPRESS", "Thread Timeout")
+            log("ERROR", "XPRESS Thread Timeout")
             self.process.terminate()
             thread.join()
             raise ImmediateHttpResponse("Process Timed Out")        
