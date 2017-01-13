@@ -166,11 +166,13 @@ class DatLibrary:
 
         run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
         run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
-      
+        
+        log("DEBUG", "Initializing Command")
         command = Command(run_command)
+        log("DEBUG", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
         
-        log("DEBUG", "Running Command 1")
+        log("DEBUG", "Running Command")
         command.run(self.timeout)
         log("DEBUG", "Running BAU")
         command_bau.run(self.timeout)
@@ -219,6 +221,7 @@ class DatLibrary:
         output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', LocalPath='%s'" % (header, outline, path_output, self.path_dat_library, self.path_egg)
      	output_txt = """ "%s " """ % (output)
         
+        log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
