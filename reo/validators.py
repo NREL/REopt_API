@@ -19,8 +19,12 @@ class REoptResourceValidation(Validation):
             errors = self.append_errors(errors, "Missing_Dependencies", message)
 
         for key, value in bundle.data.items():
+            if value in null_input_values():
+                value = None
+
             if key not in inputs(full_list=True):
                 errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+            
             else:
                 field_def = inputs(full_list=True)[key]
                 format_errors =  self.check_input_format(key,value,field_def)
@@ -42,6 +46,7 @@ class REoptResourceValidation(Validation):
 
     def check_input_format(self,key,value,field_definition):
         try:
+
             new_value = field_definition['type'](value)
             if value != new_value:
                 return ['Invalid format: Expected %s, got %s'%(field_definition['type'], type(value))]

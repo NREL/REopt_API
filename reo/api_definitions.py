@@ -1,55 +1,59 @@
 from tastypie import fields
 import os
 
+def null_input_values()
+  return ['null']
+
 def inputs(filter='',full_list=False,just_required=False):
 
     output = {
-      'user_id': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": [], 'default':None
+      'user_id': {'req': True, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default':None
                   ,"description": "User ID", "units":None},
 
       # Required
       'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
                           'default': 25, 'min': 0, 'max': None,
                           "description": "Period of Analysis", "units": 'years'},
-      'latitude': {'req': True, 'type': float, 'null': True, 'pct': False,
+                          
+      'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                    "description": "Site Latitude", "units": 'degrees'},
 
-      'longitude': {'req': True, 'type': float, 'null': True, 'pct': False,
+      'longitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                     "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                     "description": "Site Longitude", "units": 'degrees'},
 
-      'pv_cost': {'req': True, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'pv_cost': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                   'max': None, 'default': 2160,
                   "description": "Nominal PV Cost", "units": 'dollars per kilowatt'},
 
-      'pv_om': {'req': True, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'pv_om': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                 'max': None, 'default': 20,
                 "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year'},
 
-      'batt_cost_kw': {'req': True, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'batt_cost_kw': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                        'max': None, 'default': 1600,
                        "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt'},
 
-      'batt_cost_kwh': {'req': True, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'batt_cost_kwh': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 500,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
 
-      'owner_discount_rate': {'req': True, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+      'owner_discount_rate': {'req': True, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0, 'max': 1, 'default': 0.08,
                               "description": "Owner Discount Rate", "units": 'decimal percent'},
 
-      'offtaker_discount_rate': {'req': True, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+      'offtaker_discount_rate': {'req': True, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                                  'min': 0, 'max': 1, 'default': 0.08,
                                  "description": "Offtaker Discount Rate", "units": 'decimal percent'},
 
       'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
-                               'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
+                               'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
                                 "description": "Blended Utility Rate", "units": '$/kWh'},
 
 
       'demand_charge': {'req': True, 'depends_on': ['blended_utility_rate'], 'swap_for': ['urdb_rate'], 'type': list,
-                        'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
+                        'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
                         "description": "Demand Charge", "units": '$/kW'},
 
       'urdb_rate': {'req': True, 'swap_for': ['demand_charge', 'blended_utility_rate'], 'type': dict, 'null': False,

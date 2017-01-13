@@ -52,6 +52,10 @@ class RunInputResource(ModelResource):
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
+        for k,v in model_inputs.items():
+            if v in null_input_values():
+                model_inputs[k] = None
+
         model_inputs['api_version'] = get_current_api()       
         run = RunInput(**model_inputs)
         run.save()
