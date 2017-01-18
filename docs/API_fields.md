@@ -9,7 +9,7 @@ If user selects building type, then require input of "Annual Electric Load (kWh)
 
 For the electricity rate, the user shall select a rate from URDB, which is queried based on their entered location.  The web app will pass along the urdb json to the API.  
 
-- Electricity rate (user selects from URDB): ```urdb_rate```
+- Electricity rate (user selects from URDB): ```urdb_rate```  
 - Type of building (dropdown): ```load_profile_name```  
 -- _Options for dropdown_:  
   * Small Office  
@@ -35,3 +35,30 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - Net metering limit (kW): ```net_metering_limit```  
 - Sellback rate avove net metering ($/kWh) ```wholesale_rate```  
 - Interconnection limit (kW) ```interconnection_limit```  
+
+# Photovoltaic
+
+## Technology
+- Minimum size desired (kW) - ```pv_kw_min```  
+- Maximum size desired (kW) - ```pv_kw_max```  
+- Module type (dropdown) - ```module_type```  
+-- _Options for dropdown_ (pass integer 0,1,2 to API):  
+  * Standard (0)    
+  * Premium (1)  
+  * Thin film (2)  
+- Array Azimuth (degrees) - ```azimuth```
+- Array Tilt (degrees) - ```tilt```
+- Array Type (dropdown) - ```array_type```  
+-- _Options for dropdown_ (pass integer 0,1,2,3,4 to API):
+  * Fixed - Open Rack (0)  
+  * Fixed - Roof Mounted (1)
+  * 1-Axis (2)  
+  * 1-Axis Backtracking (3)  
+  * 2-Axis (4)  
+- Losses (%) - ```losses```
+- DC-AC ratio - ```dc_ac_ratio```
+- Ground coverage ratio - ```gcr```
+
+## Cost and Incentives
+- System installed cost ($/kW) - ```pv_cost```
+- Operating and maintenance ($/kW-year) - ```pv_om```
