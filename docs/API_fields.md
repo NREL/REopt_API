@@ -62,3 +62,35 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 ## Cost and Incentives
 - System installed cost ($/kW) - ```pv_cost```
 - Operating and maintenance ($/kW-year) - ```pv_om```
+
+# Battery
+
+## Technology
+
+- Minimum power desired (kW) - ```batt_kw_min```  
+- Maximum power desired (kW) - ```batt_kw_max```  
+- Minimum time capacity at full power (hours) ` ```batt_time_min```  
+- Maximum time capacity at full power (hours) - ```batt_time_max```  
+- Battery internal efficiency (%) - ``batt_efficiency```  
+- Inverter efficiency (%) - ```batt_inverter_efficiency```  
+- Rectifier efficiency (%) - ```batt_rectifier_efficiency```  
+- Minimum state of charge (%) - ```batt_soc_min```  
+- Grid can charge battery? (checkbox) - ```batt_can_gridcharge```  
+
+## Cost and Incentives
+- Capacity ($/kW) - ```batt_cost_kwh```  
+- Power electronics ($/kW) - ```batt_cost_kw```  
+- Replacement cost escalation (%) - ```batt_replacement_cost_escalation```  
+
+# Financial Inputs
+The "developer" inputs should be grayed out or unavailable unless the "Third-party owner" box is checked.  
+
+- Analysis period (years) - ```analysis_period```  
+- Electricity escalation rate (%) - ```rate_escalation```  
+- Inflation rate (%) - ```rate_inflation```  
+- Discount rate (%) - ```offtaker_discount_rate```  
+- Owner tax rate (%) - ```offtaker_tax_rate```  
+- Third-party owner (check_box or something) - ```third_party_owned```  
+-- Developer discount rate (%) - ```owner_discount_rate```  
+-- Developer discount rate (%) - ```owner_tax_rate```  
+
