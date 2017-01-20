@@ -37,7 +37,10 @@ class RunInput(models.Model):
 
     rate_inflation = models.FloatField(null=True,blank=True)
     rate_escalation = models.FloatField(null=True,blank=True)
-    rate_tax = models.FloatField(null=True,blank=True)
+
+    offtaker_tax_rate = models.FloatField(null=True,blank=True)
+    owner_tax_rate = models.FloatField(null=True,blank=True)
+
     rate_itc = models.FloatField(null=True,blank=True)
 
     batt_replacement_cost_kw = models.FloatField(null=True,blank=True)
@@ -115,7 +118,8 @@ class RunOutput(models.Model):
 
     rate_inflation = models.FloatField(null=True, blank=True)
     rate_escalation = models.FloatField(null=True, blank=True)
-    rate_tax = models.FloatField(null=True, blank=True)
+    offtaker_tax_rate = models.FloatField(null=True, blank=True)
+    owner_tax_rate = models.FloatField(null=True, blank=True)
     rate_itc = models.FloatField(null=True, blank=True)
 
     batt_replacement_cost_kw = models.FloatField(null=True, blank=True)

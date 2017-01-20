@@ -10,9 +10,8 @@ uses "mmnl"
 
 parameters
   ! When running deployed, working directory is C:\Python27\Lib\site-packages\win32
-  LocalPath = "/home/vagrant/reopt"
-  DatLibraryPath = '/home/vagrant/Xpress/DatLibraryPath'
-  OutputDir = '/home/vagrant/reopt/Xpress/Output'
+  DatLibraryPath = '/local/workspace/django_env/reopt_api/Xpress/DatLibraryPath'
+  OutputDir = 'local/workspace/django_env/reopt_api/Xpress/Output'
 
   FuelBinCount = 1
   DemandBinCount = 1
@@ -48,10 +47,9 @@ parameters
 
 end-parameters
 
-
-
 declarations
 
+  status: string
   Month = 1..12
   Ratchets = 1..NumRatchets
   FuelBin = 1..FuelBinCount
@@ -149,10 +147,10 @@ declarations
   !pwf_offtaker: real
   LevelizationFactor: array(Tech) of real
 
-end-declarations
+  r_tax_owner: real
+  r_tax_offtaker: real
 
-!Confirm that we are in the proper directory
-writeln ("REopt running from ", LocalPath)
+end-declarations
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
 !setparam("XPRS_MIPRELSTOP",.001)
@@ -174,6 +172,8 @@ end-initializations
 initializations from DAT2 ! economics
 	!pwf_owner
 	!pwf_offtaker
+	r_tax_owner
+	r_tax_offtaker
 	pwf_om
 	pwf_e
 	!pwf_op
@@ -519,23 +519,26 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 
  !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
 (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb)))
-	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e +
+	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e  +
 
-!Demand Rates
- !sum( m in Month) dvPeakDemandE( m) * DemandRates( m) * pwf_e +
- sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e + sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m)+
+! TOU Demand Rates
+ sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e * (1 - r_tax_offtaker) +
+
+ ! Flat Demand Rates
+ sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m) * pwf_e * (1 - r_tax_offtaker) +
 
 !Cost of batteries
 sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) +
 	sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b) +
 
 !O&M cost based on system size
-sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) -
+sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * (1 - r_tax_owner) -
 
 ! Production Incentives
 sum(t in Tech ) dvProdIncent (t) +
 
-sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
+! Energy costs
+sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) * (1 - r_tax_offtaker)
 
 
 !! END OBJECTIVE FUNCTION VALUE
@@ -557,6 +560,14 @@ end-if
 !End timing
 EndTime:= gettime
 
+case getprobstat of
+  XPRS_OPT: status:="Optimum found"
+  XPRS_UNF: status:="Unfinished"
+  XPRS_INF: status:="Infeasible"
+  XPRS_UNB: status:="Unbounded"
+  XPRS_OTH: status:="Failed"
+  else status:="???"
+end-case
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
@@ -565,6 +576,7 @@ EndTime:= gettime
 
 !***************** Writing to Terminal ************************************
 writeln ("****************************** Results *******************************")
+writeln ( "Problem status = ", status)
 writeln ( "Optimization time = ", EndTime-StartTime, " seconds")
 writeln ( "Load = ", DAT4)
 writeln ( "utility = ",UtilName)
@@ -621,7 +633,8 @@ fclose(F_OUTPUT)
 
 ! REO Results - for plotting mostly
 fopen(OutputDir + "\\REOresults.csv",F_OUTPUT)
-writeln ("RECosts, ", getsol(RECosts))
+writeln("Problem status, ", status)
+writeln("RECosts, ", getsol(RECosts))
 writeln("Time, ", EndTime-StartTime)
 
 forall  (b in BattLevel |getsol ( dvStorageSizeKWH(b)   ) <> 0)  do

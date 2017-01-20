@@ -10,15 +10,9 @@ uses "mmnl"
 
 parameters
   ! When running deployed, working directory is C:\Python27\Lib\site-packages\win32
-  LocalPath = "C:\\Python27\\Lib\\site-packages\\reopt_api-1.0-py2.7.egg\\"
-  DatLibraryPath = LocalPath + "Xpress\\DatLibrary\\"
+  DatLibraryPath = '/local/workspace/django_env/reopt_api/Xpress/DatLibraryPath'
+  OutputDir = 'local/workspace/django_env/reopt_api/Xpress/Output'
 
-  ! When running local
-  !LocalPath = "C:\\Nick\\Projects\\api\\env\\src\\reopt_api"
-  !DatLibraryPath = LocalPath + "\\Xpress\\DatLibrary\\"
-  OUTDIR = "Output"
-  OutputDir = LocalPath + OUTDIR
-  
   FuelBinCount = 1
   DemandBinCount = 1
   BattLevelCount = 1
@@ -153,10 +147,10 @@ declarations
   !pwf_offtaker: real
   LevelizationFactor: array(Tech) of real
 
-end-declarations  
+  r_tax_owner: real
+  r_tax_offtaker: real
 
-!Confirm that we are in the proper directory  
-writeln ("REopt running from ", LocalPath)
+end-declarations  
 
 !setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
 !setparam("XPRS_MIPRELSTOP",.001)
@@ -182,6 +176,8 @@ initializations from DAT2 ! economics
 	pwf_e
 	!pwf_op
 	LevelizationFactor
+	r_tax_owner
+	r_tax_offtaker
 	StorageCostPerKW
 	StorageCostPerKWH
 	OMperUnitSize
@@ -526,21 +522,24 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb))) 
 	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e +
 
-!Demand Rates
- !sum( m in Month) dvPeakDemandE( m) * DemandRates( m) * pwf_e +
- sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e + sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m)+
- 
+!TOU Demand Rates
+ !sum( m in Month) dvPeakDemandE( m) * DemandRates( m) * pwf_e * (1 - r_tax_offtaker) +
+
+! Flat Demand Rates
+ sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m) * pwf_e * (1 - r_tax_offtaker) +
+
 !Cost of batteries
 sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) + 
 	sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b) +  
 
 !O&M cost based on system size
-sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) -
+sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * (1 - r_tax_owner) -
 
 ! Production Incentives
 sum(t in Tech ) dvProdIncent (t) +
 
-sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
+# Energy Costs
+sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) * (1 - r_tax_offtaker)
 
 
 !! END OBJECTIVE FUNCTION VALUE

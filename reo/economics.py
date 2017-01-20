@@ -84,7 +84,8 @@ class Economics:
         args["pwf_om"] = annuity(self.analysis_period, self.rate_inflation, self.owner_discount_rate)
         args["pwf_e"] = annuity(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate)
         args["pwf_op"] = annuity(self.analysis_period, self.rate_escalation, self.owner_discount_rate)
-
+        args["r_tax_offtaker"] = self.offtaker_tax_rate
+        args["r_tax_owner"] = self.owner_tax_rate
 
         args["LevelizationFactor"] = round(
             annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.rate_degradation) / args["pwf_e"], 5)
@@ -108,18 +109,18 @@ class Economics:
             basis_batt_kW = self.batt_cost_kw * (1 - self.macrs_itc_reduction * self.rate_itc)
             basis_batt_kWh = self.batt_cost_kwh * (1 - self.macrs_itc_reduction * self.rate_itc)
 
-            bonus_pv = basis_pv * self.bonus_fraction * self.rate_tax
-            bonus_batt_kW = basis_batt_kW * self.bonus_fraction * self.rate_tax
-            bonus_batt_kWh = basis_batt_kWh * self.bonus_fraction * self.rate_tax
+            bonus_pv = basis_pv * self.bonus_fraction * self.owner_tax_rate
+            bonus_batt_kW = basis_batt_kW * self.bonus_fraction * self.owner_tax_rate
+            bonus_batt_kWh = basis_batt_kWh * self.bonus_fraction * self.owner_tax_rate
 
             macr_base_pv = basis_pv * (1 - self.bonus_fraction)
             macr_base_batt_kW = basis_batt_kW * (1 - self.bonus_fraction)
             macr_base_batt_kWh = basis_batt_kWh * (1 - self.bonus_fraction)
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
 
             # cost = price - federal tax benefits, where ITC and bonus are discounted 1 year using r_owner
             args["CapCostSlope"] = round(
@@ -155,9 +156,9 @@ class Economics:
             macr_base_batt_kWh = self.batt_cost_kwh - self.macrs_itc_reduction * self.rate_itc * self.batt_cost_kwh
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
 
             # cost = price - federal tax benefits, where ITC is discounted 1 year using r_owner
             args["CapCostSlope"] = round(
@@ -171,9 +172,9 @@ class Economics:
             pv_tax_shield = batt_kW_tax_shield = batt_kWh_tax_shield = 0
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * self.pv_cost * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * self.batt_cost_kw * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * self.batt_cost_kwh * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * self.pv_cost * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kW_tax_shield += r * self.batt_cost_kw * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kWh_tax_shield += r * self.batt_cost_kwh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
 
             # cost = price - federal tax benefits
             args["CapCostSlope"] = round(self.pv_cost - pv_tax_shield, 4)
@@ -183,18 +184,18 @@ class Economics:
         elif self.flag_itc == 0 and self.flag_macrs == 1 and self.flag_bonus == 1:
             pv_tax_shield = batt_kW_tax_shield = batt_kWh_tax_shield = 0
 
-            bonus_pv = self.pv_cost * self.bonus_fraction * self.rate_tax
-            bonus_batt_kW = self.batt_cost_kw * self.bonus_fraction * self.rate_tax
-            bonus_batt_kWh = self.batt_cost_kwh * self.bonus_fraction * self.rate_tax
+            bonus_pv = self.pv_cost * self.bonus_fraction * self.owner_tax_rate
+            bonus_batt_kW = self.batt_cost_kw * self.bonus_fraction * self.owner_tax_rate
+            bonus_batt_kWh = self.batt_cost_kwh * self.bonus_fraction * self.owner_tax_rate
 
             macr_base_pv = self.pv_cost * (1 - self.bonus_fraction)
             macr_base_batt_kW = self.batt_cost_kw * (1 - self.bonus_fraction)
             macr_base_batt_kWh = self.batt_cost_kwh * (1 - self.bonus_fraction)
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.rate_tax / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
 
             # cost = price - federal tax benefits, where bonus is discounted 1 year using r_owner
             args["CapCostSlope"] = round(self.pv_cost - pv_tax_shield - bonus_pv / (1 + self.owner_discount_rate), 4)

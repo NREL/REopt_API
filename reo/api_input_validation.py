@@ -61,7 +61,10 @@ def check_rate_inflation():
 def check_rate_escalation():
     return {}
 
-def check_rate_tax():
+def check_offtaker_tax_rate():
+    return {}
+
+def check_owner_tax_rate():
     return {}
 
 def check_rate_itc():

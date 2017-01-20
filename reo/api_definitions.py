@@ -89,9 +89,14 @@ def inputs(filter='',full_list=False,just_required=False):
                           'min': -1, 'max': 1, 'default': 0.0039,
                           "description": "Annual Cost of  Electricity Escalation Rate", "units": 'decimal percent per year'},
 
-      'rate_tax': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'offtaker_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.35,
-                   "description": "Tax Rate", "units": 'decimal percent'},
+                   "description": "Tax Rate for Electricity Customer", "units": 'decimal percent'},
+
+      'owner_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                    'min': 0,
+                    'max': 1, 'default': 0.35,
+                    "description": "Tax Rate for System Developer", "units": 'decimal percent'},
 
       'rate_itc': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.30,
