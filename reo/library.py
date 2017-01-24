@@ -83,8 +83,8 @@ class DatLibrary:
         self.path_run_outputs = os.path.join(self.path_run,"Outputs")
         self.path_run_outputs_bau = os.path.join(self.path_run,"Outputs_bau")
 
-        if os.path.exists(path_run):
-            shutil.rmtree(path_run)
+        if os.path.exists(self.path_run):
+            shutil.rmtree(self.path_run)
         
         for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
             os.mkdir(f)
