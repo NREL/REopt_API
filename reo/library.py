@@ -489,15 +489,15 @@ class DatLibrary:
 
         utility_name = alphanum(urdb_rate['utility'])
         rate_name = alphanum(urdb_rate['name'])
-    
-        folder_name = os.path.join(utility_name, rate_name)
 
-        rate_output_folder = os.path.join(self.path_utility, folder_name)
+        base_folder = os.path.join(self.path_utility, utility_name)
+        if os.path.exists(base_folder):
+            shutil.rmtree(base_folder)
+        os.mkdir(base_folder)
 
-        if os.path.exists(rate_output_folder):
-            shutil.rmtree(rate_output_folder)
+        rate_output_folder = os.path.join(base_folder, rate_name)
         os.mkdir(rate_output_folder)
-        
+
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
             outfile.close()
