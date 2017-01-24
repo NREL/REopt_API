@@ -77,23 +77,31 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_output = os.path.join(self.path_xpress,"Output"+str(self.run_input_id))
-        self.path_output_bau = os.path.join(self.path_output,"bau")
-
-        self.file_output = os.path.join(self.path_output, "summary.csv")
-        self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
+        self.path_run = os.path.join(self.path_xpress,"Run"+str(self.run_input_id))
         
-        self.path_utility  = os.path.join(self.path_dat_library,"Utility")
-        self.path_various = os.path.join(self.path_dat_library, "Various")
-        
-        self.file_economics = os.path.join(self.path_dat_library,"Economics",'economics_' + str(self.run_input_id) + '.dat')
-        self.file_economics_bau = os.path.join(self.path_dat_library,"Economics", 'economics_' + str(self.run_input_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_dat_library,"LoadSize", 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_dat_library,"LoadProfiles", 'Load8760_' + str(self.run_input_id) + '.dat')
+        self.path_run_inputs = os.path.join(self.path_run, "Inputs")
+        self.path_run_outputs = os.path.join(self.path_run,"Outputs")
+        self.path_run_outputs_bau = os.path.join(self.path_run,"Outputs_bau")
 
- 	
+        if os.path.exists(path_run):
+            shutil.rmtree(path_run)
+        
+        for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
+            os.mkdir(f)
+
+        self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
+        self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
+        
+        self.file_economics = os.path.join(self.path_run_inputs,'economics_' + str(self.run_input_id) + '.dat')
+        self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
+        self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
+        self.file_gis_bau = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '_bau.dat')
+        self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
+
+        self.path_utility  = os.path.join(self.path_run_inputs)
+        self.path_various = os.path.join(self.path_run_inputs)
+
         for k,v in self.inputs(full_list=True).items():
             if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
@@ -164,8 +172,8 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-        run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
-        run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_run_output, self.xpress_model, self.DAT )
+        run_command_bau = self.create_run_command(self.path_run_output_bau, self.xpress_model_bau, self.DAT_bau )
         
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
@@ -200,11 +208,6 @@ class DatLibrary:
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + path_output)
-
-        if os.path.exists(path_output):
-            shutil.rmtree(path_output)
-
-        os.mkdir(path_output)
 
         # RE case
         header = 'exec '
@@ -266,17 +269,15 @@ class DatLibrary:
     def cleanup(self):
         return
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
-        log("DEBUG", "Output folder: " + self.path_output)
+        log("DEBUG", "Output folder: " + self.path_run_output)
 
         if not self.debug:
-            for f in [self.path_output]:
+            for f in [self.path__run_output]:
                 if os.path.exists(f):
                     shutil.rmtree(f, ignore_errors=True)
 
             for p in [self.file_economics,self.file_economics_bau, self.file_gis, self.file_gis_bau, self.file_load_profile, self.file_load_size]:
-               
                 if os.path.exists(p):
-                  
                     os.remove(p)
 
     # BAU files
