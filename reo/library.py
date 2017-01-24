@@ -339,7 +339,7 @@ class DatLibrary:
                         path = os.path.join( self.folder_utility , name )
                         load_profile = self.scale_load_by_month(path)
                 else:
-                    path = os.path.join( self.folder_load_profile, default_load_profile_norm)
+                    path = os.path.join( self.folder_utility, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile"  )
