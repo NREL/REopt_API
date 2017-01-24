@@ -87,7 +87,6 @@ class DatLibrary:
             shutil.rmtree(self.path_run)
         
         for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
-            log("F")
             os.mkdir(f)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
