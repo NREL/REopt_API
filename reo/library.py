@@ -475,6 +475,7 @@ class DatLibrary:
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
+            
             with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
@@ -512,7 +513,7 @@ class DatLibrary:
             outfile.close()
 
         log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_dat_library, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.path_run_inputs, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
