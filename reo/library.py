@@ -103,6 +103,8 @@ class DatLibrary:
         self.path_various = os.path.join(self.path_run_inputs)
 
         self.folder_utility = os.path.join(self.path_dat_library, "Utility")
+        self.folder_load_profile = os.path.join(self.path_dat_library, "LoadProfiles")
+        self.folder_load_size = os.path.join(self.path_dat_library, "LoadSize")
         self.folder_various = os.path.join(self.path_dat_library, "Various")
 
         for k,v in self.inputs(full_list=True).items():
@@ -336,10 +338,10 @@ class DatLibrary:
                 
                 if (self.load_profile_name is not None) and (self.load_profile_name.lower() in self.default_load_profiles):
                         name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        path = os.path.join( self.folder_utility , name )
+                        path = os.path.join( self.folder_load_profile , name )
                         load_profile = self.scale_load_by_month(path)
                 else:
-                    path = os.path.join( self.folder_utility, default_load_profile_norm)
+                    path = os.path.join( self.folder_load_profile, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile"  )
@@ -350,16 +352,16 @@ class DatLibrary:
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
 
-	        self.file_load_size = os.path.join( self.folder_utility, default_load_size)
-                self.file_load_profile = os.path.join( self.folder_utility, default_load_profile) 
+	        self.file_load_size = os.path.join( self.folder_load_size, default_load_size)
+                self.file_load_profile = os.path.join( self.folder_load_profile, default_load_profile) 
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
                         filename_profile = "Load8760_raw_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        self.file_load_size = os.path.join( self.folder_utility , filename_size)
-                        self.file_load_profile = os.path.join( self.folder_utility , filename_profile)
+                        self.file_load_size = os.path.join( self.folder_load_size , filename_size)
+                        self.file_load_profile = os.path.join( self.folder_load_profile , filename_profile)
                 
             else:
                 self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
@@ -367,12 +369,12 @@ class DatLibrary:
                 # Load profile specified, with load size specified
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
-                        tmp_profile = os.path.join( self.folder_utility, "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
+                        tmp_profile = os.path.join( self.folder_load_profile, "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
                         load_profile = self.scale_load(tmp_profile, self.load_size)
                 
                 #Load size specified, no profile
                 else:
-		    p = os.path.join( self.folder_utility, default_load_profile)
+		    p = os.path.join( self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
