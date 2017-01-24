@@ -87,6 +87,7 @@ class DatLibrary:
             shutil.rmtree(self.path_run)
         
         for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
+            log("F")
             os.mkdir(f)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
@@ -491,13 +492,17 @@ class DatLibrary:
         rate_name = alphanum(urdb_rate['name'])
     
         folder_name = os.path.join(utility_name, rate_name)
+
         rate_output_folder = os.path.join(self.path_utility, folder_name)
 
-        if not os.path.isdir(rate_output_folder):
-            os.makedirs(rate_output_folder)
+        if os.path.exists(rate_output_folder):
+            shutil.rmtree(rate_output_folder)
+        os.mkdir(rate_output_folder)
+        
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
             outfile.close()
+        
         with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
