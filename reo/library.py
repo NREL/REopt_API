@@ -177,8 +177,8 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-        run_command = self.create_run_command(self.path_run_output, self.xpress_model, self.DAT )
-        run_command_bau = self.create_run_command(self.path_run_output_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT )
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model_bau, self.DAT_bau )
         
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
@@ -274,7 +274,7 @@ class DatLibrary:
     def cleanup(self):
         return
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
-        log("DEBUG", "Output folder: " + self.path_run_output)
+        log("DEBUG", "Output folder: " + self.path_run_outputs)
 
         if not self.debug:
             for f in [self.path__run_output]:
