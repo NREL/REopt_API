@@ -212,10 +212,9 @@ class UrdbParse:
     output_root = []
     utility_dat_files = []
 
-    def __init__(self, utility_root, output_dir, log_root, year, time_steps_per_hour=1):
+    def __init__(self, output_dir, log_root, year, time_steps_per_hour=1):
 
         self.year = year
-        self.utility_root = utility_root
         self.output_dir = output_dir
         self.log_root = log_root
         self.log_path = os.path.join(log_root, 'urdb_parse_log.txt')
@@ -230,17 +229,17 @@ class UrdbParse:
             self.last_hour_in_month.append(days_elapsed * 24)
 
     def parse_all_output(self):
-        for utility in os.listdir(self.utility_root):
-            for rate in os.listdir(os.path.join(self.utility_root, utility)):
+        for utility in os.listdir(self.output_dir):
+            for rate in os.listdir(os.path.join(self.output_dir, utility)):
                 self.parse_specific_rates([utility], [rate])
 
     def parse_specific_rates(self, utilities, rates):
         log_file = open(self.log_path, 'w')
         for utility in utilities:
             for rate in rates:
-                #comment
-                rate_dir = os.path.join(self.utility_root, utility, rate)
-                self.utility_dat_files = UtilityDatFiles(self.output_dir)
+
+                rate_dir = os.path.join(self.output_dir, utility, rate)
+                self.utility_dat_files = UtilityDatFiles(rate_dir)
                 name_file = os.path.join(rate_dir, 'rate_name.txt')
                 
                 print name_file
