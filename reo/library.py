@@ -513,7 +513,7 @@ class DatLibrary:
             outfile.close()
 
         log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_run_inputs, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.folder_utility, self.path_run_inputs, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
