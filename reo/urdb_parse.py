@@ -176,10 +176,10 @@ class RateData:
     demandwindow = []
     demandreactivepowercharge = []
 
-    # coincmd5 rates 
-    coincmd5rateunit = []
-    coincmd5ratestructure = []
-    coincmd5rateschedule = []
+    # coincident rates 
+    coincidentrateunit = []
+    coincidentratestructure = []
+    coincidentrateschedule = []
 
     # energy charges
     peakkwhusagemin = []
@@ -212,12 +212,13 @@ class UrdbParse:
     output_root = []
     utility_dat_files = []
 
-    def __init__(self, output_root, log_root, year, time_steps_per_hour=1):
+    def __init__(self, utility_root, output_dir, log_root, year, time_steps_per_hour=1):
 
         self.year = year
-        self.output_root = output_root
+        self.utility_root = utility_root
+        self.output_dir = output_dir
         self.log_root = log_root
-        self.log_path = os.path.join(log_root, 'urdb_parse.log')
+        self.log_path = os.path.join(log_root, 'urdb_parse_log.txt')
         self.time_steps_per_hour = time_steps_per_hour
 
         # Count the leap day
@@ -229,21 +230,21 @@ class UrdbParse:
             self.last_hour_in_month.append(days_elapsed * 24)
 
     def parse_all_output(self):
-        output = os.path.join(self.output_root, 'Utility')
-        for utility in os.listdir(output):
-            for rate in os.listdir(os.path.join(output, utility)):
+        for utility in os.listdir(self.utility_root):
+            for rate in os.listdir(os.path.join(self.utility_root, utility)):
                 self.parse_specific_rates([utility], [rate])
 
     def parse_specific_rates(self, utilities, rates):
-        output = os.path.join(self.output_root, 'Utility')
         log_file = open(self.log_path, 'w')
         for utility in utilities:
             for rate in rates:
-               
-                rate_dir = os.path.join(output, utility, rate)
-                self.utility_dat_files = UtilityDatFiles(rate_dir)
+                #comment
+                rate_dir = os.path.join(self.utility_root, utility, rate)
+                self.utility_dat_files = UtilityDatFiles(self.output_dir)
                 name_file = os.path.join(rate_dir, 'rate_name.txt')
-    
+                
+                print name_file
+                
                 if os.path.exists(name_file):
                     rate_name = open(name_file, 'r')
                     for file in os.listdir(rate_dir):
@@ -253,7 +254,7 @@ class UrdbParse:
                             # with open(json_path, encoding='utf-8') as json_file:
                             with open(json_path,'r') as json_file:
                                 log_string = "Processing: " + utility + ", " + rate_name.read()
-                       
+                                print log_string
                                 log_file.write(log_string + '\n')
 
                                 data = json.loads(json_file.read())
@@ -341,13 +342,13 @@ class UrdbParse:
         if ('energycomments' in rate):
             current_rate.energycomments = rate['energycomments']
 
-            # coincmd5 rates
-        if ('coincmd5rateunit' in rate):
-            current_rate.coincmd5rateunit = rate['coincmd5rateunit']
-        if ('coincmd5ratestructure' in rate):
-            current_rate.coincmd5ratestructure = rate['coincmd5ratestructure']
-        if ('coincmd5rateschedule' in rate):
-            current_rate.coincmd5rateschedule = rate['coincmd5rateschedule']
+            # coincident rates
+        if ('coincidentrateunit' in rate):
+            current_rate.coincidentrateunit = rate['coincidentrateunit']
+        if ('coincidentratestructure' in rate):
+            current_rate.coincidentratestructure = rate['coincidentratestructure']
+        if ('coincidentrateschedule' in rate):
+            current_rate.coincidentrateschedule = rate['coincidentrateschedule']
 
         # other charges
         if ('fixedmonthlycharge' in rate):
@@ -574,7 +575,7 @@ class UrdbParse:
             log_file.write(log_string + '\n')
             n_tiers = max(demand_tier_set)
 
-            # make the number of tiers the same across all periods by appending on md5ical tiers
+            # make the number of tiers the same across all periods by appending on identical tiers
             for r in range(n_tou):
                 demand_rate = current_rate.demandratestructure[r]
                 demand_rate_new = demand_rate
