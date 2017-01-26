@@ -464,7 +464,7 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
 
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, pv_inputs)
+            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
