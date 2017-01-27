@@ -99,7 +99,7 @@ class DatLibrary:
         self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
         self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
 
-        self.path_utility  = os.path.join(self.path_run_inputs)
+        self.path_utility = os.path.join(self.path_run_inputs, "Utility")
         self.path_various = os.path.join(self.path_run_inputs)
 
         self.folder_utility = os.path.join(self.path_dat_library, "Utility")
@@ -226,50 +226,68 @@ class DatLibrary:
         
         outline.replace('\n', '') 
         
-        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', LocalPath='%s'" % (header, outline, path_output, self.path_dat_library, self.path_egg)
+        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', LocalPath='%s'" \
+                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, self.path_egg)
      	output_txt = """ "%s " """ % (output)
         
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
+
         if os.path.exists(self.file_output):
-            df = pd.read_csv(self.file_output, header=None, index_col=0)
+
+            cols = ['Variable', 'Value']
+
+            df = pd.read_csv(self.file_output, header=None, index_col=0, names=cols)
             df = df.transpose()
             pv_size = 0
 
-            if 'LCC' in df.columns:
-                self.lcc = float(df['LCC'].values[0])
-            if 'BattInverter_kW' in df.columns:
-                self.batt_kw = float(df['BattInverter_kW'].values[0])
-            if 'BattSize_kWh' in df.columns:
-                self.batt_kwh = float(df['BattSize_kWh'].values[0])
-            if 'PVNMsize_kW' in df.columns:
-                pv_size += float(df['PVNMsize_kW'].values[0])
-            if 'PVsize_kW' in df.columns:
-                pv_size += float(df['PVsize_kW'].values[0])
-            if 'Utility_kWh' in df.columns:
-                self.utility_kwh = float(df['Utility_kWh'].values[0])
+            # check if model solved
+            if 'Problem status' in df.columns:
+                self.status = str(df['Problem status'].values[0]).rstrip()
 
-            self.update_types()
+                if self.status == "Optimum found":
+                    if 'LCC' in df.columns:
+                        self.lcc = float(df['LCC'].values[0])
+                        print self.lcc
+                    if 'BattInverter_kW' in df.columns:
+                        self.batt_kw = float(df['BattInverter_kW'].values[0])
+                    if 'BattSize_kWh' in df.columns:
+                        self.batt_kwh = float(df['BattSize_kWh'].values[0])
+                    if 'PVNMsize_kW' in df.columns:
+                        pv_size += float(df['PVNMsize_kW'].values[0])
+                    if 'PVsize_kW' in df.columns:
+                        pv_size += float(df['PVsize_kW'].values[0])
+                    if 'Utility_kWh' in df.columns:
+                        self.utility_kwh = float(df['Utility_kWh'].values[0])
 
-            if pv_size > 0:
-                self.pv_kw = str(round(pv_size, 0))
-            else:
-                self.pv_kw = 0
+                    self.update_types()
+
+                    if pv_size > 0:
+                        self.pv_kw = str(round(pv_size, 0))
+                    else:
+                        self.pv_kw = 0
+
+                    if os.path.exists(self.file_output_bau):
+                        df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
+                        df = df.transpose()
+
+                        # check if base case solved
+                        if 'Problem status' in df.columns:
+                            status = str(df['Problem status'].values[0]).rstrip()
+
+                            if status == "Optimum found":
+                                if 'LCC' in df.columns:
+                                    self.npv = float(df['LCC'].values[0]) - float(self.lcc)
+                                else:
+                                    self.npv = 0
 
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
-        if os.path.exists(self.file_output_bau):
-            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
-            df = df.transpose()
-           
-            if 'LCC' in df.columns:
-                self.npv = float(df['LCC'].values[0]) - float(self.lcc)
-            else:
-                self.npv = 0
+
 
     def cleanup(self):
         return
@@ -470,8 +488,10 @@ class DatLibrary:
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
 
     def create_utility(self):
+
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility,self.utility_name, self.rate_name)
+
+            self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
@@ -496,12 +516,14 @@ class DatLibrary:
         utility_name = alphanum(urdb_rate['utility'])
         rate_name = alphanum(urdb_rate['name'])
 
-        base_folder = os.path.join(self.path_run_inputs, utility_name)
+        base_folder = os.path.join(self.path_utility, utility_name)
+        rate_output_folder = os.path.join(base_folder, rate_name)
+
         if os.path.exists(base_folder):
             shutil.rmtree(base_folder)
-        os.mkdir(base_folder)
 
-        rate_output_folder = os.path.join(base_folder, rate_name)
+        os.mkdir(self.path_utility)
+        os.mkdir(base_folder)
         os.mkdir(rate_output_folder)
 
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
@@ -513,7 +535,7 @@ class DatLibrary:
             outfile.close()
 
         log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_run_inputs, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.path_utility, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name

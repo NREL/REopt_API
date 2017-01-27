@@ -10,8 +10,9 @@ uses "mmnl"
 
 parameters
   ! When running deployed, working directory is C:\Python27\Lib\site-packages\win32
-  DatLibraryPath = '/local/workspace/django_env/reopt_api/Xpress/DatLibraryPath'
-  OutputDir = 'local/workspace/django_env/reopt_api/Xpress/Output'
+  DatLibraryPath = "/local/workspace/django_env/reopt_api/Xpress/DatLibrary"
+  ScenarioPath = DatLibraryPath
+  OutputDir = "local/workspace/django_env/reopt_api/Xpress/Output"
 
   FuelBinCount = 1
   DemandBinCount = 1
@@ -32,24 +33,22 @@ parameters
   
   DAT6 = DatLibraryPath + "/Various/storage_bau.dat"
   DAT7 = DatLibraryPath + "/Various/maxsizes_bau.dat"
-  DAT8  = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemand.dat"
-  DAT9  = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRate.dat"
-  DAT10 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCostBase.dat"
-  DAT11 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/ExportRatesBase.dat"
-  DAT12 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemandMonth.dat"
-  DAT13 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRateMonth.dat"
-  DAT14 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/LookbackMonthsAndPercent.dat"
-  DAT15 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/UtilityTiers.dat"
-  DAT16 = DatLibraryPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRateBase.dat"
-
+  DAT8  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemand.dat"
+  DAT9  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRate.dat"
+  DAT10 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCostBase.dat"
+  DAT11 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/ExportRatesBase.dat"
+  DAT12 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemandMonth.dat"
+  DAT13 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRateMonth.dat"
+  DAT14 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/LookbackMonthsAndPercent.dat"
+  DAT15 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/UtilityTiers.dat"
+  DAT16 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRateBase.dat"
   DAT17 = DatLibraryPath + "/NMILLimits/NMIL_HIGHLimit.dat"
-  !DAT17 = "NMILLimits\\NMIL_net_metering_OFF.dat"
 
 end-parameters
 
-
 declarations
-					
+
+  status: string
   Month = 1..12    
   Ratchets = 1..NumRatchets
   FuelBin = 1..FuelBinCount
@@ -246,7 +245,6 @@ end-initializations
 initializations from DAT17
 	NMILLimits
 end-initializations
-
 
 
 !Start timing
@@ -523,7 +521,7 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e +
 
 !TOU Demand Rates
- !sum( m in Month) dvPeakDemandE( m) * DemandRates( m) * pwf_e * (1 - r_tax_offtaker) +
+ sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e * (1 - r_tax_offtaker) +
 
 ! Flat Demand Rates
  sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m) * pwf_e * (1 - r_tax_offtaker) +
@@ -538,7 +536,7 @@ sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * (1 - r_tax_owner) -
 ! Production Incentives
 sum(t in Tech ) dvProdIncent (t) +
 
-# Energy Costs
+! Energy Costs
 sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) * (1 - r_tax_offtaker)
 
 
@@ -561,6 +559,14 @@ end-if
 !End timing
 EndTime:= gettime
 
+case getprobstat of
+  XPRS_OPT: status:="Optimum found"
+  XPRS_UNF: status:="Unfinished"
+  XPRS_INF: status:="Infeasible"
+  XPRS_UNB: status:="Unbounded"
+  XPRS_OTH: status:="Failed"
+  else status:="???"
+end-case
  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
@@ -569,6 +575,7 @@ EndTime:= gettime
 
 !***************** Writing to Terminal ************************************
 writeln ("****************************** Results *******************************")
+writeln ( "Problem status = ", status)
 writeln ( "Optimization time = ", EndTime-StartTime, " seconds")
 writeln ( "Load = ", DAT4)
 writeln ( "utility = ",UtilName)
@@ -625,6 +632,7 @@ fclose(F_OUTPUT)
 
 ! REO Results - for plotting mostly
 fopen(OutputDir + "\\REOresults.csv",F_OUTPUT)
+writeln("Problem status, ", status)
 writeln ("RECosts, ", getsol(RECosts))
 writeln("Time, ", EndTime-StartTime)
 
@@ -643,6 +651,7 @@ fclose(F_OUTPUT)
 
 ! Summary
 fopen(OutputDir + "\\summary.csv",F_OUTPUT)
+writeln("Problem status,", status)
 writeln ("LCC,", getsol(RECosts))
 writeln ("Cap_Cost,",
     sum(t in Tech) CapCostSlope (t) * getsol(dvSystemSize(t)) +
