@@ -32,8 +32,7 @@ class DatLibrary:
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = False
     logfile = "reopt_api.log"
-    xpress_model = "REoptTS1127_PVBATT72916.mos"
-    xpress_model_bau = "REoptTS1127_Util_Only.mos"
+    xpress_model = "REopt_API.mos"
     year = 2017
     time_steps_per_hour = 1
 
@@ -177,8 +176,8 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT )
-        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
         
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
@@ -209,15 +208,20 @@ class DatLibrary:
                             datefmt='%m/%d/%Y %I:%M%S %p',
                             level=logging.DEBUG)
 
-    def create_run_command(self, path_output, xpress_model, DATs ):
+    def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + path_output)
 
+        # base case
+        base_string = ""
+        if base_case:
+            base_string = "Base"
+
         # RE case
         header = 'exec '
         header += os.path.join(self.path_xpress,xpress_model)
-           
+
         outline = ''
 
         for dat_file in DATs:
@@ -226,10 +230,10 @@ class DatLibrary:
         
         outline.replace('\n', '') 
         
-        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', LocalPath='%s'" \
-                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, self.path_egg)
+        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
+                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
      	output_txt = """ "%s " """ % (output)
-        
+
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
 

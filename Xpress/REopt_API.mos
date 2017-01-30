@@ -13,6 +13,7 @@ parameters
   DatLibraryPath = "/local/workspace/django_env/reopt_api/Xpress/DatLibrary"
   ScenarioPath = DatLibraryPath
   OutputDir = "local/workspace/django_env/reopt_api/Xpress/Output"
+  BaseString = ""
 
   FuelBinCount = 1
   DemandBinCount = 1
@@ -35,13 +36,13 @@ parameters
   DAT7 = DatLibraryPath + "/Various/maxsizes.dat"
   DAT8  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemand.dat"
   DAT9  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRate.dat"
-  DAT10 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCost.dat"
-  DAT11 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/ExportRates.dat"
+  DAT10 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCost" + BaseString + ".dat"
+  DAT11 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/ExportRates" + BaseString + ".dat"
   DAT12 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemandMonth.dat"
   DAT13 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRateMonth.dat"
   DAT14 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/LookbackMonthsAndPercent.dat"
   DAT15 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/UtilityTiers.dat"
-  DAT16 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRate.dat"
+  DAT16 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRate" + BaseString + ".dat"
   DAT17 = DatLibraryPath + "/NMILLimits/NMIL_HIGHLimit.dat"
 
 end-parameters
