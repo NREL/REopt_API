@@ -116,9 +116,9 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 - Analysis period (years) - ```analysis_period```  
 - Electricity escalation rate (%) - ```rate_escalation```  
 - Inflation rate (%) - ```rate_inflation```  
-- Discount rate (%) - ```offtaker_discount_rate```  
+- Real Discount rate (%) - ```offtaker_discount_rate```  
 - Owner tax rate (%) - ```offtaker_tax_rate```  
 - Third-party owner (check_box or something) - ```third_party_owned```  
--- Developer discount rate (%) - ```owner_discount_rate```  
--- Developer discount rate (%) - ```owner_tax_rate```  
+-- Developer real discount rate (%) - ```owner_discount_rate```  
+-- Developer tax rate (%) - ```owner_tax_rate```  
 
