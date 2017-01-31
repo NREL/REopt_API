@@ -130,12 +130,11 @@ class PVWatts:
         self.prod_factor_bau = prod_factor_bau
 
     def write_output(self):
-        output_root = os.path.join(self.output_root, "GISdata")
         self.filename_GIS = "GIS_" + str(self.run_id) + ".dat"
         self.filename_GIS_bau = "GIS_" + str(self.run_id) + "_bau.dat"
 
-        output = os.path.join(output_root, self.filename_GIS)
-        output_bau = os.path.join(output_root, self.filename_GIS_bau)
+        output = os.path.join(self.output_root, self.filename_GIS)
+        output_bau = os.path.join(self.output_root, self.filename_GIS_bau)
 
         f = open(output, 'w')
         f_bau = open(output_bau, 'w')

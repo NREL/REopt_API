@@ -54,6 +54,10 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
 
 class Economics:
 
+    owner_discount_rate_nominal = 0
+    offtaker_discount_rate_nominal = 0
+    rate_escalation_nominal = 0
+
     output_args = {}
     incentives = {}
 
@@ -65,7 +69,7 @@ class Economics:
 
         econ_list = inputs(filter="economics")
         for k in econ_list.keys():
-            setattr(self,k, econ_inputs.get(k))
+            setattr(self, k, econ_inputs.get(k))
 
         if self.macrs_years == 5:
             self.macrs_schedule = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
@@ -78,12 +82,16 @@ class Economics:
 
     def prepare_economics(self):
 
+        self.offtaker_discount_rate_nominal = (1 + self.offtaker_discount_rate) * (1 + self.rate_inflation) - 1
+        self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1
+        self.rate_escalation_nominal = (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1
+
         args = {}
         args["pwf_owner"] = annuity(self.analysis_period, 0, self.owner_discount_rate)
         args["pwf_offtaker"] = annuity(self.analysis_period, 0, self.offtaker_discount_rate)
-        args["pwf_om"] = annuity(self.analysis_period, self.rate_inflation, self.owner_discount_rate)
-        args["pwf_e"] = annuity(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate)
-        args["pwf_op"] = annuity(self.analysis_period, self.rate_escalation, self.owner_discount_rate)
+        args["pwf_om"] = annuity(self.analysis_period, self.rate_inflation, self.owner_discount_rate_nominal)
+        args["pwf_e"] = annuity(self.analysis_period, self.rate_escalation_nominal, self.offtaker_discount_rate_nominal)
+        args["pwf_op"] = annuity(self.analysis_period, self.rate_escalation_nominal, self.owner_discount_rate_nominal)
         args["r_tax_offtaker"] = self.offtaker_tax_rate
         args["r_tax_owner"] = self.owner_tax_rate
 
@@ -118,21 +126,21 @@ class Economics:
             macr_base_batt_kWh = basis_batt_kWh * (1 - self.bonus_fraction)
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
 
             # cost = price - federal tax benefits, where ITC and bonus are discounted 1 year using r_owner
             args["CapCostSlope"] = round(
-                self.pv_cost - pv_tax_shield - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate) \
-                - bonus_pv / (1 + self.owner_discount_rate), 4)
+                self.pv_cost - pv_tax_shield - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate_nominal) \
+                - bonus_pv / (1 + self.owner_discount_rate_nominal), 4)
             args["StorageCostPerKW"] = round(
-                self.batt_cost_kw - batt_kW_tax_shield - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate) \
-                - bonus_batt_kW / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kw - batt_kW_tax_shield - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate_nominal) \
+                - bonus_batt_kW / (1 + self.owner_discount_rate_nominal), 4)
 
             args["StorageCostPerKWH"] = round(
-                self.batt_cost_kwh - batt_kWh_tax_shield - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate) \
-                - bonus_batt_kWh / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kwh - batt_kWh_tax_shield - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate_nominal) \
+                - bonus_batt_kWh / (1 + self.owner_discount_rate_nominal), 4)
 
         elif self.flag_itc == 0 and self.flag_macrs == 0:
             # cost = price
@@ -142,11 +150,11 @@ class Economics:
 
         elif self.flag_itc == 1 and self.flag_macrs == 0:
             # cost = price - federal tax benefits, where ITC is discounted 1 year using r_owner
-            args["CapCostSlope"] = round(self.pv_cost - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate), 4)
+            args["CapCostSlope"] = round(self.pv_cost - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate_nominal), 4)
             args["StorageCostPerKW"] = round(
-                self.batt_cost_kw - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kw - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate_nominal), 4)
             args["StorageCostPerKWH"] = round(
-                self.batt_cost_kwh - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kwh - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate_nominal), 4)
 
         elif self.flag_itc == 1 and self.flag_macrs == 1 and self.flag_bonus == 0:
             pv_tax_shield = batt_kW_tax_shield = batt_kWh_tax_shield = 0
@@ -156,25 +164,25 @@ class Economics:
             macr_base_batt_kWh = self.batt_cost_kwh - self.macrs_itc_reduction * self.rate_itc * self.batt_cost_kwh
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
 
             # cost = price - federal tax benefits, where ITC is discounted 1 year using r_owner
             args["CapCostSlope"] = round(
-                self.pv_cost - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate) - pv_tax_shield, 4)
+                self.pv_cost - self.rate_itc * self.pv_cost / (1 + self.owner_discount_rate_nominal) - pv_tax_shield, 4)
             args["StorageCostPerKW"] = round(
-                self.batt_cost_kw - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate) - batt_kW_tax_shield, 4)
+                self.batt_cost_kw - self.rate_itc * self.batt_cost_kw / (1 + self.owner_discount_rate_nominal) - batt_kW_tax_shield, 4)
             args["StorageCostPerKWH"] = round(
-                self.batt_cost_kwh - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate) - batt_kWh_tax_shield, 4)
+                self.batt_cost_kwh - self.rate_itc * self.batt_cost_kwh / (1 + self.owner_discount_rate_nominal) - batt_kWh_tax_shield, 4)
 
         elif self.flag_itc == 0 and self.flag_macrs == 1 and self.flag_bonus == 0:
             pv_tax_shield = batt_kW_tax_shield = batt_kWh_tax_shield = 0
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * self.pv_cost * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * self.batt_cost_kw * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * self.batt_cost_kwh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * self.pv_cost * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kW_tax_shield += r * self.batt_cost_kw * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kWh_tax_shield += r * self.batt_cost_kwh * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
 
             # cost = price - federal tax benefits
             args["CapCostSlope"] = round(self.pv_cost - pv_tax_shield, 4)
@@ -193,16 +201,16 @@ class Economics:
             macr_base_batt_kWh = self.batt_cost_kwh * (1 - self.bonus_fraction)
 
             for idx, r in enumerate(self.macrs_schedule):  # tax shields are discounted to year zero
-                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
-                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate) ** (idx + 1)
+                pv_tax_shield += r * macr_base_pv * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kW_tax_shield += r * macr_base_batt_kW * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
+                batt_kWh_tax_shield += r * macr_base_batt_kWh * self.owner_tax_rate / (1 + self.owner_discount_rate_nominal) ** (idx + 1)
 
             # cost = price - federal tax benefits, where bonus is discounted 1 year using r_owner
-            args["CapCostSlope"] = round(self.pv_cost - pv_tax_shield - bonus_pv / (1 + self.owner_discount_rate), 4)
+            args["CapCostSlope"] = round(self.pv_cost - pv_tax_shield - bonus_pv / (1 + self.owner_discount_rate_nominal), 4)
             args["StorageCostPerKW"] = round(
-                self.batt_cost_kw - batt_kW_tax_shield - bonus_batt_kW / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kw - batt_kW_tax_shield - bonus_batt_kW / (1 + self.owner_discount_rate_nominal), 4)
             args["StorageCostPerKWH"] = round(
-                self.batt_cost_kwh - batt_kWh_tax_shield - bonus_batt_kWh / (1 + self.owner_discount_rate), 4)
+                self.batt_cost_kwh - batt_kWh_tax_shield - bonus_batt_kWh / (1 + self.owner_discount_rate_nominal), 4)
 
         else:
             print 'ERROR: invalid combination of flags'
@@ -211,8 +219,8 @@ class Economics:
             discounted back to t=0 with r_owner
         '''
         if self.flag_replace_batt == 1:
-            args["StorageCostPerKW"] += round(self.batt_replacement_cost_kw / (1 + self.owner_discount_rate) ** self.batt_replacement_year, 4)
-            args["StorageCostPerKWH"] += round(self.batt_replacement_cost_kwh / (1 + self.owner_discount_rate) ** self.batt_replacement_year, 4)
+            args["StorageCostPerKW"] += round(self.batt_replacement_cost_kw / (1 + self.owner_discount_rate_nominal) ** self.batt_replacement_year, 4)
+            args["StorageCostPerKWH"] += round(self.batt_replacement_cost_kwh / (1 + self.owner_discount_rate_nominal) ** self.batt_replacement_year, 4)
 
         if self.business_as_usual:
             args['CapCostSlope'] = 0

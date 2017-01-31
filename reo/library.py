@@ -33,8 +33,7 @@ class DatLibrary:
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = False
     logfile = "reopt_api.log"
-    xpress_model = "REoptTS1127_PVBATT72916.mos"
-    xpress_model_bau = "REoptTS1127_Util_Only.mos"
+    xpress_model = "REopt_API.mos"
     year = 2017
     time_steps_per_hour = 1
 
@@ -78,23 +77,36 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_output = os.path.join(self.path_xpress,"Output"+str(self.run_input_id))
-        self.path_output_bau = os.path.join(self.path_output,"bau")
-
-        self.file_output = os.path.join(self.path_output, "summary.csv")
-        self.file_output_bau = os.path.join(self.path_output_bau, "summary.csv")
+        self.path_run = os.path.join(self.path_xpress,"Run"+str(self.run_input_id))
         
-        self.path_utility  = os.path.join(self.path_dat_library,"Utility")
-        self.path_various = os.path.join(self.path_dat_library, "Various")
-        
-        self.file_economics = os.path.join(self.path_dat_library,"Economics",'economics_' + str(self.run_input_id) + '.dat')
-        self.file_economics_bau = os.path.join(self.path_dat_library,"Economics", 'economics_' + str(self.run_input_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_dat_library,"GISdata", 'GIS_' + str(self.run_input_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_dat_library,"LoadSize", 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_dat_library,"LoadProfiles", 'Load8760_' + str(self.run_input_id) + '.dat')
+        self.path_run_inputs = os.path.join(self.path_run, "Inputs")
+        self.path_run_outputs = os.path.join(self.path_run,"Outputs")
+        self.path_run_outputs_bau = os.path.join(self.path_run,"Outputs_bau")
 
- 	
+        if os.path.exists(self.path_run):
+            shutil.rmtree(self.path_run)
+        
+        for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
+            os.mkdir(f)
+
+        self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
+        self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
+        
+        self.file_economics = os.path.join(self.path_run_inputs,'economics_' + str(self.run_input_id) + '.dat')
+        self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
+        self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
+        self.file_gis_bau = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '_bau.dat')
+        self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
+        self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
+
+        self.path_utility = os.path.join(self.path_run_inputs, "Utility")
+        self.path_various = os.path.join(self.path_run_inputs)
+
+        self.folder_utility = os.path.join(self.path_dat_library, "Utility")
+        self.folder_load_profile = os.path.join(self.path_dat_library, "LoadProfiles")
+        self.folder_load_size = os.path.join(self.path_dat_library, "LoadSize")
+        self.folder_various = os.path.join(self.path_dat_library, "Various")
+
         for k,v in self.inputs(full_list=True).items():
             if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
@@ -165,8 +177,8 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-        run_command = self.create_run_command(self.path_output, self.xpress_model, self.DAT )
-        run_command_bau = self.create_run_command(self.path_output_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
         
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
@@ -197,20 +209,20 @@ class DatLibrary:
                             datefmt='%m/%d/%Y %I:%M%S %p',
                             level=logging.DEBUG)
 
-    def create_run_command(self, path_output, xpress_model, DATs ):
+    def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + path_output)
 
-        if os.path.exists(path_output):
-            shutil.rmtree(path_output)
-
-        os.mkdir(path_output)
+        # base case
+        base_string = ""
+        if base_case:
+            base_string = "Base"
 
         # RE case
         header = 'exec '
         header += os.path.join(self.path_xpress,xpress_model)
-           
+
         outline = ''
 
         for dat_file in DATs:
@@ -219,9 +231,10 @@ class DatLibrary:
         
         outline.replace('\n', '') 
         
-        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', LocalPath='%s'" % (header, outline, path_output, self.path_dat_library, self.path_egg)
+        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
+                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
      	output_txt = """ "%s " """ % (output)
-        
+
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
 
@@ -244,24 +257,22 @@ class DatLibrary:
     def cleanup(self):
         return
         log("DEBUG", "Cleaning up folders from: " + os.getcwd())
-        log("DEBUG", "Output folder: " + self.path_output)
+        log("DEBUG", "Output folder: " + self.path_run_outputs)
 
         if not self.debug:
-            for f in [self.path_output]:
+            for f in [self.path__run_output]:
                 if os.path.exists(f):
                     shutil.rmtree(f, ignore_errors=True)
 
             for p in [self.file_economics,self.file_economics_bau, self.file_gis, self.file_gis_bau, self.file_load_profile, self.file_load_size]:
-               
                 if os.path.exists(p):
-                  
                     os.remove(p)
 
     # BAU files
     def create_constant_bau(self):
-        self.DAT_bau[0] = "DAT1=" + "'" + os.path.join(self.path_various, 'constant_bau.dat') + "'"
-        self.DAT_bau[5] = "DAT6=" + "'" + os.path.join(self.path_various, 'storage_bau.dat') + "'"
-        self.DAT_bau[6] = "DAT7=" + "'" + os.path.join(self.path_various, 'maxsizes_bau.dat') + "'"
+        self.DAT_bau[0] = "DAT1=" + "'" + os.path.join(self.folder_various, 'constant_bau.dat') + "'"
+        self.DAT_bau[5] = "DAT6=" + "'" + os.path.join(self.folder_various, 'storage_bau.dat') + "'"
+        self.DAT_bau[6] = "DAT7=" + "'" + os.path.join(self.folder_various, 'maxsizes_bau.dat') + "'"
 
     # DAT2 - Economics
     def create_economics(self):
@@ -310,10 +321,10 @@ class DatLibrary:
                 
                 if (self.load_profile_name is not None) and (self.load_profile_name.lower() in self.default_load_profiles):
                         name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        path = os.path.join( os.path.dirname(self.file_load_profile), name )
+                        path = os.path.join( self.folder_load_profile , name )
                         load_profile = self.scale_load_by_month(path)
                 else:
-                    path = os.path.join( os.path.dirname(self.file_load_profile), default_load_profile_norm)
+                    path = os.path.join( self.folder_load_profile, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile"  )
@@ -324,16 +335,16 @@ class DatLibrary:
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
 
-	        self.file_load_size = os.path.join( os.path.dirname(self.file_load_size), default_load_size)
-                self.file_load_profile = os.path.join( os.path.dirname(self.file_load_profile), default_load_profile) 
+	        self.file_load_size = os.path.join( self.folder_load_size, default_load_size)
+                self.file_load_profile = os.path.join( self.folder_load_profile, default_load_profile) 
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
                         filename_profile = "Load8760_raw_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        self.file_load_size = os.path.join(os.path.dirname(self.file_load_size) , filename_size)
-                        self.file_load_profile = os.path.join(os.path.dirname(self.file_load_profile) , filename_profile)
+                        self.file_load_size = os.path.join( self.folder_load_size , filename_size)
+                        self.file_load_profile = os.path.join( self.folder_load_profile , filename_profile)
                 
             else:
                 self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
@@ -341,12 +352,12 @@ class DatLibrary:
                 # Load profile specified, with load size specified
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
-                        tmp_profile = os.path.join(os.path.dirname(self.file_load_profile),"Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
+                        tmp_profile = os.path.join( self.folder_load_profile, "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
                         load_profile = self.scale_load(tmp_profile, self.load_size)
                 
                 #Load size specified, no profile
                 else:
-		    p = os.path.join(os.path.dirname(self.file_load_profile), default_load_profile)
+		    p = os.path.join( self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
 		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
@@ -436,17 +447,20 @@ class DatLibrary:
         if self.latitude is not None and self.longitude is not None:
 
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_dat_library, self.run_input_id, pv_inputs)
+            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
 
     def create_utility(self):
+
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility,self.utility_name, self.rate_name)
+
+            self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
+            
             with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
@@ -466,21 +480,27 @@ class DatLibrary:
 
         utility_name = alphanum(urdb_rate['utility'])
         rate_name = alphanum(urdb_rate['name'])
-    
-        folder_name = os.path.join(utility_name, rate_name)
-        rate_output_folder = os.path.join(self.path_utility, folder_name)
 
-        if not os.path.isdir(rate_output_folder):
-            os.makedirs(rate_output_folder)
+        base_folder = os.path.join(self.path_utility, utility_name)
+        rate_output_folder = os.path.join(base_folder, rate_name)
+
+        if os.path.exists(base_folder):
+            shutil.rmtree(base_folder)
+
+        os.mkdir(self.path_utility)
+        os.mkdir(base_folder)
+        os.mkdir(rate_output_folder)
+
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
             outfile.close()
+        
         with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
         log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_dat_library, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.path_utility, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name

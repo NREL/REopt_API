@@ -49,7 +49,7 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - Array Azimuth (degrees) - ```azimuth```
 - Array Tilt (degrees) - ```tilt```
 - Array Type (dropdown) - ```array_type```  
--- _Options for dropdown_ (pass integer 0,1,2,3,4 to API):
+ _Options for dropdown_ (pass integer 0,1,2,3,4 to API):
   * Fixed - Open Rack (0)  
   * Fixed - Roof Mounted (1)
   * 1-Axis (2)  
@@ -62,6 +62,23 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 ## Cost and Incentives
 - System installed cost ($/kW) - ```pv_cost```
 - Operating and maintenance ($/kW-year) - ```pv_om```
+- Federal percentage based incentive (%) - ```pv_pbi_federal```  
+- Federal maximum incentive ($) - ```pv_pbi_federal_max```  
+- State percentage based incentive (%) - ```pv_pbi_state```  
+- State maximum incentive (%) - ```pv_pbi_state_max```  
+- State rebate ($/kW) - ```pv_rebate_state```  
+- State maximum rebate ($) - ```pv_rebate_state_max```  
+- Utility rebate ($) - ```pv_rebate_utility```  
+- Utility maximum rebate ($) - ```pv_rebate_utility_max```
+- Production incentive ($/kWh) - ```pv_production_incentive```
+- Production incentive duration (years) - ```pv_production_incentive_years```
+- Production incentive size limit (kW) - ```pv_production_incentive_max_kw```
+- MACRs Schedule (years), dropdown - ```pv_macrs_schedule```  
+ _Options for dropdown_ (pass integer 0, 3, 5, 7 to API):  
+  * 0  
+  * 3  
+  * 5  
+  * 7  
 
 # Battery
 
@@ -81,6 +98,17 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - Capacity ($/kW) - ```batt_cost_kwh```  
 - Power electronics ($/kW) - ```batt_cost_kw```  
 - Replacement cost escalation (%) - ```batt_replacement_cost_escalation```  
+- Federal percentage based incentive (%) - ```batt_pbi_federal```  
+- Federal maximum incentive ($) - ```batt_pbi_federal_max```  
+- State percentage based incentive (%) - ```batt_pbi_state```  
+- State maximum incentive (%) - ```batt_pbi_state_max```  
+- MACRs Schedule (years), dropdown - ```pv_macrs_schedule```  
+- -- _Options for dropdown_ (pass integer 0, 3, 5, 7 to API):  
+  * 0  
+  * 3  
+  * 5  
+  * 7  
+
 
 # Financial Inputs
 The "developer" inputs should be grayed out or unavailable unless the "Third-party owner" box is checked.  
@@ -88,9 +116,9 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 - Analysis period (years) - ```analysis_period```  
 - Electricity escalation rate (%) - ```rate_escalation```  
 - Inflation rate (%) - ```rate_inflation```  
-- Discount rate (%) - ```offtaker_discount_rate```  
+- Real Discount rate (%) - ```offtaker_discount_rate```  
 - Owner tax rate (%) - ```offtaker_tax_rate```  
 - Third-party owner (check_box or something) - ```third_party_owned```  
--- Developer discount rate (%) - ```owner_discount_rate```  
--- Developer discount rate (%) - ```owner_tax_rate```  
+-- Developer real discount rate (%) - ```owner_discount_rate```  
+-- Developer tax rate (%) - ```owner_tax_rate```  
 

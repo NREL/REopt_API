@@ -22,6 +22,12 @@ pwf_offtaker: [
 pwf_owner: [
 10.67478,
 ]
+r_tax_offtaker: [
+0.35,
+]
+r_tax_owner: [
+0.35,
+]
 OMperUnitSize: [
 0,
 ]
