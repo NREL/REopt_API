@@ -53,7 +53,7 @@ class ProForma(object):
         self.IRR = 0
         self.NPV = 0
 
-    def dcf(self, path_file, run, pv_size=0, batt_capacity=0, batt_power=0, \
+    def dcf(self, path_file, pv_size=0, batt_capacity=0, batt_power=0, \
             energy_savings_yr1=0, demand_savings_yr1=0):
 
         self.pv_size = float(pv_size)
@@ -62,7 +62,7 @@ class ProForma(object):
         self.energy_savings_yr1 = float(energy_savings_yr1)
         self.demand_savings_yr1 = float(demand_savings_yr1)
 
-        self.initialize_workbook(path_file, run)
+        self.initialize_workbook(path_file)
         self.compute_cash_flow()
 
         currency = self.book.add_format({'num_format': '$#,##0'})
@@ -126,9 +126,9 @@ class ProForma(object):
 
         self.book.close()
 
-    def initialize_workbook(self, path_file, run):
-        file_name = os.path.join(path_file, 'ProForma_' + run + '.xlsx')
-        book = xlsxwriter.Workbook(file_name)
+    def initialize_workbook(self, path_file):
+
+        book = xlsxwriter.Workbook(path_file)
         sheet = book.add_worksheet('Cash Flow')
         bold = book.add_format({'bold': 1})
 

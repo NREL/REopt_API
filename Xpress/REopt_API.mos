@@ -519,7 +519,7 @@ RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
 
  !O&M Costs on a per energy produced basis of all techs except BiomassOnly and increased electrical load to due SHW electrical
 (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb)))
-	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e  +
+	dvRatedProd (t,LD,ts,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e * (1 - r_tax_offtaker) +
 
 ! TOU Demand Rates
  sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e * (1 - r_tax_offtaker) +

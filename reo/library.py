@@ -41,6 +41,9 @@ class DatLibrary:
     DAT = [None] * 20
     DAT_bau = [None] * 20
 
+    # Economic inputs and calculated vals
+    economics = []
+
     @staticmethod
     def write_var(f, var, dat_var):
         f.write(dat_var + ": [\n")
@@ -241,8 +244,8 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau)
-            process_results.load_results()
+            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics)
+            process_results.run()
 
             for k in self.outputs():
                 val = getattr(process_results, k)
@@ -280,11 +283,11 @@ class DatLibrary:
         econ_inputs = self.get_subtask_inputs('economics')
 
         fp = self.file_economics
-        econ = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
+        self.economics = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
 
         for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh','owner_discount_rate','offtaker_discount_rate']:
-           setattr(self, k, getattr(econ,k))
+           setattr(self, k, getattr(self.economics,k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
