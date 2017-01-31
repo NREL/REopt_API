@@ -652,30 +652,31 @@ fclose(F_OUTPUT)
 
 ! Summary
 fopen(OutputDir + "\\summary.csv",F_OUTPUT)
-writeln ("LCC,", getsol(RECosts))
-writeln ("Cap_Cost,",
+writeln ("LCC ($),", strfmt(getsol(RECosts), 10, 0))
+writeln ("Capital Cost ($),", strfmt(
     sum(t in Tech) CapCostSlope (t) * getsol(dvSystemSize(t)) +
 	sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) * StorageCostPerKWH(b) +
-	sum(b in BattLevel) getsol(dvStorageSizeKW(b)) *  StorageCostPerKW(b) )
-writeln ("Bulk_kWh_costs,", getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)))
-writeln ("Total_Demand_cost,", getsol(TotalDemandCharges))
+	sum(b in BattLevel) getsol(dvStorageSizeKW(b)) *  StorageCostPerKW(b), 10, 0))
+writeln ("Total kWh Cost ($),", strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)), 10, 0))
+writeln ("Total Demand Cost ($),", strfmt(getsol(TotalDemandCharges), 10, 0))
 forall  (b in BattLevel)  do
-   writeln ("BattSize_kWh, ", getsol (dvStorageSizeKWH(b)))
+   writeln ("Battery Capacity (kWh), ", getsol (dvStorageSizeKWH(b)))
 end-do
 forall  (b in BattLevel)  do
-   writeln ("BattInverter_kW,", getsol (dvStorageSizeKW(b)))
+   writeln ("Battery Power (kW),", getsol (dvStorageSizeKW(b)))
 end-do
 forall (t in Tech | TechIsGrid(t)=0)  do
-	writeln (t, "size_kW,", getsol (dvSystemSize(t)))
+	writeln (t, " Size (kW),", getsol (dvSystemSize(t)))
 end-do
+
 writeln ("Utility_kWh, ", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
-writeln ("utility,",UtilName)
-writeln ("rate,",UtilRate)
-writeln("Optimization_time_seconds,", EndTime-StartTime)
+writeln ("Utility,",UtilName)
+writeln ("Rate,",UtilRate)
+writeln("Optimization Time (s),", EndTime-StartTime)
 
-writeln ("Year1EnergyCost,",getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e)
-writeln ("Year1DemandCost,",getsol(TotalDemandCharges) / pwf_e)
-
+writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
+writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
+writeln ("Total PV production (kWh),",strfmt(getsol(TotElecProd), 10, 0))
 fclose(F_OUTPUT)
 
 fopen(OutputDir + "\\dat_files.csv", F_OUTPUT)

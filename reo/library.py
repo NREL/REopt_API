@@ -13,6 +13,7 @@ import logging
 # user defined
 import economics
 import pvwatts
+import results
 from api_definitions import *
 
 from urdb_parse import *
@@ -126,7 +127,7 @@ class DatLibrary:
         self.setup_logging()
 
     def update_types(self):
-        for group in [self.inputs(full_list=True),self.outputs()]:
+        for group in [self.inputs(full_list=True), self.outputs()]:
             for k,v in group.items():
                 value = getattr(self,k)
 
@@ -182,10 +183,10 @@ class DatLibrary:
         return self.lib_output()
 
     def lib_output(self):
-        output =  {'run_input_id':self.run_input_id}
-        for k in self.inputs(full_list=True).keys()  +  self.outputs().keys():
-            if hasattr(self,k):
-                output[k] = getattr(self,k)
+        output = {'run_input_id': self.run_input_id}
+        for k in self.inputs(full_list=True).keys() + self.outputs().keys():
+            if hasattr(self, k):
+                output[k] = getattr(self, k)
             else:
                 output[k] = None
         return output
@@ -225,43 +226,20 @@ class DatLibrary:
         return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
+
         if os.path.exists(self.file_output):
-            df = pd.read_csv(self.file_output, header=None, index_col=0)
-            df = df.transpose()
-            pv_size = 0
+            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau)
+            process_results.load_results()
 
-            if 'LCC' in df.columns:
-                self.lcc = float(df['LCC'].values[0])
-            if 'BattInverter_kW' in df.columns:
-                self.batt_kw = float(df['BattInverter_kW'].values[0])
-            if 'BattSize_kWh' in df.columns:
-                self.batt_kwh = float(df['BattSize_kWh'].values[0])
-            if 'PVNMsize_kW' in df.columns:
-                pv_size += float(df['PVNMsize_kW'].values[0])
-            if 'PVsize_kW' in df.columns:
-                pv_size += float(df['PVsize_kW'].values[0])
-            if 'Utility_kWh' in df.columns:
-                self.utility_kwh = float(df['Utility_kWh'].values[0])
+            for k in self.outputs():
+                val = getattr(process_results, k)
+                setattr(self, k, val)
 
-            self.update_types()
-
-            if pv_size > 0:
-                self.pv_kw = str(round(pv_size, 0))
-            else:
-                self.pv_kw = 0
+                # print k + ":" + val
 
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
-
-        if os.path.exists(self.file_output_bau):
-            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
-            df = df.transpose()
-           
-            if 'LCC' in df.columns:
-                self.npv = float(df['LCC'].values[0]) - float(self.lcc)
-            else:
-                self.npv = 0
 
     def cleanup(self):
         return
