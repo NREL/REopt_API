@@ -661,7 +661,7 @@ writeln ("Capital Cost ($),", strfmt(
 writeln ("Total kWh Cost ($),", strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)), 10, 0))
 writeln ("Total Demand Cost ($),", strfmt(getsol(TotalDemandCharges), 10, 0))
 forall  (b in BattLevel)  do
-   writeln ("Battery Capacity (kWh), ", getsol (dvStorageSizeKWH(b)))
+   writeln ("Battery Capacity (kWh),", getsol (dvStorageSizeKWH(b)))
 end-do
 forall  (b in BattLevel)  do
    writeln ("Battery Power (kW),", getsol (dvStorageSizeKW(b)))
@@ -670,7 +670,7 @@ forall (t in Tech | TechIsGrid(t)=0)  do
 	writeln (t, " Size (kW),", getsol (dvSystemSize(t)))
 end-do
 
-writeln ("Utility_kWh, ", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
+writeln ("Utility_kWh,", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
 writeln ("Utility,",UtilName)
 writeln ("Rate,",UtilRate)
 writeln("Optimization Time (s),", EndTime-StartTime)

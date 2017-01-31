@@ -43,42 +43,31 @@ class Results:
 
         if self.is_optimal(df_results) and self.is_optimal(df_results_base):
             self.populate_data(df_results)
-            self.populate_data(df_results_base)
 
     def is_optimal(self, df):
 
         if 'Problem status' in df.columns:
             self.status = str(df['Problem status'].values[0]).rstrip()
-
             return self.status == "Optimum found"
 
     def populate_data(self, df):
 
-        pv_size = 0
+        pv_kw = 0
         if 'LCC ($)' in df.columns:
             self.lcc = float(df['LCC ($)'].values[0])
-            print str(self.lcc)
-        if 'Battery Power(kW)' in df.columns:
-            self.batt_kw = float(df['Battery Power(kW)'].values[0])
-            print str(self.batt_kw)
+        if 'Battery Power (kW)' in df.columns:
+            self.batt_kw = float(df['Battery Power (kW)'].values[0])
         if 'Battery Capacity (kWh)' in df.columns:
             self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
-            print str(self.batt_kwh)
         if 'PVNM Size (kW)' in df.columns:
-            pv_size += float(df['PVNM Size (kW)'].values[0])
+            pv_kw += round(float(df['PVNM Size (kW)'].values[0]), 0)
         if 'PV Size (kW)' in df.columns:
-            pv_size += float(df['PV Size (kW)'].values[0])
+            pv_kw += round(float(df['PV Size (kW)'].values[0]), 0)
         if 'Utility_kWh' in df.columns:
             self.utility_kwh = float(df['Utility_kWh'].values[0])
 
+        self.pv_kw = pv_kw
         self.update_types()
-
-        if pv_size > 0:
-            self.pv_kw = str(round(pv_size, 0))
-        else:
-            self.pv_kw = 0
-
-        print str(self.pv_kw)
 
     def compute_npv(self):
         self.npv = float(self.df_results_base['LCC ($)'].values[0]) - float(self.df_results['LCC ($)'].values[0])

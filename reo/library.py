@@ -248,7 +248,7 @@ class DatLibrary:
                 val = getattr(process_results, k)
                 setattr(self, k, val)
 
-                # print k + ":" + val
+
 
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
