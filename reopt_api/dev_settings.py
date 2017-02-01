@@ -1,5 +1,5 @@
 from keys import *
-
+import sys
 """
 Django settings for reopt_api project.
 
@@ -80,18 +80,31 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-DATABASES = {
+
+if 'test' in sys.argv:
+    DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'HOST': 'reopt-dev-db1.nrel.gov',
-        'NAME': 'reopt_development',
-        'OPTIONS': {
-            'options': '-c search_path=reopt_api'
-        },
-        'USER': dev_user,
-        'PASSWORD': dev_user_password,
+        'NAME': 'reopt',
+        'USER': 'reopt',
+        'PASSWORD': 'password',
+        'HOST': 'localhost',
+        'PORT': '',
     }
-}
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'HOST': 'reopt-dev-db1.nrel.gov',
+            'NAME': 'reopt_development',
+            'OPTIONS': {
+                'options': '-c search_path=reopt_api'
+            },
+            'USER': dev_user,
+            'PASSWORD': dev_user_password,
+        }
+    }
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
