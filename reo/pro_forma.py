@@ -77,7 +77,7 @@ class ProForma(object):
         self.sheet.write('E2', basis, currency)
         self.sheet.write('F2',
                          'NOTE: If you claim the 30% ITC then the depreciable amount is reduced by 1/2 of the ITC credit')
-        self.sheet.write('F5', 'NOTE: sheduled depreciation basis reduced by the bonus deprecation')
+        self.sheet.write('F5', 'NOTE: scheduled depreciation basis reduced by the bonus deprecation')
         self.sheet.write('E3', 'year')
         row = 2
         col = 5
@@ -156,7 +156,7 @@ class ProForma(object):
             ['Battery cost ($/kWh)', self.batt_cost],
             ['Battery inverter cost ($/kW)', self.invt_cost],
             ['PV 0&M ($/kW/yr)', self.om_cost],
-            ['Battery replacment cost', self.batt_repl],
+            ['Battery replacement cost', self.batt_repl],
             ['----------------', '----------------'],
             ['Year 1 energy savings', self.energy_savings_yr1],
             ['Year 1 demand savings', self.demand_savings_yr1],

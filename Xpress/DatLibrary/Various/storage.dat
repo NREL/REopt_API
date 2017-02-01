@@ -4,7 +4,21 @@ MinStorageSizeKWH: [
 StorageMinChargePcent: [
  0.2
 ]
-EtaStor: [
+EtaStorIn: [
+1,
+1,
+1,
+ 0.82944        ,
+1,
+1,
+1,
+ 0.82944        ,
+1,
+1,
+1,
+ 0.82944        ,
+]
+EtaStorOut: [
 1,
 1,
 1,

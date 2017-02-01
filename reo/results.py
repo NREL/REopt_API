@@ -83,9 +83,9 @@ class Results:
         if 'Battery Capacity (kWh)' in df.columns:
             self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
         if 'PVNM Size (kW)' in df.columns:
-            pv_kw += round(float(df['PVNM Size (kW)'].values[0]), 0)
+            pv_kw += float(df['PVNM Size (kW)'].values[0])
         if 'PV Size (kW)' in df.columns:
-            pv_kw += round(float(df['PV Size (kW)'].values[0]), 0)
+            pv_kw += float(df['PV Size (kW)'].values[0])
         if 'Utility_kWh' in df.columns:
             self.utility_kwh = float(df['Utility_kWh'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
