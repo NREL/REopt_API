@@ -194,7 +194,10 @@ def inputs(filter='',full_list=False,just_required=False):
     return output
 
 def outputs():
-    return {'lcc': {'type': float, 'null': True,'pct': False,
+    return {'status': {'type': str, 'null': True,'pct': False,
+                    "description": "Problem Status", "units":'none'},
+
+            'lcc': {'type': float, 'null': True,'pct': False,
                     "description": "Lifecycle Cost", "units":'dollars'},
 
            'npv': {'type': float, 'null': True,'pct': False,

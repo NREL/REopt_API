@@ -148,6 +148,7 @@ class RunOutput(models.Model):
     tilt = models.FloatField(null=True, blank=True)
     gcr = models.FloatField(null=True, blank=True)
 
+    status = models.TextField(null=True, blank=True)
     lcc = models.FloatField(null=True, blank=True)
     npv = models.FloatField(null=True, blank=True)
     utility_kwh = models.FloatField(null=True, blank=True)

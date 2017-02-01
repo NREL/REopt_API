@@ -13,6 +13,7 @@ import logging
 # user defined
 import economics
 import pvwatts
+import results
 from api_definitions import *
 
 from urdb_parse import *
@@ -32,14 +33,16 @@ class DatLibrary:
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = False
     logfile = "reopt_api.log"
-    xpress_model = "REoptTS1127_PVBATT72916.mos"
-    xpress_model_bau = "REoptTS1127_Util_Only.mos"
+    xpress_model = "REopt_API.mos"
     year = 2017
     time_steps_per_hour = 1
 
     # DAT files to overwrite
     DAT = [None] * 20
     DAT_bau = [None] * 20
+
+    # Economic inputs and calculated vals
+    economics = []
 
     @staticmethod
     def write_var(f, var, dat_var):
@@ -99,7 +102,7 @@ class DatLibrary:
         self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
         self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
 
-        self.path_utility  = os.path.join(self.path_run_inputs)
+        self.path_utility = os.path.join(self.path_run_inputs, "Utility")
         self.path_various = os.path.join(self.path_run_inputs)
 
         self.folder_utility = os.path.join(self.path_dat_library, "Utility")
@@ -139,7 +142,7 @@ class DatLibrary:
         self.setup_logging()
 
     def update_types(self):
-        for group in [self.inputs(full_list=True),self.outputs()]:
+        for group in [self.inputs(full_list=True), self.outputs()]:
             for k,v in group.items():
                 value = getattr(self,k)
 
@@ -177,8 +180,8 @@ class DatLibrary:
         self.create_GIS()
         self.create_utility()
 
-        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT )
-        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model_bau, self.DAT_bau )
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
         
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
@@ -195,10 +198,10 @@ class DatLibrary:
         return self.lib_output()
 
     def lib_output(self):
-        output =  {'run_input_id':self.run_input_id}
-        for k in self.inputs(full_list=True).keys()  +  self.outputs().keys():
-            if hasattr(self,k):
-                output[k] = getattr(self,k)
+        output = {'run_input_id': self.run_input_id}
+        for k in self.inputs(full_list=True).keys() + self.outputs().keys():
+            if hasattr(self, k):
+                output[k] = getattr(self, k)
             else:
                 output[k] = None
         return output
@@ -209,15 +212,20 @@ class DatLibrary:
                             datefmt='%m/%d/%Y %I:%M%S %p',
                             level=logging.DEBUG)
 
-    def create_run_command(self, path_output, xpress_model, DATs ):
+    def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("DEBUG", "Creating output directory: " + path_output)
 
+        # base case
+        base_string = ""
+        if base_case:
+            base_string = "Base"
+
         # RE case
         header = 'exec '
         header += os.path.join(self.path_xpress,xpress_model)
-           
+
         outline = ''
 
         for dat_file in DATs:
@@ -226,50 +234,28 @@ class DatLibrary:
         
         outline.replace('\n', '') 
         
-        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', LocalPath='%s'" % (header, outline, path_output, self.path_dat_library, self.path_egg)
+        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
+                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
      	output_txt = """ "%s " """ % (output)
-        
+
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
 
     def parse_run_outputs(self):
+
         if os.path.exists(self.file_output):
-            df = pd.read_csv(self.file_output, header=None, index_col=0)
-            df = df.transpose()
-            pv_size = 0
+            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics)
+            process_results.run()
 
-            if 'LCC' in df.columns:
-                self.lcc = float(df['LCC'].values[0])
-            if 'BattInverter_kW' in df.columns:
-                self.batt_kw = float(df['BattInverter_kW'].values[0])
-            if 'BattSize_kWh' in df.columns:
-                self.batt_kwh = float(df['BattSize_kWh'].values[0])
-            if 'PVNMsize_kW' in df.columns:
-                pv_size += float(df['PVNMsize_kW'].values[0])
-            if 'PVsize_kW' in df.columns:
-                pv_size += float(df['PVsize_kW'].values[0])
-            if 'Utility_kWh' in df.columns:
-                self.utility_kwh = float(df['Utility_kWh'].values[0])
+            for k in self.outputs():
+                val = getattr(process_results, k)
+                setattr(self, k, val)
 
-            self.update_types()
 
-            if pv_size > 0:
-                self.pv_kw = str(round(pv_size, 0))
-            else:
-                self.pv_kw = 0
 
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
-
-        if os.path.exists(self.file_output_bau):
-            df = pd.read_csv(self.file_output_bau, header=None, index_col=0)
-            df = df.transpose()
-           
-            if 'LCC' in df.columns:
-                self.npv = float(df['LCC'].values[0]) - float(self.lcc)
-            else:
-                self.npv = 0
 
     def cleanup(self):
         return
@@ -297,11 +283,11 @@ class DatLibrary:
         econ_inputs = self.get_subtask_inputs('economics')
 
         fp = self.file_economics
-        econ = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
+        self.economics = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
 
         for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh','owner_discount_rate','offtaker_discount_rate']:
-           setattr(self, k, getattr(econ,k))
+           setattr(self, k, getattr(self.economics,k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
@@ -470,8 +456,10 @@ class DatLibrary:
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
 
     def create_utility(self):
+
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility,self.utility_name, self.rate_name)
+
+            self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
@@ -496,12 +484,14 @@ class DatLibrary:
         utility_name = alphanum(urdb_rate['utility'])
         rate_name = alphanum(urdb_rate['name'])
 
-        base_folder = os.path.join(self.path_run_inputs, utility_name)
+        base_folder = os.path.join(self.path_utility, utility_name)
+        rate_output_folder = os.path.join(base_folder, rate_name)
+
         if os.path.exists(base_folder):
             shutil.rmtree(base_folder)
-        os.mkdir(base_folder)
 
-        rate_output_folder = os.path.join(base_folder, rate_name)
+        os.mkdir(self.path_utility)
+        os.mkdir(base_folder)
         os.mkdir(rate_output_folder)
 
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
@@ -513,7 +503,7 @@ class DatLibrary:
             outfile.close()
 
         log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_run_inputs, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.path_utility, log_root, self.year, self.time_steps_per_hour)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
