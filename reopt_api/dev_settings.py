@@ -84,13 +84,13 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 if 'test' in sys.argv:
     DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django.db.backends.sqlite3',
         'NAME': 'reopt',
         'USER': 'reopt',
         'PASSWORD': 'password',
         'HOST': 'localhost',
         'PORT': '',
-    }
+        }
     }
 else:
     DATABASES = {
