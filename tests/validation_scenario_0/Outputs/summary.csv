@@ -1,0 +1,16 @@
+Problem status,Optimum found
+LCC ($),    443161
+Capital Cost ($),     15956
+Total kWh Cost ($),    376169
+Total Demand Cost ($),    278471
+Battery Capacity (kWh),0.41932
+Battery Power (kW),0.335456
+PV Size (kW),0
+PVNM Size (kW),14.5278
+Utility_kWh,465170.9989
+Utility,SouthernCaliforniaEdisonCo
+Rate,TimeofUseGeneralServiceDemandMeteredOptionBGS2TOUBSinglePhase
+Optimization Time (s),21.974
+Year 1 Energy Cost ($),     40717
+Year 1 Demand Cost ($),     30142
+Total PV production (kWh),     21049

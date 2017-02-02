@@ -141,6 +141,15 @@ class DatLibrary:
         self.update_types()
         self.setup_logging()
 
+    def get_path_run_inputs(self):
+        return self.path_run_inputs
+
+    def get_path_run_outputs(self):
+        return self.path_run_outputs
+
+    def get_path_run_outputs_bau(self):
+        return self.path_run_outputs_bau
+
     def update_types(self):
         for group in [self.inputs(full_list=True), self.outputs()]:
             for k,v in group.items():

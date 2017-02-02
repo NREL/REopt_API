@@ -77,7 +77,6 @@ class RunInput(models.Model):
         run_set = DatLibrary(self.id, response_inputs)
 
         # Run Optimization
-        run_set.run()
         output_dictionary = run_set.run()
         output_dictionary['api_version'] = self.api_version 
 
