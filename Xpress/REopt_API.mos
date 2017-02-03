@@ -640,7 +640,7 @@ fopen(OutputDir + "\\REOresults.csv",F_OUTPUT)
 writeln("Problem status, ", status)
 writeln("RECosts, ", getsol(RECosts))
 !this writes the time elapsed
-writeln("Time, ", EndTime-StartTime)
+!writeln("Time, ", EndTime-StartTime)
 
 forall  (b in BattLevel |getsol ( dvStorageSizeKWH(b)   ) <> 0)  do
    writeln (1, ",", "BattSize, ", getsol (dvStorageSizeKWH(b)))
@@ -678,7 +678,7 @@ end-do
 writeln ("Utility_kWh,", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
 writeln ("Utility,",UtilName)
 writeln ("Rate,",UtilRate)
-writeln("Optimization Time (s),", EndTime-StartTime)
+!writeln("Optimization Time (s),", EndTime-StartTime)
 
 writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
 writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))

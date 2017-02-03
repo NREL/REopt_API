@@ -10,7 +10,6 @@ PVNM Size (kW),14.5278
 Utility_kWh,465170.9989
 Utility,SouthernCaliforniaEdisonCo
 Rate,TimeofUseGeneralServiceDemandMeteredOptionBGS2TOUBSinglePhase
-Optimization Time (s),21.974
 Year 1 Energy Cost ($),     40717
 Year 1 Demand Cost ($),     30142
 Total PV production (kWh),     21049

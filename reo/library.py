@@ -141,6 +141,9 @@ class DatLibrary:
         self.update_types()
         self.setup_logging()
 
+    def get_path_run(self):
+        return self.path_run
+
     def get_path_run_inputs(self):
         return self.path_run_inputs
 
