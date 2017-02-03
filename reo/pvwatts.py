@@ -11,6 +11,7 @@
 import requests
 import json
 import os, csv
+import keys
 from api_definitions import *
 
 class PVWatts:
@@ -55,7 +56,7 @@ class PVWatts:
 
     def api(self):
         # API specific
-        return {'key' : "EkVFWynUReFEH8HT1L1RAe4C32RUx4w1AEtiN78J",
+        return {'key' : keys.pvwatts_api_key,
         'base' : "https://developer.nrel.gov/api/pvwatts/v5.json"}
 
     def make_url(self):
