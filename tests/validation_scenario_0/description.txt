@@ -1,0 +1,7 @@
+Validation with the following scenario to match the Sunlamp_ss scenario:
+
+- Base case (no NEM)
+- Anaheim
+- Retail Store
+- Analysis period of 20 years
+- Assumed load profile in 2018

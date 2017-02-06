@@ -146,7 +146,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'dataset': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': "tmy3",
                   'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",},
 
-      'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.92,
+      'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.96,
                   'min': 0.9, 'max': 0.995, "description": "Inverter Efficiency at Rated Power",
                   "units": "decimal percent"},
 

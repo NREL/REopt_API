@@ -1,5 +1,5 @@
 pwf_op: [
-9.23862,
+8.64782,
 ]
 LevelizationFactor: [
 1.0,
@@ -14,25 +14,25 @@ CapCostSlope: [
 0,
 ]
 pwf_e: [
-9.23862,
+8.64782,
 ]
 r_tax_offtaker: [
 0.35,
 ]
 pwf_offtaker: [
-8.93923,
+8.39863,
 ]
 r_tax_owner: [
 0.35,
 ]
 pwf_owner: [
-8.93923,
+8.39863,
 ]
 OMperUnitSize: [
 0,
 ]
 pwf_om: [
-8.93923,
+8.39863,
 ]
 MaxSizeForProdIncent: [
 0,

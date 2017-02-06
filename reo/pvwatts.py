@@ -23,7 +23,7 @@ class PVWatts:
 
     # Assume defaults
     #dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
-    #inv_eff = 92  # or 96?
+    #inv_eff = 96?
     #dc_ac_ratio = 1.1
     #azimuth = 180
     #system_capacity = 1  # kw to get prod factor

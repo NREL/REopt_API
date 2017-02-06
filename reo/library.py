@@ -34,7 +34,7 @@ class DatLibrary:
     debug = False
     logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
-    year = 2017
+    year = 2018
     time_steps_per_hour = 1
 
     # DAT files to overwrite
