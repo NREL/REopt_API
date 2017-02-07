@@ -4,7 +4,7 @@ import os
 def inputs(filter='',full_list=False,just_required=False):
 
     output = {
-      'user_id': {'req': True, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default':None
+      'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default':None
                   ,"description": "User ID", "units":None},
 
       # Required

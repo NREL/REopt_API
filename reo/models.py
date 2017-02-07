@@ -7,7 +7,7 @@ from library import *
 
 # Create your models here.
 class RunInput(models.Model):
-    user_id = models.TextField(blank=True,default='')
+    user_id = models.TextField(blank=True,null=True,default='')
     api_version = models.TextField(blank=True, default='',null=False)
 
     # Required
@@ -87,7 +87,7 @@ class RunInput(models.Model):
 
 class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
-    user_id = models.TextField(blank=True, default='')
+    user_id = models.TextField(blank=True, null=True,default='')
     api_version = models.TextField(blank=True, default='')
 
     # Required

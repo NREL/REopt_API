@@ -26,7 +26,7 @@ class REoptResourceValidation(Validation):
             else:
                 field_def = inputs(full_list=True)[key]
                 format_errors =  self.check_input_format(key,value,field_def)
-                if not format_errors:
+                if not format_errors and value != None:
                     if field_def.get('max') is not None:
                         format_errors += self.check_max(key, value, field_def)
 
@@ -45,17 +45,20 @@ class REoptResourceValidation(Validation):
     def check_input_format(self,key,value,field_definition):
         invalid_msg = 'Invalid format: Expected %s, got %s'%(str(field_definition['type']), str(type(value)))
         try:
-            if not field_definition['null']:
+            if field_definition['req']:
                 if value in [None,'null']:
-                    return ['Invalid format: Input cannot be null']
+                    return ['Required Field: Cannot be null']
             
-            new_value = field_definition['type'](value)
-            
-            if value != new_value:
-                return [invalid_msg]
+            if value is not None:
+
+                new_value = field_definition['type'](value)
+                        
+                if value != new_value:
+                    return [invalid_msg]
 
             return []
         except Exception as e:
+            print value
             return [invalid_msg]
 
     def check_min(self, key, value, fd):
