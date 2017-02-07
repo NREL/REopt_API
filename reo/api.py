@@ -8,6 +8,9 @@ from tastypie.http import HttpApplicationError
 from tastypie.resources import ModelResource
 from models import RunInput
 
+import logging
+from log_levels import log
+
 import library
 import random
 import os
@@ -18,6 +21,7 @@ def get_current_api():
     return "version 0.0.1"
 
 class RunInputResource(ModelResource):
+
     class Meta:
         queryset = RunInput.objects.all()
         resource_name = 'reopt'
@@ -45,6 +49,9 @@ class RunInputResource(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
+
+        self.setup_logging()
+
         #Validate Inputs
         self.is_valid(bundle)
         if bundle.errors:
@@ -63,5 +70,11 @@ class RunInputResource(ModelResource):
         bundle.data = output_obj.to_dictionary()
         
         return self.full_hydrate(bundle)
-       
 
+    def setup_logging(self):
+        file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
+        logging.basicConfig(filename=file_logfile,
+                            format='%(asctime)s - %(levelname)s - %(message)s',
+                            datefmt='%m/%d/%Y %I:%M%S %p',
+                            level=logging.DEBUG)
+        log("DEBUG", "Logging setup")

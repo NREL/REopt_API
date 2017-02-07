@@ -6,9 +6,9 @@ import math
 import pandas as pd
 from datetime import datetime, timedelta
 import re
+
 # logging
 from log_levels import log
-import logging
 
 # user defined
 import economics
@@ -31,11 +31,15 @@ class DatLibrary:
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = False
+    debug = True
     logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
     year = 2018
     time_steps_per_hour = 1
+
+    # default for now, modify with input from user
+    net_metering = False
+
 
     # DAT files to overwrite
     DAT = [None] * 20
@@ -61,8 +65,6 @@ class DatLibrary:
         f.close()
 
     def get_egg(self):
-        # when deployed, runs from egg file, need to update if version changes!
-        #egg_name = "reopt_api-1.0-py2.7.egg"
         wd = os.getcwd()
         return wd
     
@@ -122,11 +124,13 @@ class DatLibrary:
 
         if self.tilt is None:
             self.tilt = self.latitude
-     
+
         if self.urdb_rate != None:
+            log("DEBUG", "Parsing URDB rate")
             self.parse_urdb(self.urdb_rate)
         else:
             if None not in [self.blended_utility_rate, self.demand_charge]:
+                log("DEBUG", "Making URDB rate from blended data")
                 urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
                 self.parse_urdb(urdb_rate)
 
@@ -139,7 +143,6 @@ class DatLibrary:
         for k in self.outputs() :
             setattr(self, k, None)
         self.update_types()
-        self.setup_logging()
 
     def get_path_run(self):
         return self.path_run
@@ -218,11 +221,7 @@ class DatLibrary:
                 output[k] = None
         return output
 
-    def setup_logging(self):
-        logging.basicConfig(filename=self.file_logfile,
-                            format='%(asctime)s - %(levelname)s - %(message)s',
-                            datefmt='%m/%d/%Y %I:%M%S %p',
-                            level=logging.DEBUG)
+
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
@@ -248,7 +247,6 @@ class DatLibrary:
         
         output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
                  % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
-     	output_txt = """ "%s " """ % (output)
 
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
@@ -262,9 +260,6 @@ class DatLibrary:
             for k in self.outputs():
                 val = getattr(process_results, k)
                 setattr(self, k, val)
-
-
-
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
@@ -514,8 +509,7 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        log_root = os.path.join(self.path_egg, 'log')
-        urdb_parse = UrdbParse(self.path_utility, log_root, self.year, self.time_steps_per_hour)
+        urdb_parse = UrdbParse(self.path_utility, self.year, self.time_steps_per_hour, self.net_metering)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
