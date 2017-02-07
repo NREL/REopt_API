@@ -17,15 +17,14 @@ import results
 from api_definitions import *
 
 from urdb_parse import *
-from exceptions import SubprocessTimeoutError
 from utilities import Command
+
 
 def alphanum(s):
     return re.sub(r'\W+', '', s)
 
 
 class DatLibrary:
-
     max_big_number = 100000000
     timeout = 60
     timed_out = False
@@ -39,7 +38,6 @@ class DatLibrary:
 
     # default for now, modify with input from user
     net_metering = False
-
 
     # DAT files to overwrite
     DAT = [None] * 20
@@ -67,14 +65,14 @@ class DatLibrary:
     def get_egg(self):
         wd = os.getcwd()
         return wd
-    
-    def inputs(self,**args):
+
+    def inputs(self, **args):
         return inputs(**args)
 
-    def outputs(self,**args):
+    def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self,run_input_id, lib_inputs):
+    def __init__(self, run_input_id, lib_inputs):
 
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
@@ -82,27 +80,28 @@ class DatLibrary:
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
-        self.path_run = os.path.join(self.path_xpress,"Run"+str(self.run_input_id))
-        
+        self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
+
         self.path_run_inputs = os.path.join(self.path_run, "Inputs")
-        self.path_run_outputs = os.path.join(self.path_run,"Outputs")
-        self.path_run_outputs_bau = os.path.join(self.path_run,"Outputs_bau")
+        self.path_run_outputs = os.path.join(self.path_run, "Outputs")
+        self.path_run_outputs_bau = os.path.join(self.path_run, "Outputs_bau")
 
         if os.path.exists(self.path_run):
             shutil.rmtree(self.path_run)
-        
-        for f in [self.path_run,self.path_run_inputs,self.path_run_outputs, self.path_run_outputs_bau]:
+
+        for f in [self.path_run, self.path_run_inputs, self.path_run_outputs, self.path_run_outputs_bau]:
             os.mkdir(f)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
-        
-        self.file_economics = os.path.join(self.path_run_inputs,'economics_' + str(self.run_input_id) + '.dat')
+
+        self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
         self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
         self.file_gis_bau = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '_bau.dat')
         self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
         self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
+        self.file_NEM = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '.dat')
 
         self.path_utility = os.path.join(self.path_run_inputs, "Utility")
         self.path_various = os.path.join(self.path_run_inputs)
@@ -112,11 +111,11 @@ class DatLibrary:
         self.folder_load_size = os.path.join(self.path_dat_library, "LoadSize")
         self.folder_various = os.path.join(self.path_dat_library, "Various")
 
-        for k,v in self.inputs(full_list=True).items():
+        for k, v in self.inputs(full_list=True).items():
             if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
 
-            elif lib_inputs.get(k) is  None:
+            elif lib_inputs.get(k) is None:
                 setattr(self, k, self.inputs()[k].get('default'))
 
             else:
@@ -125,22 +124,13 @@ class DatLibrary:
         if self.tilt is None:
             self.tilt = self.latitude
 
-        if self.urdb_rate != None:
-            log("DEBUG", "Parsing URDB rate")
-            self.parse_urdb(self.urdb_rate)
-        else:
-            if None not in [self.blended_utility_rate, self.demand_charge]:
-                log("DEBUG", "Making URDB rate from blended data")
-                urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
-                self.parse_urdb(urdb_rate)
-
         self.default_load_profiles = [p.lower() for p in default_load_profiles()]
         self.default_building = default_building()
         self.default_city = default_cities()[0]
         if self.latitude is not None and self.longitude is not None:
-            self.default_city = default_cities()[self.localize_load()] 
+            self.default_city = default_cities()[self.localize_load()]
 
-        for k in self.outputs() :
+        for k in self.outputs():
             setattr(self, k, None)
         self.update_types()
 
@@ -158,28 +148,28 @@ class DatLibrary:
 
     def update_types(self):
         for group in [self.inputs(full_list=True), self.outputs()]:
-            for k,v in group.items():
-                value = getattr(self,k)
+            for k, v in group.items():
+                value = getattr(self, k)
 
                 if value is not None:
-                    if v['type']==float:
+                    if v['type'] == float:
                         if v['pct']:
                             if value > 1.0:
-                                setattr(self, k, float(value)*0.01)
+                                setattr(self, k, float(value) * 0.01)
 
                     elif v['type'] == list:
                         value = [float(i) for i in getattr(self, k)]
                         setattr(self, k, value)
 
                     else:
-                        setattr(self,k,v['type'](value))
+                        setattr(self, k, v['type'](value))
 
     def get_subtask_inputs(self, name):
         output = {}
         defaults = self.inputs(filter=name)
 
         for k in defaults.keys():
-            output[k] = getattr(self,k)
+            output[k] = getattr(self, k)
             if output[k] is None:
                 default = defaults[k].get('default')
                 if default is not None:
@@ -193,16 +183,17 @@ class DatLibrary:
         self.create_economics()
         self.create_loads()
         self.create_GIS()
+        self.create_nem()
         self.create_utility()
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
-        
+
         log("DEBUG", "Initializing Command")
         command = Command(run_command)
         log("DEBUG", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
-        
+
         log("DEBUG", "Running Command")
         command.run(self.timeout)
         log("DEBUG", "Running BAU")
@@ -221,8 +212,6 @@ class DatLibrary:
                 output[k] = None
         return output
 
-
-
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
@@ -235,16 +224,16 @@ class DatLibrary:
 
         # RE case
         header = 'exec '
-        header += os.path.join(self.path_xpress,xpress_model)
+        header += os.path.join(self.path_xpress, xpress_model)
 
         outline = ''
 
         for dat_file in DATs:
             if dat_file is not None:
                 outline = ', '.join([outline, dat_file.strip('\n')])
-        
-        outline.replace('\n', '') 
-        
+
+        outline.replace('\n', '')
+
         output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
                  % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
 
@@ -270,11 +259,12 @@ class DatLibrary:
         log("DEBUG", "Output folder: " + self.path_run_outputs)
 
         if not self.debug:
-            for f in [self.path__run_output]:
+            for f in [self.path_run_output]:
                 if os.path.exists(f):
                     shutil.rmtree(f, ignore_errors=True)
 
-            for p in [self.file_economics,self.file_economics_bau, self.file_gis, self.file_gis_bau, self.file_load_profile, self.file_load_size]:
+            for p in [self.file_economics, self.file_economics_bau, self.file_gis, self.file_gis_bau,
+                      self.file_load_profile, self.file_load_size]:
                 if os.path.exists(p):
                     os.remove(p)
 
@@ -290,11 +280,11 @@ class DatLibrary:
         econ_inputs = self.get_subtask_inputs('economics')
 
         fp = self.file_economics
-        self.economics = economics.Economics(econ_inputs, file_path=fp,business_as_usual=False)
+        self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
 
-        for k in ['analysis_period','pv_cost','pv_om','batt_cost_kw','batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh','owner_discount_rate','offtaker_discount_rate']:
-           setattr(self, k, getattr(self.economics,k))
+        for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
+                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate']:
+            setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
@@ -311,66 +301,69 @@ class DatLibrary:
 
         log("DEBUG", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
-                     ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
-                     ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
-                     ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
+            ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
+            ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
+            ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
         if self.load_8760_kw is not None:
             if len(self.load_8760_kw) == 8760:
                 self.load_size = sum(self.load_8760_kw)
                 self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
                 self.write_single_variable(self.file_load_profile, self.load_8760_kw, "LoadProfile")
-               
+
             else:
                 log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
 
         if self.load_monthly_kwh is not None:
             if len(self.load_monthly_kwh) == 12:
                 self.load_size = float(sum(self.load_monthly_kwh))
-                self.write_single_variable(self.file_load_size,self.load_size, "AnnualElecLoad")
-                
-                if (self.load_profile_name is not None) and (self.load_profile_name.lower() in self.default_load_profiles):
-                        name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        path = os.path.join( self.folder_load_profile , name )
-                        load_profile = self.scale_load_by_month(path)
+                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+
+                if (self.load_profile_name is not None) and (
+                    self.load_profile_name.lower() in self.default_load_profiles):
+                    name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
+                    path = os.path.join(self.folder_load_profile, name)
+                    load_profile = self.scale_load_by_month(path)
                 else:
-                    path = os.path.join( self.folder_load_profile, default_load_profile_norm)
+                    path = os.path.join(self.folder_load_profile, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
-		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile"  )
-            
+                self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+
             else:
-                log("ERROR", "Load profile uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
+                log("ERROR",
+                    "Load profile uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
 
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
             if self.load_size is None:
 
-	        self.file_load_size = os.path.join( self.folder_load_size, default_load_size)
-                self.file_load_profile = os.path.join( self.folder_load_profile, default_load_profile) 
+                self.file_load_size = os.path.join(self.folder_load_size, default_load_size)
+                self.file_load_profile = os.path.join(self.folder_load_profile, default_load_profile)
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
                         filename_profile = "Load8760_raw_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                        self.file_load_size = os.path.join( self.folder_load_size , filename_size)
-                        self.file_load_profile = os.path.join( self.folder_load_profile , filename_profile)
-                
+                        self.file_load_size = os.path.join(self.folder_load_size, filename_size)
+                        self.file_load_profile = os.path.join(self.folder_load_profile, filename_profile)
+
             else:
                 self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-		
+
                 # Load profile specified, with load size specified
                 if self.load_profile_name is not None:
                     if self.load_profile_name.lower() in self.default_load_profiles:
-                        tmp_profile = os.path.join( self.folder_load_profile, "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
+                        tmp_profile = os.path.join(self.folder_load_profile,
+                                                   "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
                         load_profile = self.scale_load(tmp_profile, self.load_size)
-                
-                #Load size specified, no profile
+
+                # Load size specified, no profile
                 else:
-		    p = os.path.join( self.folder_load_profile, default_load_profile)
+                    p = os.path.join(self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
-		self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+                self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
 
         self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
         self.DAT_bau[2] = self.DAT[2]
@@ -378,20 +371,20 @@ class DatLibrary:
         self.DAT_bau[3] = self.DAT[3]
 
     def scale_load(self, file_load_profile, scale_factor):
-        
+
         load_profile = []
         f = open(file_load_profile, 'r')
         for line in f:
             load_profile.append(float(line.strip('\n')) * scale_factor)
 
         # fill in W, X, S bins
-        for _ in range(8760*3):
+        for _ in range(8760 * 3):
             load_profile.append(self.max_big_number)
 
         return load_profile
 
     def scale_load_by_month(self, profile_file):
-      
+
         load_profile = []
         f = open(profile_file, 'r')
 
@@ -426,7 +419,7 @@ class DatLibrary:
             datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
 
         # fill in W, X, S bins
-        for _ in range(8760*3):
+        for _ in range(8760 * 3):
             load_profile.append(self.max_big_number)
 
         return load_profile
@@ -455,7 +448,6 @@ class DatLibrary:
     def create_GIS(self):
 
         if self.latitude is not None and self.longitude is not None:
-
             pv_inputs = self.get_subtask_inputs('pvwatts')
             GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs)
 
@@ -464,13 +456,21 @@ class DatLibrary:
 
     def create_utility(self):
 
-        if self.utility_name is not None and self.rate_name is not None:
+        if self.urdb_rate is not None:
+            log("DEBUG", "Parsing URDB rate")
+            self.parse_urdb(self.urdb_rate)
+        else:
+            if None not in [self.blended_utility_rate, self.demand_charge]:
+                log("DEBUG", "Making URDB rate from blended data")
+                urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
+                self.parse_urdb(urdb_rate)
 
+        if self.utility_name is not None and self.rate_name is not None:
             self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
             with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
-            
+
             with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
@@ -504,12 +504,13 @@ class DatLibrary:
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
             outfile.close()
-        
+
         with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        urdb_parse = UrdbParse(self.path_utility, self.year, self.time_steps_per_hour, self.net_metering)
+        urdb_parse = UrdbParse(self.path_utility, self.year, self.time_steps_per_hour,
+                               self.net_metering, self.wholesale_rate)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         self.utility_name = utility_name
@@ -567,3 +568,25 @@ class DatLibrary:
         urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
         print urdb_rate
         return urdb_rate
+
+    def create_nem(self):
+
+        net_metering_limit = 0
+        interconnection_limit = 1000000
+
+        nem_input = getattr(self, "net_metering_limit")
+        ic_input = getattr(self, "interconnection_limit")
+
+        if nem_input is not None:
+            net_metering_limit = nem_input
+        if ic_input is not None:
+            interconnection_limit = ic_input
+        if net_metering_limit > 0:
+            self.net_metering = True
+
+        # check on if NM, IC are in right spot
+        self.write_single_variable(self.file_NEM,
+                                   [net_metering_limit, interconnection_limit, self.max_big_number],
+                                   "NMILLimits")
+
+        self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"

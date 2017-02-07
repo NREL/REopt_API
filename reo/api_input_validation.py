@@ -70,6 +70,15 @@ def check_owner_tax_rate():
 def check_rate_itc():
     return {}
 
+def check_net_metering_limit():
+    return {}
+
+def check_interconnection_limit():
+    return {}
+
+def check_wholesale_rate():
+    return {}
+
 def check_batt_replacement_cost_kw():
     return {}
 
