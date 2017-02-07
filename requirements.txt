@@ -1,12 +1,14 @@
 CherryPy==8.8.0
 Django==1.8
+django-picklefield==0.3.2
 django-tastypie==0.13.3
 numpy==1.11.0
 pandas==0.18.1
 psutil==4.3.1
+psycopg2==2.6.2
 python-dateutil==2.5.2
 python-mimeparse==1.5.1
 pytz==2016.4
 requests==2.11.1
-django-picklefield==0.3.2
-psycopg2==2.6.2
+six==1.10.0
+XlsxWriter==0.9.6
