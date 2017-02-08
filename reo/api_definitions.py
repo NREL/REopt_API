@@ -105,12 +105,12 @@ def inputs(filter='',full_list=False,just_required=False):
                     'pct': False, "needed_for": ['economics']},
 
       # Not Required
-      'load_profile_name': {'req': True,'swap_for':['load_8760_kw'], 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
+      'load_profile_name': {'req': True,'swap_for':['load_8760_kw'], 'depends_on':['load_size'],'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Generic Load Profile Type",
                        'restrict_to': default_load_profiles()+[None]},
 
 
-      'load_size': {'req': True, 'swap_for':['load_8760_kw'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'load_size': {'req': True, 'swap_for':['load_8760_kw'],'depends_on':['load_profile_name'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                     'max': None,
                     "description": "Annual Load Size", "units": 'kWh'},
 
@@ -279,7 +279,7 @@ def outputs():
 
 # default load profiles
 def default_load_profiles():
-    return  ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
+    return  ['FastFoodRest', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
                          'MediumOffice', 'MidriseApartment', 'Outpatient', 'PrimarySchool', 'RetailStore',
                          'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse']
 
