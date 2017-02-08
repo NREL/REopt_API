@@ -11,7 +11,15 @@ def inputs(filter='',full_list=False,just_required=False):
       'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
                           'default': 25, 'min': 0, 'max': None,
                           "description": "Period of Analysis", "units": 'years'},
-                          
+      
+      'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Land Area avaialble for PV panel siting", "units": 'acres'},
+       
+      'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Area of Roof Available for PV siting", "units": 'acres'},
+
       'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                    "description": "Site Latitude", "units": 'degrees'},
@@ -20,27 +28,67 @@ def inputs(filter='',full_list=False,just_required=False):
                     "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                     "description": "Site Longitude", "units": 'degrees'},
 
-      'pv_cost': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'pv_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                   'max': None, 'default': 2160,
                   "description": "Nominal PV Cost", "units": 'dollars per kilowatt'},
 
-      'pv_om': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                 'max': None, 'default': 20,
                 "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year'},
 
-      'batt_cost_kw': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                        'max': None, 'default': 1600,
                        "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt'},
 
-      'batt_cost_kwh': {'req': True, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'batt_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 500,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
 
-      'owner_discount_rate': {'req': True, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
+      'batt_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Maximum Allowable Battery Power Size", "units": 'kilowatt'},
+
+      'batt_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': 0,
+                        "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt'},
+
+      'batt_time_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Maximum Time Battery Can Support at Full Power", "units": 'hour'},
+
+      'batt_time_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': 0,
+                        "description": "Minimum Time  Battery Can Support at Full Power", "units": 'hour'},
+
+      'batt_replacement_cost_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": [], 'min': None,
+                        'max': None, 'default': None,
+                        "description": "Rate at which to escalate the future price of a battery", "units": 'percent'},
+
+      'interconnection_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Limit on Power flowing from System to the Grid", "units": 'kilowatt'},
+
+      'net_metering_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt'},
+
+      'wholesale_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': None,
+                        "description": "Assumed price of electricity on the wholesale market", "units": 'dollars per kilowatt-hour'},
+
+      'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                        'max': None, 'default': 500,
+                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
+
+      'pv_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                        'max': None, 'default': 500,
+                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
+
+      'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0, 'max': 1, 'default': 0.08,
                               "description": "Owner Discount Rate", "units": 'decimal percent'},
 
-      'offtaker_discount_rate': {'req': True, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
+      'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                                  'min': 0, 'max': 1, 'default': 0.08,
                                  "description": "Offtaker Discount Rate", "units": 'decimal percent'},
 
@@ -57,15 +105,16 @@ def inputs(filter='',full_list=False,just_required=False):
                     'pct': False, "needed_for": ['economics']},
 
       # Not Required
-      'load_profile_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
+      'load_profile_name': {'req': True,'swap_for':['load_8760_kw'], 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Generic Load Profile Type",
                        'restrict_to': default_load_profiles()+[None]},
 
-      'load_size': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+
+      'load_size': {'req': True, 'swap_for':['load_8760_kw'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                     'max': None,
                     "description": "Annual Load Size", "units": 'kWh'},
 
-      'load_8760_kw': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
+      'load_8760_kw': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Hourly Power Demand", "units": 'kW'},
 
       'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
