@@ -20,6 +20,44 @@ from validators import  *
 def get_current_api():
     return "version 0.0.1"
 
+
+class RunInputCheckerResource(ModelResource):
+    class Meta:
+        queryset = RunInput.objects.all()
+        resource_name = 'check_inputs'
+        allowed_methods = ['get','post']
+        object_class = RunInput
+        authorization = Authorization()
+        serializer = Serializer(formats=['json'])
+        always_return_data = True
+        validation = REoptResourceCheckerValidation()
+
+    def detail_uri_kwargs(self, bundle_or_obj):
+        kwargs = {}
+
+        if isinstance(bundle_or_obj, Bundle):
+            kwargs['pk'] = bundle_or_obj.obj.id
+        else:
+            kwargs['pk'] = bundle_or_obj['id']
+
+        return kwargs
+
+    def get_object_list(self, request):
+        return [request]
+
+    def obj_get_list(self, bundle, **kwargs):
+        return self.get_object_list(bundle.request)
+
+    def obj_create(self, bundle, **kwargs):
+        
+        #Validate Inputs
+        self.check_individual(bundle)
+        
+        if bundle.errors:
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
+
+        return self.full_hydrate(bundle)
+
 class RunInputResource(ModelResource):
 
     class Meta:

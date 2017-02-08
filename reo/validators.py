@@ -3,6 +3,31 @@ from api_definitions import *
 from api_input_validation import *
 
 class REoptResourceValidation(Validation):
+    def check_individual(self, bundle, errors):
+
+        for key, value in bundle.data.items():
+            if key not in inputs(full_list=True):
+                errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+            
+            else:
+                field_def = inputs(full_list=True)[key]
+                format_errors =  self.check_input_format(key,value,field_def)
+                if not format_errors:
+                    if field_def.get('max') is not None:
+                        format_errors += self.check_max(key, value, field_def)
+
+                    if field_def.get('min') is not None:
+                        format_errors += self.check_min(key, value, field_def)
+
+                    if field_def.get('restrict_to'):
+                        format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
+
+                #specific_errors 
+                if format_errors:
+                    errors = self.append_errors(errors, key, format_errors)
+
+        return errors
+
     def is_valid(self, bundle, request=None):
 
         errors = {}
@@ -18,47 +43,24 @@ class REoptResourceValidation(Validation):
             message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
             errors = self.append_errors(errors, "Missing_Dependencies", message)
 
-        for key, value in bundle.data.items():
-
-            if key not in inputs(full_list=True):
-                errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
-            
-            else:
-                field_def = inputs(full_list=True)[key]
-                format_errors =  self.check_input_format(key,value,field_def)
-                if not format_errors and value != None:
-                    if field_def.get('max') is not None:
-                        format_errors += self.check_max(key, value, field_def)
-
-                    if field_def.get('min') is not None:
-                        format_errors += self.check_min(key, value, field_def)
-
-                    if field_def.get('restrict_to'):
-                        format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
-
-                #specific_errors =
-                if format_errors:
-                    errors = self.append_errors(errors, key, format_errors)
+        errors = self.check_individual(bundle, errors)
 
         return errors
 
     def check_input_format(self,key,value,field_definition):
         invalid_msg = 'Invalid format: Expected %s, got %s'%(str(field_definition['type']), str(type(value)))
         try:
-            if field_definition['req']:
+            if not field_definition['null']:
                 if value in [None,'null']:
-                    return ['Required Field: Cannot be null']
+                    return ['Invalid format: Input cannot be null']
             
-            if value is not None:
-
-                new_value = field_definition['type'](value)
-                        
-                if value != new_value:
-                    return [invalid_msg]
+            new_value = field_definition['type'](value)
+            
+            if value != new_value:
+                return [invalid_msg]
 
             return []
         except Exception as e:
-            print value
             return [invalid_msg]
 
     def check_min(self, key, value, fd):
