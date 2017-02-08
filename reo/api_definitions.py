@@ -151,6 +151,18 @@ def inputs(filter='',full_list=False,just_required=False):
                    'max': 1, 'default': 0.30,
                    "description": "Investment Tax Credit rate", "units": 'decimal percent'},
 
+      'net_metering_limit': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                             'min': 0, 'max': 100000000000, 'default': 0,
+                            "description": "Net metering limit", "units": 'kW'},
+
+      'interconnection_limit': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                'min': 0, 'max': 100000000000, 'default': 1e13,
+                                "description": "Interconnection limit", "units": 'kW'},
+
+      'wholesale_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                         'min': 0,'max': 10000, 'default': 0,
+                         "description": "Wholesale rate", "units": '$/kWh'},
+
       'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
                                    "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
                                    "description": "Battery Inverter Replacement Cost", "units": '$/kW'},

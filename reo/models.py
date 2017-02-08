@@ -5,13 +5,14 @@ import json
 from picklefield.fields import PickledObjectField
 from library import *
 
+
 # Create your models here.
 class RunInput(models.Model):
-    user_id = models.TextField(blank=True,null=True,default='')
-    api_version = models.TextField(blank=True, default='',null=False)
+    user_id = models.TextField(blank=True, default='')
+    api_version = models.TextField(blank=True, default='', null=False)
 
-    # Basics
-    analysis_period = models.IntegerField(null=True,blank=True)
+    ## Basics
+    analysis_period = models.IntegerField(null=False,blank=True)
     latitude = models.FloatField(null=True,blank=True)
     longitude = models.FloatField(null=True, blank=True)
     land_area = models.FloatField(null=True,blank=True)
@@ -34,12 +35,12 @@ class RunInput(models.Model):
     # Economics
     wholesale_rate = models.FloatField(null=True,blank=True)
 
-    owner_discount_rate = models.FloatField(null=True,blank=True)
-    offtaker_discount_rate = models.FloatField(null=True,blank=True)
+    owner_discount_rate = models.FloatField(null=True, blank=True)
+    offtaker_discount_rate = models.FloatField(null=True, blank=True)
 
-    blended_utility_rate = ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    demand_charge =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    urdb_rate =  PickledObjectField(null=True)
+    blended_utility_rate = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    demand_charge = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    urdb_rate = PickledObjectField(null=True)
 
     rate_inflation = models.FloatField(null=True,blank=True)
     rate_escalation = models.FloatField(null=True,blank=True)
@@ -83,24 +84,23 @@ class RunInput(models.Model):
     timeframe = models.TextField(blank=True,default='')
     losses = models.FloatField(null=True,blank=True)
     radius = models.FloatField(null=True,blank=True)
-    tilt = models.FloatField(null=True, blank=True)
-    gcr = models.FloatField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
 
     def create_output(self, fields):
-        response_inputs = {f:getattr(self,f) for f in fields}
+        response_inputs = {f: getattr(self, f) for f in fields}
 
         run_set = DatLibrary(self.id, response_inputs)
 
         # Run Optimization
         output_dictionary = run_set.run()
-        output_dictionary['api_version'] = self.api_version 
+        output_dictionary['api_version'] = self.api_version
 
         result = RunOutput(**output_dictionary)
         result.save()
 
         return result
+
 
 class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
@@ -131,12 +131,12 @@ class RunOutput(models.Model):
     # Economics
     wholesale_rate = models.FloatField(null=True,blank=True)
 
-    owner_discount_rate = models.FloatField(null=True,blank=True)
-    offtaker_discount_rate = models.FloatField(null=True,blank=True)
+    owner_discount_rate = models.FloatField(null=True, blank=True)
+    offtaker_discount_rate = models.FloatField(null=True, blank=True)
 
-    blended_utility_rate = ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    demand_charge =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    urdb_rate =  PickledObjectField(null=True)
+    blended_utility_rate = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    demand_charge = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    urdb_rate = PickledObjectField(null=True)
 
     rate_inflation = models.FloatField(null=True,blank=True)
     rate_escalation = models.FloatField(null=True,blank=True)
@@ -180,8 +180,6 @@ class RunOutput(models.Model):
     timeframe = models.TextField(blank=True,default='')
     losses = models.FloatField(null=True,blank=True)
     radius = models.FloatField(null=True,blank=True)
-    tilt = models.FloatField(null=True, blank=True)
-    gcr = models.FloatField(null=True, blank=True)
 
     # Output
     status = models.TextField(null=True, blank=True)
@@ -192,7 +190,7 @@ class RunOutput(models.Model):
     batt_kw = models.FloatField(null=True, blank=True)
     batt_kwh = models.FloatField(null=True, blank=True)
 
-    created =  models.DateTimeField(auto_now_add=True)
+    created = models.DateTimeField(auto_now_add=True)
 
     def to_dictionary(self):
         output = {'run_input_id': self.run_input_id,
