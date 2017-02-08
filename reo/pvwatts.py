@@ -68,7 +68,6 @@ class PVWatts:
 
     def download_locations(self):
         url = self.make_url()
-        log("DEBUG", "PVWatts: " + str(url))
         r = requests.get(url, verify=True)
         data = json.loads(r.text)
         self.compute_prod_factor(data)
