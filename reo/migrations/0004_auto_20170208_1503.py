@@ -7,7 +7,7 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0002_auto_20161111_1126'),
+        ('reo', '0003_auto_20170208_1502'),
     ]
 
     operations = [
@@ -17,18 +17,8 @@ class Migration(migrations.Migration):
             field=models.FloatField(null=True, blank=True),
         ),
         migrations.AddField(
-            model_name='runinput',
-            name='tilt',
-            field=models.FloatField(null=True, blank=True),
-        ),
-        migrations.AddField(
             model_name='runoutput',
             name='gcr',
-            field=models.FloatField(null=True, blank=True),
-        ),
-        migrations.AddField(
-            model_name='runoutput',
-            name='tilt',
             field=models.FloatField(null=True, blank=True),
         ),
     ]

@@ -7,18 +7,18 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0003_auto_20161111_1133'),
+        ('reo', '0002_auto_20170208_1500'),
     ]
 
     operations = [
-        migrations.RenameField(
+        migrations.AddField(
             model_name='runinput',
-            old_name='load_profile',
-            new_name='load_profile_name',
+            name='tilt',
+            field=models.FloatField(null=True, blank=True),
         ),
-        migrations.RenameField(
+        migrations.AddField(
             model_name='runoutput',
-            old_name='load_profile',
-            new_name='load_profile_name',
+            name='tilt',
+            field=models.FloatField(null=True, blank=True),
         ),
     ]

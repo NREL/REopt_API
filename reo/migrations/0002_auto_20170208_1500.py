@@ -2,19 +2,18 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import picklefield.fields
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0004_auto_20161118_2234'),
+        ('reo', '0001_initial'),
     ]
 
     operations = [
-        migrations.AlterField(
+        migrations.RenameField(
             model_name='runoutput',
-            name='urdb_rate',
-            field=picklefield.fields.PickledObjectField(editable=False),
+            old_name='intereconnection_limit',
+            new_name='interconnection_limit',
         ),
     ]
