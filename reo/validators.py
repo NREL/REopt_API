@@ -3,11 +3,15 @@ from api_definitions import *
 from api_input_validation import *
 
 class REoptResourceValidation(Validation):
-    def check_individual(self, bundle, errors):
 
-        for key, value in bundle.data.items():
+    def check_individual(self, input_dictionary, errors):
+
+        for key, value in input_dictionary.items():
             if key not in inputs(full_list=True):
                 errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+
+            if value is None and key in inputs(just_required=True).keys():
+                errors = self.append_errors(errors, key, 'This input is required and cannot be null.')
             
             else:
                 field_def = inputs(full_list=True)[key]
@@ -43,25 +47,28 @@ class REoptResourceValidation(Validation):
             message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
             errors = self.append_errors(errors, "Missing_Dependencies", message)
 
-        errors = self.check_individual(bundle, errors)
+        errors = self.check_individual(bundle.data, errors)
 
         return errors
 
     def check_input_format(self,key,value,field_definition):
-        invalid_msg = 'Invalid format: Expected %s, got %s'%(str(field_definition['type']), str(type(value)))
+
+        invalid_msg = 'Invalid format: Expected %s, got %s' % ( str(field_definition['type']).split(" ")[-1][0:-1], str(type(value)).split(" ")[-1][0:-1] )
+        
         try:
-            if not field_definition['null']:
-                if value in [None,'null']:
-                    return ['Invalid format: Input cannot be null']
             
             new_value = field_definition['type'](value)
             
-            if value != new_value:
+            if value not in [new_value]:
                 return [invalid_msg]
 
             return []
+
         except Exception as e:
-            return [invalid_msg]
+            if value is None:
+                return []
+            else:
+                return [invalid_msg]
 
     def check_min(self, key, value, fd):
         new_value = value
@@ -69,7 +76,7 @@ class REoptResourceValidation(Validation):
             if value > 1:
                 new_value = value*0.01
 
-        if new_value < fd['min']:
+        if new_value < fd['min'] and value is not None:
             if not fd.get('pct'):
                 return ['Invalid value: %s is less than the minimum, %s' % (value, fd['min'])]
             else:
@@ -82,7 +89,7 @@ class REoptResourceValidation(Validation):
             if value > 1:
                 new_value = value * 0.01
 
-        if new_value > fd['max']:
+        if new_value > fd['max'] and value is not None:
             if not fd.get('pct'):
                 return ['Invalid value: %s is greater than the  maximum, %s' % (value, fd['max'])]
             else:
@@ -90,18 +97,18 @@ class REoptResourceValidation(Validation):
         return []
 
     def check_restrict_to(self,key, value, range):
-        if value not in range:
+        if value not in range and value is not None:
             return ['Invalid value: %s is not in %s' % (value, range)]
         return []
 
     def append_errors(self, errors, key, value):
-        if 'Error:' in errors.keys():
-            if key not in errors["Error:"].keys():
-                errors["Error:"][key] = value
+        if 'Errors' in errors.keys():
+            if key not in errors["Errors"].keys():
+                errors["Errors"][key] = value
             else:
-                errors["Error:"][key] += value
+                errors["Errors"][key] += value
         else:
-            errors['Error:']  =  {key: value}
+            errors['Errorss']  =  {key: value}
         return errors
 
     def get_missing_required_message(self, input):

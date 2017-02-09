@@ -1,6 +1,8 @@
 from api_definitions import *
 from django.shortcuts import render
-
+import json
+from django.http import HttpResponse
+from validators import REoptResourceValidation
 
 def index(request):
     api_inputs = {}
@@ -18,3 +20,27 @@ def index(request):
 
     api_outputs = outputs()
     return render(request,'template.html',{'api_inputs':api_inputs,'api_outputs':api_outputs})
+
+def check_inputs(request):
+
+    checker = REoptResourceValidation()
+    errors  ={"Errors":{}}
+
+    bdy = unicode(request.body, 'latin-1')
+    parsed_request = json.loads(bdy)
+    
+    scrubbed_request = {}
+    for k,v in parsed_request.items():
+        if k in inputs(full_list=True).keys():
+            scrubbed_request[k] = v
+        else:
+            errors["Errors"][k] = ["Not  Valid Input Name"]
+
+    
+    errors = checker.check_individual(scrubbed_request,errors)
+
+
+    if errors == {}:
+        return HttpResponse(json.dumps({"Errors":{}}), content_type='application/json')    
+    else:
+        return HttpResponse(json.dumps(errors), content_type='application/json')   
