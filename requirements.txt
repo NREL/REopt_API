@@ -2,6 +2,7 @@ CherryPy==8.8.0
 Django==1.8
 django-picklefield==0.3.2
 django-tastypie==0.13.3
+enum==0.4.6
 numpy==1.11.0
 pandas==0.18.1
 psutil==4.3.1

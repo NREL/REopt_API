@@ -29,7 +29,7 @@ class RunInput(models.Model):
     batt_kw_min = models.FloatField(null=True,blank=True)
     batt_time_max = models.FloatField(null=True,blank=True)
     batt_time_min = models.FloatField(null=True,blank=True)
-    intereconnection_limit = models.FloatField(null=True,blank=True)
+    interconnection_limit = models.FloatField(null=True,blank=True)
     net_metering_limit = models.FloatField(null=True,blank=True)
 
     # Economics
