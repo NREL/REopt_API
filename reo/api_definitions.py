@@ -279,7 +279,7 @@ def outputs():
 
 # default load profiles
 def default_load_profiles():
-    return  ['FastFoodRest', 'Flat', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
+    return  ['FastFoodRest', 'FlatLoad', 'FullServiceRest', 'Hospital', 'LargeHotel', 'LargeOffice',
                          'MediumOffice', 'MidriseApartment', 'Outpatient', 'PrimarySchool', 'RetailStore',
                          'SecondarySchool', 'SmallHotel', 'SmallOffice', 'StripMall', 'Supermarket', 'Warehouse']
 

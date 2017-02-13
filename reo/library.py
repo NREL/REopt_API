@@ -375,6 +375,7 @@ class DatLibrary:
         load_profile = []
         f = open(file_load_profile, 'r')
         for line in f:
+            print line
             load_profile.append(float(line.strip('\n')) * scale_factor)
 
         # fill in W, X, S bins
