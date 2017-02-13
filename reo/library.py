@@ -56,9 +56,9 @@ class DatLibrary:
             f.write(str(var) + "\t,\n")
         f.write("]\n")
 
-    def write_single_variable(self, path, var, dat_var):
+    def write_single_variable(self, path, var, dat_var, mode='w'):
         log("DEBUG", "Writing " + dat_var + " to " + path)
-        f = open(path, 'w')
+        f = open(path, mode)
         self.write_var(f, var, dat_var)
         f.close()
 
@@ -95,6 +95,7 @@ class DatLibrary:
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
+        self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
         self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
@@ -180,6 +181,7 @@ class DatLibrary:
     def run(self):
 
         self.create_constant_bau()
+        self.create_max_size()
         self.create_economics()
         self.create_loads()
         self.create_GIS()
@@ -453,6 +455,42 @@ class DatLibrary:
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+
+    def create_max_size(self):
+
+        acres_per_MW = 6
+        squarefeet_to_acre = 0.0002471
+        total_acres = 0
+        pv_kw_max = 20000
+        util_kw_max = 12000000
+        batt_kw_max = 1000
+        batt_kwh_max = 1000
+
+        # pv max size based on user input
+        if self.pv_kw_max is not None:
+            pv_kw_max = self.pv_kw_max
+        else:
+            if self.roof_area is not None:
+                total_acres += self.roof_area * squarefeet_to_acre
+            if self.land_area is not None:
+                total_acres += self.land_area
+
+            pv_kw_max = (total_acres / acres_per_MW) * 1000
+
+        # battery constraints
+        if self.batt_kw_max is not None:
+            batt_kw_max = self.batt_kw_max
+        if self.batt_kwh_max is not None:
+            batt_kwh_max = self.batt_kwh_max
+
+        MaxSize = [pv_kw_max, pv_kw_max, util_kw_max]
+        MaxStorageSizeKW = batt_kw_max
+        MaxStorageSizeKWH = batt_kwh_max
+
+        self.write_single_variable(self.file_max_size, MaxSize, "MaxSize", 'w')
+        self.write_single_variable(self.file_max_size, MaxStorageSizeKW, "MaxStorageSizeKW", 'a')
+        self.write_single_variable(self.file_max_size, MaxStorageSizeKWH, "MaxStorageSizeKWH", 'a')
+
 
     def create_utility(self):
 

@@ -19,7 +19,7 @@ def inputs(filter='',full_list=False,just_required=False):
        
       'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Area of Roof Available for PV siting", "units": 'acres'},
+                        "description": "Area of Roof Available for PV siting", "units": 'square feet'},
 
       'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
@@ -53,13 +53,13 @@ def inputs(filter='',full_list=False,just_required=False):
                         'max': None, 'default': 0,
                         "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt'},
 
-      'batt_time_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+      'batt_kwh_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Maximum Time Battery Can Support at Full Power", "units": 'hour'},
+                        "description": "Maximum Battery Energy Capacity", "units": 'kilowatt-hours'},
 
-      'batt_time_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+      'batt_kwh_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
-                        "description": "Minimum Time  Battery Can Support at Full Power", "units": 'hour'},
+                        "description": "Minimum Battery Energy Capacity", "units": 'kilowatt-hours'},
 
       'batt_replacement_cost_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": [], 'min': None,
                         'max': None, 'default': None,
@@ -242,7 +242,7 @@ def inputs(filter='',full_list=False,just_required=False):
                'min': 0, 'max': 90, "description": "Tilt Angle", "units": "degrees"},
 
       'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
-              'min': 0, 'max': 3, "description": "Ground  Cover Ratio",},
+              'min': 0.01, 'max': 0.99, "description": "Ground  Cover Ratio",},
     }
     if full_list:
         return output

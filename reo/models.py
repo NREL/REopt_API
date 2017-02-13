@@ -27,8 +27,8 @@ class RunInput(models.Model):
     batt_cost_kwh = models.FloatField(null=True,blank=True)
     batt_kw_max = models.FloatField(null=True,blank=True)
     batt_kw_min = models.FloatField(null=True,blank=True)
-    batt_time_max = models.FloatField(null=True,blank=True)
-    batt_time_min = models.FloatField(null=True,blank=True)
+    batt_kwh_max = models.FloatField(null=True,blank=True)
+    batt_kwh_min = models.FloatField(null=True,blank=True)
     interconnection_limit = models.FloatField(null=True,blank=True)
     net_metering_limit = models.FloatField(null=True,blank=True)
 
@@ -126,8 +126,8 @@ class RunOutput(models.Model):
     batt_cost_kwh = models.FloatField(null=True,blank=True)
     batt_kw_max = models.FloatField(null=True,blank=True)
     batt_kw_min = models.FloatField(null=True,blank=True)
-    batt_time_max = models.FloatField(null=True,blank=True)
-    batt_time_min = models.FloatField(null=True,blank=True)
+    batt_kwh_max = models.FloatField(null=True,blank=True)
+    batt_kwh_min = models.FloatField(null=True,blank=True)
     interconnection_limit = models.FloatField(null=True,blank=True)
     net_metering_limit = models.FloatField(null=True,blank=True)
 
