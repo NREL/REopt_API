@@ -86,8 +86,8 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 
 - Minimum power desired (kW) - ```batt_kw_min```  
 - Maximum power desired (kW) - ```batt_kw_max```  
-- Minimum time capacity at full power (hours) ` ```batt_time_min```  
-- Maximum time capacity at full power (hours) - ```batt_time_max```  
+- Minimum capacity at full power (kWh) ` ```batt_kwh_min```  
+- Maximum capacity at full power (kWh) - ```batt_kwh_max```  
 - Battery internal efficiency (%) - ``batt_efficiency```  
 - Inverter efficiency (%) - ```batt_inverter_efficiency```  
 - Rectifier efficiency (%) - ```batt_rectifier_efficiency```  
