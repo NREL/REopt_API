@@ -51,7 +51,6 @@ class RunInputResource(ModelResource):
     def obj_create(self, bundle, **kwargs):
 
         self.setup_logging()
-        bundle.data['simple_validation'] = False
         #Validate Inputs
         self.is_valid(bundle)
         if bundle.errors:

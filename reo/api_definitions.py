@@ -181,7 +181,7 @@ def inputs(filter='',full_list=False,just_required=False):
 
       'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
               'min': 0, 'max': 3, "description": "Ground  Cover Ratio",},
-    }
+    } 
 
     if full_list:
         return output

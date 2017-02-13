@@ -108,7 +108,7 @@ class REoptResourceValidation(Validation):
             else:
                 errors["Errors"][key] += value
         else:
-            errors['Errorss']  =  {key: value}
+            errors['Errors']  =  {key: value}
         return errors
 
     def get_missing_required_message(self, input):
