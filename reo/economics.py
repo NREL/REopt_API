@@ -86,6 +86,7 @@ class Economics:
         self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1
         self.rate_escalation_nominal = (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1
 
+
         args = {}
         args["pwf_owner"] = annuity(self.analysis_period, 0, self.owner_discount_rate)
         args["pwf_offtaker"] = annuity(self.analysis_period, 0, self.offtaker_discount_rate)
@@ -95,8 +96,11 @@ class Economics:
         args["r_tax_offtaker"] = self.offtaker_tax_rate
         args["r_tax_owner"] = self.owner_tax_rate
 
-        args["LevelizationFactor"] = round(
-            annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.rate_degradation) / args["pwf_e"], 5)
+        self.levelization_factor = round(
+            annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate,
+                         -self.rate_degradation) / args["pwf_e"], 5)
+
+        args["LevelizationFactor"] = self.levelization_factor
         # args["OMperUnitSize"]   = round(pv_OM * args["pwf_om"], 5)
         args["OMperUnitSize"] = self.pv_om
 

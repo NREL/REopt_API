@@ -26,7 +26,7 @@ def alphanum(s):
 
 class DatLibrary:
     max_big_number = 100000000
-    timeout = 60
+    timeout = 500
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
@@ -285,7 +285,7 @@ class DatLibrary:
         self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
 
         for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate']:
+                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'levelization_factor']:
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
@@ -451,7 +451,7 @@ class DatLibrary:
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs)
+            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.levelization_factor)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"

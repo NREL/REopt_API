@@ -18,9 +18,10 @@ from log_levels import log
 class PVWatts:
 
     # Input data
-    latitude = []
-    longitude = []
-    run_id = []
+    latitude = None
+    longitude = None
+    run_id = None
+    levelization_factor = None
 
     # Assume defaults
     #dataset = "tmy3"  # Default: tmy2 Options: tmy2 , tmy3, intl
@@ -45,10 +46,11 @@ class PVWatts:
     filename_GIS = []
     filename_GIS_bau = []
 
-    def __init__(self, output_root, run_id, pvwatts_inputs, steps_per_hour=1):
+    def __init__(self, output_root, run_id, pvwatts_inputs, levelization_factor, steps_per_hour=1):
         self.steps_per_hour = steps_per_hour
         self.output_root = output_root
         self.run_id = run_id
+        self.levelization_factor = levelization_factor
 
         for k,v in pvwatts_inputs.items():
             setattr(self,k,v)
@@ -86,11 +88,11 @@ class PVWatts:
         if self.steps_per_hour >= 1:
             for hour in range(0, 8760):
                 for step in range(0, self.steps_per_hour):
-                    prod_factor_ts.append(round(ac_hourly[hour] / dc_nameplate, 4))
+                    prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
         # downscaled run (i.e 288 steps per year)
         else:
             for hour in range(0, 8760, int(1 / self.steps_per_hour)):
-                prod_factor_ts.append(round(ac_hourly[hour] / dc_nameplate, 4))
+                prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
 
         # build dictionary with same structure as ProdFactor in Mosel
         tech_bau = ['UTIL1']

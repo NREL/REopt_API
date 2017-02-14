@@ -78,11 +78,11 @@ def inputs(filter='',full_list=False,just_required=False):
                         "description": "Assumed price of electricity on the wholesale market", "units": 'dollars per kilowatt-hour'},
 
       'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                        'max': None, 'default': 500,
+                        'max': None, 'default': None,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
 
       'pv_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                        'max': None, 'default': 500,
+                        'max': None, 'default': 0,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
 
       'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
