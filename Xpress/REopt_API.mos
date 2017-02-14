@@ -77,6 +77,8 @@ declarations
 
   MaxProdIncent: array (Tech) of real  !Upper bound on incentives by technology in dollars
   ProdIncentRate: array (Tech, Load) of real     !in $/kWh, for example
+
+  TechClassMinSize: array(TechClass) of real
   MaxSizeForProdIncent: array (Tech) of real  ! If rated system size is above this cap, there will be no production incentives
   MaxSize: array (Tech) of real  !Max system size.  Usually limited by land area, MSW/Bio available, etc
   CapCostSlope: array (Tech) of real
@@ -123,6 +125,7 @@ declarations
   MaxStorageSizeKWH: real !the max size of storage
   MinStorageSizeKWH: real !the min size of storage
   MaxStorageSizeKW:  real !the max size of the charge / discharge per time step, basically the inverter
+  MinStorageSizeKW: real
   StorageCostPerKWH: array(BattLevel) of real !Storage cost per KWH
   StorageCostPerKW: array( BattLevel) of real !Storage cost per KW.  Cost of inverter.
   StorageMinChargePcent: real !Min charge on the storage device as a percent of the total
@@ -201,7 +204,6 @@ initializations from DAT5 ! GIS
 end-initializations
 
 initializations from DAT6 ! storage
-	MinStorageSizeKWH
 	StorageMinChargePcent
 	EtaStorIn
 	EtaStorOut
@@ -210,8 +212,11 @@ end-initializations
 
 initializations from DAT7 ! maxsizes
 	MaxSize
+	MinStorageSizeKW
 	MaxStorageSizeKW
+	MinStorageSizeKWH
 	MaxStorageSizeKWH
+	TechClassMinSize
 end-initializations
 
 initializations from DAT8
@@ -273,7 +278,8 @@ end-do
 	!next to lines set the SOC of the battery at time of GridOutage
 	sum(b in BattLevel) dvStorageSizeKWH(b) <=  MaxStorageSizeKWH
 	sum(b in BattLevel) dvStorageSizeKWH(b) >=  MinStorageSizeKWH
-	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW  !
+	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW
+	sum(b in BattLevel) dvStorageSizeKW(b) >= MinStorageSizeKW
 
 
 forall ( ts in TimeStep) do
@@ -380,9 +386,13 @@ end-do
 !! This section defining system size and production constraints
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
- !!System size cannot exceed MaxSize
+ !!System size cannot exceed MaxSize and must equal or exceed MinSize
  !CONSTRAINT 27
 forall (t in Tech)   dvSystemSize (t) <=  MaxSize (t)
+
+forall (b in TechClass) do
+    sum (t in Tech) dvSystemSize(t) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
+end-do
 
  !!dvRatedProduction must be greater than 0
  !CONSTRAINT 27a
