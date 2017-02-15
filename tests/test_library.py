@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import filecmp
+import pandas as pd
 
 
 class ValidationCases(Enum):
@@ -59,14 +60,41 @@ class RunLibraryTests(unittest.TestCase):
         self.path_output = run_set.get_path_run_outputs()
         self.path_output_bau = run_set.get_path_run_outputs_bau()
 
-    def compare_directory_contents(self):
+    def compare_directory_contents(self, path_valid_results, path_to_test):
 
-        self.assertTrue(filecmp.dircmp(self.path_input, self.path_valid_input),
-                        "Generated results for input not valid!")
-        self.assertTrue(filecmp.dircmp(self.path_output, self.path_valid_output),
-                        "Generated results for output not valid!")
-        self.assertTrue(filecmp.dircmp(self.path_output_bau, self.path_valid_output_bau),
-                        "Generated results for output not valid!")
+        list_files_valid = {}
+        list_files = {}
+
+        #print "Valid files"
+        for dirName, subdirList, fileList in os.walk(path_valid_results):
+            for fname in fileList:
+                list_files_valid[fname] = os.path.join(dirName, fname)
+                #print list_files_valid[fname]
+
+        #print "Test files"
+        for dirName, subdirList, fileList in os.walk(path_to_test):
+            for fname in fileList:
+                list_files[fname] = os.path.join(dirName, fname)
+                #print list_files[fname]
+
+        for file_valid, path_valid in list_files_valid.iteritems():
+
+            #print "Checking: " + file_valid
+            results_contain_file = False
+
+            if file_valid in list_files:
+                results_contain_file = True
+                path_generated = list_files[file_valid]
+
+                filename, extension = os.path.splitext(path_generated)
+                if extension != ".xlsx":
+                    self.assertTrue(filecmp.cmp(path_generated, path_valid, shallow=False), "Files do not match!")
+                else:
+                    df1 = pd.read_excel(path_generated)
+                    df2 = pd.read_excel(path_valid)
+                    self.assertTrue(df1.equals(df2), 'Excel file does not match')
+
+            self.assertTrue(results_contain_file, "File doesn't exist in path_to_test")
 
     def run_scenario(self, scenario_num):
 
@@ -74,8 +102,13 @@ class RunLibraryTests(unittest.TestCase):
         run_set = DatLibrary(scenario_num, json_data)
         run_set.run()
         self.get_output_paths(run_set)
-        self.compare_directory_contents()
-        self.tearDownScenario()
+        print "Test Inputs"
+        self.compare_directory_contents(self.path_valid_input, self.path_input)
+        print "Test BAU Output"
+        self.compare_directory_contents(self.path_valid_output_bau, self.path_output_bau)
+        print "Test Output"
+        self.compare_directory_contents(self.path_valid_output, self.path_output)
+        #self.tearDownScenario()
 
     def test_base_case(self):
 
