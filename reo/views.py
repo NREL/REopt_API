@@ -43,4 +43,26 @@ def check_inputs(request):
     if errors == {}:
         return HttpResponse(json.dumps({"Errors":{}}), content_type='application/json')    
     else:
-        return HttpResponse(json.dumps(errors), content_type='application/json')   
+        return HttpResponse(json.dumps(errors), content_type='application/json')
+
+def get_tooltips(request):
+    response = {}
+    for k, df in inputs().items():
+        message = df['tool_tip'] + " "
+        
+        if df.get('restrict_to') is not None:
+            message += "Possible values include " + ", ".join( [str(i) for i in df['restrict_to'] if i is not None ] ) + ". "
+        if df.get('units') is not None:
+            message += "Units: " + df['units'] + ". "
+        if message is None:
+            print k, df
+
+        if df.get('req'):
+            message += "This value is required. "
+        else:
+            message += "This value is not required. "
+
+        response[k] = message
+    
+    return HttpResponse(json.dumps(response), content_type='application/json')    
+    

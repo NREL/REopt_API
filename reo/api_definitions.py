@@ -6,243 +6,302 @@ def inputs(filter='',full_list=False,just_required=False):
 
     output = {
       'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default':None
-                  ,"description": "User ID", "units":None},
+                  ,"description": "User ID", "units":None,
+                  "tool_tip":"Unique REopt user id."},
 
       # Required
       'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
                           'default': 25, 'min': 0, 'max': None,
-                          "description": "Period of Analysis", "units": 'years'},
+                          "description": "Period of Analysis", "units": 'years',
+                          "tool_tip":'The financial life of the project in years.'},
       
       'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Land Area avaialble for PV panel siting", "units": 'acres'},
+                        "description": "Land Area avaialble for PV panel siting", "units": 'acres',
+                        "tool_tip":'The land area available on-site, in acres, for solar panels. Include fields, parking lots and vacant lots.'},
        
       'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Area of Roof Available for PV siting", "units": 'square feet'},
+                        "description": "Area of Roof Available for PV siting", "units": 'square feet',
+                        "tool_tip":'The roof area available on-site, in square feet, for solar panels. For more accurate results, exclude areas known to be consistently shaded.'},
 
       'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
-                   "description": "Site Latitude", "units": 'degrees'},
+                   "description": "Site Latitude", "units": 'degrees',
+                   "tool_tip":'Approximate latitude of the site in degrees.'},
 
       'longitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                     "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
-                    "description": "Site Longitude", "units": 'degrees'},
+                    "description": "Site Longitude", "units": 'degrees',
+                    "tool_tip":'Approximate longitude of the site in degrees.'},
 
       'pv_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                   'max': None, 'default': 2160,
-                  "description": "Nominal PV Cost", "units": 'dollars per kilowatt'},
+                  "description": "Nominal PV Cost", "units": 'dollars per kilowatt',
+                  "tool_tip":'Approximate latitude of the site in degrees.',
+                  "tool_tip":'Fully burdened cost of PV system in dollars per kilowatt. A baseline estimate may assume $2,160/kW.'},
 
       'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                 'max': None, 'default': 20,
-                "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year'},
+                "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
+                "tool_tip":'Estimated annual PV operation and maintenance costs per installed kilowatt. O&M includes asset cleanings, administration costs and replacing broken components.'},
 
       'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                        'max': None, 'default': 1600,
-                       "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt'},
+                       "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt',
+                       "tool_tip":'Fully burdened cost of Battery Storage system in dollars per kilowatt.'},
 
       'batt_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 500,
-                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
+                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                        "tool_tip":'Fully burdened cost of Battery Storage system in dollars per kilowatt-hour.'},
 
       'batt_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Maximum Allowable Battery Power Size", "units": 'kilowatt'},
+                        "description": "Maximum Allowable Battery Power Size", "units": 'kilowatt',
+                        "tool_tip":'Restriction on the Maximum Power of the Battery System in kilowatts.'},
 
       'batt_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
-                        "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt'},
+                        "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt',
+                        "tool_tip":'Restriction on the Minimum Power of the Battery System in kilowatts.'},
 
       'batt_kwh_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Maximum Battery Energy Capacity", "units": 'kilowatt-hours'},
+                        "description": "Maximum Battery Energy Capacity", "units": 'kilowatt-hours',
+                        "tool_tip":'Restriction on the Maximum Energy Storage of the Battery System in kilowatt-hours.'},
 
       'batt_kwh_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
-                        "description": "Minimum Battery Energy Capacity", "units": 'kilowatt-hours'},
+                        "description": "Minimum Battery Energy Capacity", "units": 'kilowatt-hours',
+                        "tool_tip":'Restriction on the Minimum Energy Storage of the Battery System in kilowatt-hours.'},
+
+      'batt_time_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': 0,
+                        "description": "Minimum Battery Energy Capacity", "units": 'hours',
+                        "tool_tip":'Restriction on the Minimum Hours of Energy Storage of the Battery System.'},
+
+      'batt_time_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
+                        'max': None, 'default': 0,
+                        "description": "Minimum Battery Energy Capacity", "units": 'hours',
+                        "tool_tip":'Restriction on the Maximum Hours of Energy Storage of the Battery System.'},
 
       'batt_replacement_cost_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": [], 'min': None,
                         'max': None, 'default': None,
-                        "description": "Rate at which to escalate the future price of a battery", "units": 'percent'},
+                        "description": "Rate at which to escalate the future price of a battery", "units": 'percent',
+                        "tool_tip":'The rate at which to discount the cost of replacing a Battery System components in the future.'},
 
       'interconnection_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Limit on Power flowing from System to the Grid", "units": 'kilowatt'},
+                        "description": "Limit on Power flowing from System to the Grid", "units": 'kilowatt',
+                        "tool_tip":'The maximum power that can be transmitted to the grid at any one time, in kilowatts. Interconnection limits are typically established by state policy.'},
 
       'net_metering_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt'},
+                        "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt',
+                        "tool_tip":'The maximum power that can be sold back to utilities at any one time, in kilowatts. These values are typically established by utilities.'},
 
       'wholesale_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': None,
-                        "description": "Assumed price of electricity on the wholesale market", "units": 'dollars per kilowatt-hour'},
+                        'max': None, 'default': 0.12,
+                        "description": "Assumed price of electricity on the wholesale market", "units": 'dollars per kilowatt-hour',
+                        "tool_tip":'The estimated price of electricity on the wholesale market in dollars per kilowatt.'},
 
       'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': None,
-                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
+                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                        "tool_tip":'Restriction on the Maximum Power of the PV System in kilowatt-hours.'},
 
       'pv_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 0,
-                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour'},
+                        "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour', 
+                        "tool_tip":'Restriction on the Maximum Power of the PV System in kilowatt-hours.'},
 
       'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0, 'max': 1, 'default': 0.08,
-                              "description": "Owner Discount Rate", "units": 'decimal percent'},
+                              "description": "Owner Discount Rate", "units": 'decimal percent',
+                              "tool_tip":'The rate at which the system owner discounts future savings and earnings from the installed system.'},
 
       'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                                  'min': 0, 'max': 1, 'default': 0.08,
-                                 "description": "Offtaker Discount Rate", "units": 'decimal percent'},
+                                 "description": "Offtaker Discount Rate", "units": 'decimal percent',
+                                 "tool_tip":'The rate at which the offtaker discounts future the value of excess energy electricity supplied by the installed system.'},
 
       'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
-                                "description": "Blended Utility Rate", "units": '$/kWh'},
+                                "description": "Blended Utility Rate", "units": '$/kWh',
+                                "tool_tip":'The average of on-peak, off-peak and any shoulder time of use pricing schedules for each month. These vary according to utility.'},
 
 
       'demand_charge': {'req': True, 'depends_on': ['blended_utility_rate'], 'swap_for': ['urdb_rate'], 'type': list,
                         'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
-                        "description": "Demand Charge", "units": '$/kW'},
+                        "description": "Demand Charge", "units": '$/kW',
+                        "tool_tip":'The price per kilowatt of demand charges established by your local utility.'},
 
       'urdb_rate': {'req': True, 'swap_for': ['demand_charge', 'blended_utility_rate'], 'type': dict, 'null': False,
-                    'pct': False, "needed_for": ['economics']},
+                    'pct': False, "needed_for": ['economics'],
+                    "tool_tip":'A JSON of the utility rate schedule as provided by the Utility Rate Database (en.openei.org/wiki/Utility_Rate_Database).'},
 
       # Not Required
       'load_profile_name': {'req': True,'swap_for':['load_8760_kw'], 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Generic Load Profile Type",
-                       'restrict_to': default_load_profiles()+[None]},
+                       'restrict_to': default_load_profiles()+[None],
+                       "tool_tip":'A typcial load for a conventional building type can be scaled to your annual load size.'},
 
 
       'load_size': {'req': True, 'swap_for':['load_8760_kw'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                     'max': None,
-                    "description": "Annual Load Size", "units": 'kWh'},
+                    "description": "Annual Load Size", "units": 'kWh',
+                    "tool_tip":'The annual load at the proposed site.'},
 
       'load_8760_kw': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
-                       "description": "Hourly Power Demand", "units": 'kW'},
+                       "description": "Hourly Power Demand", "units": 'kW',
+                       "tool_tip":'The annual hourly power demand at the proposed site.'},
 
       'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
-                           "description": "Monthly Energy Demand", "units": 'kWh'},
+                           "description": "Monthly Energy Demand", "units": 'kWh',
+                           "tool_tip":'The annual monthly energy demand at the proposed site.'},
 
       'utility_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                       "description": "Utility Name"},
+                       "description": "Utility Name",
+                       "tool_tip":'The name of the utility that currently serves the proposed site.'},
 
       'rate_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                    "description": "Rate Name"},
+                    "description": "Rate Name",
+                    "tool_tip":'The name of the utility rate structure that currently applies to the proposed site.'},
 
       'rate_degradation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0, 'max': 1, 'default': 0.005,
-                           "description": "Annual Degredation for Solar PV Panels", "units": 'decimal percent'},
+                           "description": "Annual Degredation for Solar PV Panels", "units": 'decimal percent',
+                           "tool_tip":'The percent at which the PV performance is expected to degrage annually.'},
 
       'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'], 'min': 0,
                          'max': 1, 'default': 0.02,
-                         "description": "Annual Inflation Rate", "units": 'decimal percent per year'},
+                         "description": "Annual Inflation Rate", "units": 'decimal percent per year',
+                         "tool_tip":'The expected annual rate of inflation over the financial life of the system.'},
 
       'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                           'min': -1, 'max': 1, 'default': 0.0039,
-                          "description": "Annual Cost of  Electricity Escalation Rate", "units": 'decimal percent per year'},
+                          "description": "Annual Cost of  Electricity Escalation Rate", "units": 'decimal percent per year',
+                          "tool_tip":'The expected annual rate of escalation for the price of electricity provided by the utility over the financial life of the system.'},
 
       'offtaker_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.35,
-                   "description": "Tax Rate for Electricity Customer", "units": 'decimal percent'},
+                   "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
+                   "tool_tip":'The percent of income that goes to tax for the offtaker.'},
 
       'owner_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                     'min': 0,
                     'max': 1, 'default': 0.35,
-                    "description": "Tax Rate for System Developer", "units": 'decimal percent'},
+                    "description": "Tax Rate for System Developer", "units": 'decimal percent',
+                    "tool_tip":'The percent of income that goes to tax for the system owner.'},
 
       'rate_itc': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.30,
-                   "description": "Investment Tax Credit rate", "units": 'decimal percent'},
-
-      'net_metering_limit': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                             'min': 0, 'max': 100000000000, 'default': 0,
-                            "description": "Net metering limit", "units": 'kW'},
-
-      'interconnection_limit': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                                'min': 0, 'max': 100000000000, 'default': 1e13,
-                                "description": "Interconnection limit", "units": 'kW'},
-
-      'wholesale_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                         'min': 0,'max': 10000, 'default': 0,
-                         "description": "Wholesale rate", "units": '$/kWh'},
+                   "description": "Investment Tax Credit rate", "units": 'decimal percent',
+                   "tool_tip":'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
 
       'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
                                    "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
-                                   "description": "Battery Inverter Replacement Cost", "units": '$/kW'},
+                                   "description": "Battery Inverter Replacement Cost", "units": '$/kW',
+                                   "tool_tip":"The expected cost, in today's dollars,  of replacing battery components per installed kilowatt."},
 
       'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
                                     "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
-                                    "description": "Battery Replacement Cost", "units": '$/kWh'},
+                                    "description": "Battery Replacement Cost", "units": '$/kWh',
+                                    "tool_tip":"The expected cost, in today's dollars, of replacing battery components per installed kilowatt-hour."},
 
       'batt_replacement_year': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                                 'min': 0, 'max': None, 'default': 10,
-                                "description": "Battery Replacement Year", "units": 'year'},
+                                "description": "Battery Replacement Year", "units": 'year',
+                                "tool_tip":'The year in which the battery system is expected to need to be replaced.'},
 
       'flag_macrs': {'req': False, 'type': bool, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 1,
                      'min': 0, 'max': 1,
-                     "description": "Use Modified Advanced  Cost Recovery System (MACRS) Deductions", "units": 'boolean'},
+                     "description": "Use Modified Advanced  Cost Recovery System (MACRS) Deductions", "units": 'boolean',
+                     "tool_tip":'Indicates whether the Modified Accelerated Cost Recovery System (MACRS) should be used to depreciate system costs.'},
 
       'flag_itc': {'req': False, 'type': bool, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 1,
                    'min': 0, 'max': 1,
-                   "description": "Use Investment Tax Credit Deductions", "units": 'boolean'},
+                   "description": "Use Investment Tax Credit Deductions", "units": 'boolean',
+                   "tool_tip":'Indicates whether the Investment Tax Credit (ITC) should be used to subsidize system costs.'},
 
       'flag_bonus': {'req': False, 'type': bool, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 1,
                      'min': 0, 'max': 1,
-                     "description": "Use Bonus Deductions", "units": 'boolean'},
+                     "description": "Use Bonus Deductions", "units": 'boolean',
+                     "tool_tip":'Indicates whether a Bonus Fraction should be factored in to system costs.'},
 
       'flag_replace_batt': {'req': False, 'type': bool, 'null': False, 'pct': False, "needed_for": ['economics'],
                             'default': 1, 'min': 0, 'max': 1,
-                            "description": "Use Battery Replacement Scheme", "units": 'boolean'},
+                            "description": "Use Battery Replacement Scheme", "units": 'boolean',
+                            "tool_tip":'Indicates whether a the battery is expected to be replaced over the life of the system.'},
 
       'macrs_years': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 5,
                       'min': 5, 'max': 7, 'restrict_to': [5, 7],
-                      "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years'},
+                      "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
+                      "tool_tip":'If MACRS is used, specify the duration over which depreciation will occur.'},
 
       'macrs_itc_reduction': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'default': 0.5, 'min': 0, 'max': 1,
-                              "description": "If ITC is taken with MACRS, the depreciable value is reduced by this fraction of the ITC", "units": 'decimal percent'},
+                              "description": "If ITC is taken with MACRS, the depreciable value is reduced by this fraction of the ITC", "units": 'decimal percent',
+                              "tool_tip": "If ITC is taken with MACRS, the depreciable value is reduced by this fraction of the ITC"},
 
       'bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                          'default': 0.5, 'min': 0, 'max': 1,
                          "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
-                         "units": 'decimal percent'},
+                         "units": 'decimal percent',
+                         "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
+
 
       'dataset': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': "tmy3",
-                  'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",},
+                  'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",
+                  "tool_tip": "This solar insolation dataset to use when calling PVWatts"},
 
       'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.96,
                   'min': 0.9, 'max': 0.995, "description": "Inverter Efficiency at Rated Power",
-                  "units": "decimal percent"},
+                  "units": "decimal percent",
+                  "tool_tip": "The expected inverter efficiency rate."},
 
       'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
-                      'default': 1.1, 'min': 0, 'max': None, "description": "DC to AC ratio"},
+                      'default': 1.1, 'min': 0, 'max': None, "description": "DC to AC ratio",
+                      "tool_tip": "The expected DC to AC conversion ratio."},
 
       'azimuth': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 180,
-                  'min': 0, 'max': 360, "description": "Azimuth Angle", "units": "degrees"},
+                  'min': 0, 'max': 360, "description": "Azimuth Angle", "units": "degrees",
+                   "tool_tip": "The azimuth of the proposed site."},
 
       'system_capacity': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
-                          'default': 1, 'min': 0.05, 'max': 500000, "description": "Nameplate capacity", "units": "kW"},
+                          'default': 1, 'min': 0.05, 'max': 500000, "description": "Nameplate capacity", "units": "kW", 
+                          "tool_tip": "The nameplate capacity of the proposed PV system."},
 
       'array_type': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0,
-                     'restrict_to': [0, 1, 2, 3, 4], "description": "Fixed or Axis Type"},  # fixed open rack
+                     'restrict_to': [0, 1, 2, 3, 4], "description": "Fixed or Axis Type",
+                     "tool_tip": "The type of arrays for proposed PV system (Fixed - Open Rack, Fixed - Roof Mounted, 1-Axis, 1-Axis Backtracking, 2-Axis)."}, 
 
       'module_type': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0,
-                      'restrict_to': [0, 1, 2], "description": "Module Type"},  # standard
+                      'restrict_to': [0, 1, 2], "description": "Module Type",
+                      "tool_tip": "The type of modules for proposed PV system (Standard, Premium, Thin Film)."},  # standard
 
       'timeframe': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
                     'default': 'hourly', 'restrict_to': ['hourly', 'monthly'],
-                    "description": "Granularity of Output Response"},
+                    "description": "Granularity of Output Response",
+                    "tool_tip": "The granularity of the solar data used to model PV system performance."},
 
       'losses': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.14,
-                 'min': -0.05, 'max': 0.99, "description": "System Losses type", "units": "decimal percent"},
+                 'min': -0.05, 'max': 0.99, "description": "System Losses type", "units": "decimal percent",
+                 "tool_tip": "Expected total system losses."},
 
       'radius': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0,
-                 'min': 0, 'max': None, "description": "Search Distance to  Nearest Climate Data  Station",
-                 "units": "miles"},
+                 'min': 0, 'max': None, "description": "Search Distance to  Nearest Climate Data Station",
+                 "units": "miles",
+                 "tool_tip": "Search Distance to  Nearest Climate Data Station"},
 
       'tilt': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
-               'min': 0, 'max': 90, "description": "Tilt Angle", "units": "degrees"},
+               'min': 0, 'max': 90, "description": "Tilt Angle", "units": "degrees",
+               "tool_tip": "The tilt of the proposed PV System, commonly matches the latitide for optimal performance."},
 
       'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
-              'min': 0.01, 'max': 0.99, "description": "Ground  Cover Ratio",},
+              'min': 0.01, 'max': 0.99, "description": "Ground  Cover Ratio",
+              "tool_tip": "The Ground Cover Ratio of the proposed PV system."},
     }
     if full_list:
         return output
