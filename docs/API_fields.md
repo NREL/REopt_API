@@ -122,3 +122,14 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 -- Developer real discount rate (%) - ```owner_discount_rate```  
 -- Developer tax rate (%) - ```owner_tax_rate```  
 
+# Outputs
+- Solution status - ```status```  
+- Lifecycle cost ($) - ```lcc```  
+- Net present value ($) - ```npv```
+- Interal rate of return (%) - ```irr```
+- Energy supplied from grid (kWh) - ```utility_kwh```  
+- Recommended PV size (kW) - ```pv_kw```
+- Recommended battery power (kW) - ```batt_kw```  
+- Recommended battery capacity (kW) - ```batt_kwh```  
+- Year 1 utility energy payments ($) - ```year_one_energy_charge```  
+- Year 1 utility demand payments ($) - ```year_one_demand_charge```  
