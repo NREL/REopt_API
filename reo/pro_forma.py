@@ -331,6 +331,9 @@ class ProForma(object):
         self.book = book
         self.sheet = sheet
 
+    def get_IRR(self):
+        return self.IRR
+
     def compute_IRR(self):
 
         # capital costs
@@ -399,8 +402,6 @@ class ProForma(object):
             discounted_cash_flow[year] = free_cash_flow[year] / ((1 + self.discount_rate) ** year)
 
         self.NPV = sum(discounted_cash_flow)
-
-        if self.NPV > 0 and (self.pv_size > 0 or self.batt_capacity > 0 or self.invt_size > 0):
-            self.IRR = np.irr(free_cash_flow)
+        self.IRR = np.irr(free_cash_flow)
 
         return round(self.IRR * 100, 2)

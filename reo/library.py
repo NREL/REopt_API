@@ -633,7 +633,6 @@ class DatLibrary:
         urdb_rate['label'] = self.run_input_id
         urdb_rate['name'] = "Custom_rate_" + str(self.run_input_id)
         urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
-        print urdb_rate
         return urdb_rate
 
     def create_nem(self):

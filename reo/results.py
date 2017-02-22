@@ -24,14 +24,21 @@ class Results:
     file_proforma = 'ProForma.xlsx'
 
     # outputs that need to get added to DB
-    lcc_bau = []
-    year_one_energy_costs = []
-    year_one_energy_costs_bau = []
-    year_one_energy_savings = []
-    year_one_demand_costs = []
-    year_one_demand_costs_bau = []
-    year_one_demand_savings = []
-    year_one_energy_exported = []
+    lcc_bau = None
+    year_one_energy_cost = None
+    year_one_energy_cost_bau = None
+    year_one_energy_savings = None
+    year_one_demand_cost = None
+    year_one_demand_cost_bau = None
+    year_one_demand_savings = None
+    year_one_energy_exported = None
+    lcc = None
+    irr = None
+    npv = None
+    pv_kw = None
+    batt_kw = None
+    batt_kwh = None
+
 
     def outputs(self, **args):
         return outputs(**args)
@@ -90,9 +97,9 @@ class Results:
         if 'Utility_kWh' in df.columns:
             self.utility_kwh = float(df['Utility_kWh'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
-            self.year_one_energy_costs = float(df['Year 1 Energy Cost ($)'].values[0])
+            self.year_one_energy_cost = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
-            self.year_one_demand_costs = float(df['Year 1 Demand Cost ($)'].values[0])
+            self.year_one_demand_cost = float(df['Year 1 Demand Cost ($)'].values[0])
         if 'Total Electricity Exported (kWh)' in df.columns:
             self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
 
@@ -103,15 +110,15 @@ class Results:
         if 'LCC ($)' in df.columns:
             self.lcc_bau = float(df['LCC ($)'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
-            self.year_one_energy_costs_bau = float(df['Year 1 Energy Cost ($)'].values[0])
+            self.year_one_energy_cost_bau = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
-            self.year_one_demand_costs_bau = float(df['Year 1 Demand Cost ($)'].values[0])
+            self.year_one_demand_cost_bau = float(df['Year 1 Demand Cost ($)'].values[0])
 
     def compute_value(self):
 
         self.npv = self.lcc_bau - self.lcc
-        self.year_one_demand_savings = self.year_one_demand_costs_bau - self.year_one_demand_costs
-        self.year_one_energy_savings = self.year_one_energy_costs_bau - self.year_one_energy_costs
+        self.year_one_demand_savings = self.year_one_demand_cost_bau - self.year_one_demand_cost
+        self.year_one_energy_savings = self.year_one_energy_cost_bau - self.year_one_energy_cost
 
     def generate_pro_forma(self):
 
@@ -145,6 +152,7 @@ class Results:
                         self.lcc_bau)
 
         d.make_pro_forma(self.path_proforma)
+        self.irr = d.get_IRR()
 
     def update_types(self):
 

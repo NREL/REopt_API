@@ -323,17 +323,26 @@ def outputs():
            'npv': {'type': float, 'null': True,'pct': False,
                    "description": "Net Present  Value of System", "units":'dollars'},
 
+           'irr': {'type': float, 'null': True, 'pct': True,
+                    "description": "Internal Rate of Return for System", "units": 'percentage'},
+
            'utility_kwh': {'type': float, 'null': True,'pct': False,
                            "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
            'pv_kw': {'type': float, 'null': True,'pct': False,
-                     "description": "Recommned PV System Size", "units": 'kW'},
+                     "description": "Recommended PV System Size", "units": 'kW'},
 
            'batt_kw': {'type': float, 'null': True,'pct': False,
                        "description": "Recommended Battery Inverter Size", "units": 'kW'},
 
            'batt_kwh': {'type': float, 'null': True,'pct': False,
-                        "description": "Recommended Battery Size", "units": 'kWh'}
+                        "description": "Recommended Battery Size", "units": 'kWh'},
+
+           'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+                         "description": "Year 1 utility energy charge", "units": '$'},
+
+           'year_one_demand_cost': {'type': float, 'null': True, 'pct': False,
+                                       "description": "Year 1 utility demand charge", "units": '$'}
             }
 
 # default load profiles

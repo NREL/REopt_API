@@ -194,10 +194,14 @@ class RunOutput(models.Model):
     status = models.TextField(null=True, blank=True)
     lcc = models.FloatField(null=True, blank=True)
     npv = models.FloatField(null=True, blank=True)
+    irr = models.FloatField(null=True, blank=True)
     utility_kwh = models.FloatField(null=True, blank=True)
     pv_kw = models.FloatField(null=True, blank=True)
     batt_kw = models.FloatField(null=True, blank=True)
     batt_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_cost = models.FloatField(null=True, blank=True)
+    year_one_demand_cost = models.FloatField(null=True, blank=True)
+
 
     created = models.DateTimeField(auto_now_add=True)
 
