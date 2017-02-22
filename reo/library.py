@@ -17,12 +17,11 @@ import results
 from api_definitions import *
 
 from urdb_parse import *
-from utilities import Command
+from utilities import Command, check_directory_created
 
 
 def alphanum(s):
     return re.sub(r'\W+', '', s)
-
 
 class DatLibrary:
     max_big_number = 100000000
@@ -91,6 +90,11 @@ class DatLibrary:
 
         for f in [self.path_run, self.path_run_inputs, self.path_run_outputs, self.path_run_outputs_bau]:
             os.mkdir(f)
+
+        check_directory_created(self.path_run)
+        check_directory_created(self.path_run_inputs)
+        check_directory_created(self.path_run_outputs)
+        check_directory_created(self.path_run_outputs_bau)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
@@ -557,9 +561,12 @@ class DatLibrary:
         if os.path.exists(base_folder):
             shutil.rmtree(base_folder)
 
-        os.mkdir(self.path_utility)
-        os.mkdir(base_folder)
-        os.mkdir(rate_output_folder)
+        for f in [self.path_utility, base_folder, rate_output_folder]:
+            os.mkdir(f)
+
+        check_directory_created(self.path_utility)
+        check_directory_created(base_folder)
+        check_directory_created(rate_output_folder)
 
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)

@@ -7,12 +7,20 @@ from exceptions import SubprocessTimeoutError
 
 from log_levels import log
 import logging
+import os
 
 def present_worth_factor(years, escalation_rate, discount_rate):
     pwf = 0
     for y in range(1, years+1):
         pwf = pwf + np.power(1+escalation_rate, y)/np.power(1+discount_rate, y)
     return np.around(pwf, 2)
+
+
+def check_directory_created(path):
+    if not os.path.exists(path):
+        log('ERROR', "Directory: " + path + " failed to create")
+        raise ImmediateHttpResponse("Directory failed to create")
+
 
 class Command(object):
 
