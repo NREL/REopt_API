@@ -590,6 +590,12 @@ end-case
 !!!  Output Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+ExportedElec := sum(t in Tech, LD in Load, ts in TimeStep, fb in FuelBin | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1W" or LD = "1X" )))
+                dvRatedProd(t,LD,ts,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
+
+ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb)))
+                    dvRatedProd (t,LD,ts,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * ExportRates(t,LD,ts)
+
 
 !***************** Writing to Terminal ************************************
 writeln ("****************************** Results *******************************")
@@ -601,6 +607,7 @@ writeln ( "rate = ",UtilRate)
 writeln ( "LCC = ", getsol(RECosts))
 !writeln ("TotElecRatedProdKW = ", getsol(TotElecRatedProd) )
 writeln ("TotElecProdKWH = ", getsol(TotElecProd) )
+writeln ("TotElecExportedKWH = ", getsol(ExportedElec) )
 writeln ( "Bulk kWh costs = ", getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)))
 writeln ( "Total Demand costs = ", getsol(TotalDemandCharges))
 writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
@@ -693,6 +700,8 @@ writeln ("Rate,",UtilRate)
 writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
 writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
 writeln ("Total PV production (kWh),",strfmt(getsol(TotElecProd), 10, 0))
+writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
+
 fclose(F_OUTPUT)
 
 fopen(OutputDir + "\\dat_files.csv", F_OUTPUT)

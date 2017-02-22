@@ -31,6 +31,7 @@ class Results:
     year_one_demand_costs = []
     year_one_demand_costs_bau = []
     year_one_demand_savings = []
+    year_one_energy_exported = []
 
     def outputs(self, **args):
         return outputs(**args)
@@ -92,9 +93,10 @@ class Results:
             self.year_one_energy_costs = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_costs = float(df['Year 1 Demand Cost ($)'].values[0])
+        if 'Total Electricity Exported (kWh)' in df.columns:
+            self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
 
         self.pv_kw = pv_kw
-
 
     def populate_data_bau(self, df):
 
@@ -104,7 +106,6 @@ class Results:
             self.year_one_energy_costs_bau = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_costs_bau = float(df['Year 1 Demand Cost ($)'].values[0])
-
 
     def compute_value(self):
 
@@ -129,18 +130,21 @@ class Results:
                         getattr(econ, 'rate_inflation'),
                         getattr(econ, 'pv_om'),
                         getattr(econ, 'pv_cost'),
+                        self.pv_kw,
                         getattr(econ, 'batt_cost_kwh'),
+                        self.batt_kwh,
                         getattr(econ, 'batt_cost_kw'),
-                        getattr(econ, 'batt_replacement_cost_kwh') # modify based on updated input
-                        )
+                        self.batt_kw,
+                        getattr(econ, 'batt_replacement_cost_kwh'), # modify based on updated input
+                        getattr(econ, 'batt_replacement_cost_kwh'),
+                        self.year_one_energy_savings,
+                        self.year_one_demand_savings,
+                        self.year_one_energy_exported,
+                        getattr(econ, 'rate_degradation'),
+                        self.lcc,
+                        self.lcc_bau)
 
-        d.dcf(self.path_proforma,
-              self.pv_kw,
-              self.batt_kwh,
-              self.batt_kw,
-              self.year_one_energy_savings,
-              self.year_one_demand_savings)
-
+        d.make_pro_forma(self.path_proforma)
 
     def update_types(self):
 
