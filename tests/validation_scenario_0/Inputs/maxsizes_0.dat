@@ -1,19 +1,19 @@
 MaxSize: [
-0	,
-0	,
+20000	,
+20000	,
 12000000	,
 ]
 MinStorageSizeKW: [
 0	,
 ]
 MaxStorageSizeKW: [
-1000	,
+1000000	,
 ]
 MinStorageSizeKWH: [
 0	,
 ]
 MaxStorageSizeKWH: [
-1000	,
+1000000	,
 ]
 TechClassMinSize: [
 0	,

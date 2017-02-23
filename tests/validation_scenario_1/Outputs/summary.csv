@@ -1,15 +1,16 @@
 Problem status,Optimum found
-LCC ($),    418156
-Capital Cost ($),       148
-Total kWh Cost ($),    368579
-Total Demand Cost ($),    274510
-Battery Capacity (kWh),0.149826
-Battery Power (kW),0.119861
-PV Size (kW),0
+LCC ($),    412282
+Capital Cost ($),     36305
+Total kWh Cost ($),    357757
+Total Demand Cost ($),    248228
+Battery Capacity (kWh),1.29338
+Battery Power (kW),1.0347
+PV Size (kW),34.4976
 PVNM Size (kW),0
-Utility_kWh,486208.5069
+Utility_kWh,472752.2217
 Utility,SouthernCaliforniaEdisonCo
 Rate,TimeofUseGeneralServiceDemandMeteredOptionBGS2TOUBSinglePhase
-Year 1 Energy Cost ($),     42621
-Year 1 Demand Cost ($),     31743
-Total PV production (kWh),         0
+Year 1 Energy Cost ($),     41370
+Year 1 Demand Cost ($),     28704
+Total PV production (kWh),     54151
+Total Electricity Exported (kWh),     40644

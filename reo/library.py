@@ -26,7 +26,7 @@ def alphanum(s):
 
 class DatLibrary:
     max_big_number = 100000000
-    timeout = 60
+    timeout = 180
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
@@ -475,16 +475,15 @@ class DatLibrary:
         batt_kw_max = 1000
         batt_kwh_max = 1000
 
+
         # pv max size based on user input
         if self.pv_kw_max is not None:
             pv_kw_max = self.pv_kw_max
         else:
-            if self.roof_area is not None:
-                total_acres += self.roof_area * squarefeet_to_acre
-            if self.land_area is not None:
-                total_acres += self.land_area
-
-            pv_kw_max = (total_acres / acres_per_MW) * 1000
+            # don't restrict unless they specify both land_area and roof_area, otherwise one of them is "unlimited" in UI
+            if self.roof_area is not None and self.land_area is not None:
+                total_acres += (self.roof_area * squarefeet_to_acre) + self.land_area
+                pv_kw_max = (total_acres / acres_per_MW) * 1000
 
         if self.pv_kw_min is not None:
             pv_kw_min = self.pv_kw_min
