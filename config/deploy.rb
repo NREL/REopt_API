@@ -36,6 +36,17 @@ namespace :app do
     end
   end
 
+  task :migrate do
+    on roles(:db) do
+      within release_path do
+        with "PATH" => "#{release_path}/env/bin:$PATH", "VIRTUAL_ENV" => "#{release_path}/env", "DJANGO_SETTINGS_MODULE" => "reopt_api.staging_settings" do
+          execute "./env/bin/python", "manage.py", "migrate"
+        end
+      end
+    end
+  end
+
   before "deploy:updated", "app:pip_install"
   before "deploy:updated", "app:keys"
+  after "deploy:updated", "app:migrate"
 end
