@@ -10,8 +10,10 @@
 import os
 import xlsxwriter
 import numpy as np
+import math
 from xlsxwriter.utility import xl_rowcol_to_cell as cvt
 
+from log_levels import log
 
 class ProForma(object):
     """
@@ -404,4 +406,9 @@ class ProForma(object):
         self.NPV = sum(discounted_cash_flow)
         self.IRR = np.irr(free_cash_flow)
 
-        return round(self.IRR * 100, 2)
+        if math.isnan(self.IRR):
+            self.IRR = 0
+            log("DEBUG", "Computed IRR invalid")
+        if math.isnan(self.NPV):
+            self.NPV = 0
+            log("DEBUG", "Computed NPV invalid")
