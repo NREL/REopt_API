@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from api_definitions import *
 import pro_forma as pf
-
+#import dispatch
 
 class Results:
 
@@ -39,11 +39,10 @@ class Results:
     batt_kw = None
     batt_kwh = None
 
-
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, path_output, path_output_base, economics):
+    def __init__(self, path_output, path_output_base, economics, year):
 
         self.path_output = path_output
         self.path_output_base = path_output_base
@@ -51,6 +50,7 @@ class Results:
         self.path_summary_base = os.path.join(path_output_base, self.file_summary)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.economics = economics
+        self.year = year
 
         for k in self.outputs():
             setattr(self, k, None)
@@ -60,6 +60,7 @@ class Results:
         self.load_results()
         self.compute_value()
         self.generate_pro_forma()
+        #self.compute_dispatch()
 
     def load_results(self):
 
@@ -153,6 +154,14 @@ class Results:
 
         d.make_pro_forma(self.path_proforma)
         self.irr = d.get_IRR()
+
+#    def compute_dispatch(self):
+
+            #outputs = dispatch.ProcessOutputs(self.path_output, self.path_output, self.year)
+
+            # specify 'save' or 'show'.  'save outputs .png in data_root
+            # for day in range(1, 31):
+            #    outputs.plot_dispatch(2015, 7, day, 'save')
 
     def update_types(self):
 
