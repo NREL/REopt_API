@@ -127,7 +127,7 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 - Lifecycle cost ($) - ```lcc```  
 - Net present value ($) - ```npv```
 - Interal rate of return (%) - ```irr```
-- Lifetime energy supplied from grid (kWh) - ```utility_kwh```  
+- Year 1 energy supplied from grid (kWh) - ```utility_kwh```  
 - Recommended PV size (kW) - ```pv_kw```
 - Recommended battery power (kW) - ```batt_kw```  
 - Recommended battery capacity (kW) - ```batt_kwh```  
