@@ -39,7 +39,7 @@ namespace :app do
   task :migrate do
     on roles(:db) do
       within release_path do
-        with "PATH" => "#{release_path}/env/bin:$PATH", "VIRTUAL_ENV" => "#{release_path}/env", "DJANGO_SETTINGS_MODULE" => "reopt_api.staging_settings" do
+        with "PATH" => "#{release_path}/env/bin:$PATH", "VIRTUAL_ENV" => "#{release_path}/env", "DJANGO_SETTINGS_MODULE" => fetch(:django_settings_module) do
           execute "./env/bin/python", "manage.py", "migrate"
         end
       end
