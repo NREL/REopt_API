@@ -13,68 +13,67 @@ def inputs(filter='',full_list=False,just_required=False):
       'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
                           'default': 25, 'min': 0, 'max': None,
                           "description": "Period of Analysis", "units": 'years',
-                          "tool_tip":'The financial life of the project in years.'},
+                          "tool_tip":'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
       
       'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
                         "description": "Land Area avaialble for PV panel siting", "units": 'acres',
-                        "tool_tip":'The land area available on-site, in acres, for solar panels. Include fields, parking lots and vacant lots.'},
+                        "tool_tip":'Land available is the number of acres available for PV. This may include fields and vacant lots. PV size is constrained by land area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
        
       'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
                         "description": "Area of Roof Available for PV siting", "units": 'square feet',
-                        "tool_tip":'The roof area available on-site, in square feet, for solar panels. For more accurate results, exclude areas known to be consistently shaded.'},
+                        "tool_tip":'The roof space available on-site, in square feet, for solar panels. For more accurate results exclude areas known to be consistently shaded. PV size is constrained by roof area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
 
       'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                    "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                    "description": "Site Latitude", "units": 'degrees',
-                   "tool_tip":'Approximate latitude of the site in degrees.'},
+                   "tool_tip":'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
       'longitude': {'req': True, 'type': float, 'null': False, 'pct': False,
                     "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                     "description": "Site Longitude", "units": 'degrees',
-                    "tool_tip":'Approximate longitude of the site in degrees.'},
+                    "tool_tip":'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
       'pv_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                   'max': None, 'default': 2160,
                   "description": "Nominal PV Cost", "units": 'dollars per kilowatt',
-                  "tool_tip":'Approximate latitude of the site in degrees.',
-                  "tool_tip":'Fully burdened cost of PV system in dollars per kilowatt. A baseline estimate may assume $2,160/kW.'},
+                  "tool_tip":'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
 
       'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                 'max': None, 'default': 20,
                 "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
-                "tool_tip":'Estimated annual PV operation and maintenance costs per installed kilowatt. O&M includes asset cleanings, administration costs and replacing broken components.'},
+                "tool_tip":'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
       'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                        'max': None, 'default': 1600,
                        "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt',
-                       "tool_tip":'Fully burdened cost of Battery Storage system in dollars per kilowatt.'},
+                       "tool_tip":'Power capacity cost is the cost of the power components of the battery system (e.g. inverter and balance of system [BOS]). \nThe amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh. \nThis allows the capacity (kWh) and power (kW) rating of the battery to be optimized individually for maximum economic performance based on the load and rate tariff characteristics of the site. Some systems are optimized to deliver high power capacity (kW), while others are optimized for longer discharges through more energy capacity (kWh).\nFor example, assume the unit cost of power components is $1,000/kW, and the unit cost of energy components is $5,00/kWh. Consider a battery with 5 kW of power capacity and 10 kWh of energy capacity (5 kW/10 kWh). The total cost of the battery would be:\n5 kW * $1,000/kW + 10 kWh * $500/kWh = $10,000.'},
 
       'batt_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 500,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
-                        "tool_tip":'Fully burdened cost of Battery Storage system in dollars per kilowatt-hour.'},
+                        "tool_tip":'Energy capacity cost is the cost of the energy components of the battery system (e.g. battery pack). The amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh.'},
 
       'batt_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': None,
+                        'max': None, 'default': 1000000,
                         "description": "Maximum Allowable Battery Power Size", "units": 'kilowatt',
-                        "tool_tip":'Restriction on the Maximum Power of the Battery System in kilowatts.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum power capacity size limits the battery power capacity to no greater than the specified maximum. The default value is 1,000,000 kW. This value is not required.'},
 
       'batt_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
                         "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt',
-                        "tool_tip":'Restriction on the Minimum Power of the Battery System in kilowatts.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum power capacity size forces a battery power capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
       'batt_kwh_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': None,
+                        'max': None, 'default': 1000000,
                         "description": "Maximum Battery Energy Capacity", "units": 'kilowatt-hours',
-                        "tool_tip":'Restriction on the Maximum Energy Storage of the Battery System in kilowatt-hours.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum energy capacity size limits the battery energy capacity to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0. The default value is 1,000,000 kWh.'},
 
       'batt_kwh_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
                         "description": "Minimum Battery Energy Capacity", "units": 'kilowatt-hours',
-                        "tool_tip":'Restriction on the Minimum Energy Storage of the Battery System in kilowatt-hours.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum energy capacity size forces a battery energy capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
       'batt_time_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0,
@@ -99,7 +98,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'net_metering_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': None,
                         "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt',
-                        "tool_tip":'The maximum power that can be sold back to utilities at any one time, in kilowatts. These values are typically established by utilities.'},
+                        "tool_tip":'The net metering limit determines the maximum size of total systems that can be installed under a net metering agreement with the utility. Projects sized up to the net meting limit will receive credit for any exported energy at the electric retail rate. Information on state net metering limits is available at www.dsireusa.org. This value is not required.'},
 
       'wholesale_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 0.12,
@@ -109,22 +108,22 @@ def inputs(filter='',full_list=False,just_required=False):
       'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': None,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
-                        "tool_tip":'Restriction on the Maximum Power of the PV System in kilowatt-hours.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 
       'pv_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 0,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour', 
-                        "tool_tip":'Restriction on the Maximum Power of the PV System in kilowatt-hours.'},
+                        "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
       'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0, 'max': 1, 'default': 0.08,
                               "description": "Owner Discount Rate", "units": 'decimal percent',
-                              "tool_tip":'The rate at which the system owner discounts future savings and earnings from the installed system.'},
+                              "tool_tip":'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
       'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                                  'min': 0, 'max': 1, 'default': 0.08,
                                  "description": "Offtaker Discount Rate", "units": 'decimal percent',
-                                 "tool_tip":'The rate at which the offtaker discounts future the value of excess energy electricity supplied by the installed system.'},
+                                 "tool_tip":'In the third party-ownership scenario, this is the rate at which the third-party owner discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
 
       'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
@@ -139,28 +138,28 @@ def inputs(filter='',full_list=False,just_required=False):
 
       'urdb_rate': {'req': True, 'swap_for': ['demand_charge', 'blended_utility_rate'], 'type': dict, 'null': False,
                     'pct': False, "needed_for": ['economics'],
-                    "tool_tip":'A JSON of the utility rate schedule as provided by the Utility Rate Database (en.openei.org/wiki/Utility_Rate_Database).'},
+                    "tool_tip":'The electricity rate can be selected from a list of rates available in the location entered.  The rates are downloaded from the Utility Rate Database (URDB) (http://en.openei.org/wiki/Utility_Rate_Database). This value is required. Utility rates that are not in URDB cannot be modeled at this time.'},
 
       # Not Required
       'load_profile_name': {'req': True,'swap_for':['load_8760_kw'], 'type': str, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Generic Load Profile Type",
                        'restrict_to': default_load_profiles()+[None],
-                       "tool_tip":'A typcial load for a conventional building type can be scaled to your annual load size.'},
+                       "tool_tip":'If a custom load profile is not uploaded, the type of building is used in combination with annual energy consumption to simulate a load profile. Select from drop-down menu. The loads are generated from the Energy+ commercial reference buildings for the climate zone of the site, and scaled based on the annual energy consumption. This value is required if a custom load profile is not uploaded.'},
 
 
       'load_size': {'req': True, 'swap_for':['load_8760_kw'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                     'max': None,
                     "description": "Annual Load Size", "units": 'kWh',
-                    "tool_tip":'The annual load at the proposed site.'},
+                    "tool_tip":"If a custom load profile is not uploaded, the site's total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded."},
 
       'load_year': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': float, 'null': True, 'pct': False,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
                       "description": "Year of input load profile", "units": '',
-                      "tool_tip": 'The year of the input load profile'},
+                      "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
       'load_8760_kw': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Hourly Power Demand", "units": 'kW',
-                       "tool_tip":'The annual hourly power demand at the proposed site.'},
+                       "tool_tip":'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
       'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
                            "description": "Monthly Energy Demand", "units": 'kWh',
@@ -182,23 +181,23 @@ def inputs(filter='',full_list=False,just_required=False):
       'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'], 'min': 0,
                          'max': 1, 'default': 0.02,
                          "description": "Annual Inflation Rate", "units": 'decimal percent per year',
-                         "tool_tip":'The expected annual rate of inflation over the financial life of the system.'},
+                         "tool_tip":'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
 
       'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                           'min': -1, 'max': 1, 'default': 0.0039,
                           "description": "Annual Cost of  Electricity Escalation Rate", "units": 'decimal percent per year',
-                          "tool_tip":'The expected annual rate of escalation for the price of electricity provided by the utility over the financial life of the system.'},
+                          "tool_tip":'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
 
       'offtaker_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.35,
                    "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
-                   "tool_tip":'The percent of income that goes to tax for the offtaker.'},
+                   "tool_tip":'In the third party-ownership scenario, this is the percent of income that goes to tax for the third party owner of the system. Units: decimal percent. This value is not required.'},
 
       'owner_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                     'min': 0,
                     'max': 1, 'default': 0.35,
                     "description": "Tax Rate for System Developer", "units": 'decimal percent',
-                    "tool_tip":'The percent of income that goes to tax for the system owner.'},
+                    "tool_tip":'The percent of income that goes to tax for the system host. Units: decimal percent. This value is not required.'},
 
       'rate_itc': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.30,
@@ -208,17 +207,17 @@ def inputs(filter='',full_list=False,just_required=False):
       'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
                                    "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
                                    "description": "Battery Inverter Replacement Cost", "units": '$/kW',
-                                   "tool_tip":"The expected cost, in today's dollars,  of replacing battery components per installed kilowatt."},
+                                   "tool_tip":"Power capacity replacement cost is the expected cost, in today's dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required."},
 
       'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
                                     "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
                                     "description": "Battery Replacement Cost", "units": '$/kWh',
-                                    "tool_tip":"The expected cost, in today's dollars, of replacing battery components per installed kilowatt-hour."},
+                                    "tool_tip":"Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
       'batt_replacement_year': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                                 'min': 0, 'max': None, 'default': 10,
                                 "description": "Battery Replacement Year", "units": 'year',
-                                "tool_tip":'The year in which the battery system is expected to need to be replaced.'},
+                                "tool_tip":'Energy capacity replacement year is the year in which the energy components of the battery system (e.g. battery pack) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
       'flag_macrs': {'req': False, 'type': bool, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 1,
                      'min': 0, 'max': 1,
@@ -243,7 +242,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'macrs_years': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 5,
                       'min': 5, 'max': 7, 'restrict_to': [5, 7],
                       "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
-                      "tool_tip":'If MACRS is used, specify the duration over which depreciation will occur.'},
+                      "tool_tip":'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
 
       'macrs_itc_reduction': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'default': 0.5, 'min': 0, 'max': 1,
@@ -256,7 +255,6 @@ def inputs(filter='',full_list=False,just_required=False):
                          "units": 'decimal percent',
                          "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
 
-
       'dataset': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': "tmy3",
                   'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",
                   "tool_tip": "This solar insolation dataset to use when calling PVWatts"},
@@ -264,7 +262,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.96,
                   'min': 0.9, 'max': 0.995, "description": "Inverter Efficiency at Rated Power",
                   "units": "decimal percent",
-                  "tool_tip": "The expected inverter efficiency rate."},
+                  "tool_tip": "The inverter's nominal rated DC-to-AC conversion efficiency, defined as the inverter's rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
 
       'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
                       'default': 1.1, 'min': 0, 'max': None, "description": "DC to AC ratio",
