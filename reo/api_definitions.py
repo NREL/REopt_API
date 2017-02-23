@@ -53,7 +53,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'batt_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                         'max': None, 'default': 500,
                         "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
-                        "tool_tip":'Energy capacity cost is the cost of the energy components of the battery system (e.g. battery pack). The amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh.'}
+                        "tool_tip":'Energy capacity cost is the cost of the energy components of the battery system (e.g. battery pack). The amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh.'},
 
       'batt_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                         'max': None, 'default': 1000000,
@@ -150,7 +150,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'load_size': {'req': True, 'swap_for':['load_8760_kw'],'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
                     'max': None,
                     "description": "Annual Load Size", "units": 'kWh',
-                    "tool_tip":'If a custom load profile is not uploaded, the site’s total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded.'},
+                    "tool_tip":"If a custom load profile is not uploaded, the site's total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded."},
 
       'load_year': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': float, 'null': True, 'pct': False,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
@@ -207,12 +207,12 @@ def inputs(filter='',full_list=False,just_required=False):
       'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
                                    "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
                                    "description": "Battery Inverter Replacement Cost", "units": '$/kW',
-                                   "tool_tip":'Power capacity replacement cost is the expected cost, in today’s dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required.'},
+                                   "tool_tip":"Power capacity replacement cost is the expected cost, in today's dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required."},
 
       'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
                                     "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
                                     "description": "Battery Replacement Cost", "units": '$/kWh',
-                                    "tool_tip":"Energy capacity replacement cost is the expected cost, in today’s dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
+                                    "tool_tip":"Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
       'batt_replacement_year': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                                 'min': 0, 'max': None, 'default': 10,
@@ -242,7 +242,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'macrs_years': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'], 'default': 5,
                       'min': 5, 'max': 7, 'restrict_to': [5, 7],
                       "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
-                      "tool_tip":'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.”'},
+                      "tool_tip":'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
 
       'macrs_itc_reduction': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'default': 0.5, 'min': 0, 'max': 1,
@@ -255,7 +255,6 @@ def inputs(filter='',full_list=False,just_required=False):
                          "units": 'decimal percent',
                          "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
 
-
       'dataset': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': "tmy3",
                   'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",
                   "tool_tip": "This solar insolation dataset to use when calling PVWatts"},
@@ -263,7 +262,7 @@ def inputs(filter='',full_list=False,just_required=False):
       'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.96,
                   'min': 0.9, 'max': 0.995, "description": "Inverter Efficiency at Rated Power",
                   "units": "decimal percent",
-                  "tool_tip": "The inverter’s nominal rated DC-to-AC conversion efficiency, defined as the inverter’s rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
+                  "tool_tip": "The inverter's nominal rated DC-to-AC conversion efficiency, defined as the inverter's rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
 
       'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
                       'default': 1.1, 'min': 0, 'max': None, "description": "DC to AC ratio",
