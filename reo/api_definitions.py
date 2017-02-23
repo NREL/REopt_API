@@ -153,6 +153,11 @@ def inputs(filter='',full_list=False,just_required=False):
                     "description": "Annual Load Size", "units": 'kWh',
                     "tool_tip":'The annual load at the proposed site.'},
 
+      'load_year': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': float, 'null': True, 'pct': False,
+                      "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
+                      "description": "Year of input load profile", "units": '',
+                      "tool_tip": 'The year of the input load profile'},
+
       'load_8760_kw': {'req': True, 'swap_for':['load_profile_name','load_size'], 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
                        "description": "Hourly Power Demand", "units": 'kW',
                        "tool_tip":'The annual hourly power demand at the proposed site.'},

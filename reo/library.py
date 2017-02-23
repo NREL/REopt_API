@@ -23,16 +23,16 @@ from utilities import Command, check_directory_created
 def alphanum(s):
     return re.sub(r'\W+', '', s)
 
+
 class DatLibrary:
     max_big_number = 100000000
-    timeout = 500
+    timeout = 60
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
     logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
-    year = 2018
     time_steps_per_hour = 1
 
     # default for now, modify with input from user
@@ -249,7 +249,7 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics)
+            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics, self.load_year)
             process_results.run()
 
             for k in self.outputs():
@@ -394,7 +394,7 @@ class DatLibrary:
         load_profile = []
         f = open(profile_file, 'r')
 
-        datetime_current = datetime(self.year, 1, 1, 0)
+        datetime_current = datetime(self.load_year, 1, 1, 0)
         month_total = 0
         month_scale_factor = []
         normalized_load = []
@@ -415,7 +415,7 @@ class DatLibrary:
                     ", Month scale factor: " + str(month_scale_factor[month - 1]) +
                     ", Annual load: " + str(self.load_size))
 
-        datetime_current = datetime(self.year, 1, 1, 0)
+        datetime_current = datetime(self.load_year, 1, 1, 0)
         for load in normalized_load:
             month = datetime_current.month
 
@@ -576,7 +576,7 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        urdb_parse = UrdbParse(self.path_utility, self.year, self.time_steps_per_hour,
+        urdb_parse = UrdbParse(self.path_utility, self.load_year, self.time_steps_per_hour,
                                self.net_metering, self.wholesale_rate)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 

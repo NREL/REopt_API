@@ -69,6 +69,7 @@ class RunInput(models.Model):
     # Building Profile
     load_profile_name  = models.TextField(null=True,blank=True,default='')
     load_size = models.FloatField(null=True,blank=True)
+    load_year = models.IntegerField(null=True, blank=True, default=2018)
     load_8760_kw =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     load_monthly_kwh =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     utility_name = models.TextField(blank=True,default='')
@@ -170,6 +171,7 @@ class RunOutput(models.Model):
     # Building Profile
     load_profile_name  = models.TextField(null=True,blank=True,default='')
     load_size = models.FloatField(null=True,blank=True)
+    load_year = models.IntegerField(null=True, blank=True, default=2018)
     load_8760_kw =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     load_monthly_kwh =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     utility_name = models.TextField(blank=True,default='')
