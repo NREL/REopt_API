@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from api_definitions import *
 import pro_forma as pf
-#import dispatch
+import dispatch
 
 class Results:
 
@@ -22,6 +22,7 @@ class Results:
     # file names
     file_summary = 'summary.csv'
     file_proforma = 'ProForma.xlsx'
+    file_dispatch = 'Dispatch.csv'
 
     # outputs that need to get added to DB
     lcc_bau = None
@@ -60,7 +61,6 @@ class Results:
         self.load_results()
         self.compute_value()
         self.generate_pro_forma()
-        #self.compute_dispatch()
 
     def load_results(self):
 
@@ -73,6 +73,7 @@ class Results:
         if self.is_optimal(df_results) and self.is_optimal(df_results_base):
             self.populate_data(df_results)
             self.populate_data_bau(df_results_base)
+            self.compute_dispatch(df_results)
 
         self.update_types()
 
@@ -115,6 +116,9 @@ class Results:
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_cost_bau = float(df['Year 1 Demand Cost ($)'].values[0])
 
+    def compute_dispatch(self, df):
+            dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
+
     def compute_value(self):
 
         self.npv = self.lcc_bau - self.lcc
@@ -154,14 +158,6 @@ class Results:
 
         d.make_pro_forma(self.path_proforma)
         self.irr = d.get_IRR()
-
-#    def compute_dispatch(self):
-
-            #outputs = dispatch.ProcessOutputs(self.path_output, self.path_output, self.year)
-
-            # specify 'save' or 'show'.  'save outputs .png in data_root
-            # for day in range(1, 31):
-            #    outputs.plot_dispatch(2015, 7, day, 'save')
 
     def update_types(self):
 

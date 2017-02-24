@@ -29,7 +29,7 @@ class UtilityDatFiles:
     name_export_rates_base = 'ExportRatesBase.dat'
     name_fuel_burn_rate_base = 'FuelBurnRateBase.dat'
     name_summary = 'Summary.csv'
-    name_hourly_summary = "HourlySummary.csv"
+    name_hourly_summary = "HourlyRateSummary.csv"
 
 
     # varnames to use
@@ -850,15 +850,13 @@ class UrdbParse:
                         )
 
     def write_hourly_cost_summary(self, file_name):
-        if file_name == '..\..\DatLibrary\Utility\Georgia Power Co\SCHEDULEGENERAL_SERVICE_(GS-10)\HourlySummary.csv':
-            print file_name
+
         with open(file_name, 'wb') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['Energy Cost ($/kWh)', 'Demand Cost ($/kW)'])
             for i in range(0, len(self.utility_dat_files.data_fuel_rate_summary)):
                 writer.writerow([str(self.utility_dat_files.data_fuel_rate_summary[i]),
                                 str(self.utility_dat_files.data_demand_rate_summary[i])])
-
 
     @staticmethod
     def write_single_variable(file_name, var_name, array):
