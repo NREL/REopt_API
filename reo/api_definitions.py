@@ -101,7 +101,7 @@ def inputs(filter='',full_list=False,just_required=False):
                         "tool_tip":'The net metering limit determines the maximum size of total systems that can be installed under a net metering agreement with the utility. Projects sized up to the net meting limit will receive credit for any exported energy at the electric retail rate. Information on state net metering limits is available at www.dsireusa.org. This value is not required.'},
 
       'wholesale_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': 0.12,
+                        'max': None, 'default': 0.00,
                         "description": "Assumed price of electricity on the wholesale market", "units": 'dollars per kilowatt-hour',
                         "tool_tip":'The estimated price of electricity on the wholesale market in dollars per kilowatt.'},
 
