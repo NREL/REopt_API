@@ -76,11 +76,17 @@ class Economics:
         else:
             self.macrs_schedule = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]  # IRS pub 946
 
+        # set-up direct ownership
+        if self.owner_discount_rate is None:
+            self.owner_discount_rate = self.offtaker_discount_rate
+        if self.owner_tax_rate is None:
+            self.owner_tax_rate = self.offtaker_tax_rate
 
         self.prepare_economics()
         self.output_economics()
 
     def prepare_economics(self):
+
 
         self.offtaker_discount_rate_nominal = (1 + self.offtaker_discount_rate) * (1 + self.rate_inflation) - 1
         self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1

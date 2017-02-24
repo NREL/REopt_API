@@ -116,7 +116,7 @@ def inputs(filter='',full_list=False,just_required=False):
                         "tool_tip":'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
       'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                              'min': 0, 'max': 1, 'default': 0.08,
+                              'min': 0, 'max': 1, 'default': None,
                               "description": "Owner Discount Rate", "units": 'decimal percent',
                               "tool_tip":'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
@@ -188,14 +188,14 @@ def inputs(filter='',full_list=False,just_required=False):
                           "description": "Annual Cost of  Electricity Escalation Rate", "units": 'decimal percent per year',
                           "tool_tip":'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
 
-      'offtaker_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+      'offtaker_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
                    'max': 1, 'default': 0.35,
                    "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
                    "tool_tip":'In the third party-ownership scenario, this is the percent of income that goes to tax for the third party owner of the system. Units: decimal percent. This value is not required.'},
 
-      'owner_tax_rate': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+      'owner_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
                     'min': 0,
-                    'max': 1, 'default': 0.35,
+                    'max': 1, 'default': None,
                     "description": "Tax Rate for System Developer", "units": 'decimal percent',
                     "tool_tip":'The percent of income that goes to tax for the system host. Units: decimal percent. This value is not required.'},
 

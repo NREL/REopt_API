@@ -289,7 +289,8 @@ class DatLibrary:
         self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
 
         for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'levelization_factor']:
+                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
+                  'levelization_factor']:
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
