@@ -163,9 +163,10 @@ class DatLibrary:
                                 setattr(self, k, float(value) * 0.01)
 
                     elif v['type'] == list:
-                        value = [float(i) for i in getattr(self, k)]
-                        setattr(self, k, value)
-
+                        if 'listtype' in v:
+                            if v['listtype'] != str:
+                                value = [float(i) for i in getattr(self, k)]
+                                setattr(self, k, value)
                     else:
                         setattr(self, k, v['type'](value))
 

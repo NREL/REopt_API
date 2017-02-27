@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 
 from datetime import datetime
+from calendar import monthrange
 
 
 def resample(pd_series_data, factor, index, interpolate=False):
@@ -105,13 +106,16 @@ class ProcessOutputs:
             self.setup_dates()
             self.load_xpress_results()
 
+    def get_dispatch(self):
+        return self.df_xpress_output
+
     def setup_dates(self):
 
         # setup dates
         frequency = str(int(round(60/self.steps_per_hour, 0))) + 'min'
         self.date_range = pd.date_range(start=datetime(self.year, 1, 1),
                                         periods=8760 * self.steps_per_hour,
-                                        freq=frequency)
+                                        freq=frequency).to_datetime()
 
     def populate_techs(self, df):
 
@@ -298,4 +302,5 @@ class ProcessOutputs:
         numeric[numeric < 0] = 0
         self.df_xpress_output = self.df_xpress_output[output_column_headers]
         self.df_xpress_output.to_csv(os.path.join(self.path_dispatch_output))
+
 

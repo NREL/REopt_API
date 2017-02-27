@@ -1,5 +1,5 @@
 from django.db import models
-from  django.contrib.postgres.fields import *
+from django.contrib.postgres.fields import *
 from api_definitions import *
 import json
 from picklefield.fields import PickledObjectField
@@ -172,8 +172,8 @@ class RunOutput(models.Model):
     load_profile_name  = models.TextField(null=True,blank=True,default='')
     load_size = models.FloatField(null=True,blank=True)
     load_year = models.IntegerField(null=True, blank=True, default=2018)
-    load_8760_kw =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
-    load_monthly_kwh =  ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
+    load_8760_kw = ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
+    load_monthly_kwh = ArrayField(models.TextField(blank=True),null=True,blank=True,default=[])
     utility_name = models.TextField(blank=True,default='')
     rate_name = models.TextField(blank=True,default='')
     rate_degradation = models.FloatField(null=True,blank=True)
@@ -190,7 +190,7 @@ class RunOutput(models.Model):
     losses = models.FloatField(null=True,blank=True)
     radius = models.FloatField(null=True,blank=True)
     tilt = models.FloatField(null=True,blank=True)
-    gcr= models.FloatField(null=True,blank=True)
+    gcr = models.FloatField(null=True,blank=True)
 
     # Output
     status = models.TextField(null=True, blank=True)
@@ -204,6 +204,18 @@ class RunOutput(models.Model):
     year_one_energy_cost = models.FloatField(null=True, blank=True)
     year_one_demand_cost = models.FloatField(null=True, blank=True)
 
+    year_one_electric_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_pv_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_pv_to_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_pv_to_grid_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_grid_to_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_grid_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_battery_to_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_battery_to_grid_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_battery_soc_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_energy_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    #year_one_datetime_series = models.DateTimeField(null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
 

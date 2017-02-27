@@ -24,7 +24,7 @@ class Results:
     file_proforma = 'ProForma.xlsx'
     file_dispatch = 'Dispatch.csv'
 
-    # outputs that need to get added to DB
+    # scalar outputs that need to get added to DB
     lcc_bau = None
     year_one_energy_cost = None
     year_one_energy_cost_bau = None
@@ -39,6 +39,20 @@ class Results:
     pv_kw = None
     batt_kw = None
     batt_kwh = None
+
+    # time series outputs
+    year_one_electric_load_series = None
+    year_one_pv_to_battery_series = None
+    year_one_pv_to_load_series = None
+    year_one_pv_to_grid_series = None
+    year_one_grid_to_load_series = None
+    year_one_grid_to_battery_series = None
+    year_one_battery_to_load_series = None
+    year_one_battery_to_grid_series = None
+    year_one_battery_soc_series = None
+    year_one_energy_cost_series = None
+    year_one_demand_cost_series = None
+    year_one_datetime_series = None
 
     def outputs(self, **args):
         return outputs(**args)
@@ -117,7 +131,33 @@ class Results:
             self.year_one_demand_cost_bau = float(df['Year 1 Demand Cost ($)'].values[0])
 
     def compute_dispatch(self, df):
-            dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
+        results = dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
+        df_xpress = results.get_dispatch()
+
+        if 'Date' in df_xpress.columns:
+            self.year_one_datetime_series = df_xpress['Date'].tolist()
+        if 'Energy Cost ($/kWh)' in df_xpress.columns:
+            self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
+        if 'Demand Cost ($/kW)' in df_xpress.columns:
+            self.year_one_demand_cost_series = df_xpress['Demand Cost ($/kW)'].tolist()
+        if 'Electric load' in df_xpress.columns:
+            self.year_one_electric_load_series = (df_xpress['Electric load']).tolist()
+        if 'PV to battery' in df_xpress.columns:
+            self.year_one_pv_to_battery_series = df_xpress['PV to battery'].tolist()
+        if 'PV to load' in df_xpress.columns:
+            self.year_one_pv_to_load_series = df_xpress['PV to load'].tolist()
+        if 'PV to grid' in df_xpress.columns:
+            self.year_one_pv_to_grid_series = df_xpress['PV to grid'].tolist()
+        if 'Grid to load' in df_xpress.columns:
+            self.year_one_grid_to_load_series = df_xpress['Grid to load'].tolist()
+        if 'Grid to battery' in df_xpress.columns:
+            self.year_one_grid_to_battery_series = df_xpress['Grid to battery'].tolist()
+        if 'State of charge' in df_xpress.columns:
+            self.year_one_battery_soc_series = df_xpress['State of charge'].tolist()
+        if 'Battery to load' in df_xpress.columns:
+            self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
+        if 'Battery to grid' in df_xpress.columns:
+            self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
 
     def compute_value(self):
 
@@ -172,8 +212,10 @@ class Results:
                                 setattr(self, k, float(value) * 0.01)
 
                     elif v['type'] == list:
-                        value = [float(i) for i in getattr(self, k)]
-                        setattr(self, k, value)
+                        if 'listtype' in v:
+                            if v['listtype'] != str:
+                                value = [float(i) for i in getattr(self, k)]
+                                setattr(self, k, value)
 
                     else:
                         setattr(self, k, v['type'](value))
