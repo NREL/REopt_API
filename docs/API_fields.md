@@ -122,7 +122,7 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 -- Developer real discount rate (%) - ```owner_discount_rate```  
 -- Developer tax rate (%) - ```owner_tax_rate```  
 
-# Outputs
+# Scalar Outputs
 - Solution status - ```status```  
 - Lifecycle cost ($) - ```lcc```  
 - Net present value ($) - ```npv```
@@ -132,4 +132,16 @@ The "developer" inputs should be grayed out or unavailable unless the "Third-par
 - Recommended battery power (kW) - ```batt_kw```  
 - Recommended battery capacity (kW) - ```batt_kwh```  
 - Year 1 energy cost ($) - ```year_one_energy_cost```  
-- Year 1 demand cost ($) - ```year_one_demand_cost```  
+- Year 1 demand cost ($) - ```year_one_demand_cost```
+
+# Time series outputs
+- Year 1 electric load time series (kW) - ```year_one_electric_load_series```  
+- Year 1 PV power to battery time series (kW) - ```year_one_pv_to_battery_series```  
+- Year 1 PV power to electric load time series (kW) - ```year_one_pv_to_load_series```
+- Year 1 PV power to grid time series (kW) - ```year_one_pv_to_grid_series```
+- Year 1 grid power to electric load time series (kW) - ```year_one_grid_to_load_series```  
+- Year 1 grid power to battery (kW) - ```year_one_grid_to_battery_series```  
+- Year 1 battery state-of-charge time series (%) - ```year_one_battery_soc_series```  
+- Year 1 battery power to electric electric load time series (kW) - ```year_one_battery_to_load_series```  
+- Year 1 battery power to grid time series (kW) - ```year_one_battery_to_grid_series```  
+
