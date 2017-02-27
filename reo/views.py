@@ -3,6 +3,7 @@ from django.shortcuts import render
 import json
 from django.http import HttpResponse
 from validators import REoptResourceValidation
+from django.views.static import serve
 
 def index(request):
     api_inputs = {}
@@ -44,6 +45,19 @@ def check_inputs(request):
         return HttpResponse(json.dumps({"Errors":{}}), content_type='application/json')    
     else:
         return HttpResponse(json.dumps(errors), content_type='application/json')
+
+def get_download(request):
+
+    lookup_fileExt = {'proforma':".pdf"}
+
+    file_type = request.GET['file_type']
+    run_id = request.GET['run_id']
+    filename = file_type + "_" + run_id + lookup_fileExt[file_type]
+
+    path_to_file = os.path.join(os.getcwd(),'Xpress','Downloads', filename)
+   
+    return serve(request, os.path.basename(path_to_file), os.path.dirname(path_to_file))
+   
 
 def get_tooltips(request):
     response = {}

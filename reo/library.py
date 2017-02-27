@@ -80,6 +80,7 @@ class DatLibrary:
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
+        self.path_files_to_download = os.path.join(self.path_xpress, "Downloads")
 
         self.path_run_inputs = os.path.join(self.path_run, "Inputs")
         self.path_run_outputs = os.path.join(self.path_run, "Outputs")
