@@ -176,8 +176,8 @@ class Results:
         d = pf.ProForma(getattr(econ, 'analysis_period'),
                         getattr(econ, 'offtaker_discount_rate_nominal'),
                         getattr(econ, 'offtaker_tax_rate'),
-                        getattr(econ, 'bonus_fraction'),
-                        getattr(econ, 'rate_itc'), # modify based on updated incentives
+                        getattr(econ, 'pv_macrs_bonus_fraction'),
+                        getattr(econ, 'pv_itc_federal'), # modify based on updated incentives
                         getattr(econ, 'rate_escalation_nominal'),
                         getattr(econ, 'rate_inflation'),
                         getattr(econ, 'pv_om'),
@@ -188,11 +188,11 @@ class Results:
                         getattr(econ, 'batt_cost_kw'),
                         self.batt_kw,
                         getattr(econ, 'batt_replacement_cost_kwh'), # modify based on updated input
-                        getattr(econ, 'batt_replacement_cost_kwh'),
+                        getattr(econ, 'batt_replacement_cost_kw'),
                         self.year_one_energy_savings,
                         self.year_one_demand_savings,
                         self.year_one_energy_exported,
-                        getattr(econ, 'rate_degradation'),
+                        getattr(econ, 'pv_degradation_rate'),
                         self.lcc,
                         self.lcc_bau)
 
