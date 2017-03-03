@@ -3,12 +3,6 @@
 - Site location: ```latitude, longitude```  
 - Land Area Available (acres): ```land_area```  
 - Roofspace Available (square feet): ```roof_area```  
-
-# Electricity
-If user selects building type, then require input of "Annual Electric Load (kWh).  Otherwise, user can upload their own load profile (a file with 8760 lines of kW values).  If they upload their own file, they must also specify the year of the load (to properly align days-of-the week).  
-
-For the electricity rate, the user shall select a rate from URDB, which is queried based on their entered location.  The web app will pass along the urdb json to the API.  
-
 - Electricity rate (user selects from URDB): ```urdb_rate```  
 - Type of building (dropdown): ```load_profile_name```  
 -- _Options for dropdown_:  
@@ -32,11 +26,34 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - Annual Electric Load (kWh): ```load_size```  
 - Upload hourly load (kW): ```load_8760_kw```  
 - Year of uploaded load (kW): ```load_year```  
+
+# Electricity
+If user selects building type, then require input of "Annual Electric Load (kWh).  Otherwise, user can upload their own load profile (a file with 8760 lines of kW values).  If they upload their own file, they must also specify the year of the load (to properly align days-of-the week).  
+
+For the electricity rate, the user shall select a rate from URDB, which is queried based on their entered location.  The web app will pass along the urdb json to the API.  
+ 
+# Financial Inputs
+The "third-party" inputs should be grayed out or unavailable unless the "Third-party owner" box is checked.  
+
+- Analysis period (years) - ```analysis_period```  
+- Third-party owner (check_box or something) - ```third_party_owned```  
+- Host real Discount rate (%) - ```offtaker_discount_rate```  
+- Host tax rate (%) - ```offtaker_tax_rate```  
+- Third-party owner real discount rate (%) - ```owner_discount_rate```  
+- Third-party owner tax rate (%) - ```owner_tax_rate```  
+- Electricity escalation rate (%) - ```rate_escalation```  
+- Inflation rate (%) - ```rate_inflation```   
+
+# Grid Connection Inputs
 - Net metering limit (kW): ```net_metering_limit```  
 - Sellback rate avove net metering ($/kWh) ```wholesale_rate```  
 - Interconnection limit (kW) ```interconnection_limit```  
 
 # Photovoltaic
+
+## PV Cost 
+- System installed cost ($/kW) - ```pv_cost```
+- Operating and maintenance ($/kW-year) - ```pv_om```
 
 ## Technology
 - Minimum size desired (kW) - ```pv_kw_min```  
@@ -59,9 +76,7 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - DC-AC ratio - ```dc_ac_ratio```
 - Ground coverage ratio - ```gcr```
 
-## PV Cost 
-- System installed cost ($/kW) - ```pv_cost```
-- Operating and maintenance ($/kW-year) - ```pv_om```
+
 
 ## PV Capital Cost Based Incentives
 - PV Federal percentage based incentive (%) - ```pv_itc_federal```  
@@ -103,6 +118,14 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 
 # Battery
 
+## Battery Costs
+- Energy capacity ($/kWh) - ```batt_cost_kwh```  
+- Power electronics ($/kW) - ```batt_cost_kw```  
+- Energy capacity replacement cost ($/kWh) - ```batt_replacement_cost_kwh```  
+- Energy capacity replacement year (year) - ```batt_replacement_year_kwh```  
+- Power electronics replacement cost ($/kW) - ```batt_replacement_cost_kw```  
+- Power electronics replacement year (year) - ```batt_replacement_year_kw```  
+
 ## Technology
 - Minimum power desired (kW) - ```batt_kw_min```  
 - Maximum power desired (kW) - ```batt_kw_max```  
@@ -112,15 +135,10 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
 - Inverter efficiency (%) - ```batt_inverter_efficiency```  
 - Rectifier efficiency (%) - ```batt_rectifier_efficiency```  
 - Minimum state of charge (%) - ```batt_soc_min```  
+- Initial state of charge (%) - ```batt_soc_init```
 - Grid can charge battery? (checkbox) - ```batt_can_gridcharge```  
 
-## Battery Costs
-- Energy capacity ($/kWh) - ```batt_cost_kwh```  
-- Power electronics ($/kW) - ```batt_cost_kw```  
-- Energy capacity replacement cost ($/kWh) - ```batt_replacement_cost_kwh```  
-- Energy capacity replacement year (year) - ```batt_replacement_year_kwh```  
-- Power electronics replacement cost ($/kW) - ```batt_replacement_cost_kw```  
-- Power electronics replacement year (year) - ```batt_replacement_year_kw```  
+
 
 ## Battery Capital Cost Incentives  
 - Battery Federal percentage based incentive (%) - ```batt_itc_federal```  
@@ -144,18 +162,6 @@ For the electricity rate, the user shall select a rate from URDB, which is queri
   * 5  
   * 7  
 
-
-# Financial Inputs
-The "developer" inputs should be grayed out or unavailable unless the "Third-party owner" box is checked.  
-
-- Analysis period (years) - ```analysis_period```  
-- Electricity escalation rate (%) - ```rate_escalation```  
-- Inflation rate (%) - ```rate_inflation```  
-- Real Discount rate (%) - ```offtaker_discount_rate```  
-- Owner tax rate (%) - ```offtaker_tax_rate```  
-- Third-party owner (check_box or something) - ```third_party_owned```  
--- Developer real discount rate (%) - ```owner_discount_rate```  
--- Developer tax rate (%) - ```owner_tax_rate```  
 
 # Scalar Outputs
 - Solution status - ```status```  
