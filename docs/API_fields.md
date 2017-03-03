@@ -155,13 +155,12 @@ The "third-party" inputs should be grayed out or unavailable unless the "Third-p
 - Battery Utility maximum rebate ($) - ```batt_rebate_utility_max```
 
 ## Battery MACRS
-- MACRs Schedule (years), dropdown - ```pv_macrs_schedule```  
+- MACRs Schedule (years), dropdown - ```batt_macrs_schedule```  
 - -- _Options for dropdown_ (pass integer 0, 3, 5, 7 to API):  
   * 0  
   * 3  
   * 5  
   * 7  
-
 
 # Scalar Outputs
 - Solution status - ```status```  
