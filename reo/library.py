@@ -187,11 +187,11 @@ class DatLibrary:
     def run(self):
 
         self.create_constant_bau()
+        self.create_size_limits()
         self.create_economics()
         self.create_loads()
         self.create_GIS()
         self.create_nem()
-        self.create_size_limits()
         self.create_utility()
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
@@ -503,6 +503,14 @@ class DatLibrary:
             batt_kw_min = self.batt_kw_min
         if self.batt_kwh_min is not None:
             batt_kwh_min = self.batt_kwh_min
+
+        # update outputs
+        self.pv_kw_min = pv_kw_min
+        self.pv_kw_max = pv_kw_max
+        self.batt_kwh_min = batt_kwh_min
+        self.batt_kwh_max = batt_kwh_max
+        self.batt_kw_min = batt_kw_min
+        self.batt_kw_max = batt_kw_max
 
         MaxSize = [pv_kw_max, pv_kw_max, util_kw_max]
         MinStorageSizeKW = batt_kw_min

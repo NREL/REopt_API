@@ -175,7 +175,7 @@ class Economics:
                                             self.offtaker_discount_rate_nominal,
                                             self.pv_pbi_federal,
                                             self.pv_pbi_federal_max,
-                                            self.pv_pbi_federal_system_max,
+                                            min(self.pv_pbi_federal_system_max,self.pv_kw_max),
                                             self.pv_pbi_federal_years)
 
     @staticmethod
@@ -282,7 +282,8 @@ class Economics:
                     k = key.next()
                     v = value.next()
                     f.write(k + ': [\n')
-                    f.write(str(v) + ',\n')
+                    for val in v:
+                        f.write(str(val) + ',\n')
                     f.write(']\n')
                 except:
                     print '\033[91merror writing economics\033[0m'
