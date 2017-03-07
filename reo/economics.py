@@ -57,6 +57,9 @@ class Economics:
     macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
     macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
+    tech_size = 3 # [PV, PVNM, UTIL]
+    bin_size = 4 # [R, W, X, S]
+
     def __init__(self, econ_inputs, file_path='economics.dat', business_as_usual=False):
 
         self.out_name = file_path
@@ -166,7 +169,14 @@ class Economics:
                                                                                   self.batt_macrs_schedule_array,
                                                                                   self.batt_macrs_bonus_fraction,
                                                                                   self.macrs_itc_reduction)
-        self.setup_production_incentives()
+        for tech in range(0, 2):
+            self.setup_production_incentive(tech,
+                                            self.rate_escalation_nominal,
+                                            self.offtaker_discount_rate_nominal,
+                                            self.pv_pbi_federal,
+                                            self.pv_pbi_federal_max,
+                                            self.pv_pbi_federal_system_max,
+                                            self.pv_pbi_federal_years)
 
     @staticmethod
     def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
@@ -194,11 +204,37 @@ class Economics:
 
         return round(cap_cost_slope, 4)
 
-    def setup_production_incentives(self):
+    def setup_production_incentive(self, tech, rate_escalation, rate_discount, pbi, pbi_max, pbi_system_max, pbi_years):
 
-        self.incentive_output_args["ProdIncentRate"] = 12 * [0]
-        self.incentive_output_args["MaxProdIncent"] = [0, 0, 0]
-        self.incentive_output_args["MaxSizeForProdIncent"] = [0, 0, 0]
+        pwf_prod_incent = annuity(pbi_years, rate_escalation, rate_discount)
+        prod_incent_rate = round(pwf_prod_incent * pbi, 3)
+        max_prod_incent = round(pwf_prod_incent * pbi_max, 3)
+        max_size_for_prod_incent = pbi_system_max
+
+        if "ProdIncentRate" not in self.incentive_output_args:
+            prod_incent_array = self.tech_size * self.bin_size * [0]
+        else:
+            prod_incent_array = self.incentive_output_args["ProdIncentRate"]
+
+        if "MaxProdIncent" not in self.incentive_output_args:
+            max_prod_array = self.tech_size * [0]
+        else:
+            max_prod_array = self.incentive_output_args["MaxProdIncent"]
+
+        if "MaxSizeForProdIncent" not in self.incentive_output_args:
+            max_size_array = self.tech_size * [0]
+        else:
+            max_size_array = self.incentive_output_args["MaxSizeForProdIncent"]
+
+        for i in range(tech * self.bin_size, (tech + 1) * self.bin_size):
+            prod_incent_array[i] = prod_incent_rate
+
+        max_prod_array[tech] = max_prod_incent
+        max_size_array[tech] = max_size_for_prod_incent
+
+        self.incentive_output_args["ProdIncentRate"] = prod_incent_array
+        self.incentive_output_args["MaxProdIncent"] = max_prod_array
+        self.incentive_output_args["MaxSizeForProdIncent"] = max_size_array
 
     def setup_business_as_usual(self):
         if self.business_as_usual:
