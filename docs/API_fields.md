@@ -1,5 +1,4 @@
 # Site Information
-
 - Site location: ```latitude, longitude```  
 - Land Area Available (acres): ```land_area```  
 - Roofspace Available (square feet): ```roof_area```  
@@ -173,6 +172,8 @@ The "third-party" inputs should be grayed out or unavailable unless the "Third-p
 - Recommended battery capacity (kW) - ```batt_kwh```  
 - Year 1 energy cost ($) - ```year_one_energy_cost```  
 - Year 1 demand cost ($) - ```year_one_demand_cost```
+- Year 1 datetime start (datetime) - ```year_one_datetime_start```  
+- Time steps per hour: ```time_steps_per_hour```  
 
 # Time series outputs
 - Year 1 electric load time series (kW) - ```year_one_electric_load_series```  
