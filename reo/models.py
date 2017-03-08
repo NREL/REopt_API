@@ -12,6 +12,9 @@ class RunInput(models.Model):
     user_id = models.TextField(blank=True, default='')
     api_version = models.TextField(blank=True, default='', null=False)
 
+    # Non-hooked up inputs
+    time_steps_per_hour = models.IntegerField(null=True, blank=True)
+
     # Site Information
     latitude = models.FloatField(null=True,blank=True)
     longitude = models.FloatField(null=True, blank=True)
@@ -166,6 +169,9 @@ class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)
+
+    # Non-hooked up inputs
+    time_steps_per_hour = models.IntegerField(null=True, blank=True)
 
     # Site Information
     latitude = models.FloatField(null=True, blank=True)
@@ -324,7 +330,7 @@ class RunOutput(models.Model):
     year_one_battery_soc_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    #year_one_datetime_series = models.DateTimeField(null=True, blank=True)
+    year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
     def to_dictionary(self):
         output = {'run_input_id': self.run_input_id,

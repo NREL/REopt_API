@@ -1,4 +1,5 @@
 from tastypie import fields
+from datetime import datetime
 import os
 
 max_big_number = 100000000
@@ -14,6 +15,11 @@ def inputs(filter='', full_list=False, just_required=False):
                             'default': 25, 'min': 0, 'max': None,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
+
+        'time_steps_per_hour': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": [],
+                                'default': 1, 'min': 1, 'max':1, "description": "Time steps per hour",
+                                "units": 'steps per hour',
+                                "tool_tip": 'The number of time steps per hour in the simulation'},
 
         'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                       'max': None, 'default': None,
@@ -613,9 +619,8 @@ def outputs():
             'year_one_demand_cost_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 demand cost time series", "units": '$/kW'},
 
-#            'year_one_datetime_series': {'type': list, 'listtype': str, 'null': True, 'pct': False,
-#                                        "description": "Year 1 hours", "units": ''},
-
+            'year_one_datetime_start': {'type': datetime, 'null': True, 'pct': False,
+                                         "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
             }
 
 # default load profiles

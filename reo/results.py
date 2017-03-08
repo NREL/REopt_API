@@ -3,6 +3,7 @@ import pandas as pd
 from api_definitions import *
 import pro_forma as pf
 import dispatch
+from datetime import datetime
 
 class Results:
 
@@ -52,7 +53,10 @@ class Results:
     year_one_battery_soc_series = None
     year_one_energy_cost_series = None
     year_one_demand_cost_series = None
-    year_one_datetime_series = None
+
+    # time outputs (scalar)
+    year_one_datetime_start = None
+    time_steps_per_hour = None
 
     def outputs(self, **args):
         return outputs(**args)
@@ -135,7 +139,9 @@ class Results:
         df_xpress = results.get_dispatch()
 
         if 'Date' in df_xpress.columns:
-            self.year_one_datetime_series = df_xpress['Date'].tolist()
+            dates = (df_xpress['Date'].tolist())
+            self.year_one_datetime_start = dates[0]
+            self.time_steps_per_hour = round(len(dates) / 8760, 0)
         if 'Energy Cost ($/kWh)' in df_xpress.columns:
             self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
         if 'Demand Cost ($/kW)' in df_xpress.columns:
@@ -212,10 +218,9 @@ class Results:
                                 setattr(self, k, float(value) * 0.01)
 
                     elif v['type'] == list:
-                        if 'listtype' in v:
-                            if v['listtype'] != str:
-                                value = [float(i) for i in getattr(self, k)]
-                                setattr(self, k, value)
-
+                        value = [float(i) for i in getattr(self, k)]
+                        setattr(self, k, value)
+                    elif v['type'] == datetime:
+                        setattr(self, k, value)
                     else:
                         setattr(self, k, v['type'](value))
