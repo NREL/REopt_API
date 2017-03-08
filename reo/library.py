@@ -56,7 +56,7 @@ class DatLibrary:
         f.write("]\n")
 
     def write_single_variable(self, path, var, dat_var, mode='w'):
-        log("DEBUG", "Writing " + dat_var + " to " + path)
+        log("INFO", "Writing " + dat_var + " to " + path)
         f = open(path, mode)
         self.write_var(f, var, dat_var)
         f.close()
@@ -197,14 +197,14 @@ class DatLibrary:
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
 
-        log("DEBUG", "Initializing Command")
+        log("INFO", "Initializing Command")
         command = Command(run_command)
-        log("DEBUG", "Initializing Command BAU")
+        log("INFO", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
 
-        log("DEBUG", "Running Command")
+        log("INFO", "Running Command")
         command.run(self.timeout)
-        log("DEBUG", "Running BAU")
+        log("INFO", "Running BAU")
         command_bau.run(self.timeout)
 
         self.parse_run_outputs()
@@ -223,7 +223,7 @@ class DatLibrary:
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
-        log("DEBUG", "Creating output directory: " + path_output)
+        log("INFO", "Creating output directory: " + path_output)
 
         # base case
         base_string = ""
@@ -263,7 +263,7 @@ class DatLibrary:
 
     def cleanup(self):
         return
-        log("DEBUG", "Cleaning up folders from: " + os.getcwd())
+        log("INFO", "Cleaning up folders from: " + os.getcwd())
         log("DEBUG", "Output folder: " + self.path_run_outputs)
 
         if not self.debug:
@@ -308,7 +308,7 @@ class DatLibrary:
         default_load_profile_norm = "Load8760_norm_" + self.default_city + "_" + self.default_building + ".dat"
         default_load_size = "LoadSize_" + self.default_city + "_" + self.default_building + ".dat"
 
-        log("DEBUG", "Creating loads.  "
+        log("INFO", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
@@ -531,11 +531,11 @@ class DatLibrary:
     def create_utility(self):
 
         if self.urdb_rate is not None:
-            log("DEBUG", "Parsing URDB rate")
+            log("INFO", "Parsing URDB rate")
             self.parse_urdb(self.urdb_rate)
         else:
             if None not in [self.blended_utility_rate, self.demand_charge]:
-                log("DEBUG", "Making URDB rate from blended data")
+                log("INFO", "Making URDB rate from blended data")
                 urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
                 self.parse_urdb(urdb_rate)
 

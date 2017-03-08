@@ -408,7 +408,7 @@ class ProForma(object):
 
         if math.isnan(self.IRR):
             self.IRR = 0
-            log("DEBUG", "Computed IRR invalid")
+            log("WARNING", "Computed IRR invalid")
         if math.isnan(self.NPV):
             self.NPV = 0
-            log("DEBUG", "Computed NPV invalid")
+            log("WARNING", "Computed NPV invalid")

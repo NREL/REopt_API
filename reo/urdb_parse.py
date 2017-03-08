@@ -230,7 +230,7 @@ class UrdbParse:
     def __init__(self, output_root, year, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
 
-        log("DEBUG", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
+        log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
 
         self.year = year
         self.output_root = output_root
@@ -253,7 +253,7 @@ class UrdbParse:
                 self.parse_specific_rates([utility], [rate])
 
     def parse_specific_rates(self, utilities, rates):
-        log("DEBUG", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.output_root)
+        log("INFO", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.output_root)
         for utility in utilities:
             for rate in rates:
                 rate_dir = os.path.join(self.output_root, utility, rate)
@@ -266,7 +266,7 @@ class UrdbParse:
                             json_path = os.path.join(rate_dir, filename)
 
                             with open(json_path, 'r') as json_file:
-                                log("DEBUG", "Processing: " + utility + ", " + rate_name.read())
+                                log("INFO", "Processing: " + utility + ", " + rate_name.read())
 
                                 data = json.loads(json_file.read())
                                 current_rate = self.parse_rate(data)

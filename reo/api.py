@@ -20,9 +20,18 @@ from validators import  *
 def get_current_api():
     return "version 0.0.1"
 
+def setup_logging():
+    file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
+    logging.basicConfig(filename=file_logfile,
+                        format='%(asctime)s - %(levelname)s - %(message)s',
+                        datefmt='%m/%d/%Y %I:%M%S %p',
+                        level=logging.INFO)
+    log("INFO", "Logging setup")
+
 class RunInputResource(ModelResource):
 
     class Meta:
+        setup_logging()
         queryset = RunInput.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['get', 'post']
@@ -50,7 +59,6 @@ class RunInputResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
-        self.setup_logging()
         #Validate Inputs
         self.is_valid(bundle)
         if bundle.errors:
@@ -70,10 +78,4 @@ class RunInputResource(ModelResource):
         
         return self.full_hydrate(bundle)
 
-    def setup_logging(self):
-        file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-        logging.basicConfig(filename=file_logfile,
-                            format='%(asctime)s - %(levelname)s - %(message)s',
-                            datefmt='%m/%d/%Y %I:%M%S %p',
-                            level=logging.DEBUG)
-        log("DEBUG", "Logging setup")
+

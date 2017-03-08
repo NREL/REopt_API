@@ -1,6 +1,7 @@
 from tastypie.validation import Validation
 from api_definitions import *
 from api_input_validation import *
+from log_levels import log
 
 class REoptResourceValidation(Validation):
 
@@ -9,13 +10,15 @@ class REoptResourceValidation(Validation):
         for key, value in input_dictionary.items():
             if key not in inputs(full_list=True):
                 errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+                log("ERROR", "Key: '" + str(key) + "' does not match a valid input!")
 
             if value is None and key in inputs(just_required=True).keys():
                 errors = self.append_errors(errors, key, 'This input is required and cannot be null.')
-            
+                log("ERROR", "Value for key: " + str(key) + " is required and cannot be null!")
+
             else:
                 field_def = inputs(full_list=True)[key]
-                format_errors =  self.check_input_format(key,value,field_def)
+                format_errors = self.check_input_format(key,value,field_def)
                 if not format_errors:
                     if field_def.get('max') is not None:
                         format_errors += self.check_max(key, value, field_def)
