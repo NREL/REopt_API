@@ -93,10 +93,10 @@ The "third-party" inputs should be grayed out or unavailable unless the "Third-p
 
 ## PV Production Based Incentives
 
-- PV production based incentive ($/kWh) - ```pv_pbi_federal```  
-- PV production based incentive max ($) - ```pv_pbi_federal_max```  
-- PV production based incentive year duration (years) - ```pv_pbi_federal_years```  
-- PV production based incentive max system size (kW) - ```pv_pbi_federal_system_max```  
+- PV production based incentive ($/kWh) - ```pv_pbi```  
+- PV production based incentive max ($) - ```pv_pbi_max```  
+- PV production based incentive year duration (years) - ```pv_pbi_years```  
+- PV production based incentive max system size (kW) - ```pv_pbi_system_max```  
 
 ## PV MACRS
 - MACRs Schedule (years), dropdown - ```pv_macrs_schedule```  
