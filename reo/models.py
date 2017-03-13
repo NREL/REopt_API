@@ -84,21 +84,10 @@ class RunInput(models.Model):
     pv_rebate_utility_max = models.FloatField(null=True, blank=True)
 
     # PV Production Based Incentives
-    pv_pbi_federal = models.FloatField(null=True, blank=True)
-    pv_pbi_state = models.FloatField(null=True, blank=True)
-    pv_pbi_utility = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_max = models.FloatField(null=True, blank=True)
-    pv_pbi_state_max = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_max = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_years = models.FloatField(null=True, blank=True)
-    pv_pbi_state_years = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_years = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_system_max = models.FloatField(null=True, blank=True)
-    pv_pbi_state_system_max = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_system_max = models.FloatField(null=True, blank=True)
+    pv_pbi = models.FloatField(null=True, blank=True)
+    pv_pbi_max = models.FloatField(null=True, blank=True)
+    pv_pbi_years = models.FloatField(null=True, blank=True)
+    pv_pbi_system_max = models.FloatField(null=True, blank=True)
 
     # PV MACRS
     pv_macrs_schedule = models.IntegerField(null=True, blank=True)
@@ -242,21 +231,10 @@ class RunOutput(models.Model):
     pv_rebate_utility_max = models.FloatField(null=True, blank=True)
 
     # PV Production Based Incentives
-    pv_pbi_federal = models.FloatField(null=True, blank=True)
-    pv_pbi_state = models.FloatField(null=True, blank=True)
-    pv_pbi_utility = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_max = models.FloatField(null=True, blank=True)
-    pv_pbi_state_max = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_max = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_years = models.FloatField(null=True, blank=True)
-    pv_pbi_state_years = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_years = models.FloatField(null=True, blank=True)
-
-    pv_pbi_federal_system_max = models.FloatField(null=True, blank=True)
-    pv_pbi_state_system_max = models.FloatField(null=True, blank=True)
-    pv_pbi_utility_system_max = models.FloatField(null=True, blank=True)
+    pv_pbi = models.FloatField(null=True, blank=True)
+    pv_pbi_max = models.FloatField(null=True, blank=True)
+    pv_pbi_years = models.FloatField(null=True, blank=True)
+    pv_pbi_system_max = models.FloatField(null=True, blank=True)
 
     # PV MACRS
     pv_macrs_schedule = models.IntegerField(null=True, blank=True)

@@ -173,10 +173,10 @@ class Economics:
             self.setup_production_incentive(tech,
                                             self.rate_escalation_nominal,
                                             self.offtaker_discount_rate_nominal,
-                                            self.pv_pbi_federal,
-                                            self.pv_pbi_federal_max,
-                                            min(self.pv_pbi_federal_system_max,self.pv_kw_max),
-                                            self.pv_pbi_federal_years)
+                                            self.pv_pbi,
+                                            self.pv_pbi_max,
+                                            min(self.pv_pbi_system_max,self.pv_kw_max),
+                                            self.pv_pbi_years)
 
     @staticmethod
     def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
