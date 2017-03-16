@@ -27,13 +27,20 @@ class Results:
 
     # scalar outputs that need to get added to DB
     lcc_bau = None
+    year_one_utility_kwh = None
     year_one_energy_cost = None
     year_one_energy_cost_bau = None
     year_one_energy_savings = None
     year_one_demand_cost = None
     year_one_demand_cost_bau = None
     year_one_demand_savings = None
+    year_one_payments_to_third_party_owner = None
     year_one_energy_exported = None
+    total_energy_cost = None
+    total_demand_cost = None
+    total_payments_to_third_party_owner = None
+    net_capital_costs_plus_om = None
+    average_yearly_pv_energy_produced = None
     lcc = None
     irr = None
     npv = None
@@ -114,15 +121,29 @@ class Results:
             pv_kw += float(df['PVNM Size (kW)'].values[0])
         if 'PV Size (kW)' in df.columns:
             pv_kw += float(df['PV Size (kW)'].values[0])
-        if 'Utility_kWh' in df.columns:
-            self.utility_kwh = float(df['Utility_kWh'].values[0])
+        if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
+            self.year_one_utility_kwh = float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
             self.year_one_energy_cost = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_cost = float(df['Year 1 Demand Cost ($)'].values[0])
+        if 'Year 1 Payments to Third Party Owner ($)' in df.columns:
+            self.year_one_payments_to_third_party_owner = float(df['Year 1 Payments to Third Party Owner ($)'].values[0])
+        if 'Total Energy Cost ($)' in df.columns:
+            self.total_energy_cost = float(df['Total Energy Cost ($)'].values[0])
+        if 'Total Demand Cost ($)' in df.columns:
+            self.total_demand_cost = float(df['Total Demand Cost ($)'].values[0])
+        if 'Total Payments to Third Party Owner ($)' in df.columns:
+            self.total_payments_to_third_party_owner = float(df['Total Payments to Third Party Owner ($)'].values[0])
+        if 'Net Capital Costs plus O&M ($)' in df.columns:
+            self.net_capital_costs_plus_om = float(df['Net Capital Costs plus O&M ($)'].values[0])
         if 'Total Electricity Exported (kWh)' in df.columns:
             self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
+        if 'Average PV production (kWh)' in df.columns:
+            self.average_yearly_pv_energy_produced = float(df['Average PV production (kWh)'].values[0])
 
+        #from IPython import embed
+        #embed()
         self.pv_kw = pv_kw
 
     def populate_data_bau(self, df):

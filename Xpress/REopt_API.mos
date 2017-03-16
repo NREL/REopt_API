@@ -144,6 +144,8 @@ declarations
   binBattLevel: array(BattLevel) of mpvar
   BattLevelCoef: array(BattLevel,1..2) of real
 
+  analysis_period: integer
+
   pwf_e: real
   pwf_om: real
   pwf_prod_incent: real
@@ -195,6 +197,7 @@ initializations from DAT2 ! economics
 	MaxProdIncent
 	MaxSizeForProdIncent
 	two_party_factor
+	analysis_period
 end-initializations
 
 initializations from DAT3
@@ -687,7 +690,6 @@ writeln ("Capital Cost ($),", strfmt(
 	sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) * StorageCostPerKWH(b) +
 	sum(b in BattLevel) getsol(dvStorageSizeKW(b)) *  StorageCostPerKW(b), 10, 0))
 writeln ("Total kWh Cost ($),", strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)), 10, 0))
-writeln ("Total Demand Cost ($),", strfmt(getsol(TotalDemandCharges), 10, 0))
 forall  (b in BattLevel)  do
    writeln ("Battery Capacity (kWh),", getsol (dvStorageSizeKWH(b)))
 end-do
@@ -698,14 +700,22 @@ forall (t in Tech | TechIsGrid(t)=0)  do
 	writeln (t, " Size (kW),", getsol (dvSystemSize(t)))
 end-do
 
-writeln ("Utility_kWh,", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
+writeln ("Year 1 Energy Supplied From Grid (kWh),", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
 writeln ("Utility,",UtilName)
 writeln ("Rate,",UtilRate)
 !writeln("Optimization Time (s),", EndTime-StartTime)
 
 writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
 writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
-writeln ("Total PV production (kWh),",strfmt(getsol(TotElecProd), 10, 0))
+writeln ("Year 1 Payments to Third Party Owner ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
+
+writeln ("Total Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)), 10, 0))
+writeln ("Total Demand Cost ($),",strfmt(getsol(TotalDemandCharges), 10, 0))
+writeln ("Total Payments to Third Party Owner ($)",0)
+
+
+writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotCapCosts) + getsol(TotalOMCosts), 10, 0))
+writeln ("Average PV production (kWh),",strfmt(getsol(TotElecProd) / analysis_period, 10, 0))
 writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
 
 fclose(F_OUTPUT)

@@ -116,6 +116,7 @@ class Economics:
 
     def setup_financial_parameters(self):
 
+        self.output_args['analysis_period'] = self.analysis_period
         self.output_args['pwf_owner'] = annuity(self.analysis_period, 0, self.owner_discount_rate)
         self.output_args['pwf_offtaker'] = annuity(self.analysis_period, 0, self.offtaker_discount_rate)
         self.output_args['pwf_om'] = annuity(self.analysis_period, self.rate_inflation, self.owner_discount_rate_nominal)
