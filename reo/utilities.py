@@ -30,6 +30,8 @@ class Command(object):
 
     def run(self, timeout):
         def target():
+            from IPython import embed
+            embed()
             self.process = Popen(self.cmd)
             log("INFO", "XPRESS" + str(self.process.communicate()))
        

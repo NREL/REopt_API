@@ -290,12 +290,22 @@ class RunOutput(models.Model):
     lcc = models.FloatField(null=True, blank=True)
     npv = models.FloatField(null=True, blank=True)
     irr = models.FloatField(null=True, blank=True)
-    utility_kwh = models.FloatField(null=True, blank=True)
+    year_one_utility_kwh = models.FloatField(null=True, blank=True)
     pv_kw = models.FloatField(null=True, blank=True)
     batt_kw = models.FloatField(null=True, blank=True)
     batt_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_cost = models.FloatField(null=True, blank=True)
     year_one_demand_cost = models.FloatField(null=True, blank=True)
+    year_one_energy_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_demand_cost_bau = models.FloatField(null=True, blank=True)
+ 
+
+    year_one_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
+    total_energy_cost = models.FloatField(null=True, blank=True)
+    total_demand_cost = models.FloatField(null=True, blank=True)
+    total_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
+    net_capital_costs_plus_om = models.FloatField(null=True, blank=True)
+    average_yearly_pv_energy_produced = models.FloatField(null=True, blank=True)
 
     year_one_electric_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_pv_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)

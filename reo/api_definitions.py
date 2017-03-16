@@ -6,6 +6,7 @@ max_big_number = 100000000
 
 def inputs(filter='', full_list=False, just_required=False):
     output = {
+
         'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
             , "description": "User ID", "units": None,
                     "tool_tip": "Unique REopt user id."},
@@ -523,9 +524,6 @@ def outputs():
             'irr': {'type': float, 'null': True, 'pct': True,
                     "description": "Internal Rate of Return for System", "units": 'percentage'},
 
-            'utility_kwh': {'type': float, 'null': True, 'pct': False,
-                            "description": "Energy Supplied from the Grid", "units": 'kWh'},
-
             'pv_kw': {'type': float, 'null': True, 'pct': False,
                       "description": "Recommended PV System Size", "units": 'kW'},
 
@@ -535,13 +533,46 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
+            'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Energy Cost Business as Usual", "units": '$'},
+
+            'year_one_demand_cost_bau' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Demand Charges Year One Business as Usual", "units": '$'},
+
+            'year_one_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Revenue to Battery Owner", "units": '$'},
+
+            'total_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Revenue to Battery Owner", "units": '$'},
+
+            'total_energy_cost' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
+
+            'total_demand_cost' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
+
+            'net_capital_costs_plus_om' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},
+
+            'average_yearly_pv_energy_produced' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
+
+
+            'total_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
+                         "description": "Revenue to Battery Owner", "units": '$'},
+
+            'year_one_utility_kwh': {'type': float, 'null': True, 'pct': False,
+                            "description": "Energy Supplied from the Grid", "units": 'kWh'},
+
             'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
             'year_one_electric_load_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
 
-            'year_one_pv_to_battery_series': {'type': list, 'null': True, 'pct': False,
+            
+
+             'year_one_pv_to_battery_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 PV to battery time series", "units": 'kW'},
 
             'year_one_pv_to_load_series': {'type': list, 'null': True, 'pct': False,
