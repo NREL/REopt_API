@@ -124,6 +124,7 @@ class Economics:
         self.output_args['r_tax_offtaker'] = self.offtaker_tax_rate
         self.output_args['r_tax_owner'] = self.owner_tax_rate
         self.output_args["OMperUnitSize"] = self.pv_om
+        self.output_args['two_party_factor'] = (self.output_args['pwf_offtaker'] * self.output_args['r_tax_offtaker']) / (self.output_args['pwf_owner'] * self.output_args['r_tax_owner'])
 
         # compute degradation impact
         self.levelization_factor = round(annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate,
@@ -207,8 +208,8 @@ class Economics:
     def setup_production_incentive(self, tech, rate_escalation, rate_discount, pbi, pbi_max, pbi_system_max, pbi_years):
 
         pwf_prod_incent = annuity(pbi_years, rate_escalation, rate_discount)
-        prod_incent_rate = round(pwf_prod_incent * pbi, 3)
-        max_prod_incent = round(pwf_prod_incent * pbi_max, 3)
+        prod_incent_rate = round(pbi, 3)
+        max_prod_incent = round(pbi_max, 3)
         max_size_for_prod_incent = pbi_system_max
 
         if "ProdIncentRate" not in self.incentive_output_args:
@@ -232,6 +233,7 @@ class Economics:
         max_prod_array[tech] = max_prod_incent
         max_size_array[tech] = max_size_for_prod_incent
 
+        self.output_args["pwf_prod_incent"] = pwf_prod_incent
         self.incentive_output_args["ProdIncentRate"] = prod_incent_array
         self.incentive_output_args["MaxProdIncent"] = max_prod_array
         self.incentive_output_args["MaxSizeForProdIncent"] = max_size_array

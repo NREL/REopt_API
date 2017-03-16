@@ -146,13 +146,17 @@ declarations
 
   pwf_e: real
   pwf_om: real
+  pwf_prod_incent: real
+
   !pwf_op: real
   !pwf_owner: real
   !pwf_offtaker: real
+
   LevelizationFactor: array(Tech) of real
 
   r_tax_owner: real
   r_tax_offtaker: real
+  two_party_factor: real
 
 end-declarations
 
@@ -180,6 +184,7 @@ initializations from DAT2 ! economics
 	r_tax_offtaker
 	pwf_om
 	pwf_e
+	pwf_prod_incent
 	!pwf_op
 	LevelizationFactor
 	StorageCostPerKW
@@ -189,6 +194,7 @@ initializations from DAT2 ! economics
 	ProdIncentRate
 	MaxProdIncent
 	MaxSizeForProdIncent
+	two_party_factor
 end-initializations
 
 initializations from DAT3
@@ -360,14 +366,14 @@ forall (t in Tech) binProdIncent (t) is_binary
 
 !CONSTRAINT 22
 ! Number 1: The Production Incentive can't exceed a certain dollar max (and is "0" if system size is too big)
-forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t)
+forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent * two_party_factor
 
 !CONSTRAINT 23
 ! Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that.
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep,  fb in FuelBin |exists (dvRatedProd (t,LD,ts,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,fb) * TimeStepScaling * ProdIncentRate (t, LD)
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent * two_party_factor
 end-do
 
 !CONSTRAINT 24
@@ -518,7 +524,7 @@ end-do
 !TotElecRatedProd := sum( t in Tech | TechToTechClassMatrix (t, "PV") = 1) dvSystemSize (t) * TurbineDerate(t)
 TotElecProd := sum( t in Tech,  fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
-TotCapCosts := sum(t in Tech,  fb in FuelBin) (CapCostSlope(t) * dvSystemSize(t))
+TotCapCosts := sum(t in Tech,  fb in FuelBin) (CapCostSlope(t) * dvSystemSize(t)) * two_party_factor
 
 ! Utility and Taxable Costs
 TotalEnergyCharges := (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb))) 
@@ -526,13 +532,13 @@ TotalEnergyCharges := (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin |
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month) dvPeakDemandEMonth( m) * DemandRatesMonth( m) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
-TotalOMCosts := sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t)
+TotalOMCosts := sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * two_party_factor
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
 
 !Capital Costs
-RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t)+
+RECosts := sum(t in Tech) CapCostSlope(t) * dvSystemSize(t) * two_party_factor +
 
 ! Exported energy
 (sum (t in Tech,LD in Load,ts in TimeStep, fb in FuelBin | exists (dvRatedProd(t,LD,ts,fb)))
@@ -549,7 +555,7 @@ sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) +
 	sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b) +
 
 !O&M cost based on system size
-sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * (1 - r_tax_owner) -
+sum(t in Tech) OMperUnitSize(t) * pwf_om * dvSystemSize(t) * (1 - r_tax_owner) * two_party_factor -
 
 ! Production Incentives
 sum(t in Tech ) dvProdIncent (t) +
