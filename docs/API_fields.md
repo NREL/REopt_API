@@ -157,12 +157,20 @@ The "third-party" inputs should be grayed out or unavailable unless the "Third-p
 - Lifecycle cost ($) - ```lcc```  
 - Net present value ($) - ```npv```
 - Interal rate of return (%) - ```irr```
-- Year 1 energy supplied from grid (kWh) - ```utility_kwh```  
+- Year 1 energy supplied from grid (kWh) - ```year_one_utility_kwh```  
 - Recommended PV size (kW) - ```pv_kw```
 - Recommended battery power (kW) - ```batt_kw```  
 - Recommended battery capacity (kW) - ```batt_kwh```  
+- Average PV energy produced per year (kWh) - ```average_yearly_pv_energy_produced```  
+- Net capital costs plus operations and maintenence cost ($) - ```net_capital_costs_plus_om```  
+- Total demand cost ($) - ```total_demand_cost```  
+- Total energy cost ($) - ```total_energy_cost```  
+- Total payments to third party developer ($) - ```total_payments_to_third_party_owner```  
 - Year 1 energy cost ($) - ```year_one_energy_cost```  
-- Year 1 demand cost ($) - ```year_one_demand_cost```
+- Year 1 demand cost ($) - ```year_one_demand_cost```  
+- Year 1 payement to third party owner ($) - ```year_one_payments_to_third_party_owner```  
+- Year 1 energy cost business as usual ($) - ```year_one_energy_cost_bau```
+- Year 1 demand cost business as usual ($) - ```year_one_demand_cost_bau```
 - Year 1 datetime start (datetime) - ```year_one_datetime_start```  
 - Time steps per hour: ```time_steps_per_hour```  
 
