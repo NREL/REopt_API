@@ -518,6 +518,9 @@ def outputs():
             'lcc': {'type': float, 'null': True, 'pct': False,
                     "description": "Lifecycle Cost", "units": 'dollars'},
 
+            'lcc_bau': {'type': float, 'null': True, 'pct': False,
+                    "description": "Lifecycle Cost", "units": 'dollars'},
+
             'npv': {'type': float, 'null': True, 'pct': False,
                     "description": "Net Present  Value of System", "units": 'dollars'},
 
@@ -550,6 +553,13 @@ def outputs():
 
             'total_demand_cost' : {'type': float, 'null': True, 'pct': False,
                          "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
+
+            'total_energy_cost_bau': {'type': float, 'null': True, 'pct': False,
+                                  "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
+
+            'total_demand_cost_bau': {'type': float, 'null': True, 'pct': False,
+                                  "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
+
 
             'net_capital_costs_plus_om' : {'type': float, 'null': True, 'pct': False,
                          "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},

@@ -37,7 +37,9 @@ class Results:
     year_one_payments_to_third_party_owner = None
     year_one_energy_exported = None
     total_energy_cost = None
+    total_energy_cost_bau = None
     total_demand_cost = None
+    total_demand_cost_bau = None
     total_payments_to_third_party_owner = None
     net_capital_costs_plus_om = None
     average_yearly_pv_energy_produced = None
@@ -142,8 +144,6 @@ class Results:
         if 'Average PV production (kWh)' in df.columns:
             self.average_yearly_pv_energy_produced = float(df['Average PV production (kWh)'].values[0])
 
-        #from IPython import embed
-        #embed()
         self.pv_kw = pv_kw
 
     def populate_data_bau(self, df):
@@ -154,6 +154,10 @@ class Results:
             self.year_one_energy_cost_bau = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_cost_bau = float(df['Year 1 Demand Cost ($)'].values[0])
+        if 'Total Energy Cost ($)' in df.columns:
+            self.total_energy_cost_bau = float(df['Total Energy Cost ($)'].values[0])
+        if 'Total Demand Cost ($)' in df.columns:
+            self.total_demand_cost_bau = float(df['Total Demand Cost ($)'].values[0])
 
     def compute_dispatch(self, df):
         results = dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
