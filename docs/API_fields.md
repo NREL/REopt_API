@@ -165,6 +165,8 @@ The "third-party" inputs should be grayed out or unavailable unless the "Third-p
 - Net capital costs plus operations and maintenence cost ($) - ```net_capital_costs_plus_om```  
 - Total demand cost ($) - ```total_demand_cost```  
 - Total energy cost ($) - ```total_energy_cost```  
+- Total demand cost business as usual ($) - ```total_demand_cost_bau```  
+- Total energy cost business as usual ($) - ```total_energy_cost_bau```  
 - Total payments to third party developer ($) - ```total_payments_to_third_party_owner```  
 - Year 1 energy cost ($) - ```year_one_energy_cost```  
 - Year 1 demand cost ($) - ```year_one_demand_cost```  
