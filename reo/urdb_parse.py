@@ -284,10 +284,12 @@ class UrdbParse:
         current_rate = RateData()
         current_rate.utility = rate['utility']
         current_rate.rate = rate['name']
-        current_rate.sector = rate['sector']
         current_rate.label = rate['label']
-        current_rate.uri = rate['uri']
 
+        if 'uri' in rate:
+            current_rate.uri = rate['uri']
+        if 'sector' in rate:
+            current_rate.sector = rate['sector']
         if ('startdate' in rate):
             current_rate.startdate = rate['startdate']
         if ('enddate' in rate):
