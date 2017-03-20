@@ -160,35 +160,37 @@ class Results:
             self.total_demand_cost_bau = float(df['Total Demand Cost ($)'].values[0])
 
     def compute_dispatch(self, df):
+
         results = dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
         df_xpress = results.get_dispatch()
 
-        if 'Date' in df_xpress.columns:
-            dates = (df_xpress['Date'].tolist())
-            self.year_one_datetime_start = dates[0]
-            self.time_steps_per_hour = round(len(dates) / 8760, 0)
-        if 'Energy Cost ($/kWh)' in df_xpress.columns:
-            self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
-        if 'Demand Cost ($/kW)' in df_xpress.columns:
-            self.year_one_demand_cost_series = df_xpress['Demand Cost ($/kW)'].tolist()
-        if 'Electric load' in df_xpress.columns:
-            self.year_one_electric_load_series = (df_xpress['Electric load']).tolist()
-        if 'PV to battery' in df_xpress.columns:
-            self.year_one_pv_to_battery_series = df_xpress['PV to battery'].tolist()
-        if 'PV to load' in df_xpress.columns:
-            self.year_one_pv_to_load_series = df_xpress['PV to load'].tolist()
-        if 'PV to grid' in df_xpress.columns:
-            self.year_one_pv_to_grid_series = df_xpress['PV to grid'].tolist()
-        if 'Grid to load' in df_xpress.columns:
-            self.year_one_grid_to_load_series = df_xpress['Grid to load'].tolist()
-        if 'Grid to battery' in df_xpress.columns:
-            self.year_one_grid_to_battery_series = df_xpress['Grid to battery'].tolist()
-        if 'State of charge' in df_xpress.columns:
-            self.year_one_battery_soc_series = df_xpress['State of charge'].tolist()
-        if 'Battery to load' in df_xpress.columns:
-            self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
-        if 'Battery to grid' in df_xpress.columns:
-            self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
+        if len(df_xpress) > 0:
+            if 'Date' in df_xpress.columns:
+                dates = (df_xpress['Date'].tolist())
+                self.year_one_datetime_start = dates[0]
+                self.time_steps_per_hour = round(len(dates) / 8760, 0)
+            if 'Energy Cost ($/kWh)' in df_xpress.columns:
+                self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
+            if 'Demand Cost ($/kW)' in df_xpress.columns:
+                self.year_one_demand_cost_series = df_xpress['Demand Cost ($/kW)'].tolist()
+            if 'Electric load' in df_xpress.columns:
+                self.year_one_electric_load_series = (df_xpress['Electric load']).tolist()
+            if 'PV to battery' in df_xpress.columns:
+                self.year_one_pv_to_battery_series = df_xpress['PV to battery'].tolist()
+            if 'PV to load' in df_xpress.columns:
+                self.year_one_pv_to_load_series = df_xpress['PV to load'].tolist()
+            if 'PV to grid' in df_xpress.columns:
+                self.year_one_pv_to_grid_series = df_xpress['PV to grid'].tolist()
+            if 'Grid to load' in df_xpress.columns:
+                self.year_one_grid_to_load_series = df_xpress['Grid to load'].tolist()
+            if 'Grid to battery' in df_xpress.columns:
+                self.year_one_grid_to_battery_series = df_xpress['Grid to battery'].tolist()
+            if 'State of charge' in df_xpress.columns:
+                self.year_one_battery_soc_series = df_xpress['State of charge'].tolist()
+            if 'Battery to load' in df_xpress.columns:
+                self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
+            if 'Battery to grid' in df_xpress.columns:
+                self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
 
     def compute_value(self):
 
