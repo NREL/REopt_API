@@ -1,6 +1,4 @@
-from tastypie import fields
 from datetime import datetime
-import os
 
 max_big_number = 100000000
 
@@ -8,12 +6,11 @@ def inputs(filter='', full_list=False, just_required=False):
     output = {
 
         'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
-            , "description": "User ID", "units": None,
-                    "tool_tip": "Unique REopt user id."},
+            , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': 25, 'min': 0, 'max': None,
+                            'default': 25, 'min': 1, 'max': None,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -104,13 +101,13 @@ def inputs(filter='', full_list=False, just_required=False):
                          "description": "Battery rectifer efficiency", "units": 'percent',
                          "tool_tip": 'Battery rectifier efficiency'},
 
-        'batt_soc_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [],
+        'batt_soc_min': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": [],
                                       'min': 0,
                                       'max': 1, 'default': 0.2,
                                       "description": "Battery minimum state-of-charge", "units": 'percent',
                                       "tool_tip": 'Battery minimum state-of-charge'},
 
-        'batt_soc_init': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [],
+        'batt_soc_init': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": [],
                                       'min': 0,
                                       'max': 1, 'default': 0.5,
                                       "description": "Battery initial state-of-charge", "units": 'percent',
@@ -219,30 +216,30 @@ def inputs(filter='', full_list=False, just_required=False):
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
 
-        'offtaker_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
+        'offtaker_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0,
                               'max': 1, 'default': 0.35,
                               "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
                               "tool_tip": 'In the third party-ownership scenario, this is the percent of income that goes to tax for the third party owner of the system. Units: decimal percent. This value is not required.'},
 
-        'owner_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
+        'owner_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': None,
                            "description": "Tax Rate for System Developer", "units": 'decimal percent',
                            "tool_tip": 'The percent of income that goes to tax for the system host. Units: decimal percent. This value is not required.'},
 
-        'pv_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'], 'min': 0,
+        'pv_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'], 'min': 0,
                      'max': 1, 'default': 0.30,
                      "description": "Investment Tax Credit rate", "units": 'decimal percent',
                      "tool_tip": 'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
 
-        'pv_itc_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_itc_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
                            "description": "State Investment Tax Credit rate", "units": 'decimal percent',
                            "tool_tip": 'The percent of system costs that are subsudized by the current state tax credit.'},
 
-        'pv_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
                            "description": "Local Investment Tax Credit rate", "units": 'decimal percent',
@@ -326,19 +323,19 @@ def inputs(filter='', full_list=False, just_required=False):
                                "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
                                "tool_tip": 'Total production based incentive system maximum size'},
 
-        'batt_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'batt_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.30,
                            "description": "Investment Tax Credit rate applied to battery", "units": 'decimal percent',
                            "tool_tip": 'The percent of battery system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
-        'batt_itc_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'batt_itc_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                          'min': 0,
                          'max': 1, 'default': 0.00,
                          "description": "State Investment Tax Credit rate for battery", "units": 'decimal percent',
                          "tool_tip": 'The percent of battery system costs that are subsidized by the current state tax credit.'},
 
-        'batt_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'batt_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
                            "description": "Local Investment Tax Credit rate for battery", "units": 'decimal percent',
@@ -422,7 +419,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                         'default': 5,
-                        'min': 5, 'max': 7, 'restrict_to': [5, 7],
+                            'min': 5, 'max': 7, 'restrict_to': [5, 7],
                         "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
                         "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
 
@@ -512,19 +509,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
 
 def outputs():
-    return {'status': {'type': str, 'null': True, 'pct': False,
+    return {'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
 
-            'lcc': {'type': float, 'null': True, 'pct': False,
+            'lcc': {'req': True, 'type': float, 'null': True, 'pct': False,
                     "description": "Lifecycle Cost", "units": 'dollars'},
 
-            'lcc_bau': {'type': float, 'null': True, 'pct': False,
+            'lcc_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
                     "description": "Lifecycle Cost", "units": 'dollars'},
 
-            'npv': {'type': float, 'null': True, 'pct': False,
+            'npv': {'req': True, 'type': float, 'null': True, 'pct': False,
                     "description": "Net Present  Value of System", "units": 'dollars'},
 
-            'irr': {'type': float, 'null': True, 'pct': True,
+            'irr': {'req': True, 'type': float, 'null': True, 'pct': True,
                     "description": "Internal Rate of Return for System", "units": 'percentage'},
 
             'pv_kw': {'type': float, 'null': True, 'pct': False,
@@ -536,10 +533,10 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
-            'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
+            'year_one_energy_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Energy Cost Business as Usual", "units": '$'},
 
-            'year_one_demand_cost_bau' : {'type': float, 'null': True, 'pct': False,
+            'year_one_demand_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Demand Charges Year One Business as Usual", "units": '$'},
 
             'year_one_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
@@ -548,36 +545,32 @@ def outputs():
             'total_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
                          "description": "Revenue to Battery Owner", "units": '$'},
 
-            'total_energy_cost' : {'type': float, 'null': True, 'pct': False,
+            'total_energy_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
 
-            'total_demand_cost' : {'type': float, 'null': True, 'pct': False,
+            'total_demand_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
 
-            'total_energy_cost_bau': {'type': float, 'null': True, 'pct': False,
+            'total_energy_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
                                   "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
 
-            'total_demand_cost_bau': {'type': float, 'null': True, 'pct': False,
+            'total_demand_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
                                   "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
 
 
             'net_capital_costs_plus_om' : {'type': float, 'null': True, 'pct': False,
                          "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},
 
-            'average_yearly_pv_energy_produced' : {'type': float, 'null': True, 'pct': False,
+            'average_yearly_pv_energy_produced' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
 
-
-            'total_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
-                         "description": "Revenue to Battery Owner", "units": '$'},
-
-            'year_one_utility_kwh': {'type': float, 'null': True, 'pct': False,
+            'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
-            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+            'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
-            'year_one_electric_load_series': {'type': list, 'null': True, 'pct': False,
+            'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
 
             
@@ -612,7 +605,7 @@ def outputs():
             'year_one_demand_cost_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 demand cost time series", "units": '$/kW'},
 
-            'year_one_datetime_start': {'type': datetime, 'null': True, 'pct': False,
+            'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
             }
 
