@@ -138,10 +138,13 @@ class RunInput(models.Model):
     # Metadata
     created = models.DateTimeField(auto_now_add=True)
 
-    def create_output(self, fields):
+    def create_output(self, fields, json_POST):
         response_inputs = {f: getattr(self, f) for f in fields}
 
         run_set = DatLibrary(self.id, response_inputs)
+
+        # Log POST request
+        run_set.log_post(json_POST)
 
         # Run Optimization
         output_dictionary = run_set.run()

@@ -6,6 +6,7 @@ import math
 import pandas as pd
 from datetime import datetime, timedelta
 import re
+import json
 
 # logging
 from log_levels import log
@@ -78,6 +79,7 @@ class DatLibrary:
 
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
+
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
         self.path_files_to_download = os.path.join(self.path_xpress, "Downloads")
@@ -100,6 +102,7 @@ class DatLibrary:
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
+        self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
@@ -139,6 +142,10 @@ class DatLibrary:
         for k in self.outputs():
             setattr(self, k, None)
         self.update_types()
+
+    def log_post(self, json_POST):
+        with open(self.file_post_input, 'w') as file_post:
+            json.dump(json_POST, file_post)
 
     def get_path_run(self):
         return self.path_run

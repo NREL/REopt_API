@@ -72,7 +72,7 @@ class RunInputResource(ModelResource):
 
         # Return  Results
       
-        output_obj = run.create_output(model_inputs.keys())
+        output_obj = run.create_output(model_inputs.keys(), bundle.data)
         bundle.obj = output_obj
         bundle.data = output_obj.to_dictionary()
         
