@@ -536,6 +536,12 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
+            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 utility energy charge", "units": '$'},
+
+            'year_one_demand_cost': {'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 utility demand charge", "units": '$'},
+
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
                          "description": "Energy Cost Business as Usual", "units": '$'},
 
@@ -573,9 +579,6 @@ def outputs():
 
             'year_one_utility_kwh': {'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
-
-            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
-                                     "description": "Year 1 utility energy charge", "units": '$'},
 
             'year_one_electric_load_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
