@@ -132,8 +132,8 @@ class ProcessOutputs:
             if float(df['PV Size (kW)'].values[0]) > 0:
                 self.tech_list.append('PV')
                 self.pv_system = True
-        if 'Utility_kWh' in df.columns:
-            if float(df['Utility_kWh'].values[0]) > 0:
+        if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
+            if float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0]) > 0:
                 self.tech_list.append('UTIL1')
                 self.grid_system = True
 
