@@ -213,12 +213,12 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
-                           'max': 1, 'default': 0.02,
+                           'max': 1, 'default': 0.01,
                            "description": "Annual Inflation Rate", "units": 'decimal percent per year',
                            "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.0039,
+                            'min': -1, 'max': 1, 'default': 0.02,
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
