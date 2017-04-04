@@ -78,7 +78,11 @@ class PVWatts:
     def compute_prod_factor(self, data):
         # NEED TO DERATE 0.5%! nlaws: accounted for in LevelizationFactor, which is defined in economics.py
         outputs = data['outputs']
-        ac_hourly = outputs['ac']
+
+        ac_hourly = outputs.get('ac')
+        if ac_hourly is None:
+            ac_hourly = [0] * 8760
+
         dc_nameplate = self.system_capacity * 1000  # W
         prod_factor = []
         prod_factor_bau = []
@@ -86,12 +90,20 @@ class PVWatts:
 
         # subhourly (i.e 15 minute data)
         if self.steps_per_hour >= 1:
-            for hour in range(0, 8760):
+            timesteps = []
+            timesteps_base = range(0, 8760)
+            for ts_b in timesteps_base:
                 for step in range(0, self.steps_per_hour):
-                    prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
+                   timesteps.append(ts_b)
+
         # downscaled run (i.e 288 steps per year)
         else:
-            for hour in range(0, 8760, int(1 / self.steps_per_hour)):
+            timesteps = range(0, 8760, int(1 / self.steps_per_hour))
+
+        for hour in timesteps:
+            if dc_nameplate == 0:
+                prod_factor.append(0)
+            else:
                 prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
 
         # build dictionary with same structure as ProdFactor in Mosel

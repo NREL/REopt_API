@@ -1,6 +1,7 @@
 from datetime import datetime
 
 max_big_number = 100000000
+max_years = 150
 
 def inputs(filter='', full_list=False, just_required=False):
     output = {
@@ -10,7 +11,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': 25, 'min': 1, 'max': None,
+                            'default': 25, 'min': 5, 'max': max_years,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -168,7 +169,7 @@ def inputs(filter='', full_list=False, just_required=False):
                               'type': str, 'null': True, 'pct': False,
                               "needed_for": ['economics'],
                               "description": "Generic Load Profile Type",
-                              'restrict_to': default_load_profiles() + [None],
+                              'restrict_to': default_load_profiles(),
                               "tool_tip": 'If a custom load profile is not uploaded, the type of building is used in combination with annual energy consumption to simulate a load profile. Select from drop-down menu. The loads are generated from the Energy+ commercial reference buildings for the climate zone of the site, and scaled based on the annual energy consumption. This value is required if a custom load profile is not uploaded.'},
 
         'load_size': {'req': True, 'swap_for': ['load_8760_kw', 'load_year'],
@@ -180,7 +181,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_year': {'req': True, 'swap_for': ['load_profile_name', 'load_size'],
                       'type': float, 'null': True,
-                      'pct': False,
+                      'pct': False, 'min': 0,'max': max_years,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
@@ -317,7 +318,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': 0,
+                               'max': max_years, 'default': 0,
                                "description": "Total Production Incentive Year Duration", "units": 'years',
                                "tool_tip": 'Total production based incentive years'},
 
@@ -411,13 +412,13 @@ def inputs(filter='', full_list=False, just_required=False):
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
         'batt_replacement_year_kw': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
-                                  'min': 0, 'max': None, 'default': 10,
+                                  'min': 0, 'max': max_years, 'default': 10,
                                   "description": "Battery Replacement Year for Power Electronics", "units": 'year',
                                   "tool_tip": 'Power electronics replacement year is the year in which the power components of the battery system (e.g. battery inverter) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
         'batt_replacement_year_kwh': {'req': False, 'type': int, 'null': False, 'pct': False,
                                      "needed_for": ['economics'],
-                                     'min': 0, 'max': None, 'default': 10,
+                                     'min': 0, 'max': max_years, 'default': 10,
                                      "description": "Battery Replacement Year for Energy Capacity", "units": 'year',
                                      "tool_tip": 'Energy capacity replacement year is the year in which the energy components of the battery system (e.g. battery pack) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
@@ -449,7 +450,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'dataset': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
                     'default': "tmy3",
-                    'restrict_to': ['tmy2', 'tmy3', 'intl', 'IN'], "description": "Climate Dataset",
+                    'restrict_to': ['tmy2', 'tmy3', 'intl'], "description": "Climate Dataset",
                     "tool_tip": "This solar insolation dataset to use when calling PVWatts"},
 
         'inv_eff': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.96,

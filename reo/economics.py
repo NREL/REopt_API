@@ -132,8 +132,11 @@ class Economics:
             self.output_args['two_party_factor'] = (self.output_args['pwf_offtaker'] * self.output_args['r_tax_offtaker']) / (self.output_args['pwf_owner'] * self.output_args['r_tax_owner'])
 
         # compute degradation impact
-        self.levelization_factor = round(annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate,
-                           - self.pv_degradation_rate) / self.output_args["pwf_e"], 5)
+        if self.output_args['pwf_e'] == 0:
+            self.levelization_factor = 0 
+        else:
+            lf = annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / self.output_args["pwf_e"]
+            self.levelization_factor = round(lf, 5)
 
         self.output_args['LevelizationFactor'] = self.levelization_factor
 

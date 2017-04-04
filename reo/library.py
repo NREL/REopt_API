@@ -418,7 +418,10 @@ class DatLibrary:
             datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
 
             if month != datetime_current.month:
-                month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
+                if month_total == 0:
+                    month_scale_factor.append(0)
+                else:
+                    month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
                 month_total = 0
 
                 log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
