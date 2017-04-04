@@ -172,8 +172,8 @@ def make_call(data):
 def check_response(key, case, r):
     msg = read_response(key, r)
     if msg is not None:
-        logging.warning('%s\n%s\n%s' % (key, case, r.content))
-        print key, case, r.content
+        logging.warning('%s-%s\n%s\n%s' % (key, msg, case, r.content))
+        print key, msg
 
     else:
         logging.info('%s\n%s\n%s' % (key, case, r.content))
@@ -184,6 +184,11 @@ def read_response(key, r):
         return "Error"
 
       result = json.loads(r.content)
+
+      for k,v in outputs().items():
+          if bool(v.get('req')):
+              if result[k] in [None, 'null', ""]:
+                return "Negative Value for required output " + k
 
       for k,v in result.items():
 
@@ -203,7 +208,8 @@ def read_response(key, r):
                         return "Negative Value for " + k
 
   except Exception as e:
-      print key + " " + e
+      print key
+      print e
       logging.warning(e)
 
   return None
@@ -213,15 +219,15 @@ for k,v in inputs().items():
     logging.info('Started ' + k + ' ' + datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
     start_time = datetime.datetime.now()
 
-    if k.get('restrict_to') is not None:
-      for restriction in k.get('restrict_to'):
+    if v.get('restrict_to') is not None:
+      for restriction in v.get('restrict_to'):
         c = case()
-        c[k] = test
+        c[k] = restriction
         r = make_call(c)
         check_response(k,c,r)
 
 
-    if v['type'] in [float, int]:
+    elif v['type'] in [float, int]:
 
         min_ = inputs()[k].get('min')
         max_ = inputs()[k].get('max')

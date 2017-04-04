@@ -29,12 +29,12 @@ def inputs(filter='', full_list=False, just_required=False):
                       "description": "Area of Roof Available for PV siting", "units": 'square feet',
                       "tool_tip": 'The roof space available on-site, in square feet, for solar panels. For more accurate results exclude areas known to be consistently shaded. PV size is constrained by roof area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
 
-        'latitude': {'req': True, 'type': float, 'null': False, 'pct': False,
+        'latitude': {'req': True, 'type': float, 'null': False, 'pct': False, 'min':-180, 'max':180,
                      "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                      "description": "Site Latitude", "units": 'degrees',
                      "tool_tip": 'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
-        'longitude': {'req': True, 'type': float, 'null': False, 'pct': False,
+        'longitude': {'req': True, 'type': float, 'null': False, 'pct': False, 'min':-180, 'max':180,
                       "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
                       "description": "Site Longitude", "units": 'degrees',
                       "tool_tip": 'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
@@ -419,7 +419,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                         'default': 5,
-                            'min': 5, 'max': 7, 'restrict_to': [5, 7],
+                        'restrict_to': [5, 7],
                         "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
                         "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
 
