@@ -29,8 +29,8 @@ def annuity(analysis_period, rate_escalation, rate_discount):
         i.e. it is a geometric sum of (1+rate_escalation)^n / (1+rate_discount)^n
         for n = 1,..., analysis_period
     '''
-    if rate_escalation != rate_discount:
-        x = (1 + rate_escalation) / (1 + rate_discount)
+    x = (1 + rate_escalation) / (1 + rate_discount)
+    if x != 1:
         pwf = round(x * (1 - x ** analysis_period) / (1 - x), 5)
     else:
         pwf = analysis_period
