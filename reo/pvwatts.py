@@ -101,10 +101,7 @@ class PVWatts:
             timesteps = range(0, 8760, int(1 / self.steps_per_hour))
 
         for hour in timesteps:
-            if dc_nameplate == 0:
-                prod_factor.append(0)
-            else:
-                prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
+            prod_factor_ts.append(round(ac_hourly[hour] * self.levelization_factor / dc_nameplate, 4))
 
         # build dictionary with same structure as ProdFactor in Mosel
         tech_bau = ['UTIL1']

@@ -1,7 +1,7 @@
 from datetime import datetime
 
 max_big_number = 100000000
-max_years = 150
+max_years = 75
 
 def inputs(filter='', full_list=False, just_required=False):
     output = {
@@ -52,7 +52,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1600,
+                         'max': 10000, 'default': 1600,
                          "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt',
                          "tool_tip": 'Power capacity cost is the cost of the power components of the battery system (e.g. inverter and balance of system [BOS]). \nThe amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh. \nThis allows the capacity (kWh) and power (kW) rating of the battery to be optimized individually for maximum economic performance based on the load and rate tariff characteristics of the site. Some systems are optimized to deliver high power capacity (kW), while others are optimized for longer discharges through more energy capacity (kWh).\nFor example, assume the unit cost of power components is $1,000/kW, and the unit cost of energy components is $5,00/kWh. Consider a battery with 5 kW of power capacity and 10 kWh of energy capacity (5 kW/10 kWh). The total cost of the battery would be:\n5 kW * $1,000/kW + 10 kWh * $500/kWh = $10,000.'},
 
@@ -181,7 +181,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_year': {'req': True, 'swap_for': ['load_profile_name', 'load_size'],
                       'type': float, 'null': True,
-                      'pct': False, 'min': 0,'max': max_years,
+                      'pct': False, 'min': 2017,'max': 2017 + max_years,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
