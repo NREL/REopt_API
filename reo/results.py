@@ -25,6 +25,10 @@ class Results:
     file_proforma = 'ProForma.xlsx'
     file_dispatch = 'Dispatch.csv'
 
+    # time outputs (scalar)
+    year_one_datetime_start = None
+    time_steps_per_hour = 1
+
     # scalar outputs that need to get added to DB
     lcc_bau = None
     year_one_utility_kwh = None
@@ -50,22 +54,21 @@ class Results:
     batt_kw = None
     batt_kwh = None
 
-    # time series outputs
-    year_one_electric_load_series = None
-    year_one_pv_to_battery_series = None
-    year_one_pv_to_load_series = None
-    year_one_pv_to_grid_series = None
-    year_one_grid_to_load_series = None
-    year_one_grid_to_battery_series = None
-    year_one_battery_to_load_series = None
-    year_one_battery_to_grid_series = None
-    year_one_battery_soc_series = None
-    year_one_energy_cost_series = None
-    year_one_demand_cost_series = None
+    # time series labels
+    label_year_one_electric_load_series = 'Electric load'
+    label_year_one_pv_to_battery_series = 'PV to battery'
+    label_year_one_pv_to_load_series = 'PV to load'
+    label_year_one_pv_to_grid_series = 'PV to grid'
+    label_year_one_grid_to_load_series = 'Grid to load'
+    label_year_one_grid_to_battery_series = 'Grid to battery'
+    label_year_one_battery_to_load_series = 'Battery to load'
+    label_year_one_battery_to_grid_series = 'Battery to grid'
+    label_year_one_battery_soc_series = 'State of charge'
+    label_year_one_energy_cost_series = 'Energy Cost ($/kWh)'
+    label_year_one_demand_cost_series = 'Demand Cost ($/kW)'
 
-    # time outputs (scalar)
-    year_one_datetime_start = None
-    time_steps_per_hour = None
+    # time series outputs
+    zero_array = 8760 * [0]
 
     def outputs(self, **args):
         return outputs(**args)
@@ -82,6 +85,18 @@ class Results:
 
         for k in self.outputs():
             setattr(self, k, None)
+
+        self.year_one_electric_load_series = self.zero_array
+        self.year_one_pv_to_battery_series = self.zero_array
+        self.year_one_pv_to_load_series = self.zero_array
+        self.year_one_pv_to_grid_series = self.zero_array
+        self.year_one_grid_to_load_series = self.zero_array
+        self.year_one_grid_to_battery_series = self.zero_array
+        self.year_one_battery_to_load_series = self.zero_array
+        self.year_one_battery_to_grid_series = self.zero_array
+        self.year_one_battery_soc_series = self.zero_array
+        self.year_one_energy_cost_series = self.zero_array
+        self.year_one_demand_cost_series = self.zero_array
 
     def run(self):
 
@@ -168,7 +183,8 @@ class Results:
             if 'Date' in df_xpress.columns:
                 dates = (df_xpress['Date'].tolist())
                 self.year_one_datetime_start = dates[0]
-                self.time_steps_per_hour = round(len(dates) / 8760, 0)
+                self.time_steps_per_hour = int(round(len(dates) / 8760, 0))
+                zero_array = 8760 * self.time_steps_per_hour * [0]
             if 'Energy Cost ($/kWh)' in df_xpress.columns:
                 self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
             if 'Demand Cost ($/kW)' in df_xpress.columns:
@@ -191,6 +207,8 @@ class Results:
                 self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
             if 'Battery to grid' in df_xpress.columns:
                 self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
+
+
 
     def compute_value(self):
 

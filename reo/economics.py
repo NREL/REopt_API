@@ -125,6 +125,7 @@ class Economics:
         self.output_args['r_tax_offtaker'] = self.offtaker_tax_rate
         self.output_args['r_tax_owner'] = self.owner_tax_rate
         self.output_args["OMperUnitSize"] = self.pv_om
+
         if self.output_args['pwf_owner'] == 0 or self.output_args['r_tax_owner'] ==0:
             self.output_args['two_party_factor'] = 0
         else:    

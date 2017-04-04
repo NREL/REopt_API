@@ -164,25 +164,29 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'The electricity rate can be selected from a list of rates available in the location entered.  The rates are downloaded from the Utility Rate Database (URDB) (http://en.openei.org/wiki/Utility_Rate_Database). This value is required. Utility rates that are not in URDB cannot be modeled at this time.'},
 
         # Not Required
-        'load_profile_name': {'req': True, 'swap_for': ['load_8760_kw'], 'type': str, 'null': True, 'pct': False,
+        'load_profile_name': {'req': True, 'swap_for': ['load_8760_kw', 'load_year'],
+                              'type': str, 'null': True, 'pct': False,
                               "needed_for": ['economics'],
                               "description": "Generic Load Profile Type",
                               'restrict_to': default_load_profiles() + [None],
                               "tool_tip": 'If a custom load profile is not uploaded, the type of building is used in combination with annual energy consumption to simulate a load profile. Select from drop-down menu. The loads are generated from the Energy+ commercial reference buildings for the climate zone of the site, and scaled based on the annual energy consumption. This value is required if a custom load profile is not uploaded.'},
 
-        'load_size': {'req': True, 'swap_for': ['load_8760_kw'], 'type': float, 'null': True, 'pct': False,
+        'load_size': {'req': True, 'swap_for': ['load_8760_kw', 'load_year'],
+                      'type': float, 'null': True, 'pct': False,
                       "needed_for": ['economics'], 'min': 0,
                       'max': None,
                       "description": "Annual Load Size", "units": 'kWh',
                       "tool_tip": "If a custom load profile is not uploaded, the site's total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded."},
 
-        'load_year': {'req': True, 'swap_for': ['load_profile_name', 'load_size'], 'type': float, 'null': True,
+        'load_year': {'req': True, 'swap_for': ['load_profile_name', 'load_size'],
+                      'type': float, 'null': True,
                       'pct': False,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
-        'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name', 'load_size'], 'type': list, 'null': True,
+        'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name', 'load_size'], 'depends_on': ['load_year'],
+                         'type': list, 'null': True,
                          'pct': False, "needed_for": ['economics'],
                          "description": "Hourly Power Demand", "units": 'kW',
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
@@ -206,12 +210,12 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
-                           'max': 1, 'default': 0.02,
+                           'max': 1, 'default': 0.01,
                            "description": "Annual Inflation Rate", "units": 'decimal percent per year',
                            "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.0039,
+                            'min': -1, 'max': 1, 'default': 0.02,
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
@@ -533,7 +537,13 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
-            'year_one_energy_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
+            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 utility energy charge", "units": '$'},
+
+            'year_one_demand_cost': {'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 utility demand charge", "units": '$'},
+
+            'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
                          "description": "Energy Cost Business as Usual", "units": '$'},
 
             'year_one_demand_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
@@ -567,10 +577,14 @@ def outputs():
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
+<<<<<<< HEAD
             'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
             'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
+=======
+            'year_one_electric_load_series': {'type': list, 'null': True, 'pct': False,
+>>>>>>> d2f5057b47725504df5b0094f73d0f6a2ae03f78
                                      "description": "Year 1 electric load time series", "units": 'kW'},
 
             

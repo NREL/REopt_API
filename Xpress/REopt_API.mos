@@ -715,7 +715,7 @@ writeln ("Total Payments to Third Party Owner ($)",0)
 
 
 writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotCapCosts) + getsol(TotalOMCosts), 10, 0))
-writeln ("Average PV production (kWh),",strfmt(getsol(TotElecProd) / analysis_period, 10, 0))
+writeln ("Average PV production (kWh),",strfmt(getsol(TotElecProd), 10, 0))
 writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
 
 fclose(F_OUTPUT)

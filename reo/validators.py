@@ -16,10 +16,11 @@ class REoptResourceValidation(Validation):
                 raise BadRequest(logstring)
 
             if value is None and key in inputs(just_required=True).keys():
-                errors = self.append_errors(errors, key, 'This input is required and cannot be null.')
-                logstring = "Value for key: " + str(key) + " is required and cannot be null!"
-                log("ERROR", logstring)
-                raise BadRequest(logstring)
+                if not self.swaps_exists(input_dictionary.keys(), key):
+                    errors = self.append_errors(errors, key, 'This input is required and cannot be null.')
+                    logstring = "Value for key: " + str(key) + " is required and cannot be null!"
+                    log("ERROR", logstring)
+                    raise BadRequest(logstring)
 
             else:
                 field_def = inputs(full_list=True)[key]
@@ -123,7 +124,6 @@ class REoptResourceValidation(Validation):
     def get_missing_required_message(self, input):
         definition_values = inputs(full_list=True)[input]
         swap = definition_values.get('swap_for')
-
         message = input
         if swap is not None:
             message +=  " (OR %s)" % (" and ".join(definition_values['swap_for']))
@@ -153,9 +153,10 @@ class REoptResourceValidation(Validation):
                             missing.append(d)
         return missing
 
-    def swaps_exists(self,key_list, f):
+    def swaps_exists(self, key_list, f):
         swap = inputs(full_list=True)[f].get('swap_for')
         swap_exists = False
+
         if swap is not None:
             swap_exists = True
             for ff in swap:
