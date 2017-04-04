@@ -404,7 +404,11 @@ class ProForma(object):
             discounted_cash_flow[year] = free_cash_flow[year] / ((1 + self.discount_rate) ** year)
 
         self.NPV = sum(discounted_cash_flow)
-        self.IRR = np.irr(free_cash_flow)
+        try:
+            self.IRR = np.irr(free_cash_flow)
+        except:
+            self.IRR = 0
+            log("WARNING", "Computed IRR invalid")
 
         if math.isnan(self.IRR):
             self.IRR = 0
