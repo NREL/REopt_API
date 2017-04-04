@@ -578,17 +578,11 @@ def outputs():
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
-<<<<<<< HEAD
             'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
             'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
-=======
-            'year_one_electric_load_series': {'type': list, 'null': True, 'pct': False,
->>>>>>> d2f5057b47725504df5b0094f73d0f6a2ae03f78
                                      "description": "Year 1 electric load time series", "units": 'kW'},
-
-            
 
              'year_one_pv_to_battery_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 PV to battery time series", "units": 'kW'},
