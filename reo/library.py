@@ -103,6 +103,7 @@ class DatLibrary:
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
+        self.file_constant = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '.dat')
         self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
@@ -194,6 +195,7 @@ class DatLibrary:
     def run(self):
 
         self.create_constant_bau()
+        self.create_constants()
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
@@ -282,6 +284,38 @@ class DatLibrary:
                       self.file_load_profile, self.file_load_size]:
                 if os.path.exists(p):
                     os.remove(p)
+
+    # Constant file
+    def create_constants(self):
+
+        can_grid_charge = getattr(self, "batt_can_gridcharge", 1)
+
+        Tech = ['PV', 'PVNM', 'UTIL1']
+        TechIsGrid = [0, 0, 1]
+        Load = ['1R', '1W', '1X', '1S']
+        TechToLoadMatrix = [1, 1, 1, 1, \
+                            1, 1, 1, 1, \
+                            1, 0, 0, int(can_grid_charge)]
+        TechClass = ['PV', 'UTIL']
+        NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
+        TechToNMILMapping = [1, 0, 0, \
+                             0, 1, 0, \
+                             0, 0, 0]
+        TurbineDerate = [1, 1, 0]
+        TechToTechClassMatrix = [1, 0, \
+                                 1, 0, \
+                                 0, 0]
+
+        self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
+        self.write_single_variable(self.file_constant, Tech, 'Tech')
+        self.write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
+        self.write_single_variable(self.file_constant, Load, 'Load', 'a')
+        self.write_single_variable(self.file_constant, TechToLoadMatrix, 'TechToLoadMatrix', 'a')
+        self.write_single_variable(self.file_constant, TechClass, 'TechClass', 'a')
+        self.write_single_variable(self.file_constant, NMILRegime, 'NMILRegime', 'a')
+        self.write_single_variable(self.file_constant, TechToNMILMapping, 'TechToNMILMapping', 'a')
+        self.write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
+        self.write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
 
     # BAU files
     def create_constant_bau(self):
