@@ -359,17 +359,19 @@ class ProForma(object):
         beginning_book_value_year_1 = 0
         beginning_book_value = 0
 
-        for year in range(1, len(self.macrs_schedule) + 1):
-            macrs_fraction = self.macrs_schedule[year - 1]
+        macrs_years = min(len(self.macrs_schedule), years)
 
-            if year == 1:
+        for year in range(0, macrs_years):
+            macrs_fraction = self.macrs_schedule[year]
+
+            if year == 0:
                 beginning_book_value_year_1 = depreciable_basis * (1 - self.bonus_fraction)
             else:
                 beginning_book_value = end_book_value
 
             depreciation_tax_shield[year] = beginning_book_value_year_1 * macrs_fraction
 
-            if year == 1:
+            if year == 0:
                 end_book_value = beginning_book_value_year_1 - depreciation_tax_shield[year]
             else:
                 end_book_value = beginning_book_value - depreciation_tax_shield[year]
