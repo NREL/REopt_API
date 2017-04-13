@@ -52,8 +52,8 @@ server {
     ssl_certificate /etc/ssl/vagrant.crt;
     ssl_certificate_key /etc/ssl/vagrant.key;
   <% else %>
-    ssl_certificate /etc/ssl/star_nrel_gov.crt;
-    ssl_certificate_key /etc/ssl/star_nrel_gov.key;
+    ssl_certificate /etc/httpd/ssl/<%= host.hostname %>.pem;
+    ssl_certificate_key /etc/httpd/ssl/<%= host.hostname %>.key;
   <% end %>
 
   access_log <%= current_path %>/log/access.log combined;
