@@ -22,11 +22,28 @@ def check_directory_created(path):
         raise ImmediateHttpResponse("Directory failed to create")
 
 
+def write_var(f, var, dat_var):
+    f.write(dat_var + ": [\n")
+    if isinstance(var, list):
+        for i in var:
+            f.write(str(i) + "\t,\n")
+    else:
+        f.write(str(var) + "\t,\n")
+    f.write("]\n")
+
+
+def write_single_variable(path, var, dat_var, mode='w'):
+    log("INFO", "Writing " + dat_var + " to " + path)
+    f = open(path, mode)
+    write_var(f, var, dat_var)
+    f.close()
+
+
 class Command(object):
 
     def __init__(self, cmd):
         self.cmd = cmd
-	self.process = None
+        self.process = None
 
     def run(self, timeout):
         def target():

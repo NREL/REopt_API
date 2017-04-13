@@ -18,7 +18,7 @@ import results
 from api_definitions import *
 
 from urdb_parse import *
-from utilities import Command, check_directory_created
+from utilities import Command, check_directory_created, write_single_variable
 
 
 def alphanum(s):
@@ -45,22 +45,6 @@ class DatLibrary:
 
     # Economic inputs and calculated vals
     economics = []
-
-    @staticmethod
-    def write_var(f, var, dat_var):
-        f.write(dat_var + ": [\n")
-        if isinstance(var, list):
-            for i in var:
-                f.write(str(i) + "\t,\n")
-        else:
-            f.write(str(var) + "\t,\n")
-        f.write("]\n")
-
-    def write_single_variable(self, path, var, dat_var, mode='w'):
-        log("INFO", "Writing " + dat_var + " to " + path)
-        f = open(path, mode)
-        self.write_var(f, var, dat_var)
-        f.close()
 
     def get_egg(self):
         wd = os.getcwd()
@@ -307,15 +291,15 @@ class DatLibrary:
                                  0, 0]
 
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
-        self.write_single_variable(self.file_constant, Tech, 'Tech')
-        self.write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
-        self.write_single_variable(self.file_constant, Load, 'Load', 'a')
-        self.write_single_variable(self.file_constant, TechToLoadMatrix, 'TechToLoadMatrix', 'a')
-        self.write_single_variable(self.file_constant, TechClass, 'TechClass', 'a')
-        self.write_single_variable(self.file_constant, NMILRegime, 'NMILRegime', 'a')
-        self.write_single_variable(self.file_constant, TechToNMILMapping, 'TechToNMILMapping', 'a')
-        self.write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
-        self.write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
+        write_single_variable(self.file_constant, Tech, 'Tech')
+        write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
+        write_single_variable(self.file_constant, Load, 'Load', 'a')
+        write_single_variable(self.file_constant, TechToLoadMatrix, 'TechToLoadMatrix', 'a')
+        write_single_variable(self.file_constant, TechClass, 'TechClass', 'a')
+        write_single_variable(self.file_constant, NMILRegime, 'NMILRegime', 'a')
+        write_single_variable(self.file_constant, TechToNMILMapping, 'TechToNMILMapping', 'a')
+        write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
+        write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
 
     # BAU files
     def create_constant_bau(self):
@@ -358,8 +342,8 @@ class DatLibrary:
         if self.load_8760_kw is not None:
             if len(self.load_8760_kw) == 8760:
                 self.load_size = sum(self.load_8760_kw)
-                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-                self.write_single_variable(self.file_load_profile, self.load_8760_kw, "LoadProfile")
+                write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+                write_single_variable(self.file_load_profile, self.load_8760_kw, "LoadProfile")
 
             else:
                 log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
@@ -367,7 +351,7 @@ class DatLibrary:
         if self.load_monthly_kwh is not None:
             if len(self.load_monthly_kwh) == 12:
                 self.load_size = float(sum(self.load_monthly_kwh))
-                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+                write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
 
                 if (self.load_profile_name is not None) and (
                     self.load_profile_name.lower() in self.default_load_profiles):
@@ -378,7 +362,7 @@ class DatLibrary:
                     path = os.path.join(self.folder_load_profile, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
-                self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+                write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
 
             else:
                 log("ERROR",
@@ -399,7 +383,7 @@ class DatLibrary:
                         self.file_load_profile = os.path.join(self.folder_load_profile, filename_profile)
 
             else:
-                self.write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+                write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
 
                 # Load profile specified, with load size specified
                 if self.load_profile_name is not None:
@@ -413,7 +397,7 @@ class DatLibrary:
                     p = os.path.join(self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
-                self.write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+                write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
 
         self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
         self.DAT_bau[2] = self.DAT[2]
@@ -563,12 +547,12 @@ class DatLibrary:
         MaxStorageSizeKWH = batt_kwh_max
         TechClassMinSize = [pv_kw_min, 0]
 
-        self.write_single_variable(self.file_max_size, MaxSize, "MaxSize", 'a')
-        self.write_single_variable(self.file_max_size, MinStorageSizeKW, "MinStorageSizeKW", 'a')
-        self.write_single_variable(self.file_max_size, MaxStorageSizeKW, "MaxStorageSizeKW", 'a')
-        self.write_single_variable(self.file_max_size, MinStorageSizeKWH, "MinStorageSizeKWH", 'a')
-        self.write_single_variable(self.file_max_size, MaxStorageSizeKWH, "MaxStorageSizeKWH", 'a')
-        self.write_single_variable(self.file_max_size, TechClassMinSize, "TechClassMinSize", 'a')
+        write_single_variable(self.file_max_size, MaxSize, "MaxSize", 'a')
+        write_single_variable(self.file_max_size, MinStorageSizeKW, "MinStorageSizeKW", 'a')
+        write_single_variable(self.file_max_size, MaxStorageSizeKW, "MaxStorageSizeKW", 'a')
+        write_single_variable(self.file_max_size, MinStorageSizeKWH, "MinStorageSizeKWH", 'a')
+        write_single_variable(self.file_max_size, MaxStorageSizeKWH, "MaxStorageSizeKWH", 'a')
+        write_single_variable(self.file_max_size, TechClassMinSize, "TechClassMinSize", 'a')
 
         self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
 
@@ -712,7 +696,7 @@ class DatLibrary:
             self.net_metering = True
 
         # check on if NM, IC are in right spot
-        self.write_single_variable(self.file_NEM,
+        write_single_variable(self.file_NEM,
                                    [net_metering_limit, interconnection_limit, self.max_big_number],
                                    "NMILLimits")
 
