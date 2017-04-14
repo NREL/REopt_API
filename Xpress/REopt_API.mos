@@ -9,9 +9,9 @@ uses "mmsystem" !for timing function
 uses "mmnl" 
 
 parameters
-  ! When running deployed, working directory is C:\Python27\Lib\site-packages\win32
-  DatLibraryPath = "/local/workspace/django_env/reopt_api/Xpress/DatLibrary"
-  ScenarioPath = DatLibraryPath
+
+  ScenarioNum = "1715"
+  ScenarioPath = "/local/workspace/django_env/reopt_api/Xpress/Run" + ScenarioNum + "/Inputs"
   OutputDir = "local/workspace/django_env/reopt_api/Xpress/Output"
   BaseString = ""
 
@@ -19,22 +19,22 @@ parameters
   FuelBinCount = 1
   DemandBinCount = 1
   BattLevelCount = 1
-  TimeStepScaling = 1.0!.25!1.0 !how much actual time does each timestep represent.  For 288, it is 365 / 12
-  TimeStepCount =8760!35040!8760
+  TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
+  TimeStepCount =8760 !35040
   Obj = 1  !1 for minimize LCC, 2 for maximize rated production, 3 for maximize production
 
-  DAT1 = DatLibraryPath + "/Various/constant.dat"
-  DAT2 = DatLibraryPath + "/Economics/economics.dat"
+  ! Utility info
+  NumRatchets = 20
+  UtilName = "SouthernCaliforniaEdisonCo"
+  UtilRate = "TimeofUseGeneralServiceDemandMeteredOptionBGS2TOUBSinglePhase"
 
-  NumRatchets = 24
-  DAT3 = DatLibraryPath + "/LoadSize/LoadSize_Miami_Hospital.dat"
-  DAT4 = DatLibraryPath + "/LoadProfiles/Load8760_raw_Miami_Hospital.dat"
-  DAT5 = DatLibraryPath + "/GISdata/GIS_Miami.dat"
-  UtilName = "FloridaPowerLightCo"
-  UtilRate = "GLSDT1GeneralServiceLargeDemandTimeOfUse"
-
-  DAT6 = DatLibraryPath + "/Various/storage.dat"
-  DAT7 = DatLibraryPath + "/Various/maxsizes.dat"
+  DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
+  DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
+  DAT3 = ScenarioPath + "/LoadSize_" + ScenarioNum + ".dat"
+  DAT4 = ScenarioPath + "/Load8760_" + ScenarioNum + ".dat"
+  DAT5 = ScenarioPath + "/GIS_" + ScenarioNum + ".dat"
+  DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"
+  DAT7 = ScenarioPath + "/maxsizes_" + ScenarioNum + ".dat"
   DAT8  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemand.dat"
   DAT9  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRate.dat"
   DAT10 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCost" + BaseString + ".dat"
@@ -44,7 +44,7 @@ parameters
   DAT14 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/LookbackMonthsAndPercent.dat"
   DAT15 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/UtilityTiers.dat"
   DAT16 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRate" + BaseString + ".dat"
-  DAT17 = DatLibraryPath + "/NMILLimits/NMIL_net_metering_OFF.dat"
+  DAT17 = ScenarioPath + "/NMIL_" + ScenarioNum + ".dat"
 
 end-parameters
 
@@ -200,6 +200,8 @@ initializations from DAT2 ! economics
 	StorageCostPerKWH
 	OMperUnitSize
 	CapCostSlope
+	CapCostYInt
+    CapCostX
 	ProdIncentRate
 	MaxProdIncent
 	MaxSizeForProdIncent
@@ -402,21 +404,21 @@ forall (t in Tech) binProdIncent (t) is_binary
 
 !CONSTRAINT 22
 ! Number 1: The Production Incentive can't exceed a certain dollar max (and is "0" if system size is too big)
-forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent * two_party_factor
+forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent
 
 !CONSTRAINT 23
 ! Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that.
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent * two_party_factor
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent
 end-do
 
 !CONSTRAINT 24
 ! Number 3: If system size is bigger than MaxSizeForProdIncent, binProdIncent is 0, meaning you don't get the Prod Incent.
 !TS 31513 Replaced BigNumberSystemSize with MaxSize
-forall (t in Tech,s in Seg, LD in Load,ts in TimeStep  ) do
-    dvSystemSize (t, s) <= MaxSizeForProdIncent (t) + MaxSize(t) * (1 - binProdIncent (t))
+forall (t in Tech, LD in Load,ts in TimeStep  ) do
+    sum (s in Seg) dvSystemSize (t,s) <= MaxSizeForProdIncent (t) + MaxSize(t) * (1 - binProdIncent (t))
 end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -430,7 +432,7 @@ end-do
 
  !!System size cannot exceed MaxSize and must equal or exceed MinSize
  !CONSTRAINT 27
-forall (t in Tech, s in Seg)   dvSystemSize (t, s) <=  MaxSize (t)
+forall (t in Tech,s in Seg)   dvSystemSize (t,s) <=  MaxSize (t)
 
 forall (b in TechClass) do
     sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
@@ -567,7 +569,7 @@ TotalEnergyCharges := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month) dvPeakDemandEMonth( m) * DemandRatesMonth( m) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
-TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s) * two_party_factor
+TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
@@ -590,7 +592,7 @@ sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) +
 	sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b) +
 
 !O&M cost based on system size
-sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s) * (1 - r_tax_owner) * two_party_factor -
+sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s) * (1 - r_tax_owner) -
 
 ! Production Incentives
 sum(t in Tech ) dvProdIncent (t) +

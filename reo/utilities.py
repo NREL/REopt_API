@@ -1,6 +1,7 @@
 import numpy as np
 import datetime, time, threading, signal
 from subprocess import Popen, PIPE
+from shlex import split
 import psutil
 from tastypie.exceptions import ImmediateHttpResponse
 from exceptions import SubprocessTimeoutError
@@ -47,7 +48,7 @@ class Command(object):
 
     def run(self, timeout):
         def target():
-            self.process = Popen(self.cmd)
+            self.process = Popen(split(self.cmd))
             log("INFO", "XPRESS" + str(self.process.communicate()))
        
         log("DEBUG", "XPRESS Creating Thread")

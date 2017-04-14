@@ -252,19 +252,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': max_big_number,
+                           'max': None, 'default': max_big_number * max_big_number,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': max_big_number,
+                         'max': None, 'default': max_big_number * max_big_number,
                          "description": "State Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
         'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': max_big_number,
+                         'max': None, 'default': max_big_number * max_big_number,
                          "description": "Local Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
@@ -288,19 +288,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': max_big_number,
+                              'max': None, 'default': max_big_number * max_big_number,
                               "description": "Maximum federal rebate", "units": 'dollars',
                               "tool_tip": 'Maximum federal rebate for PV panels in $'},
 
         'pv_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': max_big_number,
+                            'max': None, 'default': max_big_number * max_big_number,
                             "description": "Maximum state rebate", "units": 'dollars',
                             "tool_tip": 'Maximum state rebate for PV panels in $'},
 
         'pv_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': max_big_number,
+                            'max': None, 'default': max_big_number * max_big_number,
                             "description": "Maximum utility rebate", "units": 'dollars',
                             "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
 
@@ -312,7 +312,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_pbi_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': max_big_number,
+                           'max': None, 'default': max_big_number * max_big_number,
                            "description": "Total Production Incentive Maximum", "units": 'dollars',
                            "tool_tip": 'Total production based incentive maximum'},
 
@@ -324,7 +324,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_pbi_system_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number,
+                               'max': None, 'default': max_big_number * max_big_number,
                                "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
                                "tool_tip": 'Total production based incentive system maximum size'},
 
@@ -348,19 +348,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number,
+                               'max': None, 'default': max_big_number * max_big_number,
                                "description": "Federal Investment Tax Credit for battery max", "units": 'dollars',
                                "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'batt_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                              'min': 0,
-                             'max': None, 'default': max_big_number,
+                             'max': None, 'default': max_big_number * max_big_number,
                              "description": "State Investment Tax Credit battery max", "units": 'dollars',
                              "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current state tax credit.'},
 
         'batt_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number,
+                               'max': None, 'default': max_big_number * max_big_number,
                                "description": "Local Investment Tax Credit max for battery", "units": 'dollars',
                                "tool_tip": 'The maximum $ of battery system costs that are subsidized by a utility or local tax credit.'},
 
@@ -384,19 +384,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                   'min': 0,
-                                  'max': None, 'default': max_big_number,
+                                  'max': None, 'default': max_big_number * max_big_number,
                                   "description": "Maximum federal rebate", "units": 'dollars',
                                   "tool_tip": 'Maximum federal rebate for battery in $'},
 
         'batt_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                 'min': 0,
-                                'max': None, 'default': max_big_number,
+                                'max': None, 'default': max_big_number * max_big_number,
                                 "description": "Maximum state rebate", "units": 'dollars',
                                 "tool_tip": 'Maximum state rebate for battery in $'},
 
         'batt_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                   'min': 0,
-                                  'max': None, 'default': max_big_number,
+                                  'max': None, 'default': max_big_number * max_big_number,
                                   "description": "Maximum utility rebate", "units": 'dollars',
                                   "tool_tip": 'Maximum local or utility rebate for battery in $'},
 

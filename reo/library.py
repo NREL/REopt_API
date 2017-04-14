@@ -58,6 +58,7 @@ class DatLibrary:
 
         # Command line constants
         self.command_line_constants = list()
+        self.command_line_constants.append("ScenarioNum=" + str(run_input_id))
 
         # Economic inputs and calculated vals
         self.economics = list()
@@ -91,8 +92,14 @@ class DatLibrary:
         self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
+        self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
+        self.file_cmd_input_bau = os.path.join(self.path_run_inputs, "cmd_bau.log")
         self.file_constant = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '.dat')
+        self.file_constant_bau = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '_bau.dat')
+        self.file_storage = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '.dat')
+        self.file_storage_bau = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '_bau.dat')
         self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
+        self.file_max_size_bau = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '_bau.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
         self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
@@ -182,8 +189,9 @@ class DatLibrary:
 
     def run(self):
 
-        self.create_constant_bau()
+        self.create_simple_bau()
         self.create_constants()
+        self.create_storage()
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
@@ -234,22 +242,29 @@ class DatLibrary:
         # Command line constants and Dat file overrides
         outline = ''
         for constant in self.command_line_constants:
-            outline = ', '.join([outline, constant.strip('\n')])
+            outline = ' '.join([outline, constant.strip('\n')])
 
         for dat_file in DATs:
             if dat_file is not None:
-                outline = ', '.join([outline, dat_file.strip('\n')])
+                outline = ' '.join([outline, dat_file.strip('\n')])
 
         outline.replace('\n', '')
 
-        output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
+        cmd = r"mosel %s %s OutputDir='%s' DatLibraryPath='%s' ScenarioPath='%s' BaseString='%s'" \
                  % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
 
-        #from IPython import embed
-        #embed()
+        log("DEBUG", "Returning Process Command " + cmd)
 
-        log("DEBUG", "Returning Process Command " + output)
-        return ['mosel', '-c', output]
+        # write a cmd file for easy debugging
+        filename = self.file_cmd_input
+        if base_case:
+            filename = self.file_cmd_input_bau
+
+        f = open(filename, 'w')
+        f.write(cmd)
+        f.close()
+
+        return cmd
 
     def parse_run_outputs(self):
 
@@ -278,6 +293,17 @@ class DatLibrary:
                       self.file_load_profile, self.file_load_size]:
                 if os.path.exists(p):
                     os.remove(p)
+
+
+    # BAU files
+    def create_simple_bau(self):
+        self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
+        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
+        self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
+
+        shutil.copyfile(os.path.join(self.folder_various, 'constant_bau.dat'), self.file_constant_bau)
+        shutil.copyfile(os.path.join(self.folder_various, 'storage_bau.dat'), self.file_storage_bau)
+        shutil.copyfile(os.path.join(self.folder_various, 'maxsizes_bau.dat'), self.file_max_size_bau)
 
     # Constant file
     def create_constants(self):
@@ -311,11 +337,10 @@ class DatLibrary:
         write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
         write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
 
-    # BAU files
-    def create_constant_bau(self):
-        self.DAT_bau[0] = "DAT1=" + "'" + os.path.join(self.folder_various, 'constant_bau.dat') + "'"
-        self.DAT_bau[5] = "DAT6=" + "'" + os.path.join(self.folder_various, 'storage_bau.dat') + "'"
-        self.DAT_bau[6] = "DAT7=" + "'" + os.path.join(self.folder_various, 'maxsizes_bau.dat') + "'"
+    # storage
+    def create_storage(self):
+        self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
+        shutil.copyfile(os.path.join(self.folder_various, 'storage.dat'), self.file_storage)
 
     # DAT2 - Economics
     def create_economics(self):

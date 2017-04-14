@@ -257,7 +257,6 @@ class Economics:
                 if not switch_percentage:
                     p_xbp = (p_cap / p - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)
                     p_ybp = p_cap / p
-
                 if ((p * yp) < p_cap or p_cap == 0) and ((u * xp) < u_cap or u_cap == 0):
                     ya = yp - (p * yp + u * xp)
                 elif (p * yp) < p_cap and (u * xp) >= u_cap:
@@ -330,7 +329,11 @@ class Economics:
         cap_cost_x = list()
         cap_cost_yint = list()
 
-        for tech in self.techs:
+        techs = self.techs
+        if self.business_as_usual:
+            techs = self.techs_bau
+
+        for tech in techs:
             for seg in range(0, self.cap_cost_segments):
                 if tech == 'PV' or tech == 'PVNM':
                     cap_cost_slope.append(self.cap_cost_slope[seg])
