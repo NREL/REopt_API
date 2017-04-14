@@ -64,8 +64,12 @@ class Economics:
     macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
     macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
-    tech_size = 3 # [PV, PVNM, UTIL]
-    bin_size = 4 # [R, W, X, S]
+    tech_size = 3
+    techs = ['PV', 'PVNM', 'UTIL']
+    tech_size_bau = 1
+    techs_bau = ['UTIL']
+    bin_size = 4
+    bins = ['R', 'W', 'X', 'S']
 
     def __init__(self, econ_inputs, file_path='economics.dat', business_as_usual=False):
 
@@ -78,7 +82,6 @@ class Economics:
 
         # group outputs
         self.output_args = dict()
-        self.incentive_output_args = dict()
 
         # set-up direct ownership
         if self.owner_discount_rate is None:
@@ -95,7 +98,6 @@ class Economics:
         self.pv_macrs_schedule_array = list()
         self.batt_macrs_schedule_array = list()
         self.levelization_factor = 1
-        self.output_args = dict()
 
         # cost curve
         self.xp_array_incent = list()
@@ -103,6 +105,7 @@ class Economics:
         self.cap_cost_slope = list()
         self.cap_cost_yint = list()
         self.cap_cost_x = list()
+        self.segments = 1
 
         # tmp incentives
         self.macrs_itc_reduction = 0.5
@@ -207,10 +210,24 @@ class Economics:
         self.xp_array_incent = [0]
         self.yp_array_incent = [0]
 
-        switch_percentage = False
-        switch_rebate = False
-
         for region in pv_incentives.keys():
+
+            # percentage based incentives
+            p = pv_incentives[region]['%']
+            p_cap = pv_incentives[region]['%_max']
+
+            # rebates, for some reason called 'u' in REopt
+            u = pv_incentives[region]['rebate']
+            u_cap = pv_incentives[region]['rebate_max']
+
+            # check discounts
+            switch_percentage = False
+            switch_rebate = False
+
+            if p == 0 or p_cap == 0:
+                switch_percentage = True
+            if u == 0 or u_cap == 0:
+                switch_rebate = True
 
             # start at second point, first is always zero
             for point in range(1, len(xp_array)):
@@ -226,14 +243,6 @@ class Economics:
                 # initialize the adjusted points on cost curve
                 xa = xp
                 ya = yp
-
-                # percentage based incentives
-                p = region['%']
-                p_cap = region['%_max']
-
-                # rebates, for some reason called 'u' in REopt
-                u = region['rebate']
-                u_cap = region['rebate_max']
 
                 # initialize break points
                 u_xbp = 0
@@ -301,28 +310,43 @@ class Economics:
                     else:
                         ya = yp - (p_cap + u_cap)
 
-                    self.xp_array_incent.append(xa)
-                    self.yp_array_incent.append(ya)
+                self.xp_array_incent.append(xa)
+                self.yp_array_incent.append(ya)
+
+        # clean up any duplicates
+        for i in range(1, len(self.xp_array_incent)):
+            if self.xp_array_incent[i] == self.xp_array_incent[i - 1]:
+                self.xp_array_incent = self.xp_array_incent[0:i]
+                self.yp_array_incent = self.yp_array_incent[0:i]
+                break
 
         self.cap_cost_x = self.xp_array_incent
         for seg in range(1, len(self.xp_array_incent)):
-            self.cap_cost_slope.append(round((self.yp_array_incent[seg] - self.yp_array_incent[seg - 1])/ self.xp_array_incent[seg] - self.xp_array_incent[seg - 1]), 0)
-            self.cap_cost_yint.append(round(self.yp_array_incent[seg] - self.cap_cost_slope[-1] * self.xp_array_incent[seg]), 0)
+            self.cap_cost_slope.append(round((self.yp_array_incent[seg] - self.yp_array_incent[seg - 1])/ self.xp_array_incent[seg] - self.xp_array_incent[seg - 1], 0))
+            self.cap_cost_yint.append(round(self.yp_array_incent[seg] - self.cap_cost_slope[-1] * self.xp_array_incent[seg], 0))
+        self.segments = len(self.cap_cost_slope)
 
+        cap_cost_slope = list()
+        cap_cost_x = list()
+        cap_cost_yint = list()
 
+        for tech in self.techs:
+            for seg in range(0, self.segments):
+                if tech == 'PV' or tech == 'PVNM':
+                    cap_cost_slope.append(self.cap_cost_slope[seg])
+                    cap_cost_yint.append(self.cap_cost_yint[seg])
+                else:
+                    cap_cost_slope.append(0)
+                    cap_cost_yint.append(0)
+            for seg in range(0, self.segments + 1):
+                if tech == 'PV' or tech == 'PVNM':
+                    cap_cost_x.append(self.cap_cost_x[seg])
+                else:
+                    cap_cost_x.append(0)
 
-
-
-
-
-
-
-
-
-
-        #from IPython import embed
-        #embed()
-
+        self.output_args["CapCostSlope"] = cap_cost_slope
+        self.output_args["CapCostX"] = cap_cost_x
+        self.output_args["CapCostYInt"] = cap_cost_yint
 
         """
         self.output_args["CapCostSlope"] = self.setup_capital_cost_incentive(self.pv_cost,
@@ -405,20 +429,20 @@ class Economics:
         max_prod_incent = round(pbi_max, 3)
         max_size_for_prod_incent = pbi_system_max
 
-        if "ProdIncentRate" not in self.incentive_output_args:
+        if "ProdIncentRate" not in self.output_args:
             prod_incent_array = self.tech_size * self.bin_size * [0]
         else:
-            prod_incent_array = self.incentive_output_args["ProdIncentRate"]
+            prod_incent_array = self.output_args["ProdIncentRate"]
 
-        if "MaxProdIncent" not in self.incentive_output_args:
+        if "MaxProdIncent" not in self.output_args:
             max_prod_array = self.tech_size * [0]
         else:
-            max_prod_array = self.incentive_output_args["MaxProdIncent"]
+            max_prod_array = self.output_args["MaxProdIncent"]
 
-        if "MaxSizeForProdIncent" not in self.incentive_output_args:
+        if "MaxSizeForProdIncent" not in self.output_args:
             max_size_array = self.tech_size * [0]
         else:
-            max_size_array = self.incentive_output_args["MaxSizeForProdIncent"]
+            max_size_array = self.output_args["MaxSizeForProdIncent"]
 
         for i in range(tech * self.bin_size, (tech + 1) * self.bin_size):
             prod_incent_array[i] = prod_incent_rate
@@ -427,59 +451,32 @@ class Economics:
         max_size_array[tech] = max_size_for_prod_incent
 
         self.output_args["pwf_prod_incent"] = pwf_prod_incent
-        self.incentive_output_args["ProdIncentRate"] = prod_incent_array
-        self.incentive_output_args["MaxProdIncent"] = max_prod_array
-        self.incentive_output_args["MaxSizeForProdIncent"] = max_size_array
+        self.output_args["ProdIncentRate"] = prod_incent_array
+        self.output_args["MaxProdIncent"] = max_prod_array
+        self.output_args["MaxSizeForProdIncent"] = max_size_array
 
     def setup_business_as_usual(self):
         if self.business_as_usual:
 
-            self.output_args['CapCostSlope'] = 0
-            self.output_args['LevelizationFactor'] = 1.0
-            self.output_args['OMperUnitSize'] = 0
+            self.output_args['CapCostSlope'] = self.tech_size_bau * [0]
+            self.output_args['LevelizationFactor'] = self.tech_size_bau * [1.0]
+            self.output_args['OMperUnitSize'] = self.tech_size_bau * [0]
 
-            self.incentive_output_args['ProdIncentRate'] = 4 * [0]
-            self.incentive_output_args['MaxProdIncent'] = [0]
-            self.incentive_output_args['MaxSizeForProdIncent'] = [0]
+            self.output_args['ProdIncentRate'] = self.bin_size * self.tech_size_bau * [0]
+            self.output_args['MaxProdIncent'] = self.tech_size_bau * [0]
+            self.output_args['MaxSizeForProdIncent'] = self.tech_size_bau * [0]
 
     def output_economics(self):
 
         args = self.output_args
-        incentive_args = self.incentive_output_args
+        key = args.iterkeys()
+        value = args.itervalues()
+        for _ in range(len(args)):
+            try:
+                k = key.next()
+                v = value.next()
+                write_single_variable(self.out_name, v, k, 'a')
+            except:
+                log('ERROR', 'Error writing economics for ' + key)
 
-        with open(self.out_name, 'w') as f:
-            key = args.iterkeys()
-            value = args.itervalues()
-            for _ in range(len(args)):
-                try:
-                    k = key.next()
-                    v = value.next()
-                    f.write(k + ': [\n')
-                    f.write(str(v) + ',\n')
-                    if not self.business_as_usual:
-                        if "CapCostSlope" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                            f.write(str(v) + ',\n')
-                            f.write(str(0) + ',\n')
-                        if "OMperUnitSize" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                            f.write(str(v) + ',\n')
-                            f.write(str(0) + ',\n')
-                        if "LevelizationFactor" in k:  # need additional lines for each TECH: [PV, PVNM, UTIL]
-                            f.write(str(v) + ',\n')
-                            f.write(str(1.0) + ',\n')
-                    f.write(']\n')
-                except:
-                    print '\033[91merror writing economics\033[0m'
-
-            key = incentive_args.iterkeys()
-            value = incentive_args.itervalues()
-            for _ in range(len(incentive_args)):
-                try:
-                    k = key.next()
-                    v = value.next()
-                    f.write(k + ': [\n')
-                    for val in v:
-                        f.write(str(val) + ',\n')
-                    f.write(']\n')
-                except:
-                    print '\033[91merror writing economics\033[0m'
 
