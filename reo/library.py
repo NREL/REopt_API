@@ -26,25 +26,16 @@ def alphanum(s):
 
 
 class DatLibrary:
+
+    # statically constant
     max_big_number = 100000000
     timeout = 180
-    timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
     logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1
-
-    # default for now, modify with input from user
-    net_metering = False
-
-    # DAT files to overwrite
-    DAT = [None] * 20
-    DAT_bau = [None] * 20
-
-    # Economic inputs and calculated vals
-    economics = []
 
     def get_egg(self):
         wd = os.getcwd()
@@ -57,6 +48,19 @@ class DatLibrary:
         return outputs(**args)
 
     def __init__(self, run_input_id, lib_inputs):
+
+        self.timed_out = False
+        self.net_metering = False
+
+        # DAT files to overwrite
+        self.DAT = [None] * 20
+        self.DAT_bau = [None] * 20
+
+        # Command line constants
+        self.command_line_constants = list()
+
+        # Economic inputs and calculated vals
+        self.economics = list()
 
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
@@ -227,7 +231,10 @@ class DatLibrary:
         header = 'exec '
         header += os.path.join(self.path_xpress, xpress_model)
 
+        # Command line constants and Dat file overrides
         outline = ''
+        for constant in self.command_line_constants:
+            outline = ', '.join([outline, constant.strip('\n')])
 
         for dat_file in DATs:
             if dat_file is not None:
@@ -237,6 +244,9 @@ class DatLibrary:
 
         output = r"%s %s, OutputDir='%s', DatLibraryPath='%s', ScenarioPath='%s', BaseString='%s'" \
                  % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
+
+        #from IPython import embed
+        #embed()
 
         log("DEBUG", "Returning Process Command " + output)
         return ['mosel', '-c', output]
@@ -317,14 +327,16 @@ class DatLibrary:
 
         for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
-                  'levelization_factor']:
+                  'levelization_factor', 'cap_cost_segments']:
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
         fp = self.file_economics_bau
         econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
+
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
+        self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
 
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
@@ -577,16 +589,11 @@ class DatLibrary:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
 
-            self.DAT[7] = num_ratchets
-            self.DAT_bau[7] = self.DAT[7]
-            self.DAT[8] = "UtilName=" + "'" + str(self.utility_name) + "'"
-            self.DAT_bau[8] = self.DAT[8]
-            self.DAT[9] = "UtilRate=" + "'" + str(self.rate_name) + "'"
-            self.DAT_bau[9] = self.DAT[9]
-            self.DAT[10] = fuel_bin_count
-            self.DAT_bau[10] = self.DAT[10]
-            self.DAT[11] = demand_bin_count
-            self.DAT_bau[11] = self.DAT[11]
+            self.command_line_constants.append(num_ratchets)
+            self.command_line_constants.append("UtilName=" + "'" + str(self.utility_name) + "'")
+            self.command_line_constants.append("UtilRate=" + "'" + str(self.rate_name) + "'")
+            self.command_line_constants.append(fuel_bin_count)
+            self.command_line_constants.append(demand_bin_count)
 
     def parse_urdb(self, urdb_rate):
 

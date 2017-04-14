@@ -5,6 +5,8 @@ import pro_forma as pf
 import dispatch
 from datetime import datetime
 
+from tastypie.exceptions import ImmediateHttpResponse
+
 class Results:
 
     # data
@@ -116,6 +118,8 @@ class Results:
             self.populate_data(df_results)
             self.populate_data_bau(df_results_base)
             self.compute_dispatch(df_results)
+        else:
+            raise ImmediateHttpResponse("No solution could be found for these inputs")
 
         self.update_types()
 
@@ -207,8 +211,6 @@ class Results:
                 self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
             if 'Battery to grid' in df_xpress.columns:
                 self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
-
-
 
     def compute_value(self):
 

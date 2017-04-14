@@ -105,7 +105,7 @@ class Economics:
         self.cap_cost_slope = list()
         self.cap_cost_yint = list()
         self.cap_cost_x = list()
-        self.segments = 1
+        self.cap_cost_segments = 1
 
         # tmp incentives
         self.macrs_itc_reduction = 0.5
@@ -324,21 +324,21 @@ class Economics:
         for seg in range(1, len(self.xp_array_incent)):
             self.cap_cost_slope.append(round((self.yp_array_incent[seg] - self.yp_array_incent[seg - 1])/ self.xp_array_incent[seg] - self.xp_array_incent[seg - 1], 0))
             self.cap_cost_yint.append(round(self.yp_array_incent[seg] - self.cap_cost_slope[-1] * self.xp_array_incent[seg], 0))
-        self.segments = len(self.cap_cost_slope)
+        self.cap_cost_segments = len(self.cap_cost_slope)
 
         cap_cost_slope = list()
         cap_cost_x = list()
         cap_cost_yint = list()
 
         for tech in self.techs:
-            for seg in range(0, self.segments):
+            for seg in range(0, self.cap_cost_segments):
                 if tech == 'PV' or tech == 'PVNM':
                     cap_cost_slope.append(self.cap_cost_slope[seg])
                     cap_cost_yint.append(self.cap_cost_yint[seg])
                 else:
                     cap_cost_slope.append(0)
                     cap_cost_yint.append(0)
-            for seg in range(0, self.segments + 1):
+            for seg in range(0, self.cap_cost_segments + 1):
                 if tech == 'PV' or tech == 'PVNM':
                     cap_cost_x.append(self.cap_cost_x[seg])
                 else:
