@@ -269,7 +269,10 @@ class ProcessOutputs:
             stored.loc[:, 'Index'] = index
             stored.set_index('Index', inplace=True)
             d['Stored energy'] = stored['Stored energy']
-            d['State of charge'] = 100 * stored['Stored energy'].divide(self.batt_kwh)
+            d['State of charge'] = stored['Stored energy']
+
+            if self.batt_kwh > 0:
+                d['State of charge'] = 100 * stored['Stored energy'].divide(self.batt_kwh)
 
             # ElecFromStore.csv
             batt_to_load = pd.read_csv(self.path_elec_from_store, header=None, names=['Battery to load'])

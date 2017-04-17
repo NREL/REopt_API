@@ -4,23 +4,13 @@ from api_definitions import *
 import pro_forma as pf
 import dispatch
 from datetime import datetime
-
 from tastypie.exceptions import ImmediateHttpResponse
+
 
 class Results:
 
     # data
-    df_results = []
-    df_results_base = []
     df_cols = ['Variable', 'Value']
-    economics = []
-
-    # paths
-    path_output = []
-    path_output_base = []
-    path_summary = []
-    path_summary_base = []
-    path_proforma = []
 
     # file names
     file_summary = 'summary.csv'
@@ -28,33 +18,7 @@ class Results:
     file_dispatch = 'Dispatch.csv'
 
     # time outputs (scalar)
-    year_one_datetime_start = None
     time_steps_per_hour = 1
-
-    # scalar outputs that need to get added to DB
-    lcc_bau = None
-    year_one_utility_kwh = None
-    year_one_energy_cost = None
-    year_one_energy_cost_bau = None
-    year_one_energy_savings = None
-    year_one_demand_cost = None
-    year_one_demand_cost_bau = None
-    year_one_demand_savings = None
-    year_one_payments_to_third_party_owner = None
-    year_one_energy_exported = None
-    total_energy_cost = None
-    total_energy_cost_bau = None
-    total_demand_cost = None
-    total_demand_cost_bau = None
-    total_payments_to_third_party_owner = None
-    net_capital_costs_plus_om = None
-    average_yearly_pv_energy_produced = None
-    lcc = None
-    irr = None
-    npv = None
-    pv_kw = None
-    batt_kw = None
-    batt_kwh = None
 
     # time series labels
     label_year_one_electric_load_series = 'Electric load'
@@ -70,7 +34,6 @@ class Results:
     label_year_one_demand_cost_series = 'Demand Cost ($/kW)'
 
     # time series outputs
-    zero_array = 8760 * [0]
 
     def outputs(self, **args):
         return outputs(**args)
@@ -88,6 +51,38 @@ class Results:
         for k in self.outputs():
             setattr(self, k, None)
 
+        # data
+        self.df_results = []
+        self.df_results_base = []
+
+        # scalar outputs
+        self.lcc_bau = None
+        self.year_one_utility_kwh = None
+        self.year_one_energy_cost = None
+        self.year_one_energy_cost_bau = None
+        self.year_one_energy_savings = None
+        self.year_one_demand_cost = None
+        self.year_one_demand_cost_bau = None
+        self.year_one_demand_savings = None
+        self.year_one_payments_to_third_party_owner = None
+        self.year_one_energy_exported = None
+        self.total_energy_cost = None
+        self.total_energy_cost_bau = None
+        self.total_demand_cost = None
+        self.total_demand_cost_bau = None
+        self.total_payments_to_third_party_owner = None
+        self.net_capital_costs_plus_om = None
+        self.average_yearly_pv_energy_produced = None
+        self.lcc = None
+        self.irr = None
+        self.npv = None
+        self.pv_kw = None
+        self.batt_kw = None
+        self.batt_kwh = None
+        self.year_one_datetime_start = None
+
+        # time series outputs
+        self.zero_array = 8760 * self.time_steps_per_hour * [0]
         self.year_one_electric_load_series = self.zero_array
         self.year_one_pv_to_battery_series = self.zero_array
         self.year_one_pv_to_load_series = self.zero_array
