@@ -490,8 +490,8 @@ end-do
 !!!!  Demand Rate Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-forall ( LD in Load, s in Seg, fb in FuelBin, ts in TimeStep) do
-	dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin) dvGrid(LD,ts,db,fb)
+forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
+	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin) dvGrid(LD,ts,db,fb)
 end-do
 
 forall ( db in DemandBin, ts in TimeStep) do
@@ -546,8 +546,8 @@ end-do
 ! Can only have one tech from each tech class
 !31513 TS Replaced BigNumber with MaxSize
 !CONSTRAINT 46
-forall (t in Tech,  b in TechClass, s in Seg) do
-   dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <= binSingleBasicTech (t,b) * MaxSize(t)
+forall (t in Tech,  b in TechClass) do
+   sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <= binSingleBasicTech (t,b) * MaxSize(t)
 end-do
 
 !Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.

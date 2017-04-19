@@ -183,7 +183,7 @@ class Results:
                 dates = (df_xpress['Date'].tolist())
                 self.year_one_datetime_start = dates[0]
                 self.time_steps_per_hour = int(round(len(dates) / 8760, 0))
-                zero_array = 8760 * self.time_steps_per_hour * [0]
+                self.zero_array = 8760 * self.time_steps_per_hour * [0]
             if 'Energy Cost ($/kWh)' in df_xpress.columns:
                 self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
             if 'Demand Cost ($/kW)' in df_xpress.columns:
