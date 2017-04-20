@@ -27,7 +27,7 @@ def alphanum(s):
 
 class DatLibrary:
     max_big_number = 100000000
-    timeout = 180
+    timeout = 600
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
