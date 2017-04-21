@@ -97,7 +97,7 @@ class Economics:
         # initialize variables
         self.pv_macrs_schedule_array = list()
         self.batt_macrs_schedule_array = list()
-        self.levelization_factor = 1
+        self.pv_levelization_factor = 1
 
         # cost curve
         self.xp_array_incent = list()
@@ -143,19 +143,26 @@ class Economics:
         self.output_args['r_tax_owner'] = self.owner_tax_rate
         self.output_args["OMperUnitSize"] = self.pv_om
 
-        if self.output_args['pwf_owner'] == 0 or self.output_args['r_tax_owner'] ==0:
+        if self.output_args['pwf_owner'] == 0 or self.output_args['r_tax_owner'] == 0:
             self.output_args['two_party_factor'] = 0
         else:    
             self.output_args['two_party_factor'] = (self.output_args['pwf_offtaker'] * self.output_args['r_tax_offtaker']) / (self.output_args['pwf_owner'] * self.output_args['r_tax_owner'])
 
         # compute degradation impact
         if self.output_args['pwf_e'] == 0:
-            self.levelization_factor = 0 
+            self.pv_levelization_factor = 0
         else:
             lf = annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / self.output_args["pwf_e"]
-            self.levelization_factor = round(lf, 5)
+            self.pv_levelization_factor = round(lf, 5)
 
-        self.output_args['LevelizationFactor'] = self.levelization_factor
+        levelization_factor_array = list()
+        for t in self.techs:
+            if t == 'PV' or 'PVNM':
+                levelization_factor_array.append(self.pv_levelization_factor)
+            else:
+                levelization_factor_array.append(1.0)
+
+        self.output_args['LevelizationFactor'] = levelization_factor_array
 
     def insert_u_bp(self, u_xbp, u_ybp, p, u_cap):
 
@@ -345,7 +352,10 @@ class Economics:
                 if tech == 'PV' or tech == 'PVNM':
                     cap_cost_x.append(self.cap_cost_x[seg])
                 else:
-                    cap_cost_x.append(0)
+                    x = 0
+                    if len(cap_cost_x) > 0 and cap_cost_x[-1] == 0:
+                        x = max_big_number
+                    cap_cost_x.append(x)
 
         self.output_args["CapCostSlope"] = cap_cost_slope
         self.output_args["CapCostX"] = cap_cost_x

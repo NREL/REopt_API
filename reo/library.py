@@ -352,7 +352,7 @@ class DatLibrary:
 
         for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
-                  'levelization_factor', 'cap_cost_segments']:
+                  'pv_levelization_factor', 'cap_cost_segments']:
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
@@ -523,7 +523,7 @@ class DatLibrary:
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.levelization_factor)
+            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
