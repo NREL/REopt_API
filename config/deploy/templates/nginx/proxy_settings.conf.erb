@@ -14,3 +14,6 @@ proxy_set_header Host $host;
 
 # Disable redirect rewriting.
 proxy_redirect off;
+
+# Increase timeout for longer response times.
+proxy_read_timeout 300s;
