@@ -106,6 +106,7 @@ class Economics:
         self.cap_cost_yint = list()
         self.cap_cost_x = list()
         self.cap_cost_segments = 1
+        self.cap_cost_points = 2
 
         # tmp incentives
         self.macrs_itc_reduction = 0.5
@@ -157,7 +158,7 @@ class Economics:
 
         levelization_factor_array = list()
         for t in self.techs:
-            if t == 'PV' or 'PVNM':
+            if t == 'PV' or t == 'PVNM':
                 levelization_factor_array.append(self.pv_levelization_factor)
             else:
                 levelization_factor_array.append(1.0)
@@ -331,6 +332,36 @@ class Economics:
             self.cap_cost_slope.append(round((self.yp_array_incent[seg] - self.yp_array_incent[seg - 1])/ self.xp_array_incent[seg] - self.xp_array_incent[seg - 1], 0))
             self.cap_cost_yint.append(round(self.yp_array_incent[seg] - self.cap_cost_slope[-1] * self.xp_array_incent[seg], 0))
         self.cap_cost_segments = len(self.cap_cost_slope)
+        self.cap_cost_points = len(self.yp_array_incent)
+
+        # include MACRS
+        updated_cap_cost_slope = list()
+        updated_y_intercept = list()
+
+        for s in range(0, self.cap_cost_segments):
+            initial_unit_cost = ((self.cap_cost_yint[s] + self.cap_cost_slope[s]) / (1 - self.pv_itc_federal))
+            updated_slope = self.setup_capital_cost_incentive(initial_unit_cost,
+                                                              0,
+                                                              self.analysis_period,
+                                                              self.owner_discount_rate_nominal,
+                                                              self.owner_tax_rate,
+                                                              self.pv_itc_federal,
+                                                              self.pv_itc_federal_max,
+                                                              self.pv_rebate_federal,
+                                                              self.pv_rebate_federal_max,
+                                                              self.pv_macrs_schedule_array,
+                                                              self.pv_macrs_bonus_fraction,
+                                                              self.macrs_itc_reduction)
+            updated_cap_cost_slope.append(updated_slope)
+
+        for p in range(1, self.cap_cost_points):
+            self.yp_array_incent[p] = self.yp_array_incent[p - 1] + \
+                                      updated_cap_cost_slope[p - 1] * \
+                                      (self.xp_array_incent[p] - self.xp_array_incent[p - 1])
+            updated_y_intercept.append(self.yp_array_incent[p] - updated_cap_cost_slope[p - 1] * self.xp_array_incent[p])
+
+        self.cap_cost_slope = updated_cap_cost_slope
+        self.cap_cost_yint = updated_y_intercept
 
         cap_cost_slope = list()
         cap_cost_x = list()
