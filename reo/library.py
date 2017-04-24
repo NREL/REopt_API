@@ -32,6 +32,7 @@ class DatLibrary:
 
     # timeout is slightly less than server timeout of 5 minutes
     timeout = 295
+    timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
