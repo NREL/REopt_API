@@ -65,6 +65,7 @@ class Economics:
     macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
     tech_size = 3
+    tech_re_classes = ['PV']
     techs = ['PV', 'PVNM', 'UTIL']
     tech_size_bau = 1
     techs_bau = ['UTIL']
@@ -196,6 +197,29 @@ class Economics:
             self.yp_array_incent[region].append(p_ybp - (p_cap + u_cap))
 
     def setup_incentives(self):
+
+        self.setup_pv_incentives()
+
+        self.output_args["StorageCostPerKW"] = self.setup_capital_cost_incentive(self.batt_cost_kw,
+                                                                                 self.batt_replacement_cost_kw,
+                                                                                 self.batt_replacement_year_kw,
+                                                                                 self.owner_discount_rate_nominal,
+                                                                                 self.owner_tax_rate,
+                                                                                 self.batt_itc_federal,
+                                                                                 self.batt_macrs_schedule_array,
+                                                                                 self.batt_macrs_bonus_fraction,
+                                                                                 self.macrs_itc_reduction)
+        self.output_args["StorageCostPerKWH"] = self.setup_capital_cost_incentive(self.batt_cost_kwh,
+                                                                                  self.batt_replacement_cost_kwh,
+                                                                                  self.batt_replacement_year_kwh,
+                                                                                  self.owner_discount_rate_nominal,
+                                                                                  self.owner_tax_rate,
+                                                                                  self.batt_itc_federal,
+                                                                                  self.batt_macrs_schedule_array,
+                                                                                  self.batt_macrs_bonus_fraction,
+                                                                                  self.macrs_itc_reduction)
+
+    def setup_pv_incentives(self):
 
         pv_incentives = dict()
 
@@ -337,7 +361,6 @@ class Economics:
                     self.yp_array_incent[region] = self.yp_array_incent[region][0:i]
                     break
 
-
         # compute cost curve
         cost_curve_bp_x = self.xp_array_incent['federal']
         cost_curve_bp_y = self.yp_array_incent['federal']
@@ -370,9 +393,6 @@ class Economics:
                                                               self.owner_discount_rate_nominal,
                                                               self.owner_tax_rate,
                                                               self.pv_itc_federal,
-                                                              self.pv_itc_federal_max,
-                                                              self.pv_rebate_federal,
-                                                              self.pv_rebate_federal_max,
                                                               self.pv_macrs_schedule_array,
                                                               self.pv_macrs_bonus_fraction,
                                                               self.macrs_itc_reduction)
@@ -380,7 +400,7 @@ class Economics:
 
         for p in range(1, self.cap_cost_points):
             cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
-                                      (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+                                                          (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
             updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
 
         self.cap_cost_slope = updated_cap_cost_slope
@@ -415,45 +435,6 @@ class Economics:
         self.output_args["CapCostX"] = cap_cost_x
         self.output_args["CapCostYInt"] = cap_cost_yint
 
-        """
-        self.output_args["CapCostSlope"] = self.setup_capital_cost_incentive(self.pv_cost,
-                                                                             0,
-                                                                             self.analysis_period,
-                                                                             self.owner_discount_rate_nominal,
-                                                                             self.owner_tax_rate,
-                                                                             self.pv_itc_federal,
-                                                                             self.pv_itc_federal_max,
-                                                                             self.pv_rebate_federal,
-                                                                             self.pv_rebate_federal_max,
-                                                                             self.pv_macrs_schedule_array,
-                                                                             self.pv_macrs_bonus_fraction,
-                                                                             self.macrs_itc_reduction)
-        """
-        self.output_args["StorageCostPerKW"] = self.setup_capital_cost_incentive(self.batt_cost_kw,
-                                                                                 self.batt_replacement_cost_kw,
-                                                                                 self.batt_replacement_year_kw,
-                                                                                 self.owner_discount_rate_nominal,
-                                                                                 self.owner_tax_rate,
-                                                                                 self.batt_itc_federal,
-                                                                                 self.batt_itc_federal_max,
-                                                                                 self.batt_rebate_federal,
-                                                                                 self.batt_rebate_federal_max,
-                                                                                 self.batt_macrs_schedule_array,
-                                                                                 self.batt_macrs_bonus_fraction,
-                                                                                 self.macrs_itc_reduction)
-        self.output_args["StorageCostPerKWH"] = self.setup_capital_cost_incentive(self.batt_cost_kwh,
-                                                                                  self.batt_replacement_cost_kwh,
-                                                                                  self.batt_replacement_year_kwh,
-                                                                                  self.owner_discount_rate_nominal,
-                                                                                  self.owner_tax_rate,
-                                                                                  self.batt_itc_federal,
-                                                                                  self.batt_itc_federal_max,
-                                                                                  self.batt_rebate_federal,
-                                                                                  self.batt_rebate_federal_max,
-                                                                                  self.batt_macrs_schedule_array,
-                                                                                  self.batt_macrs_bonus_fraction,
-                                                                                  self.macrs_itc_reduction)
-
         for tech in range(0, 2):
             self.setup_production_incentive(tech,
                                             self.rate_escalation_nominal,
@@ -465,9 +446,7 @@ class Economics:
 
     @staticmethod
     def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
-                                     discount_rate, tax_rate,
-                                     itc, itc_max,
-                                     rebate, rebate_max,
+                                     discount_rate, tax_rate, itc,
                                      macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction):
 
         ''' effective PV and battery prices with ITC and depreciation

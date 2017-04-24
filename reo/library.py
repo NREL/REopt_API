@@ -29,7 +29,9 @@ class DatLibrary:
 
     # statically constant
     max_big_number = 100000000
-    timeout = 180
+
+    # timeout is slightly less than server timeout of 5 minutes
+    timeout = 295
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
