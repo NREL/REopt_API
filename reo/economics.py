@@ -384,9 +384,9 @@ class Economics:
         for s in range(0, self.cap_cost_segments):
 
             initial_unit_cost = 0
-            if cost_curve_bp_x[s] > 0:
-                initial_unit_cost = ((self.cap_cost_yint[s] + self.cap_cost_slope[s] * cost_curve_bp_x[s]) /
-                                     ((1 - self.pv_itc_federal) * cost_curve_bp_x[s]))
+            if cost_curve_bp_x[s + 1] > 0:
+                initial_unit_cost = ((self.cap_cost_yint[s] + self.cap_cost_slope[s] * cost_curve_bp_x[s + 1]) /
+                                     ((1 - self.pv_itc_federal) * cost_curve_bp_x[s + 1]))
             updated_slope = self.setup_capital_cost_incentive(initial_unit_cost,
                                                               0,
                                                               self.analysis_period,
