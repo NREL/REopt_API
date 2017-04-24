@@ -99,9 +99,13 @@ class Economics:
         self.batt_macrs_schedule_array = list()
         self.pv_levelization_factor = 1
 
+        # incentives get applied from the initial cost curve and then to utility onward to federal
+        self.regions = ['utility', 'state', 'federal', 'combined']
+        self.num_pv_regions = 3
+
         # cost curve
-        self.xp_array_incent = list()
-        self.yp_array_incent = list()
+        self.xp_array_incent = dict()
+        self.yp_array_incent = dict()
         self.cap_cost_slope = list()
         self.cap_cost_yint = list()
         self.cap_cost_x = list()
@@ -165,68 +169,72 @@ class Economics:
 
         self.output_args['LevelizationFactor'] = levelization_factor_array
 
-    def insert_u_bp(self, u_xbp, u_ybp, p, u_cap):
+    def insert_u_bp(self, region, u_xbp, u_ybp, p, u_cap):
 
-        self.xp_array_incent.append(u_xbp)
-        self.yp_array_incent.append(u_ybp - u_ybp * p + u_cap)
+        self.xp_array_incent[region].append(u_xbp)
+        self.yp_array_incent[region].append(u_ybp - u_ybp * p + u_cap)
 
-    def insert_p_bp(self, p_xbp, p_ybp, u, p_cap):
+    def insert_p_bp(self, region, p_xbp, p_ybp, u, p_cap):
 
-        self.xp_array_incent.append(p_xbp)
-        self.yp_array_incent.append(p_ybp - (p_cap + p_xbp * u))
+        self.xp_array_incent[region].append(p_xbp)
+        self.yp_array_incent[region].append(p_ybp - (p_cap + p_xbp * u))
 
-    def insert_u_after_p_bp(self, u_xbp, u_ybp, p, p_cap, u_cap):
+    def insert_u_after_p_bp(self, region, u_xbp, u_ybp, p, p_cap, u_cap):
 
-        self.xp_array_incent.append(u_xbp)
+        self.xp_array_incent[region].append(u_xbp)
         if p_cap == 0:
-            self.yp_array_incent.append(u_ybp - (p * u_ybp + u_cap))
+            self.yp_array_incent[region].append(u_ybp - (p * u_ybp + u_cap))
         else:
-            self.yp_array_incent.append(u_ybp - (p_cap + u_cap))
+            self.yp_array_incent[region].append(u_ybp - (p_cap + u_cap))
 
-    def insert_p_after_u_bp(self, p_xbp, p_ybp, u, u_cap, p_cap):
+    def insert_p_after_u_bp(self, region, p_xbp, p_ybp, u, u_cap, p_cap):
 
-        self.xp_array_incent.append(p_xbp)
+        self.xp_array_incent[region].append(p_xbp)
         if u_cap == 0:
-            self.yp_array_incent.append(p_ybp - (p_cap + u * p_xbp))
+            self.yp_array_incent[region].append(p_ybp - (p_cap + u * p_xbp))
         else:
-            self.yp_array_incent.append(p_ybp - (p_cap + u_cap))
+            self.yp_array_incent[region].append(p_ybp - (p_cap + u_cap))
 
     def setup_incentives(self):
 
         pv_incentives = dict()
-        pv_incentives['federal'] = dict()
-        pv_incentives['federal']['%'] = self.pv_itc_federal
-        pv_incentives['federal']['%_max'] = self.pv_itc_federal_max
-        pv_incentives['federal']['rebate'] = self.pv_rebate_federal
-        pv_incentives['federal']['rebate_max'] = self.pv_rebate_federal_max
-        pv_incentives['state'] = dict()
-        pv_incentives['state']['%'] = self.pv_itc_state
-        pv_incentives['state']['%_max'] = self.pv_itc_state_max
-        pv_incentives['state']['rebate'] = self.pv_rebate_state
-        pv_incentives['state']['rebate_max'] = self.pv_rebate_state_max
+
         pv_incentives['utility'] = dict()
         pv_incentives['utility']['%'] = self.pv_itc_utility
         pv_incentives['utility']['%_max'] = self.pv_itc_utility_max
         pv_incentives['utility']['rebate'] = self.pv_rebate_utility
         pv_incentives['utility']['rebate_max'] = self.pv_rebate_utility_max
+        pv_incentives['state'] = dict()
+        pv_incentives['state']['%'] = self.pv_itc_state
+        pv_incentives['state']['%_max'] = self.pv_itc_state_max
+        pv_incentives['state']['rebate'] = self.pv_rebate_state
+        pv_incentives['state']['rebate_max'] = self.pv_rebate_state_max
+        pv_incentives['federal'] = dict()
+        pv_incentives['federal']['%'] = self.pv_itc_federal
+        pv_incentives['federal']['%_max'] = self.pv_itc_federal_max
+        pv_incentives['federal']['rebate'] = self.pv_rebate_federal
+        pv_incentives['federal']['rebate_max'] = self.pv_rebate_federal_max
 
         # Cost curve
-        xp_array = [0, max_big_number]  # kW
-        yp_array = [0, max_big_number * self.pv_cost]  # $
+        self.xp_array_incent['utility'] = [0.0, float(max_big_number)]  # kW
+        self.yp_array_incent['utility'] = [0.0, float(max_big_number * self.pv_cost)]  # $
 
-        # Apply incentives, initialize first value
-        self.xp_array_incent = [0]
-        self.yp_array_incent = [0]
+        for r in range(0, self.num_pv_regions):
 
-        for region in pv_incentives.keys():
+            region = self.regions[r]
+            next_region = self.regions[r + 1]
+
+            # Apply incentives, initialize first value
+            self.xp_array_incent[next_region] = [0]
+            self.yp_array_incent[next_region] = [0]
 
             # percentage based incentives
-            p = pv_incentives[region]['%']
-            p_cap = pv_incentives[region]['%_max']
+            p = float(pv_incentives[region]['%'])
+            p_cap = float(pv_incentives[region]['%_max'])
 
             # rebates, for some reason called 'u' in REopt
-            u = pv_incentives[region]['rebate']
-            u_cap = pv_incentives[region]['rebate_max']
+            u = float(pv_incentives[region]['rebate'])
+            u_cap = float(pv_incentives[region]['rebate_max'])
 
             # check discounts
             switch_percentage = False
@@ -238,15 +246,15 @@ class Economics:
                 switch_rebate = True
 
             # start at second point, first is always zero
-            for point in range(1, len(xp_array)):
+            for point in range(1, len(self.xp_array_incent[region])):
 
                 # previous points
-                xp_prev = xp_array[point - 1]
-                yp_prev = yp_array[point - 1]
+                xp_prev = self.xp_array_incent[region][point - 1]
+                yp_prev = self.yp_array_incent[region][point - 1]
 
                 # current, unadjusted points
-                xp = xp_array[point]
-                yp = yp_array[point]
+                xp = self.xp_array_incent[region][point]
+                yp = self.yp_array_incent[region][point]
 
                 # initialize the adjusted points on cost curve
                 xa = xp
@@ -265,48 +273,49 @@ class Economics:
                 if not switch_percentage:
                     p_xbp = (p_cap / p - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)
                     p_ybp = p_cap / p
+
                 if ((p * yp) < p_cap or p_cap == 0) and ((u * xp) < u_cap or u_cap == 0):
                     ya = yp - (p * yp + u * xp)
                 elif (p * yp) < p_cap and (u * xp) >= u_cap:
                     if not switch_rebate:
                         if u * xp != u_cap:
-                            self.insert_u_bp(u_xbp, u_ybp, p, u_cap)
+                            self.insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
                         switch_rebate = True
                     ya = yp - (p * yp + u_cap)
                 elif (p * yp) >= p_cap and (u * xp) < u_cap:
                     if not switch_percentage:
                         if p * yp != p_cap:
-                            self.insert_p_bp(p_xbp, p_ybp, u, p_cap)
+                            self.insert_p_bp(next_region, p_xbp, p_ybp, u, p_cap)
                         switch_percentage = True
                     ya = yp - (p_cap + xp * u)
                 elif p * yp >= p_cap and u * xp >= u_cap:
                     if not switch_rebate and not switch_percentage:
                         if p_xbp == u_xbp:
-                            self.insert_u_bp(u_xbp, u_ybp, p, u_cap)
+                            self.insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
                             switch_percentage = True
                             switch_rebate = True
                         elif p_xbp < u_xbp:
                             if p * yp != p_cap:
-                                self.insert_p_bp(p_xbp, p_ybp, u, p_cap)
+                                self.insert_p_bp(next_region, p_xbp, p_ybp, u, p_cap)
                             switch_percentage = True
                             if u * xp != u_cap:
-                                self.insert_u_after_p_bp(u_xbp, u_ybp, p, p_cap, u_cap)
+                                self.insert_u_after_p_bp(next_region, u_xbp, u_ybp, p, p_cap, u_cap)
                             switch_rebate = True
                         else:
                             if u * xp != u_cap:
-                                self.insert_u_bp(u_xbp, u_ybp, p, u_cap)
+                                self.insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
                             switch_rebate = True
                             if p * yp != p_cap:
                                 # insert p after u
-                                self.insert_p_after_u_bp(p_xbp, p_ybp, u, u_cap, p_cap)
+                                self.insert_p_after_u_bp(next_region, p_xbp, p_ybp, u, u_cap, p_cap)
                             switch_percentage = True
                     elif switch_rebate and not switch_percentage:
                         if p * yp != p_cap:
-                            self.insert_p_after_u_bp(p_xbp, p_ybp, u, u_cap, p_cap)
+                            self.insert_p_after_u_bp(next_region, p_xbp, p_ybp, u, u_cap, p_cap)
                         switch_percentage = True
                     elif switch_percentage and not switch_rebate:
                         if u * xp != u_cap:
-                            self.insert_u_after_p_bp(u_xbp, u_ybp, p, p_cap, u_cap)
+                            self.insert_u_after_p_bp(next_region, u_xbp, u_ybp, p, p_cap, u_cap)
                         switch_rebate = True
 
                     # Finally compute adjusted values
@@ -317,29 +326,44 @@ class Economics:
                     else:
                         ya = yp - (p_cap + u_cap)
 
-                self.xp_array_incent.append(xa)
-                self.yp_array_incent.append(ya)
+                self.xp_array_incent[next_region].append(xa)
+                self.yp_array_incent[next_region].append(ya)
 
         # clean up any duplicates
-        for i in range(1, len(self.xp_array_incent)):
-            if self.xp_array_incent[i] == self.xp_array_incent[i - 1]:
-                self.xp_array_incent = self.xp_array_incent[0:i]
-                self.yp_array_incent = self.yp_array_incent[0:i]
-                break
+        for region in self.regions:
+            for i in range(1, len(self.xp_array_incent[region])):
+                if self.xp_array_incent[region][i] == self.xp_array_incent[region][i - 1]:
+                    self.xp_array_incent[region] = self.xp_array_incent[region][0:i]
+                    self.yp_array_incent[region] = self.yp_array_incent[region][0:i]
+                    break
 
-        self.cap_cost_x = self.xp_array_incent
-        for seg in range(1, len(self.xp_array_incent)):
-            self.cap_cost_slope.append(round((self.yp_array_incent[seg] - self.yp_array_incent[seg - 1])/ self.xp_array_incent[seg] - self.xp_array_incent[seg - 1], 0))
-            self.cap_cost_yint.append(round(self.yp_array_incent[seg] - self.cap_cost_slope[-1] * self.xp_array_incent[seg], 0))
+
+        # compute cost curve
+        cost_curve_bp_x = self.xp_array_incent['federal']
+        cost_curve_bp_y = self.yp_array_incent['federal']
+
+        self.cap_cost_x = cost_curve_bp_x
+        for seg in range(1, len(cost_curve_bp_x)):
+            tmp_slope = round((cost_curve_bp_y[seg] - cost_curve_bp_y[seg - 1]) /
+                              (cost_curve_bp_x[seg] - cost_curve_bp_x[seg - 1]), 0)
+            tmp_y_int = round(cost_curve_bp_y[seg] - tmp_slope * cost_curve_bp_x[seg], 0)
+
+            self.cap_cost_slope.append(tmp_slope)
+            self.cap_cost_yint.append(tmp_y_int)
+
         self.cap_cost_segments = len(self.cap_cost_slope)
-        self.cap_cost_points = len(self.yp_array_incent)
+        self.cap_cost_points = self.cap_cost_segments + 1
 
         # include MACRS
         updated_cap_cost_slope = list()
         updated_y_intercept = list()
 
         for s in range(0, self.cap_cost_segments):
-            initial_unit_cost = ((self.cap_cost_yint[s] + self.cap_cost_slope[s]) / (1 - self.pv_itc_federal))
+
+            initial_unit_cost = 0
+            if cost_curve_bp_x[s] > 0:
+                initial_unit_cost = ((self.cap_cost_yint[s] + self.cap_cost_slope[s] * cost_curve_bp_x[s]) /
+                                     ((1 - self.pv_itc_federal) * cost_curve_bp_x[s]))
             updated_slope = self.setup_capital_cost_incentive(initial_unit_cost,
                                                               0,
                                                               self.analysis_period,
@@ -355,10 +379,9 @@ class Economics:
             updated_cap_cost_slope.append(updated_slope)
 
         for p in range(1, self.cap_cost_points):
-            self.yp_array_incent[p] = self.yp_array_incent[p - 1] + \
-                                      updated_cap_cost_slope[p - 1] * \
-                                      (self.xp_array_incent[p] - self.xp_array_incent[p - 1])
-            updated_y_intercept.append(self.yp_array_incent[p] - updated_cap_cost_slope[p - 1] * self.xp_array_incent[p])
+            cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
+                                      (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+            updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
 
         self.cap_cost_slope = updated_cap_cost_slope
         self.cap_cost_yint = updated_y_intercept
@@ -463,7 +486,6 @@ class Economics:
 
         cap_cost_slope = tech_cost - tax_shield - itc * tech_cost / (1 + discount_rate) - bonus / (1 + discount_rate)
         cap_cost_slope += replacement_cost / (1 + discount_rate) ** replacement_year
-
         return round(cap_cost_slope, 4)
 
     def setup_production_incentive(self, tech, rate_escalation, rate_discount, pbi, pbi_max, pbi_system_max, pbi_years):

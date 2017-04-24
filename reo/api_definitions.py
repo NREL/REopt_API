@@ -424,7 +424,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                         'default': 5,
-                        'restrict_to': [5, 7],
+                        'restrict_to': [0, 5, 7],
                         "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
                         "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
 
