@@ -1,8 +1,11 @@
 from api_definitions import *
+from urdb_download import *
 import requests
 import json
 import logging
 import datetime
+import pandas
+
 
 logging.basicConfig(filename='log_%s.log' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')), filemode='w', level=logging.DEBUG)
 
@@ -68,7 +71,11 @@ def case(
     "pv_rebate_utility_max": pv_rebate_utility_max,
   }
 
-  if urdb_rate == None and blended_utility_rate is None and demand_charge is None:
+  if urdb_rate is not None:
+    response['urdb_rate'] = urdb_rate
+    return response
+
+  elif urdb_rate == None and blended_utility_rate is None and demand_charge is None:
 
     urdb_rate = {"sector": "Commercial", "peakkwcapacitymax": 200,
      "demandattrs": [{"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"},
@@ -165,25 +172,30 @@ def make_call(data):
   else:
     h = "https://reopt-dev-api1.nrel.gov"
 
-  r = requests.post(h + "/api/v1/reopt/?format=json",data=data, headers=headers)
-  return r
+  try:
+    r = requests.post(h + "/api/v1/reopt/?format=json",data=data, headers=headers)
+    return r.content
+
+  except Exception as e:
+    return e
 
 
 def check_response(key, case, r):
     msg = read_response(key, r)
     if msg is not None:
-        logging.warning('%s-%s\n%s\n%s' % (key, msg, case, r.content))
-        print key, msg
+        logging.warning('%s-%s\n%s\n%s' % (key, msg, case, r))
+        print key, msg, r
 
     else:
-        logging.info('%s\n%s\n%s' % (key, case, r.content))
+        logging.info('%s\n%s\n%s' % (key, case, r))
+        print "VALID", key, r
 
 def read_response(key, r):
   try:
-      if 'error' in r.content:
+      if 'error' in r:
         return "Error"
 
-      result = json.loads(r.content)
+      result = json.loads(r)
 
       for k,v in outputs().items():
           if bool(v.get('req')):
@@ -208,12 +220,41 @@ def read_response(key, r):
                         return "Negative Value for " + k
 
   except Exception as e:
-      print key
-      print e
+      print key, e
+      print r
       logging.warning(e)
 
   return None
 
+def check_rates(rates, sample_rate=1):
+    all_rates = random.sample(rates, int(len(rates) * sample_rate))
+    for u in all_rates:
+        for r in u:
+            k = 'urdb_rate'
+            c = case(urdb_rate=r)
+            r = make_call(c)
+            check_response(k, c, r)
+
+###########################
+#Check Utility Rates
+logging.info('Started Checking Utility Rates' + ' ' + datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
+start_time = datetime.datetime.now()
+
+utility_rate_list = os.path.join(os.getcwd(), "reo/usurdb.csv")
+dat_library_root = os.getcwd()
+utility_data = urdb_download(dat_library_root)
+utility_data.load_urdb_rate_list(utility_rate_list)
+
+urdb_responses = utility_data.get_rates(sample_rate=0.01)
+check_rates(urdb_responses.values(), sample_rate=0.1)
+
+end_time = datetime.datetime.now()
+duration =  end_time - start_time
+logging.info('End Checking Utility Rates ' + ' ' + end_time.strftime('%Y%m%d %H:%M:%S') + (' (% seconds)' % (duration)) )
+
+
+###########################
+#Check Data Input Ranges
 for k,v in inputs().items():
 
     logging.info('Started ' + k + ' ' + datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
@@ -240,10 +281,10 @@ for k,v in inputs().items():
                 if v['pct']:
                     max_ = 1
                 else:
-                    max_ = 1000000
+                    max_ = 100000
 
             elif v['type'] == int:
-                max_ = 100000000
+                max_ = 100000
 
         for test in [min_,max_]:
             c = case()
@@ -253,11 +294,11 @@ for k,v in inputs().items():
     else:
         if k in ['blended_utility_rate','demand_charge','load_monthly_kwh','load_8760_kw']:
             min_ = [0]*12
-            max_ = [100000] * 12
+            max_ = [100] * 12
 
             if k in ['load_8760_kw']:
                 min_ = [0] * 8760
-                max_ = [100000] * 8760
+                max_ = [100] * 8760
 
             if k in ['blended_utility_rate','demand_charge']:
                 for test in [min_, max_]:
@@ -280,7 +321,4 @@ for k,v in inputs().items():
 
     if duration.seconds > 120:
         logging.warning( 'Long API call ' + k )
-
-
-
 
