@@ -211,9 +211,14 @@ class DatLibrary:
         command_bau = Command(run_command_bau)
 
         log("INFO", "Running Command")
-        command.run(self.timeout)
+        run1 = command.run(self.timeout)
+        if not run1 == True:
+            return {"ERROR":run1}
         log("INFO", "Running BAU")
-        command_bau.run(self.timeout)
+
+        run2 = command_bau.run(self.timeout)
+        if not run2 == True:
+            return {"ERROR":run2}
 
         self.parse_run_outputs()
         self.cleanup()

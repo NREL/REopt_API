@@ -148,6 +148,10 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
+        
+        if "ERROR" in output_dictionary.keys():
+            return output_dictionary
+
         output_dictionary['api_version'] = self.api_version
 
         result = RunOutput(**output_dictionary)

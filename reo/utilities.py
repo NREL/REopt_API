@@ -64,4 +64,5 @@ class Command(object):
             log("ERROR", "XPRESS Thread Timeout")
             self.process.terminate()
             thread.join()
-            raise ImmediateHttpResponse("Process Timed Out")        
+            return "Process Exceeeded Timeout: %s seconds" % (timeout)
+        return True
