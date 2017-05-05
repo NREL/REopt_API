@@ -542,14 +542,15 @@ class DatLibrary:
         squarefeet_to_acre = 0.0002471
         total_acres = 0
 
+        # Internal working defaults, probably need to revamp and move to api_definitions.py
         pv_kw_min = 0
-        pv_kw_max = 20000
+        pv_kw_max = 200000
         util_kw_max = 12000000
 
         batt_kw_min = 0
         batt_kwh_min = 0
-        batt_kw_max = 1000
-        batt_kwh_max = 1000
+        batt_kw_max = 10000
+        batt_kwh_max = 10000
 
 
         # pv max size based on user input
