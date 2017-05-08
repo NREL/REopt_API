@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from api_definitions import *
-import pro_forma as pf
+import pro_forma_writer as pf
 import dispatch
 from datetime import datetime
 from tastypie.exceptions import ImmediateHttpResponse
@@ -220,7 +220,13 @@ class Results:
         # - if PV or Batt do not have the same itc_rate
 
         econ = self.economics
+        results = self
 
+        pf.ProForma(self.path_output, econ, results)
+
+
+
+        """
         d = pf.ProForma(getattr(econ, 'analysis_period'),
                         getattr(econ, 'offtaker_discount_rate_nominal'),
                         getattr(econ, 'offtaker_tax_rate'),
@@ -246,6 +252,7 @@ class Results:
 
         d.make_pro_forma(self.path_proforma)
         self.irr = d.get_IRR()
+        """
 
     def update_types(self):
 
