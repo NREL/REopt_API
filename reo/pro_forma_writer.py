@@ -21,6 +21,10 @@ class ProForma:
                              results.batt_kw * econ.batt_cost_kw + \
                              results.batt_kwh * econ.batt_cost_kwh
 
+        self.year_one_bill = self.results.year_one_demand_cost + self.results.year_one_energy_cost
+        self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
+        self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
+
         # ProForma outputs
         self.IRR = 0
         self.NPV = 0
@@ -64,8 +68,8 @@ class ProForma:
         ws['C51'] = self.econ.pv_rebate_state_max
         ws['B52'] = self.econ.pv_rebate_utility
         ws['C52'] = self.econ.pv_rebate_utility_max
-        ws['C61'] = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
-        ws['C62'] = self.results.year_one_demand_cost + self.results.year_one_energy_cost
+        ws['C61'] = self.year_one_bill_bau
+        ws['C62'] = self.year_one_bill
 
         if self.econ.pv_macrs_schedule == 0:
             ws['B55'] = 0
@@ -73,3 +77,42 @@ class ProForma:
 
         # Save
         wb.save(self.file_output)
+
+    def compute_cashflow(self):
+
+        n_cols = self.econ.analysis_period + 1
+
+        # row_vectors
+        value_of_savings = [0] * n_cols
+        o_and_m_capacity_cost = [0] * n_cols
+        batt_kw_replacement_cost = [0] * n_cols
+        batt_kwh_replacement_cost = [0] * n_cols
+        total_operating_expenses = [0] * n_cols
+
+        # initialize values
+        value_of_savings[1] = self.year_one_savings
+        o_and_m_capacity_cost[1] = self.econ.pv_om
+
+        inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
+
+        for year in range(1, n_cols):
+
+            inflation_modifier_n = inflation_modifier ** year-1
+
+            # Savings
+            value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
+
+            # Operating Expenses
+            o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
+
+            if self.self.econ.batt_replacement_year_kw == year:
+                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier_n
+
+
+
+
+
+
+
+
+
