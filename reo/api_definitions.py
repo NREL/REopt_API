@@ -210,7 +210,7 @@ def inputs(filter='', full_list=False, just_required=False):
                              "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
 
         'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                           'min': ,
+                           'min': -1,
                            'max': 1, 'default': 0.01,
                            "description": "Annual Inflation Rate", "units": 'decimal percent per year',
                            "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
