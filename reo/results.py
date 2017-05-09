@@ -38,8 +38,9 @@ class Results:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, path_output, path_output_base, economics, year):
+    def __init__(self, path_templates, path_output, path_output_base, economics, year):
 
+        self.path_templates = path_templates
         self.path_output = path_output
         self.path_output_base = path_output_base
         self.path_summary = os.path.join(path_output, self.file_summary)
@@ -215,16 +216,10 @@ class Results:
 
     def generate_pro_forma(self):
 
-        # doesn't handle:
-        # - if batt replacement kw cost is different from replacement kwh cost
-        # - if PV or Batt do not have the same itc_rate
-
         econ = self.economics
         results = self
-
-        pf.ProForma(self.path_output, econ, results)
-
-
+        cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, results)
+        cash_flow.update_template()
 
         """
         d = pf.ProForma(getattr(econ, 'analysis_period'),

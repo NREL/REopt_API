@@ -69,6 +69,7 @@ class DatLibrary:
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
 
+        self.path_templates = os.path.join(self.path_egg, "reo", "templates")
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
 
@@ -277,7 +278,8 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics, self.load_year)
+            process_results = results.Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
+                                              self.economics, self.load_year)
             process_results.run()
 
             for k in self.outputs():
