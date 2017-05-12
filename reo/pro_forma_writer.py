@@ -2,7 +2,8 @@ import os
 import numpy as np
 from openpyxl import load_workbook
 
-class ProForma:
+
+class ProForma(object):
 
     file_template = "REoptCashFlowTemplate.xlsx"
     file_output = "ProForma.xlsx"
@@ -29,6 +30,8 @@ class ProForma:
         # ProForma outputs
         self.IRR = 0
         self.NPV = 0
+        self.LCC = 0
+        self.LCC_BAU = 0
 
         # tax credits reduce depreciation and ITC basis
         self.itc_fed_percent_deprbas_fed = True
@@ -122,7 +125,8 @@ class ProForma:
 
         # row_vectors to match template spreadsheet
         zero_list = [0] * n_cols
-
+        bill_without_system = zero_list
+        bill_with_system = zero_list
         value_of_savings = zero_list
         o_and_m_capacity_cost = zero_list
         batt_kw_replacement_cost = zero_list
@@ -144,6 +148,8 @@ class ProForma:
         after_tax_annual_costs = zero_list
         after_tax_value_of_energy = zero_list
         after_tax_cash_flow = zero_list
+        net_annual_costs_with_system = zero_list
+        net_annual_costs_without_system = zero_list
 
         # incentives, tax credits, depreciation
         federal_itc = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_federal_max)
@@ -167,8 +173,12 @@ class ProForma:
         pre_tax_cash_flow[0] = -debt_amount[0]
         after_tax_annual_costs[0] = pre_tax_cash_flow[0]
         after_tax_cash_flow[0] = after_tax_annual_costs[0]
+        net_annual_costs_with_system[0] = - self.year_one_bill
+        net_annual_costs_without_system[0] = -self.year_one_bill_bau
 
         # year 1 initializations
+        bill_with_system[1] = self.year_one_bill
+        bill_without_system[1] = self.year_one_bill_bau
         value_of_savings[1] = self.year_one_savings
         o_and_m_capacity_cost[1] = self.econ.pv_om
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
@@ -180,7 +190,10 @@ class ProForma:
             inflation_modifier_n = inflation_modifier ** year-1
 
             if year > 1:
-                # Savings
+
+                # Bill savings
+                bill_without_system[year] = bill_without_system[year - 1] * inflation_modifier
+                bill_with_system[year] = bill_with_system[year - 1] * inflation_modifier
                 value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
 
                 # Operating Expenses
@@ -226,12 +239,14 @@ class ProForma:
             after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (state_tax_owner + (1 - state_tax_owner) * fed_tax_owner))
             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
 
+            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (state_tax_owner * (1-state_tax_owner) * fed_tax_owner))
+            net_annual_costs_without_system[year] = - bill_without_system[year] * (1 - (state_tax_owner * (1- state_tax_owner) * fed_tax_owner))
+
         # compute outputs
         self.IRR = np.irr(after_tax_cash_flow)
         self.NPV = sum(after_tax_cash_flow)
-
-    def irr(self):
-        return self.IRR
+        self.LCC = -np.npv(self.econ.owner_discount_rate, net_annual_costs_with_system)
+        self.LCC_BAU = -np.npv(self.econ.owner_discount_rate, net_annual_costs_without_system)
 
     def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
 
