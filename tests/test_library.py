@@ -1,7 +1,6 @@
 import unittest
 
 from reo.library import DatLibrary
-from reo.pro_forma import ProForma
 from enum import Enum
 
 import json

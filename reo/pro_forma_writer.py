@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from openpyxl import load_workbook
 
 class ProForma:
@@ -28,6 +29,39 @@ class ProForma:
         # ProForma outputs
         self.IRR = 0
         self.NPV = 0
+
+        # tax credits reduce depreciation and ITC basis
+        self.itc_fed_percent_deprbas_fed = True
+        self.itc_fed_percent_deprbas_sta = True
+
+        # incentive is taxable
+        self.itc_sta_percent_tax_fed = True
+        self.itc_sta_percent_tax_fed = True
+        self.itc_util_percent_tax_fed = True
+        self.itc_util_percent_tax_sta = True
+
+        self.cbi_fed_tax_fed = True
+        self.cbi_fed_tax_sta = True
+        self.cbi_sta_tax_fed = True
+        self.cbi_sta_tax_sta = True
+        self.cbi_uti_tax_fed = True
+        self.cbi_uti_tax_sta = True
+
+        # incentive reduces depreciation and ITC basis
+        self.ibi_sta_percent_deprbas_fed = False
+        self.ibi_sta_percent_deprbas_sta = False
+        self.ibi_uti_percent_deprbas_fed = False
+        self.ibi_uti_percent_deprbas_sta = False
+
+        self.cbi_fed_deprbas_fed = False
+        self.cbi_fed_deprbas_sta = False
+        self.cbi_sta_deprbas_fed = False
+        self.cbi_sta_deprbas_sta = False
+        self.cbi_uti_deprbas_fed = False
+        self.cbi_uti_deprbas_sta = False
+
+        # Assume state MACRS the same as fed
+        self.state_depreciation_equals_federal = True
 
     def update_template(self):
 
@@ -82,31 +116,201 @@ class ProForma:
 
         n_cols = self.econ.analysis_period + 1
 
-        # row_vectors
-        value_of_savings = [0] * n_cols
-        o_and_m_capacity_cost = [0] * n_cols
-        batt_kw_replacement_cost = [0] * n_cols
-        batt_kwh_replacement_cost = [0] * n_cols
-        total_operating_expenses = [0] * n_cols
+        # approximate state taxes as 5/35 of total taxes
+        state_tax_owner = 7./37. * self.econ.owner_tax_rate
+        fed_tax_owner = 30./37. * self.econ.owner_tax_rate
 
-        # initialize values
+        # row_vectors to match template spreadsheet
+        zero_list = [0] * n_cols
+
+        value_of_savings = zero_list
+        o_and_m_capacity_cost = zero_list
+        batt_kw_replacement_cost = zero_list
+        batt_kwh_replacement_cost = zero_list
+        total_operating_expenses = zero_list
+        total_deductible_expenses = zero_list
+        debt_amount = zero_list
+        pre_tax_cash_flow = zero_list
+        total_investment_based_incentives = zero_list
+        total_capacity_based_incentives = zero_list
+        state_depreciation_amount = zero_list
+        state_total_deductions = zero_list
+        state_income_tax = zero_list
+        state_tax_liability = zero_list
+        federal_depreciation_amount = zero_list
+        federal_total_deductions = zero_list
+        federal_income_tax = zero_list
+        federal_tax_liability = zero_list
+        after_tax_annual_costs = zero_list
+        after_tax_value_of_energy = zero_list
+        after_tax_cash_flow = zero_list
+
+        # incentives, tax credits, depreciation
+        federal_itc = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_federal_max)
+        state_ibi = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_state_max)
+        utility_ibi = min(self.econ.pv_itc_utility * self.capital_costs, self.econ.pv_itc_utility_max)
+        federal_cbi = min(self.econ.pv_rebate_federal * self.capital_costs, self.econ.pv_rebate_federal_max)
+        state_cbi = min(self.econ.pv_rebate_state * self.capital_costs, self.econ.pv_rebate_state_max)
+        utility_cbi = min(self.econ.pv_rebate_utility * self.capital_costs, self.econ.pv_rebate_utility_max)
+
+
+        state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
+        state_depreciation_basis = self.state_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
+                                                                 state_cbi, utility_cbi)
+        federal_itc_basis = self.federal_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
+        federal_depreciation_basis = self.federal_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
+                                                                     state_cbi, utility_cbi)
+        macrs_schedule = self.econ.pv_macrs_schedule_array
+
+        # year 0 initializations
+        debt_amount[0] = self.capital_costs
+        pre_tax_cash_flow[0] = -debt_amount[0]
+        after_tax_annual_costs[0] = pre_tax_cash_flow[0]
+        after_tax_cash_flow[0] = after_tax_annual_costs[0]
+
+        # year 1 initializations
         value_of_savings[1] = self.year_one_savings
         o_and_m_capacity_cost[1] = self.econ.pv_om
-
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
+        total_investment_based_incentives[1] = state_ibi + utility_ibi
+        total_capacity_based_incentives[1] = federal_cbi + state_cbi + utility_cbi
 
         for year in range(1, n_cols):
 
             inflation_modifier_n = inflation_modifier ** year-1
 
-            # Savings
-            value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
+            if year > 1:
+                # Savings
+                value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
 
-            # Operating Expenses
-            o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
+                # Operating Expenses
+                o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier_n
 
-            if self.self.econ.batt_replacement_year_kw == year:
+            if self.econ.batt_replacement_year_kw == year:
                 batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier_n
+
+            if self.econ.batt_replacement_year_kwh == year:
+                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier_n
+
+            total_operating_expenses[year] = o_and_m_capacity_cost[year] + batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
+
+            # Tax deductible operating expenses
+            if self.econ.pv_macrs_schedule != 0:
+                total_deductible_expenses[year] = total_operating_expenses[year]
+
+            # Pre-tax cash flow
+            pre_tax_cash_flow[year] = -(total_operating_expenses[year])
+
+            # State income tax
+            if year > 0 and year <= len(macrs_schedule):
+                state_depreciation_amount[year] = state_depreciation_basis * macrs_schedule[year - 1]
+                state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
+                state_income_tax[year] = -state_total_deductions[year] * state_tax_owner
+
+            state_tax_liability[year] = - state_income_tax[year]
+
+            # Federal income tax
+            if year > 0 and year <= len(macrs_schedule):
+                federal_depreciation_amount[year] = federal_depreciation_basis * macrs_schedule[year - 1]
+                federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + state_income_tax[year]
+                federal_income_tax[year] = -federal_total_deductions[year] * fed_tax_owner
+
+            federal_tax_liability[year] = -federal_income_tax[year] + federal_itc
+
+            # After tax calculation
+            after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
+                                           total_investment_based_incentives[year] + \
+                                           total_capacity_based_incentives[year] + \
+                                           state_tax_liability[year] + \
+                                           federal_tax_liability[year]
+            after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (state_tax_owner + (1 - state_tax_owner) * fed_tax_owner))
+            after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
+
+        # compute outputs
+        self.IRR = np.irr(after_tax_cash_flow)
+        self.NPV = sum(after_tax_cash_flow)
+
+    def irr(self):
+        return self.IRR
+
+    def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
+
+        basis = 0
+        state_deprecation = 0
+        itc_federal = 0
+
+        if self.state_depreciation_equals_federal:
+            state_deprecation = self.econ.pv_macrs_schedule
+
+        if self.itc_fed_percent_deprbas_sta:
+            itc_federal = self.econ.macrs_itc_reduction * federal_itc
+
+        if state_deprecation > 0:
+            state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
+            basis = state_itc_basis - itc_federal
+
+        return basis
+
+    def federal_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
+
+        basis = 0
+        federal_deprecation = self.econ.pv_macrs_schedule
+        itc_federal = 0
+
+        if self.itc_fed_percent_deprbas_fed:
+            itc_federal = self.econ.macrs_itc_reduction * federal_itc
+
+        if federal_deprecation > 0:
+            federal_itc_basis = self.federal_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
+            basis = federal_itc_basis - itc_federal
+
+        return basis
+
+    def state_itc_basis(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
+
+        # reduce the itc basis
+        ibi_state = 0
+        ibi_util = 0
+        cbi_fed = 0
+        cbi_state = 0
+        cbi_util = 0
+
+        if self.ibi_sta_percent_deprbas_sta:
+            ibi_state = state_ibi
+        if self.ibi_uti_percent_deprbas_sta:
+            ibi_util = utility_ibi
+        if self.cbi_fed_deprbas_sta:
+            cbi_fed = federal_cbi
+        if self.cbi_sta_deprbas_sta:
+            cbi_state = state_cbi
+        if self.cbi_uti_deprbas_sta:
+            cbi_util = utility_cbi
+
+        return self.capital_costs - ibi_state - ibi_util - cbi_fed - cbi_state - cbi_util
+
+    def federal_itc_basis(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
+
+        # reduce the itc basis
+        ibi_state = 0
+        ibi_util = 0
+        cbi_fed = 0
+        cbi_state = 0
+        cbi_util = 0
+
+        if self.ibi_sta_percent_deprbas_fed:
+            ibi_state = state_ibi
+        if self.ibi_uti_percent_deprbas_fed:
+            ibi_util = utility_ibi
+        if self.cbi_fed_deprbas_fed:
+            cbi_fed = federal_cbi
+        if self.cbi_sta_deprbas_fed:
+            cbi_state = state_cbi
+        if self.cbi_uti_deprbas_fed:
+            cbi_util = utility_cbi
+
+        return self.capital_costs - ibi_state - ibi_util - cbi_fed - cbi_state - cbi_util
+
+
 
 
 
