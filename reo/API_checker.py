@@ -240,7 +240,7 @@ def check_rates(rates, sample_rate=1):
 logging.info('Started Checking Utility Rates' + ' ' + datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
 start_time = datetime.datetime.now()
 
-utility_rate_list = os.path.join("~/Desktop/usurdb.csv")
+utility_rate_list = os.path.join("~/Desktop/IAC/usurdb.csv")
 dat_library_root = os.getcwd()
 utility_data = urdb_download(dat_library_root)
 utility_data.load_urdb_rate_list(utility_rate_list)

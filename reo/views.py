@@ -22,6 +22,13 @@ def index(request):
     api_outputs = outputs()
     return render(request,'template.html',{'api_inputs':api_inputs,'api_outputs':api_outputs})
 
+def definition(request):
+    reference = inputs(full_list=True)
+    for k,v in reference.items():
+        reference[k]['type'] = reference[k].get('type').__name__
+
+    return HttpResponse(json.dumps(reference), content_type='application/json')
+
 def check_inputs(request):
 
     checker = REoptResourceValidation()
