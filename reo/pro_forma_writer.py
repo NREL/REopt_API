@@ -2,6 +2,8 @@ import os
 import numpy as np
 from openpyxl import load_workbook
 
+# logging
+from log_levels import log
 
 class ProForma(object):
 
@@ -26,6 +28,15 @@ class ProForma(object):
         self.year_one_bill = self.results.year_one_demand_cost + self.results.year_one_energy_cost
         self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
+
+        # approximate state taxes as 5/35 of total taxes
+        self.state_tax_owner = 7./37. * self.econ.owner_tax_rate
+        self.fed_tax_owner = 30./37. * self.econ.owner_tax_rate
+
+        # intermediate values to test
+        self.bill_with_sys = list()
+        self.bill_bau = list()
+        self.total_operating_expenses = list()
 
         # ProForma outputs
         self.IRR = 0
@@ -92,7 +103,8 @@ class ProForma(object):
         ws['B25'] = self.econ.rate_inflation * 100
         ws['B26'] = self.econ.rate_escalation * 100
         ws['B27'] = self.econ.owner_discount_rate * 100
-        ws['B31'] = self.econ.owner_tax_rate * 100
+        ws['B31'] = self.fed_tax_owner * 100
+        ws['B32'] = self.state_tax_owner * 100
         ws['B42'] = self.econ.pv_itc_federal * 100
         ws['C42'] = self.econ.pv_itc_federal_max
         ws['B47'] = self.econ.pv_itc_state * 100
@@ -119,37 +131,33 @@ class ProForma(object):
 
         n_cols = self.econ.analysis_period + 1
 
-        # approximate state taxes as 5/35 of total taxes
-        state_tax_owner = 7./37. * self.econ.owner_tax_rate
-        fed_tax_owner = 30./37. * self.econ.owner_tax_rate
-
         # row_vectors to match template spreadsheet
         zero_list = [0] * n_cols
-        bill_without_system = zero_list
-        bill_with_system = zero_list
-        value_of_savings = zero_list
-        o_and_m_capacity_cost = zero_list
-        batt_kw_replacement_cost = zero_list
-        batt_kwh_replacement_cost = zero_list
-        total_operating_expenses = zero_list
-        total_deductible_expenses = zero_list
-        debt_amount = zero_list
-        pre_tax_cash_flow = zero_list
-        total_investment_based_incentives = zero_list
-        total_capacity_based_incentives = zero_list
-        state_depreciation_amount = zero_list
-        state_total_deductions = zero_list
-        state_income_tax = zero_list
-        state_tax_liability = zero_list
-        federal_depreciation_amount = zero_list
-        federal_total_deductions = zero_list
-        federal_income_tax = zero_list
-        federal_tax_liability = zero_list
-        after_tax_annual_costs = zero_list
-        after_tax_value_of_energy = zero_list
-        after_tax_cash_flow = zero_list
-        net_annual_costs_with_system = zero_list
-        net_annual_costs_without_system = zero_list
+        bill_without_system = list(zero_list)
+        bill_with_system = list(zero_list)
+        value_of_savings = list(zero_list)
+        o_and_m_capacity_cost = list(zero_list)
+        batt_kw_replacement_cost = list(zero_list)
+        batt_kwh_replacement_cost = list(zero_list)
+        total_operating_expenses = list(zero_list)
+        total_deductible_expenses = list(zero_list)
+        debt_amount = list(zero_list)
+        pre_tax_cash_flow = list(zero_list)
+        total_investment_based_incentives = list(zero_list)
+        total_capacity_based_incentives = list(zero_list)
+        state_depreciation_amount = list(zero_list)
+        state_total_deductions = list(zero_list)
+        state_income_tax = list(zero_list)
+        state_tax_liability = list(zero_list)
+        federal_depreciation_amount = list(zero_list)
+        federal_total_deductions = list(zero_list)
+        federal_income_tax = list(zero_list)
+        federal_tax_liability = list(zero_list)
+        after_tax_annual_costs = list(zero_list)
+        after_tax_value_of_energy = list(zero_list)
+        after_tax_cash_flow = list(zero_list)
+        net_annual_costs_with_system = list(zero_list)
+        net_annual_costs_without_system = list(zero_list)
 
         # incentives, tax credits, depreciation
         federal_itc = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_federal_max)
@@ -158,7 +166,6 @@ class ProForma(object):
         federal_cbi = min(self.econ.pv_rebate_federal * self.capital_costs, self.econ.pv_rebate_federal_max)
         state_cbi = min(self.econ.pv_rebate_state * self.capital_costs, self.econ.pv_rebate_state_max)
         utility_cbi = min(self.econ.pv_rebate_utility * self.capital_costs, self.econ.pv_rebate_utility_max)
-
 
         state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
         state_depreciation_basis = self.state_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
@@ -179,15 +186,16 @@ class ProForma(object):
         # year 1 initializations
         bill_with_system[1] = self.year_one_bill
         bill_without_system[1] = self.year_one_bill_bau
+
         value_of_savings[1] = self.year_one_savings
-        o_and_m_capacity_cost[1] = self.econ.pv_om
+        o_and_m_capacity_cost[1] = self.econ.pv_om * self.results.pv_kw
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
         total_investment_based_incentives[1] = state_ibi + utility_ibi
         total_capacity_based_incentives[1] = federal_cbi + state_cbi + utility_cbi
 
         for year in range(1, n_cols):
 
-            inflation_modifier_n = inflation_modifier ** year-1
+            inflation_modifier_n = inflation_modifier ** (year-1)
 
             if year > 1:
 
@@ -197,13 +205,13 @@ class ProForma(object):
                 value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
 
                 # Operating Expenses
-                o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier_n
+                o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
 
             if self.econ.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier_n
+                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier
 
             if self.econ.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier_n
+                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier
 
             total_operating_expenses[year] = o_and_m_capacity_cost[year] + batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
 
@@ -218,7 +226,7 @@ class ProForma(object):
             if year > 0 and year <= len(macrs_schedule):
                 state_depreciation_amount[year] = state_depreciation_basis * macrs_schedule[year - 1]
                 state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
-                state_income_tax[year] = -state_total_deductions[year] * state_tax_owner
+                state_income_tax[year] = -state_total_deductions[year] * self.state_tax_owner
 
             state_tax_liability[year] = - state_income_tax[year]
 
@@ -226,7 +234,7 @@ class ProForma(object):
             if year > 0 and year <= len(macrs_schedule):
                 federal_depreciation_amount[year] = federal_depreciation_basis * macrs_schedule[year - 1]
                 federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + state_income_tax[year]
-                federal_income_tax[year] = -federal_total_deductions[year] * fed_tax_owner
+                federal_income_tax[year] = -federal_total_deductions[year] * self.fed_tax_owner
 
             federal_tax_liability[year] = -federal_income_tax[year] + federal_itc
 
@@ -236,14 +244,26 @@ class ProForma(object):
                                            total_capacity_based_incentives[year] + \
                                            state_tax_liability[year] + \
                                            federal_tax_liability[year]
-            after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (state_tax_owner + (1 - state_tax_owner) * fed_tax_owner))
+            after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
 
-            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (state_tax_owner * (1-state_tax_owner) * fed_tax_owner))
-            net_annual_costs_without_system[year] = - bill_without_system[year] * (1 - (state_tax_owner * (1- state_tax_owner) * fed_tax_owner))
+            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (self.state_tax_owner * (1-self.state_tax_owner) * self.fed_tax_owner))
+            net_annual_costs_without_system[year] = - bill_without_system[year] * (1 - (self.state_tax_owner * (1- self.state_tax_owner) * self.fed_tax_owner))
+
+        # Intermediate values to test
+        self.bill_with_sys = bill_with_system
+        self.bill_bau = bill_without_system
+        self.total_operating_expenses = total_operating_expenses
+
+        #import pdb
+        #pdb.set_trace()
 
         # compute outputs
-        self.IRR = np.irr(after_tax_cash_flow)
+        try:
+            self.IRR = np.irr(after_tax_cash_flow)
+        except ValueError:
+            log("ERROR", "IRR calculation failed to compute a real number")
+
         self.NPV = sum(after_tax_cash_flow)
         self.LCC = -np.npv(self.econ.owner_discount_rate, net_annual_costs_with_system)
         self.LCC_BAU = -np.npv(self.econ.owner_discount_rate, net_annual_costs_without_system)

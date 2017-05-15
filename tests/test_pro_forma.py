@@ -45,11 +45,34 @@ class TestProForma(unittest.TestCase):
         cash_flow.update_template()
         cash_flow.compute_cashflow()
 
+        # expected values
+        expected_bill_no_system = [0, 826030, 842551, 859402, 876590, 894121, 912004, 930244, 948849, 967826, 987182,
+                                   1006926, 1027064, 1047606, 1068558, 1089929, 1111728, 1133962, 1156641, 1179774,
+                                   1203370, 1227437, 1251986, 1277026, 1302566, 1328617]
+
+        expected_bill_with_system = [0, 783215, 798879, 814857, 831154, 847777, 864733, 882027, 899668, 917661, 936014,
+                                     954735, 973829, 993306, 1013172, 1033436, 1054104, 1075186, 1096690, 1118624,
+                                     1140996, 1163816, 1187093, 1210834, 1235051, 1259752]
+
+        expected_total_operating_expenses = [0, 4392, 4480, 4569, 4661, 4754, 4849, 4946, 5045, 5146, 94880, 5353, 5461,
+                                             5570, 5681, 5795, 5911, 6029, 6149, 6272, 6398, 6526, 6656, 6790, 6925, 7064]
+
+
+        expected_cap_costs = 542718
+        expected_lcc_bau = 6739405
+        expected_lcc = 6714537
+        expected_npv = 24868
+        expected_irr = 8.96
+
         # begin test asserts
-        self.assertEqual(round(cash_flow.LCC_BAU, 0), 6739405, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC), 6739405))
-        self.assertEqual(round(cash_flow.LCC, 0), 6678063, "LCC bau does not match expected result")
-        self.assertEqual(round(cash_flow.NPV, 0), 61342, "NPV does not match expected result")
-        self.assertEqual(round(cash_flow.IRR * 100, 1), 10.4, "IRR does not match expected result")
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.bill_bau], expected_bill_no_system)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.bill_with_sys], expected_bill_with_system)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.total_operating_expenses], expected_total_operating_expenses)
+        self.assertEqual(round(cash_flow.capital_costs, 0), expected_cap_costs, msg='CapCosts of {0} does not match expected result of {1}'.format(int(cash_flow.capital_costs), expected_cap_costs))
+        self.assertEqual(round(cash_flow.LCC_BAU, 0), expected_lcc_bau, msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_BAU), expected_lcc_bau))
+        self.assertEqual(round(cash_flow.LCC, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_), expected_lcc))
+        self.assertEqual(round(cash_flow.NPV, 0), expected_npv, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.NPV), expected_npv))
+        self.assertEqual(round(cash_flow.IRR * 100, 1), expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.IRR), expected_irr))
 
 
 
