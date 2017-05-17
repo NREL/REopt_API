@@ -500,8 +500,16 @@ def inputs(filter='', full_list=False, just_required=False):
                  "tool_tip": "The tilt of the proposed PV System, commonly matches the latitide for optimal performance."},
 
         'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
-                'min': 0.01, 'max': 0.99, "description": "Ground  Cover Ratio",
+                'min': 0.01, 'max': 0.99, "description": "Ground Cover Ratio",
                 "tool_tip": "The Ground Cover Ratio of the proposed PV system."},
+
+        'outage_start': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
+                'min': 0, 'max': 8759, "description": "Grid outage start hour.",
+                "tool_tip": "Hour of year that grid outage starts."},
+
+        'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
+                'min': 0, 'max': 8759, "description": "Grid outage end hour.",
+                "tool_tip": "Hour of year that grid outage ends."},
     }
     if full_list:
         return output
