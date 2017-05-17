@@ -1,10 +1,5 @@
 #!/user/bin/python
 # ==============================================================================
-#  File: ~\Sunlamp\DatLibrarySetup\pvwatts\pvwatts.py
-#
-#  Date: July 15, 2016
-#  Auth: N. DiOrio, N. Laws
-#
 #  Description: download pvwatts solar resource for given lat/lon
 #       and produce 'ProdFactor' for Mosel (includes utility ProdFactor)
 # ==============================================================================
@@ -14,6 +9,7 @@ import os, csv
 import keys
 from api_definitions import *
 from log_levels import log
+
 
 class PVWatts:
 
@@ -46,11 +42,24 @@ class PVWatts:
     filename_GIS = []
     filename_GIS_bau = []
 
-    def __init__(self, output_root, run_id, pvwatts_inputs, levelization_factor, steps_per_hour=1):
+    def __init__(self, output_root, run_id, pvwatts_inputs, levelization_factor, steps_per_hour=1,
+                 outage_start=None, outage_end=None):
+        """
+
+        :param output_root:
+        :param run_id:
+        :param pvwatts_inputs:
+        :param levelization_factor:
+        :param steps_per_hour:
+        :param outage_start: int, min: 0, max: 8759, zero-based index for the hour that grid outage starts
+        :param outage_end:  int, min: 0, max: 8759, zero-based index for the hour that grid outage ends
+        """
         self.steps_per_hour = steps_per_hour
         self.output_root = output_root
         self.run_id = run_id
         self.levelization_factor = levelization_factor
+        self.outage_start = outage_start
+        self.outage_end = outage_end
 
         for k,v in pvwatts_inputs.items():
             setattr(self,k,v)
@@ -112,11 +121,19 @@ class PVWatts:
 
         for t in tech:
             pf_Dict[t] = {ld: None for ld in load}
+
             if t is 'UTIL1':
-                pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = [1.0 for _ in range(
-                    8760)]  # grid produces 100% of capacity, so '1's for Retail and Storage
+
+                grid_prod_factor = [1.0 for _ in range(8760)]
+
+                if self.outage_start and self.outage_end:  # "turn off" grid resource
+                    grid_prod_factor[self.outage_start:self.outage_end] = [0]*(self.outage_end - self.outage_start)
+
+                pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = grid_prod_factor
+                    # grid produces 100% of capacity, so '1's for Retail and Storage
                 pf_Dict[t]['1W'] = pf_Dict[t]['1X'] = [0.0 for _ in range(
-                    8760)]  # grid cannot sell back, so '0's for Wholesale and Xbin
+                    8760)]  # grid cannot sell back, so '0's for Wholesale and Export
+
             elif t is 'PV':
                 pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = \
                     pf_Dict[t]['1W'] = pf_Dict[t]['1X'] = [p for p in prod_factor_ts]  # PV can serve all loads
