@@ -33,7 +33,12 @@ class ProForma(object):
         self.state_tax_owner = 7./37. * self.econ.owner_tax_rate
         self.fed_tax_owner = 30./37. * self.econ.owner_tax_rate
 
-        # intermediate values to test
+        # Unit test outputs
+        self.state_depr_basis_calc = 0
+        self.state_itc_basis_calc = 0
+        self.fed_depr_basis_calc = 0
+        self.fed_itc_basis_calc = 0
+        self.state_tax_liability = list()
         self.bill_with_sys = list()
         self.bill_bau = list()
         self.total_operating_expenses = list()
@@ -160,7 +165,7 @@ class ProForma(object):
         net_annual_costs_without_system = list(zero_list)
 
         # incentives, tax credits, depreciation
-        federal_itc = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_federal_max)
+        federal_itc = min(self.econ.pv_itc_federal * self.capital_costs, self.econ.pv_itc_federal_max)
         state_ibi = min(self.econ.pv_itc_state * self.capital_costs, self.econ.pv_itc_state_max)
         utility_ibi = min(self.econ.pv_itc_utility * self.capital_costs, self.econ.pv_itc_utility_max)
         federal_cbi = min(self.econ.pv_rebate_federal * self.capital_costs, self.econ.pv_rebate_federal_max)
@@ -208,10 +213,10 @@ class ProForma(object):
                 o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
 
             if self.econ.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier
+                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier_n
 
             if self.econ.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier
+                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier_n
 
             total_operating_expenses[year] = o_and_m_capacity_cost[year] + batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
 
@@ -250,13 +255,15 @@ class ProForma(object):
             net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (self.state_tax_owner * (1-self.state_tax_owner) * self.fed_tax_owner))
             net_annual_costs_without_system[year] = - bill_without_system[year] * (1 - (self.state_tax_owner * (1- self.state_tax_owner) * self.fed_tax_owner))
 
-        # Intermediate values to test
+        # Additional Unit test outputs
+        self.state_depr_basis_calc = state_depreciation_basis
+        self.state_itc_basis_calc = state_itc_basis
+        self.fed_depr_basis_calc = federal_depreciation_basis
+        self.fed_itc_basis_calc = federal_itc_basis
+        self.state_tax_liability = state_tax_liability
         self.bill_with_sys = bill_with_system
         self.bill_bau = bill_without_system
         self.total_operating_expenses = total_operating_expenses
-
-        #import pdb
-        #pdb.set_trace()
 
         # compute outputs
         try:
@@ -269,6 +276,9 @@ class ProForma(object):
         self.LCC_BAU = -np.npv(self.econ.owner_discount_rate, net_annual_costs_without_system)
 
     def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
+
+        #import pdb
+        #pdb.set_trace()
 
         basis = 0
         state_deprecation = 0
