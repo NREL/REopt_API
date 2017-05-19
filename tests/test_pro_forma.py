@@ -60,6 +60,14 @@ class TestProForma(unittest.TestCase):
         expected_state_tax_liability = [0, 6766, 10647, 6520, 4046, 4053, 2199, 346, 353, 360, 6642, 375, 382, 390, 398,
                                         406, 414, 422, 430, 439, 448, 457, 466, 475, 485, 494]
 
+        expected_federal_tax_liability = [0, 189782, 42436, 25986, 16127, 16153, 8766, 1380, 1407, 1436, 26472, 1494,
+                                          1523, 1554, 1585, 1617, 1649, 1682, 1716, 1750, 1785, 1821, 1857, 1894, 1932,
+                                          1971]
+
+        expected_after_tax_annual_costs = [-542718, 192156, 48603, 27937, 15513, 15452, 6117, -3220, -3284, -3350,
+                                           -61767, -3485, -3555, -3626, -3698, -3772, -3848, -3925, -4003, -4083, -4165,
+                                           -4248, -4333, -4420, -4508, -4599]
+
         expected_cap_costs = 542718
         expected_state_depreciation_basis = 461310
         expected_state_itc_basis = 542718
@@ -80,6 +88,9 @@ class TestProForma(unittest.TestCase):
         self.assertEqual(round(cash_flow.fed_depr_basis_calc, 0), expected_fed_depreciation_basis)
         self.assertEqual(round(cash_flow.fed_itc_basis_calc, 0), expected_fed_itc_basis)
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.state_tax_liability], expected_state_tax_liability)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.federal_tax_liability], expected_federal_tax_liability)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.after_tax_annual_costs], expected_after_tax_annual_costs)
+
         self.assertEqual(round(cash_flow.LCC_BAU, 0), expected_lcc_bau, msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_BAU), expected_lcc_bau))
         self.assertEqual(round(cash_flow.LCC, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_), expected_lcc))
         self.assertEqual(round(cash_flow.NPV, 0), expected_npv, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.NPV), expected_npv))

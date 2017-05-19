@@ -39,9 +39,11 @@ class ProForma(object):
         self.fed_depr_basis_calc = 0
         self.fed_itc_basis_calc = 0
         self.state_tax_liability = list()
+        self.federal_tax_liability = list()
         self.bill_with_sys = list()
         self.bill_bau = list()
         self.total_operating_expenses = list()
+        self.after_tax_annual_costs = list()
 
         # ProForma outputs
         self.IRR = 0
@@ -230,18 +232,23 @@ class ProForma(object):
             # State income tax
             if year > 0 and year <= len(macrs_schedule):
                 state_depreciation_amount[year] = state_depreciation_basis * macrs_schedule[year - 1]
-                state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
-                state_income_tax[year] = -state_total_deductions[year] * self.state_tax_owner
 
+            state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
+            state_income_tax[year] = -state_total_deductions[year] * self.state_tax_owner
             state_tax_liability[year] = - state_income_tax[year]
 
             # Federal income tax
+            federal_itc_to_apply = 0
+            if year == 1:
+                federal_itc_to_apply = federal_itc
+
             if year > 0 and year <= len(macrs_schedule):
                 federal_depreciation_amount[year] = federal_depreciation_basis * macrs_schedule[year - 1]
-                federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + state_income_tax[year]
-                federal_income_tax[year] = -federal_total_deductions[year] * self.fed_tax_owner
 
-            federal_tax_liability[year] = -federal_income_tax[year] + federal_itc
+            federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + \
+                                             state_income_tax[year]
+            federal_income_tax[year] = -federal_total_deductions[year] * self.fed_tax_owner
+            federal_tax_liability[year] = -federal_income_tax[year] + federal_itc_to_apply
 
             # After tax calculation
             after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
@@ -261,9 +268,11 @@ class ProForma(object):
         self.fed_depr_basis_calc = federal_depreciation_basis
         self.fed_itc_basis_calc = federal_itc_basis
         self.state_tax_liability = state_tax_liability
+        self.federal_tax_liability = federal_tax_liability
         self.bill_with_sys = bill_with_system
         self.bill_bau = bill_without_system
         self.total_operating_expenses = total_operating_expenses
+        self.after_tax_annual_costs = after_tax_annual_costs
 
         # compute outputs
         try:
