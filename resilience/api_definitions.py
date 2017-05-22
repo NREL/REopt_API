@@ -15,3 +15,8 @@ def inputs(filter='', full_list=False, just_required=False):
       return output
 
     return output
+
+def outputs():
+    return {'resiliency_hours':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Hours of Resliency", "units": 'hours'},}
