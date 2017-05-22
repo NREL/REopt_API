@@ -97,7 +97,7 @@ class ProForma(object):
     def get_lcc(self):
         return self.lcc
 
-    def get_irr(self):
+    def get_lcc_bau(self):
         return self.lcc_bau
 
     def update_template(self):
