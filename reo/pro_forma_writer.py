@@ -44,6 +44,10 @@ class ProForma(object):
         self.bill_bau = list()
         self.total_operating_expenses = list()
         self.after_tax_annual_costs = list()
+        self.after_tax_value = list()
+        self.after_tax_cash_flow = list()
+        self.net_annual_cost_without_sys = list()
+        self.net_annual_cost_with_sys = list()
 
         # ProForma outputs
         self.IRR = 0
@@ -187,8 +191,8 @@ class ProForma(object):
         pre_tax_cash_flow[0] = -debt_amount[0]
         after_tax_annual_costs[0] = pre_tax_cash_flow[0]
         after_tax_cash_flow[0] = after_tax_annual_costs[0]
-        net_annual_costs_with_system[0] = - self.year_one_bill
-        net_annual_costs_without_system[0] = -self.year_one_bill_bau
+        net_annual_costs_with_system[0] = -self.capital_costs
+        net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
         bill_with_system[1] = self.year_one_bill
@@ -230,7 +234,7 @@ class ProForma(object):
             pre_tax_cash_flow[year] = -(total_operating_expenses[year])
 
             # State income tax
-            if year > 0 and year <= len(macrs_schedule):
+            if year <= len(macrs_schedule):
                 state_depreciation_amount[year] = state_depreciation_basis * macrs_schedule[year - 1]
 
             state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
@@ -242,7 +246,7 @@ class ProForma(object):
             if year == 1:
                 federal_itc_to_apply = federal_itc
 
-            if year > 0 and year <= len(macrs_schedule):
+            if year <= len(macrs_schedule):
                 federal_depreciation_amount[year] = federal_depreciation_basis * macrs_schedule[year - 1]
 
             federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + \
@@ -259,8 +263,8 @@ class ProForma(object):
             after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
 
-            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (self.state_tax_owner * (1-self.state_tax_owner) * self.fed_tax_owner))
-            net_annual_costs_without_system[year] = - bill_without_system[year] * (1 - (self.state_tax_owner * (1- self.state_tax_owner) * self.fed_tax_owner))
+            net_annual_costs_without_system[year] = -bill_without_system[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
+            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (self.state_tax_owner + (1 -self.state_tax_owner) * self.fed_tax_owner))
 
         # Additional Unit test outputs
         self.state_depr_basis_calc = state_depreciation_basis
@@ -273,6 +277,13 @@ class ProForma(object):
         self.bill_bau = bill_without_system
         self.total_operating_expenses = total_operating_expenses
         self.after_tax_annual_costs = after_tax_annual_costs
+        self.after_tax_value = after_tax_value_of_energy
+        self.after_tax_cash_flow = after_tax_cash_flow
+        self.net_annual_cost_without_sys = net_annual_costs_without_system
+        self.net_annual_cost_with_sys = net_annual_costs_with_system
+
+        #import pdb
+        #pdb.set_trace()
 
         # compute outputs
         try:
@@ -280,14 +291,11 @@ class ProForma(object):
         except ValueError:
             log("ERROR", "IRR calculation failed to compute a real number")
 
-        self.NPV = sum(after_tax_cash_flow)
-        self.LCC = -np.npv(self.econ.owner_discount_rate, net_annual_costs_with_system)
-        self.LCC_BAU = -np.npv(self.econ.owner_discount_rate, net_annual_costs_without_system)
+        self.NPV = np.npv(self.econ.owner_discount_rate_nominal, after_tax_cash_flow)
+        self.LCC = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_with_system)
+        self.LCC_BAU = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_without_system)
 
     def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
-
-        #import pdb
-        #pdb.set_trace()
 
         basis = 0
         state_deprecation = 0

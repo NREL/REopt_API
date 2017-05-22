@@ -68,6 +68,24 @@ class TestProForma(unittest.TestCase):
                                            -61767, -3485, -3555, -3626, -3698, -3772, -3848, -3925, -4003, -4083, -4165,
                                            -4248, -4333, -4420, -4508, -4599]
 
+        expected_after_tax_value = [0, 27873, 28430, 28999, 29579, 30170, 30774, 31389, 32017, 32657, 33310, 33977,
+                                    34656, 35349, 36056, 36777, 37513, 38263, 39028, 39809, 40605, 41417, 42246, 43090,
+                                    43952, 44831]
+
+        expected_after_tax_cash_flow = [-542718, 220028, 77033, 56936, 45091, 45622, 36890, 28169, 28733, 29307, -28457,
+                                        30491, 31101, 31723, 32358, 33005, 33665, 34338, 35025, 35726, 36440, 37169,
+                                        37912, 38670, 39444, 40233]
+
+        expected_net_annual_cost_without_sys = [0, -537746, -548500, -559470, -570660, -582073, -593715, -605589,
+                                                -617701, -630055, -642656, -655509, -668619, -681991, -695631, -709544,
+                                                -723735, -738209, -752974, -768033, -783394, -799062, -815043, -831344,
+                                                -847971, -864930]
+
+        expected_net_annual_cost_with_sys = [-542718, -317717, -471467, -502535, -525568, -536451, -556824, -577419,
+                                             -588968, -600747, -671113, -625017, -637518, -650268, -663273, -676539,
+                                             -690070, -703871, -717949, -732308, -746954, -761893, -777131, -792673,
+                                             -808527, -824697]
+
         expected_cap_costs = 542718
         expected_state_depreciation_basis = 461310
         expected_state_itc_basis = 542718
@@ -90,11 +108,15 @@ class TestProForma(unittest.TestCase):
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.state_tax_liability], expected_state_tax_liability)
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.federal_tax_liability], expected_federal_tax_liability)
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.after_tax_annual_costs], expected_after_tax_annual_costs)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.after_tax_value], expected_after_tax_value)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.after_tax_cash_flow], expected_after_tax_cash_flow)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.net_annual_cost_without_sys], expected_net_annual_cost_without_sys)
+        self.assertListEqual([int(round(i, 0)) for i in cash_flow.net_annual_cost_with_sys], expected_net_annual_cost_with_sys)
 
         self.assertEqual(round(cash_flow.LCC_BAU, 0), expected_lcc_bau, msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_BAU), expected_lcc_bau))
-        self.assertEqual(round(cash_flow.LCC, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_), expected_lcc))
-        self.assertEqual(round(cash_flow.NPV, 0), expected_npv, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.NPV), expected_npv))
-        self.assertEqual(round(cash_flow.IRR * 100, 1), expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.IRR), expected_irr))
+        self.assertEqual(round(cash_flow.LCC, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC), expected_lcc))
+        self.assertAlmostEqual(round(cash_flow.NPV, 0), expected_npv, delta=2, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.NPV), expected_npv))
+        self.assertEqual(round(cash_flow.IRR * 100, 2), expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.IRR), expected_irr))
 
 
 
