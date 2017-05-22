@@ -140,8 +140,10 @@ class ProForma(object):
         ws['C51'] = self.econ.pv_rebate_state_max
         ws['B52'] = self.econ.pv_rebate_utility
         ws['C52'] = self.econ.pv_rebate_utility_max
-        ws['C61'] = self.year_one_bill_bau
-        ws['C62'] = self.year_one_bill
+        ws['B58'] = self.econ.pv_macrs_bonus_fraction
+        ws['B59'] = self.econ.pv_macrs_bonus_fraction
+        ws['C63'] = self.year_one_bill_bau
+        ws['C64'] = self.year_one_bill
 
         if self.econ.pv_macrs_schedule == 0:
             ws['B55'] = 0
