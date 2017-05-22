@@ -221,7 +221,7 @@ class Results:
         cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, results)
         cash_flow.update_template()
         cash_flow.compute_cashflow()
-        self.IRR = cash_flow.IRR
+        self.irr = cash_flow.get_irr()
 
         """
         d = pf.ProForma(getattr(econ, 'analysis_period'),

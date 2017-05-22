@@ -113,10 +113,10 @@ class TestProForma(unittest.TestCase):
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.net_annual_cost_without_sys], expected_net_annual_cost_without_sys)
         self.assertListEqual([int(round(i, 0)) for i in cash_flow.net_annual_cost_with_sys], expected_net_annual_cost_with_sys)
 
-        self.assertEqual(round(cash_flow.LCC_BAU, 0), expected_lcc_bau, msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.LCC_BAU), expected_lcc_bau))
-        self.assertEqual(round(cash_flow.LCC, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.LCC), expected_lcc))
-        self.assertAlmostEqual(round(cash_flow.NPV, 0), expected_npv, delta=2, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.NPV), expected_npv))
-        self.assertEqual(round(cash_flow.IRR * 100, 2), expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.IRR), expected_irr))
+        self.assertEqual(round(cash_flow.lcc_bau, 0), expected_lcc_bau, msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.lcc_bau), expected_lcc_bau))
+        self.assertEqual(round(cash_flow.lcc, 0), expected_lcc, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.lcc), expected_lcc))
+        self.assertAlmostEqual(round(cash_flow.npv, 0), expected_npv, delta=2, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.npv), expected_npv))
+        self.assertEqual(round(cash_flow.irr * 100, 2), expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.irr), expected_irr))
 
 
 

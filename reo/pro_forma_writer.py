@@ -50,10 +50,10 @@ class ProForma(object):
         self.net_annual_cost_with_sys = list()
 
         # ProForma outputs
-        self.IRR = 0
-        self.NPV = 0
-        self.LCC = 0
-        self.LCC_BAU = 0
+        self.irr = 0
+        self.npv= 0
+        self.lcc = 0
+        self.lcc_bau = 0
 
         # tax credits reduce depreciation and ITC basis
         self.itc_fed_percent_deprbas_fed = True
@@ -87,6 +87,18 @@ class ProForma(object):
 
         # Assume state MACRS the same as fed
         self.state_depreciation_equals_federal = True
+
+    def get_irr(self):
+        return self.irr
+
+    def get_npv(self):
+        return self.npv
+
+    def get_lcc(self):
+        return self.lcc
+
+    def get_irr(self):
+        return self.lcc_bau
 
     def update_template(self):
 
@@ -287,13 +299,13 @@ class ProForma(object):
 
         # compute outputs
         try:
-            self.IRR = np.irr(after_tax_cash_flow)
+            self.irr = np.irr(after_tax_cash_flow)
         except ValueError:
             log("ERROR", "IRR calculation failed to compute a real number")
 
-        self.NPV = np.npv(self.econ.owner_discount_rate_nominal, after_tax_cash_flow)
-        self.LCC = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_with_system)
-        self.LCC_BAU = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_without_system)
+        self.npv = np.npv(self.econ.owner_discount_rate_nominal, after_tax_cash_flow)
+        self.lcc = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_with_system)
+        self.lcc_bau = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_without_system)
 
     def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
 
