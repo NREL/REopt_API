@@ -84,7 +84,7 @@ server {
     return 301 https://$host$request_uri;
   }
 
-  root <%= current_path %>/public;
+  root <%= current_path %>/static;
 
   access_log <%= current_path %>/log/access.log combined;
   error_log <%= current_path %>/log/error.log;

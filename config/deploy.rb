@@ -15,7 +15,7 @@ set :file_permissions_users, ["www-data-local"]
 set :bundle_swap_nrel_git_references, false
 
 # Symlink other directories across deploys.
-set :linked_dirs, fetch(:linked_dirs, []).push("tmp")
+set :linked_dirs, fetch(:linked_dirs, []).push("static", "tmp")
 
 # Allow the web user to write files for Xpress
 set :file_permissions_paths, fetch(:file_permissions_paths, []).push("Xpress")
