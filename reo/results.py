@@ -134,10 +134,15 @@ class Results:
             self.batt_kw = float(df['Battery Power (kW)'].values[0])
         if 'Battery Capacity (kWh)' in df.columns:
             self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
+
+        # PV and PVNM are mutually exclusive, can't have both
         if 'PVNM Size (kW)' in df.columns:
-            self.pv_kw = float(df['PVNM Size (kW)'].values[0])
+            if float(df['PVNM Size (kW)'].values[0]) > 0:
+                self.pv_kw = float(df['PVNM Size (kW)'].values[0])
         if 'PV Size (kW)' in df.columns:
-            self.pv_kw = float(df['PV Size (kW)'].values[0])
+            if float(df['PV Size (kW)'].values[0]) > 0:
+                self.pv_kw = float(df['PV Size (kW)'].values[0])
+
         if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
             self.year_one_utility_kwh = float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
