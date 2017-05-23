@@ -657,8 +657,8 @@ writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) 
 writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
 
 !PV output
-forall  (t in Tech, s in Seg| TechIsGrid(t)=0)  do
-   writeln (t," = ", getsol (dvSystemSize(t,s)*TurbineDerate(t)))
+forall  (t in Tech | TechIsGrid(t)=0)  do
+   writeln (t," = ", sum(s in Seg) getsol (dvSystemSize(t,s)*TurbineDerate(t)))
 end-do
 
 !Battery output
@@ -732,8 +732,8 @@ end-do
 forall  (b in BattLevel)  do
    writeln ("Battery Power (kW),", getsol (dvStorageSizeKW(b)))
 end-do
-forall (t in Tech, s in Seg | TechIsGrid(t)=0)  do
-	writeln (t, " Size (kW),", getsol (dvSystemSize(t,s)))
+forall (t in Tech | TechIsGrid(t)=0)  do
+	writeln (t, " Size (kW),", sum(s in Seg) getsol (dvSystemSize(t,s)))
 end-do
 
 writeln ("Year 1 Energy Supplied From Grid (kWh),", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
@@ -772,8 +772,8 @@ fclose(F_OUTPUT)
 !******************
 !Time series dispatch output
 fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
-forall (t in Tech,LD in Load, s in Seg, ts in TimeStep)     do
-   writeln ( t,",", LD, "," ,ts ,",",sum (fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)),",", sum (fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
+forall (t in Tech,LD in Load, ts in TimeStep)     do
+   writeln ( t,",", LD, "," ,ts ,",",sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) getsol (dvRatedProd (t,LD,ts,s,fb)),",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
 end-do
 fclose(F_OUTPUT)
 

@@ -57,6 +57,7 @@ class Results:
         self.df_results_base = []
 
         # scalar outputs
+        self.status = None
         self.lcc_bau = None
         self.year_one_utility_kwh = None
         self.year_one_energy_cost = None
@@ -127,7 +128,6 @@ class Results:
 
     def populate_data(self, df):
 
-        pv_kw = 0
         if 'LCC ($)' in df.columns:
             self.lcc = float(df['LCC ($)'].values[0])
         if 'Battery Power (kW)' in df.columns:
@@ -135,9 +135,9 @@ class Results:
         if 'Battery Capacity (kWh)' in df.columns:
             self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
         if 'PVNM Size (kW)' in df.columns:
-            pv_kw += float(df['PVNM Size (kW)'].values[0])
+            self.pv_kw = float(df['PVNM Size (kW)'].values[0])
         if 'PV Size (kW)' in df.columns:
-            pv_kw += float(df['PV Size (kW)'].values[0])
+            self.pv_kw = float(df['PV Size (kW)'].values[0])
         if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
             self.year_one_utility_kwh = float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
@@ -158,8 +158,6 @@ class Results:
             self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
         if 'Average PV production (kWh)' in df.columns:
             self.average_yearly_pv_energy_produced = float(df['Average PV production (kWh)'].values[0])
-
-        self.pv_kw = pv_kw
 
     def populate_data_bau(self, df):
 

@@ -51,7 +51,7 @@ class ProForma(object):
 
         # ProForma outputs
         self.irr = 0
-        self.npv= 0
+        self.npv = 0
         self.lcc = 0
         self.lcc_bau = 0
 
@@ -144,6 +144,9 @@ class ProForma(object):
         ws['B59'] = self.econ.pv_macrs_bonus_fraction
         ws['C63'] = self.year_one_bill_bau
         ws['C64'] = self.year_one_bill
+
+        #import pdb
+        #pdb.set_trace()
 
         if self.econ.pv_macrs_schedule == 0:
             ws['B55'] = 0
@@ -295,9 +298,6 @@ class ProForma(object):
         self.after_tax_cash_flow = after_tax_cash_flow
         self.net_annual_cost_without_sys = net_annual_costs_without_system
         self.net_annual_cost_with_sys = net_annual_costs_with_system
-
-        #import pdb
-        #pdb.set_trace()
 
         # compute outputs
         try:
