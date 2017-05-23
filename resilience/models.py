@@ -29,13 +29,13 @@ class ResilienceCase(models.Model):
     def run(input_dictionary, bundle):
 
         output = input_dictionary
-        model_output = simulate_outage(input_dictionary)  ##TO DO: hook up to a submodule later to get actual results
+        model_output = simulate_outage(**input_dictionary)
 
         if "ERROR" in model_output.keys():
             raise ImmediateHttpResponse(response=ResilienceCase.error_response(bundle.request, model_output))
 
         else:
-            for k in outputs().keys():
+            for k in model_output.keys():
                 output[k] = model_output[k]
 
             output_obj = ResilienceCase(**output)

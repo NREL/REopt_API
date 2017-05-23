@@ -54,4 +54,8 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_
     r_avg = float(sum(r)) / float(len(r))
     r_list = r
     
-    return r_list, r_min, r_max, r_avg
+    return {"r_list": r_list,
+            "r_min": r_min,
+            "r_max": r_max,
+            "r_avg": r_avg,
+            }
