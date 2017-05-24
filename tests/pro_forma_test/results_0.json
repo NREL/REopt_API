@@ -1,13 +1,13 @@
 {
-  "pv_kw": 219.586,
-  "batt_kw": 100,
-  "batt_kwh": 50,
-  "average_yearly_pv_energy_produced": 411626,
-  "capital_cost": 467132,
-  "year_one_bill_bau": 826030,
-  "year_one_bill": 783215,
-  "year_one_demand_cost": 391608,
-  "year_one_energy_cost": 391607,
-  "year_one_demand_cost_bau": 413015,
-  "year_one_energy_cost_bau": 413015
+	"pv_kw":219.586,
+	"batt_kw":100,
+	"batt_kwh":50,
+	"average_yearly_pv_energy_produced":411626,
+	"capital_cost":542718.18,
+	"year_one_bill_bau":826030,
+	"year_one_bill":783215,
+	"year_one_demand_cost":783215,
+	"year_one_demand_cost_bau":826030,
+	"year_one_energy_cost":0,
+	"year_one_energy_cost_bau":0
 }
