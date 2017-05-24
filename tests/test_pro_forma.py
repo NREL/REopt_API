@@ -51,10 +51,11 @@ class MockCashFlow:
 class TestProForma(unittest.TestCase):
 
     def setUp(self):
-        self.num_scenarios = 1
+        self.num_scenarios = 2
+        self.delta = 2 # allowed variation in values
 
     def setUpScenario(self, case_number):
-
+        print "Setting up scenario: " + str(case_number)
         self.path_template = os.path.join(os.getcwd(), "tests", "pro_forma_test")
         self.econ = MockEconomics(self.path_template, case_number)
         self.results = MockResults(self.path_template, case_number)
@@ -72,7 +73,7 @@ class TestProForma(unittest.TestCase):
             # begin test asserts
             self.assertListEqual([int(round(i, 0)) for i in cash_flow.bill_bau], self.cf.expected_bill_no_system)
             self.assertListEqual([int(round(i, 0)) for i in cash_flow.bill_with_sys], self.cf.expected_bill_with_system)
-            self.assertListEqual([int(round(i, 0)) for i in cash_flow.total_operating_expenses], self.cf.expected_total_operating_expenses)
+            self.assertListAlmostEqual(cash_flow.total_operating_expenses, self.cf.expected_total_operating_expenses, self.delta)
             self.assertEqual(round(cash_flow.capital_costs, 0), self.cf.expected_cap_costs, msg='CapCosts of {0} does not match expected result of {1}'.format(int(cash_flow.capital_costs), self.cf.expected_cap_costs))
             self.assertEqual(round(cash_flow.state_depr_basis_calc, 0), self.cf.expected_state_depreciation_basis)
             self.assertEqual(round(cash_flow.state_itc_basis_calc, 0), self.cf.expected_state_itc_basis)
@@ -91,8 +92,11 @@ class TestProForma(unittest.TestCase):
             self.assertAlmostEqual(round(cash_flow.npv, 0), self.cf.expected_npv, delta=2, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.npv), self.cf.expected_npv))
             self.assertEqual(round(cash_flow.irr * 100, 2), self.cf.expected_irr, msg='IRR of {0} does not match expected result of {1}'.format(int(cash_flow.irr), self.cf.expected_irr))
 
+    def assertListAlmostEqual(self, list1, list2, delta):
 
+        self.assertEqual(len(list1), len(list2))
 
-
+        for i in range(0, len(list1)):
+            self.assertAlmostEqual(round(list1[i], 0), round(list2[i], 0), delta=delta)
 
 

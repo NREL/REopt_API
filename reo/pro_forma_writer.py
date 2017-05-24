@@ -7,8 +7,8 @@ from log_levels import log
 
 class ProForma(object):
 
-    file_template = "REoptCashFlowTemplate.xlsx"
-    file_output = "ProForma.xlsx"
+    file_template = "REoptCashFlowTemplate.xlsm"
+    file_output = "ProForma.xlsm"
 
     def __init__(self, path_templates, path_output, econ, results):
 
@@ -105,7 +105,7 @@ class ProForma(object):
         sheet_io = "Inputs and Outputs"
 
         # Open file for reading
-        wb = load_workbook(self.file_template)
+        wb = load_workbook(self.file_template, read_only=False, keep_vba=True)
 
         # Open Inputs Sheet
         ws = wb.get_sheet_by_name(sheet_io)
