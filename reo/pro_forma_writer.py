@@ -233,21 +233,21 @@ class ProForma(object):
         # year 0 initializations
         debt_amount[0] = self.capital_costs
         pre_tax_cash_flow[0] = -debt_amount[0]
-        after_tax_annual_costs[0] = pre_tax_cash_flow[0]
+        total_investment_based_incentives[0] = state_ibi + utility_ibi
+        total_capacity_based_incentives[0] = federal_cbi + state_cbi + utility_cbi
+        after_tax_annual_costs[0] = total_investment_based_incentives[0] + total_capacity_based_incentives[0] - self.capital_costs
         after_tax_cash_flow[0] = after_tax_annual_costs[0]
-        net_annual_costs_with_system[0] = -self.capital_costs
+        net_annual_costs_with_system[0] = after_tax_annual_costs[0]
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
         annual_energy[1] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
         bill_with_system[1] = self.year_one_bill
         bill_without_system[1] = self.year_one_bill_bau
-
         value_of_savings[1] = self.year_one_savings
         o_and_m_capacity_cost[1] = self.econ.pv_om * self.results.pv_kw
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
-        total_investment_based_incentives[1] = state_ibi + utility_ibi
-        total_capacity_based_incentives[1] = federal_cbi + state_cbi + utility_cbi
+
         state_taxable_income_before_deductions[1] = self.state_taxable_income_before_deductions(state_ibi, utility_ibi,
                                                                                              federal_cbi, state_cbi,
                                                                                              utility_cbi)
@@ -329,7 +329,7 @@ class ProForma(object):
             after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
                                            total_production_based_incentives[year] + \
                                            state_tax_liability[year] + \
-                                           federal_tax_liability[year] # + total_investment_based_incentives[year] + total_capacity_based_incentives[year]
+                                           federal_tax_liability[year]
 
             after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]

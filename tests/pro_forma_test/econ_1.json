@@ -12,7 +12,7 @@
   "batt_replacement_year_kw": 10,
   "batt_replacement_year_kwh": 10,
   "owner_discount_rate":0.06,
-  "owner_discount_rate_nominal":0.0812,
+  "owner_discount_rate_nominal":0.06,
   "owner_tax_rate":0.37,
   "pv_pbi": 0,
   "pv_pbi_max": 0,
