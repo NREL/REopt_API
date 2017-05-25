@@ -4,13 +4,13 @@ from datetime import datetime
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
-        'pv_kw': {'type': float, 'null': True, 'pct': False,
+        'pv_kw': {'req': True,'type': float, 'null': True, 'pct': False,
                   "description": "PV System Size", "units": 'kW'},
 
-        'batt_kw': {'type': float, 'null': True, 'pct': False,
+        'batt_kw': {'req': True,'type': float, 'null': True, 'pct': False,
                     "description": "Battery Inverter Size", "units": 'kW'},
 
-        'batt_kwh': {'type': float, 'null': True, 'pct': False,
+        'batt_kwh': {'req': True,'type': float, 'null': True, 'pct': False,
                      "description": "Battery Size", "units": 'kWh'},
 
         'load': {'req': True, 'type': list, 'null': False, 'pct': False, "needed_for": [], 'default': [0]*8760,
