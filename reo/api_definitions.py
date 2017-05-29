@@ -510,6 +510,11 @@ def inputs(filter='', full_list=False, just_required=False):
         'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
                 'min': 0, 'max': 8759, "description": "Grid outage end hour.",
                 "tool_tip": "Hour of year that grid outage ends."},
+
+        'crit_load_factor': {'req': False, 'type': list, 'null': False, 'pct': True, "needed_for": [], 'default': None,
+                     "description": "Critical Load Factor", "units": None,
+                     "tool_tip": "Critical load factor can be entered as either 8760 values for each hour or a single \
+                     value for the duration of the outage. Value(s) must be between zero and one, inclusive."},
     }
     if full_list:
         return output
