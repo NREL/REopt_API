@@ -121,6 +121,7 @@ class DatLibrary:
         self.folder_various = os.path.join(self.path_dat_library, "Various")
 
         for k, v in self.inputs(full_list=True).items():
+            # see api_definitions.py for attributes set here
             if k == 'load_profile_name' and lib_inputs.get(k) is not None:
                 setattr(self, k, lib_inputs.get(k).replace(" ", ""))
 
@@ -380,22 +381,27 @@ class DatLibrary:
         default_load_profile_norm = "Load8760_norm_" + self.default_city + "_" + self.default_building + ".dat"
         default_load_size = "LoadSize_" + self.default_city + "_" + self.default_building + ".dat"
 
+        load_profile = None
+
         log("INFO", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        if self.load_8760_kw is not None:
+        if self.load_8760_kw is not None:  # user load profile
+
             if len(self.load_8760_kw) == 8760:
+
                 self.load_size = sum(self.load_8760_kw)
                 write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-                write_single_variable(self.file_load_profile, self.load_8760_kw, "LoadProfile")
+                load_profile = self.load_8760_kw
 
             else:
                 log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
 
         if self.load_monthly_kwh is not None:
+
             if len(self.load_monthly_kwh) == 12:
                 self.load_size = float(sum(self.load_monthly_kwh))
                 write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
@@ -409,17 +415,17 @@ class DatLibrary:
                     path = os.path.join(self.folder_load_profile, default_load_profile_norm)
                     load_profile = self.scale_load_by_month(path)
 
-                write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
-
             else:
                 log("ERROR",
-                    "Load profile uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
+                    "Load monthly kWh uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
 
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
-            if self.load_size is None:
+
+            if self.load_size is None:  # use defaults
 
                 self.file_load_size = os.path.join(self.folder_load_size, default_load_size)
                 self.file_load_profile = os.path.join(self.folder_load_profile, default_load_profile)
+                # nlaws: why is no load_profile defined here?
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
@@ -428,8 +434,9 @@ class DatLibrary:
                         filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         self.file_load_size = os.path.join(self.folder_load_size, filename_size)
                         self.file_load_profile = os.path.join(self.folder_load_profile, filename_profile)
+                        # nlaws: why is no load_profile defined here?
 
-            else:
+            else:  # load_size provided
                 write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
 
                 # Load profile specified, with load size specified
@@ -444,7 +451,24 @@ class DatLibrary:
                     p = os.path.join(self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
-                write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
+        if load_profile:
+
+            if self.crit_load_factor:
+
+                if len(self.crit_load_factor) == 8760:
+                    load_profile = [x * clf for x, clf in zip(load_profile, self.crit_load_factor)]
+
+                elif len(self.crit_load_factor) == 1 and self.outage_start and self.outage_end:
+                    load_profile = load_profile[0:self.outage_start] \
+                                   + [ld * self.crit_load_factor[0]
+                                      for ld in load_profile[self.outage_start:self.outage_end]] \
+                                   + load_profile[self.outage_end:]
+
+            # fill in W, X, S bins
+            for _ in range(8760 * 3):
+                load_profile.append(self.max_big_number)
+
+            write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
 
         self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
         self.DAT_bau[2] = self.DAT[2]
@@ -457,10 +481,6 @@ class DatLibrary:
         f = open(file_load_profile, 'r')
         for line in f:
             load_profile.append(float(line.strip('\n')) * scale_factor)
-
-        # fill in W, X, S bins
-        for _ in range(8760 * 3):
-            load_profile.append(self.max_big_number)
 
         return load_profile
 
@@ -501,10 +521,6 @@ class DatLibrary:
 
             # add an hour
             datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-
-        # fill in W, X, S bins
-        for _ in range(8760 * 3):
-            load_profile.append(self.max_big_number)
 
         return load_profile
 
