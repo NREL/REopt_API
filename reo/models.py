@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.postgres.fields import *
 from api_definitions import *
 import json
+import uuid
 from picklefield.fields import PickledObjectField
 from library import *
 
@@ -146,7 +147,10 @@ class RunInput(models.Model):
     def create_output(self, fields, json_POST):
         response_inputs = {f: getattr(self, f) for f in fields}
 
-        run_set = DatLibrary(self.id, response_inputs)
+        run_uuid = uuid.uuid4()
+        run_input_id = self.id
+
+        run_set = DatLibrary(run_uuid, run_input_id, response_inputs)
 
         # Log POST request
         run_set.log_post(json_POST)
@@ -167,6 +171,7 @@ class RunInput(models.Model):
 
 class RunOutput(models.Model):
 
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, null=False, unique=True)
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)

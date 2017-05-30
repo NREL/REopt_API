@@ -1,4 +1,5 @@
 import os
+import shutil
 import pandas as pd
 from api_definitions import *
 import pro_forma_writer as pf
@@ -14,7 +15,7 @@ class Results:
 
     # file names
     file_summary = 'summary.csv'
-    file_proforma = 'ProForma.xlsx'
+    file_proforma = 'ProForma.xlsm'
     file_dispatch = 'Dispatch.csv'
 
     # time outputs (scalar)
@@ -38,11 +39,12 @@ class Results:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, path_templates, path_output, path_output_base, economics, year):
+    def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
 
         self.path_templates = path_templates
         self.path_output = path_output
         self.path_output_base = path_output_base
+        self.path_static = os.path.join(path_static, self.file_proforma)
         self.path_summary = os.path.join(path_output, self.file_summary)
         self.path_summary_base = os.path.join(path_output_base, self.file_summary)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
@@ -102,6 +104,9 @@ class Results:
         self.load_results()
         self.compute_value()
         self.generate_pro_forma()
+
+    def copy_static(self):
+        shutil.copyfile(self.path_proforma, self.path_static)
 
     def load_results(self):
 

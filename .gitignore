@@ -99,3 +99,6 @@ ENV/
 
 /tmp/*
 /log/*
+static/*
+!static/.gitkeep
+
