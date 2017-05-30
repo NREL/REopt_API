@@ -15,7 +15,7 @@ class ResilienceCase(models.Model):
     load = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
     prod_factor = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
     init_soc = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
-    crit_load_factor = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    crit_load_factor = models.FloatField(null=True, blank=True)
     batt_roundtrip_efficiency = models.FloatField(null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)
 
