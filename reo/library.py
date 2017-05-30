@@ -66,7 +66,6 @@ class DatLibrary:
         # Economic inputs and calculated vals
         self.economics = list()
 
-        self.uuid = run_uuid
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
 
@@ -81,7 +80,7 @@ class DatLibrary:
         self.path_run_inputs = os.path.join(self.path_run, "Inputs")
         self.path_run_outputs = os.path.join(self.path_run, "Outputs")
         self.path_run_outputs_bau = os.path.join(self.path_run, "Outputs_bau")
-        self.path_static_outputs = os.path.join(self.path_egg, "static", "files", str(self.uuid))
+        self.path_static_outputs = os.path.join(self.path_egg, "static", "files", str(run_uuid))
 
         if os.path.exists(self.path_run):
             shutil.rmtree(self.path_run)
@@ -144,6 +143,7 @@ class DatLibrary:
 
         for k in self.outputs():
             setattr(self, k, None)
+
         self.update_types()
 
     def log_post(self, json_POST):
@@ -230,6 +230,7 @@ class DatLibrary:
 
     def lib_output(self):
         output = {'run_input_id': self.run_input_id}
+
         for k in self.inputs(full_list=True).keys() + self.outputs().keys():
             if hasattr(self, k):
                 output[k] = getattr(self, k)

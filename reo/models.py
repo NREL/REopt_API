@@ -152,11 +152,13 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
-        
+
         if "ERROR" in output_dictionary.keys():
             return output_dictionary
 
+        # API level outputs
         output_dictionary['api_version'] = self.api_version
+        output_dictionary['uuid'] = run_uuid
 
         result = RunOutput(**output_dictionary)
         result.save()
@@ -166,7 +168,7 @@ class RunInput(models.Model):
 
 class RunOutput(models.Model):
 
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, null=False, unique=True)
+    uuid = models.UUIDField(default=uuid.uuid4, null=False)
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)

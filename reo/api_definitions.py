@@ -515,7 +515,11 @@ def inputs(filter='', full_list=False, just_required=False):
 
 
 def outputs():
-    return {'status': {'req': True, 'type': str, 'null': True, 'pct': False,
+    return {'uuid': {'req': True, 'type': str, 'null': True, 'pct': False,
+                       "description": "Unique id", "units": 'none'},
+
+
+            'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
 
             'lcc': {'req': True, 'type': float, 'null': True, 'pct': False,

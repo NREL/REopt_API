@@ -8,13 +8,13 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0022_runoutput_lcc_bau'),
+        ('reo', '0023_auto_20170525_1729'),
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='runoutput',
             name='uuid',
-            field=models.UUIDField(default=uuid.uuid4, null=True),
+            field=models.UUIDField(default=uuid.uuid4),
         ),
     ]

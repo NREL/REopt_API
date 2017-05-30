@@ -126,7 +126,7 @@ USE_TZ = True
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static', 'files'),
 )
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+#STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.dev_settings")
