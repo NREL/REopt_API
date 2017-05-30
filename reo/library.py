@@ -453,16 +453,11 @@ class DatLibrary:
 
         if load_profile:
 
-            if self.crit_load_factor:
-
-                if len(self.crit_load_factor) == 8760:
-                    load_profile = [x * clf for x, clf in zip(load_profile, self.crit_load_factor)]
-
-                elif len(self.crit_load_factor) == 1 and self.outage_start and self.outage_end:
-                    load_profile = load_profile[0:self.outage_start] \
-                                   + [ld * self.crit_load_factor[0]
-                                      for ld in load_profile[self.outage_start:self.outage_end]] \
-                                   + load_profile[self.outage_end:]
+            # resilience: modify load during outage with crit_load_factor
+            if self.crit_load_factor and self.outage_start and self.outage_end:  # default values are None
+                load_profile = load_profile[0:self.outage_start] \
+                                + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
+                                + load_profile[self.outage_end:]
 
             # fill in W, X, S bins
             for _ in range(8760 * 3):

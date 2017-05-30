@@ -503,18 +503,18 @@ def inputs(filter='', full_list=False, just_required=False):
                 'min': 0.01, 'max': 0.99, "description": "Ground Cover Ratio",
                 "tool_tip": "The Ground Cover Ratio of the proposed PV system."},
 
-        'outage_start': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
+        'outage_start': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
                 'min': 0, 'max': 8759, "description": "Grid outage start hour.",
-                "tool_tip": "Hour of year that grid outage starts."},
+                "tool_tip": "Hour of year that grid outage starts. Must be less than outage_end"},
 
-        'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
+        'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
                 'min': 0, 'max': 8759, "description": "Grid outage end hour.",
-                "tool_tip": "Hour of year that grid outage ends."},
+                "tool_tip": "Hour of year that grid outage ends. Must be greater than outage_start."},
 
-        'crit_load_factor': {'req': False, 'type': list, 'null': False, 'pct': True, "needed_for": [], 'default': None,
-                     "description": "Critical Load Factor", "units": None,
-                     "tool_tip": "Critical load factor can be entered as either 8760 values for each hour or a single \
-                     value for the duration of the outage. Value(s) must be between zero and one, inclusive."},
+        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': None,
+                     "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
+                     "tool_tip": "Critical load factor is used to scale the load during an outage. \
+                                  Value must be between zero and one, inclusive."},
     }
     if full_list:
         return output
