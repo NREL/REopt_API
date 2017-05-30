@@ -138,7 +138,7 @@ class RunInput(models.Model):
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
     outage_end = models.IntegerField(null=True, blank=True)
-    crit_load_factor = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    crit_load_factor = models.FloatField(null=True, blank=True)
 
     # Metadata
     created = models.DateTimeField(auto_now_add=True)
@@ -338,7 +338,7 @@ class RunOutput(models.Model):
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
     outage_end = models.IntegerField(null=True, blank=True)
-    crit_load_factor = ArrayField(models.TextField(blank=True), null=True, blank=True)
+    crit_load_factor = models.FloatField(null=True, blank=True)
 
     def to_dictionary(self):
         output = {'run_input_id': self.run_input_id,
