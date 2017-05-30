@@ -1,5 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib import admin
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from reo.api import RunInputResource
 from tastypie.api import Api
 
@@ -15,3 +16,5 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
 ]
+urlpatterns += staticfiles_urlpatterns()
+
