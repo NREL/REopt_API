@@ -81,7 +81,7 @@ class DatLibrary:
         self.path_run_inputs = os.path.join(self.path_run, "Inputs")
         self.path_run_outputs = os.path.join(self.path_run, "Outputs")
         self.path_run_outputs_bau = os.path.join(self.path_run, "Outputs_bau")
-        self.path_static_outputs = os.path.join(self.path_egg, "static", str(self.uuid))
+        self.path_static_outputs = os.path.join(self.path_egg, "static", "files", str(self.uuid))
 
         if os.path.exists(self.path_run):
             shutil.rmtree(self.path_run)
