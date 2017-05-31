@@ -136,6 +136,11 @@ class RunInput(models.Model):
     batt_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
     batt_macrs_itc_reduction = models.FloatField(null=True, blank=True)
 
+    # Resilience
+    outage_start = models.IntegerField(null=True, blank=True)
+    outage_end = models.IntegerField(null=True, blank=True)
+    crit_load_factor = models.FloatField(null=True, blank=True)
+
     # Metadata
     created = models.DateTimeField(auto_now_add=True)
 
@@ -336,6 +341,11 @@ class RunOutput(models.Model):
     year_one_energy_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
+
+    # Resilience
+    outage_start = models.IntegerField(null=True, blank=True)
+    outage_end = models.IntegerField(null=True, blank=True)
+    crit_load_factor = models.FloatField(null=True, blank=True)
 
     def to_dictionary(self):
         output = {'run_input_id': self.run_input_id,
