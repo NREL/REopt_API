@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 from openpyxl import load_workbook
 
@@ -20,10 +21,22 @@ class ProForma(object):
         self.econ = econ
         self.results = results
 
+        # system sizes
+        self.pv_kw = results.pv_kw
+        self.batt_kw = results.batt_kw
+        self.batt_kwh = results.batt_kwh
+
+        if self.pv_kw is None:
+            self.pv_kw = 0
+        if self.batt_kw is None:
+            self.batt_kw = 0
+        if self.batt_kwh is None:
+            self.batt_kwh = 0
+
         # input to template
-        self.capital_costs = results.pv_kw * econ.pv_cost + \
-                             results.batt_kw * econ.batt_cost_kw + \
-                             results.batt_kwh * econ.batt_cost_kwh
+        self.capital_costs = self.pv_kw * econ.pv_cost + \
+                             self.batt_kw * econ.batt_cost_kw + \
+                             self.batt_kwh * econ.batt_cost_kwh
 
         self.year_one_bill = self.results.year_one_demand_cost + self.results.year_one_energy_cost
         self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
@@ -137,10 +150,10 @@ class ProForma(object):
         ws = wb.get_sheet_by_name(sheet_io)
 
         # Modify inputs
-        ws['B3'] = self.results.pv_kw
+        ws['B3'] = self.pv_kw
         ws['B4'] = self.econ.pv_degradation_rate * 100
-        ws['B5'] = self.results.batt_kw
-        ws['B6'] = self.results.batt_kwh
+        ws['B5'] = self.batt_kw
+        ws['B6'] = self.batt_kwh
         ws['B7'] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
         ws['B10'] = self.capital_costs
         ws['B12'] = self.econ.pv_om
@@ -168,8 +181,8 @@ class ProForma(object):
         ws['C52'] = self.econ.pv_rebate_utility_max
         ws['B58'] = self.econ.pv_macrs_bonus_fraction
         ws['B59'] = self.econ.pv_macrs_bonus_fraction
-        ws['C63'] = self.year_one_bill_bau
-        ws['C64'] = self.year_one_bill
+        ws['C65'] = self.year_one_bill_bau
+        ws['C66'] = self.year_one_bill
 
         if self.econ.pv_macrs_schedule == 0:
             ws['B55'] = 0
@@ -218,9 +231,9 @@ class ProForma(object):
         federal_itc = min(self.itc_fed_percent * self.capital_costs, self.itc_fed_percent_maxvalue)
         state_ibi = min(self.ibi_sta_percent * self.capital_costs, self.ibi_sta_percent_maxvalue)
         utility_ibi = min(self.ibi_uti_percent * self.capital_costs, self.ibi_uti_percent_maxvalue)
-        federal_cbi = min(self.cbi_fed_amount * self.results.pv_kw, self.cbi_fed_maxvalue)
-        state_cbi = min(self.cbi_sta_amount * self.results.pv_kw, self.cbi_sta_maxvalue)
-        utility_cbi = min(self.cbi_uti_amount * self.results.pv_kw, self.cbi_uti_maxvalue)
+        federal_cbi = min(self.cbi_fed_amount * self.pv_kw, self.cbi_fed_maxvalue)
+        state_cbi = min(self.cbi_sta_amount * self.pv_kw, self.cbi_sta_maxvalue)
+        utility_cbi = min(self.cbi_uti_amount * self.pv_kw, self.cbi_uti_maxvalue)
 
         state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
         state_depreciation_basis = self.state_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
@@ -245,7 +258,7 @@ class ProForma(object):
         bill_with_system[1] = self.year_one_bill
         bill_without_system[1] = self.year_one_bill_bau
         value_of_savings[1] = self.year_one_savings
-        o_and_m_capacity_cost[1] = self.econ.pv_om * self.results.pv_kw
+        o_and_m_capacity_cost[1] = self.econ.pv_om * self.pv_kw
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
 
         state_taxable_income_before_deductions[1] = self.state_taxable_income_before_deductions(state_ibi, utility_ibi,
@@ -274,10 +287,10 @@ class ProForma(object):
                 o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
 
             if self.econ.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.results.batt_kw * inflation_modifier_n
+                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
 
             if self.econ.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.results.batt_kwh * inflation_modifier_n
+                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
 
             total_operating_expenses[year] = o_and_m_capacity_cost[year] + batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
 
@@ -357,7 +370,11 @@ class ProForma(object):
         try:
             self.irr = np.irr(after_tax_cash_flow)
         except ValueError:
+            self.irr = 0
             log("ERROR", "IRR calculation failed to compute a real number")
+
+        if math.isnan(self.irr):
+            self.irr = 0
 
         self.npv = np.npv(self.econ.owner_discount_rate_nominal, after_tax_cash_flow)
         self.lcc = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_with_system)
