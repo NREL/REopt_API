@@ -423,7 +423,6 @@ class DatLibrary:
 
                 self.file_load_size = os.path.join(self.folder_load_size, default_load_size)
                 self.file_load_profile = os.path.join(self.folder_load_profile, default_load_profile)
-                # nlaws: why is no load_profile defined here?
 
                 # Load profile with no load size
                 if self.load_profile_name is not None:
@@ -432,9 +431,8 @@ class DatLibrary:
                         filename_size = "LoadSize_" + self.default_city + "_" + self.load_profile_name + ".dat"
                         self.file_load_size = os.path.join(self.folder_load_size, filename_size)
                         self.file_load_profile = os.path.join(self.folder_load_profile, filename_profile)
-                        # nlaws: why is no load_profile defined here?
 
-            else:  # load_size provided
+            else:  # load_size provided, scale built-in load
                 write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
 
                 # Load profile specified, with load size specified
@@ -444,19 +442,26 @@ class DatLibrary:
                                                    "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
                         load_profile = self.scale_load(tmp_profile, self.load_size)
 
-                # Load size specified, no profile
+                # Load size specified, default profile
                 else:
                     p = os.path.join(self.folder_load_profile, default_load_profile)
                     load_profile = self.scale_load(p, self.load_size)
 
+        # resilience: modify load during outage with crit_load_factor
+        if self.crit_load_factor and self.outage_start and self.outage_end:  # default values are None
+
+            if load_profile is None:  # open default load profile for modification
+                load_profile = []
+                with open(self.file_load_profile, 'r') as f:
+                    for line in f:
+                        load_profile.append(float(line.strip('\n')))
+            # modify load
+            load_profile = load_profile[0:self.outage_start] \
+                            + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
+                            + load_profile[self.outage_end:]
+
+        # need to write load_profile if it is user-provided or if user gave parameters to scale built-in profile
         if load_profile:
-
-            # resilience: modify load during outage with crit_load_factor
-            if self.crit_load_factor and self.outage_start and self.outage_end:  # default values are None
-                load_profile = load_profile[0:self.outage_start] \
-                                + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
-                                + load_profile[self.outage_end:]
-
             # fill in W, X, S bins
             for _ in range(8760 * 3):
                 load_profile.append(self.max_big_number)
