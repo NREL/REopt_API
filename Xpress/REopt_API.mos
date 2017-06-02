@@ -558,47 +558,46 @@ forall ( t in Tech, ts in TimeStep, s in Seg | TechToTechClassMatrix(t, "PV") = 
 		dvRatedProd (t,LD,ts,s,fb) =  dvSystemSize (t, s)
 end-do
 
-! For Sunlamp (S&S only), TotElecRatedProd is redundant with PV system size
-!TotElecRatedProd := sum( t in Tech | TechToTechClassMatrix (t, "PV") = 1) dvSystemSize (t) * TurbineDerate(t)
-TotElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
-TotCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
+! System production
+TotalElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
+
+! Capital Costs
+TotalTechCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
+TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) + sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b)
+TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 
 ! Utility and Taxable Costs
-TotalEnergyCharges := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-					dvRatedProd (t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e
+TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month) dvPeakDemandEMonth( m) * DemandRatesMonth( m) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
-TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
+
+! Incentives
+TotalEnergyExports := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
+					dvRatedProd (t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e
+TotalProductionIncentive := sum(t in Tech ) dvProdIncent (t)
+
+! Tax benefit to system owner
+r_tax_fraction_owner := (1 - r_tax_owner)
+r_tax_fraction_offtaker := (1 - r_tax_offtaker)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
 
+! Lifecycle Costs (LCC)
+RECosts :=
+
 !Capital Costs
-RECosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s)) +
+TotalTechCapCosts + TotalStorageCapCosts +
 
-! Exported energy
-(sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-	dvRatedProd (t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e * (1 - r_tax_offtaker) +
+! Fixed O&M, tax deductible for owner
+TotalOMCosts * r_tax_fraction_owner +
 
-! TOU Demand Rates
- sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates( r, db) * pwf_e * (1 - r_tax_offtaker) +
+! Utility Bill, tax deductible for offtaker
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) * r_tax_fraction_offtaker +
 
- ! Flat Demand Rates
- sum( m in Month) dvPeakDemandEMonth(m)*DemandRatesMonth(m) * pwf_e * (1 - r_tax_offtaker) +
-
-!Cost of batteries
-sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) +
-	sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b) +
-
-!O&M cost based on system size
-sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s) * (1 - r_tax_owner) -
-
-! Production Incentives
-sum(t in Tech ) dvProdIncent (t) +
-
-! Energy Costs
-sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) * (1 - r_tax_offtaker)
+! Incentives
+TotalProductionIncentive
 
 
 !! END OBJECTIVE FUNCTION VALUE
@@ -648,8 +647,7 @@ writeln ( "Load = ", DAT4)
 writeln ( "utility = ",UtilName)
 writeln ( "rate = ",UtilRate)
 writeln ( "LCC = ", getsol(RECosts))
-!writeln ("TotElecRatedProdKW = ", getsol(TotElecRatedProd) )
-writeln ("TotElecProdKWH = ", getsol(TotElecProd) )
+writeln ("TotElecProdKWH = ", getsol(TotalElecProd) )
 writeln ("TotElecExportedKWH = ", getsol(ExportedElec) )
 writeln ( "Bulk kWh costs = ", getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)))
 writeln ( "Total Demand costs = ", getsol(TotalDemandCharges))
@@ -750,8 +748,8 @@ writeln ("Total Demand Cost ($),",strfmt(getsol(TotalDemandCharges), 10, 0))
 writeln ("Total Payments to Third Party Owner ($)",0)
 
 
-writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotCapCosts) + getsol(TotalOMCosts), 10, 0))
-writeln ("Average PV production (kWh),",strfmt(getsol(TotElecProd), 10, 0))
+writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotalTechCapCosts) + getsol(TotalOMCosts), 10, 0))
+writeln ("Average PV production (kWh),",strfmt(getsol(TotalElecProd), 10, 0))
 writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
 
 fclose(F_OUTPUT)
