@@ -741,6 +741,7 @@ writeln ("Rate,",UtilRate)
 
 writeln ("Year 1 Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)) / pwf_e, 10, 0))
 writeln ("Year 1 Demand Cost ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
+writeln ("Year 1 Export Benefit ($),",strfmt(getsol(ExportBenefitYr1), 10, 0))
 writeln ("Year 1 Payments to Third Party Owner ($),",strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
 
 writeln ("Total Energy Cost ($),",strfmt(getsol(sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)), 10, 0))

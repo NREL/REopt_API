@@ -68,6 +68,7 @@ class Results:
         self.year_one_demand_cost = None
         self.year_one_demand_cost_bau = None
         self.year_one_demand_savings = None
+        self.year_one_export_benefit = None
         self.year_one_payments_to_third_party_owner = None
         self.year_one_energy_exported = None
         self.total_energy_cost = None
@@ -154,6 +155,8 @@ class Results:
             self.year_one_energy_cost = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_cost = float(df['Year 1 Demand Cost ($)'].values[0])
+        if 'Year 1 Export Benefit ($)' in df.columns:
+            self.year_one_export_benefit = float(df['Year 1 Export Benefit ($)'].values[0])
         if 'Year 1 Payments to Third Party Owner ($)' in df.columns:
             self.year_one_payments_to_third_party_owner = float(df['Year 1 Payments to Third Party Owner ($)'].values[0])
         if 'Total Energy Cost ($)' in df.columns:

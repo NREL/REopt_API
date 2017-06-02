@@ -39,6 +39,7 @@ class ProForma(object):
                              self.batt_kwh * econ.batt_cost_kwh
 
         self.year_one_bill = self.results.year_one_demand_cost + self.results.year_one_energy_cost
+        self.year_one_exports = self.results.year_one_export_benefit
         self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
@@ -179,14 +180,15 @@ class ProForma(object):
         ws['C51'] = self.econ.pv_rebate_state_max
         ws['B52'] = self.econ.pv_rebate_utility
         ws['C52'] = self.econ.pv_rebate_utility_max
-        ws['B58'] = self.econ.pv_macrs_bonus_fraction
-        ws['B59'] = self.econ.pv_macrs_bonus_fraction
+        ws['B60'] = self.econ.pv_macrs_bonus_fraction
+        ws['B61'] = self.econ.pv_macrs_bonus_fraction
         ws['C65'] = self.year_one_bill_bau
         ws['C66'] = self.year_one_bill
+        ws['C67'] = self.year_one_exports
 
         if self.econ.pv_macrs_schedule == 0:
-            ws['B55'] = 0
-            ws['B56'] = 0
+            ws['B57'] = 0
+            ws['B58'] = 0
 
         # Save
         wb.save(self.file_output)
@@ -255,7 +257,7 @@ class ProForma(object):
 
         # year 1 initializations
         annual_energy[1] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
-        bill_with_system[1] = self.year_one_bill
+        bill_with_system[1] = self.year_one_bill + self.year_one_exports
         bill_without_system[1] = self.year_one_bill_bau
         value_of_savings[1] = self.year_one_savings
         o_and_m_capacity_cost[1] = self.econ.pv_om * self.pv_kw
