@@ -147,7 +147,6 @@ class Economics:
         self.output_args['pwf_op'] = annuity(self.analysis_period, self.rate_escalation_nominal, self.owner_discount_rate_nominal)
         self.output_args['r_tax_offtaker'] = self.offtaker_tax_rate
         self.output_args['r_tax_owner'] = self.owner_tax_rate
-        self.output_args["OMperUnitSize"] = self.pv_om
 
         if self.output_args['pwf_owner'] == 0 or self.output_args['r_tax_owner'] == 0:
             self.output_args['two_party_factor'] = 0
@@ -161,14 +160,20 @@ class Economics:
             lf = annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / self.output_args["pwf_e"]
             self.pv_levelization_factor = round(lf, 5)
 
+        # Output args that depend on tech
         levelization_factor_array = list()
+        om_array = list()
         for t in self.techs:
             if t == 'PV' or t == 'PVNM':
                 levelization_factor_array.append(self.pv_levelization_factor)
+                om_array.append(self.pv_om)
             else:
                 levelization_factor_array.append(1.0)
+                om_array.append(0)
 
         self.output_args['LevelizationFactor'] = levelization_factor_array
+        self.output_args["OMperUnitSize"] = om_array
+
 
     def insert_u_bp(self, region, u_xbp, u_ybp, p, u_cap):
 
