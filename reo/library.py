@@ -50,7 +50,7 @@ class DatLibrary:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, run_input_id, lib_inputs):
+    def __init__(self, run_uuid, run_input_id, lib_inputs):
 
         self.timed_out = False
         self.net_metering = False
@@ -69,6 +69,7 @@ class DatLibrary:
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
 
+        self.path_templates = os.path.join(self.path_egg, "reo", "templates")
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
         self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
 
@@ -79,11 +80,13 @@ class DatLibrary:
         self.path_run_inputs = os.path.join(self.path_run, "Inputs")
         self.path_run_outputs = os.path.join(self.path_run, "Outputs")
         self.path_run_outputs_bau = os.path.join(self.path_run, "Outputs_bau")
+        self.path_static_outputs = os.path.join(self.path_egg, "static", "files", str(run_uuid))
 
         if os.path.exists(self.path_run):
             shutil.rmtree(self.path_run)
 
-        for f in [self.path_run, self.path_run_inputs, self.path_run_outputs, self.path_run_outputs_bau]:
+        for f in [self.path_run, self.path_run_inputs, self.path_run_outputs, self.path_run_outputs_bau,
+                  self.path_static_outputs]:
             os.mkdir(f)
 
         check_directory_created(self.path_run)
@@ -141,6 +144,7 @@ class DatLibrary:
 
         for k in self.outputs():
             setattr(self, k, None)
+
         self.update_types()
 
     def log_post(self, json_POST):
@@ -227,6 +231,7 @@ class DatLibrary:
 
     def lib_output(self):
         output = {'run_input_id': self.run_input_id}
+
         for k in self.inputs(full_list=True).keys() + self.outputs().keys():
             if hasattr(self, k):
                 output[k] = getattr(self, k)
@@ -278,8 +283,10 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_run_outputs, self.path_run_outputs_bau, self.economics, self.load_year)
+            process_results = results.Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
+                                              self.path_static_outputs, self.economics, self.load_year)
             process_results.run()
+            process_results.copy_static()
 
             for k in self.outputs():
                 val = getattr(process_results, k)

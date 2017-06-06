@@ -1,7 +1,8 @@
 import os
+import shutil
 import pandas as pd
 from api_definitions import *
-import pro_forma as pf
+import pro_forma_writer as pf
 import dispatch
 from datetime import datetime
 from tastypie.exceptions import ImmediateHttpResponse
@@ -14,7 +15,7 @@ class Results:
 
     # file names
     file_summary = 'summary.csv'
-    file_proforma = 'ProForma.xlsx'
+    file_proforma = 'ProForma.xlsm'
     file_dispatch = 'Dispatch.csv'
 
     # time outputs (scalar)
@@ -38,10 +39,12 @@ class Results:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, path_output, path_output_base, economics, year):
+    def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
 
+        self.path_templates = path_templates
         self.path_output = path_output
         self.path_output_base = path_output_base
+        self.path_static = os.path.join(path_static, self.file_proforma)
         self.path_summary = os.path.join(path_output, self.file_summary)
         self.path_summary_base = os.path.join(path_output_base, self.file_summary)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
@@ -56,6 +59,7 @@ class Results:
         self.df_results_base = []
 
         # scalar outputs
+        self.status = None
         self.lcc_bau = None
         self.year_one_utility_kwh = None
         self.year_one_energy_cost = None
@@ -64,6 +68,7 @@ class Results:
         self.year_one_demand_cost = None
         self.year_one_demand_cost_bau = None
         self.year_one_demand_savings = None
+        self.year_one_export_benefit = None
         self.year_one_payments_to_third_party_owner = None
         self.year_one_energy_exported = None
         self.total_energy_cost = None
@@ -101,6 +106,9 @@ class Results:
         self.compute_value()
         self.generate_pro_forma()
 
+    def copy_static(self):
+        shutil.copyfile(self.path_proforma, self.path_static)
+
     def load_results(self):
 
         df_results = pd.read_csv(self.path_summary, header=None, names=self.df_cols, index_col=0)
@@ -126,23 +134,29 @@ class Results:
 
     def populate_data(self, df):
 
-        pv_kw = 0
         if 'LCC ($)' in df.columns:
             self.lcc = float(df['LCC ($)'].values[0])
         if 'Battery Power (kW)' in df.columns:
             self.batt_kw = float(df['Battery Power (kW)'].values[0])
         if 'Battery Capacity (kWh)' in df.columns:
             self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
+
+        # PV and PVNM are mutually exclusive, can't have both
         if 'PVNM Size (kW)' in df.columns:
-            pv_kw += float(df['PVNM Size (kW)'].values[0])
+            if float(df['PVNM Size (kW)'].values[0]) > 0:
+                self.pv_kw = float(df['PVNM Size (kW)'].values[0])
         if 'PV Size (kW)' in df.columns:
-            pv_kw += float(df['PV Size (kW)'].values[0])
+            if float(df['PV Size (kW)'].values[0]) > 0:
+                self.pv_kw = float(df['PV Size (kW)'].values[0])
+
         if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
             self.year_one_utility_kwh = float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0])
         if 'Year 1 Energy Cost ($)' in df.columns:
             self.year_one_energy_cost = float(df['Year 1 Energy Cost ($)'].values[0])
         if 'Year 1 Demand Cost ($)' in df.columns:
             self.year_one_demand_cost = float(df['Year 1 Demand Cost ($)'].values[0])
+        if 'Year 1 Export Benefit ($)' in df.columns:
+            self.year_one_export_benefit = float(df['Year 1 Export Benefit ($)'].values[0])
         if 'Year 1 Payments to Third Party Owner ($)' in df.columns:
             self.year_one_payments_to_third_party_owner = float(df['Year 1 Payments to Third Party Owner ($)'].values[0])
         if 'Total Energy Cost ($)' in df.columns:
@@ -157,8 +171,6 @@ class Results:
             self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
         if 'Average PV production (kWh)' in df.columns:
             self.average_yearly_pv_energy_produced = float(df['Average PV production (kWh)'].values[0])
-
-        self.pv_kw = pv_kw
 
     def populate_data_bau(self, df):
 
@@ -215,12 +227,14 @@ class Results:
 
     def generate_pro_forma(self):
 
-        # doesn't handle:
-        # - if batt replacement kw cost is different from replacement kwh cost
-        # - if PV or Batt do not have the same itc_rate
-
         econ = self.economics
+        results = self
+        cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, results)
+        cash_flow.update_template()
+        cash_flow.compute_cashflow()
+        self.irr = cash_flow.get_irr()
 
+        """
         d = pf.ProForma(getattr(econ, 'analysis_period'),
                         getattr(econ, 'offtaker_discount_rate_nominal'),
                         getattr(econ, 'offtaker_tax_rate'),
@@ -246,6 +260,7 @@ class Results:
 
         d.make_pro_forma(self.path_proforma)
         self.irr = d.get_IRR()
+        """
 
     def update_types(self):
 
