@@ -389,33 +389,23 @@ class DatLibrary:
 
         if self.load_8760_kw is not None:  # user load profile
 
-            if len(self.load_8760_kw) == 8760:
-
-                self.load_size = sum(self.load_8760_kw)
-                write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-                load_profile = self.load_8760_kw
-
-            else:
-                log("ERROR", "Load profile uploaded contains: " + len(self.load_8760_kw) + " values, 8760 required")
+            self.load_size = sum(self.load_8760_kw)
+            write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+            load_profile = self.load_8760_kw
 
         if self.load_monthly_kwh is not None:
 
-            if len(self.load_monthly_kwh) == 12:
-                self.load_size = float(sum(self.load_monthly_kwh))
-                write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
+            self.load_size = float(sum(self.load_monthly_kwh))
+            write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
 
-                if (self.load_profile_name is not None) and (
-                    self.load_profile_name.lower() in self.default_load_profiles):
-                    name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
-                    path = os.path.join(self.folder_load_profile, name)
-                    load_profile = self.scale_load_by_month(path)
-                else:
-                    path = os.path.join(self.folder_load_profile, default_load_profile_norm)
-                    load_profile = self.scale_load_by_month(path)
-
+            if (self.load_profile_name is not None) and (
+                self.load_profile_name.lower() in self.default_load_profiles):
+                name = "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat"
+                path = os.path.join(self.folder_load_profile, name)
+                load_profile = self.scale_load_by_month(path)
             else:
-                log("ERROR",
-                    "Load monthly kWh uploaded contains: " + str(len(self.load_monthly_kwh)) + " values, 12 required")
+                path = os.path.join(self.folder_load_profile, default_load_profile_norm)
+                load_profile = self.scale_load_by_month(path)
 
         if self.load_8760_kw is None and self.load_monthly_kwh is None:
 

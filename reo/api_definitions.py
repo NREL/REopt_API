@@ -187,13 +187,13 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
         'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name', 'load_size'], 'depends_on': ['load_year'],
-                         'type': list, 'null': True,
+                         'type': list, 'null': True, 'length': 8760,
                          'pct': False, "needed_for": ['economics'],
                          "description": "Hourly Power Demand", "units": 'kW',
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
         'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
-                             "description": "Monthly Energy Demand", "units": 'kWh',
+                             "description": "Monthly Energy Demand", "units": 'kWh', 'length': 12,
                              "tool_tip": 'The annual monthly energy demand at the proposed site.'},
 
         'utility_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
