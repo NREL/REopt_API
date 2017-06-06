@@ -26,14 +26,17 @@ class REoptResourceValidation(Validation):
                 field_def = inputs(full_list=True)[key]
                 format_errors = self.check_input_format(key,value,field_def)
                 if not format_errors:
-                    if field_def.get('max') is not None:
+                    if field_def.get('max'):
                         format_errors += self.check_max(key, value, field_def)
 
-                    if field_def.get('min') is not None:
+                    if field_def.get('min'):
                         format_errors += self.check_min(key, value, field_def)
 
                     if field_def.get('restrict_to'):
                         format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
+
+                    if field_def.get('length'):
+                        format_errors += self.check_length(key, value, field_def['length'])
 
                 #specific_errors 
                 if format_errors:
@@ -172,3 +175,8 @@ class REoptResourceValidation(Validation):
             if not self.swaps_exists(key_list,field):
                 output.append(field)
         return output
+
+    def check_length(self, key, value, correct_length):
+        if len(value) != correct_length:
+            return ['Invalid number of values: entered %s values, %s required' % (len(value), correct_length)]
+        return []
