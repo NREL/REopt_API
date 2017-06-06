@@ -43,9 +43,9 @@ class ProForma(object):
         self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
-        # approximate state taxes as 5/35 of total taxes
-        self.state_tax_owner = 7./37. * self.econ.owner_tax_rate
-        self.fed_tax_owner = 30./37. * self.econ.owner_tax_rate
+        # no state taxes for now
+        self.state_tax_owner = 0
+        self.fed_tax_owner = self.econ.owner_tax_rate
 
         # Unit test outputs
         self.state_depr_basis_calc = 0
@@ -167,28 +167,26 @@ class ProForma(object):
         ws['B26'] = self.econ.rate_escalation * 100
         ws['B27'] = self.econ.owner_discount_rate * 100
         ws['B31'] = self.fed_tax_owner * 100
-        ws['B32'] = self.state_tax_owner * 100
-        ws['B42'] = self.econ.pv_itc_federal * 100
-        ws['C42'] = self.econ.pv_itc_federal_max
-        ws['B47'] = self.econ.pv_itc_state * 100
-        ws['C47'] = self.econ.pv_itc_state_max
-        ws['B48'] = self.econ.pv_itc_utility * 100
-        ws['C48'] = self.econ.pv_itc_utility_max
-        ws['B50'] = self.econ.pv_rebate_federal
-        ws['C50'] = self.econ.pv_rebate_federal_max
-        ws['B51'] = self.econ.pv_rebate_state
-        ws['C51'] = self.econ.pv_rebate_state_max
-        ws['B52'] = self.econ.pv_rebate_utility
-        ws['C52'] = self.econ.pv_rebate_utility_max
-        ws['B60'] = self.econ.pv_macrs_bonus_fraction
-        ws['B61'] = self.econ.pv_macrs_bonus_fraction
-        ws['C65'] = self.year_one_bill_bau
-        ws['C66'] = self.year_one_bill
-        ws['C67'] = self.year_one_exports
+        ws['B36'] = self.econ.pv_itc_federal * 100
+        ws['C36'] = self.econ.pv_itc_federal_max
+        ws['B41'] = self.econ.pv_itc_state * 100
+        ws['C41'] = self.econ.pv_itc_state_max
+        ws['B42'] = self.econ.pv_itc_utility * 100
+        ws['C42'] = self.econ.pv_itc_utility_max
+        ws['B44'] = self.econ.pv_rebate_federal
+        ws['C44'] = self.econ.pv_rebate_federal_max
+        ws['B45'] = self.econ.pv_rebate_state
+        ws['C45'] = self.econ.pv_rebate_state_max
+        ws['B46'] = self.econ.pv_rebate_utility
+        ws['C46'] = self.econ.pv_rebate_utility_max
+        ws['B54'] = self.econ.pv_macrs_bonus_fraction
+        ws['B54'] = self.econ.pv_macrs_bonus_fraction
+        ws['C59'] = self.year_one_bill_bau
+        ws['C60'] = self.year_one_bill
 
         if self.econ.pv_macrs_schedule == 0:
-            ws['B57'] = 0
-            ws['B58'] = 0
+            ws['B51'] = 0
+            ws['B52'] = 0
 
         # Save
         wb.save(self.file_output)
