@@ -511,8 +511,9 @@ def inputs(filter='', full_list=False, just_required=False):
                 'min': 0, 'max': 8759, "description": "Grid outage end hour.", 'depends_on': ['outage_start'],
                 "tool_tip": "Hour of year that grid outage ends. Must be greater than outage_start."},
 
-        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': None,
-                     "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
+        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'],
+                     'default': None, "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
+                     'depends_on': ['outage_start', 'outage_end'],
                      "tool_tip": "Critical load factor is used to scale the load during an outage. \
                                   Value must be between zero and one, inclusive."},
     }
