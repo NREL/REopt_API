@@ -138,7 +138,7 @@ class REoptResourceValidation(Validation):
             if value is not None:
                 if input in value:
                     dependency_of.append(k)
-        return "%s (%s depend(s) on  this input.)" % (input, "  and ".join(dependency_of))
+        return "%s (%s depend(s) on this input.)" % (input, "  and ".join(dependency_of))
 
     def missing_dependencies(self, key_list,exclude=[]):
         # Check if field depends on non-required fields
