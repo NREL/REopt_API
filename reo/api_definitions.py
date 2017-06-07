@@ -504,11 +504,11 @@ def inputs(filter='', full_list=False, just_required=False):
                 "tool_tip": "The Ground Cover Ratio of the proposed PV system."},
 
         'outage_start': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
-                'min': 0, 'max': 8759, "description": "Grid outage start hour.",
+                'min': 0, 'max': 8759, "description": "Grid outage start hour.", 'depends_on': ['outage_end'],
                 "tool_tip": "Hour of year that grid outage starts. Must be less than outage_end"},
 
         'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
-                'min': 0, 'max': 8759, "description": "Grid outage end hour.",
+                'min': 0, 'max': 8759, "description": "Grid outage end hour.", 'depends_on': ['outage_start'],
                 "tool_tip": "Hour of year that grid outage ends. Must be greater than outage_start."},
 
         'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': None,
