@@ -297,19 +297,10 @@ class DatLibrary:
 
     def cleanup(self):
         return
-        log("INFO", "Cleaning up folders from: " + os.getcwd())
-        log("DEBUG", "Output folder: " + self.path_run_outputs)
+        log("INFO", "Cleaning up folders from: " + self.path_run)
 
         if not self.debug:
-            for f in [self.path_run_output]:
-                if os.path.exists(f):
-                    shutil.rmtree(f, ignore_errors=True)
-
-            for p in [self.file_economics, self.file_economics_bau, self.file_gis, self.file_gis_bau,
-                      self.file_load_profile, self.file_load_size]:
-                if os.path.exists(p):
-                    os.remove(p)
-
+            shutil.rmtree(self.path_run)
 
     # BAU files
     def create_simple_bau(self):
