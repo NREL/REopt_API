@@ -296,7 +296,6 @@ class DatLibrary:
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
     def cleanup(self):
-        return
         log("INFO", "Cleaning up folders from: " + self.path_run)
         shutil.rmtree(self.path_run)
 
