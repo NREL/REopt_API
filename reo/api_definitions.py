@@ -166,16 +166,16 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Not Required
         'load_profile_name': {'req': True, 'swap_for': ['load_8760_kw', 'load_year'],
-                              'type': str, 'null': True, 'pct': False,
-                              "needed_for": ['economics'],
+                              'type': str, 'null': True, 'pct': False, 'depends_on': ['load_size'],
+                              "needed_for": ['load_profile'], 'default': None,
                               "description": "Generic Load Profile Type",
                               'restrict_to': default_load_profiles(),
                               "tool_tip": 'If a custom load profile is not uploaded, the type of building is used in combination with annual energy consumption to simulate a load profile. Select from drop-down menu. The loads are generated from the Energy+ commercial reference buildings for the climate zone of the site, and scaled based on the annual energy consumption. This value is required if a custom load profile is not uploaded.'},
 
         'load_size': {'req': True, 'swap_for': ['load_8760_kw', 'load_year'],
-                      'type': float, 'null': True, 'pct': False,
-                      "needed_for": ['economics'], 'min': 0,
-                      'max': None,
+                      'type': float, 'null': True, 'pct': False, 'depends_on': ['load_profile_name'],
+                      "needed_for": ['load_profile'], 'min': 0,
+                      'max': None, 'default': None,
                       "description": "Annual Load Size", "units": 'kWh',
                       "tool_tip": "If a custom load profile is not uploaded, the site's total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded."},
 
@@ -187,14 +187,14 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
         'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name', 'load_size'], 'depends_on': ['load_year'],
-                         'type': list, 'null': True,
-                         'pct': False, "needed_for": ['economics'],
+                         'type': list, 'null': True, 'length': 8760,
+                         'pct': False, "needed_for": ['load_profile'],
                          "description": "Hourly Power Demand", "units": 'kW',
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
-        'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": ['economics'],
-                             "description": "Monthly Energy Demand", "units": 'kWh',
-                             "tool_tip": 'The annual monthly energy demand at the proposed site.'},
+        'load_monthly_kwh': {'req': False, 'type': list, 'null': True, 'pct': False, "needed_for": [],
+                             "description": "Monthly Energy Usage", "units": 'kWh', 'length': 12,
+                             "tool_tip": 'The monthly energy usage at the proposed site.'},
 
         'utility_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
                          "description": "Utility Name",
@@ -504,15 +504,16 @@ def inputs(filter='', full_list=False, just_required=False):
                 "tool_tip": "The Ground Cover Ratio of the proposed PV system."},
 
         'outage_start': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
-                'min': 0, 'max': 8759, "description": "Grid outage start hour.",
+                'min': 0, 'max': 8759, "description": "Grid outage start hour.", 'depends_on': ['outage_end'],
                 "tool_tip": "Hour of year that grid outage starts. Must be less than outage_end"},
 
         'outage_end': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['resilience'], 'default': None,
-                'min': 0, 'max': 8759, "description": "Grid outage end hour.",
+                'min': 0, 'max': 8759, "description": "Grid outage end hour.", 'depends_on': ['outage_start'],
                 "tool_tip": "Hour of year that grid outage ends. Must be greater than outage_start."},
 
-        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': None,
-                     "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
+        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'],
+                     'default': None, "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
+                     'depends_on': ['outage_start', 'outage_end'],
                      "tool_tip": "Critical load factor is used to scale the load during an outage. \
                                   Value must be between zero and one, inclusive."},
     }
