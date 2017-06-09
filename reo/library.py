@@ -395,10 +395,15 @@ class DatLibrary:
             self.load_size = sum(self.load_8760_kw)
             load_profile = self.load_8760_kw
 
-        else:  # building type and load_size defined by user
+        else:  # building type and (load_size OR load_monthly_kwh) defined by user
             profile_path = os.path.join(self.folder_load_profile,
                                         "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
-            load_profile = self.scale_load(profile_path, self.load_size)
+            if self.load_monthly_kwh:
+                self.load_size = sum(self.load_monthly_kwh)
+                load_profile = self.scale_load_by_month(profile_path)
+
+            else:  # load_size is "swap_for" load_monthly_kwh
+                load_profile = self.scale_load(profile_path, self.load_size)
 
         # resilience: modify load during outage with crit_load_factor
         if self.crit_load_factor:
@@ -428,45 +433,45 @@ class DatLibrary:
 
         return load_profile
 
-    # def scale_load_by_month(self, profile_file):
-    #
-    #     load_profile = []
-    #     f = open(profile_file, 'r')
-    #
-    #     datetime_current = datetime(self.load_year, 1, 1, 0)
-    #     month_total = 0
-    #     month_scale_factor = []
-    #     normalized_load = []
-    #
-    #     for line in f:
-    #         month = datetime_current.month
-    #         normalized_load.append(float(line.strip('\n')))
-    #         month_total += self.load_size * float(line.strip('\n'))
-    #
-    #         # add an hour
-    #         datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-    #
-    #         if month != datetime_current.month:
-    #             if month_total == 0:
-    #                 month_scale_factor.append(0)
-    #             else:
-    #                 month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
-    #             month_total = 0
-    #
-    #             log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
-    #                 ", Month scale factor: " + str(month_scale_factor[month - 1]) +
-    #                 ", Annual load: " + str(self.load_size))
-    #
-    #     datetime_current = datetime(self.load_year, 1, 1, 0)
-    #     for load in normalized_load:
-    #         month = datetime_current.month
-    #
-    #         load_profile.append(self.load_size * load * month_scale_factor[month - 1])
-    #
-    #         # add an hour
-    #         datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-    #
-    #     return load_profile
+    def scale_load_by_month(self, profile_file):
+
+        load_profile = []
+        f = open(profile_file, 'r')
+
+        datetime_current = datetime(self.load_year, 1, 1, 0)
+        month_total = 0
+        month_scale_factor = []
+        normalized_load = []
+
+        for line in f:
+            month = datetime_current.month
+            normalized_load.append(float(line.strip('\n')))
+            month_total += self.load_size * float(line.strip('\n'))
+
+            # add an hour
+            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
+
+            if month != datetime_current.month:
+                if month_total == 0:
+                    month_scale_factor.append(0)
+                else:
+                    month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
+                month_total = 0
+
+                log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
+                    ", Month scale factor: " + str(month_scale_factor[month - 1]) +
+                    ", Annual load: " + str(self.load_size))
+
+        datetime_current = datetime(self.load_year, 1, 1, 0)
+        for load in normalized_load:
+            month = datetime_current.month
+
+            load_profile.append(self.load_size * load * month_scale_factor[month - 1])
+
+            # add an hour
+            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
+
+        return load_profile
 
     def localize_load(self):
 

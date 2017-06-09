@@ -55,7 +55,7 @@ class REoptResourceValidation(Validation):
             message = [self.get_missing_required_message(m) for  m in missing_required]
             errors = self.append_errors(errors,"Missing_Required",message)
 
-        missing_dependencies = self.missing_dependencies(bundle.data.keys(),exclude=missing_required)
+        missing_dependencies = self.missing_dependencies(bundle.data.keys(), exclude=missing_required)
         if missing_dependencies:
             message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
             errors = self.append_errors(errors, "Missing_Dependencies", message)
@@ -66,7 +66,8 @@ class REoptResourceValidation(Validation):
 
     def check_input_format(self,key,value,field_definition):
 
-        invalid_msg = 'Invalid format: Expected %s, got %s' % ( str(field_definition['type']).split(" ")[-1][0:-1], str(type(value)).split(" ")[-1][0:-1] )
+        invalid_msg = 'Invalid format: Expected %s, got %s for %s'\
+                      % (str(field_definition['type']).split(" ")[-1][0:-1], str(type(value)).split(" ")[-1][0:-1], key)
         
         try:
             
@@ -109,7 +110,7 @@ class REoptResourceValidation(Validation):
                 return ['Invalid value: %s is greater than the  maximum, %s %%' % (value, fd['max']*100)]
         return []
 
-    def check_restrict_to(self,key, value, range):
+    def check_restrict_to(self, key, value, range):
         if value not in range and value is not None:
             return ['Invalid value: %s is not in %s' % (value, range)]
         return []
@@ -143,16 +144,18 @@ class REoptResourceValidation(Validation):
                     dependency_of.append(k)
         return "%s (%s depend(s) on this input.)" % (input, "  and ".join(dependency_of))
 
-    def missing_dependencies(self, key_list,exclude=[]):
+    def missing_dependencies(self, key_list, exclude=[]):
         # Check if field depends on non-required fields
         missing = []
-        for f in inputs(full_list=True).keys():
+        for f in inputs(full_list=True).keys():  # all possible inputs
 
-            if not self.swaps_exists(key_list,f):
+            if not self.swaps_exists(key_list, f):  # if a swap exists we don't care about dependencies
                 dependent = inputs(full_list=True)[f].get('depends_on')
-                if dependent is not None and f  not in exclude:
+
+                if dependent is not None and f not in exclude:
                     for d in dependent:
-                        if d not in key_list:
+                        if d not in key_list and not self.swaps_exists(key_list, d):
+                            # dependencies can have swaps too (eg. load_size for load_monthly_kwh)
                             missing.append(d)
         return missing
 
@@ -160,23 +163,20 @@ class REoptResourceValidation(Validation):
         swap = inputs(full_list=True)[f].get('swap_for')
         swap_exists = False
 
-        if swap is not None:
+        if swap is not None and any(s in key_list for s in swap):
             swap_exists = True
-            for ff in swap:
-                if ff not in key_list:
-                    swap_exists = False
         return swap_exists
 
     def missing_required(self,key_list):
-        missing =  list(set(inputs(just_required=True)) - set(key_list))
-        output =[]
-        for  field  in  missing:
-            #Check if field can  be  swappedout  for others
-            if not self.swaps_exists(key_list,field):
+        missing = list(set(inputs(just_required=True)) - set(key_list))
+        output = []
+        for field in missing:  # Check if field can be swappedout for others
+            if not self.swaps_exists(key_list, field):
                 output.append(field)
+
         return output
 
     def check_length(self, key, value, correct_length):
         if len(value) != correct_length:
-            return ['Invalid number of values: entered %s values, %s required' % (len(value), correct_length)]
+            return ['Invalid number of values for %s: entered %s values, %s required' % (key, len(value), correct_length)]
         return []
