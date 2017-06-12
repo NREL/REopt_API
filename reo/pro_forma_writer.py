@@ -43,9 +43,9 @@ class ProForma(object):
         self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
-        # approximate state taxes as 5/35 of total taxes
-        self.state_tax_owner = 7./37. * self.econ.owner_tax_rate
-        self.fed_tax_owner = 30./37. * self.econ.owner_tax_rate
+        # no state taxes for now
+        self.state_tax_owner = 0
+        self.fed_tax_owner = self.econ.owner_tax_rate
 
         # Unit test outputs
         self.state_depr_basis_calc = 0
@@ -56,6 +56,7 @@ class ProForma(object):
         self.federal_tax_liability = list()
         self.bill_with_sys = list()
         self.bill_bau = list()
+        self.exports_with_sys = list()
         self.total_operating_expenses = list()
         self.after_tax_annual_costs = list()
         self.after_tax_value = list()
@@ -132,13 +133,13 @@ class ProForma(object):
         return self.irr
 
     def get_npv(self):
-        return self.npv
+        return round(self.npv)
 
     def get_lcc(self):
-        return self.lcc
+        return round(self.lcc)
 
     def get_lcc_bau(self):
-        return self.lcc_bau
+        return round(self.lcc_bau)
 
     def update_template(self):
 
@@ -167,28 +168,25 @@ class ProForma(object):
         ws['B26'] = self.econ.rate_escalation * 100
         ws['B27'] = self.econ.owner_discount_rate * 100
         ws['B31'] = self.fed_tax_owner * 100
-        ws['B32'] = self.state_tax_owner * 100
-        ws['B42'] = self.econ.pv_itc_federal * 100
-        ws['C42'] = self.econ.pv_itc_federal_max
-        ws['B47'] = self.econ.pv_itc_state * 100
-        ws['C47'] = self.econ.pv_itc_state_max
-        ws['B48'] = self.econ.pv_itc_utility * 100
-        ws['C48'] = self.econ.pv_itc_utility_max
-        ws['B50'] = self.econ.pv_rebate_federal
-        ws['C50'] = self.econ.pv_rebate_federal_max
-        ws['B51'] = self.econ.pv_rebate_state
-        ws['C51'] = self.econ.pv_rebate_state_max
-        ws['B52'] = self.econ.pv_rebate_utility
-        ws['C52'] = self.econ.pv_rebate_utility_max
-        ws['B60'] = self.econ.pv_macrs_bonus_fraction
-        ws['B61'] = self.econ.pv_macrs_bonus_fraction
-        ws['C65'] = self.year_one_bill_bau
-        ws['C66'] = self.year_one_bill
-        ws['C67'] = self.year_one_exports
+        ws['B36'] = self.econ.pv_itc_federal * 100
+        ws['C36'] = self.econ.pv_itc_federal_max
+        ws['B41'] = self.econ.pv_itc_state * 100
+        ws['C41'] = self.econ.pv_itc_state_max
+        ws['B42'] = self.econ.pv_itc_utility * 100
+        ws['C42'] = self.econ.pv_itc_utility_max
+        ws['B44'] = self.econ.pv_rebate_federal
+        ws['C44'] = self.econ.pv_rebate_federal_max
+        ws['B45'] = self.econ.pv_rebate_state
+        ws['C45'] = self.econ.pv_rebate_state_max
+        ws['B46'] = self.econ.pv_rebate_utility
+        ws['C46'] = self.econ.pv_rebate_utility_max
+        ws['B53'] = self.econ.pv_macrs_bonus_fraction
+        ws['C56'] = self.year_one_bill_bau
+        ws['C57'] = self.year_one_bill
+        ws['C58'] = self.year_one_exports
 
         if self.econ.pv_macrs_schedule == 0:
-            ws['B57'] = 0
-            ws['B58'] = 0
+            ws['B51'] = 0
 
         # Save
         wb.save(self.file_output)
@@ -202,6 +200,7 @@ class ProForma(object):
         annual_energy = list(zero_list)
         bill_without_system = list(zero_list)
         bill_with_system = list(zero_list)
+        exports_with_system = list(zero_list)
         value_of_savings = list(zero_list)
         o_and_m_capacity_cost = list(zero_list)
         batt_kw_replacement_cost = list(zero_list)
@@ -213,11 +212,6 @@ class ProForma(object):
         total_investment_based_incentives = list(zero_list)
         total_capacity_based_incentives = list(zero_list)
         total_production_based_incentives = list(zero_list)
-        state_taxable_income_before_deductions = list(zero_list)
-        state_depreciation_amount = list(zero_list)
-        state_total_deductions = list(zero_list)
-        state_income_tax = list(zero_list)
-        state_tax_liability = list(zero_list)
         federal_taxable_income_before_deductions = list(zero_list)
         federal_depreciation_amount = list(zero_list)
         federal_total_deductions = list(zero_list)
@@ -237,9 +231,6 @@ class ProForma(object):
         state_cbi = min(self.cbi_sta_amount * self.pv_kw, self.cbi_sta_maxvalue)
         utility_cbi = min(self.cbi_uti_amount * self.pv_kw, self.cbi_uti_maxvalue)
 
-        state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
-        state_depreciation_basis = self.state_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
-                                                                 state_cbi, utility_cbi)
         federal_itc_basis = self.federal_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
         federal_depreciation_basis = self.federal_depreciation_basis(federal_itc, state_ibi, utility_ibi, federal_cbi,
                                                                      state_cbi, utility_cbi)
@@ -257,15 +248,12 @@ class ProForma(object):
 
         # year 1 initializations
         annual_energy[1] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
-        bill_with_system[1] = self.year_one_bill + self.year_one_exports
+        bill_with_system[1] = self.year_one_bill
         bill_without_system[1] = self.year_one_bill_bau
-        value_of_savings[1] = self.year_one_savings
+        exports_with_system[1] = self.year_one_exports
+        value_of_savings[1] = self.year_one_savings - self.year_one_exports
         o_and_m_capacity_cost[1] = self.econ.pv_om * self.pv_kw
         inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
-
-        state_taxable_income_before_deductions[1] = self.state_taxable_income_before_deductions(state_ibi, utility_ibi,
-                                                                                             federal_cbi, state_cbi,
-                                                                                             utility_cbi)
 
         federal_taxable_income_before_deductions[1] = self.federal_taxable_income_before_deductions(state_ibi, utility_ibi,
                                                                                              federal_cbi, state_cbi,
@@ -274,6 +262,7 @@ class ProForma(object):
         for year in range(1, n_cols):
 
             inflation_modifier_n = inflation_modifier ** (year-1)
+            degradation_modifier = 1 - self.econ.pv_degradation_rate
 
             if year > 1:
 
@@ -283,7 +272,8 @@ class ProForma(object):
                 # Bill savings
                 bill_without_system[year] = bill_without_system[year - 1] * inflation_modifier
                 bill_with_system[year] = bill_with_system[year - 1] * inflation_modifier
-                value_of_savings[year] = value_of_savings[year - 1] * inflation_modifier
+                exports_with_system[year] = exports_with_system[year - 1] * inflation_modifier * degradation_modifier
+                value_of_savings[year] = bill_without_system[year] - (bill_with_system[year] + exports_with_system[year])
 
                 # Operating Expenses
                 o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
@@ -306,21 +296,6 @@ class ProForma(object):
             # Direct cash incentives
             total_production_based_incentives[year] = self.pbi_calculate(year, annual_energy[year])
 
-            # State income tax
-            if year > 1 and self.pbi_combined_tax_sta:
-                state_taxable_income_before_deductions[year] = total_production_based_incentives[year]
-
-            state_bonus_depreciation = 0
-            if year == 1:
-                state_bonus_depreciation = self.econ.pv_macrs_bonus_fraction
-
-            if year <= len(macrs_schedule):
-                state_depreciation_amount[year] = state_depreciation_basis * (macrs_schedule[year - 1] + state_bonus_depreciation)
-
-            state_total_deductions[year] = total_deductible_expenses[year] + state_depreciation_amount[year]
-            state_income_tax[year] = (state_taxable_income_before_deductions[year]-state_total_deductions[year]) * self.state_tax_owner
-            state_tax_liability[year] = - state_income_tax[year]
-
             # Federal income tax
             if year > 1 and self.pbi_combined_tax_fed:
                 federal_taxable_income_before_deductions[year] = total_production_based_incentives[year]
@@ -335,31 +310,27 @@ class ProForma(object):
             if year <= len(macrs_schedule):
                 federal_depreciation_amount[year] = federal_depreciation_basis * (macrs_schedule[year - 1] + federal_bonus_depreciation)
 
-            federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year] + \
-                                             state_income_tax[year]
+            federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year]
             federal_income_tax[year] = (federal_taxable_income_before_deductions[year]-federal_total_deductions[year]) * self.fed_tax_owner
             federal_tax_liability[year] = -federal_income_tax[year] + federal_itc_to_apply
 
             # After tax calculation
             after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
                                            total_production_based_incentives[year] + \
-                                           state_tax_liability[year] + \
                                            federal_tax_liability[year]
 
-            after_tax_value_of_energy[year] = value_of_savings[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
+            after_tax_value_of_energy[year] = value_of_savings[year] * (1 - self.fed_tax_owner)
             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
 
-            net_annual_costs_without_system[year] = -bill_without_system[year] * (1 - (self.state_tax_owner + (1 - self.state_tax_owner) * self.fed_tax_owner))
-            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - bill_with_system[year] * (1 - (self.state_tax_owner + (1 -self.state_tax_owner) * self.fed_tax_owner))
+            net_annual_costs_without_system[year] = -bill_without_system[year] * (1 - self.fed_tax_owner)
+            net_annual_costs_with_system[year] = after_tax_annual_costs[year] - (bill_with_system[year] + exports_with_system[year]) * (1 - self.fed_tax_owner)
 
         # Additional Unit test outputs
-        self.state_depr_basis_calc = state_depreciation_basis
-        self.state_itc_basis_calc = state_itc_basis
         self.fed_depr_basis_calc = federal_depreciation_basis
         self.fed_itc_basis_calc = federal_itc_basis
-        self.state_tax_liability = state_tax_liability
         self.federal_tax_liability = federal_tax_liability
         self.bill_with_sys = bill_with_system
+        self.exports_with_sys = exports_with_system
         self.bill_bau = bill_without_system
         self.total_operating_expenses = total_operating_expenses
         self.after_tax_annual_costs = after_tax_annual_costs
@@ -389,22 +360,6 @@ class ProForma(object):
             pbi_amount = min(self.pbi_combined_amount * annual_energy, self.pbi_combined_maxvalue)
         return pbi_amount
 
-    def state_taxable_income_before_deductions(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
-
-        taxable_income = 0
-        if self.ibi_sta_percent_tax_sta:
-            taxable_income += state_ibi
-        if self.ibi_uti_percent_tax_sta:
-            taxable_income += utility_ibi
-        if self.cbi_fed_tax_sta:
-            taxable_income += federal_cbi
-        if self.cbi_sta_tax_sta:
-            taxable_income += state_cbi
-        if self.cbi_uti_tax_sta:
-            taxable_income += utility_cbi
-
-        return taxable_income
-
     def federal_taxable_income_before_deductions(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
 
         taxable_income = 0
@@ -421,24 +376,6 @@ class ProForma(object):
 
         return taxable_income
 
-    def state_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
-
-        basis = 0
-        state_deprecation = 0
-        itc_federal = 0
-
-        if self.state_depreciation_equals_federal:
-            state_deprecation = self.econ.pv_macrs_schedule
-
-        if self.itc_fed_percent_deprbas_sta:
-            itc_federal = self.econ.macrs_itc_reduction * federal_itc
-
-        if state_deprecation > 0:
-            state_itc_basis = self.state_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
-            basis = state_itc_basis - itc_federal
-
-        return basis
-
     def federal_depreciation_basis(self, federal_itc, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
 
         basis = 0
@@ -448,33 +385,10 @@ class ProForma(object):
         if self.itc_fed_percent_deprbas_fed:
             itc_federal = self.econ.macrs_itc_reduction * federal_itc
 
-        if federal_deprecation > 0:
-            federal_itc_basis = self.federal_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
-            basis = federal_itc_basis - itc_federal
+        federal_itc_basis = self.federal_itc_basis(state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi)
+        basis = federal_itc_basis - itc_federal
 
         return basis
-
-    def state_itc_basis(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
-
-        # reduce the itc basis
-        ibi_state = 0
-        ibi_util = 0
-        cbi_fed = 0
-        cbi_state = 0
-        cbi_util = 0
-
-        if self.ibi_sta_percent_deprbas_sta:
-            ibi_state = state_ibi
-        if self.ibi_uti_percent_deprbas_sta:
-            ibi_util = utility_ibi
-        if self.cbi_fed_deprbas_sta:
-            cbi_fed = federal_cbi
-        if self.cbi_sta_deprbas_sta:
-            cbi_state = state_cbi
-        if self.cbi_uti_deprbas_sta:
-            cbi_util = utility_cbi
-
-        return self.capital_costs - ibi_state - ibi_util - cbi_fed - cbi_state - cbi_util
 
     def federal_itc_basis(self, state_ibi, utility_ibi, federal_cbi, state_cbi, utility_cbi):
 
