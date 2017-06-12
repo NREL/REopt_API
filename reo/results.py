@@ -232,35 +232,11 @@ class Results:
         cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, results)
         cash_flow.update_template()
         cash_flow.compute_cashflow()
+
+        # make results consistent
         self.irr = cash_flow.get_irr()
-
-        """
-        d = pf.ProForma(getattr(econ, 'analysis_period'),
-                        getattr(econ, 'offtaker_discount_rate_nominal'),
-                        getattr(econ, 'offtaker_tax_rate'),
-                        getattr(econ, 'pv_macrs_bonus_fraction'),
-                        getattr(econ, 'pv_itc_federal'), # modify based on updated incentives
-                        getattr(econ, 'rate_escalation_nominal'),
-                        getattr(econ, 'rate_inflation'),
-                        getattr(econ, 'pv_om'),
-                        getattr(econ, 'pv_cost'),
-                        self.pv_kw,
-                        getattr(econ, 'batt_cost_kwh'),
-                        self.batt_kwh,
-                        getattr(econ, 'batt_cost_kw'),
-                        self.batt_kw,
-                        getattr(econ, 'batt_replacement_cost_kwh'), # modify based on updated input
-                        getattr(econ, 'batt_replacement_cost_kw'),
-                        self.year_one_energy_savings,
-                        self.year_one_demand_savings,
-                        self.year_one_energy_exported,
-                        getattr(econ, 'pv_degradation_rate'),
-                        self.lcc,
-                        self.lcc_bau)
-
-        d.make_pro_forma(self.path_proforma)
-        self.irr = d.get_IRR()
-        """
+        self.npv = cash_flow.get_npv()
+        self.lcc = cash_flow.get_lcc()
 
     def update_types(self):
 

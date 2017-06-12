@@ -55,7 +55,7 @@ def round_list(list1):
 class TestProForma(unittest.TestCase):
 
     def setUp(self):
-        self.num_scenarios = 2
+        self.num_scenarios = 1
         self.delta = 2 # allowed variation in values
 
     def setUpScenario(self, case_number):
@@ -67,7 +67,7 @@ class TestProForma(unittest.TestCase):
 
     def test_cash_flow(self):
 
-        for case in range(1, self.num_scenarios):
+        for case in range(0, self.num_scenarios):
             self.setUpScenario(case)
 
             cash_flow = ProForma(self.path_template, self.path_template, self.econ, self.results)
@@ -79,11 +79,8 @@ class TestProForma(unittest.TestCase):
             self.assertListEqual(round_list(cash_flow.bill_with_sys), round_list(self.cf.expected_bill_with_system))
             self.assertListAlmostEqual(round_list(cash_flow.total_operating_expenses), round_list(self.cf.expected_total_operating_expenses), self.delta)
             self.assertEqual(round(cash_flow.capital_costs, 0), round(self.cf.expected_cap_costs), msg='CapCosts of {0} does not match expected result of {1}'.format(int(cash_flow.capital_costs), self.cf.expected_cap_costs))
-            self.assertEqual(round(cash_flow.state_depr_basis_calc, 0), round(self.cf.expected_state_depreciation_basis))
-            self.assertEqual(round(cash_flow.state_itc_basis_calc, 0), round(self.cf.expected_state_itc_basis))
-            self.assertEqual(round(cash_flow.fed_depr_basis_calc, 0), round(self.cf.expected_fed_depreciation_basis))
             self.assertEqual(round(cash_flow.fed_itc_basis_calc, 0), round(self.cf.expected_fed_itc_basis))
-            self.assertListEqual(round_list(cash_flow.state_tax_liability), round_list(self.cf.expected_state_tax_liability))
+            self.assertEqual(round(cash_flow.fed_depr_basis_calc, 0), round(self.cf.expected_fed_depreciation_basis))
             self.assertListEqual(round_list(cash_flow.federal_tax_liability), round_list(self.cf.expected_federal_tax_liability))
             self.assertListEqual(round_list(cash_flow.after_tax_annual_costs), round_list(self.cf.expected_after_tax_annual_costs))
             self.assertListEqual(round_list(cash_flow.after_tax_value), round_list(self.cf.expected_after_tax_value))
