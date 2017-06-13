@@ -749,7 +749,7 @@ writeln ("Total Demand Cost ($),",strfmt(getsol(TotalDemandCharges), 10, 0))
 writeln ("Total Payments to Third Party Owner ($)",0)
 
 
-writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotalTechCapCosts) + getsol(TotalOMCosts), 10, 0))
+writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts), 10, 0))
 writeln ("Average PV production (kWh),",strfmt(getsol(TotalElecProd), 10, 0))
 writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
 
