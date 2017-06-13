@@ -406,7 +406,7 @@ class DatLibrary:
                 load_profile = self.scale_load(profile_path, self.load_size)
 
         # resilience: modify load during outage with crit_load_factor
-        if self.crit_load_factor:
+        if self.crit_load_factor and self.outage_start and self.outage_end:
             # modify load
             load_profile = load_profile[0:self.outage_start] \
                             + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
