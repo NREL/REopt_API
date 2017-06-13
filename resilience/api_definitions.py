@@ -24,7 +24,7 @@ def inputs(filter='', full_list=False, just_required=False):
                      "description": "Initial State Of Charge", "units": None,
                      "tool_tip": "Fractional initial state of charge for simulating outages."},
 
-        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': 1.0,
+        'crit_load_factor': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['resilience'], 'default': 0.5,
                      "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
                      "tool_tip": "Critical load factor is used to scale the load during an outage. \
                                   Value must be between zero and one, inclusive."},
