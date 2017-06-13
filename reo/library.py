@@ -507,7 +507,7 @@ class DatLibrary:
     def create_size_limits(self):
 
         acres_per_MW = 6
-        squarefeet_to_acre = 0.0002471
+        squarefeet_to_acre = 2.2957e-5
         total_acres = 0
 
         # Internal working defaults, probably need to revamp and move to api_definitions.py
