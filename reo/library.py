@@ -54,13 +54,14 @@ class DatLibrary:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, run_uuid, run_input_id, lib_inputs):
+    def __init__(self, run_uuid, run_input_id, inputs_dict):
         """
 
         All error handling is done in validators.py before data is passed to library.py
         :param run_uuid:
         :param run_input_id:
-        :param lib_inputs: dict, API post params
+        :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
+        that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
 
         self.timed_out = False
@@ -106,7 +107,6 @@ class DatLibrary:
         check_directory_created(self.path_run_outputs_bau)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
-        self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
@@ -135,14 +135,14 @@ class DatLibrary:
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
-            if k == 'load_profile_name' and lib_inputs.get(k) is not None:
-                setattr(self, k, lib_inputs.get(k).replace(" ", ""))
+            if k == 'load_profile_name' and inputs_dict.get(k) is not None:
+                setattr(self, k, inputs_dict.get(k).replace(" ", ""))
 
-            elif lib_inputs.get(k) is None:
+            elif inputs_dict.get(k) is None:
                 setattr(self, k, self.inputs()[k].get('default'))
 
             else:
-                setattr(self, k, lib_inputs.get(k))
+                setattr(self, k, inputs_dict.get(k))
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -155,6 +155,10 @@ class DatLibrary:
             setattr(self, k, None)
 
         self.update_types()
+
+        for k, v in inputs(full_list=True).iteritems():
+            inputs_dict.setdefault(k, v['default'])
+        self.inputs_dict = inputs_dict
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
