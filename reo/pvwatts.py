@@ -65,7 +65,6 @@ class PVWatts:
             setattr(self,k,v)
 
         self.download_locations()
-        return self
 
     def api(self):
         # API specific

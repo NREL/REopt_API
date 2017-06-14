@@ -212,7 +212,7 @@ class DatLibrary:
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        self.create_GIS()
+        solar_data = self.create_GIS()
         self.create_nem()
         self.create_utility()
 
@@ -236,7 +236,7 @@ class DatLibrary:
 
         self.parse_run_outputs()
         self.cleanup()
-        return self.lib_output()
+        return self.outputs()
 
     def lib_output(self):
         output = {'run_input_id': self.run_input_id}
@@ -515,10 +515,10 @@ class DatLibrary:
             solar_data = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
                                   outage_start=self.outage_start, outage_end=self.outage_end)
 
-            self.prod_factor = solar_data.prod_factor
-
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+
+            return solar_data
 
     def create_size_limits(self):
 
