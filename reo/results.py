@@ -3,10 +3,11 @@ import shutil
 import pandas as pd
 from api_definitions import *
 import pro_forma_writer as pf
-import dispatch
+from dispatch import ProcessOutputs
 from datetime import datetime
 from tastypie.exceptions import ImmediateHttpResponse
 import json
+from datetime import datetime
 
 
 class Results:
@@ -35,6 +36,13 @@ class Results:
     label_year_one_energy_cost_series = 'Energy Cost ($/kWh)'
     label_year_one_demand_cost_series = 'Demand Cost ($/kW)'
 
+    bau_attributes = [
+        "lcc",
+        "year_one_energy_cost",
+        "year_one_demand_cost",
+        "total_energy_cost",
+        "total_demand_cost",
+    ]
 
     def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
         """
@@ -47,14 +55,46 @@ class Results:
         :param year:
         """
 
+
+
         with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
             results_dict = json.loads(f.read())
 
         with open(os.path.join(path_output_base, "REopt_results.json"), 'r') as f:
             results_dict_bau = json.loads(f.read())
 
+        if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
+            raise ImmediateHttpResponse("No solution could be found for these inputs")
+
+        # add bau outputs to results_dict
+        for k in Results.bau_attributes:
+            results_dict[k+'_bau'] = results_dict_bau[k]
+
+
+        # compute_value
+        results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
+        # results_dict['year_one_demand_savings'] = results_dict['year_one_demand_cost_bau'] - results_dict['year_one_demand_cost']
+        # results_dict['year_one_energy_savings'] = results_dict['year_one_energy_cost_bau'] - results_dict['year_one_energy_cost']
+
+        # compute_dispatch
+        po = ProcessOutputs(results_dict, path_output, self.file_dispatch, year)
+        results_dict['year_one_grid_to_load_series'] = po.get_grid_to_load()
+        results_dict['year_one_grid_to_battery_series'] = po.get_grid_to_batt()
+        results_dict['year_one_pv_to_load_series'] = po.get_pv_to_load()
+        results_dict['year_one_pv_to_battery_series'] = po.get_pv_to_batt()
+        results_dict['year_one_pv_to_grid_series'] = po.get_pv_to_grid()
+        results_dict['year_one_battery_soc_series'] = po.get_soc(results_dict['batt_kwh'])
+        results_dict['time_steps_per_hour'] = len(results_dict['year_one_grid_to_load_series'])
+        results_dict['year_one_energy_cost_series'] = po.get_energy_cost()
+        results_dict['year_one_demand_cost_series'] =  po.get_energy_cost()
+        results_dict['year_one_electric_load_series'] = po.get_demand_cost()
+
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
+
+        # self.generate_pro_forma()
+
+        ####################################################
 
         self.path_templates = path_templates
         self.path_output = path_output
@@ -144,8 +184,9 @@ class Results:
     @staticmethod
     def is_optimal(d):
 
-        if 'Problem status' in d.keys():
-            status = str(d['Problem status']).rstrip()
+        if 'status' in d.keys():
+            status = str(d['status']).rstrip()
+            # self.results_dict['status'] = status  # need to handle BAU
             return status == "Optimum found"
         return False
 
@@ -204,13 +245,13 @@ class Results:
 
     def compute_dispatch(self, d):
 
-        results = dispatch.ProcessOutputs(d, self.path_output, self.file_dispatch, self.year)
+        results = ProcessOutputs(d, self.path_output, self.file_dispatch, self.year)
         df_xpress = results.get_dispatch()
 
         if len(df_xpress) > 0:
             if 'Date' in df_xpress.columns:
                 dates = (df_xpress['Date'].tolist())
-                self.year_one_datetime_start = dates[0]
+                self.year_one_datetime_start = dates[0]  # deprecated, load_year replaces
                 self.time_steps_per_hour = int(round(len(dates) / 8760, 0))
                 self.zero_array = 8760 * self.time_steps_per_hour * [0]
             if 'Energy Cost ($/kWh)' in df_xpress.columns:
