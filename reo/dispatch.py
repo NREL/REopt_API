@@ -85,7 +85,15 @@ class ProcessOutputs:
 
     tech_list = list()
 
-    def __init__(self, results_dict, path_outputs, file_output, year=2015, resample_factor=1):
+    def __init__(self, results_df, path_outputs, file_output, year=2015, resample_factor=1):
+        """
+
+        :param results_df: only used for populate_techs (deprecated)
+        :param path_outputs: path to REopt output dir
+        :param file_output: not used?
+        :param year: first year of analysis
+        :param resample_factor: not used?
+        """
 
         self.path_outputs = path_outputs
         self.path_dispatch_output = os.path.join(self.path_outputs, file_output)
@@ -97,10 +105,18 @@ class ProcessOutputs:
         self.path_production = os.path.join(self.path_outputs, "Production.csv")
         self.path_stored_energy = os.path.join(self.path_outputs, "StoredEnergy.csv")
         self.path_hourly_rate_summary = os.path.join(self.path_outputs, "HourlyRateSummary.csv")
+        self.path_energy_cost = os.path.join(self.path_outputs, "energy_cost.txt")
+        self.path_demand_cost = os.path.join(self.path_outputs, "demand_cost.txt")
+
+        self.path_grid_to_load = os.path.join(self.path_outputs, "GridToLoad.csv")
+        self.path_grid_to_batt = os.path.join(self.path_outputs, "GridToBatt.csv")
+        self.path_pv_to_load = os.path.join(self.path_outputs, "PVtoLoad.csv")
+        self.path_pv_to_batt = os.path.join(self.path_outputs, "PVtoBatt.csv")
+        self.path_pv_to_grid = os.path.join(self.path_outputs, "PVtoGrid.csv")
 
         self.year = year
         self.resample_factor = resample_factor
-        self.populate_techs(results_dict)
+        self.populate_techs(results_df)
 
         if self.battery_system or self.pv_system or self.grid_system or self.generator_system:
             self.setup_dates()
@@ -305,5 +321,70 @@ class ProcessOutputs:
         numeric[numeric < 0] = 0
         self.df_xpress_output = self.df_xpress_output[output_column_headers]
         self.df_xpress_output.to_csv(os.path.join(self.path_dispatch_output))
+
+    def get_energy_cost(self):
+
+        if os.path.isfile(self.path_energy_cost):
+            return self._load_csv(self.path_energy_cost)
+        return None
+
+    def get_demand_cost(self):
+
+        if os.path.isfile(self.path_demand_cost):
+            return self._load_csv(self.path_demand_cost)
+        return None
+
+    def get_soc(self, batt_kwh):
+
+        if os.path.isfile(self.path_stored_energy):
+            stored_energy = self._load_csv(self.path_stored_energy)
+            return [float(se) / batt_kwh for se in stored_energy]
+        return None
+
+    def get_grid_to_load(self):
+
+        if os.path.isfile(self.path_grid_to_load):
+            return self._load_csv(self.path_grid_to_load)
+        return None
+
+    def get_grid_to_batt(self):
+
+        if os.path.isfile(self.path_grid_to_batt):
+            return self._load_csv(self.path_grid_to_batt)
+        return None
+
+    def get_pv_to_load(self):
+
+        if os.path.isfile(self.path_pv_to_load):
+            return self._load_csv(self.path_pv_to_load)
+        return None
+
+    def get_pv_to_grid(self):
+
+        if os.path.isfile(self.path_pv_to_grid):
+            return self._load_csv(self.path_pv_to_grid)
+        return None
+
+    def get_pv_to_batt(self):
+
+        if os.path.isfile(self.path_pv_to_batt):
+            return self._load_csv(self.path_pv_to_batt)
+        return None
+
+    def _load_csv(self, path):
+        """
+        internal method for loading dispatch csv's into lists
+        :param path: path to csv file
+        :return: return list of params
+        :energy_cost: special handling
+        :demand_cost: special handling
+        """
+        l = list()
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                l.append(float(line))
+        return l
+
+
 
 
