@@ -521,11 +521,7 @@ class DatLibrary:
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
 
-<<<<<<< HEAD
             return solar_data
-=======
-	    return solar_data
->>>>>>> aa7961d8229f79ddc4b199f70d038ea3847800e5
 
     def create_size_limits(self):
 
