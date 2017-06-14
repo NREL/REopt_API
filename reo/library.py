@@ -417,6 +417,8 @@ class DatLibrary:
             else:  # load_size is "swap_for" load_monthly_kwh
                 load_profile = self.scale_load(profile_path, self.load_size)
 
+            self.load_8760_kw = load_profile
+
         # resilience: modify load during outage with crit_load_factor
         if self.crit_load_factor and self.outage_start and self.outage_end:
             # modify load
@@ -510,8 +512,10 @@ class DatLibrary:
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
+            solar_data = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
                                   outage_start=self.outage_start, outage_end=self.outage_end)
+
+            self.prod_factor = solar_data.prod_factor
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"

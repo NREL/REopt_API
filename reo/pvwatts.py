@@ -65,6 +65,7 @@ class PVWatts:
             setattr(self,k,v)
 
         self.download_locations()
+        return self
 
     def api(self):
         # API specific
@@ -89,6 +90,7 @@ class PVWatts:
         outputs = data['outputs']
 
         ac_hourly = outputs.get('ac')
+
         if ac_hourly is None:
             ac_hourly = [0] * 8760
 

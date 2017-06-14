@@ -196,6 +196,7 @@ class RunOutput(models.Model):
     rate_name = models.TextField(blank=True, default='')
     blended_utility_rate = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
     demand_charge = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    prod_factor = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)

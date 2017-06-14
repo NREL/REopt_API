@@ -635,6 +635,15 @@ def outputs():
 
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
+
+            'load_8760_kw': {
+                'type': list, 'null': True, 'pct': False,
+                "description": "load_profile", "units": 'kw'
+                },
+
+            'prod_factor': {
+               'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'
+                },
             }
 
 # default load profiles
