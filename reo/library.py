@@ -238,19 +238,20 @@ class DatLibrary:
         if not run2 == True:
             return {"ERROR":run2}
 
-        self.parse_run_outputs()
         self.cleanup()
-        return self.lib_output()
+        output_dict = self.parse_run_outputs()
 
-    def lib_output(self):
-        output = {'run_input_id': self.run_input_id}
+        ins_and_outs_dict = self._add_inputs(output_dict)
+        return ins_and_outs_dict
 
-        for k in self.inputs(full_list=True).keys() + self.outputs().keys():
+    def _add_inputs(self, od):
+
+        for k in self.inputs(full_list=True).keys():
             if hasattr(self, k):
-                output[k] = getattr(self, k)
+                od[k] = getattr(self, k)
             else:
-                output[k] = None
-        return output
+                od[k] = None  # should we set defaults here?
+        return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
@@ -304,11 +305,14 @@ class DatLibrary:
             for k in self.outputs():
                 val = getattr(process_results, k)
                 setattr(self, k, val)
+            output_dict = process_results.get_output()
+            output_dict['run_input_id'] = self.run_input_id
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
-        output_dict = process_results.get_output()
+        return output_dict
+
 
     def cleanup(self):
         log("INFO", "Cleaning up folders from: " + self.path_run)
@@ -639,6 +643,16 @@ class DatLibrary:
                             os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_hourly_summary))
             shutil.copyfile(urdb_parse.utility_dat_files.path_hourly_summary,
                             os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_hourly_summary))
+
+            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
+                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_energy_cost))
+            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
+                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_energy_cost))
+
+            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
+                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_demand_cost))
+            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
+                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_demand_cost))
 
         self.utility_name = utility_name
         self.rate_name = rate_name
