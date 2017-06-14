@@ -14,7 +14,7 @@ from log_levels import log
 # user defined
 import economics
 import pvwatts
-import results
+from results import Results
 from api_definitions import *
 
 from urdb_parse import *
@@ -292,8 +292,8 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
-                                              self.path_static_outputs, self.economics, self.load_year)
+            process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
+                                      self.path_static_outputs, self.economics, self.load_year)
             process_results.run()
             process_results.copy_static()
 
@@ -303,6 +303,8 @@ class DatLibrary:
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
+
+        output_dict = process_results.get_output()
 
     def cleanup(self):
         log("INFO", "Cleaning up folders from: " + self.path_run)

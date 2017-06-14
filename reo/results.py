@@ -274,3 +274,5 @@ class Results:
                 else:
                     setattr(self, k, v['type'](value))
 
+    def get_output(self):
+        return self.results_dict
