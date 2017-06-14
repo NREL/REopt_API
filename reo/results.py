@@ -132,7 +132,7 @@ class Results:
         df_results = df_results.transpose()
         df_results_base = df_results_base.transpose()
 
-        if self.is_optimal(df_results) and self.is_optimal(df_results_base):
+        if self.is_optimal(self.results_dict) and self.is_optimal(self.results_dict_bau):
             self.populate_data(df_results)
             self.populate_data_bau(df_results_base)
             self.compute_dispatch(df_results)
@@ -141,11 +141,13 @@ class Results:
 
         self.update_types()
 
-    def is_optimal(self, df):
+    @staticmethod
+    def is_optimal(d):
 
-        if 'Problem status' in df.columns:
-            self.status = str(df['Problem status'].values[0]).rstrip()
-            return self.status == "Optimum found"
+        if 'Problem status' in d.keys():
+            status = str(d['Problem status']).rstrip()
+            return status == "Optimum found"
+        return False
 
     def populate_data(self, df):
 
