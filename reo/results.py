@@ -34,10 +34,6 @@ class Results:
     label_year_one_energy_cost_series = 'Energy Cost ($/kWh)'
     label_year_one_demand_cost_series = 'Demand Cost ($/kW)'
 
-    # time series outputs
-
-    def outputs(self, **args):
-        return outputs(**args)
 
     def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
 
@@ -51,7 +47,7 @@ class Results:
         self.economics = economics
         self.year = year
 
-        for k in self.outputs():
+        for k in outputs().iterkeys():
             setattr(self, k, None)
 
         # data
@@ -240,20 +236,20 @@ class Results:
 
     def update_types(self):
 
-        for group in [self.outputs()]:
-            for k, v in group.items():
-                value = getattr(self, k)
+        for k, v in outputs().iteritems():
+            value = getattr(self, k)
 
-                if value is not None:
-                    if v['type'] == float:
-                        if v['pct']:
-                            if value > 1.0:
-                                setattr(self, k, float(value) * 0.01)
+            if value is not None:
+                if v['type'] == float:
+                    if v['pct']:
+                        if value > 1.0:
+                            setattr(self, k, float(value) * 0.01)
 
-                    elif v['type'] == list:
-                        value = [float(i) for i in getattr(self, k)]
-                        setattr(self, k, value)
-                    elif v['type'] == datetime:
-                        setattr(self, k, value)
-                    else:
-                        setattr(self, k, v['type'](value))
+                elif v['type'] == list:
+                    value = [float(i) for i in getattr(self, k)]
+                    setattr(self, k, value)
+                elif v['type'] == datetime:
+                    setattr(self, k, value)
+                else:
+                    setattr(self, k, v['type'](value))
+
