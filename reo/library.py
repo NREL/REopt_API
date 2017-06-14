@@ -206,15 +206,15 @@ class DatLibrary:
 
     def run(self):
 
-        self.create_simple_bau()
-        self.create_constants()
-        self.create_storage()
-        self.create_size_limits()
-        self.create_economics()
-        self.create_loads()
-        solar_data = self.create_GIS()
-        self.create_nem()
-        self.create_utility()
+        simple_bau = self.create_simple_bau()
+        constants = self.create_constants()
+        storage = self.create_storage()
+        size_limits = self.create_size_limits()
+        economics = self.create_economics()
+        loads = self.create_loads()
+        solar_data = self.create_Solar() 
+        nem =  self.create_nem()
+        utilty = self.create_utility()
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -233,15 +233,18 @@ class DatLibrary:
         run2 = command_bau.run(self.timeout)
         if not run2 == True:
             return {"ERROR":run2}
-
+  
         self.parse_run_outputs()
         self.cleanup()
-        return self.outputs()
-
+   
+        self.prod_factor = solar_data.prod_factor
+        result = self.lib_output()
+	return result
+   
     def lib_output(self):
         output = {'run_input_id': self.run_input_id}
 
-        for k in self.inputs(full_list=True).keys() + self.outputs().keys():
+        for k in set(self.inputs(full_list=True).keys() + self.outputs().keys()):
             if hasattr(self, k):
                 output[k] = getattr(self, k)
             else:
@@ -508,7 +511,7 @@ class DatLibrary:
 
         return min_index
 
-    def create_GIS(self):
+    def create_Solar(self):
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
@@ -518,7 +521,11 @@ class DatLibrary:
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
 
+<<<<<<< HEAD
             return solar_data
+=======
+	    return solar_data
+>>>>>>> aa7961d8229f79ddc4b199f70d038ea3847800e5
 
     def create_size_limits(self):
 
