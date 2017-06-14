@@ -202,9 +202,9 @@ class Results:
         if 'Total Demand Cost ($)' in df.columns:
             self.total_demand_cost_bau = float(df['Total Demand Cost ($)'].values[0])
 
-    def compute_dispatch(self, df):
+    def compute_dispatch(self, d):
 
-        results = dispatch.ProcessOutputs(df, self.path_output, self.file_dispatch, self.year)
+        results = dispatch.ProcessOutputs(d, self.path_output, self.file_dispatch, self.year)
         df_xpress = results.get_dispatch()
 
         if len(df_xpress) > 0:

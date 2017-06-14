@@ -85,7 +85,7 @@ class ProcessOutputs:
 
     tech_list = list()
 
-    def __init__(self, df_results_summary, path_outputs, file_output, year=2015, resample_factor=1):
+    def __init__(self, results_dict, path_outputs, file_output, year=2015, resample_factor=1):
 
         self.path_outputs = path_outputs
         self.path_dispatch_output = os.path.join(self.path_outputs, file_output)
@@ -100,7 +100,7 @@ class ProcessOutputs:
 
         self.year = year
         self.resample_factor = resample_factor
-        self.populate_techs(df_results_summary)
+        self.populate_techs(results_dict)
 
         if self.battery_system or self.pv_system or self.grid_system or self.generator_system:
             self.setup_dates()
@@ -117,23 +117,23 @@ class ProcessOutputs:
                                         periods=8760 * self.steps_per_hour,
                                         freq=frequency).to_datetime()
 
-    def populate_techs(self, df):
+    def populate_techs(self, d):
 
-        if 'Battery Capacity (kWh)' in df.columns:
-            self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
+        if 'Battery Capacity (kWh)' in d.keys():
+            self.batt_kwh = float(d['Battery Capacity (kWh)'])
             if self.batt_kwh > 0:
                 self.tech_list.append('BATT')
                 self.battery_system = True
-        if 'PVNM Size (kW)' in df.columns:
-            if float(df['PVNM Size (kW)'].values[0]) > 0:
+        if 'PVNM Size (kW)' in d.keys():
+            if float(d['PVNM Size (kW)']) > 0:
                 self.tech_list.append('PVNM')
                 self.pv_system = True
-        if 'PV Size (kW)' in df.columns:
-            if float(df['PV Size (kW)'].values[0]) > 0:
+        if 'PV Size (kW)' in d.keys():
+            if float(d['PV Size (kW)']) > 0:
                 self.tech_list.append('PV')
                 self.pv_system = True
-        if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
-            if float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0]) > 0:
+        if 'Year 1 Energy Supplied From Grid (kWh)' in d.keys():
+            if float(d['Year 1 Energy Supplied From Grid (kWh)']) > 0:
                 self.tech_list.append('UTIL1')
                 self.grid_system = True
 
