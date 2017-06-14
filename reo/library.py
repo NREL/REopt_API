@@ -306,7 +306,7 @@ class DatLibrary:
 
     def cleanup(self):
         log("INFO", "Cleaning up folders from: " + self.path_run)
-        shutil.rmtree(self.path_run)
+        # shutil.rmtree(self.path_run)
 
     # BAU files
     def create_simple_bau(self):
