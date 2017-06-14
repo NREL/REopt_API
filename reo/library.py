@@ -206,15 +206,15 @@ class DatLibrary:
 
     def run(self):
 
-        simple_bau = self.create_simple_bau()
-        constants = self.create_constants()
-        storage = self.create_storage()
-        size_limits = self.create_size_limits()
-        economics = self.create_economics()
-        loads = self.create_loads()
+        self.create_simple_bau()
+        self.create_constants()
+        self.create_storage()
+        self.create_size_limits()
+        self.create_economics()
+        self.create_loads()
         solar_data = self.create_Solar() 
-        nem =  self.create_nem()
-        utilty = self.create_utility()
+        self.create_nem()
+        self.create_utility()
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -239,8 +239,8 @@ class DatLibrary:
    
         self.prod_factor = solar_data.prod_factor
         result = self.lib_output()
-	return result
-   
+        return result
+
     def lib_output(self):
         output = {'run_input_id': self.run_input_id}
 

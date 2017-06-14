@@ -94,7 +94,7 @@ class ReslienceInputResource(ModelResource):
 
     def dehydrate(self, bundle):
         print "A"
-        field_maps = {'run_input_id':None,'pv_kw':'pv_kw','batt_kw':'batt_kw','batt_kwh':'batt_kwh','load_8760_kw':'load','crit_load_factor':'crit_load_factor','batt_efficiency':'batt_roundtrip_efficiency','batt_soc_init':'init_soc'}
+        field_maps = {'run_input_id':None,'pv_kw':'pv_kw','batt_kw':'batt_kw','batt_kwh':'batt_kwh','load_8760_kw':'load','crit_load_factor':'crit_load_factor','batt_efficiency':'batt_roundtrip_efficiency','batt_soc_init':'init_soc','prod_factor':'prod_factor'}
 
         for k,v in field_maps.items():
             if v is not None:
