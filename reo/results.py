@@ -6,6 +6,7 @@ import pro_forma_writer as pf
 import dispatch
 from datetime import datetime
 from tastypie.exceptions import ImmediateHttpResponse
+import json
 
 
 class Results:
@@ -36,6 +37,24 @@ class Results:
 
 
     def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
+        """
+
+        :param path_templates:
+        :param path_output: path to scenario output dir
+        :param path_output_base:
+        :param path_static:
+        :param economics:
+        :param year:
+        """
+
+        with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
+            results_dict = json.loads(f.read())
+
+        with open(os.path.join(path_output_base, "REopt_results.json"), 'r') as f:
+            results_dict_bau = json.loads(f.read())
+
+        self.results_dict = results_dict
+        self.results_dict_bau = results_dict_bau
 
         self.path_templates = path_templates
         self.path_output = path_output
