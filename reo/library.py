@@ -636,16 +636,14 @@ class DatLibrary:
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         # Copy hourly rate summary to outputs
-        if os.path.exists(urdb_parse.utility_dat_files.path_hourly_summary):
-            shutil.copyfile(urdb_parse.utility_dat_files.path_hourly_summary,
-                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_hourly_summary))
-            shutil.copyfile(urdb_parse.utility_dat_files.path_hourly_summary,
-                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_hourly_summary))
+        if os.path.exists(urdb_parse.utility_dat_files.path_energy_cost):
 
             shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
                             os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_energy_cost))
             shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
                             os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_energy_cost))
+
+        if os.path.exists(urdb_parse.utility_dat_files.path_demand_cost):
 
             shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
                             os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_demand_cost))
