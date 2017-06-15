@@ -774,11 +774,11 @@ fclose(F_OUTPUT)
 
 !******************
 !Time series dispatch output
-fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
-forall (t in Tech,LD in Load, ts in TimeStep)     do
-   writeln ( t,",", LD, "," ,ts ,",",sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) getsol (dvRatedProd (t,LD,ts,s,fb)),",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
-end-do
-fclose(F_OUTPUT)
+!fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
+!forall (t in Tech,LD in Load, ts in TimeStep)     do
+!   writeln ( t,",", LD, "," ,ts ,",",sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) getsol (dvRatedProd (t,LD,ts,s,fb)),",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
+!end-do
+!fclose(F_OUTPUT)
 
 fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
 forall (ts in TimeStep) do

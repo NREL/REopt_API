@@ -68,7 +68,7 @@ class Results:
         results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
         # dispatch
-        po = ProcessOutputs(results_dict, path_output, self.file_dispatch, year)
+        po = ProcessOutputs(path_output, year)
         results_dict['year_one_grid_to_load_series'] = po.get_grid_to_load()
         results_dict['year_one_grid_to_battery_series'] = po.get_grid_to_batt()
         results_dict['year_one_pv_to_load_series'] = po.get_pv_to_load()
