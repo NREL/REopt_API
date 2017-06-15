@@ -85,7 +85,7 @@ class ProcessOutputs:
 
     tech_list = list()
 
-    def __init__(self, results_df, path_outputs, file_output, year=2015, resample_factor=1):
+    def __init__(self, results_df, path_outputs, file_output, year=2017, resample_factor=1):
         """
 
         :param results_df: only used for populate_techs (deprecated)
@@ -321,6 +321,9 @@ class ProcessOutputs:
         numeric[numeric < 0] = 0
         self.df_xpress_output = self.df_xpress_output[output_column_headers]
         self.df_xpress_output.to_csv(os.path.join(self.path_dispatch_output))
+
+    def get_batt_to_grid(self):  # this was not defined in original dispatch.py
+        return None
 
     def get_batt_to_load(self):
 

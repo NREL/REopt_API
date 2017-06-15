@@ -1,29 +1,22 @@
 import os
 import shutil
-import pandas as pd
 from api_definitions import *
 import pro_forma_writer as pf
 from dispatch import ProcessOutputs
-from datetime import datetime
 from tastypie.exceptions import ImmediateHttpResponse
 import json
-from datetime import datetime
 
 
 class Results:
 
-    # data
-    df_cols = ['Variable', 'Value']
-
     # file names
-    file_summary = 'summary.csv'
     file_proforma = 'ProForma.xlsm'
     file_dispatch = 'Dispatch.csv'
 
     # time outputs (scalar)
     time_steps_per_hour = 1
 
-    # time series labels
+    # time series labels - where are these used?
     label_year_one_electric_load_series = 'Electric load'
     label_year_one_pv_to_battery_series = 'PV to battery'
     label_year_one_pv_to_load_series = 'PV to load'
@@ -44,23 +37,21 @@ class Results:
         "total_demand_cost",
     ]
 
-    def __init__(self, path_templates, path_output, path_output_base, path_static, economics, year):
+    def __init__(self, path_templates, path_output, path_output_bau, path_static, economics, year):
         """
 
-        :param path_templates:
+        :param path_templates: path to proForma template
         :param path_output: path to scenario output dir
-        :param path_output_base:
-        :param path_static:
-        :param economics:
-        :param year:
+        :param path_output_bau: path to bau results json
+        :param path_static: path to copy proForma to for user download
+        :param economics: economics.Economics object
+        :param year: load_year
         """
-
-
 
         with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
             results_dict = json.loads(f.read())
 
-        with open(os.path.join(path_output_base, "REopt_results.json"), 'r') as f:
+        with open(os.path.join(path_output_bau, "REopt_results.json"), 'r') as f:
             results_dict_bau = json.loads(f.read())
 
         if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
@@ -74,13 +65,9 @@ class Results:
             setattr(self, k, None)
             results_dict.setdefault(k, None)
 
-
-        # compute_value
         results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
-        # results_dict['year_one_demand_savings'] = results_dict['year_one_demand_cost_bau'] - results_dict['year_one_demand_cost']
-        # results_dict['year_one_energy_savings'] = results_dict['year_one_energy_cost_bau'] - results_dict['year_one_energy_cost']
 
-        # compute_dispatch
+        # dispatch
         po = ProcessOutputs(results_dict, path_output, self.file_dispatch, year)
         results_dict['year_one_grid_to_load_series'] = po.get_grid_to_load()
         results_dict['year_one_grid_to_battery_series'] = po.get_grid_to_batt()
@@ -90,9 +77,10 @@ class Results:
         results_dict['year_one_battery_soc_series'] = po.get_soc(results_dict['batt_kwh'])
         results_dict['time_steps_per_hour'] = len(results_dict['year_one_grid_to_load_series'])
         results_dict['year_one_energy_cost_series'] = po.get_energy_cost()
-        results_dict['year_one_demand_cost_series'] =  po.get_energy_cost()
+        results_dict['year_one_demand_cost_series'] = po.get_energy_cost()
         results_dict['year_one_electric_load_series'] = po.get_demand_cost()
         results_dict['year_one_battery_to_load_series'] = po.get_batt_to_load()
+        results_dict['year_one_battery_to_grid_series'] = po.get_batt_to_grid()
 
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
@@ -101,10 +89,7 @@ class Results:
 
         self.path_templates = path_templates
         self.path_output = path_output
-        self.path_output_base = path_output_base
         self.path_static = os.path.join(path_static, self.file_proforma)
-        self.path_summary = os.path.join(path_output, self.file_summary)
-        self.path_summary_base = os.path.join(path_output_base, self.file_summary)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.economics = economics
         self.year = year
@@ -112,71 +97,8 @@ class Results:
 
         self.generate_pro_forma()
 
-        # data
-        self.df_results = []
-        self.df_results_base = []
-
-        # scalar outputs
-        self.status = None
-        self.lcc_bau = None
-        self.year_one_utility_kwh = None
-        self.year_one_energy_cost = None
-        self.year_one_energy_cost_bau = None
-        self.year_one_energy_savings = None
-        self.year_one_demand_cost = None
-        self.year_one_demand_cost_bau = None
-        self.year_one_demand_savings = None
-        self.year_one_export_benefit = None
-        self.year_one_payments_to_third_party_owner = None
-        self.year_one_energy_exported = None
-        self.total_energy_cost = None
-        self.total_energy_cost_bau = None
-        self.total_demand_cost = None
-        self.total_demand_cost_bau = None
-        self.total_payments_to_third_party_owner = None
-        self.net_capital_costs_plus_om = None
-        self.average_yearly_pv_energy_produced = None
-        self.lcc = None
-        self.irr = None
-        self.npv = None
-        self.pv_kw = None
-        self.batt_kw = None
-        self.batt_kwh = None
-        self.year_one_datetime_start = None
-
-        # time series outputs
-        self.zero_array = 8760 * self.time_steps_per_hour * [0]
-        self.year_one_electric_load_series = self.zero_array
-        self.year_one_pv_to_battery_series = self.zero_array
-        self.year_one_pv_to_load_series = self.zero_array
-        self.year_one_pv_to_grid_series = self.zero_array
-        self.year_one_grid_to_load_series = self.zero_array
-        self.year_one_grid_to_battery_series = self.zero_array
-        self.year_one_battery_to_load_series = self.zero_array
-        self.year_one_battery_to_grid_series = self.zero_array
-        self.year_one_battery_soc_series = self.zero_array
-        self.year_one_energy_cost_series = self.zero_array
-        self.year_one_demand_cost_series = self.zero_array
-
     def copy_static(self):
         shutil.copyfile(self.path_proforma, self.path_static)
-
-    def load_results(self):
-
-        df_results = pd.read_csv(self.path_summary, header=None, names=self.df_cols, index_col=0)
-        df_results_base = pd.read_csv(self.path_summary_base, header=None, names=self.df_cols, index_col=0)
-
-        df_results = df_results.transpose()
-        df_results_base = df_results_base.transpose()
-
-        if self.is_optimal(self.results_dict) and self.is_optimal(self.results_dict_bau):
-            self.populate_data(df_results)
-            self.populate_data_bau(df_results_base)
-            self.compute_dispatch(df_results)
-        else:
-            raise ImmediateHttpResponse("No solution could be found for these inputs")
-
-        self.update_types()
 
     @staticmethod
     def is_optimal(d):
@@ -187,97 +109,9 @@ class Results:
             return status == "Optimum found"
         return False
 
-    def populate_data(self, df):
-
-        if 'LCC ($)' in df.columns:
-            self.lcc = float(df['LCC ($)'].values[0])
-        if 'Battery Power (kW)' in df.columns:
-            self.batt_kw = float(df['Battery Power (kW)'].values[0])
-        if 'Battery Capacity (kWh)' in df.columns:
-            self.batt_kwh = float(df['Battery Capacity (kWh)'].values[0])
-
-        # PV and PVNM are mutually exclusive, can't have both
-        if 'PVNM Size (kW)' in df.columns:
-            if float(df['PVNM Size (kW)'].values[0]) > 0:
-                self.pv_kw = float(df['PVNM Size (kW)'].values[0])
-        if 'PV Size (kW)' in df.columns:
-            if float(df['PV Size (kW)'].values[0]) > 0:
-                self.pv_kw = float(df['PV Size (kW)'].values[0])
-
-        if 'Year 1 Energy Supplied From Grid (kWh)' in df.columns:
-            self.year_one_utility_kwh = float(df['Year 1 Energy Supplied From Grid (kWh)'].values[0])
-        if 'Year 1 Energy Cost ($)' in df.columns:
-            self.year_one_energy_cost = float(df['Year 1 Energy Cost ($)'].values[0])
-        if 'Year 1 Demand Cost ($)' in df.columns:
-            self.year_one_demand_cost = float(df['Year 1 Demand Cost ($)'].values[0])
-        if 'Year 1 Export Benefit ($)' in df.columns:
-            self.year_one_export_benefit = float(df['Year 1 Export Benefit ($)'].values[0])
-        if 'Year 1 Payments to Third Party Owner ($)' in df.columns:
-            self.year_one_payments_to_third_party_owner = float(df['Year 1 Payments to Third Party Owner ($)'].values[0])
-        if 'Total Energy Cost ($)' in df.columns:
-            self.total_energy_cost = float(df['Total Energy Cost ($)'].values[0])
-        if 'Total Demand Cost ($)' in df.columns:
-            self.total_demand_cost = float(df['Total Demand Cost ($)'].values[0])
-        if 'Total Payments to Third Party Owner ($)' in df.columns:
-            self.total_payments_to_third_party_owner = float(df['Total Payments to Third Party Owner ($)'].values[0])
-        if 'Net Capital Costs plus O&M ($)' in df.columns:
-            self.net_capital_costs_plus_om = float(df['Net Capital Costs plus O&M ($)'].values[0])
-        if 'Total Electricity Exported (kWh)' in df.columns:
-            self.year_one_energy_exported = float(df['Total Electricity Exported (kWh)'].values[0])
-        if 'Average PV production (kWh)' in df.columns:
-            self.average_yearly_pv_energy_produced = float(df['Average PV production (kWh)'].values[0])
-
-    def populate_data_bau(self, df):
-
-        if 'LCC ($)' in df.columns:
-            self.lcc_bau = float(df['LCC ($)'].values[0])
-        if 'Year 1 Energy Cost ($)' in df.columns:
-            self.year_one_energy_cost_bau = float(df['Year 1 Energy Cost ($)'].values[0])
-        if 'Year 1 Demand Cost ($)' in df.columns:
-            self.year_one_demand_cost_bau = float(df['Year 1 Demand Cost ($)'].values[0])
-        if 'Total Energy Cost ($)' in df.columns:
-            self.total_energy_cost_bau = float(df['Total Energy Cost ($)'].values[0])
-        if 'Total Demand Cost ($)' in df.columns:
-            self.total_demand_cost_bau = float(df['Total Demand Cost ($)'].values[0])
-
-    def compute_dispatch(self, d):
-
-        results = ProcessOutputs(d, self.path_output, self.file_dispatch, self.year)
-        df_xpress = results.get_dispatch()
-
-        if len(df_xpress) > 0:
-            if 'Date' in df_xpress.columns:
-                dates = (df_xpress['Date'].tolist())
-                self.year_one_datetime_start = dates[0]  # deprecated, load_year replaces
-                self.time_steps_per_hour = int(round(len(dates) / 8760, 0))
-                self.zero_array = 8760 * self.time_steps_per_hour * [0]
-            if 'Energy Cost ($/kWh)' in df_xpress.columns:
-                self.year_one_energy_cost_series = df_xpress['Energy Cost ($/kWh)'].tolist()
-            if 'Demand Cost ($/kW)' in df_xpress.columns:
-                self.year_one_demand_cost_series = df_xpress['Demand Cost ($/kW)'].tolist()
-            if 'Electric load' in df_xpress.columns:
-                self.year_one_electric_load_series = (df_xpress['Electric load']).tolist()
-            if 'PV to battery' in df_xpress.columns:
-                self.year_one_pv_to_battery_series = df_xpress['PV to battery'].tolist()
-            if 'PV to load' in df_xpress.columns:
-                self.year_one_pv_to_load_series = df_xpress['PV to load'].tolist()
-            if 'PV to grid' in df_xpress.columns:
-                self.year_one_pv_to_grid_series = df_xpress['PV to grid'].tolist()
-            if 'Grid to load' in df_xpress.columns:
-                self.year_one_grid_to_load_series = df_xpress['Grid to load'].tolist()
-            if 'Grid to battery' in df_xpress.columns:
-                self.year_one_grid_to_battery_series = df_xpress['Grid to battery'].tolist()
-            if 'State of charge' in df_xpress.columns:
-                self.year_one_battery_soc_series = df_xpress['State of charge'].tolist()
-            if 'Battery to load' in df_xpress.columns:
-                self.year_one_battery_to_load_series = df_xpress['Battery to load'].tolist()
-            if 'Battery to grid' in df_xpress.columns:
-                self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
-
     def generate_pro_forma(self):
 
-        econ = self.economics
-        cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, self.results_dict)
+        cash_flow = pf.ProForma(self.path_templates, self.path_output, self.economics, self.results_dict)
         cash_flow.update_template()
         cash_flow.compute_cashflow()
 
@@ -285,25 +119,6 @@ class Results:
         self.results_dict['irr'] = cash_flow.get_irr()
         self.results_dict['npv'] = cash_flow.get_npv()
         self.results_dict['lcc'] = cash_flow.get_lcc()
-
-    def update_types(self):
-
-        for k, v in outputs().iteritems():
-            value = getattr(self, k)
-
-            if value is not None:
-                if v['type'] == float:
-                    if v['pct']:
-                        if value > 1.0:
-                            setattr(self, k, float(value) * 0.01)
-
-                elif v['type'] == list:
-                    value = [float(i) for i in getattr(self, k)]
-                    setattr(self, k, value)
-                elif v['type'] == datetime:
-                    setattr(self, k, value)
-                else:
-                    setattr(self, k, v['type'](value))
 
     def get_output(self):
         output_dict = dict()
