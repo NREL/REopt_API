@@ -243,9 +243,9 @@ class DatLibrary:
         output_dict = self.parse_run_outputs()
 
         ins_and_outs_dict = self._add_inputs(output_dict)
-        self.cleanup()
         end = time.time()
         print "Post processing time: {}".format(end - start)
+        self.cleanup()
         return ins_and_outs_dict
 
         ###################
@@ -307,10 +307,6 @@ class DatLibrary:
                                       self.path_static_outputs, self.economics, self.load_year)
             output_dict = process_results.get_output()
             output_dict['run_input_id'] = self.run_input_id
-
-            for k in self.outputs():
-                val = getattr(process_results, k)
-                setattr(self, k, val)
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
