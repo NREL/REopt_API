@@ -287,15 +287,14 @@ class Results:
     def generate_pro_forma(self):
 
         econ = self.economics
-        results = self
-        cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, results)
+        cash_flow = pf.ProForma(self.path_templates, self.path_output, econ, self.results_dict)
         cash_flow.update_template()
         cash_flow.compute_cashflow()
 
         # make results consistent
-        self.irr = cash_flow.get_irr()
-        self.npv = cash_flow.get_npv()
-        self.lcc = cash_flow.get_lcc()
+        self.results_dict['irr'] = cash_flow.get_irr()
+        self.results_dict['npv'] = cash_flow.get_npv()
+        self.results_dict['lcc'] = cash_flow.get_lcc()
 
     def update_types(self):
 
