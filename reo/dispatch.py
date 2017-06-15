@@ -322,6 +322,12 @@ class ProcessOutputs:
         self.df_xpress_output = self.df_xpress_output[output_column_headers]
         self.df_xpress_output.to_csv(os.path.join(self.path_dispatch_output))
 
+    def get_batt_to_load(self):
+
+        if os.path.isfile(self.path_elec_from_store):
+            return self._load_csv(self.path_elec_from_store)
+        return None
+
     def get_energy_cost(self):
 
         if os.path.isfile(self.path_energy_cost):

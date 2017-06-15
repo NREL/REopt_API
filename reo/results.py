@@ -88,6 +88,7 @@ class Results:
         results_dict['year_one_energy_cost_series'] = po.get_energy_cost()
         results_dict['year_one_demand_cost_series'] =  po.get_energy_cost()
         results_dict['year_one_electric_load_series'] = po.get_demand_cost()
+        results_dict['year_one_battery_to_load_series'] = po.get_batt_to_load()
 
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
