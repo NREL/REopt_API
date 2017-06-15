@@ -1,5 +1,4 @@
 import os
-
 import numpy as np
 import pandas as pd
 
@@ -51,7 +50,6 @@ class ProcessOutputs:
         self.path_peak_demands = os.path.join(path_outputs, "PeakDemands.csv")
         self.path_production = os.path.join(path_outputs, "Production.csv")
         self.path_stored_energy = os.path.join(path_outputs, "StoredEnergy.csv")
-        self.path_hourly_rate_summary = os.path.join(path_outputs, "HourlyRateSummary.csv")
         self.path_energy_cost = os.path.join(path_outputs, "energy_cost.txt")
         self.path_demand_cost = os.path.join(path_outputs, "demand_cost.txt")
         self.path_grid_to_load = os.path.join(path_outputs, "GridToLoad.csv")
@@ -124,8 +122,6 @@ class ProcessOutputs:
         internal method for loading dispatch csv's into lists
         :param path: path to csv file
         :return: return list of params
-        :energy_cost: special handling
-        :demand_cost: special handling
         """
         l = list()
         with open(path, 'r') as f:

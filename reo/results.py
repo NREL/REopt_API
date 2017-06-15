@@ -61,6 +61,7 @@ class Results:
         for k in Results.bau_attributes:
             results_dict[k+'_bau'] = results_dict_bau[k]
 
+        # set missing outputs to None
         for k in outputs().iterkeys():
             setattr(self, k, None)
             results_dict.setdefault(k, None)
@@ -84,9 +85,6 @@ class Results:
 
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
-
-        ####################################################
-
         self.path_templates = path_templates
         self.path_output = path_output
         self.path_static = os.path.join(path_static, self.file_proforma)
@@ -94,18 +92,13 @@ class Results:
         self.economics = economics
         self.year = year
 
-
         self.generate_pro_forma()
-
-    def copy_static(self):
-        shutil.copyfile(self.path_proforma, self.path_static)
 
     @staticmethod
     def is_optimal(d):
 
         if 'status' in d.keys():
             status = str(d['status']).rstrip()
-            # self.results_dict['status'] = status  # need to handle BAU
             return status == "Optimum found"
         return False
 
@@ -119,6 +112,7 @@ class Results:
         self.results_dict['irr'] = cash_flow.get_irr()
         self.results_dict['npv'] = cash_flow.get_npv()
         self.results_dict['lcc'] = cash_flow.get_lcc()
+        shutil.copyfile(self.path_proforma, self.path_static)
 
     def get_output(self):
         output_dict = dict()

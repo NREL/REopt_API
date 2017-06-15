@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import re
 import json
-
+import time
 # logging
 from log_levels import log
 
@@ -237,11 +237,18 @@ class DatLibrary:
         run2 = command_bau.run(self.timeout)
         if not run2 == True:
             return {"ERROR":run2}
+
+        ###################
+        start = time.time()
         output_dict = self.parse_run_outputs()
 
         ins_and_outs_dict = self._add_inputs(output_dict)
         self.cleanup()
+        end = time.time()
+        print "Post processing time: {}".format(end - start)
         return ins_and_outs_dict
+
+        ###################
 
     def _add_inputs(self, od):
 
@@ -298,19 +305,17 @@ class DatLibrary:
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
-            process_results.copy_static()
+            output_dict = process_results.get_output()
+            output_dict['run_input_id'] = self.run_input_id
 
             for k in self.outputs():
                 val = getattr(process_results, k)
                 setattr(self, k, val)
-            output_dict = process_results.get_output()
-            output_dict['run_input_id'] = self.run_input_id
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
         return output_dict
-
 
     def cleanup(self):
         log("INFO", "Cleaning up folders from: " + self.path_run)
