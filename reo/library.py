@@ -7,7 +7,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 import re
 import json
-import time
 # logging
 from log_levels import log
 
