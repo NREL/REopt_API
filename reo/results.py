@@ -5,7 +5,7 @@ import pro_forma_writer as pf
 from dispatch import ProcessOutputs
 from tastypie.exceptions import ImmediateHttpResponse
 import json
-
+import time
 
 class Results:
 
@@ -48,6 +48,7 @@ class Results:
         :param year: load_year
         """
 
+        start = time.time()
         with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
             results_dict = json.loads(f.read())
 
@@ -91,7 +92,9 @@ class Results:
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.economics = economics
         self.year = year
+        end = time.time()
 
+        print "Post processing time: {}".format(end - start)
         self.generate_pro_forma()
 
     @staticmethod

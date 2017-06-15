@@ -238,13 +238,8 @@ class DatLibrary:
         if not run2 == True:
             return {"ERROR":run2}
 
-        ###################
-        start = time.time()
         output_dict = self.parse_run_outputs()
-
         ins_and_outs_dict = self._add_inputs(output_dict)
-        end = time.time()
-        print "Post processing time: {}".format(end - start)
         self.cleanup()
         return ins_and_outs_dict
 
