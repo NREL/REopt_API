@@ -299,7 +299,6 @@ class DatLibrary:
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
-            process_results.run()
             process_results.copy_static()
 
             for k in self.outputs():

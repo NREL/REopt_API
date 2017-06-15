@@ -70,6 +70,10 @@ class Results:
         for k in Results.bau_attributes:
             results_dict[k+'_bau'] = results_dict_bau[k]
 
+        for k in outputs().iterkeys():
+            setattr(self, k, None)
+            results_dict.setdefault(k, None)
+
 
         # compute_value
         results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
@@ -93,8 +97,6 @@ class Results:
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
 
-        # self.generate_pro_forma()
-
         ####################################################
 
         self.path_templates = path_templates
@@ -107,8 +109,8 @@ class Results:
         self.economics = economics
         self.year = year
 
-        for k in outputs().iterkeys():
-            setattr(self, k, None)
+
+        self.generate_pro_forma()
 
         # data
         self.df_results = []
@@ -155,12 +157,6 @@ class Results:
         self.year_one_battery_soc_series = self.zero_array
         self.year_one_energy_cost_series = self.zero_array
         self.year_one_demand_cost_series = self.zero_array
-
-    def run(self):
-
-        self.load_results()
-        self.compute_value()
-        self.generate_pro_forma()
 
     def copy_static(self):
         shutil.copyfile(self.path_proforma, self.path_static)
@@ -278,12 +274,6 @@ class Results:
             if 'Battery to grid' in df_xpress.columns:
                 self.year_one_battery_to_grid_series = df_xpress['Battery to grid'].tolist()
 
-    def compute_value(self):
-
-        self.npv = self.lcc_bau - self.lcc
-        self.year_one_demand_savings = self.year_one_demand_cost_bau - self.year_one_demand_cost
-        self.year_one_energy_savings = self.year_one_energy_cost_bau - self.year_one_energy_cost
-
     def generate_pro_forma(self):
 
         econ = self.economics
@@ -316,4 +306,7 @@ class Results:
                     setattr(self, k, v['type'](value))
 
     def get_output(self):
-        return self.results_dict
+        output_dict = dict()
+        for k in outputs().iterkeys():
+            output_dict[k] = self.results_dict[k]
+        return output_dict
