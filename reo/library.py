@@ -215,7 +215,7 @@ class DatLibrary:
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        self.create_GIS()
+        solar_data = self.create_Solar() 
         self.create_nem()
         self.create_utility()
 
@@ -242,7 +242,6 @@ class DatLibrary:
         self.cleanup()
         return ins_and_outs_dict
 
-        ###################
 
     def _add_inputs(self, od):
 
@@ -497,15 +496,17 @@ class DatLibrary:
 
         return min_index
 
-    def create_GIS(self):
+    def create_Solar(self):
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
+            solar_data = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
                                   outage_start=self.outage_start, outage_end=self.outage_end)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+
+            return solar_data
 
     def create_size_limits(self):
 
