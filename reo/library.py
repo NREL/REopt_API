@@ -14,7 +14,7 @@ from log_levels import log
 # user defined
 import economics
 import pvwatts
-import results
+from results import Results
 from api_definitions import *
 
 from urdb_parse import *
@@ -54,13 +54,14 @@ class DatLibrary:
     def outputs(self, **args):
         return outputs(**args)
 
-    def __init__(self, run_uuid, run_input_id, lib_inputs):
+    def __init__(self, run_uuid, run_input_id, inputs_dict):
         """
 
         All error handling is done in validators.py before data is passed to library.py
         :param run_uuid:
         :param run_input_id:
-        :param lib_inputs: dict, API post params
+        :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
+        that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
 
         self.timed_out = False
@@ -106,7 +107,6 @@ class DatLibrary:
         check_directory_created(self.path_run_outputs_bau)
 
         self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
-        self.file_output_bau = os.path.join(self.path_run_outputs_bau, "summary.csv")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
@@ -135,14 +135,14 @@ class DatLibrary:
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
-            if k == 'load_profile_name' and lib_inputs.get(k) is not None:
-                setattr(self, k, lib_inputs.get(k).replace(" ", ""))
+            if k == 'load_profile_name' and inputs_dict.get(k) is not None:
+                setattr(self, k, inputs_dict.get(k).replace(" ", ""))
 
-            elif lib_inputs.get(k) is None:
+            elif inputs_dict.get(k) is None:
                 setattr(self, k, self.inputs()[k].get('default'))
 
             else:
-                setattr(self, k, lib_inputs.get(k))
+                setattr(self, k, inputs_dict.get(k))
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -155,6 +155,10 @@ class DatLibrary:
             setattr(self, k, None)
 
         self.update_types()
+
+        for k, v in inputs(full_list=True).iteritems():
+            inputs_dict.setdefault(k, v['default'])
+        self.inputs_dict = inputs_dict
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
@@ -213,6 +217,7 @@ class DatLibrary:
         self.create_economics()
         self.create_loads()
         solar_data = self.create_Solar() 
+        self.prod_factor = solar_data.prod_factor
         self.create_nem()
         self.create_utility()
 
@@ -233,23 +238,21 @@ class DatLibrary:
         run2 = command_bau.run(self.timeout)
         if not run2 == True:
             return {"ERROR":run2}
-  
-        self.parse_run_outputs()
+
+        output_dict = self.parse_run_outputs()
+        ins_and_outs_dict = self._add_inputs(output_dict)
         self.cleanup()
-   
-        self.prod_factor = solar_data.prod_factor
-        result = self.lib_output()
-        return result
+        return ins_and_outs_dict
 
-    def lib_output(self):
-        output = {'run_input_id': self.run_input_id}
 
-        for k in set(self.inputs(full_list=True).keys() + self.outputs().keys()):
+    def _add_inputs(self, od):
+
+        for k in self.inputs(full_list=True).keys():
             if hasattr(self, k):
-                output[k] = getattr(self, k)
+                od[k] = getattr(self, k)
             else:
-                output[k] = None
-        return output
+                od[k] = None  # should we set defaults here?
+        return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
 
@@ -295,33 +298,19 @@ class DatLibrary:
     def parse_run_outputs(self):
 
         if os.path.exists(self.file_output):
-            process_results = results.Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
-                                              self.path_static_outputs, self.economics, self.load_year)
-            process_results.run()
-            process_results.copy_static()
-
-            for k in self.outputs():
-                val = getattr(process_results, k)
-                setattr(self, k, val)
+            process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
+                                      self.path_static_outputs, self.economics, self.load_year)
+            output_dict = process_results.get_output()
+            output_dict['run_input_id'] = self.run_input_id
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
 
+        return output_dict
+
     def cleanup(self):
-        return
-        log("INFO", "Cleaning up folders from: " + os.getcwd())
-        log("DEBUG", "Output folder: " + self.path_run_outputs)
-
-        if not self.debug:
-            for f in [self.path_run_output]:
-                if os.path.exists(f):
-                    shutil.rmtree(f, ignore_errors=True)
-
-            for p in [self.file_economics, self.file_economics_bau, self.file_gis, self.file_gis_bau,
-                      self.file_load_profile, self.file_load_size]:
-                if os.path.exists(p):
-                    os.remove(p)
-
+        log("INFO", "Cleaning up folders from: " + self.path_run)
+        # shutil.rmtree(self.path_run)
 
     # BAU files
     def create_simple_bau(self):
@@ -419,8 +408,6 @@ class DatLibrary:
 
             else:  # load_size is "swap_for" load_monthly_kwh
                 load_profile = self.scale_load(profile_path, self.load_size)
-
-            self.load_8760_kw = load_profile
 
         # resilience: modify load during outage with crit_load_factor
         if self.crit_load_factor and self.outage_start and self.outage_end:
@@ -526,7 +513,7 @@ class DatLibrary:
     def create_size_limits(self):
 
         acres_per_MW = 6
-        squarefeet_to_acre = 0.0002471
+        squarefeet_to_acre = 2.2957e-5
         total_acres = 0
 
         # Internal working defaults, probably need to revamp and move to api_definitions.py
@@ -647,11 +634,19 @@ class DatLibrary:
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
 
         # Copy hourly rate summary to outputs
-        if os.path.exists(urdb_parse.utility_dat_files.path_hourly_summary):
-            shutil.copyfile(urdb_parse.utility_dat_files.path_hourly_summary,
-                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_hourly_summary))
-            shutil.copyfile(urdb_parse.utility_dat_files.path_hourly_summary,
-                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_hourly_summary))
+        if os.path.exists(urdb_parse.utility_dat_files.path_energy_cost):
+
+            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
+                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_energy_cost))
+            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
+                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_energy_cost))
+
+        if os.path.exists(urdb_parse.utility_dat_files.path_demand_cost):
+
+            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
+                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_demand_cost))
+            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
+                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_demand_cost))
 
         self.utility_name = utility_name
         self.rate_name = rate_name
