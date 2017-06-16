@@ -29,7 +29,8 @@ class UtilityDatFiles:
     name_export_rates_base = 'ExportRatesBase.dat'
     name_fuel_burn_rate_base = 'FuelBurnRateBase.dat'
     name_summary = 'Summary.csv'
-    name_hourly_summary = "HourlyRateSummary.csv"
+    name_energy_cost = "energy_cost.txt"
+    name_demand_cost = "demand_cost.txt"
 
 
     # varnames to use
@@ -122,7 +123,8 @@ class UtilityDatFiles:
         self.path_fuel_burn_rate = os.path.join(rate_dir, self.name_fuel_burn_rate)
         self.path_fuel_burn_rate_base = os.path.join(rate_dir, self.name_fuel_burn_rate_base)
         self.path_summary = os.path.join(rate_dir, self.name_summary)
-        self.path_hourly_summary = os.path.join(rate_dir, self.name_hourly_summary)
+        self.path_energy_cost = os.path.join(rate_dir, self.name_energy_cost)
+        self.path_demand_cost = os.path.join(rate_dir, self.name_demand_cost)
 
         self.data_minimum_demand = 0
         self.data_demand_flat_rates = 12 * [0]
@@ -839,7 +841,8 @@ class UrdbParse:
         file_path.close()
 
         # hourly cost summary
-        self.write_hourly_cost_summary(self.utility_dat_files.path_hourly_summary)
+        self.write_energy_cost(self.utility_dat_files.path_energy_cost)
+        self.write_demand_cost(self.utility_dat_files.path_demand_cost)
 
     def write_summary(self, file_name):
         file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')
@@ -851,14 +854,17 @@ class UrdbParse:
                         str(self.max_demand_rate)
                         )
 
-    def write_hourly_cost_summary(self, file_name):
+    def write_energy_cost(self, file_path):
 
-        with open(file_name, 'wb') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(['Energy Cost ($/kWh)', 'Demand Cost ($/kW)'])
-            for i in range(0, len(self.utility_dat_files.data_fuel_rate_summary)):
-                writer.writerow([str(self.utility_dat_files.data_fuel_rate_summary[i]),
-                                str(self.utility_dat_files.data_demand_rate_summary[i])])
+        with open(file_path, 'wb') as f:
+            for v in self.utility_dat_files.data_fuel_rate_summary:
+                f.write(str(v)+'\n')
+
+    def write_demand_cost(self, file_path):
+
+        with open(file_path, 'wb') as f:
+            for v in self.utility_dat_files.data_demand_rate_summary:
+                f.write(str(v)+'\n')
 
     @staticmethod
     def write_single_variable(file_name, var_name, array):
