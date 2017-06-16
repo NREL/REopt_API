@@ -32,12 +32,12 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'latitude': {'req': True, 'type': float, 'null': False, 'pct': False, 'min':-180, 'max':180,
                      "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
-                     "description": "Site Latitude", "units": 'degrees',
+                     "description": "Site Latitude", "units": 'degrees', 'default': None,
                      "tool_tip": 'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
         'longitude': {'req': True, 'type': float, 'null': False, 'pct': False, 'min':-180, 'max':180,
                       "needed_for": ['economics', 'gis', 'loads', 'pvwatts'],
-                      "description": "Site Longitude", "units": 'degrees',
+                      "description": "Site Longitude", "units": 'degrees', 'default': None,
                       "tool_tip": 'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
         'pv_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
@@ -152,16 +152,16 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                  'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
-                                 "description": "Blended Utility Rate", "units": '$/kWh',
+                                 "description": "Blended Utility Rate", "units": '$/kWh', 'default': None,
                                  "tool_tip": 'The average of on-peak, off-peak and any shoulder time of use pricing schedules for each month. These vary according to utility.'},
 
         'demand_charge': {'req': True, 'depends_on': ['blended_utility_rate'], 'swap_for': ['urdb_rate'], 'type': list,
                           'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
-                          "description": "Demand Charge", "units": '$/kW',
+                          "description": "Demand Charge", "units": '$/kW', 'default': None,
                           "tool_tip": 'The price per kilowatt of demand charges established by your local utility.'},
 
         'urdb_rate': {'req': True, 'swap_for': ['demand_charge', 'blended_utility_rate'], 'type': dict, 'null': False,
-                      'pct': False, "needed_for": ['economics'],
+                      'pct': False, "needed_for": ['economics'], 'default': None,
                       "tool_tip": 'The electricity rate can be selected from a list of rates available in the location entered.  The rates are downloaded from the Utility Rate Database (URDB) (http://en.openei.org/wiki/Utility_Rate_Database). This value is required. Utility rates that are not in URDB cannot be modeled at this time.'},
 
         # load_profile
@@ -181,13 +181,13 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_monthly_kwh': {'req': False, 'swap_for': ['load_size'], 'depends_on': ['load_profile_name'],
                              'type': list, 'null': True, 'pct': False, "needed_for": ['load_profile'],
-                             "description": "Monthly Energy Usage", "units": 'kWh', 'length': 12,
+                             "description": "Monthly Energy Usage", "units": 'kWh', 'length': 12, 'default': None,
                              "tool_tip": 'The monthly energy usage at the proposed site.'},
 
         'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name'], 'depends_on': ['load_year'],
                          'type': list, 'null': True, 'length': 8760,
                          'pct': False, "needed_for": ['load_profile'],
-                         "description": "Hourly Power Demand", "units": 'kW',
+                         "description": "Hourly Power Demand", "units": 'kW', 'default': None,
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
         'load_year': {'req': False, 'swap_for': [],
@@ -198,11 +198,11 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
         'utility_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                         "description": "Utility Name",
+                         "description": "Utility Name", 'default': None,
                          "tool_tip": 'The name of the utility that currently serves the proposed site.'},
 
         'rate_name': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": ['economics', 'utility'],
-                      "description": "Rate Name",
+                      "description": "Rate Name", 'default': None,
                       "tool_tip": 'The name of the utility rate structure that currently applies to the proposed site.'},
 
         'pv_degradation_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
@@ -635,11 +635,6 @@ def outputs():
 
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
-
-            'load_8760_kw': {
-                'type': list, 'null': True, 'pct': False,
-                "description": "load_profile", "units": 'kw'
-                },
 
             'prod_factor': {
                'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'

@@ -99,4 +99,7 @@ ENV/
 
 /tmp/*
 /log/*
-**.xlsm
+static/files/*
+!static/files/.gitkeep
+
+

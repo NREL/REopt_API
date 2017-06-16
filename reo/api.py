@@ -6,9 +6,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
 from tastypie.resources import ModelResource
-from models import RunInput, RunOutput
-from IPython import embed
-from tastypie.resources import ModelResource, ALL, ALL_WITH_RELATIONS
+from models import RunInput
 
 import logging
 from log_levels import log
@@ -84,20 +82,4 @@ class RunInputResource(ModelResource):
         
         return self.full_hydrate(bundle)
 
-class ReslienceInputResource(ModelResource):
-    class Meta:
-        queryset = RunOutput.objects.all()
-        resource_name = 'resilience_input'
-        allowed_methods = ['get']
-        fields = ['run_input_id']
-        filtering = {'run_input_id':ALL}
 
-    def dehydrate(self, bundle):
-        print "A"
-        field_maps = {'run_input_id':None,'pv_kw':'pv_kw','batt_kw':'batt_kw','batt_kwh':'batt_kwh','load_8760_kw':'load','crit_load_factor':'crit_load_factor','batt_efficiency':'batt_roundtrip_efficiency','batt_soc_init':'init_soc','prod_factor':'prod_factor'}
-
-        for k,v in field_maps.items():
-            if v is not None:
-                bundle.data[v] = getattr(bundle.obj, k)
-
-        return bundle

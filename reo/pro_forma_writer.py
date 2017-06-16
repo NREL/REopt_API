@@ -19,12 +19,11 @@ class ProForma(object):
 
         # data
         self.econ = econ
-        self.results = results
 
         # system sizes
-        self.pv_kw = results.pv_kw
-        self.batt_kw = results.batt_kw
-        self.batt_kwh = results.batt_kwh
+        self.pv_kw = results['pv_kw']
+        self.batt_kw = results['batt_kw']
+        self.batt_kwh = results['batt_kwh']
 
         if self.pv_kw is None:
             self.pv_kw = 0
@@ -38,9 +37,10 @@ class ProForma(object):
                              self.batt_kw * econ.batt_cost_kw + \
                              self.batt_kwh * econ.batt_cost_kwh
 
-        self.year_one_bill = self.results.year_one_demand_cost + self.results.year_one_energy_cost
-        self.year_one_exports = self.results.year_one_export_benefit
-        self.year_one_bill_bau = self.results.year_one_demand_cost_bau + self.results.year_one_energy_cost_bau
+        self.year_one_bill = results['year_one_demand_cost'] + results['year_one_energy_cost']
+        self.year_one_exports = results['year_one_export_benefit']
+        self.year_one_bill_bau = results['year_one_demand_cost_bau'] + results['year_one_energy_cost_bau']
+        self.average_yearly_pv_energy_produced = results['average_yearly_pv_energy_produced']
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
         # approximate state taxes as 5/35 of total taxes
@@ -155,7 +155,7 @@ class ProForma(object):
         ws['B4'] = self.econ.pv_degradation_rate * 100
         ws['B5'] = self.batt_kw
         ws['B6'] = self.batt_kwh
-        ws['B7'] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
+        ws['B7'] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
         ws['B10'] = self.capital_costs
         ws['B12'] = self.econ.pv_om
         ws['B13'] = self.econ.batt_replacement_cost_kw
@@ -256,7 +256,7 @@ class ProForma(object):
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
-        annual_energy[1] = self.results.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
+        annual_energy[1] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
         bill_with_system[1] = self.year_one_bill + self.year_one_exports
         bill_without_system[1] = self.year_one_bill_bau
         value_of_savings[1] = self.year_one_savings
