@@ -7,7 +7,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 import re
 import json
-
 # logging
 from log_levels import log
 
@@ -39,7 +38,7 @@ class DatLibrary:
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    debug = False
     logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1

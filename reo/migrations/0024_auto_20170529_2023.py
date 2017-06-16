@@ -15,11 +15,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='runinput',
             name='crit_load_factor',
-            field=django.contrib.postgres.fields.ArrayField(default=[], null=True, base_field=models.TextField(blank=True), size=None, blank=True),
+            field=models.FloatField(null=True, blank=True),
+
         ),
         migrations.AddField(
             model_name='runoutput',
             name='crit_load_factor',
-            field=django.contrib.postgres.fields.ArrayField(default=[], null=True, base_field=models.TextField(blank=True), size=None, blank=True),
+            field=models.FloatField(null=True, blank=True),
         ),
     ]
