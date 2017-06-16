@@ -6,7 +6,8 @@ model "REopt"
 uses "mmxprs"   !Xpress optimizer
 uses "mmetc"    ! Defines Disk Data procedure -- not used for this model
 uses "mmsystem" !for timing function
-uses "mmnl" 
+uses "mmnl"
+uses "mmxml"    ! for JSON output
 
 parameters
 
@@ -752,7 +753,7 @@ writeln ("Total Demand Cost ($),",strfmt(getsol(TotalDemandCharges), 10, 0))
 writeln ("Total Payments to Third Party Owner ($)",0)
 
 
-writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotalTechCapCosts) + getsol(TotalOMCosts), 10, 0))
+writeln ("Net Capital Costs plus O&M ($),",strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts), 10, 0))
 writeln ("Average PV production (kWh),",strfmt(getsol(TotalElecProd), 10, 0))
 writeln ("Total Electricity Exported (kWh),",strfmt(getsol(ExportedElec), 10, 0))
 
