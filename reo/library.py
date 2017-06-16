@@ -216,6 +216,7 @@ class DatLibrary:
         self.create_economics()
         self.create_loads()
         solar_data = self.create_Solar() 
+        self.prod_factor = solar_data.prod_factor
         self.create_nem()
         self.create_utility()
 
