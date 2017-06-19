@@ -67,23 +67,22 @@ class ResilienceCase(models.Model):
 
         output = {}
 
-        translator = {'load':'year_one_electric_load_series', 'init_soc':'batt_soc_init'}
+        translator = {'load':'year_one_electric_load_series', 'init_soc':'year_one_battery_soc_series'}
 
         res_inputs = inputs()
 
         for res_k in res_inputs.keys():
+
             if res_k in translator.keys():
                 reo_k = translator[res_k]
             else:
                 reo_k = res_k
 
-            value = data.get(reo_k)
-            output[res_k] = value
-
-            if value is None:
-                output[res_k] = res_inputs[res_k]['default']
+            if res_k == 'batt_roundtrip_efficiency':
+                value = data['batt_efficiency'] * data['batt_inverter_efficiency'] * data['batt_rectifier_efficiency']
             else:
-                if res_k == 'init_soc':
-                    output[res_k] = [value] * 8760
+                value = data.get(reo_k)
+
+            output[res_k] = value
 
         return output
