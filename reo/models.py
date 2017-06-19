@@ -6,7 +6,6 @@ import uuid
 from picklefield.fields import PickledObjectField
 from library import *
 
-
 # Create your models here.
 class RunInput(models.Model):
 
@@ -157,6 +156,8 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
+        from IPython import embed
+        embed()
 
         if "ERROR" in output_dictionary.keys():
             return output_dictionary
@@ -346,15 +347,4 @@ class RunOutput(models.Model):
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
     outage_end = models.IntegerField(null=True, blank=True)
-    crit_load_factor = models.FloatField(null=True, blank=True)
-
-    def to_dictionary(self):
-        output = {'run_input_id': self.run_input_id,
-                  'api_version': self.api_version}
-
-        for k in inputs(full_list=True).keys() + outputs().keys():
-            if hasattr(self, k):
-                output[k] = getattr(self, k)
-            else:
-                output[k] = 0
-        return output
+    crit_load_factor = models.FloatField(null=True, blank=True)   
