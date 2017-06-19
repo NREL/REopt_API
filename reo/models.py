@@ -160,8 +160,6 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
-        from IPython import embed
-        embed()
 
         # Add Resilience Stats to Output Dictionary
         output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)

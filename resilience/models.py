@@ -49,6 +49,7 @@ class ResilienceCase(models.Model):
 
     @staticmethod
     def append_resilience_stats(data):
+
         resilience_params = ResilienceCase().inputs_from_reo_output(data)
         resilience_results = simulate_outage(**resilience_params)
 
@@ -81,5 +82,8 @@ class ResilienceCase(models.Model):
 
             if value is None:
                 output[res_k] = res_inputs[res_k]['default']
+            else:
+                if res_k == 'init_soc':
+                    output[res_k] = [value] * 8760
 
         return output

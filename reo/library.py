@@ -220,7 +220,7 @@ class DatLibrary:
 
 
         solar_data = self.create_Solar()
-        self.prod_factor = solar_data.prod_factor
+        self.prod_factor = solar_data.ac_hourly
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)

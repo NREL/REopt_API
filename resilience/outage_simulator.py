@@ -48,10 +48,12 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_
                     break
 
     pvMld = pvMld[1:] + pvMld[:1]  # shift back to original state
+    
+    r = [round(i,2) for i in r]
 
     r_min = min(r)
     r_max = max(r)
-    r_avg = float(sum(r)) / float(len(r))
+    r_avg = round( float(sum(r)) / float(len(r)),2)
     r_list = r
     
     return {"r_list": r_list,

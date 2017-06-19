@@ -93,6 +93,8 @@ class PVWatts:
         if ac_hourly is None:
             ac_hourly = [0] * 8760
 
+        self.ac_hourly = ac_hourly
+
         dc_nameplate = self.system_capacity * 1000  # W
         prod_factor = []
         prod_factor_bau = []
@@ -160,6 +162,8 @@ class PVWatts:
 
         self.prod_factor = prod_factor
         self.prod_factor_bau = prod_factor_bau
+
+        
 
     def write_output(self):
         self.filename_GIS = "GIS_" + str(self.run_id) + ".dat"
