@@ -603,7 +603,7 @@ def outputs():
             'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
 
-             'year_one_pv_to_battery_series': {'type': list, 'null': True, 'pct': False,
+            'year_one_pv_to_battery_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 PV to battery time series", "units": 'kW'},
 
             'year_one_pv_to_load_series': {'type': list, 'null': True, 'pct': False,
@@ -636,9 +636,19 @@ def outputs():
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
 
-            'prod_factor': {
-               'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'
-                },
+            'prod_factor': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
+
+            'r_list': {'req': True, 'type': float, 'null': True, 'pct': False,
+                    "description": "List of hours survived for outages starting at every time step", "units": 'hours'},
+
+            'r_min': {'req': True, 'type': float, 'null': True, 'pct': False,
+                    "description": "Minimum hours survived", "units": 'hours'},
+
+            'r_max': {'req': True, 'type': float, 'null': True, 'pct': False,
+                    "description": "Maximum hours survived", "units": 'hours'},
+
+            'r_avg': {'req': True, 'type': float, 'null': True, 'pct': False,
+                    "description": "Average hours survived", "units": 'hours'},
             }
 
 # default load profiles

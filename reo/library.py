@@ -215,10 +215,11 @@ class DatLibrary:
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        solar_data = self.create_Solar() 
-        self.prod_factor = solar_data.prod_factor
         self.create_nem()
         self.create_utility()
+
+        solar_data = self.create_Solar()
+        self.prod_factor = solar_data.prod_factor
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -240,7 +241,9 @@ class DatLibrary:
 
         output_dict = self.parse_run_outputs()
         ins_and_outs_dict = self._add_inputs(output_dict)
+
         self.cleanup()
+
         return ins_and_outs_dict
 
 
@@ -308,8 +311,9 @@ class DatLibrary:
         return output_dict
 
     def cleanup(self):
-        log("INFO", "Cleaning up folders from: " + self.path_run)
-        # shutil.rmtree(self.path_run)
+        if not self.debug:
+            log("INFO", "Cleaning up folders from: " + self.path_run)
+            shutil.rmtree(self.path_run)
 
     # BAU files
     def create_simple_bau(self):
@@ -343,6 +347,7 @@ class DatLibrary:
                                  0, 0]
 
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
+
         write_single_variable(self.file_constant, Tech, 'Tech')
         write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
         write_single_variable(self.file_constant, Load, 'Load', 'a')

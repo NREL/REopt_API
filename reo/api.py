@@ -76,7 +76,7 @@ class RunInputResource(ModelResource):
         if hasattr(output_obj, 'keys'):
             if "ERROR" in [i.upper() for i in output_obj.keys()]:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
-        
+        output
         bundle.obj = output_obj
         bundle.data = output_obj.to_dictionary()
         
