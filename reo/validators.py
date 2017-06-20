@@ -55,7 +55,7 @@ class REoptResourceValidation(Validation):
             message = [self.get_missing_required_message(m) for  m in missing_required]
             errors = self.append_errors(errors,"Missing_Required",message)
 
-        missing_dependencies = self.missing_dependencies(bundle.data.keys(), exclude=missing_required)
+        missing_dependencies = self.missing_dependencies(bundle.data, exclude=missing_required)
         if missing_dependencies:
             message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
             errors = self.append_errors(errors, "Missing_Dependencies", message)
@@ -144,19 +144,21 @@ class REoptResourceValidation(Validation):
                     dependency_of.append(k)
         return "%s (%s depend(s) on this input.)" % (input, "  and ".join(dependency_of))
 
-    def missing_dependencies(self, key_list, exclude=[]):
+    def missing_dependencies(self, bundle, exclude=[]):
         # Check if field depends on non-required fields
         missing = []
-        for f in inputs(full_list=True).keys():  # all possible inputs
+        for f, v in bundle.items():  # all possible inputs
 
-            if not self.swaps_exists(key_list, f):  # if a swap exists we don't care about dependencies
-                dependent = inputs(full_list=True)[f].get('depends_on')
+            if v is not None:  # if the value is None we don't care about dependencies
 
-                if dependent is not None and f not in exclude:
-                    for d in dependent:
-                        if d not in key_list and not self.swaps_exists(key_list, d):
-                            # dependencies can have swaps too (eg. load_size for load_monthly_kwh)
-                            missing.append(d)
+                if not self.swaps_exists(bundle.keys(), f):  # if a swap exists we don't care about dependencies
+                    dependent = inputs(full_list=True)[f].get('depends_on')
+
+                    if dependent is not None and f not in exclude:
+                        for d in dependent:
+                            if d not in bundle.keys() and not self.swaps_exists(bundle.keys(), d):
+                                # dependencies can have swaps too (eg. load_size for load_monthly_kwh)
+                                missing.append(d)
         return missing
 
     def swaps_exists(self, key_list, f):
