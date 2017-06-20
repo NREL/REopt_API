@@ -48,6 +48,7 @@ class Command(object):
 
     def run(self, timeout):
         def target():
+
             self.process = Popen(split(self.cmd))
             log("INFO", "XPRESS" + str(self.process.communicate()))
        
