@@ -6,6 +6,9 @@ import uuid
 from picklefield.fields import PickledObjectField
 from library import *
 
+from resilience.models import ResilienceCase
+from resilience.api_definitions import inputs as resilience_inputs
+from resilience.outage_simulator import simulate_outage
 
 # Create your models here.
 class RunInput(models.Model):
@@ -25,12 +28,12 @@ class RunInput(models.Model):
     load_profile_name = models.TextField(null=True, blank=True, default='')
     load_size = models.FloatField(null=True, blank=True)
     load_year = models.IntegerField(null=True, blank=True, default=2018)
-    load_8760_kw = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
-    load_monthly_kwh = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    load_8760_kw = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    load_monthly_kwh = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     utility_name = models.TextField(blank=True, default='')
     rate_name = models.TextField(blank=True, default='')
-    blended_utility_rate = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
-    demand_charge = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    blended_utility_rate = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    demand_charge = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)
@@ -158,6 +161,9 @@ class RunInput(models.Model):
         # Run Optimization
         output_dictionary = run_set.run()
 
+        # Add Resilience Stats to Output Dictionary
+        output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)
+
         if "ERROR" in output_dictionary.keys():
             return output_dictionary
 
@@ -190,12 +196,13 @@ class RunOutput(models.Model):
     load_profile_name = models.TextField(null=True, blank=True, default='')
     load_size = models.FloatField(null=True, blank=True)
     load_year = models.IntegerField(null=True, blank=True, default=2018)
-    load_8760_kw = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
-    load_monthly_kwh = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    load_8760_kw = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    load_monthly_kwh = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     utility_name = models.TextField(blank=True, default='')
     rate_name = models.TextField(blank=True, default='')
-    blended_utility_rate = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
-    demand_charge = ArrayField(models.TextField(blank=True), null=True, blank=True, default=[])
+    blended_utility_rate = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    demand_charge = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    prod_factor = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)
@@ -342,18 +349,15 @@ class RunOutput(models.Model):
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
+    # Resilience Stats
+    r_list = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    r_min = models.FloatField(null=True, blank=True)
+    r_max = models.FloatField(null=True, blank=True)
+    r_avg = models.FloatField(null=True, blank=True)
+
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
     outage_end = models.IntegerField(null=True, blank=True)
+
     crit_load_factor = models.FloatField(null=True, blank=True)
 
-    def to_dictionary(self):
-        output = {'run_input_id': self.run_input_id,
-                  'api_version': self.api_version}
-
-        for k in inputs(full_list=True).keys() + outputs().keys():
-            if hasattr(self, k):
-                output[k] = getattr(self, k)
-            else:
-                output[k] = 0
-        return output

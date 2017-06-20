@@ -76,10 +76,7 @@ class RunInputResource(ModelResource):
         if hasattr(output_obj, 'keys'):
             if "ERROR" in [i.upper() for i in output_obj.keys()]:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
-        
         bundle.obj = output_obj
-        bundle.data = output_obj.to_dictionary()
-        
+        bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
+
         return self.full_hydrate(bundle)
-
-
