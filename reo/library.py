@@ -215,9 +215,12 @@ class DatLibrary:
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        self.create_GIS()
         self.create_nem()
         self.create_utility()
+
+
+        solar_data = self.create_Solar()
+        self.prod_factor = solar_data.ac_hourly
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -239,10 +242,11 @@ class DatLibrary:
 
         output_dict = self.parse_run_outputs()
         ins_and_outs_dict = self._add_inputs(output_dict)
+
         self.cleanup()
+
         return ins_and_outs_dict
 
-        ###################
 
     def _add_inputs(self, od):
 
@@ -250,7 +254,7 @@ class DatLibrary:
             if hasattr(self, k):
                 od[k] = getattr(self, k)
             else:
-                od[k] = None  # should we set defaults here?
+                od[k] = None  # should we set defaults here? Nope - defaults will already have been set by this point in the code
         return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
@@ -300,7 +304,8 @@ class DatLibrary:
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
             output_dict = process_results.get_output()
-            output_dict['run_input_id'] = self.run_input_id
+            for key in ['run_input_id','prod_factor']:
+                output_dict[key] = getattr(self,key)
         else:
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
@@ -308,8 +313,9 @@ class DatLibrary:
         return output_dict
 
     def cleanup(self):
-        log("INFO", "Cleaning up folders from: " + self.path_run)
-        # shutil.rmtree(self.path_run)
+        if not self.debug:
+            log("INFO", "Cleaning up folders from: " + self.path_run)
+            shutil.rmtree(self.path_run)
 
     # BAU files
     def create_simple_bau(self):
@@ -343,6 +349,7 @@ class DatLibrary:
                                  0, 0]
 
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
+
         write_single_variable(self.file_constant, Tech, 'Tech')
         write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
         write_single_variable(self.file_constant, Load, 'Load', 'a')
@@ -497,15 +504,17 @@ class DatLibrary:
 
         return min_index
 
-    def create_GIS(self):
+    def create_Solar(self):
 
         if self.latitude is not None and self.longitude is not None:
             pv_inputs = self.get_subtask_inputs('pvwatts')
-            GIS = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
+            solar_data = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
                                   outage_start=self.outage_start, outage_end=self.outage_end)
 
             self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
             self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+
+            return solar_data
 
     def create_size_limits(self):
 
