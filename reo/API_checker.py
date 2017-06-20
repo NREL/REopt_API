@@ -4,8 +4,6 @@ import requests
 import json
 import logging
 import datetime
-import pandas
-
 
 logging.basicConfig(filename='log_%s.log' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')), filemode='w', level=logging.DEBUG)
 
