@@ -117,6 +117,12 @@ class ProcessOutputs:
             return self._load_csv(self.path_pv_to_batt)
         return None
 
+    def get_load_profile(self):
+
+        if os.path.isfile(self.path_load):
+            return self._load_csv(self.path_load)
+        return None
+
     def _load_csv(self, path):
         """
         internal method for loading dispatch csv's into lists
