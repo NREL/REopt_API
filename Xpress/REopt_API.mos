@@ -772,83 +772,88 @@ writeln (DAT17, ",")
 fclose(F_OUTPUT)
 
 
-!******************
+!******************************************************
 !Time series dispatch output
-!fopen(OutputDir + "\\DispatchHourly.csv",F_OUTPUT)
-!forall (t in Tech,LD in Load, ts in TimeStep)     do
-!   writeln ( t,",", LD, "," ,ts ,",",sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) getsol (dvRatedProd (t,LD,ts,s,fb)),",", sum (s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))      getsol (dvRatedProd (t,LD,ts,s,fb)) * ProdFactor(t,LD,ts)*LevelizationFactor(t))
-!end-do
-!fclose(F_OUTPUT)
 
-fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
-forall (ts in TimeStep) do
-   writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1S", ts, s, fb)) * ProdFactor("UTIL1", "1S", ts) * LevelizationFactor("UTIL1"))
+if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
+
+    fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
+        forall (ts in TimeStep) do
+           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1S", ts, s, fb)) * ProdFactor("UTIL1", "1S", ts) * LevelizationFactor("UTIL1"))
+        end-do
+    fclose(F_OUTPUT)
+
+    fopen(OutputDir + "\\ElecToStore.csv",F_OUTPUT)
+        forall (ts in TimeStep )     do
+           writeln (     getsol (dvElecToStor (ts)))
+        end-do
+    fclose(F_OUTPUT)
+
+    !Time series dispatch output
+    fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
+        forall (ts in TimeStep )     do
+           writeln (    getsol (dvElecFromStor (ts)))
+        end-do
+    fclose(F_OUTPUT)
+
+    fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
+        forall (ts in TimeStep )     do
+           writeln (   getsol (dvStoredEnergy (ts)))
+        end-do
+    fclose(F_OUTPUT)
+
+    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+
+        fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
+            forall (ts in TimeStep) do
+               writeln (sum (s in Seg, fb in FuelBin)  getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
+            end-do
+        fclose(F_OUTPUT)
+
+    end-do
+
+end-if
+
+forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+
+    fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
+        forall (ts in TimeStep) do
+           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
+        end-do
+    fclose(F_OUTPUT)
+
+    fopen(OutputDir + "\\PVtoGrid.csv", F_OUTPUT)
+        forall (ts in TimeStep) do
+           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
+                    sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
+        end-do
+    fclose(F_OUTPUT)
+
 end-do
-fclose(F_OUTPUT)
 
 fopen(OutputDir + "\\GridToLoad.csv", F_OUTPUT)
-forall (ts in TimeStep) do
-   writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1R", ts, s, fb)) * ProdFactor("UTIL1", "1R", ts) * LevelizationFactor("UTIL1"))
-end-do
+    forall (ts in TimeStep) do
+       writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1R", ts, s, fb)) * ProdFactor("UTIL1", "1R", ts) * LevelizationFactor("UTIL1"))
+    end-do
 fclose(F_OUTPUT)
 
-fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
-forall (ts in TimeStep, t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0) do
-   writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
-end-do
-fclose(F_OUTPUT)
-
-fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
-forall (ts in TimeStep, t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0) do
-   writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
-end-do
-fclose(F_OUTPUT)
-
-fopen(OutputDir + "\\PVtoGrid.csv", F_OUTPUT)
-forall (ts in TimeStep, t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0) do
-   writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
-            sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
-end-do
-fclose(F_OUTPUT)
-
-fopen(OutputDir + "\\ElecToStore.csv",F_OUTPUT)
-forall (ts in TimeStep )     do
-   writeln (     getsol (dvElecToStor (ts)))
-end-do
-fclose(F_OUTPUT)
-
-!Time series dispatch output
-fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
-forall (ts in TimeStep )     do
-   writeln (    getsol (dvElecFromStor (ts)))
-end-do
-fclose(F_OUTPUT)
-
-!Time series dispatch output
 fopen(OutputDir + "\\Load.csv",F_OUTPUT)
-forall (ts in TimeStep )     do
-   writeln (   getsol (LoadProfile("1R",ts)))
-end-do
+    forall (ts in TimeStep )     do
+       writeln (   getsol (LoadProfile("1R",ts)))
+    end-do
 fclose(F_OUTPUT)
 
-!Time series dispatch output
-fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
-forall (ts in TimeStep )     do
-   writeln (   getsol (dvStoredEnergy (ts)))
-end-do
-fclose(F_OUTPUT)
 
-!demand output
 fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
-writeln ("Ratchet,DemandTier,PeakDemand")
-forall  ( r in Ratchets, db in DemandBin)  do
-   writeln (r, ",", db, ",", getsol(dvPeakDemandE(r,db)),",")
-end-do
-writeln(",")
-writeln("Month,Peak_Demand")
-forall  ( m in Month)  do
-   writeln (m, ",", getsol(dvPeakDemandEMonth(m)),",")
-end-do
+    writeln ("Ratchet,DemandTier,PeakDemand")
+    forall  ( r in Ratchets, db in DemandBin)  do
+       writeln (r, ",", db, ",", getsol(dvPeakDemandE(r,db)),",")
+    end-do
+    writeln(",")
+    writeln("Month,Peak_Demand")
+    forall  ( m in Month)  do
+       writeln (m, ",", getsol(dvPeakDemandEMonth(m)),",")
+    end-do
 fclose(F_OUTPUT)
 
 

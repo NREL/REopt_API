@@ -16,19 +16,6 @@ class Results:
     # time outputs (scalar)
     time_steps_per_hour = 1
 
-    # time series labels - where are these used?
-    label_year_one_electric_load_series = 'Electric load'
-    label_year_one_pv_to_battery_series = 'PV to battery'
-    label_year_one_pv_to_load_series = 'PV to load'
-    label_year_one_pv_to_grid_series = 'PV to grid'
-    label_year_one_grid_to_load_series = 'Grid to load'
-    label_year_one_grid_to_battery_series = 'Grid to battery'
-    label_year_one_battery_to_load_series = 'Battery to load'
-    label_year_one_battery_to_grid_series = 'Battery to grid'
-    label_year_one_battery_soc_series = 'State of charge'
-    label_year_one_energy_cost_series = 'Energy Cost ($/kWh)'
-    label_year_one_demand_cost_series = 'Demand Cost ($/kW)'
-
     bau_attributes = [
         "lcc",
         "year_one_energy_cost",
@@ -63,8 +50,12 @@ class Results:
 
         # set missing outputs to None
         for k in outputs().iterkeys():
-            setattr(self, k, None)
             results_dict.setdefault(k, None)
+
+        # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
+        if results_dict['pv_kw'] is None:
+            results_dict['pv_kw'] = 0
+
 
         results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
@@ -79,7 +70,7 @@ class Results:
         results_dict['time_steps_per_hour'] = len(results_dict['year_one_grid_to_load_series'])
         results_dict['year_one_energy_cost_series'] = po.get_energy_cost()
         results_dict['year_one_demand_cost_series'] = po.get_energy_cost()
-        results_dict['year_one_electric_load_series'] = po.get_demand_cost()
+        results_dict['year_one_electric_load_series'] = po.get_load_profile()
         results_dict['year_one_battery_to_load_series'] = po.get_batt_to_load()
         results_dict['year_one_battery_to_grid_series'] = po.get_batt_to_grid()
 
