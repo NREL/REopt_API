@@ -269,7 +269,7 @@ class DatLibrary:
 
         # RE case
         header = 'exec '
-        header += os.path.join(self.path_xpress, xpress_model)
+        xpress_model_path = os.path.join(self.path_xpress, xpress_model)
 
         # Command line constants and Dat file overrides
         outline = ''
@@ -282,8 +282,8 @@ class DatLibrary:
 
         outline.replace('\n', '')
 
-        cmd = r"mosel %s %s OutputDir='%s' DatLibraryPath='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
+        cmd = r"mosel %s '%s' %s OutputDir='%s' DatLibraryPath='%s' ScenarioPath='%s' BaseString='%s'" \
+                 % (header, xpress_model_path, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
 
         log("DEBUG", "Returning Process Command " + cmd)
 
