@@ -10,17 +10,17 @@ class REoptResourceValidation(Validation):
 
         for key, value in input_dictionary.items():
             if key not in inputs(full_list=True):
-                errors = self.append_errors(errors, key, 'This key name does not match a valid input.')
+                errors = self.append_errors(errors, key, ['This key name does not match a valid input.'])
                 logstring = "Key: '" + str(key) + "' does not match a valid input!"
                 log("ERROR", logstring)
-                raise BadRequest(logstring)
+               # raise BadRequest(logstring)
 
             if value is None and key in inputs(just_required=True).keys():
-                if not self.swaps_exists(input_dictionary.keys(), key):
-                    errors = self.append_errors(errors, key, 'This input is required and cannot be null.')
+                if inputs()[key].get('swap_for') is None:
+                    errors = self.append_errors(errors, key, ['This input is required and cannot be null.'])
                     logstring = "Value for key: " + str(key) + " is required and cannot be null!"
                     log("ERROR", logstring)
-                    raise BadRequest(logstring)
+                #    raise BadRequest(logstring)
 
             else:
                 field_def = inputs(full_list=True)[key]
@@ -41,7 +41,7 @@ class REoptResourceValidation(Validation):
                 #specific_errors 
                 if format_errors:
                     errors = self.append_errors(errors, key, format_errors)
-                    raise BadRequest(format_errors)
+                 #   raise BadRequest(format_errors)
 
         return errors
 
@@ -55,7 +55,9 @@ class REoptResourceValidation(Validation):
             message = [self.get_missing_required_message(m) for  m in missing_required]
             errors = self.append_errors(errors,"Missing_Required",message)
 
-        missing_dependencies = self.missing_dependencies(bundle.data, exclude=missing_required)
+        remaining_keys = list( set(inputs(full_list=True)) - set(inputs(just_required=True)) )
+        missing_dependencies = self.missing_dependencies(remaining_keys)
+
         if missing_dependencies:
             message = [self.get_missing_dependency_message(m) for m in missing_dependencies]
             errors = self.append_errors(errors, "Missing_Dependencies", message)
@@ -66,8 +68,8 @@ class REoptResourceValidation(Validation):
 
     def check_input_format(self,key,value,field_definition):
 
-        invalid_msg = 'Invalid format: Expected %s, got %s for %s'\
-                      % (str(field_definition['type']).split(" ")[-1][0:-1], str(type(value)).split(" ")[-1][0:-1], key)
+        invalid_msg = 'Invalid format: Expected %s, got %s'\
+                      % (field_definition['type'].__name__, type(value).__name__)
         
         try:
             
@@ -116,18 +118,21 @@ class REoptResourceValidation(Validation):
         return []
 
     def append_errors(self, errors, key, value):
-        if 'Errors' in errors.keys():
-            if key not in errors["Errors"].keys():
-                errors["Errors"][key] = value
+        if 'Error' in errors.keys():
+            if key not in errors["Error"].keys():
+                errors["Error"][key] = value
             else:
-                errors["Errors"][key] += value
+                errors["Error"][key] += value
         else:
-            errors['Errors']  =  {key: value}
+            errors['Error']  =  {key: value}
         return errors
 
     def get_missing_required_message(self, input):
         definition_values = inputs(full_list=True)[input]
         swap = definition_values.get('swap_for')
+        depends = definition_values.get('depends_on')
+        if depends is not None:
+            input = ' and '.join([input] + depends)
         message = input
         if swap is not None:
             message +=  " (OR %s)" % (" and ".join(definition_values['swap_for']))
@@ -144,22 +149,16 @@ class REoptResourceValidation(Validation):
                     dependency_of.append(k)
         return "%s (%s depend(s) on this input.)" % (input, "  and ".join(dependency_of))
 
-    def missing_dependencies(self, bundle, exclude=[]):
+    def missing_dependencies(self, key_list, exclude=[]):
         # Check if field depends on non-required fields
         missing = []
-        for f, v in bundle.items():  # all possible inputs
-
-            if v is not None:  # if the value is None we don't care about dependencies
-
-                if not self.swaps_exists(bundle.keys(), f):  # if a swap exists we don't care about dependencies
-                    dependent = inputs(full_list=True)[f].get('depends_on')
-
-                    if dependent is not None and f not in exclude:
-                        for d in dependent:
-                            if d not in bundle.keys() and not self.swaps_exists(bundle.keys(), d):
-                                # dependencies can have swaps too (eg. load_size for load_monthly_kwh)
-                                missing.append(d)
-        return missing
+        for k in key_list:  # all possible inputs
+            if k not in exclude:
+                d = inputs(full_list=True)[k].get('depends_on')
+                if d is not None:
+                    if set(d) & set(key_list) != set(d) and d not in missing:
+                        missing+=d        
+            return missing
 
     def swaps_exists(self, key_list, f):
         swap = inputs(full_list=True)[f].get('swap_for')
@@ -171,11 +170,14 @@ class REoptResourceValidation(Validation):
 
     def missing_required(self,key_list):
         missing = list(set(inputs(just_required=True)) - set(key_list))
+        
         output = []
+        swaps_used = []
         for field in missing:  # Check if field can be swappedout for others
-            if not self.swaps_exists(key_list, field):
-                output.append(field)
-
+            if field not in swaps_used:   
+                if not self.swaps_exists(key_list, field):
+                    swaps_used += inputs(full_list=True)[field].get('swap_for') + inputs(full_list=True)[field].get('depends_on')
+                    output.append(field)
         return output
 
     def check_length(self, key, value, correct_length):

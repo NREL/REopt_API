@@ -241,9 +241,12 @@ class DatLibrary:
             return {"ERROR":run2}
 
         output_dict = self.parse_run_outputs()
-        ins_and_outs_dict = self._add_inputs(output_dict)
-
         self.cleanup()
+
+        if 'Error' in output_dict.keys():
+            return output_dict       
+ 
+        ins_and_outs_dict = self._add_inputs(output_dict)
 
         return ins_and_outs_dict
 
@@ -299,7 +302,7 @@ class DatLibrary:
         return cmd
 
     def parse_run_outputs(self):
-
+       
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
@@ -307,8 +310,10 @@ class DatLibrary:
             for key in ['run_input_id','prod_factor']:
                 output_dict[key] = getattr(self,key)
         else:
+            msg = "Output file: " + self.file_output + " + doesn't exist!"
+            output_dict = {'Error': [msg] }
             log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
+            log("WARNING", msg)
 
         return output_dict
 

@@ -5,14 +5,18 @@ from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
+import numpy as np
+
+def u2s (d):
+    sub_d = d['reopt']['Error']
+    return {'reopt':{'Error':{str(k):[str(i) for i in v]  for k,v in sub_d.items()}}}
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         super(EntryResourceTest, self).setUp()
 
-        self.required  = ["latitude","longitude","pv_om","batt_cost_kw",
-                          "batt_cost_kwh","pv_cost", "owner_discount_rate","offtaker_discount_rate"]
+        self.required  = inputs(just_required=True).keys()
 
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
 
@@ -24,6 +28,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def get_defaults_from_list(self,list):
         base = {k:inputs(full_list=True)[k].get('default') for k in list}
         base['user_id'] = 'abc321'
+        if 'load_profile_name' in list:
+            base['load_profile_name'] = default_load_profiles()[0]
         if 'latitude' in list:
             base['latitude'] = default_latitudes()[0]
         if 'longitude' in list:
@@ -32,6 +38,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             base['urdb_rate'] = default_urdb_rate()
         if 'demand_charge' in list:
             base['demand_charge'] = default_demand_charge()
+        if 'blended_utility_rate' in list:
             base['blended_utility_rate'] = default_blended_rate() 
         return base
     def list_to_default_string(self,list_inputs):
@@ -46,16 +53,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data[k] = dummy_data
         return self.api_client.post(self.url_base, format='json', data=data)
 
-    def test_valid_inputs(self):
-        swaps = [['urdb_rate'],['demand_charge','blended_utility_rate']]
-        for add in swaps :
-            #Test  Requiring Inputs
-            for f in self.required:
-                l = [i for i in self.required if i!=f and i not in sum(swaps, []) ] + add
-                data = self.get_defaults_from_list(l)
-                resp = self.api_client.post(self.url_base, format='json', data=data)
-                f =  REoptResourceValidation().get_missing_required_message(f)
-                self.assertEqual(self.deserialize(resp), {r"reopt":{"Error:":{"Missing_Required":[f]}}} )
+    def test_valid_swapping(self):
+        swaps = [[['urdb_rate'],['demand_charge','blended_utility_rate']],[['load_profile_name'],['load_8760_kw']]]
+        for sp in swaps:
+            other_pairs = list(np.concatenate([i[0] for i in swaps if i!=sp ]))
+            possible_messages = [{r"reopt":{"Error":{"Missing_Required": [REoptResourceValidation().get_missing_required_message(ii)]}}} for ii in sp[0]+sp[1]]
+            for ss in sp:
+                for f in ss:
+                     dependent_fields = [i for i in ss if i != f]
+                     l = [i for i in self.required if i not in sp[0]+sp[1] ] + dependent_fields + other_pairs
+                     data = self.get_defaults_from_list(l)
+                     resp = self.api_client.post(self.url_base, format='json', data=data) 
+                     self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
 
     def test_valid_test_defaults(self):
 
@@ -92,7 +101,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
    
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
-            print resp
+            
             if add != ['urdb_rate']:
                 d = json.loads(resp.content)
                 self.assertEqual(str(d['lcc']),'1973.33')
@@ -121,7 +130,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 if v['type'] in [float,int]:
                     dummy_data  = u"A"
                 resp = self.request_swap_value(k, dummy_data, swaps, add)
-                self.assertEqual(self.deserialize(resp), {r"reopt": {"Error:": {k: ['Invalid format: Expected %s, got %s'%(v['type'], type(dummy_data))]}}})
+                self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {k: ['Invalid format: Expected %s, got %s'%(v['type'].__name__, type(dummy_data).__name__)]}}})
 
     def test_valid_data_ranges(self):
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
@@ -136,30 +145,30 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     if v.get('min') is not None and v.get('pct') is not True:
                         dummy_data =  -1000000
                         resp = self.request_swap_value(k,dummy_data,swaps,add)
-                        self.assertEqual(self.deserialize(resp), {
-                            r"reopt": {"Error:": {k: ['Invalid value: %s is less than the minimum, %s' % (dummy_data, v.get('min'))]}}})
+                        self.assertEqual(u2s(self.deserialize(resp)), {
+                            r"reopt": {"Error": {k: ['Invalid value: %s is less than the minimum, %s' % (dummy_data, v.get('min'))]}}})
                         completed_checks = set(list(completed_checks) + ['min'])
 
                     if v.get('max') is not None and v.get('pct') is not True:
                         dummy_data = 1000000
                         resp = self.request_swap_value(k, dummy_data, swaps, add)
-                        self.assertEqual(self.deserialize(resp), {
-                            r"reopt": {"Error:": {k: ['Invalid value: %s is greater than the  maximum, %s' % (dummy_data, v.get('max'))]}}})
+                        self.assertEqual(u2s(self.deserialize(resp)), {
+                            r"reopt": {"Error": {k: ['Invalid value: %s is greater than the  maximum, %s' % (dummy_data, v.get('max'))]}}})
                         completed_checks = set(list(completed_checks) + ['max'])
 
                     if v.get('min') is not None and bool(v.get('pct')):
                         dummy_data =  -1000000
                         resp = self.request_swap_value(k, dummy_data, swaps, add)
-                        self.assertEqual(self.deserialize(resp), {
-                            r"reopt": {"Error:": {
+                        self.assertEqual(u2s(self.deserialize(resp)), {
+                            r"reopt": {"Error": {
                                 k: ['Invalid value: %s is less than the minimum, %s %%' % (dummy_data, v.get('min')*100)]}}})
                         completed_checks = set(list(completed_checks) + ['minpct'])
 
                     if v.get('max') is not None and bool(v.get('pct')):
                         dummy_data = 1000000
                         resp = self.request_swap_value(k, dummy_data, swaps, add)
-                        self.assertEqual(self.deserialize(resp), {
-                            r"reopt": {"Error:": {
+                        self.assertEqual(u2s(self.deserialize(resp)), {
+                            r"reopt": {"Error": {
                                 k: ['Invalid value: %s is greater than the  maximum, %s %%' % (dummy_data, v.get('max')*100)]}}})
                         completed_checks = set(list(completed_checks) + ['maxpct'])
 
@@ -170,9 +179,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                             dummy_data  =  "!@#$%^&*UI("
 
                         resp = self.request_swap_value(k, dummy_data, swaps, add)
-                        self.assertEqual(self.deserialize(resp), {
+                        self.assertEqual(u2s(self.deserialize(resp)), {
                             r"reopt": {
-                                "Error:": {k: ['Invalid value: %s is not in %s' % (dummy_data, v.get('restrict_to'))]}}})
+                                "Error": {k: ['Invalid value: %s is not in %s' % (dummy_data, v.get('restrict_to'))]}}})
                         completed_checks = set(list(completed_checks) + ['restrict'])
 
                 completed_checks = set(checks)
