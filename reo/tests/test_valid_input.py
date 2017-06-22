@@ -76,17 +76,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertEqual(u2s(self.deserialize(resp)), {r"reopt":{"Error":{"Missing_Required": [REoptResourceValidation().get_missing_required_message(f)]}}} )
 
-    def test_dependent_fields(self):
-
-        for f in inputs(full_list=True):
-            if not bool(f.get('req')):
-                if f.get('depends_on') is not None:
-                    df = f.get('depends_on')
-                fields = set( self.required + f ) - set(df)
-                data = self.get_defaults_from_list(fields)
-                resp = self.api_client.post(self.url_base, format='json', data=data)
-                self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {"Missing_Dependencies": [REoptResourceValidation().get_missing_dependency_message(f)]}}})
-
     def test_valid_test_defaults(self):
 
         '''
