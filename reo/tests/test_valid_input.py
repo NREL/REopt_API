@@ -28,6 +28,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def get_defaults_from_list(self,list):
         base = {k:inputs(full_list=True)[k].get('default') for k in list}
         base['user_id'] = 'abc321'
+        if 'load_8760_kw' in list:
+            base['load_8760_kw'] = [0]*8760
         if 'load_profile_name' in list:
             base['load_profile_name'] = default_load_profiles()[0]
         if 'latitude' in list:
@@ -41,6 +43,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         if 'blended_utility_rate' in list:
             base['blended_utility_rate'] = default_blended_rate() 
         return base
+
     def list_to_default_string(self,list_inputs):
         output  = ""
         for f in list_inputs:
@@ -68,79 +71,61 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_required_fields(self):
 
         for f in self.required:
-            swaps = inputs(full_list=True)['f'].get('swap_for')
+            swaps = inputs(full_list=True)[f].get('swap_for')
             if swaps == None:
                 swaps = []
+            possible_messages = [{r"reopt":{"Error":{"Missing_Required":[REoptResourceValidation().get_missing_required_message(ii)]}}} for ii in swaps + [f]] 
             fields = [i for i in self.required if i != f and i not in swaps]
             data = self.get_defaults_from_list(fields)
             resp = self.api_client.post(self.url_base, format='json', data=data)
-            self.assertEqual(u2s(self.deserialize(resp)), {r"reopt":{"Error":{"Missing_Required": [REoptResourceValidation().get_missing_required_message(f)]}}} )
-
-    def test_dependent_fields(self):
-
-        for f in inputs(full_list=True):
-            if not bool(f.get('req')):
-                if f.get('depends_on') is not None:
-                    df = f.get('depends_on')
-                fields = set( self.required + f ) - set(df)
-                data = self.get_defaults_from_list(fields)
-                resp = self.api_client.post(self.url_base, format='json', data=data)
-                self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {"Missing_Dependencies": [REoptResourceValidation().get_missing_dependency_message(f)]}}})
+            self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
 
     def test_valid_test_defaults(self):
-
-        '''
-        # Come up with some new values, as model has changed
-
 
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
 
         for add in swaps:
+            null = None
+            true = True 
+           # Test All  Data and  Valid Rate Inputs
             
-            # Test All  Data and  Valid Rate Inputs
-            data = {}
-            data['user_id']="abc123"
-            data['latitude'] = 25.7616798
-            data['longitude'] = -80.19179020000001
-            data['pv_om'] = 20
-            data['batt_cost_kw'] = 1600
-            data['batt_cost_kwh'] = 500
-            data['pv_cost'] = 2160
-            data['owner_discount_rate'] = 8
-            data['offtaker_discount_rate'] = 8
-
-	    if add == ['urdb_rate']:
-                data['load_size'] = 10000000
-                data['urdb_rate'] = default_urdb_rate()
-                data['load_profile_name'] = 'Hospital'
-            else:
+            data = {"losses":null, "roof_area": 5000.0, "batt_rebate_utility_max": null, "batt_rebate_utility": null, "owner_tax_rate": null, "pv_itc_federal": null, "batt_can_gridcharge": true, "load_profile_name": "RetailStore", "batt_replacement_cost_kwh": null, "pv_rebate_state_max": null, "batt_itc_utility_max": null, "batt_rebate_state_max": null, "pv_rebate_utility": null, "pv_itc_utility": null, "pv_rebate_federal": null, "analysis_period": null, "pv_rebate_state": null, "offtaker_tax_rate": null, "pv_macrs_schedule": 5, "pv_kw_max": null, "load_size": 10000000.0, "tilt": null, "batt_kwh_max": null, "pv_rebate_federal_max": null, "batt_replacement_cost_kw": null, "batt_rebate_federal": null, "longitude": -118.1164613, "pv_itc_state": null, "batt_kw_max": null, "pv_pbi": null, "batt_inverter_efficiency": null, "offtaker_discount_rate": null, "batt_efficiency": null, "batt_itc_federal_max": null, "batt_soc_min": null, "batt_itc_state_max": null, "batt_rebate_state": null, "batt_itc_utility": null, "batt_macrs_schedule": 5, "batt_replacement_year_kwh": null, "latitude": 34.5794343, "owner_discount_rate": null, "batt_replacement_year_kw": null, "module_type": 1, "batt_kw_min": null, "array_type": 1, "rate_escalation": null, "batt_cost_kw": null, "pv_kw_min": null, "pv_pbi_max": null, "pv_pbi_years": null, "land_area": 1.0, "dc_ac_ratio": null, "net_metering_limit": null, "batt_itc_state": null, "batt_itc_federal": null, "batt_rebate_federal_max": null, "azimuth": null, "batt_soc_init": null, "pv_rebate_utility_max": null, "pv_itc_utility_max": null, "pv_itc_federal_max": null, "urdb_rate": {"sector": "Commercial", "peakkwcapacitymax": 200, "energyweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], "demandattrs": [{"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"}, {"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"}, {"Facilties Voltage Discount >220 kV": "$-9.96/KW"}, {"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"}, {"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"}, {"Time Voltage Discount >220 kV": "$-1.95/KW"}], "energyratestructure": [[{"rate": 0.0712, "unit": "kWh"}], [{"rate": 0.09368, "unit": "kWh"}], [{"rate": 0.066, "unit": "kWh"}], [{"rate": 0.08888, "unit": "kWh"}], [{"rate": 0.1355, "unit": "kWh"}]], "energyweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "demandweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "utility": "Southern California Edison Co", "flatdemandstructure": [[{"rate": 13.2}]], "startdate": 1433116800, "phasewiring": "Single Phase", "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf", "label": "55fc81d7682bea28da64f9ae", "flatdemandunit": "kW", "eiaid": 17609, "voltagecategory": "Primary", "revisions": [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], "demandweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "voltageminimum": 2000, "description": "- Energy tiered charge = generation charge + delivery charge\r\n\r\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).", "energyattrs": [{"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"}, {"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"}, {"Voltage Discount at 220 KV": "$-0.0024/Kwh"}, {"California Climate credit": "$-0.00669/kwh"}], "demandrateunit": "kW", "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "approved": true, "fixedmonthlycharge": 259.2, "enddate": 1451520000, "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase", "country": "USA", "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae", "voltagemaximum": 50000, "peakkwcapacitymin": 20, "peakkwcapacityhistory": 12, "demandratestructure": [[{"rate": 0}], [{"rate": 5.3}], [{"rate": 18.11}]]}, "pv_cost": null, "rate_inflation": null, "batt_kwh_min": null, "pv_itc_state_max": null, "pv_pbi_system_max": null, "batt_rectifier_efficiency": null, "pv_om": null, "batt_cost_kwh": null, "crit_load_factor": 1.0
+}
+            if add != swaps[0]:
+                del data['urdb_rate']
+                del data['load_size']
                 data['load_monthly_kwh'] = default_load_monthly()
-                data['blended_utility_rate'] = default_blended_rate()
+                data['blended_utility_rate'] = [i*2 for i in default_blended_rate()]
                 data['demand_charge'] = default_demand_charge()                    
 
-
-   
+            
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
             
-            if add != ['urdb_rate']:
+            if add == swaps[1]:
                 d = json.loads(resp.content)
-                self.assertEqual(str(d['lcc']),'1973.33')
-                self.assertEqual(str(d['npv']),'0.0')
-                self.assertEqual(str(d['pv_kw']),'0')
-                self.assertEqual(str(d['batt_kw']),'0.0')
-                self.assertEqual(str(d['batt_kwh']),'0.0')
-                self.assertEqual(str(d['utility_kwh']),'3400.0')
+                self.assertEqual(str(d['lcc']),'3206.0')
+                self.assertEqual(str(d['npv']),'449.0')
+                self.assertEqual(str(d['pv_kw'])[0:4],'0.59')
+                self.assertEqual(str(d['batt_kw'])[0:4],'0.04')
+                self.assertEqual(str(d['batt_kwh'])[0:4],'0.05')
+                self.assertEqual(str(d['year_one_utility_kwh']),'2367.7202')
+                self.assertEqual(str(d['r_min']),'0.01')
+                self.assertEqual(str(d['r_max']),'14.33')
+                self.assertEqual(str(d['r_avg']),'3.23')
             
-            if add == ['urdb_rate']:
+            else:
                 d = json.loads(resp.content)
-                self.assertEqual(str(d['lcc']),str(8413330.0))
-                self.assertEqual(str(d['npv']),str(12250.0))
-                self.assertEqual(str(d['pv_kw']),str(59.0))
-                self.assertEqual(str(d['batt_kw']),str(28.1348))
-                self.assertEqual(str(d['batt_kwh']),str(54.9747))
-                self.assertEqual(int(float(d['utility_kwh'])),9978797)
-        '''
+                self.assertEqual(str(d['lcc']),str(12296217.0))
+                self.assertEqual(str(d['npv']),str(336099.0))
+                self.assertEqual(str(d['pv_kw']),str(185.798))
+                self.assertEqual(str(d['batt_kw']),str(93.745))
+                self.assertEqual(str(d['batt_kwh']),str(262.205))
+                self.assertEqual(int(float(d['year_one_utility_kwh'])),9679735)
+                self.assertEqual(str(d['r_min']),str(0.02))
+                self.assertEqual(str(d['r_max']),str(14.29))
+                self.assertEqual(str(d['r_avg']),str(3.13))
+ 
 
     def test_valid_data_types(self):
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]

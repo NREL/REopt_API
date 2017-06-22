@@ -176,7 +176,13 @@ class REoptResourceValidation(Validation):
         for field in missing:  # Check if field can be swappedout for others
             if field not in swaps_used:   
                 if not self.swaps_exists(key_list, field):
-                    swaps_used += inputs(full_list=True)[field].get('swap_for') + inputs(full_list=True)[field].get('depends_on')
+                    swaps = inputs(full_list=True)[field].get('swap_for') 
+                    depends = inputs(full_list=True)[field].get('depends_on')
+                    if swaps is not None:
+                        swaps_used += swaps
+                    if depends is not None:
+                        swaps_used += depends
+
                     output.append(field)
         return output
 

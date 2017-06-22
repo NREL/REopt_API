@@ -310,7 +310,7 @@ class DatLibrary:
             for key in ['run_input_id','prod_factor']:
                 output_dict[key] = getattr(self,key)
         else:
-            msg = "Output file: " + self.file_output + " + doesn't exist!"
+            msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", msg)
@@ -318,10 +318,10 @@ class DatLibrary:
         return output_dict
 
     def cleanup(self):
-        if not self.debug:
-            log("INFO", "Cleaning up folders from: " + self.path_run)
-            shutil.rmtree(self.path_run)
-
+       # if not self.debug:
+       #     log("INFO", "Cleaning up folders from: " + self.path_run)
+       #     shutil.rmtree(self.path_run)
+       return
     # BAU files
     def create_simple_bau(self):
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
