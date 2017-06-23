@@ -56,7 +56,6 @@ class Results:
         if results_dict['pv_kw'] is None:
             results_dict['pv_kw'] = 0
 
-
         results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
         # dispatch
@@ -103,6 +102,14 @@ class Results:
         self.results_dict['irr'] = cash_flow.get_irr()
         self.results_dict['npv'] = cash_flow.get_npv()
         self.results_dict['lcc'] = cash_flow.get_lcc()
+        self.results_dict['lcc_bau'] = cash_flow.get_lcc_bau()
+
+        # rounding error handling
+        if not self.is_system():
+            self.results_dict['lcc'] = self.results_dict['lcc_bau']
+            self.results_dict['npv'] = 0
+            self.results_dict['irr'] = 0
+
         shutil.copyfile(self.path_proforma, self.path_static)
 
     def get_output(self):
@@ -110,3 +117,9 @@ class Results:
         for k in outputs().iterkeys():
             output_dict[k] = self.results_dict[k]
         return output_dict
+
+    def is_system(self):
+        system = False
+        if self.results_dict['pv_kw'] > 0 or self.results_dict['batt_kw'] > 0:
+            system = True
+        return system
