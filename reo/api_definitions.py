@@ -21,12 +21,12 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": 'The number of time steps per hour in the simulation'},
 
         'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                      'max': None, 'default': None,
+                      'max': 1e6, 'default': None,
                       "description": "Land Area available for PV panel siting", "units": 'acres',
                       "tool_tip": 'Land available is the number of acres available for PV. This may include fields and vacant lots. PV size is constrained by land area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
 
         'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                      'max': None, 'default': None,
+                      'max': 1e9, 'default': None,
                       "description": "Area of Roof Available for PV siting", "units": 'square feet',
                       "tool_tip": 'The roof space available on-site, in square feet, for solar panels. For more accurate results exclude areas known to be consistently shaded. PV size is constrained by roof area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
 
@@ -41,34 +41,34 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'The Site Location may be entered as latitude and longitude (degrees), street address, city, state or zip code. This value is required. The location is used to determine solar resource data and applicable utility rates. Solar resource and utility rate data is available for locations in the US.'},
 
         'pv_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                    'max': None, 'default': 2000,
+                    'max': 1e5, 'default': 2000,
                     "description": "Nominal PV Cost", "units": 'dollars per kilowatt',
                     "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
 
         'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                  'max': None, 'default': 20,
+                  'max': 1e3, 'default': 20,
                   "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
         'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1000,
+                         'max': 1e4, 'default': 1000,
                          "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt',
                          "tool_tip": 'Power capacity cost is the cost of the power components of the battery system (e.g. inverter and balance of system [BOS]). \nThe amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh. \nThis allows the capacity (kWh) and power (kW) rating of the battery to be optimized individually for maximum economic performance based on the load and rate tariff characteristics of the site. Some systems are optimized to deliver high power capacity (kW), while others are optimized for longer discharges through more energy capacity (kWh).\nFor example, assume the unit cost of power components is $1,000/kW, and the unit cost of energy components is $5,00/kWh. Consider a battery with 5 kW of power capacity and 10 kWh of energy capacity (5 kW/10 kWh). The total cost of the battery would be:\n5 kW * $1,000/kW + 10 kWh * $500/kWh = $10,000.'},
 
         'batt_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
                           'min': 0,
-                          'max': None, 'default': 500,
+                          'max': 1e4, 'default': 500,
                           "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                           "tool_tip": 'Energy capacity cost is the cost of the energy components of the battery system (e.g. battery pack). The amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh.'},
 
         'batt_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': 1000000,
+                        'max': 1e9, 'default': 1000000,
                         "description": "Maximum Allowable Battery Power Size", "units": 'kilowatt',
                         "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum power capacity size limits the battery power capacity to no greater than the specified maximum. The default value is 1,000,000 kW. This value is not required.'},
 
         'batt_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                        'max': None, 'default': 0,
+                        'max': 1e9, 'default': 0,
                         "description": "Minimum Allowable Battery Power Size", "units": 'kilowatt',
                         "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum power capacity size forces a battery power capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
@@ -120,7 +120,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                   "tool_tip": 'The maximum power that can be transmitted to the grid at any one time, in kilowatts. Interconnection limits are typically established by state policy.'},
 
         'net_metering_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                               'max': None, 'default': None,
+                               'max': 1e9, 'default': None,
                                "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt',
                                "tool_tip": 'The net metering limit determines the maximum size of total systems that can be installed under a net metering agreement with the utility. Projects sized up to the net meting limit will receive credit for any exported energy at the electric retail rate. Information on state net metering limits is available at www.dsireusa.org. This value is not required.'},
 
@@ -131,12 +131,12 @@ def inputs(filter='', full_list=False, just_required=False):
                            "tool_tip": 'The estimated price of electricity on the wholesale market in dollars per kilowatt.'},
 
         'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': None, 'default': None,
+                      'max': 1e9, 'default': None,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 
         'pv_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': None, 'default': 0,
+                      'max': 1e9, 'default': 0,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
@@ -175,7 +175,7 @@ def inputs(filter='', full_list=False, just_required=False):
         'load_size': {'req': False, 'swap_for': ['load_monthly_kwh'], 'depends_on': ['load_profile_name'],
                       'type': float, 'null': True, 'pct': False,
                       "needed_for": ['load_profile'], 'min': 0,
-                      'max': None, 'default': None,
+                      'max': 1e12, 'default': None,
                       "description": "Annual Load Size", "units": 'kWh',
                       "tool_tip": "If a custom load profile is not uploaded, the site's total annual energy usage (in total kWh) is used in combination with the building type to simulate a load profile. This value is required if a custom load profile is not uploaded."},
 
@@ -253,19 +253,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': max_big_number * max_big_number,
+                           'max': 1e9, 'default': 1e9,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': max_big_number * max_big_number,
+                         'max': 1e9, 'default': 1e9,
                          "description": "State Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
         'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': max_big_number * max_big_number,
+                         'max': 1e9, 'default': 1e9,
                          "description": "Local Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
@@ -289,43 +289,43 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': max_big_number * max_big_number,
+                              'max': 1e9, 'default': 1e9,
                               "description": "Maximum federal rebate", "units": 'dollars',
                               "tool_tip": 'Maximum federal rebate for PV panels in $'},
 
         'pv_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': max_big_number * max_big_number,
+                            'max': 1e9, 'default': 1e9,
                             "description": "Maximum state rebate", "units": 'dollars',
                             "tool_tip": 'Maximum state rebate for PV panels in $'},
 
         'pv_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': max_big_number * max_big_number,
+                            'max': 1e9, 'default': 1e9,
                             "description": "Maximum utility rebate", "units": 'dollars',
                             "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
 
         'pv_pbi': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': 0.00,
+                           'max': 1e2, 'default': 0.00,
                            "description": "Federal Production Incentive", "units": 'dollars-per-kilowatt-hour',
                            "tool_tip": 'Federal production based incentives'},
 
         'pv_pbi_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': max_big_number * max_big_number,
+                           'max': 1e9, 'default': 1e9,
                            "description": "Total Production Incentive Maximum", "units": 'dollars',
                            "tool_tip": 'Total production based incentive maximum'},
 
         'pv_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': max_years, 'default': 0,
+                               'max': 'analysis_period', 'default': 0,
                                "description": "Total Production Incentive Year Duration", "units": 'years',
                                "tool_tip": 'Total production based incentive years'},
 
         'pv_pbi_system_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number * max_big_number,
+                               'max': 1e9, 'default': 1e9,
                                "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
                                "tool_tip": 'Total production based incentive system maximum size'},
 
@@ -349,66 +349,66 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number * max_big_number,
+                               'max': 1e9, 'default': 1e9,
                                "description": "Federal Investment Tax Credit for battery max", "units": 'dollars',
                                "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'batt_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                              'min': 0,
-                             'max': None, 'default': max_big_number * max_big_number,
+                             'max': 1e9, 'default': 1e9,
                              "description": "State Investment Tax Credit battery max", "units": 'dollars',
                              "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current state tax credit.'},
 
         'batt_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': None, 'default': max_big_number * max_big_number,
+                               'max': 1e9, 'default': 1e9,
                                "description": "Local Investment Tax Credit max for battery", "units": 'dollars',
                                "tool_tip": 'The maximum $ of battery system costs that are subsidized by a utility or local tax credit.'},
 
         'batt_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': 0,
+                              'max': 1e9, 'default': 0,
                               "description": "Federal rate", "units": 'dollars-per-kilowatt',
                               "tool_tip": 'Federal rebate for battery in $/kW'},
 
         'batt_rebate_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': 0,
+                            'max': 1e9, 'default': 0,
                             "description": "State rebate", "units": 'dollars-per-kilowatt',
                             "tool_tip": 'State rebate for battery in $/kW'},
 
         'batt_rebate_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': 0,
+                              'max': 1e9, 'default': 0,
                               "description": "Local rebate", "units": 'dollars-per-kilowatt',
                               "tool_tip": 'Utility or Local rebate for battery in $/kW'},
 
         'batt_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                   'min': 0,
-                                  'max': None, 'default': max_big_number * max_big_number,
+                                  'max': 1e9, 'default': 1e9,
                                   "description": "Maximum federal rebate", "units": 'dollars',
                                   "tool_tip": 'Maximum federal rebate for battery in $'},
 
         'batt_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                 'min': 0,
-                                'max': None, 'default': max_big_number * max_big_number,
+                                'max': 1e9, 'default': 1e9,
                                 "description": "Maximum state rebate", "units": 'dollars',
                                 "tool_tip": 'Maximum state rebate for battery in $'},
 
         'batt_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                   'min': 0,
-                                  'max': None, 'default': max_big_number * max_big_number,
+                                  'max': 1e9, 'default': 1e9,
                                   "description": "Maximum utility rebate", "units": 'dollars',
                                   "tool_tip": 'Maximum local or utility rebate for battery in $'},
 
 
         'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                     "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
+                                     "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
                                      "description": "Battery Inverter Replacement Cost", "units": '$/kW',
                                      "tool_tip": "Power capacity replacement cost is the expected cost, in today's dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required."},
 
         'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                      "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 200,
+                                      "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
                                       "description": "Battery Replacement Cost", "units": '$/kWh',
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
