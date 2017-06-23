@@ -105,7 +105,7 @@ class DatLibrary:
         check_directory_created(self.path_run_outputs)
         check_directory_created(self.path_run_outputs_bau)
 
-        self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
+        self.file_output = os.path.join(self.path_run_outputs, "REopt_results.json")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
@@ -243,7 +243,7 @@ class DatLibrary:
         output_dict = self.parse_run_outputs()
         ins_and_outs_dict = self._add_inputs(output_dict)
 
-        self.cleanup()
+        # self.cleanup()
 
         return ins_and_outs_dict
 
