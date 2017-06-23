@@ -11,7 +11,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': 25, 'min': 5, 'max': max_years,
+                            'default': 25, 'min': 1, 'max': max_years,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -22,7 +22,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                       'max': None, 'default': None,
-                      "description": "Land Area avaialble for PV panel siting", "units": 'acres',
+                      "description": "Land Area available for PV panel siting", "units": 'acres',
                       "tool_tip": 'Land available is the number of acres available for PV. This may include fields and vacant lots. PV size is constrained by land area available, with power density (in DC-Watts/ft^2) varying based on module type and array type as shown in the table below.'},
 
         'roof_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
@@ -52,7 +52,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': 10000, 'default': 1000,
+                         'max': None, 'default': 1000,
                          "description": "Nominal Battery Inverter Cost", "units": 'dollars per kilowatt',
                          "tool_tip": 'Power capacity cost is the cost of the power components of the battery system (e.g. inverter and balance of system [BOS]). \nThe amount of energy that a battery can store is determined by its capacity [kWh] while the rate at which it charges or discharges is determined by its power rating [kW]. While PV system cost is typically estimated based on power rating [kW] alone, storage costs are estimated based on both capacity [kWh] and power [kW].\nThe power components of the system (e.g., inverter, balance of system [BOS]) are captured by the power metric of $/kW and the energy components of the system (e.g., battery) are captured by the energy metric of $/kWh. \nThis allows the capacity (kWh) and power (kW) rating of the battery to be optimized individually for maximum economic performance based on the load and rate tariff characteristics of the site. Some systems are optimized to deliver high power capacity (kW), while others are optimized for longer discharges through more energy capacity (kWh).\nFor example, assume the unit cost of power components is $1,000/kW, and the unit cost of energy components is $5,00/kWh. Consider a battery with 5 kW of power capacity and 10 kWh of energy capacity (5 kW/10 kWh). The total cost of the battery would be:\n5 kW * $1,000/kW + 10 kWh * $500/kWh = $10,000.'},
 
@@ -413,13 +413,13 @@ def inputs(filter='', full_list=False, just_required=False):
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
         'batt_replacement_year_kw': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
-                                  'min': 0, 'max': max_years, 'default': 10,
+                                  'min': 0, 'max': 'analysis_period', 'default': 10,
                                   "description": "Battery Replacement Year for Power Electronics", "units": 'year',
                                   "tool_tip": 'Power electronics replacement year is the year in which the power components of the battery system (e.g. battery inverter) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
         'batt_replacement_year_kwh': {'req': False, 'type': int, 'null': False, 'pct': False,
                                      "needed_for": ['economics'],
-                                     'min': 0, 'max': max_years, 'default': 10,
+                                     'min': 0, 'max': 'analysis_period', 'default': 10,
                                      "description": "Battery Replacement Year for Energy Capacity", "units": 'year',
                                      "tool_tip": 'Energy capacity replacement year is the year in which the energy components of the battery system (e.g. battery pack) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
@@ -461,7 +461,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": "The inverter's nominal rated DC-to-AC conversion efficiency, defined as the inverter's rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
 
         'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
-                        'default': 1.1, 'min': 0, 'max': None, "description": "DC to AC ratio",
+                        'default': 1.1, 'min': 0, 'max': 2, "description": "DC to AC ratio",
                         "tool_tip": "The expected DC to AC conversion ratio."},
 
         'azimuth': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 180,
@@ -488,7 +488,7 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": "The granularity of the solar data used to model PV system performance."},
 
         'losses': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['pvwatts'], 'default': 0.14,
-                   'min': -0.05, 'max': 0.99, "description": "System Losses type", "units": "decimal percent",
+                   'min': 0.00, 'max': 0.99, "description": "System Losses type", "units": "decimal percent",
                    "tool_tip": "Expected total system losses."},
 
         'radius': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0,
@@ -531,7 +531,6 @@ def inputs(filter='', full_list=False, just_required=False):
 def outputs():
     return {'uuid': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Unique id", "units": 'none'},
-
 
             'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
