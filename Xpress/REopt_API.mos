@@ -26,8 +26,6 @@ parameters
 
   ! Utility info
   NumRatchets = 20
-  UtilName = "SouthernCaliforniaEdisonCo"
-  UtilRate = "TimeofUseGeneralServiceDemandMeteredOptionBGS2TOUBSinglePhase"
 
   DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
   DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
@@ -36,15 +34,15 @@ parameters
   DAT5 = ScenarioPath + "/GIS_" + ScenarioNum + ".dat"
   DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"
   DAT7 = ScenarioPath + "/maxsizes_" + ScenarioNum + ".dat"
-  DAT8  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemand.dat"
-  DAT9  = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRate.dat"
-  DAT10 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelCost" + BaseString + ".dat"
-  DAT11 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/ExportRates" + BaseString + ".dat"
-  DAT12 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/TimeStepsDemandMonth.dat"
-  DAT13 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/DemandRateMonth.dat"
-  DAT14 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/LookbackMonthsAndPercent.dat"
-  DAT15 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/UtilityTiers.dat"
-  DAT16 = ScenarioPath + "/Utility/"+UtilName+"/"+UtilRate+"/FuelBurnRate" + BaseString + ".dat"
+  DAT8  = ScenarioPath + "/Utility/TimeStepsDemand.dat"
+  DAT9  = ScenarioPath + "/Utility/DemandRate.dat"
+  DAT10 = ScenarioPath + "/Utility/FuelCost" + BaseString + ".dat"
+  DAT11 = ScenarioPath + "/Utility/ExportRates" + BaseString + ".dat"
+  DAT12 = ScenarioPath + "/Utility/TimeStepsDemandMonth.dat"
+  DAT13 = ScenarioPath + "/Utility/DemandRateMonth.dat"
+  DAT14 = ScenarioPath + "/Utility/LookbackMonthsAndPercent.dat"
+  DAT15 = ScenarioPath + "/Utility/UtilityTiers.dat"
+  DAT16 = ScenarioPath + "/Utility/FuelBurnRate" + BaseString + ".dat"
   DAT17 = ScenarioPath + "/NMIL_" + ScenarioNum + ".dat"
 
 end-parameters
@@ -650,8 +648,6 @@ writeln ("****************************** Results *******************************
 writeln ( "Problem status = ", status)
 writeln ( "Optimization time = ", EndTime-StartTime, " seconds")
 writeln ( "Load = ", DAT4)
-writeln ( "utility = ",UtilName)
-writeln ( "rate = ",UtilRate)
 writeln ( "LCC = ", getsol(RECosts))
 writeln ("TotElecProdKWH = ", getsol(TotalElecProd) )
 writeln ("TotElecExportedKWH = ", getsol(ExportedElec) )

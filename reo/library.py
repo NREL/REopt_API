@@ -594,20 +594,26 @@ class DatLibrary:
                 self.parse_urdb(urdb_rate)
 
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
-            with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
+            utility_folder = os.path.join(self.path_utility, self.utility_name)
+            rate_output_folder = os.path.join(utility_folder, self.rate_name)
+
+            with open(os.path.join(rate_output_folder, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
 
-            with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
+            with open(os.path.join(rate_output_folder, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
 
             self.command_line_constants.append(num_ratchets)
-            self.command_line_constants.append("UtilName=" + "'" + str(self.utility_name) + "'")
-            self.command_line_constants.append("UtilRate=" + "'" + str(self.rate_name) + "'")
             self.command_line_constants.append(fuel_bin_count)
             self.command_line_constants.append(demand_bin_count)
+
+            # for ease in the Xpress model, copy to generic Utility folder and delete sub-rate folder
+            filelist = os.listdir(rate_output_folder)
+            for f in filelist:
+                shutil.copy2(os.path.join(rate_output_folder, f), self.path_utility)
+            shutil.rmtree(utility_folder)
 
     def parse_urdb(self, urdb_rate):
 
@@ -629,6 +635,10 @@ class DatLibrary:
 
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
+            outfile.close()
+
+        with open(os.path.join(rate_output_folder, 'utility_name.txt'), 'w') as outfile:
+            outfile.write(str(utility_name).replace(' ', '_'))
             outfile.close()
 
         with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:
