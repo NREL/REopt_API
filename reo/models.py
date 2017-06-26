@@ -15,6 +15,7 @@ class RunInput(models.Model):
 
     user_id = models.TextField(blank=True, default='')
     api_version = models.TextField(blank=True, default='', null=False)
+    timeout = models.IntegerField(blank=True, default=295, null=True)
 
     # Non-hooked up inputs
     time_steps_per_hour = models.IntegerField(null=True, blank=True)
@@ -160,11 +161,16 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
+        if 'Error' in output_dictionary.keys():
+            return output_dictionary
+
+        if "ERROR" in output_dictionary.keys():
+            return output_dictionary
 
         # Add Resilience Stats to Output Dictionary
         output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)
 
-        if "ERROR" in output_dictionary.keys():
+        if "Error" in output_dictionary.keys():
             return output_dictionary
 
         # API level outputs
@@ -183,6 +189,7 @@ class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)
+    timeout = models.IntegerField(blank=True, default=295, null=True)
 
     # Non-hooked up inputs
     time_steps_per_hour = models.IntegerField(null=True, blank=True)
@@ -202,7 +209,7 @@ class RunOutput(models.Model):
     rate_name = models.TextField(blank=True, default='')
     blended_utility_rate = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     demand_charge = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
-    prod_factor = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    pv_kw_ac_hourly = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)
@@ -350,10 +357,10 @@ class RunOutput(models.Model):
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
     # Resilience Stats
-    r_list = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    r_min = models.FloatField(null=True, blank=True)
-    r_max = models.FloatField(null=True, blank=True)
-    r_avg = models.FloatField(null=True, blank=True)
+    resilience_by_timestep = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    resilience_hours_min = models.FloatField(null=True, blank=True)
+    resilience_hours_max = models.FloatField(null=True, blank=True)
+    resilience_hours_avg = models.FloatField(null=True, blank=True)
 
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)

@@ -7,18 +7,18 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0003_auto_20170208_1502'),
+        ('reo', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='runinput',
-            name='gcr',
-            field=models.FloatField(null=True, blank=True),
+            name='timeout',
+            field=models.IntegerField(default=295, blank=True),
         ),
         migrations.AddField(
             model_name='runoutput',
-            name='gcr',
-            field=models.FloatField(null=True, blank=True),
+            name='timeout',
+            field=models.IntegerField(default=295, blank=True),
         ),
     ]

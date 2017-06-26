@@ -85,9 +85,7 @@ class PVWatts:
         self.write_output()
 
     def compute_prod_factor(self, data):
-        # NEED TO DERATE 0.5%! nlaws: accounted for in LevelizationFactor, which is defined in economics.py
         outputs = data['outputs']
-
         ac_hourly = outputs.get('ac')
 
         if ac_hourly is None:

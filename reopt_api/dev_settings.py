@@ -88,7 +88,7 @@ if 'test' in sys.argv:
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'reopt',
         'USER': 'reopt',
-        'PASSWORD': 'password',
+        'PASSWORD': 'reopt',
         'HOST': 'localhost',
         'PORT': '',
         }

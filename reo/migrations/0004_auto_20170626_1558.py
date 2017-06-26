@@ -2,19 +2,18 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import uuid
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0022_runoutput_lcc_bau'),
+        ('reo', '0003_merge'),
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.RenameField(
             model_name='runoutput',
-            name='uuid',
-            field=models.UUIDField(default=uuid.uuid4, null=True),
+            old_name='prod_factor',
+            new_name='pv_kw_ac_hourly',
         ),
     ]

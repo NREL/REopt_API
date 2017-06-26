@@ -7,13 +7,13 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0004_auto_20170208_1503'),
+        ('resilience', '0002_auto_20170623_2158'),
     ]
 
     operations = [
         migrations.RenameField(
-            model_name='runinput',
-            old_name='intereconnection_limit',
-            new_name='interconnection_limit',
+            model_name='resiliencecase',
+            old_name='prod_factor',
+            new_name='pv_kw_ac_hourly',
         ),
     ]
