@@ -190,9 +190,9 @@ def inputs(filter='', full_list=False, just_required=False):
                              "tool_tip": 'The monthly energy usage at the proposed site.'},
 
         'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name'], 'depends_on': ['load_year'],
-                         'type': list, 'null': True, 'length': 8760,
+                         'type': list, 'null': True, 'length': 8760, 'default':None,
                          'pct': False, "needed_for": ['load_profile'],
-                         "description": "Hourly Power Demand", "units": 'kW', 'default': None,
+                         "description": "Hourly Power Demand", "units": 'kW',
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
         'load_year': {'req': False, 'swap_for': [],
@@ -640,19 +640,20 @@ def outputs():
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
 
-            'prod_factor': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
+            'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
-            'r_list': {'req': True, 'type': float, 'null': True, 'pct': False,
-                    "description": "List of hours survived for outages starting at every time step", "units": 'hours'},
-
-            'r_min': {'req': True, 'type': float, 'null': True, 'pct': False,
-                    "description": "Minimum hours survived", "units": 'hours'},
-
-            'r_max': {'req': True, 'type': float, 'null': True, 'pct': False,
-                    "description": "Maximum hours survived", "units": 'hours'},
-
-            'r_avg': {'req': True, 'type': float, 'null': True, 'pct': False,
-                    "description": "Average hours survived", "units": 'hours'},
+            'resilience_by_timestep':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "List of hours survived for outages starting at every time step", "units": 'hours'},
+            'resilience_hours_min':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Minimum hours survived", "units": 'hours'},
+            'resilience_hours_max':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Maximum hours survived", "units": 'hours'},
+            'resilience_hours_avg':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Average hours survived", "units": 'hours'},
             }
 
 # default load profiles

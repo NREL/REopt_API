@@ -74,8 +74,9 @@ class RunInputResource(ModelResource):
         output_obj = run.create_output(model_inputs.keys(), bundle.data)
          
         if hasattr(output_obj, 'keys'):
-            if "ERROR" in [i.upper() for i in output_obj.keys()]:
+            if "Error" in output_obj.keys():
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
+
         bundle.obj = output_obj
         bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
 

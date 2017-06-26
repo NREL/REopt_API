@@ -219,7 +219,7 @@ class DatLibrary:
 
 
         solar_data = self.create_Solar()
-        self.prod_factor = solar_data.ac_hourly
+        self.pv_kw_ac_hourly = solar_data.ac_hourly
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -240,6 +240,11 @@ class DatLibrary:
             return {"ERROR":run2}
 
         output_dict = self.parse_run_outputs()
+
+        self.cleanup()
+
+        if 'Error' in output_dict.keys():
+            return output_dict       
         ins_and_outs_dict = self._add_inputs(output_dict)
 
         return ins_and_outs_dict
@@ -296,16 +301,18 @@ class DatLibrary:
         return cmd
 
     def parse_run_outputs(self):
-
+       
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
             output_dict = process_results.get_output()
-            for key in ['run_input_id','prod_factor']:
+            for key in ['run_input_id','pv_kw_ac_hourly']:
                 output_dict[key] = getattr(self,key)
         else:
+            msg = "Output file: " + self.file_output + " does not exist"
+            output_dict = {'Error': [msg] }
             log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", "Output file: " + self.file_output + " + doesn't exist!")
+            log("WARNING", msg)
 
         return output_dict
 
@@ -315,7 +322,7 @@ class DatLibrary:
             log("INFO", "Cleaning up folders from: " + self.path_run)
             shutil.rmtree(self.path_run)
 
-    # BAU files
+   # BAU files
     def create_simple_bau(self):
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
