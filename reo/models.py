@@ -162,6 +162,9 @@ class RunInput(models.Model):
         # Run Optimization
         output_dictionary = run_set.run()
 
+        if "ERROR" in output_dictionary.keys():
+            return output_dictionary
+
         # Add Resilience Stats to Output Dictionary
         output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)
 
