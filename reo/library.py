@@ -33,8 +33,7 @@ class DatLibrary:
     # statically constant
     max_big_number = 100000000
 
-    # timeout is slightly less than server timeout of 5 minutes
-    timeout = 295
+    # timeout is slightly less than server timeout of 5 minutes by default
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
@@ -243,8 +242,6 @@ class DatLibrary:
         output_dict = self.parse_run_outputs()
         ins_and_outs_dict = self._add_inputs(output_dict)
 
-        # self.cleanup()
-
         return ins_and_outs_dict
 
 
@@ -313,6 +310,7 @@ class DatLibrary:
         return output_dict
 
     def cleanup(self):
+        # do not call until alternate means of accessing data is developed!
         if not self.debug:
             log("INFO", "Cleaning up folders from: " + self.path_run)
             shutil.rmtree(self.path_run)

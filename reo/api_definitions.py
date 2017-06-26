@@ -20,6 +20,11 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "units": 'steps per hour',
                                 "tool_tip": 'The number of time steps per hour in the simulation'},
 
+        'timeout': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": [],
+                                'default': 295, 'min': 1, 'max': 295, "description": "Timeout of optimization",
+                                "units": 'seconds',
+                                "tool_tip": 'The number of seconds allowed before the optimization times out'},
+
         'land_area': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
                       'max': 1e6, 'default': None,
                       "description": "Land Area available for PV panel siting", "units": 'acres',
