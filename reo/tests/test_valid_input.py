@@ -68,6 +68,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      data = self.get_defaults_from_list(l)
                      resp = self.api_client.post(self.url_base, format='json', data=data) 
                      self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
+
     def test_required_fields(self):
 
         for f in self.required:
