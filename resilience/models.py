@@ -13,7 +13,7 @@ class ResilienceCase(models.Model):
     batt_kw = models.FloatField(null=True, blank=True)
     batt_kwh = models.FloatField(null=True, blank=True)
     load = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
-    prod_factor = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    pv_kw_ac_hourly = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     init_soc = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     crit_load_factor = models.FloatField(null=True, blank=True)
     batt_roundtrip_efficiency = models.FloatField(null=True, blank=True)

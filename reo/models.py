@@ -206,7 +206,7 @@ class RunOutput(models.Model):
     rate_name = models.TextField(blank=True, default='')
     blended_utility_rate = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     demand_charge = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
-    prod_factor = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    pv_kw_ac_hourly = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)

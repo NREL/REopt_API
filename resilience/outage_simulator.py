@@ -1,15 +1,15 @@
 #!usr/bin/python
 
 
-def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_load_factor=0.5,
+def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, crit_load_factor=0.5,
                     batt_roundtrip_efficiency=0.829):
     """
     
     :param pv_kw: float, pv capacity
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
-    :param load: list of floats, units=kW, len(load) must equal len(prod_factor)
-    :param prod_factor: list of floats, production of 1kW PV system
+    :param load: list of floats, units=kW, len(load) must equal len(pv_kw_ac_hourly)
+    :param pv_kw_ac_hourly: list of floats, production of 1kW PV system
     :param init_soc: list of floats between 0 and 1 inclusive, initial state-of-charge
     :param crit_load_factor: float between 0 and 1 inclusive, scales load during outage
     :param batt_roundtrip_efficiency: roundtrip battery efficiency
@@ -32,7 +32,7 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_
 
     # pv minus load is the burden on battery
     pvMld = [pf * pv_kw - crit_load_factor * ld for (pf, ld) in
-             zip(prod_factor, load)]  # negative values are unmet load (by PV)
+             zip(pv_kw_ac_hourly, load)]  # negative values are unmet load (by PV)
 
     for n in range(n_timesteps):  # outer loop for finding r for outage starting each timestep of year
 

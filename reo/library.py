@@ -306,7 +306,7 @@ class DatLibrary:
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
             output_dict = process_results.get_output()
-            for key in ['run_input_id','prod_factor']:
+            for key in ['run_input_id','pv_kw_ac_hourly']:
                 output_dict[key] = getattr(self,key)
         else:
             msg = "Output file: " + self.file_output + " does not exist"
