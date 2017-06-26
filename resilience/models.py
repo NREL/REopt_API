@@ -20,10 +20,10 @@ class ResilienceCase(models.Model):
     api_version = models.TextField(blank=True, default='', null=False)
 
     #Outputs
-    r_list = ArrayField(models.FloatField(blank=True, null=True), null=True, blank=True, default=[])
-    r_min = models.FloatField(blank=True, null=True)
-    r_max = models.FloatField(blank=True, null=True)
-    r_avg = models.FloatField(blank=True, null=True)
+    resilience_by_timestep = ArrayField(models.FloatField(blank=True, null=True), null=True, blank=True, default=[])
+    resilience_hours_min = models.FloatField(blank=True, null=True)
+    resilience_hours_max = models.FloatField(blank=True, null=True)
+    resilience_hours_avg = models.FloatField(blank=True, null=True)
 
     @staticmethod
     def run(bundle):

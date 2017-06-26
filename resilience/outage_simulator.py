@@ -23,10 +23,10 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_
 
         if pv_kw == 0:  # no pv nor battery --> no resilience
 
-            return {"r_list": r,
-                    "r_min": 0,
-                    "r_max": 0,
-                    "r_avg": 0,
+            return {"resilience_by_timestep": r,
+                    "resilience_hours_min": 0,
+                    "resilience_hours_max": 0,
+                    "resilience_hours_avg": 0,
                     }
 
 
@@ -67,8 +67,8 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, prod_factor, init_soc, crit_
     r_avg = round( float(sum(r)) / float(len(r)),2)
     r_list = r
     
-    return {"r_list": r_list,
-            "r_min": r_min,
-            "r_max": r_max,
-            "r_avg": r_avg,
+    return {"resilience_by_timestep": r_list,
+            "resilience_hours_min": r_min,
+            "resilience_hours_max": r_max,
+            "resilience_hours_avg": r_avg,
             }

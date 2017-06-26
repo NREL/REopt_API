@@ -42,16 +42,16 @@ def inputs(filter='', full_list=False, just_required=False):
 
 
 def outputs():
-    return {'r_list':
+    return {'resilience_by_timestep':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "List of hours survived for outages starting at every time step", "units": 'hours'},
-            'r_min':
+            'resilience_hours_min':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Minimum hours survived", "units": 'hours'},
-            'r_max':
+            'resilience_hours_max':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Maximum hours survived", "units": 'hours'},
-            'r_avg':
+            'resilience_hours_avg':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Average hours survived", "units": 'hours'},
             }

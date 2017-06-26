@@ -352,10 +352,10 @@ class RunOutput(models.Model):
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
     # Resilience Stats
-    r_list = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    r_min = models.FloatField(null=True, blank=True)
-    r_max = models.FloatField(null=True, blank=True)
-    r_avg = models.FloatField(null=True, blank=True)
+    resilience_by_timestep = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    resilience_hours_min = models.FloatField(null=True, blank=True)
+    resilience_hours_max = models.FloatField(null=True, blank=True)
+    resilience_hours_avg = models.FloatField(null=True, blank=True)
 
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
