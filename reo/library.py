@@ -208,6 +208,8 @@ class DatLibrary:
 
     def run(self):
 
+        output_dict = dict()
+
         self.create_simple_bau()
         self.create_constants()
         self.create_storage()
@@ -216,7 +218,6 @@ class DatLibrary:
         self.create_loads()
         self.create_nem()
         self.create_utility()
-
 
         solar_data = self.create_Solar()
         self.pv_kw_ac_hourly = solar_data.ac_hourly
@@ -229,21 +230,24 @@ class DatLibrary:
         log("INFO", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
 
-        log("INFO", "Running Command")
-        run1 = command.run(self.timeout)
-        if not run1 == True:
-            return {"ERROR":run1}
-        log("INFO", "Running BAU")
 
-        run2 = command_bau.run(self.timeout)
-        if not run2 == True:
-            return {"ERROR":run2}
+        log("INFO", "Running Command")
+        error = command.run(self.timeout)
+        if error:
+            output_dict['error'] = error
+            return output_dict
+
+        log("INFO", "Running BAU")
+        error = command_bau.run(self.timeout)
+        if error:
+            output_dict['error'] = error
+            return output_dict
 
         output_dict = self.parse_run_outputs()
 
         self.cleanup()
 
-        if 'Error' in output_dict.keys():
+        if 'error' in output_dict.keys().lower():
             return output_dict       
         ins_and_outs_dict = self._add_inputs(output_dict)
 
