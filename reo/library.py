@@ -17,7 +17,7 @@ from results import Results
 from api_definitions import *
 
 from urdb_parse import *
-from utilities import Command, check_directory_created, write_single_variable
+from utilities import Command, check_directory_created, write_single_variable, is_error
 
 
 def alphanum(s):
@@ -247,10 +247,10 @@ class DatLibrary:
 
         self.cleanup()
 
-        if 'error' in output_dict.keys().lower():
-            return output_dict       
-        ins_and_outs_dict = self._add_inputs(output_dict)
+        if is_error(output_dict):
+            return output_dict
 
+        ins_and_outs_dict = self._add_inputs(output_dict)
         return ins_and_outs_dict
 
 
