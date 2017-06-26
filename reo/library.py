@@ -33,8 +33,7 @@ class DatLibrary:
     # statically constant
     max_big_number = 100000000
 
-    # timeout is slightly less than server timeout of 5 minutes
-    timeout = 295
+    # timeout is slightly less than server timeout of 5 minutes by default
     timed_out = False
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
@@ -105,7 +104,7 @@ class DatLibrary:
         check_directory_created(self.path_run_outputs)
         check_directory_created(self.path_run_outputs_bau)
 
-        self.file_output = os.path.join(self.path_run_outputs, "summary.csv")
+        self.file_output = os.path.join(self.path_run_outputs, "REopt_results.json")
 
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
@@ -241,11 +240,11 @@ class DatLibrary:
             return {"ERROR":run2}
 
         output_dict = self.parse_run_outputs()
+
         self.cleanup()
 
         if 'Error' in output_dict.keys():
             return output_dict       
- 
         ins_and_outs_dict = self._add_inputs(output_dict)
 
         return ins_and_outs_dict
@@ -318,11 +317,12 @@ class DatLibrary:
         return output_dict
 
     def cleanup(self):
-       # if not self.debug:
-       #     log("INFO", "Cleaning up folders from: " + self.path_run)
-       #     shutil.rmtree(self.path_run)
-       return
-    # BAU files
+        # do not call until alternate means of accessing data is developed!
+        if not self.debug:
+            log("INFO", "Cleaning up folders from: " + self.path_run)
+            shutil.rmtree(self.path_run)
+
+   # BAU files
     def create_simple_bau(self):
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
@@ -599,20 +599,26 @@ class DatLibrary:
                 self.parse_urdb(urdb_rate)
 
         if self.utility_name is not None and self.rate_name is not None:
-            self.path_util_rate = os.path.join(self.path_utility, self.utility_name, self.rate_name)
 
-            with open(os.path.join(self.path_util_rate, "NumRatchets.dat"), 'r') as f:
+            utility_folder = os.path.join(self.path_utility, self.utility_name)
+            rate_output_folder = os.path.join(utility_folder, self.rate_name)
+
+            with open(os.path.join(rate_output_folder, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
 
-            with open(os.path.join(self.path_util_rate, "bins.dat"), 'r') as f:
+            with open(os.path.join(rate_output_folder, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
 
             self.command_line_constants.append(num_ratchets)
-            self.command_line_constants.append("UtilName=" + "'" + str(self.utility_name) + "'")
-            self.command_line_constants.append("UtilRate=" + "'" + str(self.rate_name) + "'")
             self.command_line_constants.append(fuel_bin_count)
             self.command_line_constants.append(demand_bin_count)
+
+            # for ease in the Xpress model, copy to generic Utility folder and delete sub-rate folder
+            filelist = os.listdir(rate_output_folder)
+            for f in filelist:
+                shutil.copy2(os.path.join(rate_output_folder, f), self.path_utility)
+            shutil.rmtree(utility_folder)
 
     def parse_urdb(self, urdb_rate):
 
@@ -634,6 +640,10 @@ class DatLibrary:
 
         with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
             json.dump(urdb_rate, outfile)
+            outfile.close()
+
+        with open(os.path.join(rate_output_folder, 'utility_name.txt'), 'w') as outfile:
+            outfile.write(str(utility_name).replace(' ', '_'))
             outfile.close()
 
         with open(os.path.join(rate_output_folder, 'rate_name.txt'), 'w') as outfile:

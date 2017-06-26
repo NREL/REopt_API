@@ -9,6 +9,7 @@ class REoptResourceValidation(Validation):
     def check_individual(self, input_dictionary, errors):
 
         for key, value in input_dictionary.items():
+
             if key not in inputs(full_list=True):
                 errors = self.append_errors(errors, key, ['This key name does not match a valid input.'])
                 logstring = "Key: '" + str(key) + "' does not match a valid input!"
@@ -26,16 +27,24 @@ class REoptResourceValidation(Validation):
                 field_def = inputs(full_list=True)[key]
                 format_errors = self.check_input_format(key,value,field_def)
                 if not format_errors:
-                    if field_def.get('max'):
-                        format_errors += self.check_max(key, value, field_def)
+                    if 'max' in field_def and field_def['max'] is not None:
+                        max_value = field_def['max']
+                        # handle case that one input depends upon another
+                        if type(field_def['max']) == str and field_def['max'] in input_dictionary:
+                            field_def_depend = inputs(full_list=True)[field_def['max']]
+                            max_value = field_def_depend['default']
+                            if input_dictionary[field_def['max']] is not None:
+                                max_value = input_dictionary[field_def['max']]
 
-                    if field_def.get('min'):
+                        format_errors += self.check_max(key, value, field_def, max_value)
+
+                    if 'min' in field_def and field_def['min'] is not None:
                         format_errors += self.check_min(key, value, field_def)
 
-                    if field_def.get('restrict_to'):
+                    if 'restrict_to' in field_def and field_def['restrict_to'] is not None:
                         format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
 
-                    if field_def.get('length'):
+                    if 'length' in field_def and field_def['length'] is not None:
                         format_errors += self.check_length(key, value, field_def['length'])
 
                 #specific_errors 
@@ -88,18 +97,18 @@ class REoptResourceValidation(Validation):
 
     def check_min(self, key, value, fd):
         new_value = value
-        if fd.get('pct')  is True:
+        if fd.get('pct') is True:
             if value > 1:
                 new_value = value*0.01
 
         if new_value < fd['min'] and value is not None:
             if not fd.get('pct'):
-                return ['Invalid value: %s is less than the minimum, %s' % (value, fd['min'])]
+                return ['Invalid value: %s: %s is less than the minimum, %s' % (key, value, fd['min'])]
             else:
-                return ['Invalid value: %s is less than the minimum, %s %%' % (value, fd['min'] * 100)]
+                return ['Invalid value: %s: %s is less than the minimum, %s %%' % (key, value, fd['min'] * 100)]
         return []
 
-    def check_max(self, key, value, fd):
+    def check_max(self, key, value, fd, max_value):
         new_value = value
         if fd.get('pct') is True:
             if value > 1:
@@ -107,14 +116,14 @@ class REoptResourceValidation(Validation):
 
         if new_value > fd['max'] and value is not None:
             if not fd.get('pct'):
-                return ['Invalid value: %s is greater than the  maximum, %s' % (value, fd['max'])]
+                return ['Invalid value: %s: %s is greater than the  maximum, %s' % (key, value, fd['max'])]
             else:
-                return ['Invalid value: %s is greater than the  maximum, %s %%' % (value, fd['max']*100)]
+                return ['Invalid value: %s: %s is greater than the  maximum, %s %%' % (key, value, fd['max']*100)]
         return []
 
     def check_restrict_to(self, key, value, range):
         if value not in range and value is not None:
-            return ['Invalid value: %s is not in %s' % (value, range)]
+            return ['Invalid value: %s: %s is not in %s' % (key, value, range)]
         return []
 
     def append_errors(self, errors, key, value):

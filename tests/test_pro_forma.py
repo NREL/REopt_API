@@ -14,10 +14,10 @@ class MockEconomics:
 
         econ_file = open(os.path.join(path_template, case_file))
         econ_data = econ_file.read()
-        econ_dict = json.loads(econ_data)
+        self.econ_dict = json.loads(econ_data)
 
-        for key in econ_dict:
-            setattr(self, key, econ_dict[key])
+        for key in self.econ_dict:
+            setattr(self, key, self.econ_dict[key])
 
 
 class MockResults:
@@ -29,10 +29,10 @@ class MockResults:
 
         results_file = open(os.path.join(path_template, case_file))
         results_data = results_file.read()
-        results_dict = json.loads(results_data)
+        self.results_dict = json.loads(results_data)
 
-        for key in results_dict:
-            setattr(self, key, results_dict[key])
+        for key in self.results_dict:
+            setattr(self, key, self.results_dict[key])
 
 
 class MockCashFlow:
@@ -42,10 +42,10 @@ class MockCashFlow:
 
         expected_file = open(os.path.join(path_template, case_file))
         expected_data = expected_file.read()
-        expected_dict = json.loads(expected_data)
+        self.expected_dict = json.loads(expected_data)
 
-        for key in expected_dict:
-            setattr(self, key, expected_dict[key])
+        for key in self.expected_dict:
+            setattr(self, key, self.expected_dict[key])
 
 
 def round_list(list1):
@@ -70,7 +70,7 @@ class TestProForma(unittest.TestCase):
         for case in range(0, self.num_scenarios):
             self.setUpScenario(case)
 
-            cash_flow = ProForma(self.path_template, self.path_template, self.econ, self.results)
+            cash_flow = ProForma(self.path_template, self.path_template, self.econ, self.results.results_dict)
             cash_flow.update_template()
             cash_flow.compute_cashflow()
 

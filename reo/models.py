@@ -15,6 +15,7 @@ class RunInput(models.Model):
 
     user_id = models.TextField(blank=True, default='')
     api_version = models.TextField(blank=True, default='', null=False)
+    timeout = models.IntegerField(blank=True, default=295)
 
     # Non-hooked up inputs
     time_steps_per_hour = models.IntegerField(null=True, blank=True)
@@ -185,6 +186,7 @@ class RunOutput(models.Model):
     run_input_id = models.IntegerField(null=False)
     user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)
+    timeout = models.IntegerField(blank=True, default=295)
 
     # Non-hooked up inputs
     time_steps_per_hour = models.IntegerField(null=True, blank=True)
