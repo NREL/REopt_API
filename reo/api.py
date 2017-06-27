@@ -15,7 +15,8 @@ import library
 import random
 import os
 from api_definitions import *
-from validators import  *
+from validators import *
+from utilities import is_error
 
 def get_current_api():
     return "version 0.0.1"
@@ -59,7 +60,6 @@ class RunInputResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
-        #Validate Inputs
         self.is_valid(bundle)
         if bundle.errors:
             raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
@@ -72,10 +72,15 @@ class RunInputResource(ModelResource):
 
         # Return  Results
         output_obj = run.create_output(model_inputs.keys(), bundle.data)
-         
+
         if hasattr(output_obj, 'keys'):
-            if "Error" in output_obj.keys():
+            if is_error(output_obj):
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
+        # not sure how this is happening
+        if isinstance(output_obj, dict):
+            output_dict = dict()
+            output_dict['error'] = "REopt optimization error or timeout, please contact reopt@nrel.gov"
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_dict))
 
         bundle.obj = output_obj
         bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
