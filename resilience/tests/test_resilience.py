@@ -60,16 +60,68 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return
 
     def test_outage(self):
-        return
+        data = self.base_case_1
+        data['outage_start'] = 100 
+        data['outage_end'] = 110
+
+        d = self.get_response(data)
+   
+        self.assertTrue(d['resilience_hours_max']>=10)
+        for i in range(100,110):
+            self.assertTrue(d['resilience_by_timestep'][i]>1)
 
     def test_no_system(self):
+        data = self.base_case_1
+        data['pv_kw_max'] = 0
+        data['batt_kwh_max'] = 0
+    
+        d = self.get_response(data)
+        self.assertEqual(int(d['resilience_hours_max']), 0)
+        self.assertEqual(int(d['resilience_hours_min']), 0)
+
+        for i in d['resilience_by_timestep']:
+            self.assertEqual(i, 0)
+
         return
 
     def test_pv_only(self):
+        data = self.base_case_1
+        data['batt_kwh_max'] = 0
+        data['load_profile_name']='RetailStore'
+        data['blended_utility_rate'] = [0.25]*12
+        data['demand_charge'] = [0.25]*12
+        del data['urdb_rate']
+
+        d = self.get_response(data)
+
+        self.assertEqual(int(d['resilience_hours_max']), 14)
+        self.assertEqual(int(d['resilience_hours_min']), 0)
+
+        for i in d['resilience_by_timestep']:
+            self.assertTrue(i<15)
+
+        for i in d['resilience_by_timestep'][0::24]:
+            self.assertTrue(i==0)
+
         return
 
     def test_batt_only(self):
-        return
+        data = self.base_case_1
+        data['pv_kw_max'] = 0
+        data['blended_utility_rate'] = [1000]*12
+        data['demand_charge'] = [1000]*12
+        del data['urdb_rate']
 
-    def test_batt_and_pv(self):
+        d = self.get_response(data)
+    
+        load = d['year_one_electric_load_series']
+        max_load = max(load)
+
+        for i,l in enumerate(load):
+             l = l * d['crit_load_factor']
+             if l > d['batt_kwh']*d['year_one_battery_soc_series'][i] or l > d['batt_kw']:
+                 self.assertTrue(d['resilience_by_timestep'][i] < 1)
+             elif l < d['batt_kwh']  and l < d['batt_kw']:
+                 self.assertTrue(d['resilience_by_timestep'][i] > 1)
+
         return
