@@ -6,6 +6,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
+import pickle
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
@@ -13,6 +14,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.required =  self.get_defaults_from_list(inputs(just_required=True))
+     
+        self.base_case_1 = {k:v for k,v in self.required.items() if k not in ['load_8760_kw', 'blended_utility_rate','demand_charge']}
+        self.base_case_1['load_size'] = 10000	
+
         self.url_base = '/api/v1/reopt/'
 
     def get_defaults_from_list(self, list):
@@ -34,18 +39,24 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             base['blended_utility_rate'] = default_blended_rate()
         return base
 
-    def test_resilience_stats(self):
+    def expected_base_case_1(self):
+        return pickle.load(open('base_case_1','r'))
 
-        data = self.required
+    def get_response(self, data):
 
         resp = self.api_client.post(self.url_base, format='json', data=data)
-        print resp
         self.assertHttpCreated(resp)
+        d = self.deserialize(resp)
 
-        self.assertEqual(str(data['r_min']), str(0.02))
-        self.assertEqual(str(data['r_max']), str(14.29))
-        self.assertEqual(str(data['r_avg']), str(3.13))
+        return d
 
+    def test_base_case_1(self):
+        d = self.get_response(self.base_case_1)
+        expected_result = self.expected_base_case_1()
+
+        for f in ['resilience_hours_min','resilience_hours_max','resilience_hours_avg','resilience_by_timestep']:
+             self.assertEqual(d[f], expected_result[f])
+        
         return
 
     def test_outage(self):
