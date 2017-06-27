@@ -32,7 +32,7 @@ class ResilienceCase(models.Model):
 
         model_results = simulate_outage(**data)
         
-        if "ERROR" in model_results.keys():
+        if 'error' in model_results.keys():
             raise ImmediateHttpResponse(response=ResilienceCase.error_response(bundle.request, model_results))
 
         else:

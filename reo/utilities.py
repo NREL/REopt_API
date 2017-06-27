@@ -75,5 +75,5 @@ class Command(object):
             log("ERROR", "XPRESS Thread Timeout")
             self.process.terminate()
             thread.join()
-            error = "REopt optimization exceeded timeout: %s seconds, please contact REopt support" % (timeout)
+            error = "REopt optimization exceeded timeout: %s seconds, please email reopt@nrel.gov for support" % (timeout)
         return error

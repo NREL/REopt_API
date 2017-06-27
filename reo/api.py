@@ -76,6 +76,11 @@ class RunInputResource(ModelResource):
         if hasattr(output_obj, 'keys'):
             if is_error(output_obj):
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
+        # not sure how this is happening
+        if isinstance(output_obj, dict):
+            output_dict = dict()
+            output_dict['error'] = "REopt optimization error or timeout, please contact reopt@nrel.gov"
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_dict))
 
         bundle.obj = output_obj
         bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
