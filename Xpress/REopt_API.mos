@@ -22,7 +22,7 @@ parameters
   BattLevelCount = 1
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
-  Obj = 1  !1 for minimize LCC, 2 for maximize rated production, 3 for maximize production
+  Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
 
   ! Utility info
   NumRatchets = 20
