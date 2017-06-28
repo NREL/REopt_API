@@ -2,7 +2,7 @@ from datetime import datetime
 
 max_big_number = 100000000
 max_years = 75
-
+analysis_period = 25
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
@@ -11,7 +11,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': 25, 'min': 1, 'max': max_years,
+                            'default': analysis_period, 'min': 1, 'max': max_years,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -88,7 +88,7 @@ def inputs(filter='', full_list=False, just_required=False):
                          "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum energy capacity size forces a battery energy capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
         'batt_can_gridcharge': {'req': False, 'type': bool, 'null': False, 'pct': False,
-                                "needed_for": ['economics'], 'min': 0, 'max': 1, 'default': True,
+                                "needed_for": ['economics'], 'default': True,
                                 "description": "Is battery allowed to charge from grid", "units": '0/1',
                                 "tool_tip": "Is battery allowed to charge from the grid?"},
 
@@ -177,7 +177,7 @@ def inputs(filter='', full_list=False, just_required=False):
                               'restrict_to': default_load_profiles(),
                               "tool_tip": 'If a custom load profile is not uploaded, the type of building is used in combination with annual energy consumption to simulate a load profile. Select from drop-down menu. The loads are generated from the Energy+ commercial reference buildings for the climate zone of the site, and scaled based on the annual energy consumption. This value is required if a custom load profile is not uploaded.'},
 
-        'load_size': {'req': False, 'swap_for': ['load_monthly_kwh'], 'depends_on': ['load_profile_name'],
+        'load_size': {'req': False, 'alt_field': 'load_monthly_kwh', 'depends_on': ['load_profile_name'],
                       'type': float, 'null': True, 'pct': False,
                       "needed_for": ['load_profile'], 'min': 0,
                       'max': 1e12, 'default': None,
@@ -189,14 +189,13 @@ def inputs(filter='', full_list=False, just_required=False):
                              "description": "Monthly Energy Usage", "units": 'kWh', 'length': 12, 'default': None,
                              "tool_tip": 'The monthly energy usage at the proposed site.'},
 
-        'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name'], 'depends_on': ['load_year'],
+        'load_8760_kw': {'req': True, 'swap_for': ['load_profile_name'],
                          'type': list, 'null': True, 'length': 8760, 'default':None,
                          'pct': False, "needed_for": ['load_profile'],
                          "description": "Hourly Power Demand", "units": 'kW',
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
-        'load_year': {'req': False, 'swap_for': [],
-                      'type': float, 'null': True,
+        'load_year': {'req': False, 'type': float, 'null': True,
                       'pct': False, 'min': 2017,'max': 2017 + max_years,
                       "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
                       "description": "Year of input load profile", "units": '',
@@ -324,7 +323,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': 'analysis_period', 'default': 0,
+                               'max': analysis_period, 'default': 0,
                                "description": "Total Production Incentive Year Duration", "units": 'years',
                                "tool_tip": 'Total production based incentive years'},
 
@@ -418,13 +417,13 @@ def inputs(filter='', full_list=False, just_required=False):
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
         'batt_replacement_year_kw': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
-                                  'min': 0, 'max': 'analysis_period', 'default': 10,
+                                  'min': 0, 'max': analysis_period, 'default': 10,
                                   "description": "Battery Replacement Year for Power Electronics", "units": 'year',
                                   "tool_tip": 'Power electronics replacement year is the year in which the power components of the battery system (e.g. battery inverter) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
         'batt_replacement_year_kwh': {'req': False, 'type': int, 'null': False, 'pct': False,
                                      "needed_for": ['economics'],
-                                     'min': 0, 'max': 'analysis_period', 'default': 10,
+                                     'min': 0, 'max': analysis_period, 'default': 10,
                                      "description": "Battery Replacement Year for Energy Capacity", "units": 'year',
                                      "tool_tip": 'Energy capacity replacement year is the year in which the energy components of the battery system (e.g. battery pack) are replaced during the project lifecycle. The default is year 10. This value is not required.'},
 
@@ -443,7 +442,6 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
                               'default': 5,
-                              'min': 0, 'max': 7,
                               'restrict_to': [0, 5, 7],
                               "description": "MACRS depreciation timeline for battery storage", "units": 'years',
                               "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},

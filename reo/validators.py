@@ -61,7 +61,7 @@ class REoptResourceValidation(Validation):
         missing_required = self.missing_required(bundle.data.keys())
 
         if missing_required:
-            message = [self.get_missing_required_message(m) for  m in missing_required]
+            message = list(set([self.get_missing_required_message(m) for  m in missing_required]))
             errors = self.append_errors(errors,"Missing_Required",message)
 
         remaining_keys = list( set(inputs(full_list=True)) - set(inputs(just_required=True)) )
@@ -137,18 +137,28 @@ class REoptResourceValidation(Validation):
         return errors
 
     def get_missing_required_message(self, input):
-        definition_values = inputs(full_list=True)[input]
-        swap = definition_values.get('swap_for')
-        depends = definition_values.get('depends_on')
-        
+        definition_values = inputs(full_list=True)
+        depends = definition_values[input].get('depends_on')
+ 
         if depends is not None:
-            input = ' and '.join([input] + depends)
-        
-        message = input
-        
+            fields = sorted([input] + depends)
+            input = fields[0]
+            depends = fields[1:]
+
+        swap = definition_values[input].get('swap_for')
+        alt_field = definition_values[input].get('alt_field')
+
+        message = "(" + input
+       
+        if alt_field is not None:
+            message += " (or %s)" % (alt_field)
+      
+        if depends is not None:
+            message += ' and ' + ",".join(depends) + ")"
+ 
         if swap is not None:
-            message +=  " (OR %s)" % (" and ".join(definition_values['swap_for']))
-        
+            message += " OR (%s)" % ( " and ".join(swap)  )
+                	
         return message
 
     def get_missing_dependency_message(self, input):
@@ -187,25 +197,33 @@ class REoptResourceValidation(Validation):
         output = []
         
         for field in required.keys():
+            check_swaps = False
             if field not in used_swaps: 
-                
                 if field in key_list:
-                    dependent = required.get('depends_on')
+                    dependent = required[field].get('depends_on')
                     if dependent is not None:
                         for d in dependent:
                             if d not in key_list:
-                                output.append(d)
-                
+                                alt = inputs(full_list=True)[d].get('alt_field')
+                                if alt is not None: 
+                                   if alt not in key_list: 
+                                        check_swaps=True      
+                                else:
+                                    check_swaps=True
                 else:
-                    swap = required.get('swap_for')
+                    check_swaps=True
+
+                if check_swaps:
+                    swap = required[field].get('swap_for')
                     if swap is not None:
                         for s in swap:
                             if s not in key_list:
                                 output.append(field)
                                 used_swaps += swap
                                 break
-        
-        return output
+                    else:
+                        output.append(field)
+        return set(output)
 
     def check_length(self, key, value, correct_length):
         if len(value) != correct_length:
