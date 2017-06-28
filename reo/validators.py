@@ -140,11 +140,15 @@ class REoptResourceValidation(Validation):
         definition_values = inputs(full_list=True)[input]
         swap = definition_values.get('swap_for')
         depends = definition_values.get('depends_on')
+        
         if depends is not None:
             input = ' and '.join([input] + depends)
+        
         message = input
+        
         if swap is not None:
             message +=  " (OR %s)" % (" and ".join(definition_values['swap_for']))
+        
         return message
 
     def get_missing_dependency_message(self, input):
@@ -178,21 +182,29 @@ class REoptResourceValidation(Validation):
         return swap_exists
 
     def missing_required(self,key_list):
-        missing = list(set(inputs(just_required=True)) - set(key_list))
-        
+        required = inputs(just_required=True)
+        used_swaps = []
         output = []
-        swaps_used = []
-        for field in missing:  # Check if field can be swappedout for others
-            if field not in swaps_used:   
-                if not self.swaps_exists(key_list, field):
-                    swaps = inputs(full_list=True)[field].get('swap_for') 
-                    depends = inputs(full_list=True)[field].get('depends_on')
-                    if swaps is not None:
-                        swaps_used += swaps
-                    if depends is not None:
-                        swaps_used += depends
-
-                    output.append(field)
+        
+        for field in required.keys():
+            if field not in used_swaps: 
+                
+                if field in key_list:
+                    dependent = required.get('depends_on')
+                    if dependent is not None:
+                        for d in dependent:
+                            if d not in key_list:
+                                output.append(d)
+                
+                else:
+                    swap = required.get('swap_for')
+                    if swap is not None:
+                        for s in swap:
+                            if s not in key_list:
+                                output.append(field)
+                                used_swaps += swap
+                                break
+        
         return output
 
     def check_length(self, key, value, correct_length):
