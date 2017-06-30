@@ -634,6 +634,8 @@ end-case
 !!!  Output Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+! Define some output params
+
 ExportedElec := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1W" or LD = "1X" )))
                 dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
@@ -643,73 +645,14 @@ ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in 
 Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
 
-!***************** Writing to Terminal ************************************
-writeln ("****************************** Results *******************************")
-writeln ( "Problem status = ", status)
-writeln ( "Optimization time = ", EndTime-StartTime, " seconds")
-writeln ( "Load = ", DAT4)
-writeln ( "LCC = ", getsol(RECosts))
-writeln ("TotElecProdKWH = ", getsol(TotalElecProd) )
-writeln ("TotElecExportedKWH = ", getsol(ExportedElec) )
-writeln ( "Total Energy Cost = ", getsol(TotalEnergyCharges) )
-writeln ( "Total Demand Cost = ", getsol(TotalDemandCharges))
-writeln ("Year 1 Energy Cost ($),",strfmt(getsol(Year1EnergyCost), 10, 2))
-writeln ("Year 1 Demand Cost ($),",strfmt(getsol(Year1DemandCost), 10, 2))
-
-!PV output
-forall  (t in Tech | TechIsGrid(t)=0)  do
-   writeln (t," = ", sum(s in Seg) getsol (dvSystemSize(t,s)*TurbineDerate(t)))
-end-do
-
-!Battery output
-writeln ( "BattSize= ", sum(b in BattLevel) getsol (dvStorageSizeKWH(b)))
-writeln ( "Batt size KW (inverter)= ", sum(b in BattLevel) getsol (dvStorageSizeKW(b)))
-
-!CapCost plus LFG pipeline cost output
-writeln ( "Cap Costs = ",
-    sum(t in Tech,s in Seg) CapCostSlope (t,s) * getsol(dvSystemSize(t,s)) +
-	sum(t in Tech,s in Seg) CapCostYInt(t,s) * getsol(binSegChosen(t,s)) +
-	sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) * StorageCostPerKWH(b) +
-	sum(b in BattLevel) getsol(dvStorageSizeKW(b)) *  StorageCostPerKW(b) )
-
-!Prod incent output
-   !writeln ( " Total Prod Incent = ", sum (t in Tech) getsol (dvProdIncent(t)))
-
-!demand output
-!writeln ("r fb")
-!forall  ( r in Ratchets, db in DemandBin)  do
-!   writeln ( " ", r, " ", db,  " PeakDemand = ", getsol(dvPeakDemandE(r,db)))
-!end-do
-
-!forall  ( m in Month)  do
-!   writeln ( " ", m,  " Month Peak = ", getsol(dvPeakDemandEMonth(m)))
-!end-do
-
-writeln ("****************************** End Results *******************************")
-
-
-!************************** Writing to files ************************************
-!Time series demand output
 forall ( ts in TimeStep )     do
        Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  s in Seg, fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,s,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
                                (sum(t in Tech, s in Seg, fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,s,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
 end-do
 
-!!!! Write outputs to files
-forall  (b in BattLevel |getsol ( dvStorageSizeKWH(b)   ) <> 0)  do
-   writeln (1, ",", "BattSize, ", getsol (dvStorageSizeKWH(b)))
-end-do
+!************************** Writing to files ************************************
 
-forall  (b in BattLevel |getsol ( dvStorageSizeKW(b)   ) <> 0)  do
-   writeln (1, ",", "BattSizekW, ", getsol (dvStorageSizeKW(b)))
-end-do
 
-forall  (t in Tech, s in Seg |getsol ( dvSystemSize(t,s)   ) <> 0 )  do
-   writeln (1, ",", t, ", ", getsol ( dvSystemSize(t,s)   )     )
-end-do
-fclose(F_OUTPUT)
-
-!******************************************************
 !Time series dispatch output
 
 if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
