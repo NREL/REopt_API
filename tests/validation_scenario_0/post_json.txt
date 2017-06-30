@@ -7,6 +7,7 @@
   "batt_cost_kw": 1600,
   "batt_cost_kwh": 500,
   "load_profile_name": "RetailStore",
+  "load_size": 1000000,
   "pv_cost": 2050,
   "owner_discount_rate": 0.102,
   "offtaker_discount_rate": 0.102,
