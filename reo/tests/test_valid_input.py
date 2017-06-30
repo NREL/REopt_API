@@ -153,7 +153,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for k,v in inputs(full_list=True).items():
                 list = self.base_case_fields
                 if k not in list:
-		    list.append(k)
+                    list.append(k)
 
                 if v.get('depends_on') is not None:
                     for d in v.get('depends_on'):
