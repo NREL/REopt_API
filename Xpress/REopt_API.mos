@@ -135,6 +135,7 @@ declarations
   StorageCostPerKWH: array(BattLevel) of real !Storage cost per KWH
   StorageCostPerKW: array( BattLevel) of real !Storage cost per KW.  Cost of inverter.
   StorageMinChargePcent: real !Min charge on the storage device as a percent of the total
+  InitSOC: real  ! initial state of charge of battery
 
   dvFuelCost: array(Tech,FuelBin) of mpvar
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
@@ -228,6 +229,7 @@ initializations from DAT6 ! storage
 	EtaStorIn
 	EtaStorOut
 	BattLevelCoef
+	InitSOC
 end-initializations
 
 initializations from DAT7 ! maxsizes
@@ -294,7 +296,7 @@ end-do
 !the state of the storage system at the beginning is 0
 
 	! boundary condition.  State of charge must begin and end the same.
-	dvStoredEnergy(0) = StorageMinChargePcent * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling !SOCt0(l) !dvStoredEnergy(TimeStepCount)
+	dvStoredEnergy(0) = InitSOC * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling !SOCt0(l) !dvStoredEnergy(TimeStepCount)
 	!next to lines set the SOC of the battery at time of GridOutage
 	sum(b in BattLevel) dvStorageSizeKWH(b) <=  MaxStorageSizeKWH
 	sum(b in BattLevel) dvStorageSizeKWH(b) >=  MinStorageSizeKWH
