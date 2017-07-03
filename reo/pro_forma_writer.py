@@ -156,37 +156,37 @@ class ProForma(object):
         ws['B4'] = self.econ.pv_degradation_rate * 100
         ws['B5'] = self.batt_kw
         ws['B6'] = self.batt_kwh
-        ws['B7'] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
-        ws['B10'] = self.capital_costs
-        ws['B12'] = self.econ.pv_om
-        ws['B13'] = self.econ.batt_replacement_cost_kw
-        ws['B14'] = self.econ.batt_replacement_year_kw
-        ws['B15'] = self.econ.batt_replacement_cost_kwh
-        ws['B16'] = self.econ.batt_replacement_year_kwh
-        ws['B24'] = self.econ.analysis_period
-        ws['B25'] = self.econ.rate_inflation * 100
-        ws['B26'] = self.econ.rate_escalation * 100
-        ws['B27'] = self.econ.owner_discount_rate * 100
-        ws['B31'] = self.fed_tax_owner * 100
-        ws['B36'] = self.econ.pv_itc_federal * 100
-        ws['C36'] = self.econ.pv_itc_federal_max
-        ws['B41'] = self.econ.pv_itc_state * 100
-        ws['C41'] = self.econ.pv_itc_state_max
-        ws['B42'] = self.econ.pv_itc_utility * 100
-        ws['C42'] = self.econ.pv_itc_utility_max
-        ws['B44'] = self.econ.pv_rebate_federal
-        ws['C44'] = self.econ.pv_rebate_federal_max
-        ws['B45'] = self.econ.pv_rebate_state
-        ws['C45'] = self.econ.pv_rebate_state_max
-        ws['B46'] = self.econ.pv_rebate_utility
-        ws['C46'] = self.econ.pv_rebate_utility_max
-        ws['B53'] = self.econ.pv_macrs_bonus_fraction
-        ws['C56'] = self.year_one_bill_bau
-        ws['C57'] = self.year_one_bill
-        ws['C58'] = self.year_one_exports
+        ws['B9'] = self.year_one_bill_bau
+        ws['B10'] = self.year_one_bill
+        ws['B11'] = self.year_one_exports
+        ws['B12'] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
+        ws['B15'] = self.capital_costs
+        ws['B17'] = self.econ.pv_om
+        ws['B18'] = self.econ.batt_replacement_cost_kw
+        ws['B19'] = self.econ.batt_replacement_year_kw
+        ws['B20'] = self.econ.batt_replacement_cost_kwh
+        ws['B21'] = self.econ.batt_replacement_year_kwh
+        ws['B29'] = self.econ.analysis_period
+        ws['B30'] = self.econ.rate_inflation * 100
+        ws['B31'] = self.econ.rate_escalation * 100
+        ws['B33'] = self.econ.owner_discount_rate * 100
+        ws['B37'] = self.fed_tax_owner * 100
+        ws['B42'] = self.econ.pv_itc_federal * 100
+        ws['C42'] = self.econ.pv_itc_federal_max
+        ws['B47'] = self.econ.pv_itc_state * 100
+        ws['C47'] = self.econ.pv_itc_state_max
+        ws['B48'] = self.econ.pv_itc_utility * 100
+        ws['C48'] = self.econ.pv_itc_utility_max
+        ws['B50'] = self.econ.pv_rebate_federal
+        ws['C50'] = self.econ.pv_rebate_federal_max
+        ws['B51'] = self.econ.pv_rebate_state
+        ws['C51'] = self.econ.pv_rebate_state_max
+        ws['B52'] = self.econ.pv_rebate_utility
+        ws['C52'] = self.econ.pv_rebate_utility_max
+        ws['B58'] = self.econ.pv_macrs_bonus_fraction
 
         if self.econ.pv_macrs_schedule == 0:
-            ws['B51'] = 0
+            ws['B57'] = 0
 
         # Save
         wb.save(self.file_output)
