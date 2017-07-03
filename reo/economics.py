@@ -130,12 +130,16 @@ class Economics:
             self.pv_macrs_schedule_array = self.macrs_five_year
         elif self.pv_macrs_schedule == 7:
             self.pv_macrs_schedule_array = self.macrs_seven_year
+        elif self.pv_macrs_schedule == 0:
+            self.pv_macrs_bonus_fraction = 0
 
         self.batt_macrs_schedule_array = list()
         if self.batt_macrs_schedule == 5:
             self.batt_macrs_schedule_array = self.macrs_five_year
         elif self.batt_macrs_schedule_array == 7:
             self.batt_macrs_schedule_array = self.macrs_seven_year
+        elif self.batt_macrs_schedule == 0:
+            self.batt_macrs_bonus_fraction = 0
 
     def setup_financial_parameters(self):
 
