@@ -371,8 +371,8 @@ class Economics:
                     break
 
         # compute cost curve
-        cost_curve_bp_x = self.xp_array_incent['federal']
-        cost_curve_bp_y = self.yp_array_incent['federal']
+        cost_curve_bp_x = self.xp_array_incent['combined']
+        cost_curve_bp_y = self.yp_array_incent['combined']
 
         self.cap_cost_x = cost_curve_bp_x
         for seg in range(1, len(cost_curve_bp_x)):
