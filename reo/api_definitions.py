@@ -323,7 +323,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                'min': 0,
-                               'max': analysis_period, 'default': 0,
+                               'max': analysis_period, 'default': 1,
                                "description": "Total Production Incentive Year Duration", "units": 'years',
                                "tool_tip": 'Total production based incentive years'},
 
