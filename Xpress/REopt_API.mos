@@ -161,6 +161,7 @@ declarations
   !pwf_offtaker: real
 
   LevelizationFactor: array(Tech) of real
+  LevelizationFactorProdIncent: array(Tech) of real
 
   r_tax_owner: real
   r_tax_offtaker: real
@@ -198,6 +199,7 @@ initializations from DAT2 ! economics
 	pwf_prod_incent
 	!pwf_op
 	LevelizationFactor
+	LevelizationFactorProdIncent
 	StorageCostPerKW
 	StorageCostPerKWH
 	OMperUnitSize
@@ -413,7 +415,7 @@ forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * p
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent
+     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent
 end-do
 
 !CONSTRAINT 24
@@ -561,7 +563,7 @@ forall ( t in Tech, ts in TimeStep, s in Seg | TechToTechClassMatrix(t, "PV") = 
 end-do
 
 ! System production
-TotalElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
+AverageElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))) dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling * LevelizationFactor(t)
 
 ! Capital Costs
 TotalTechCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
@@ -596,10 +598,10 @@ TotalTechCapCosts + TotalStorageCapCosts +
 TotalOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
-(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) * r_tax_fraction_offtaker +
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) * r_tax_fraction_offtaker -
 
-! Incentives
-TotalProductionIncentive
+! Subtract Incentives, which are taxable
+TotalProductionIncentive * r_tax_fraction_owner
 
 
 !! END OBJECTIVE FUNCTION VALUE
@@ -646,8 +648,8 @@ Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
 
 forall ( ts in TimeStep )     do
-       Demand(ts) := LoadProfile("1R",ts) + sum(t in Tech,  s in Seg, fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,s,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
-                               (sum(t in Tech, s in Seg, fb in FuelBin | t <> "UTIL1") (dvRatedProd (t,"1R",ts,s,fb)*ProdFactor(t,"1R",ts)) * LevelizationFactor(t) + dvElecFromStor( ts))
+       Year1UtilityEnergy(ts) := LoadProfile("1R",ts) + sum(t in Tech,  s in Seg, fb in FuelBin | t = "UTIL1") (dvRatedProd (t,"1S",ts,s,fb)*ProdFactor(t,"1S",ts)) * LevelizationFactor(t) - 1*
+                               (sum(t in Tech, LD in Load, s in Seg, fb in FuelBin | t <> "UTIL1" and LD <> "1S") (dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t,LD,ts))  + dvElecFromStor( ts))
 end-do
 
 !************************** Writing to files ************************************
@@ -757,7 +759,7 @@ fclose(F_OUTPUT)
         Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
 
-    Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (sum(ts in TimeStep) Demand(ts)), 10, 4))
+    Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (sum(ts in TimeStep) Year1UtilityEnergy(ts)) , 10, 4))
     Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
@@ -766,7 +768,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges), 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
     Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts), 10, 0))
-    Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(TotalElecProd), 10, 0))
+    Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
 !    Node:=addnode(out_json, Root, "year_one_energy_exported", strfmt(getsol(ExportedElec), 10, 0))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")

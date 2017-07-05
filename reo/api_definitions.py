@@ -301,7 +301,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'pv_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': 1e12,
+                            'max': 1e12, 'default': 1e12,
                             "description": "Maximum state rebate", "units": 'dollars',
                             "tool_tip": 'Maximum state rebate for PV panels in $'},
 
@@ -373,13 +373,13 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': 1e12,
+                              'max': None, 'default': 0,
                               "description": "Federal rate", "units": 'dollars-per-kilowatt',
                               "tool_tip": 'Federal rebate for battery in $/kW'},
 
         'batt_rebate_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': 1e12,
+                            'max': None, 'default': 0,
                             "description": "State rebate", "units": 'dollars-per-kilowatt',
                             "tool_tip": 'State rebate for battery in $/kW'},
 
@@ -397,7 +397,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                                 'min': 0,
-                                'max': 1e12, 'default': None,
+                                'max': None, 'default': 1e12,
                                 "description": "Maximum state rebate", "units": 'dollars',
                                 "tool_tip": 'Maximum state rebate for battery in $'},
 

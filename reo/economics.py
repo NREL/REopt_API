@@ -99,6 +99,7 @@ class Economics:
         self.pv_macrs_schedule_array = list()
         self.batt_macrs_schedule_array = list()
         self.pv_levelization_factor = 1
+        self.pv_levelization_factor_production_incentive = 1
 
         # incentives get applied from the initial cost curve and then to utility onward to federal
         self.regions = ['utility', 'state', 'federal', 'combined']
@@ -160,22 +161,30 @@ class Economics:
         # compute degradation impact
         if self.output_args['pwf_e'] == 0:
             self.pv_levelization_factor = 0
+            self.pv_levelization_factor_production_incentive = 0
         else:
             lf = annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / self.output_args["pwf_e"]
+            lf_prod_incent = annuity_degr(self.pv_pbi_years, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / \
+                             annuity(self.pv_pbi_years, self.rate_escalation_nominal, self.offtaker_discount_rate_nominal)
             self.pv_levelization_factor = round(lf, 5)
+            self.pv_levelization_factor_production_incentive = round(lf_prod_incent, 5)
 
         # Output args that depend on tech
         levelization_factor_array = list()
+        levelization_factor_array_production_incentive = list()
         om_array = list()
         for t in self.techs:
             if t == 'PV' or t == 'PVNM':
                 levelization_factor_array.append(self.pv_levelization_factor)
+                levelization_factor_array_production_incentive.append(self.pv_levelization_factor_production_incentive)
                 om_array.append(self.pv_om)
             else:
                 levelization_factor_array.append(1.0)
+                levelization_factor_array_production_incentive.append(1.0)
                 om_array.append(0)
 
         self.output_args['LevelizationFactor'] = levelization_factor_array
+        self.output_args['LevelizationFactorProdIncent'] = levelization_factor_array_production_incentive
         self.output_args["OMperUnitSize"] = om_array
 
 
@@ -514,6 +523,7 @@ class Economics:
 
             self.output_args['CapCostSlope'] = self.tech_size_bau * [0]
             self.output_args['LevelizationFactor'] = self.tech_size_bau * [1.0]
+            self.output_args['LevelizationFactorProdIncent'] = self.tech_size_bau* [1.0]
             self.output_args['OMperUnitSize'] = self.tech_size_bau * [0]
 
             self.output_args['ProdIncentRate'] = self.bin_size * self.tech_size_bau * [0]
