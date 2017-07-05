@@ -1,5 +1,5 @@
 from tastypie import fields
-from tastypie.authorization import Authorization
+from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -20,6 +20,7 @@ class ResilienceCaseResource(ModelResource):
         queryset = ResilienceCase.objects.all()
         resource_name = 'resilience'
         allowed_methods = ['post']
+        detail_allowed_methods = [] 
         object_class = ResilienceCase
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
