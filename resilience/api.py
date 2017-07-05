@@ -19,7 +19,7 @@ class ResilienceCaseResource(ModelResource):
     class Meta:
         queryset = ResilienceCase.objects.all()
         resource_name = 'resilience'
-        allowed_methods = ['post']
+        allowed_methods = []
         detail_allowed_methods = [] 
         object_class = ResilienceCase
         authorization = ReadOnlyAuthorization()
