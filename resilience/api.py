@@ -21,7 +21,7 @@ class ResilienceCaseResource(ModelResource):
         resource_name = 'resilience'
         allowed_methods = ['post']
         object_class = ResilienceCase
-        authorization = Authorization()
+        authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = ResilienceCaseValidation()

@@ -1,5 +1,5 @@
 from tastypie import fields
-from tastypie.authorization import Authorization
+from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -18,6 +18,8 @@ from api_definitions import *
 from validators import *
 from utilities import is_error
 
+from IPython import embed
+
 def get_current_api():
     return "version 0.0.1"
 
@@ -35,9 +37,10 @@ class RunInputResource(ModelResource):
         setup_logging()
         queryset = RunInput.objects.all()
         resource_name = 'reopt'
-        allowed_methods = ['get', 'post']
+        allowed_methods = ['post']
+        detail_allowed_methods= []
         object_class = RunInput
-        authorization = Authorization()
+        authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = REoptResourceValidation()

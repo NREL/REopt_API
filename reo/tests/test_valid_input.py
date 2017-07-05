@@ -6,7 +6,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
-from IPython import embed
+#from IPython import embed
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -79,29 +79,29 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      l = [i for i in self.required if i not in sp[0]+sp[1] ] + dependent_fields + other_pairs
                      data = self.get_defaults_from_list(l)
                      resp = self.api_client.post(self.url_base, format='json', data=data) 
-                     try:
-                         self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
-                     except:
-                         embed()
+                    # try:
+                     self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
+                    # except:     
+                         #embed()
     def test_required_fields(self):
-        try:
-            for f in self.required:
-                swaps = inputs(full_list=True)[f].get('swap_for')
-                if swaps == None:
-                    swaps = []
-                alt_field = inputs(full_list=True)[f].get('alt_field')
-                if alt_field == None:
-                    alt_field = []
-                else:
-                    alt_field= [alt_field]
-                possible_messages = [{r"reopt":{"Error":{"Missing_Required":[REoptResourceValidation().get_missing_required_message(ii)]}}} for ii in [f]+swaps+alt_field] 
-                fields = [i for i in list(set(self.required) - set([f]+swaps+alt_field)) if i != f]
-                data = self.get_defaults_from_list(fields)
-                resp = self.get_response(data)
+        #try:
+        for f in self.required:
+            swaps = inputs(full_list=True)[f].get('swap_for')
+            if swaps == None:
+                swaps = []
+            alt_field = inputs(full_list=True)[f].get('alt_field')
+            if alt_field == None:
+                alt_field = []
+            else:
+                alt_field= [alt_field]
+            possible_messages = [{r"reopt":{"Error":{"Missing_Required":[REoptResourceValidation().get_missing_required_message(ii)]}}} for ii in [f]+swaps+alt_field] 
+            fields = [i for i in list(set(self.required) - set([f]+swaps+alt_field)) if i != f]
+            data = self.get_defaults_from_list(fields)
+            resp = self.get_response(data)
 
-                self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
-        except:
-            embed()
+            self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
+        #except:
+           # embed()
 
     def test_valid_test_defaults(self):
 
@@ -151,94 +151,94 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
  
 
     def test_valid_data_types(self):
-        try: 
-            for k,v in inputs(full_list=True).items():
-                list = self.base_case_fields
-                if k not in list:
-                    list.append(k)
+        #try: 
+        for k,v in inputs(full_list=True).items():
+            list = self.base_case_fields
+            if k not in list:
+                list.append(k)
 
-                if v.get('depends_on') is not None:
-                    for d in v.get('depends_on'):
-                        if d not in list:
-                            list.append(d)
+            if v.get('depends_on') is not None:
+                for d in v.get('depends_on'):
+                    if d not in list:
+                        list.append(d)
 
-                if v.get('swap_for') is not None:
-                    for s in v.get('swap_for'):
-                        list = [i for i in list if i != s]
+            if v.get('swap_for') is not None:
+                for s in v.get('swap_for'):
+                    list = [i for i in list if i != s]
             
-                data = self.get_defaults_from_list(list)
+            data = self.get_defaults_from_list(list)
 
-                dummy_data = 1
-                if v['type'] in [bool,float,int]:
-                    dummy_data  = u"A"
+            dummy_data = 1
+            if v['type'] in [bool,float,int]:
+                dummy_data  = u"A"
 
-                data[k] = dummy_data
+            data[k] = dummy_data
 
-                resp = self.get_response(data)
-                self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {k: ['Invalid format: Expected %s, got %s'%(v['type'].__name__, type(dummy_data).__name__)]}}})
-        except:
-            embed()
+            resp = self.get_response(data)
+            self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {k: ['Invalid format: Expected %s, got %s'%(v['type'].__name__, type(dummy_data).__name__)]}}})
+       # except:
+        #    embed()
 
     def test_valid_data_ranges(self):
-        try:
-            # Test Bad Data Types
-            checks  = set(['min','max','minpct','maxpct','restrict'])
-            completed_checks = []
+        #try:
+        # Test Bad Data Types
+        checks  = set(['min','max','minpct','maxpct','restrict'])
+        completed_checks = []
 
-            while completed_checks != checks:
-                for k, v in inputs(full_list=True).items():
+        while completed_checks != checks:
+            for k, v in inputs(full_list=True).items():
+       
+                if v.get('min') is not None and v.get('pct') is not True:
+                    dummy_data =  -1e20
+                    data = self.get_defaults_from_list(self.base_case_fields)
+                    data[k] = dummy_data
+                    resp = self.get_response(data)
+                    self.assertEqual(u2s(self.deserialize(resp)), {
+                        r"reopt": {"Error": {k: ['Invalid value: %s: %s is less than the minimum, %s' % (k, dummy_data, v.get('min'))]}}})
+                    completed_checks = set(list(completed_checks) + ['min'])
 
-                    if v.get('min') is not None and v.get('pct') is not True:
-                        dummy_data =  -1e20
-                        data = self.get_defaults_from_list(self.base_case_fields)
-                        data[k] = dummy_data
-                        resp = self.get_response(data)
-                        self.assertEqual(u2s(self.deserialize(resp)), {
-                            r"reopt": {"Error": {k: ['Invalid value: %s: %s is less than the minimum, %s' % (k, dummy_data, v.get('min'))]}}})
-                        completed_checks = set(list(completed_checks) + ['min'])
-
-                    if v.get('max') is not None and v.get('pct') is not True:
-                        dummy_data = 1e20
-                        data = self.get_defaults_from_list(self.base_case_fields)
-                        data[k] = dummy_data    
-                        resp = self.get_response(data)
-                        self.assertEqual(u2s(self.deserialize(resp)), {
+                if v.get('max') is not None and v.get('pct') is not True:
+                    dummy_data = 1e20
+                    data = self.get_defaults_from_list(self.base_case_fields)
+                    data[k] = dummy_data    
+                    resp = self.get_response(data)
+                    self.assertEqual(u2s(self.deserialize(resp)), {
                             r"reopt": {"Error": {k: ['Invalid value: %s: %s is greater than the  maximum, %s' % (k, dummy_data, v.get('max'))]}}})
-                        completed_checks = set(list(completed_checks) + ['max'])
+                    completed_checks = set(list(completed_checks) + ['max'])
 
-                    if v.get('min') is not None and bool(v.get('pct')):
-                        dummy_data =  -1000000
-                        data = self.get_defaults_from_list(self.base_case_fields)
-                        data[k] = dummy_data         
-                        resp = self.get_response(data)
-                        self.assertEqual(u2s(self.deserialize(resp)), {
+                if v.get('min') is not None and bool(v.get('pct')):
+                    dummy_data =  -1000000
+                    data = self.get_defaults_from_list(self.base_case_fields)
+                    data[k] = dummy_data         
+                    resp = self.get_response(data)
+                    self.assertEqual(u2s(self.deserialize(resp)), {
                             r"reopt": {"Error": {
                                 k: ['Invalid value: %s: %s is less than the minimum, %s %%' % (k, dummy_data, v.get('min')*100)]}}})
-                        completed_checks = set(list(completed_checks) + ['minpct'])
+                    completed_checks = set(list(completed_checks) + ['minpct'])
 
-                    if v.get('max') is not None and bool(v.get('pct')):
-                        dummy_data = 1000000
-                        data = self.get_defaults_from_list(self.base_case_fields)
-                        data[k] = dummy_data          
-                        resp = self.get_response(data)
-                        self.assertEqual(u2s(self.deserialize(resp)), {
+                if v.get('max') is not None and bool(v.get('pct')):
+                    dummy_data = 1000000
+                    data = self.get_defaults_from_list(self.base_case_fields)
+                    data[k] = dummy_data          
+                    resp = self.get_response(data)
+                    self.assertEqual(u2s(self.deserialize(resp)), {
                             r"reopt": {"Error": {
                                 k: ['Invalid value: %s: %s is greater than the  maximum, %s %%' % (k, dummy_data, v.get('max')*100)]}}})
-                        completed_checks = set(list(completed_checks) + ['maxpct'])
+                    completed_checks = set(list(completed_checks) + ['maxpct'])
 
-                    if bool(v.get('restrict_to')):
-                        if v.get('type') in [int,float]:
-                            dummy_data = -123
-                        else:
-                            dummy_data  =  "!@#$%^&*UI("
-                        data = self.get_defaults_from_list(self.base_case_fields)
-                        data[k] = dummy_data
-                        resp = self.get_response(data)
-                        self.assertEqual(u2s(self.deserialize(resp)), {
-                            r"reopt": {
-                                "Error": {k: ['Invalid value: %s: %s is not in %s' % (k, dummy_data, v.get('restrict_to'))]}}})
-                        completed_checks = set(list(completed_checks) + ['restrict'])
+                if bool(v.get('restrict_to')):
+                     if v.get('type') in [int,float]:
+                         dummy_data = -123
+                     else:
+                        dummy_data  =  "!@#$%^&*UI("
+                     data = self.get_defaults_from_list(self.base_case_fields)
+                     data[k] = dummy_data
+                     resp = self.get_response(data)
+                     self.assertEqual(u2s(self.deserialize(resp)), {
+                        r"reopt": {
+                            "Error": {k: ['Invalid value: %s: %s is not in %s' % (k, dummy_data, v.get('restrict_to'))]}}})
+                     completed_checks = set(list(completed_checks) + ['restrict'])
 
-                completed_checks = set(checks)
-        except:
-            embed()
+        completed_checks = set(checks)
+        #except:
+        #    embed()
