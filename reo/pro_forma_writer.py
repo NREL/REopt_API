@@ -43,19 +43,19 @@ class ProForma(object):
         self.year_one_bill = results['year_one_demand_cost'] + results['year_one_energy_cost']
         self.year_one_exports = results['year_one_export_benefit']
         self.year_one_bill_bau = results['year_one_demand_cost_bau'] + results['year_one_energy_cost_bau']
-        self.average_yearly_pv_energy_produced = results['average_yearly_pv_energy_produced']
+        self.year_one_energy_produced = results['year_one_energy_produced']
         self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
         # no state taxes for now
-        self.state_tax_owner = 0
         self.fed_tax_owner = self.econ.owner_tax_rate
 
         # Unit test outputs
-        self.state_depr_basis_calc = 0
-        self.state_itc_basis_calc = 0
-        self.fed_depr_basis_calc = 0
-        self.fed_itc_basis_calc = 0
-        self.state_tax_liability = list()
+        self.fed_pv_depr_basis_calc = 0
+        self.fed_pv_itc_basis_calc = 0
+        self.fed_batt_depr_basis_calc = 0
+        self.fed_batt_itc_basis_calc = 0
+        self.pre_tax_cash_flow = list()
+        self.direct_cash_incentives = list()
         self.federal_tax_liability = list()
         self.bill_with_sys = list()
         self.bill_bau = list()
@@ -205,7 +205,7 @@ class ProForma(object):
         ws['B9'] = self.year_one_bill_bau
         ws['B10'] = self.year_one_bill
         ws['B11'] = self.year_one_exports
-        ws['B12'] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
+        ws['B12'] = self.year_one_energy_produced
 
         # System Costs
         ws['B15'] = self.total_capital_costs
@@ -314,7 +314,7 @@ class ProForma(object):
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
-        annual_energy[1] = self.average_yearly_pv_energy_produced / self.econ.pv_levelization_factor
+        annual_energy[1] = self.year_one_energy_produced
         bill_with_system[1] = self.year_one_bill
         bill_without_system[1] = self.year_one_bill_bau
         exports_with_system[1] = self.year_one_exports
@@ -331,7 +331,7 @@ class ProForma(object):
             if year > 1:
 
                 # Annual energy
-                annual_energy[year] = annual_energy[year - 1] * self.econ.pv_degradation_rate
+                annual_energy[year] = annual_energy[year - 1] * (1 - self.econ.pv_degradation_rate)
 
                 # Bill savings
                 bill_without_system[year] = bill_without_system[year - 1] * inflation_modifier
@@ -362,6 +362,7 @@ class ProForma(object):
 
             # Direct cash incentives
             total_production_based_incentives[year] = self.pbi_calculate('PV', year, annual_energy[year])
+            total_cash_incentives[year] += total_production_based_incentives[year]
 
             # Federal income tax
             if year > 1 and self.incentives['PV']['pbi_combined_tax_fed']:
@@ -395,7 +396,7 @@ class ProForma(object):
 
             # After tax calculation
             after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
-                                           total_production_based_incentives[year] + \
+                                           total_cash_incentives[year] + \
                                            federal_tax_liability[year]
 
             after_tax_value_of_energy[year] = value_of_savings[year] * (1 - self.fed_tax_owner)
@@ -405,8 +406,12 @@ class ProForma(object):
             net_annual_costs_with_system[year] = after_tax_annual_costs[year] - (bill_with_system[year] + exports_with_system[year]) * (1 - self.fed_tax_owner)
 
         # Additional Unit test outputs
-        #self.fed_depr_basis_calc = federal_depreciation_basis
-        #self.fed_itc_basis_calc = federal_itc_basis
+        self.fed_pv_depr_basis_calc = self.incentives['PV']['federal_depreciation_basis']
+        self.fed_pv_itc_basis_calc = self.incentives['PV']['federal_itc_basis']
+        self.fed_batt_depr_basis_calc = self.incentives['BATT']['federal_depreciation_basis']
+        self.fed_batt_itc_basis_calc = self.incentives['BATT']['federal_itc_basis']
+        self.pre_tax_cash_flow = pre_tax_cash_flow
+        self.direct_cash_incentives = total_cash_incentives
         self.federal_tax_liability = federal_tax_liability
         self.bill_with_sys = bill_with_system
         self.exports_with_sys = exports_with_system

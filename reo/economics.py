@@ -21,7 +21,6 @@
 # ==============================================================================
 import os
 from log_levels import log
-import logging
 from api_definitions import *
 from utilities import write_single_variable
 
@@ -542,5 +541,3 @@ class Economics:
                 write_single_variable(self.out_name, v, k, 'a')
             except:
                 log('ERROR', 'Error writing economics for ' + key)
-
-

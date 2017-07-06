@@ -1,13 +1,10 @@
 import numpy as np
-import datetime, time, threading, signal
-from subprocess import Popen, PIPE
+import threading
+from subprocess import Popen
 from shlex import split
-import psutil
 from tastypie.exceptions import ImmediateHttpResponse
-from exceptions import SubprocessTimeoutError
 
 from log_levels import log
-import logging
 import os
 
 def present_worth_factor(years, escalation_rate, discount_rate):
