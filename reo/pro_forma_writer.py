@@ -233,11 +233,11 @@ class ProForma(object):
         ws['C49'] = self.econ.pv_itc_state_max
         ws['B50'] = self.econ.pv_itc_utility * 100
         ws['C50'] = self.econ.pv_itc_utility_max
-        ws['B52'] = self.econ.pv_rebate_federal
+        ws['B52'] = self.econ.pv_rebate_federal * 0.001
         ws['C52'] = self.econ.pv_rebate_federal_max
-        ws['B53'] = self.econ.pv_rebate_state
+        ws['B53'] = self.econ.pv_rebate_state * 0.001
         ws['C53'] = self.econ.pv_rebate_state_max
-        ws['B54'] = self.econ.pv_rebate_utility
+        ws['B54'] = self.econ.pv_rebate_utility * 0.001
         ws['C54'] = self.econ.pv_rebate_utility_max
         ws['B56'] = self.econ.pv_pbi
         ws['C56'] = self.econ.pv_pbi_max
@@ -305,9 +305,9 @@ class ProForma(object):
         federal_itc = self.federal_itc_total()
 
         # year 0 initializations
-        debt_amount[0] = self.total_capital_costs
-        pre_tax_cash_flow[0] = -debt_amount[0]
         total_cash_incentives[0] = sum([self.total_cash_incentives(tech) for tech in self.techs])
+        debt_amount[0] = self.total_capital_costs - total_cash_incentives[0]
+        pre_tax_cash_flow[0] = -debt_amount[0]
         after_tax_annual_costs[0] = total_cash_incentives[0] - self.total_capital_costs
         after_tax_cash_flow[0] = after_tax_annual_costs[0]
         net_annual_costs_with_system[0] = after_tax_annual_costs[0]
@@ -354,8 +354,7 @@ class ProForma(object):
 
             # Tax deductible operating expenses
             for tech in self.techs:
-                if self.incentives[tech]['macrs_schedule'] != 0:
-                    total_deductible_expenses[year] += tech_operating_expenses[tech]
+                total_deductible_expenses[year] += tech_operating_expenses[tech]
 
             # Pre-tax cash flow
             pre_tax_cash_flow[year] = -(total_operating_expenses[year])
@@ -365,8 +364,8 @@ class ProForma(object):
             total_cash_incentives[year] += total_production_based_incentives[year]
 
             # Federal income tax
-            if year > 1 and self.incentives['PV']['pbi_combined_tax_fed']:
-                federal_taxable_income_before_deductions[year] = total_production_based_incentives[year]
+            if self.incentives['PV']['pbi_combined_tax_fed']:
+                federal_taxable_income_before_deductions[year] = total_cash_incentives[year]
 
             federal_itc_to_apply = 0
             if year == 1:
