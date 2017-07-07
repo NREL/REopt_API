@@ -166,8 +166,10 @@ class Economics:
             self.pv_levelization_factor_production_incentive = 0
         else:
             lf = annuity_degr(self.analysis_period, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / self.output_args["pwf_e"]
-            lf_prod_incent = annuity_degr(self.pv_pbi_years, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / \
-                             annuity(self.pv_pbi_years, self.rate_escalation_nominal, self.offtaker_discount_rate_nominal)
+            lf_prod_incent = 1
+            if self.pv_pbi > 0 and self.pv_pbi_years > 0:
+                lf_prod_incent = annuity_degr(self.pv_pbi_years, self.rate_escalation, self.offtaker_discount_rate, -self.pv_degradation_rate) / \
+                                 annuity(self.pv_pbi_years, self.rate_escalation_nominal, self.offtaker_discount_rate_nominal)
             self.pv_levelization_factor = round(lf, 5)
             self.pv_levelization_factor_production_incentive = round(lf_prod_incent, 5)
 

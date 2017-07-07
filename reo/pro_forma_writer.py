@@ -316,33 +316,28 @@ class ProForma(object):
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
+        nominal_escalation_modifier = 1 + self.econ.rate_escalation_nominal
+        inflation_modifier = 1 + self.econ.rate_inflation
         annual_energy[1] = self.year_one_energy_produced
-        bill_with_system[1] = self.year_one_bill
-        bill_without_system[1] = self.year_one_bill_bau
-        exports_with_system[1] = self.year_one_exports
-        value_of_savings[1] = self.year_one_savings - self.year_one_exports
-        o_and_m_capacity_cost[1] = self.econ.pv_om * self.pv_kw
-        inflation_modifier = 1 + self.econ.rate_inflation + self.econ.rate_escalation
         federal_taxable_income_before_deductions[1] = sum([self.federal_taxable_income_before_deductions(tech) for tech in self.techs])
 
         for year in range(1, n_cols):
 
-            inflation_modifier_n = inflation_modifier ** (year-1)
+            inflation_modifier_n = inflation_modifier ** year
+            nominal_escalation_modifier_n = nominal_escalation_modifier ** year
             degradation_modifier = 1 - self.econ.pv_degradation_rate
 
             if year > 1:
-
-                # Annual energy
                 annual_energy[year] = annual_energy[year - 1] * (1 - self.econ.pv_degradation_rate)
 
-                # Bill savings
-                bill_without_system[year] = bill_without_system[year - 1] * inflation_modifier
-                bill_with_system[year] = bill_with_system[year - 1] * inflation_modifier
-                exports_with_system[year] = exports_with_system[year - 1] * inflation_modifier * degradation_modifier
-                value_of_savings[year] = bill_without_system[year] - (bill_with_system[year] + exports_with_system[year])
+            # Bill savings
+            bill_without_system[year] = self.year_one_bill_bau * nominal_escalation_modifier_n
+            bill_with_system[year] = self.year_one_bill * nominal_escalation_modifier_n
+            exports_with_system[year] = self.year_one_exports * nominal_escalation_modifier_n * degradation_modifier
+            value_of_savings[year] = bill_without_system[year] - (bill_with_system[year] + exports_with_system[year])
 
-                # Operating Expenses
-                o_and_m_capacity_cost[year] = o_and_m_capacity_cost[year - 1] * inflation_modifier
+            # Operating Expenses
+            o_and_m_capacity_cost[year] = self.econ.pv_om * self.pv_kw * inflation_modifier_n
 
             if self.econ.batt_replacement_year_kw == year:
                 batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
@@ -367,7 +362,7 @@ class ProForma(object):
 
             # Federal income tax
             if self.incentives['PV']['pbi_combined_tax_fed']:
-                federal_taxable_income_before_deductions[year] = total_cash_incentives[year]
+                federal_taxable_income_before_deductions[year] += total_cash_incentives[year]
 
             federal_itc_to_apply = 0
             if year == 1:

@@ -82,8 +82,8 @@ class TestProForma(unittest.TestCase):
             cash_flow.update_template()
             cash_flow.compute_cashflow()
 
-            self.assertListEqual(round_list(cash_flow.bill_bau), round_list(self.cf.expected_bill_no_system))
-            self.assertListEqual(round_list(cash_flow.bill_with_sys), round_list(self.cf.expected_bill_with_system))
+            self.assertListAlmostEqual(round_list(cash_flow.bill_bau), round_list(self.cf.expected_bill_no_system), self.delta)
+            self.assertListAlmostEqual(round_list(cash_flow.bill_with_sys), round_list(self.cf.expected_bill_with_system), self.delta)
             self.assertListAlmostEqual(round_list(cash_flow.total_operating_expenses), round_list(self.cf.expected_total_operating_expenses), self.delta)
             self.assertEqual(round(cash_flow.total_capital_costs, 0), round(self.cf.expected_cap_costs), msg='CapCosts of {0} does not match expected result of {1}'.format(int(cash_flow.total_capital_costs), self.cf.expected_cap_costs))
             self.assertEqual(round(cash_flow.fed_pv_itc_basis_calc, 0), round(self.cf.expected_fed_pv_itc_basis))
