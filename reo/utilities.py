@@ -1,13 +1,10 @@
 import numpy as np
-import datetime, time, threading, signal
-from subprocess import Popen, PIPE
+import threading
+from subprocess import Popen
 from shlex import split
-import psutil
 from tastypie.exceptions import ImmediateHttpResponse
-from exceptions import SubprocessTimeoutError
 
 from log_levels import log
-import logging
 import os
 
 def present_worth_factor(years, escalation_rate, discount_rate):
@@ -40,6 +37,14 @@ def write_single_variable(path, var, dat_var, mode='w'):
     f.close()
 
 
+def is_error(output_dictionary):
+    error = False
+    [d.lower() for d in output_dictionary]
+    if 'error' in output_dictionary:
+        error = output_dictionary
+    return error
+
+
 class Command(object):
 
     def __init__(self, cmd):
@@ -47,6 +52,9 @@ class Command(object):
         self.process = None
 
     def run(self, timeout):
+
+        error = False
+
         def target():
             self.process = Popen(split(self.cmd))
             log("INFO", "XPRESS" + str(self.process.communicate()))
@@ -64,5 +72,5 @@ class Command(object):
             log("ERROR", "XPRESS Thread Timeout")
             self.process.terminate()
             thread.join()
-            return "Process Exceeeded Timeout: %s seconds" % (timeout)
-        return True
+            error = "REopt optimization exceeded timeout: %s seconds, please email reopt@nrel.gov for support" % (timeout)
+        return error

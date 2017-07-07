@@ -191,7 +191,7 @@ def check_response(key, case, r):
 def read_response(key, r):
   try:
       if 'error' in r:
-        return "Error"
+        return 'error'
 
       result = json.loads(r)
 

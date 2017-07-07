@@ -76,7 +76,7 @@ Instructions will assume a Windows based install where you have administrator pr
   cd src\reopt_api
   python manage.py runserver
 ```
-<h4> To deploy the API using CherryPy and setuptools <h4>
+<h4> To deploy the API using CherryPy and setuptools </h4>
    
 The reopt_api is staged on iac-129986 as a standalone service (CherryPyService), which automatically starts when the server boots. This is a different process than using `runserver`, which starts the API on a process associated with the command prompt and uses the local python code repository rather than the deployed python package. The `runserver` method is useful for development and debugging, but is not a solution for serving a finished product. 
 
@@ -122,3 +122,20 @@ The process (modified from: https://baxeico.wordpress.com/2013/10/13/django-on-w
    - There are logs for the CherryPy Service and for the API available in:
      `C:\Python27\Lib\site-packages\reopt_api-1.0-py2.7.egg\reopt_api`
    - The DAT paths in the Xpress file have to be relative to where the installable package runs from
+
+
+<h4>Running tests with `python manage.py test`</h4>
+
+In order to run all test functions, one must have a postgres server installed and running locally.
+
+Once the postgres server is running, login to the local host via the command line:
+
+`psql -h localhost`
+
+And create a `reopt` user with the password `reopt`:
+
+`CREATE USER reopt WITH PASSWORD 'reopt';`
+
+Then add permission to create databases:
+
+`ALTER USER reopt CREATEDB;`

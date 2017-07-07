@@ -6,6 +6,7 @@ __pycache__/
 keys.py
 .idea
 Xpress/
+!Xpress/REopt_API.mos
 
 
 # C extensions

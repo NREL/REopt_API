@@ -3,3 +3,6 @@ server "reopt-dev-api1.nrel.gov", :user => "deploy", :roles => ["web", "app", "d
 set :app_env, "development"
 set :django_settings_module, "reopt_api.dev_settings"
 set :base_domain, "reopt-dev-api1.nrel.gov"
+
+# TODO: Remove this if we get more flexible branched deployments setup.
+set :branch, "develop"

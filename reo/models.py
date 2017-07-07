@@ -5,6 +5,7 @@ import json
 import uuid
 from picklefield.fields import PickledObjectField
 from library import *
+from utilities import is_error
 
 from resilience.models import ResilienceCase
 from resilience.api_definitions import inputs as resilience_inputs
@@ -161,17 +162,15 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
-        if 'Error' in output_dictionary.keys():
-            return output_dictionary
-
-        if "ERROR" in output_dictionary.keys():
-            return output_dictionary
+        error = is_error(output_dictionary)
+        if error:
+            return error
 
         # Add Resilience Stats to Output Dictionary
         output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)
-
-        if "Error" in output_dictionary.keys():
-            return output_dictionary
+        error = is_error(output_dictionary)
+        if error:
+            return error
 
         # API level outputs
         output_dictionary['api_version'] = self.api_version

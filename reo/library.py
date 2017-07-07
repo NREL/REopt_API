@@ -17,7 +17,7 @@ from results import Results
 from api_definitions import *
 
 from urdb_parse import *
-from utilities import Command, check_directory_created, write_single_variable
+from utilities import Command, check_directory_created, write_single_variable, is_error
 
 
 def alphanum(s):
@@ -208,6 +208,8 @@ class DatLibrary:
 
     def run(self):
 
+        output_dict = dict()
+
         self.create_simple_bau()
         self.create_constants()
         self.create_storage()
@@ -216,7 +218,6 @@ class DatLibrary:
         self.create_loads()
         self.create_nem()
         self.create_utility()
-
 
         solar_data = self.create_Solar()
         self.pv_kw_ac_hourly = solar_data.ac_hourly
@@ -229,24 +230,27 @@ class DatLibrary:
         log("INFO", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
 
-        log("INFO", "Running Command")
-        run1 = command.run(self.timeout)
-        if not run1 == True:
-            return {"ERROR":run1}
-        log("INFO", "Running BAU")
 
-        run2 = command_bau.run(self.timeout)
-        if not run2 == True:
-            return {"ERROR":run2}
+        log("INFO", "Running Command")
+        error = command.run(self.timeout)
+        if error:
+            output_dict['error'] = error
+            return output_dict
+
+        log("INFO", "Running BAU")
+        error = command_bau.run(self.timeout)
+        if error:
+            output_dict['error'] = error
+            return output_dict
 
         output_dict = self.parse_run_outputs()
 
         self.cleanup()
 
-        if 'Error' in output_dict.keys():
-            return output_dict       
-        ins_and_outs_dict = self._add_inputs(output_dict)
+        if is_error(output_dict):
+            return output_dict
 
+        ins_and_outs_dict = self._add_inputs(output_dict)
         return ins_and_outs_dict
 
 
@@ -325,11 +329,9 @@ class DatLibrary:
    # BAU files
     def create_simple_bau(self):
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
-        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
 
         shutil.copyfile(os.path.join(self.folder_various, 'constant_bau.dat'), self.file_constant_bau)
-        shutil.copyfile(os.path.join(self.folder_various, 'storage_bau.dat'), self.file_storage_bau)
         shutil.copyfile(os.path.join(self.folder_various, 'maxsizes_bau.dat'), self.file_max_size_bau)
 
     # Constant file
@@ -367,8 +369,51 @@ class DatLibrary:
 
     # storage
     def create_storage(self):
+        """
+        writes storage_[run_input_id].dat, which contains:
+            StorageMinChargePcent
+            EtaStorIn  (same as roundtrip efficiency)
+            EtaStorOut (currently not used in REopt)
+            BattLevelCoef
+            InitSOC
+        NOTE: EtaStorIn and EtaStorOut are array(Tech,Load)
+        """
+        Tech = ['PV', 'PVNM', 'UTIL1']  # copied from create_constants, needs to adjusted for future techs
+        Load = ['1R', '1W', '1X', '1S']
+
         self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
-        shutil.copyfile(os.path.join(self.folder_various, 'storage.dat'), self.file_storage)
+
+        roundtrip_efficiency = self.batt_efficiency * self.batt_inverter_efficiency * self.batt_rectifier_efficiency
+
+        etaStorIn = list()
+        etaStorOut = list()
+        for t in Tech:
+            for ld in Load:
+                etaStorIn.append(roundtrip_efficiency if ld is '1S' else 1)
+                etaStorOut.append(roundtrip_efficiency if ld is '1S' else 1)
+
+        write_single_variable(self.file_storage, self.batt_soc_min, 'StorageMinChargePcent')
+        write_single_variable(self.file_storage, etaStorIn, 'EtaStorIn', mode='a')
+        write_single_variable(self.file_storage, etaStorOut, 'EtaStorOut', mode='a')
+        write_single_variable(self.file_storage, [-1, 0], 'BattLevelCoef', mode='a')
+        write_single_variable(self.file_storage, self.batt_soc_init, 'InitSOC', mode='a')
+
+        # NOTE: All bau dat files except maxsizes can be eliminated by just placing zeros in maxsizes_bau.dat
+        # (including all utility bau files)
+        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
+        Tech_bau = ['UTIL1']
+        etaStorIn_bau = list()
+        etaStorOut_bau = list()
+        for t in Tech_bau:
+            for ld in Load:
+                etaStorIn_bau.append(roundtrip_efficiency if ld is '1S' else 1)
+                etaStorOut_bau.append(roundtrip_efficiency if ld is '1S' else 1)
+
+        write_single_variable(self.file_storage_bau, self.batt_soc_min, 'StorageMinChargePcent')
+        write_single_variable(self.file_storage_bau, etaStorIn_bau, 'EtaStorIn', mode='a')
+        write_single_variable(self.file_storage_bau, etaStorOut_bau, 'EtaStorOut', mode='a')
+        write_single_variable(self.file_storage_bau, [-1, 0], 'BattLevelCoef', mode='a')
+        write_single_variable(self.file_storage_bau, self.batt_soc_init, 'InitSOC', mode='a')
 
     # DAT2 - Economics
     def create_economics(self):
