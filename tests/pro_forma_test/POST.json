@@ -23,6 +23,7 @@
   "pv_itc_federal": 0.3,
   "pv_itc_federal_max": 1000000000000,
   "pv_macrs_schedule":5,
+  "pv_macrs_bonus_fraction":0.5,
   "pv_pbi": 1,
   "pv_pbi_max": 1000000000,
   "pv_pbi_system_max": 1000000000,

@@ -91,17 +91,17 @@ class TestProForma(unittest.TestCase):
             self.assertEqual(round(cash_flow.fed_pv_depr_basis_calc, 0), round(self.cf.expected_fed_pv_depreciation_basis))
             self.assertEqual(round(cash_flow.fed_batt_depr_basis_calc, 0),round(self.cf.expected_fed_batt_depreciation_basis))
             self.assertListEqual(round_list(cash_flow.pre_tax_cash_flow), round_list(self.cf.expected_pre_tax_cash_flow))
-            self.assertListEqual(round_list(cash_flow.direct_cash_incentives), round_list(self.cf.expected_direct_cash_incentives))
+            self.assertListAlmostEqual(round_list(cash_flow.direct_cash_incentives), round_list(self.cf.expected_direct_cash_incentives), self.delta)
             self.assertListEqual(round_list(cash_flow.federal_tax_liability), round_list(self.cf.expected_federal_tax_liability))
-            self.assertListEqual(round_list(cash_flow.after_tax_annual_costs), round_list(self.cf.expected_after_tax_annual_costs))
+            self.assertListAlmostEqual(round_list(cash_flow.after_tax_annual_costs), round_list(self.cf.expected_after_tax_annual_costs), self.delta)
             self.assertListEqual(round_list(cash_flow.after_tax_value), round_list(self.cf.expected_after_tax_value))
             self.assertListEqual(round_list(cash_flow.after_tax_cash_flow), round_list(self.cf.expected_after_tax_cash_flow))
             self.assertListEqual(round_list(cash_flow.net_annual_cost_without_sys), round_list(self.cf.expected_net_annual_cost_without_sys))
-            self.assertListEqual(round_list(cash_flow.net_annual_cost_with_sys), round_list(self.cf.expected_net_annual_cost_with_sys))
+            self.assertListAlmostEqual(round_list(cash_flow.net_annual_cost_with_sys), round_list(self.cf.expected_net_annual_cost_with_sys), self.delta)
 
             self.assertEqual(round(cash_flow.lcc_bau, 0), round(self.cf.expected_lcc_bau), msg='LCC bau of {0} does not match expected result of {1}'.format(int(cash_flow.lcc_bau), self.cf.expected_lcc_bau))
-            self.assertEqual(round(cash_flow.lcc, 0), round(self.cf.expected_lcc), msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.lcc), self.cf.expected_lcc))
-            self.assertAlmostEqual(round(cash_flow.npv, 0), round(self.cf.expected_npv), delta=2, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.npv), self.cf.expected_npv))
+            self.assertAlmostEqual(round(cash_flow.lcc, 0), round(self.cf.expected_lcc), delta=self.delta, msg='LCC of {0} does not match expected result of {1}'.format(int(cash_flow.lcc), self.cf.expected_lcc))
+            self.assertAlmostEqual(round(cash_flow.npv, 0), round(self.cf.expected_npv), delta=self.delta, msg='NPV of {0} does not match expected result of {1}'.format(int(cash_flow.npv), self.cf.expected_npv))
             self.assertEqual(round(cash_flow.irr, 3), round(self.cf.expected_irr, 3), msg='IRR of {0} does not match expected result of {1}'.format(round(cash_flow.irr, 3), round(self.cf.expected_irr, 3)))
 
     def assertListAlmostEqual(self, list1, list2, delta):

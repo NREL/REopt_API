@@ -87,6 +87,7 @@ class ProForma(object):
                 # MACRS
                 self.incentives[t]['macrs_schedule'] = self.econ.pv_macrs_schedule
                 self.incentives[t]['bonus_fraction'] = self.econ.pv_macrs_bonus_fraction
+                self.incentives[t]['macrs_itc_reduction'] = self.econ.pv_macrs_itc_reduction
 
                 # tax credits
                 self.incentives[t]['itc_fed_percent'] = self.econ.pv_itc_federal
@@ -119,6 +120,7 @@ class ProForma(object):
                 # MACRS
                 self.incentives[t]['macrs_schedule'] = self.econ.batt_macrs_schedule
                 self.incentives[t]['bonus_fraction'] = self.econ.batt_macrs_bonus_fraction
+                self.incentives[t]['macrs_itc_reduction'] = self.econ.batt_macrs_itc_reduction
 
                 # tax credits
                 self.incentives[t]['itc_fed_percent'] = self.econ.batt_itc_federal
@@ -371,24 +373,7 @@ class ProForma(object):
             if year == 1:
                 federal_itc_to_apply = federal_itc
 
-            federal_depreciation_basis = 0
-            for tech in self.techs:
-                bonus_fraction = 0
-                macrs_schedule = self.incentives[tech]['macrs_schedule']
-
-                macrs_schedule_array = []
-                if macrs_schedule == 5:
-                    macrs_schedule_array = self.econ.macrs_five_year
-                elif macrs_schedule == 7:
-                    macrs_schedule_array = self.econ.macrs_seven_year
-
-                depreciation_basis = self.incentives[tech]['federal_depreciation_basis']
-                if year == 1:
-                    bonus_fraction = self.incentives[tech]['bonus_fraction']
-                if year <= len(macrs_schedule_array) and macrs_schedule > 0:
-                    federal_depreciation_amount[year] += depreciation_basis * (macrs_schedule_array[year - 1] + bonus_fraction)
-                federal_depreciation_basis += depreciation_basis
-
+            federal_depreciation_amount[year] = self.federal_depreciation_amount_total(year)
             federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year]
             federal_income_tax[year] = (federal_taxable_income_before_deductions[year]-federal_total_deductions[year]) * self.fed_tax_owner
             federal_tax_liability[year] = -federal_income_tax[year] + federal_itc_to_apply
@@ -482,12 +467,33 @@ class ProForma(object):
         itc_federal = 0
 
         if self.incentives[tech]['itc_fed_percent_deprbas_fed']:
-            itc_federal = self.econ.macrs_itc_reduction * federal_itc
+            itc_federal = self.incentives[tech]['macrs_itc_reduction'] * federal_itc
 
         federal_itc_basis = self.federal_itc_basis(tech)
         basis = federal_itc_basis - itc_federal
 
         return basis
+
+    def federal_depreciation_amount_total(self, year):
+
+        depreciation_amount = 0
+        for tech in self.techs:
+            bonus_fraction = 0
+            macrs_schedule = self.incentives[tech]['macrs_schedule']
+
+            macrs_schedule_array = []
+            if macrs_schedule == 5:
+                macrs_schedule_array = self.econ.macrs_five_year
+            elif macrs_schedule == 7:
+                macrs_schedule_array = self.econ.macrs_seven_year
+
+            depreciation_basis = self.incentives[tech]['federal_depreciation_basis']
+            if year == 1:
+                bonus_fraction = self.incentives[tech]['bonus_fraction']
+            if year <= len(macrs_schedule_array) and macrs_schedule > 0:
+                depreciation_amount += depreciation_basis * (macrs_schedule_array[year - 1] + bonus_fraction)
+
+        return depreciation_amount
 
     def federal_itc_basis(self, tech):
 

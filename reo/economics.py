@@ -114,7 +114,8 @@ class Economics:
         self.cap_cost_points = 2
 
         # tmp incentives
-        self.macrs_itc_reduction = 0.5
+        self.batt_macrs_itc_reduction = 0.5
+        self.pv_macrs_itc_reduction = 0.5
 
         # run economics
         self.setup_macrs()
@@ -132,6 +133,7 @@ class Economics:
             self.pv_macrs_schedule_array = self.macrs_seven_year
         elif self.pv_macrs_schedule == 0:
             self.pv_macrs_bonus_fraction = 0
+            self.pv_macrs_itc_reduction = 0
 
         self.batt_macrs_schedule_array = list()
         if self.batt_macrs_schedule == 5:
@@ -140,6 +142,7 @@ class Economics:
             self.batt_macrs_schedule_array = self.macrs_seven_year
         elif self.batt_macrs_schedule == 0:
             self.batt_macrs_bonus_fraction = 0
+            self.batt_macrs_itc_reduction = 0
 
     def setup_financial_parameters(self):
 
@@ -225,7 +228,7 @@ class Economics:
                                                                                  self.batt_itc_federal,
                                                                                  self.batt_macrs_schedule_array,
                                                                                  self.batt_macrs_bonus_fraction,
-                                                                                 self.macrs_itc_reduction)
+                                                                                 self.batt_macrs_itc_reduction)
         self.output_args["StorageCostPerKWH"] = self.setup_capital_cost_incentive(self.batt_cost_kwh,
                                                                                   self.batt_replacement_cost_kwh,
                                                                                   self.batt_replacement_year_kwh,
@@ -234,7 +237,7 @@ class Economics:
                                                                                   self.batt_itc_federal,
                                                                                   self.batt_macrs_schedule_array,
                                                                                   self.batt_macrs_bonus_fraction,
-                                                                                  self.macrs_itc_reduction)
+                                                                                  self.batt_macrs_itc_reduction)
 
     def setup_pv_incentives(self):
 
@@ -412,7 +415,7 @@ class Economics:
                                                               self.pv_itc_federal,
                                                               self.pv_macrs_schedule_array,
                                                               self.pv_macrs_bonus_fraction,
-                                                              self.macrs_itc_reduction)
+                                                              self.pv_macrs_itc_reduction)
             updated_cap_cost_slope.append(updated_slope)
 
         for p in range(1, self.cap_cost_points):
@@ -472,16 +475,32 @@ class Economics:
             (iii) battery replacement cost: one time capex in user defined year discounted back to t=0 with r_owner
         '''
 
-        basis = tech_cost * (1 - macrs_itc_reduction * itc)
-        bonus = basis * macrs_bonus_fraction * tax_rate
-        macrs_base = basis * (1 - macrs_bonus_fraction)
+        # Assume that cash incentives do not reduce ITC basis or depreciation basis ($/kW)
+        depreciable_cash_incentives = 0
 
-        tax_shield = 0
-        for idx, r in enumerate(macrs_schedule):  # tax shields are discounted to year zero
-            tax_shield += r * macrs_base * tax_rate / (1 + discount_rate) ** (idx + 1)
+        # Amount of money the ITC can be applied against ($/kW)
+        itc_basis = tech_cost - depreciable_cash_incentives
 
-        cap_cost_slope = tech_cost - tax_shield - itc * tech_cost / (1 + discount_rate) - bonus / (1 + discount_rate)
+        # Assume the ITC reduces the depreciable basis ($/kW)
+        macrs_basis = itc_basis * (1 - (1 - macrs_itc_reduction) * itc)
+
+        # Compute depreciation amount before tax.  ($/kW)
+        depreciation_amount = 0
+        for idx, r in enumerate(macrs_schedule):
+            rate = r
+            if idx == 0:
+                rate += macrs_bonus_fraction
+            depreciation_amount += (rate * macrs_basis) / (1 + discount_rate) ** (idx + 1)
+
+        # Compute the effective tax savings ($/kW)
+        tax_savings = depreciation_amount * tax_rate
+
+        # Adjust cost curve to account for itc and depreciation savings ($/kW)
+        cap_cost_slope = tech_cost * (1 - itc) - tax_savings
+
+        # Factor in any out year replacements
         cap_cost_slope += replacement_cost / (1 + discount_rate) ** replacement_year
+
         return round(cap_cost_slope, 4)
 
     def setup_production_incentive(self, tech, rate_escalation, rate_discount, pbi, pbi_max, pbi_system_max, pbi_years):
