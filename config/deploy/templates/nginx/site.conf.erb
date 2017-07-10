@@ -89,13 +89,6 @@ server {
   access_log <%= current_path %>/log/access.log combined;
   error_log <%= current_path %>/log/error.log;
 
-  <% if(fetch(:app_env) != "development") %>
-    # Friendly error pages
-    error_page 404 /404.html;
-    error_page 500 502 503 504 /500.html;
-    proxy_intercept_errors on;
-  <% end %>
-
   # gzip configuration
   gzip on;
   gzip_comp_level 2;
