@@ -125,7 +125,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                   "tool_tip": 'The maximum power that can be transmitted to the grid at any one time, in kilowatts. Interconnection limits are typically established by state policy.'},
 
         'net_metering_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                               'max': 1e9, 'default': 1e9,
+                               'max': 1e9, 'default': 0,
                                "description": "System Size Limitation for Net Metering Purposes", "units": 'kilowatt',
                                "tool_tip": 'The net metering limit determines the maximum size of total systems that can be installed under a net metering agreement with the utility. Projects sized up to the net meting limit will receive credit for any exported energy at the electric retail rate. Information on state net metering limits is available at www.dsireusa.org. This value is not required.'},
 
