@@ -56,7 +56,7 @@ server {
     ssl_certificate_key /etc/httpd/ssl/<%= host.hostname %>.key;
   <% end %>
 
-  access_log <%= current_path %>/log/access.log combined;
+  access_log <%= current_path %>/log/access.log combined_extended;
   error_log <%= current_path %>/log/error.log;
 
   # Default proxy settings.
@@ -86,7 +86,7 @@ server {
 
   root <%= current_path %>/static;
 
-  access_log <%= current_path %>/log/access.log combined;
+  access_log <%= current_path %>/log/access.log combined_extended;
   error_log <%= current_path %>/log/error.log;
 
   # gzip configuration
