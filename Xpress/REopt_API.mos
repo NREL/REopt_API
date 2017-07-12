@@ -542,8 +542,8 @@ end-do
 !!4313 TS.  Adding elec penalty to annual site load
 !!41513 TS.  Excluding Grid.
 
-   (sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (LD="1R" or LD="1W") and TechIsGrid(t) = 0)
- 		dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling) <=  AnnualElecLoad
+   sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (LD="1R" or LD="1W" or LD="1S") and TechIsGrid(t) = 0)
+ 		(dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling)  <=  AnnualElecLoad
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!  End Electric Net Zero Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
