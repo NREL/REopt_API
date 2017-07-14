@@ -355,10 +355,6 @@ class RunOutput(models.Model):
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
-    year_one_demand_cost = models.FloatField(null=True, blank=True)
-    year_one_demand_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_energy_cost = models.FloatField(null=True, blank=True)
-    year_one_energy_cost_bau = models.FloatField(null=True, blank=True)
     year_one_export_benefit = models.FloatField(null=True, blank=True)
     year_one_energy_produced = models.FloatField(null=True, blank=True)
 
