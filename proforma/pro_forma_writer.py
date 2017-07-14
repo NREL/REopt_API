@@ -11,12 +11,14 @@ from log_levels import log
 class ProFormaWriter(object):
 
     file_template = "REoptCashFlowTemplate.xlsm"
-    file_output = "ProForma.xlsm"
+    file_name = "ProForma.xlsm"
 
     def __init__(self, uuid, **kwargs):
 
         # paths
-        self.file_output = os.path.join('static', 'files', uuid, self.file_output)
+        path_output = os.path.join('static', 'files', uuid)
+        os.mkdir(path_output)
+        self.file_path = os.path.join(path_output, self.file_name)
 
         # data
         self.econ = Economics(**kwargs)
@@ -270,7 +272,7 @@ class ProFormaWriter(object):
             ws['C75'] = self.econ.batt_macrs_bonus_fraction
 
         # Save
-        wb.save(self.file_output)
+        wb.save(self.file_path)
 
     def compute_cashflow(self):
 
