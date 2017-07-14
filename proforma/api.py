@@ -62,6 +62,9 @@ class ProFormaResource(ModelResource):
         ro_id = bundle.data.get('run_output_id')
         ro = RunOutput.objects.get(pk=ro_id)
         
+        from IPython import embed
+        embed()
+
         pf = ProForma().fromRunOutput(ro)
         pf.generate_spreadsheet()
 

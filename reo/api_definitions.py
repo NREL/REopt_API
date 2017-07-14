@@ -675,6 +675,18 @@ def outputs():
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Result - total export benefit", "units": 'hours'},
 
+            'year_one_bill':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill", "units": 'hours'},
+
+            'year_one_bill_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill bau", "units": 'hours'},
+
+            'pv_degradation_rate':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "pv_degredation rate", "units": 'hours'},
+
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
             'resilience_by_timestep':
