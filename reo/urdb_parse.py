@@ -527,7 +527,7 @@ class UrdbParse:
         self.utility_dat_files.data_fuel_rate_summary = energy_costs[start_index:len(energy_costs)]
 
         # Assuming ExportRate is the equivalent to the first fuel rate tier:
-        negative_energy_costs = [cost * -1 for cost in energy_costs[0:8760]]
+        negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
         negative_wholesale_rate_costs = 8760 * [-1 * self.wholesale_rate]
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
