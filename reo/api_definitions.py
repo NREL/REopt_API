@@ -664,6 +664,14 @@ def outputs():
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Result - total energy produced", "units": 'hours'},
 
+            'pv_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
+            'batt_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
             'resilience_by_timestep':

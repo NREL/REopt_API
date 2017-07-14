@@ -271,6 +271,7 @@ class RunOutput(models.Model):
     # PV MACRS
     pv_macrs_schedule = models.IntegerField(null=True, blank=True)
     pv_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
+    pv_macrs_bonus_reduction = models.FloatField(null=True, blank=True)
 
     # Battery Costs
     batt_cost_kwh = models.FloatField(null=True, blank=True)
