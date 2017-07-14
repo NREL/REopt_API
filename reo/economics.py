@@ -71,14 +71,14 @@ class Economics:
     bin_size = 4
     bins = ['R', 'W', 'X', 'S']
 
-    def __init__(self, econ_inputs, file_path='economics.dat', business_as_usual=False):
+    def __init__(self, file_path='economics.dat', business_as_usual=False,**kwargs):
 
         self.out_name = file_path
         self.business_as_usual = business_as_usual
 
         econ_list = inputs(filter="economics")
         for k in econ_list.keys():
-            setattr(self, k, econ_inputs.get(k))
+            setattr(self, k, kwargs.get(k))
 
         # group outputs
         self.output_args = dict()

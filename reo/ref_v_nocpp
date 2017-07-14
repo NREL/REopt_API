@@ -1,0 +1,11 @@
+select *, a.dlrs_per_mmbtu - b.dlrs_per_mmbtu as dif from (select * from diffusion_shared."aeo_energy_price_projections_2017" where fuel_type='electricity' and scenario ='AEO2017 Reference') a
+JOIN (select * from diffusion_shared."aeo_energy_price_projections_2017" where fuel_type='electricity' and scenario ='AEO2017 NO CPP') b 
+on a.year = b.year and a.census_division_abbr = b.census_division_abbr and a.sector_abbr=b.sector_abbr
+where a.census_division_abbr = 'MTN'  and a.sector_abbr='res'
+order by a.year
+
+select *, a.load_multiplier - b.load_multiplier as dif from (select * from diffusion_shared."aeo_load_growth_projections_2017"  where scenario ='AEO2017 Reference') a
+JOIN (select * from diffusion_shared."aeo_load_growth_projections_2017" where  scenario ='AEO2017 NO CPP') b 
+on a.year = b.year and a.census_division_abbr = b.census_division_abbr and a.sector_abbr=b.sector_abbr
+where a.census_division_abbr = 'MTN'  and a.sector_abbr='res'
+order by a.year

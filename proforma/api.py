@@ -13,11 +13,7 @@ from reo.log_levels import log
 from reo.models import RunOutput
 
 import os
-from api_definitions import *
-from validators import *
-from utilities import is_error
 
-from IPython import embed
 
 def get_current_api():
     return "version 0.0.1"
@@ -63,12 +59,13 @@ class ProFormaResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
-        id = bundle.data.get('run_id')
-        run_outputs = RunOutput.objects.get(pk=id)
-        pf = ProForma(run_input_id=id)
-        pf.save()
-        pf.make(run_outputs)
+        ro_id = bundle.data.get('run_output_id')
+        ro = RunOutput.objects.get(pk=ro_id)
+        
+        pf = ProForma().fromRunOutput(ro)
+        pf.generate_spreadsheet()
 
+        
         bundle.object = pf
 
         return self.full_hydrate(bundle)

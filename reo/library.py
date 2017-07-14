@@ -421,7 +421,7 @@ class DatLibrary:
         econ_inputs = self.get_subtask_inputs('economics')
 
         fp = self.file_economics
-        self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
+        self.economics = economics.Economics(file_path=fp, business_as_usual=False,**econ_inputs)
 
         for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
                   'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
@@ -431,7 +431,7 @@ class DatLibrary:
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
         fp = self.file_economics_bau
-        econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
+        econ = economics.Economics(file_path=fp, business_as_usual=True,**econ_inputs)
 
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
         self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
