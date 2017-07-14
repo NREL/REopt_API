@@ -310,8 +310,9 @@ class DatLibrary:
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
             output_dict = process_results.get_output()
-            for key in ['run_input_id','pv_kw_ac_hourly']:
-                output_dict[key] = getattr(self,key)
+            for key in outputs().keys():
+                if key not in output_dict.keys():
+                    output_dict[key] = getattr(self,key)
         else:
             msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }
@@ -423,9 +424,7 @@ class DatLibrary:
         fp = self.file_economics
         self.economics = economics.Economics(file_path=fp, business_as_usual=False,**econ_inputs)
 
-        for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
-                  'pv_levelization_factor', 'cap_cost_segments']:
+        for k in self.economics.__dict__.keys():
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
