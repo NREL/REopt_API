@@ -1,5 +1,4 @@
 from django.db import models
-from pro_forma_writer import ProFormaWriter
 import uuid
 import os
 import math
