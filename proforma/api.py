@@ -65,7 +65,8 @@ class ProFormaResource(ModelResource):
         from IPython import embed
         embed()
 
-        pf = ProForma().fromRunOutput(ro)
+        pf = ProForma(run_output_id=ro_id)
+        pf.loadRunOuput()
         pf.generate_spreadsheet()
 
         

@@ -11,11 +11,11 @@ from reo.models import RunOutput
 from log_levels import log
 
 
-
 class ProForma(models.Model):
 
-    run_output = models.ForeignKey(RunOutput)
+    run_output = models.ForeignKey(RunOutput) 
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
+    
 
     def set_global_params(self):
     	self.file_template = "REoptCashFlowTemplate.xlsm"
@@ -46,11 +46,11 @@ class ProForma(models.Model):
         self.lcc = 0
         self.lcc_bau = 0
 
-    def fromRunOutput(self,run_output):
+    def loadRunOuput(self):
 
     	self.set_global_params()
     	
-    	for k,v in run_output.__dict__.items():
+    	for k,v in self.run_output.__dict__.items():
         	setattr(self,k,v)
         	if k in ['pv_kw','batt_kw','batt_kwh'] and v is None:
         		setattr(self,k,0)
@@ -172,6 +172,8 @@ class ProForma(models.Model):
             # calculated values
             self.incentives[t]['federal_itc_basis'] = self.federal_itc_basis(t)
             self.incentives[t]['federal_depreciation_basis'] = self.federal_depreciation_basis(t)
+
+            return self
           
     def get_irr(self):
         return self.irr

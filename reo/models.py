@@ -359,9 +359,7 @@ class RunOutput(models.Model):
 
     year_one_export_benefit = models.FloatField(null=True, blank=True)
     year_one_energy_produced = models.FloatField(null=True, blank=True)
-    year_one_bill = models.FloatField(null=True, blank=True)
-    year_one_bill_bau = models.FloatField(null=True, blank=True)
-
+    
     # Resilience Stats
     resilience_by_timestep = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     resilience_hours_min = models.FloatField(null=True, blank=True)
