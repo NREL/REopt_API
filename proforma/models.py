@@ -46,44 +46,31 @@ class ProForma(models.Model):
         self.lcc = 0
         self.lcc_bau = 0
 
-
     def fromRunOutput(self,run_output):
 
-    	from IPython import embed
-    	embed()
-
     	self.set_global_params()
+    	
+    	for k,v in run_output.__dict__.items():
+        	setattr(self,k,v)
+        	if k in ['pv_kw','batt_kw','batt_kwh'] and v is None:
+        		setattr(self,k,0)
 
-    	econ = Economics(**run_output.__dict__)
-        
         # paths
         self.file_output = os.path.join('static', 'files', str(self.uuid), self.file_output)
 
-        # system sizes
-        self.pv_kw = run_output.pv_kw
-        self.batt_kw = run_output.batt_kw
-        self.batt_kwh = run_output.batt_kwh
-
-        if self.pv_kw is None:
-            self.pv_kw = 0
-        if self.batt_kw is None:
-            self.batt_kw = 0
-        if self.batt_kwh is None:
-            self.batt_kwh = 0
-
         # input to template
-        self.pv_installed_cost = run_output.pv_kw * run_output.pv_cost
-        self.battery_installed_cost = run_output.batt_kw * run_output.batt_cost_kw + run_output.batt_kwh * run_output.batt_cost_kwh
+        self.pv_installed_cost = self.pv_kw * self.pv_cost
+        self.battery_installed_cost = self.batt_kw * self.batt_cost_kw + self.batt_kwh * self.batt_cost_kwh
         self.total_capital_costs = self.pv_installed_cost + self.battery_installed_cost
 
-        self.year_one_bill = results['year_one_demand_cost'] + results['year_one_energy_cost']
-        self.year_one_exports = results['year_one_export_benefit']
-        self.year_one_bill_bau = results['year_one_demand_cost_bau'] + results['year_one_energy_cost_bau']
-        self.year_one_energy_produced = results['year_one_energy_produced']
-        self.year_one_savings = run_output.year_one_bill_bau - run_output.year_one_bill
+        self.year_one_bill = self.year_one_demand_cost + self.year_one_energy_cost
+        self.year_one_exports = self.year_one_export_benefit
+        self.year_one_bill_bau = self.year_one_demand_cost_bau + self.year_one_energy_cost_bau
+        self.year_one_energy_produced = self.year_one_energy_produced
+        self.year_one_savings = self.year_one_bill_bau - self.year_one_bill
 
         # no state taxes for now
-        self.fed_tax_owner = run_output.owner_tax_rate
+        self.fed_tax_owner = self.owner_tax_rate
 
         # Incentives data structure
         self.incentives = dict()
@@ -97,32 +84,32 @@ class ProForma(models.Model):
                 self.incentives[t]['tech_size'] = self.pv_kw
 
                 # MACRS
-                self.incentives[t]['macrs_schedule'] = run_output.pv_macrs_schedule
-                self.incentives[t]['bonus_fraction'] = run_output.pv_macrs_bonus_fraction
-                self.incentives[t]['macrs_itc_reduction'] = econ.pv_macrs_itc_reduction
+                self.incentives[t]['macrs_schedule'] = self.pv_macrs_schedule
+                self.incentives[t]['bonus_fraction'] = self.pv_macrs_bonus_fraction
+                self.incentives[t]['macrs_itc_reduction'] = self.pv_macrs_itc_reduction
 
                 # tax credits
-                self.incentives[t]['itc_fed_percent'] = run_output.pv_itc_federal
-                self.incentives[t]['itc_fed_percent_maxvalue'] = run_output.pv_itc_federal_max
+                self.incentives[t]['itc_fed_percent'] = self.pv_itc_federal
+                self.incentives[t]['itc_fed_percent_maxvalue'] = self.pv_itc_federal_max
 
                 # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = run_output.pv_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = run_output.pv_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = run_output.pv_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = run_output.pv_itc_utility_max
+                self.incentives[t]['ibi_sta_percent'] = self.pv_itc_state
+                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_itc_state_max
+                self.incentives[t]['ibi_uti_percent'] = self.pv_itc_utility
+                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_itc_utility_max
 
                 # capacity based incentives
-                self.incentives[t]['cbi_fed_amount'] = run_output.pv_rebate_federal
-                self.incentives[t]['cbi_fed_maxvalue'] = run_output.pv_rebate_federal_max
-                self.incentives[t]['cbi_sta_amount'] = run_output.pv_rebate_state
-                self.incentives[t]['cbi_sta_maxvalue'] = run_output.pv_rebate_state_max
-                self.incentives[t]['cbi_uti_amount'] = run_output.pv_rebate_utility
-                self.incentives[t]['cbi_uti_maxvalue'] = run_output.pv_rebate_utility_max
+                self.incentives[t]['cbi_fed_amount'] = self.pv_rebate_federal
+                self.incentives[t]['cbi_fed_maxvalue'] = self.pv_rebate_federal_max
+                self.incentives[t]['cbi_sta_amount'] = self.pv_rebate_state
+                self.incentives[t]['cbi_sta_maxvalue'] = self.pv_rebate_state_max
+                self.incentives[t]['cbi_uti_amount'] = self.pv_rebate_utility
+                self.incentives[t]['cbi_uti_maxvalue'] = self.pv_rebate_utility_max
 
                 # production based incentives
-                self.incentives[t]['pbi_combined_amount'] = run_output.pv_pbi
-                self.incentives[t]['pbi_combined_maxvalue'] = run_output.pv_pbi_max
-                self.incentives[t]['pbi_combined_term'] = run_output.pv_pbi_years
+                self.incentives[t]['pbi_combined_amount'] = self.pv_pbi
+                self.incentives[t]['pbi_combined_maxvalue'] = self.pv_pbi_max
+                self.incentives[t]['pbi_combined_term'] = self.pv_pbi_years
 
             elif t == 'BATT':
 
@@ -130,27 +117,27 @@ class ProForma(models.Model):
                 self.incentives[t]['tech_size'] = self.batt_kw
 
                 # MACRS
-                self.incentives[t]['macrs_schedule'] = run_output.batt_macrs_schedule
-                self.incentives[t]['bonus_fraction'] = run_output.batt_macrs_bonus_fraction
-                self.incentives[t]['macrs_itc_reduction'] = econ.batt_macrs_itc_reduction
+                self.incentives[t]['macrs_schedule'] = self.batt_macrs_schedule
+                self.incentives[t]['bonus_fraction'] = self.batt_macrs_bonus_fraction
+                self.incentives[t]['macrs_itc_reduction'] = self.batt_macrs_itc_reduction
 
                 # tax credits
-                self.incentives[t]['itc_fed_percent'] = run_output.batt_itc_federal
-                self.incentives[t]['itc_fed_percent_maxvalue'] = run_output.batt_itc_federal_max
+                self.incentives[t]['itc_fed_percent'] = self.batt_itc_federal
+                self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
 
                 # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = run_output.batt_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = run_output.batt_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = run_output.batt_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = run_output.batt_itc_utility_max
+                self.incentives[t]['ibi_sta_percent'] = self.batt_itc_state
+                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.batt_itc_state_max
+                self.incentives[t]['ibi_uti_percent'] = self.batt_itc_utility
+                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.batt_itc_utility_max
 
                 # capacity based incentives
-                self.incentives[t]['cbi_fed_amount'] = run_output.batt_rebate_federal
-                self.incentives[t]['cbi_fed_maxvalue'] = run_output.batt_rebate_federal_max
-                self.incentives[t]['cbi_sta_amount'] = run_output.batt_rebate_state
-                self.incentives[t]['cbi_sta_maxvalue'] = run_output.batt_rebate_state_max
-                self.incentives[t]['cbi_uti_amount'] = run_output.batt_rebate_utility
-                self.incentives[t]['cbi_uti_maxvalue'] = run_output.batt_rebate_utility_max
+                self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_federal
+                self.incentives[t]['cbi_fed_maxvalue'] = self.batt_rebate_federal_max
+                self.incentives[t]['cbi_sta_amount'] = self.batt_rebate_state
+                self.incentives[t]['cbi_sta_maxvalue'] = self.batt_rebate_state_max
+                self.incentives[t]['cbi_uti_amount'] = self.batt_rebate_utility
+                self.incentives[t]['cbi_uti_maxvalue'] = self.batt_rebate_utility_max
 
                 # production based incentives
                 self.incentives[t]['pbi_combined_amount'] = 0
@@ -210,7 +197,7 @@ class ProForma(models.Model):
 
         # System Design
         ws['B3'] = self.pv_kw
-        ws['B4'] = self.econ.pv_degradation_rate * 100
+        ws['B4'] = self.pv_degradation_rate * 100
         ws['B5'] = self.batt_kw
         ws['B6'] = self.batt_kwh
 
@@ -224,67 +211,68 @@ class ProForma(models.Model):
         ws['B15'] = self.total_capital_costs
         ws['B16'] = self.pv_installed_cost
         ws['B17'] = self.battery_installed_cost
-        ws['B19'] = self.econ.pv_om
-        ws['B20'] = self.econ.batt_replacement_cost_kw
-        ws['B21'] = self.econ.batt_replacement_year_kw
-        ws['B22'] = self.econ.batt_replacement_cost_kwh
-        ws['B23'] = self.econ.batt_replacement_year_kwh
+        ws['B19'] = self.pv_om
+        ws['B20'] = self.batt_replacement_cost_kw
+        ws['B21'] = self.batt_replacement_year_kw
+        ws['B22'] = self.batt_replacement_cost_kwh
+        ws['B23'] = self.batt_replacement_year_kwh
 
         # Analysis Parameters
-        ws['B31'] = self.econ.analysis_period
-        ws['B32'] = self.econ.rate_inflation * 100
-        ws['B33'] = self.econ.rate_escalation * 100
-        ws['B35'] = self.econ.owner_discount_rate * 100
+        ws['B31'] = self.analysis_period
+        ws['B32'] = self.rate_inflation * 100
+        ws['B33'] = self.rate_escalation * 100
+        ws['B35'] = self.owner_discount_rate * 100
 
         # Tax rates
         ws['B39'] = self.fed_tax_owner * 100
 
         # PV Tax Credits and Incentives
-        ws['B44'] = self.econ.pv_itc_federal * 100
-        ws['C44'] = self.econ.pv_itc_federal_max
-        ws['B49'] = self.econ.pv_itc_state * 100
-        ws['C49'] = self.econ.pv_itc_state_max
-        ws['B50'] = self.econ.pv_itc_utility * 100
-        ws['C50'] = self.econ.pv_itc_utility_max
-        ws['B52'] = self.econ.pv_rebate_federal * 0.001
-        ws['C52'] = self.econ.pv_rebate_federal_max
-        ws['B53'] = self.econ.pv_rebate_state * 0.001
-        ws['C53'] = self.econ.pv_rebate_state_max
-        ws['B54'] = self.econ.pv_rebate_utility * 0.001
-        ws['C54'] = self.econ.pv_rebate_utility_max
-        ws['B56'] = self.econ.pv_pbi
-        ws['C56'] = self.econ.pv_pbi_max
-        ws['E56'] = self.econ.pv_pbi_years
-        ws['F56'] = self.econ.pv_pbi_system_max
+        ws['B44'] = self.pv_itc_federal * 100
+        ws['C44'] = self.pv_itc_federal_max
+        ws['B49'] = self.pv_itc_state * 100
+        ws['C49'] = self.pv_itc_state_max
+        ws['B50'] = self.pv_itc_utility * 100
+        ws['C50'] = self.pv_itc_utility_max
+        ws['B52'] = self.pv_rebate_federal * 0.001
+        ws['C52'] = self.pv_rebate_federal_max
+        ws['B53'] = self.pv_rebate_state * 0.001
+        ws['C53'] = self.pv_rebate_state_max
+        ws['B54'] = self.pv_rebate_utility * 0.001
+        ws['C54'] = self.pv_rebate_utility_max
+        ws['B56'] = self.pv_pbi
+        ws['C56'] = self.pv_pbi_max
+        ws['E56'] = self.pv_pbi_years
+        ws['F56'] = self.pv_pbi_system_max
 
         # Battery Tax Credits and Incentives
-        ws['B61'] = self.econ.batt_itc_federal * 100
-        ws['C61'] = self.econ.batt_itc_federal_max
-        ws['B66'] = self.econ.batt_itc_state * 100
-        ws['C66'] = self.econ.batt_itc_state_max
-        ws['B67'] = self.econ.batt_itc_utility * 100
-        ws['C67'] = self.econ.batt_itc_utility_max
-        ws['B69'] = self.econ.batt_rebate_federal
-        ws['C69'] = self.econ.batt_rebate_federal_max
-        ws['B70'] = self.econ.batt_rebate_state
-        ws['C70'] = self.econ.batt_rebate_state_max
-        ws['B71'] = self.econ.batt_rebate_utility
-        ws['C71'] = self.econ.batt_rebate_utility_max
+        ws['B61'] = self.batt_itc_federal * 100
+        ws['C61'] = self.batt_itc_federal_max
+        ws['B66'] = self.batt_itc_state * 100
+        ws['C66'] = self.batt_itc_state_max
+        ws['B67'] = self.batt_itc_utility * 100
+        ws['C67'] = self.batt_itc_utility_max
+        ws['B69'] = self.batt_rebate_federal
+        ws['C69'] = self.batt_rebate_federal_max
+        ws['B70'] = self.batt_rebate_state
+        ws['C70'] = self.batt_rebate_state_max
+        ws['B71'] = self.batt_rebate_utility
+        ws['C71'] = self.batt_rebate_utility_max
 
         # Depreciation
-        if self.econ.pv_macrs_schedule > 0:
-            ws['B74'] = self.econ.pv_macrs_schedule
-            ws['B75'] = self.econ.pv_macrs_bonus_fraction
-        if self.econ.batt_macrs_schedule > 0:
-            ws['C74'] = self.econ.batt_macrs_schedule
-            ws['C75'] = self.econ.batt_macrs_bonus_fraction
+        if self.pv_macrs_schedule > 0:
+            ws['B74'] = self.pv_macrs_schedule
+            ws['B75'] = self.pv_macrs_bonus_fraction
+        
+        if self.batt_macrs_schedule > 0:
+            ws['C74'] = self.batt_macrs_schedule
+            ws['C75'] = self.batt_macrs_bonus_fraction
 
         # Save
         wb.save(self.file_output)
 
     def compute_cashflow(self):
 
-        n_cols = self.econ.analysis_period + 1
+        n_cols = self.analysis_period + 1
 
         # row_vectors to match template spreadsheet
         zero_list = [0] * n_cols
@@ -327,8 +315,8 @@ class ProForma(models.Model):
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
-        nominal_escalation_modifier = 1 + self.econ.rate_escalation_nominal
-        inflation_modifier = 1 + self.econ.rate_inflation
+        nominal_escalation_modifier = 1 + self.rate_escalation_nominal
+        inflation_modifier = 1 + self.rate_inflation
         annual_energy[1] = self.year_one_energy_produced
         federal_taxable_income_before_deductions[1] = sum([self.federal_taxable_income_before_deductions(tech) for tech in self.techs])
 
@@ -336,10 +324,10 @@ class ProForma(models.Model):
 
             inflation_modifier_n = inflation_modifier ** year
             nominal_escalation_modifier_n = nominal_escalation_modifier ** year
-            degradation_modifier = 1 - self.econ.pv_degradation_rate
+            degradation_modifier = 1 - self.pv_degradation_rate
 
             if year > 1:
-                annual_energy[year] = annual_energy[year - 1] * (1 - self.econ.pv_degradation_rate)
+                annual_energy[year] = annual_energy[year - 1] * (1 - self.pv_degradation_rate)
 
             # Bill savings
             bill_without_system[year] = self.year_one_bill_bau * nominal_escalation_modifier_n
@@ -348,13 +336,13 @@ class ProForma(models.Model):
             value_of_savings[year] = bill_without_system[year] - (bill_with_system[year] + exports_with_system[year])
 
             # Operating Expenses
-            o_and_m_capacity_cost[year] = self.econ.pv_om * self.pv_kw * inflation_modifier_n
+            o_and_m_capacity_cost[year] = self.pv_om * self.pv_kw * inflation_modifier_n
 
-            if self.econ.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.econ.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
+            if self.batt_replacement_year_kw == year:
+                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
 
-            if self.econ.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.econ.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
+            if self.batt_replacement_year_kwh == year:
+                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
 
             tech_operating_expenses['PV'] = o_and_m_capacity_cost[year]
             tech_operating_expenses['BATT'] = batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
@@ -423,9 +411,9 @@ class ProForma(models.Model):
         if math.isnan(self.irr):
             self.irr = 0
 
-        self.npv = np.npv(self.econ.owner_discount_rate_nominal, after_tax_cash_flow)
-        self.lcc = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_with_system)
-        self.lcc_bau = -np.npv(self.econ.owner_discount_rate_nominal, net_annual_costs_without_system)
+        self.npv = np.npv(self.owner_discount_rate_nominal, after_tax_cash_flow)
+        self.lcc = -np.npv(self.owner_discount_rate_nominal, net_annual_costs_with_system)
+        self.lcc_bau = -np.npv(self.owner_discount_rate_nominal, net_annual_costs_without_system)
 
     def pbi_calculate(self, tech, year, annual_energy):
 
@@ -489,9 +477,9 @@ class ProForma(models.Model):
 
             macrs_schedule_array = []
             if macrs_schedule == 5:
-                macrs_schedule_array = self.econ.macrs_five_year
+                macrs_schedule_array = self.macrs_five_year
             elif macrs_schedule == 7:
-                macrs_schedule_array = self.econ.macrs_seven_year
+                macrs_schedule_array = self.macrs_seven_year
 
             depreciation_basis = self.incentives[tech]['federal_depreciation_basis']
             if year == 1:
