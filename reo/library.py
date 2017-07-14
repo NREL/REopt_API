@@ -309,10 +309,16 @@ class DatLibrary:
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
+
             output_dict = process_results.get_output()
-            for key in outputs().keys():
-                if key not in output_dict.keys():
-                    output_dict[key] = getattr(self,key)
+            output_dict['run_input_id'] = self.run_input_id
+
+            for k,v in self.__dict__.items():
+                if output_dict.get(k) is None and k in outputs():
+                    output_dict[k] = v
+
+            from IPython import embed
+            embed()
         else:
             msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }
