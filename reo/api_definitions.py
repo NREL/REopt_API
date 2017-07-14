@@ -598,6 +598,9 @@ def outputs():
             'average_yearly_pv_energy_produced' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
 
+            'average_annual_energy_exported': {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Average annual energy exported by the PV system", "units": 'kWh'},
+
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
