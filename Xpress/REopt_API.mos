@@ -648,7 +648,7 @@ ExportedElec := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelB
                 dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
 ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-                    dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * ExportRates(t,LD,ts) * -1
+                    dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * ExportRates(t,LD,ts)
 
 Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
