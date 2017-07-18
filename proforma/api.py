@@ -1,5 +1,7 @@
+from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import ReadOnlyAuthorization
+from tastypie.authentication import ApiKeyAuthentication
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -7,6 +9,8 @@ from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
 from tastypie.resources import ModelResource
 from models import ProForma
+from tastypie.exceptions import Unauthorized
+
 
 import logging
 from reo.log_levels import log
@@ -42,22 +46,30 @@ class ProFormaResource(ModelResource):
         include_resource_uri = False
         excludes = ['created', 'updated','resource_uri','id']
         # validation = REoptResourceValidation()
-
+        authentication = ApiKeyAuthentication()
 
     def obj_create(self, bundle, **kwargs):
 
+        user = User.objects.get(pk=bundle.request.user.id)
         ro_id = bundle.data.get('run_output_id')
 
-        pfs = ProForma.objects.filter(run_output_id=ro_id) 
-        
-        if len(pfs) == 1:
-            pf = pfs[0]    
-        else:
-            pf = ProForma.create(run_output_id=ro_id)
-            pf.generate_spreadsheet()
+        if ro_id in [i.id for i in RunOutput.objects.filter(user=user)]:
 
-        pf.save()
-        
-        bundle.obj = pf
+            pfs = ProForma.objects.filter(run_output_id=ro_id,user=user) 
             
-        return self.full_hydrate(bundle)
+            if len(pfs) == 1:
+                pf = pfs[0]    
+            else:
+                pf = ProForma.create(run_output_id=ro_id)
+                pf.generate_spreadsheet()
+
+            pf.save()
+            
+            bundle.obj = pf
+                
+            return self.full_hydrate(bundle)
+
+        else:
+            raise Unauthorized("Invalid Authorization")
+
+

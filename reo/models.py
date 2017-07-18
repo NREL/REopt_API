@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import *
 from api_definitions import *
@@ -15,7 +16,7 @@ from resilience.outage_simulator import simulate_outage
 # Create your models here.
 class RunInput(models.Model):
 
-    user_id = models.TextField(blank=True, default='')
+    user = models.ForeignKey(User, null=True) 
     api_version = models.TextField(blank=True, default='', null=False)
     timeout = models.IntegerField(blank=True, default=295, null=True)
 
@@ -177,16 +178,17 @@ class RunInput(models.Model):
         output_dictionary['api_version'] = self.api_version
         output_dictionary['uuid'] = run_uuid
 
-        result = RunOutput(**output_dictionary)
+        result = RunOutput(user=self.user,**output_dictionary)
         result.save()
 
         return result
     
 class RunOutput(models.Model):
 
+    user = models.ForeignKey(User, null=True) 
+
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     run_input_id = models.IntegerField(null=False)
-    user_id = models.TextField(default='', null=True, blank=True)
     api_version = models.TextField(blank=True, default='', null=False)
     timeout = models.IntegerField(blank=True, default=295, null=True)
 

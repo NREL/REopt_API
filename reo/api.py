@@ -70,7 +70,7 @@ class RunInputResource(ModelResource):
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
         model_inputs['api_version'] = get_current_api()       
-        run = RunInput(**model_inputs)
+        run = RunInput(user=bundle.request.user,**model_inputs)
         run.save()
 
         # Return  Results
@@ -79,6 +79,7 @@ class RunInputResource(ModelResource):
         if hasattr(output_obj, 'keys'):
             if is_error(output_obj):
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
+        
         # not sure how this is happening
         if isinstance(output_obj, dict):
             output_dict = dict()
