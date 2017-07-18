@@ -16,7 +16,7 @@ urlpatterns = [
     # url(r'^blog/', include('blog.urls')),
     url(r'^$', include('reo.urls'), name='reopt'),
     url(r'^reopt/', include('reo.urls'), name='reopt'),
-    url(r'^proforma/', include('reo.urls'), name='proforma'),
+    url(r'^proforma/spreadsheet', include('reo.urls'), name='proforma/spreadsheet'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
 ]

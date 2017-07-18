@@ -317,8 +317,6 @@ class DatLibrary:
                 if output_dict.get(k) is None and k in outputs():
                     output_dict[k] = v
 
-            from IPython import embed
-            embed()
         else:
             msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }

@@ -60,8 +60,8 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
 
 class Economics:
 
-    macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
-    macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
+    macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946               #duplicated in run_output model
+    macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]       #duplicated in run_output model
 
     tech_size = 3
     tech_re_classes = ['PV']
@@ -91,8 +91,8 @@ class Economics:
 
         # compute nominal discount rates
         self.offtaker_discount_rate_nominal = (1 + self.offtaker_discount_rate) * (1 + self.rate_inflation) - 1
-        self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1
-        self.rate_escalation_nominal = (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1
+        self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1                   #duplicated in run_output model
+        self.rate_escalation_nominal = (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1                           #duplicated in run_output model
 
         # initialize variables
         self.pv_macrs_schedule_array = list()
