@@ -48,6 +48,9 @@ class PVWatts:
         self.tilt = tilt
         self.time_steps_per_hour = time_steps_per_hour
 
+        if self.tilt is None:
+            self.tilt = self.latitude
+
     @property
     def url(self):
         url = self.url_base + "?api_key=" + self.key + "&azimuth=" + str(self.azimuth) + \
@@ -67,6 +70,7 @@ class PVWatts:
     @property
     def pv_prod_factor(self):
         outputs = self.data['outputs']
+        print(outputs)
         ac_hourly = outputs.get('ac')
 
         if ac_hourly is None:
