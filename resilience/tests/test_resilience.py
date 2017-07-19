@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
+from tastypie.models import ApiKey
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
@@ -18,11 +19,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_1 = {k:v for k,v in self.required.items() if k not in ['load_8760_kw', 'blended_utility_rate','demand_charge']}
         self.base_case_1['load_size'] = 10000	
 
-        self.url_base = '/api/v1/reopt/'
+        self.user = User.objects.create(username='test')
+        self.api_key = ApiKey.objects.create(user=self.user)
+
+        self.url_base = '/api/v1/reopt/?username=%s&api_key=%s' % (self.user.username, self.api_key.key)
 
     def get_defaults_from_list(self, list):
         base = {k: inputs(full_list=True)[k].get('default') for k in list}
-        base['user_id'] = 'abc321'
         if 'load_8760_kw' in list:
             base['load_8760_kw'] = [0] * 8760
         if 'load_profile_name' in list:

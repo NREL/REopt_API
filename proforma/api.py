@@ -51,24 +51,24 @@ class ProFormaResource(ModelResource):
     def obj_create(self, bundle, **kwargs):
 
         ro_id = bundle.data.get('run_output_id')
-
-        if ro_id in [i.id for i in RunOutput.objects.filter(user=bundle.request.user)]:
-
-            pfs = ProForma.objects.filter(run_output_id=ro_id) 
+       
+        for i in RunOutput.objects.filter(user=bundle.request.user):
+       
+            if i.id == ro_id: 
+                pfs = ProForma.objects.filter(run_output_id=ro_id) 
             
-            if len(pfs) == 1:
-                pf = pfs[0]    
-            else:
-                pf = ProForma.create(run_output_id=ro_id)
-                pf.generate_spreadsheet()
+                if len(pfs) == 1:
+                    pf = pfs[0]    
+                else:
+                    pf = ProForma.create(run_output_id=ro_id)
+                    pf.generate_spreadsheet()
 
-            pf.save()
+                pf.save()
             
-            bundle.obj = pf
+                bundle.obj = pf
                 
-            return self.full_hydrate(bundle)
+                return self.full_hydrate(bundle)
 
-        else:
-            raise Unauthorized("Invalid Authorization")
+        raise Unauthorized("Invalid Authorization")
 
 
