@@ -6,7 +6,11 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
-#from IPython import embed
+
+from django.db.models import signals
+from tastypie.models import ApiKey
+
+from IPython import embed
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -24,7 +28,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
 
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
-
+     
         self.url_base = '/api/v1/reopt/'
 
     def make_url(self,string):
@@ -32,7 +36,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def get_defaults_from_list(self,list):
         base = {k:inputs(full_list=True)[k].get('default') for k in list}
-        base['user_id'] = 'abc321'
+  
         if 'load_8760_kw' in list:
             base['load_8760_kw'] = [0]*8760
         if 'load_profile_name' in list:
@@ -124,30 +128,50 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             
             resp = self.api_client.post(self.url_base, format='json', data=data)
             self.assertHttpCreated(resp)
-            
+           
             if add == swaps[1]:
+                npv = 722.0
+                lcc = 3055.0
+                pv_kw = 1.24622
+                batt_kw = 0.163791
+                batt_kwh = 0.52211
+                yr_one = 1488.5226
+                r_min = 0.13
+                r_max = 24.18
+                r_avg = 5.67
+
                 d = json.loads(resp.content)
-                self.assertTrue((float(d['lcc']) - 3669.0) / 3669 < self.REopt_tol)
-                self.assertTrue((float(d['npv']) - 453.0) / 453 < self.REopt_tol)
-                self.assertTrue((float(d['pv_kw']) - 0.597511) / 0.597511 < self.REopt_tol)
-                self.assertTrue((float(d['batt_kw']) - 0.0439906) / 0.0439906 < self.REopt_tol)
-                self.assertTrue((float(d['batt_kwh']) - 0.0549883) / 0.0549883 < self.REopt_tol)
-                self.assertTrue((float(d['year_one_utility_kwh']) - 2368.2545) / 2368.2545 < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_min']) - 0.01) / 0.01 < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_max']) - 14.33) / 14.33 < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_avg']) - 3.33) / 3.33 < self.REopt_tol)
+                self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
+                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol)
+                self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
+                self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
+                self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
+                self.assertTrue((float(d['year_one_utility_kwh']) - yr_one) / yr_one < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_min']) - r_min) / r_min < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_max']) - r_max) / r_max < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_avg']) - r_avg) / r_avg < self.REopt_tol)
             
             else:
+               
                 d = json.loads(resp.content)
-                self.assertTrue((float(d['lcc']) - 12296217.0) / 12296217 < self.REopt_tol)
-                # self.assertTrue((float(d['npv']) - 335867.0) / 335867 < self.REopt_tol)
-                self.assertTrue((float(d['pv_kw']) - 185.798) / 185.798 < self.REopt_tol)
-                self.assertTrue((float(d['batt_kw']) - 93.745) / 93.745 < self.REopt_tol)
-                self.assertTrue((float(d['batt_kwh']) - 262.205) / 262.205 < self.REopt_tol)
-                self.assertTrue((float(d['year_one_utility_kwh']) - 9679735) / 9679735 < self.REopt_tol)
-                self.assertEqual(float(d['resilience_hours_min']), 0.02)
-                self.assertEqual(float(d['resilience_hours_max']), 14.29)
-                self.assertEqual(float(d['resilience_hours_avg']),  3.18)
+		lcc = 12650203.0
+                npv = 386675.0
+                pv_kw = 185.798
+                batt_kw = 199.134
+                batt_kwh = 945.509
+                yr_one_kwh = 9709096.8185 #9693788.4005
+                r_min = 0.08
+                r_max = 14.62
+                r_avg = 3.38
+                self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
+                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol)
+                self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
+                self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
+                self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
+                self.assertTrue((float(d['year_one_utility_kwh']) - yr_one_kwh) / yr_one_kwh < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_min']) - r_min)/r_min < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_max']) - r_max)/r_max < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_avg']) -  r_avg)/r_avg < self.REopt_tol)
  
 
     def test_valid_data_types(self):
@@ -240,5 +264,3 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      completed_checks = set(list(completed_checks) + ['restrict'])
 
         completed_checks = set(checks)
-        #except:
-        #    embed()

@@ -40,7 +40,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return base
 
     def expected_base_case_1(self):
-        return pickle.load(open('base_case_1','r'))
+        return pickle.load(open('resilience/tests/base_case_1','r'))
 
     def get_response(self, data):
 
