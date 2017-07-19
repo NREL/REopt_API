@@ -19,6 +19,8 @@ from api_definitions import *
 
 from urdb_parse import *
 from utilities import Command, check_directory_created, write_single_variable, is_error
+from dat_file_manager import DatFileManager
+from techs import PV, Util
 
 
 def alphanum(s):
@@ -159,6 +161,10 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
+        self.dfm = DatFileManager()
+        self.dfm.run_id = self.run_input_id  # dfm is a singleton
+        self.dfm.path_inputs = self.path_run_inputs
+
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
             json.dump(json_POST, file_post)
@@ -221,7 +227,7 @@ class DatLibrary:
         self.create_utility()
 
         solar_data = self.create_Solar()
-        self.pv_kw_ac_hourly = solar_data.ac_hourly
+        self.pv_kw_ac_hourly = solar_data
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -557,15 +563,17 @@ class DatLibrary:
 
     def create_Solar(self):
 
-        if self.latitude is not None and self.longitude is not None:
-            pv_inputs = self.get_subtask_inputs('pvwatts')
-            solar_data = pvwatts.PVWatts(self.path_run_inputs, self.run_input_id, pv_inputs, self.pv_levelization_factor,
-                                  outage_start=self.outage_start, outage_end=self.outage_end)
+        pv = PV(**self.inputs_dict)
+        util = Util(**self.inputs_dict)
 
-            self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
-            self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+        self.dfm.finalize()  # needed for ProdFactor (depends on which Techs are defined)
 
-            return solar_data
+        solar_data = pv.prod_factor
+
+        self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
+        self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+
+        return solar_data
 
     def create_size_limits(self):
 
