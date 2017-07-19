@@ -22,7 +22,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def get_defaults_from_list(self, list):
         base = {k: inputs(full_list=True)[k].get('default') for k in list}
-        base['user_id'] = 'abc321'
+        base['user_id'] = 1
         if 'load_8760_kw' in list:
             base['load_8760_kw'] = [0] * 8760
         if 'load_profile_name' in list:
