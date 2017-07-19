@@ -28,16 +28,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
 
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
-      
-        self.username = 'test'
-
-        self.user = User(username=self.username)
-	self.user.save()
-        
-        self.api_key = ApiKey.objects.create(user=self.user)
-        self.api_key.save()
-        
-        self.url_base = '/api/v1/reopt/?username=%s&api_key=%s' % (self.user.username, str(self.api_key.key))
+     
+        self.url_base = '/api/v1/reopt/'
 
     def make_url(self,string):
         return self.url_base + string
