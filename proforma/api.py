@@ -54,7 +54,7 @@ class ProFormaResource(ModelResource):
 
         if ro_id in [i.id for i in RunOutput.objects.filter(user=bundle.request.user)]:
 
-            pfs = ProForma.objects.filter(run_output_id=ro_id,user=user) 
+            pfs = ProForma.objects.filter(run_output_id=ro_id) 
             
             if len(pfs) == 1:
                 pf = pfs[0]    
