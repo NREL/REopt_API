@@ -122,7 +122,7 @@ p44
 F0.5
 sVresilience_hours_min
 p45
-F0.05
+F0.11
 sVyear_one_battery_to_grid_series
 p46
 NsVtimeframe
@@ -8933,7 +8933,7 @@ aF0.1999995512757231
 aF0.1999995512757231
 asVresilience_hours_max
 p65
-F0.46
+F0.95
 sVpv_cost
 p66
 F2000.0
