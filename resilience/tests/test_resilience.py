@@ -40,7 +40,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return base
 
     def expected_base_case_1(self):
-        return pickle.load(open('base_case_1','r'))
+        return pickle.load(open('resilience/tests/base_case_1','r'))
 
     def get_response(self, data):
 
@@ -52,6 +52,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_base_case_1(self):
         d = self.get_response(self.base_case_1)
+        pickle.dump(d,open('resilience/tests/base_case_1','wb'))
         expected_result = self.expected_base_case_1()
 
         for f in ['resilience_hours_min','resilience_hours_max','resilience_hours_avg','resilience_by_timestep']:
