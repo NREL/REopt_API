@@ -70,7 +70,6 @@ class PVWatts:
     @property
     def pv_prod_factor(self):
         outputs = self.data['outputs']
-        print(outputs)
         ac_hourly = outputs.get('ac')
 
         if ac_hourly is None:

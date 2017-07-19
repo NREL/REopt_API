@@ -567,7 +567,7 @@ class DatLibrary:
 
         self.dfm.finalize()  # needed for ProdFactor (depends on which Techs are defined)
 
-        solar_data = pv.prod_factor
+        solar_data = [p*1000 for p in pv.prod_factor]
 
         self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
         self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
