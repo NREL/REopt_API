@@ -50,10 +50,9 @@ class ProFormaResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
-        user = User.objects.get(pk=bundle.request.user.id)
         ro_id = bundle.data.get('run_output_id')
 
-        if ro_id in [i.id for i in RunOutput.objects.filter(user=user)]:
+        if ro_id in [i.id for i in RunOutput.objects.filter(user=bundle.request.user)]:
 
             pfs = ProForma.objects.filter(run_output_id=ro_id,user=user) 
             

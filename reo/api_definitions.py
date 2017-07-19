@@ -6,8 +6,8 @@ analysis_period = 25
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
-        'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
-            , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
+     #   'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
+     #       , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],

@@ -11,6 +11,7 @@ import json
 from log_levels import log
 
 # user defined
+
 import economics
 import pvwatts
 from results import Results
@@ -255,12 +256,9 @@ class DatLibrary:
 
 
     def _add_inputs(self, od):
-
         for k in self.inputs(full_list=True).keys():
             if hasattr(self, k):
                 od[k] = getattr(self, k)
-            else:
-                od[k] = None  # should we set defaults here? Nope - defaults will already have been set by this point in the code
         return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
