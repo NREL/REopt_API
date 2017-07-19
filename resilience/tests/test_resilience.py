@@ -94,7 +94,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         d = self.get_response(data)
 
-        self.assertEqual(int(d['resilience_hours_max']), 14)
+        self.assertEqual(int(d['resilience_hours_max']), 13)
         self.assertEqual(int(d['resilience_hours_min']), 0)
 
         for i in d['resilience_by_timestep']:
