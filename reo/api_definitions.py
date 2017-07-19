@@ -6,7 +6,7 @@ analysis_period = 25
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
-        'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
+        'user_id': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": [], 'default': None
             , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
 
         # Required
