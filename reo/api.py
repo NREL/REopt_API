@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.resources import Resource
@@ -62,7 +63,6 @@ class RunInputResource(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-
         self.is_valid(bundle)
         if bundle.errors:
             raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
@@ -74,13 +74,14 @@ class RunInputResource(ModelResource):
 
         run = RunInput(**model_inputs)
         run.save()
-
+    
         # Return  Results
         output_obj = run.create_output(model_inputs.keys(), bundle.data)
 
         if hasattr(output_obj, 'keys'):
             if is_error(output_obj):
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
+        
         # not sure how this is happening
         if isinstance(output_obj, dict):
             output_dict = dict()

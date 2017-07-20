@@ -3,6 +3,7 @@ import datetime
 from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
+from tastypie.models import ApiKey
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
@@ -22,7 +23,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def get_defaults_from_list(self, list):
         base = {k: inputs(full_list=True)[k].get('default') for k in list}
-        base['user_id'] = 1
         if 'load_8760_kw' in list:
             base['load_8760_kw'] = [0] * 8760
         if 'load_profile_name' in list:
@@ -53,6 +53,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_base_case_1(self):
         d = self.get_response(self.base_case_1)
         expected_result = self.expected_base_case_1()
+
 
         for f in ['resilience_hours_min','resilience_hours_max','resilience_hours_avg','resilience_by_timestep']:
              self.assertEqual(d[f], expected_result[f])

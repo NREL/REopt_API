@@ -172,7 +172,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['resilience_hours_min']) - r_min)/r_min < self.REopt_tol)
                 self.assertTrue((float(d['resilience_hours_max']) - r_max)/r_max < self.REopt_tol)
                 self.assertTrue((float(d['resilience_hours_avg']) -  r_avg)/r_avg < self.REopt_tol)
- 
 
     def test_valid_data_types(self):
         #try: 

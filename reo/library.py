@@ -11,6 +11,7 @@ import json
 from log_levels import log
 
 # user defined
+
 import economics
 import pvwatts
 from results import Results
@@ -261,12 +262,9 @@ class DatLibrary:
 
 
     def _add_inputs(self, od):
-
         for k in self.inputs(full_list=True).keys():
             if hasattr(self, k):
                 od[k] = getattr(self, k)
-            else:
-                od[k] = None  # should we set defaults here? Nope - defaults will already have been set by this point in the code
         return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
@@ -315,9 +313,14 @@ class DatLibrary:
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
+
             output_dict = process_results.get_output()
-            for key in ['run_input_id','pv_kw_ac_hourly']:
-                output_dict[key] = getattr(self,key)
+            output_dict['run_input_id'] = self.run_input_id
+
+            for k,v in self.__dict__.items():
+                if output_dict.get(k) is None and k in outputs():
+                    output_dict[k] = v
+
         else:
             msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }
@@ -427,17 +430,15 @@ class DatLibrary:
         econ_inputs = self.get_subtask_inputs('economics')
 
         fp = self.file_economics
-        self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
+        self.economics = economics.Economics(file_path=fp, business_as_usual=False,**econ_inputs)
 
-        for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
-                  'pv_levelization_factor', 'cap_cost_segments']:
+        for k in self.economics.__dict__.keys():
             setattr(self, k, getattr(self.economics, k))
 
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
 
         fp = self.file_economics_bau
-        econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
+        econ = economics.Economics(file_path=fp, business_as_usual=True,**econ_inputs)
 
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
         self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
