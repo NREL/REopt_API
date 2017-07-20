@@ -20,8 +20,6 @@ from api_definitions import *
 from validators import *
 from utilities import is_error
 
-from IPython import embed
-
 def get_current_api():
     return "version 0.0.1"
 
