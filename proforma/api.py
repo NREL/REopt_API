@@ -7,8 +7,9 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.http import HttpApplicationError
 from tastypie.resources import ModelResource
-from models import ProForma
-from tastypie.exceptions import Unauthorized
+from models import ProForma, RunOutput
+from tastypie.exceptions import ImmediateHttpResponse
+from tastypie.http import HttpBadRequest
 
 
 import logging
@@ -47,25 +48,25 @@ class ProFormaResource(ModelResource):
         # validation = REoptResourceValidation()
 
     def obj_create(self, bundle, **kwargs):
+        
+        uuid = bundle.data.get('run_uuid')
 
-        ro_uuid = bundle.data.get('run_uuid')
-       
-        pfs = ProForma.objects.filter(run_output_id=ro_id) 
+        try:
+            run = RunOutput.objects.get(uuid=uuid)
             
-        if len(pfs) ==0:
-             return HttpBadRequest({'code': 777, 'message':'Invalid UUID'})
+            try:
+                pf = ProForma.objects.get(run_output=run.id)
+            except:
+                pf = ProForma.create(run_output_id=run.id)
+                pf.generate_spreadsheet()
 
-        elif len(pfs) == 1:
-            pf = pfs[0]  
+            pf.save()
 
-        else:
-            pf = ProForma.create(run_output_id=ro_id)
-            pf.generate_spreadsheet()
+            bundle.obj = pf
 
-        pf.save()
-            
-        bundle.obj = pf
-                
-        return self.full_hydrate(bundle)
+            return self.full_hydrate(bundle)
+
+        except:
+            raise ImmediateHttpResponse(HttpBadRequest("Invalid UUID"))
 
 
