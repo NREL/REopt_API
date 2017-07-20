@@ -178,7 +178,7 @@ class RunInput(models.Model):
         output_dictionary['api_version'] = self.api_version
         output_dictionary['uuid'] = run_uuid
 
-        result = RunOutput(user=self.user,**output_dictionary)
+        result = RunOutput(**output_dictionary)
         result.save()
 
         return result

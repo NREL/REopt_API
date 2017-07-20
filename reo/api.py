@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from tastypie import fields
-from tastypie.authentication import ApiKeyAuthentication
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
@@ -41,7 +40,6 @@ class RunInputResource(ModelResource):
         detail_allowed_methods= []
         object_class = RunInput
         authorization = ReadOnlyAuthorization()
-        authentication = ApiKeyAuthentication()
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = REoptResourceValidation()
@@ -69,8 +67,10 @@ class RunInputResource(ModelResource):
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
+
         model_inputs['api_version'] = get_current_api()       
-        run = RunInput(user=bundle.request.user,**model_inputs)
+
+        run = RunInput(**model_inputs)
         run.save()
     
         # Return  Results

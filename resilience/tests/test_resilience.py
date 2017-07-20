@@ -19,10 +19,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_1 = {k:v for k,v in self.required.items() if k not in ['load_8760_kw', 'blended_utility_rate','demand_charge']}
         self.base_case_1['load_size'] = 10000	
 
-        self.user = User.objects.create(username='test')
-        self.api_key = ApiKey.objects.create(user=self.user)
-
-        self.url_base = '/api/v1/reopt/?username=%s&api_key=%s' % (self.user.username, self.api_key.key)
+        self.url_base = '/api/v1/reopt/'
 
     def get_defaults_from_list(self, list):
         base = {k: inputs(full_list=True)[k].get('default') for k in list}
@@ -43,7 +40,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return base
 
     def expected_base_case_1(self):
-        return pickle.load(open('base_case_1','r'))
+        return pickle.load(open('resilience/tests/base_case_1','r'))
 
     def get_response(self, data):
 
@@ -55,8 +52,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_base_case_1(self):
         d = self.get_response(self.base_case_1)
-        #pickle.dump(d,open('base_case_1','wb'))
         expected_result = self.expected_base_case_1()
+
 
         for f in ['resilience_hours_min','resilience_hours_max','resilience_hours_avg','resilience_by_timestep']:
              self.assertEqual(d[f], expected_result[f])

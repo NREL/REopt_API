@@ -1,7 +1,6 @@
 from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import ReadOnlyAuthorization
-from tastypie.authentication import ApiKeyAuthentication
 from tastypie.resources import Resource
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -46,29 +45,27 @@ class ProFormaResource(ModelResource):
         include_resource_uri = False
         excludes = ['created', 'updated','resource_uri','id']
         # validation = REoptResourceValidation()
-        authentication = ApiKeyAuthentication()
 
     def obj_create(self, bundle, **kwargs):
 
-        ro_id = bundle.data.get('run_output_id')
+        ro_uuid = bundle.data.get('run_uuid')
        
-        for i in RunOutput.objects.filter(user=bundle.request.user):
-       
-            if i.id == ro_id: 
-                pfs = ProForma.objects.filter(run_output_id=ro_id) 
+        pfs = ProForma.objects.filter(run_output_id=ro_id) 
             
-                if len(pfs) == 1:
-                    pf = pfs[0]    
-                else:
-                    pf = ProForma.create(run_output_id=ro_id)
-                    pf.generate_spreadsheet()
+        if len(pfs) ==0:
+             return HttpBadRequest({'code': 777, 'message':'Invalid UUID'})
 
-                pf.save()
+        elif len(pfs) == 1:
+            pf = pfs[0]  
+
+        else:
+            pf = ProForma.create(run_output_id=ro_id)
+            pf.generate_spreadsheet()
+
+        pf.save()
             
-                bundle.obj = pf
+        bundle.obj = pf
                 
-                return self.full_hydrate(bundle)
-
-        raise Unauthorized("Invalid Authorization")
+        return self.full_hydrate(bundle)
 
 

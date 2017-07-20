@@ -28,16 +28,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
 
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
-      
-        self.username = 'test'
-
-        self.user = User(username=self.username)
-	self.user.save()
-        
-        self.api_key = ApiKey.objects.create(user=self.user)
-        self.api_key.save()
-        
-        self.url_base = '/api/v1/reopt/?username=%s&api_key=%s' % (self.user.username, str(self.api_key.key))
+     
+        self.url_base = '/api/v1/reopt/'
 
     def make_url(self,string):
         return self.url_base + string
@@ -177,10 +169,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one_kwh) / yr_one_kwh < self.REopt_tol)
-                self.assertEqual(float(d['resilience_hours_min']), r_min)
-                self.assertEqual(float(d['resilience_hours_max']), r_max)
-                self.assertEqual(float(d['resilience_hours_avg']),  r_avg)
- 
+                self.assertTrue((float(d['resilience_hours_min']) - r_min)/r_min < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_max']) - r_max)/r_max < self.REopt_tol)
+                self.assertTrue((float(d['resilience_hours_avg']) -  r_avg)/r_avg < self.REopt_tol)
 
     def test_valid_data_types(self):
         #try: 
@@ -272,5 +263,3 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      completed_checks = set(list(completed_checks) + ['restrict'])
 
         completed_checks = set(checks)
-        #except:
-        #    embed()
