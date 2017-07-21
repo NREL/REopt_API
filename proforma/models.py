@@ -24,33 +24,31 @@ class ProForma(models.Model):
     def create(cls, **kwargs):
         pf = cls(**kwargs)
         
-        pf.sheet_io = "Inputs and Outputs"
-        pf.file_template = os.path.join('proforma',"REoptCashFlowTemplate.xlsm")
-        pf.file_output_name = "ProForma.xls"
-        pf.dir = os.path.join('static', 'files', str(pf.uuid))
-        pf.file_output = os.path.join(pf.dir, pf.file_output_name)
+        file_dir = os.path.dirname(pf.output_file)
+        
+        if not os.path.exists(file_dir):
+            os.mkdir(file_dir)
 
-        if not os.path.exists(pf.dir):
-            os.mkdir(pf.dir)
+        pf.generate_spreadsheet()
         
         return pf
+    
+    @property
+    def sheet_io(self):
+        return "Inputs and Outputs"
+
+    @property
+    def file_template(self):
+        return os.path.join('proforma',"REoptCashFlowTemplate.xlsm")
+
+    @property
+    def output_file_name(self):
+        return "ProForma.xls"
+
+    @property
+    def output_file(self):
+        return os.path.join(os.getcwd(),'static', 'files', str(self.uuid), self.output_file_name)
           
-    @property
-    def irr(self):
-        return self.run_output.irr
-
-    @property
-    def npv(self):
-        return round(self.run_output.npv)
-
-    @property
-    def lcc(self):
-        return round(self.run_output.lcc)
-
-    @property
-    def lcc_bau(self):
-        return round(self.run_output.lcc_bau)
-
     def generate_spreadsheet(self):
 
         ro = self.run_output
@@ -134,7 +132,7 @@ class ProForma(models.Model):
             ws['C75'] = ro.batt_macrs_bonus_fraction
 
         # Save
-        wb.save(self.file_output)
+        wb.save(self.output_file)
 
         self.spreadsheet_created = tzlocal.get_localzone().localize(datetime.datetime.now())
         
