@@ -34,11 +34,16 @@ class DatFileManager():
     __metaclass__ = Singleton
     run_id = None
     path_inputs = None
+    n_timesteps = 8760
     max_big_number = 100000000
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
+    pvnm = None
     util = None
+    available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
+    available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
+    bau_techs = ['util']
 
     def _add_constants(self):
         pass
@@ -74,6 +79,7 @@ class DatFileManager():
 
     def add_pv(self, pv):
         self.pv = pv
+        self.pvnm = self.pv
 
     def add_util(self, util):
         self.util = util
@@ -87,60 +93,32 @@ class DatFileManager():
     def add_storage(self):
         pass
 
+    def _get_REopt_prodfactor(self, techs):
+        prod_factor = []
+        for tech in techs:
+
+            if eval('self.' + tech) is not None:
+
+                for load in self.available_loads:
+
+                    if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
+                        for pf in eval('self.' + tech + '.prod_factor'):
+                            prod_factor.append(pf)
+                    else:
+                        for _ in range(self.n_timesteps):
+                            prod_factor.append(0)
+        return prod_factor
+
     def finalize(self):
         """
         necessary for writing out ProdFactor, which depends on Techs and Loads
         i.e. in REopt ProdFactor: array (Tech,Load,TimeStep).
-        Currently set up is hard-coded such that UTIL1 has a ProdFactor of 1 in the Retail and Storage Loads
-        and PV has the ProdFactor from PVWatts for all Loads.
-        Whether or not a given Tech can serve a given Load can be controlled via TechToLoadMatrix
+        Note: whether or not a given Tech can serve a given Load can also be controlled via TechToLoadMatrix
         :return: None
         """
 
-        # build dictionary with same structure as ProdFactor in Mosel for convenience
-        tech_bau = ['UTIL1']
-        tech = ['PV', 'PVNM', 'UTIL1']
-        load = ["1R", "1W", "1X", "1S"]
-        pf_Dict = {}
-        pf_Dict_bau = {}
-
-        for t in tech:
-            pf_Dict[t] = {ld: None for ld in load}
-
-            if t is 'UTIL1':
-
-                pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = self.util.prod_factor
-                    # grid produces 100% of capacity, so '1's for Retail and Storage
-                pf_Dict[t]['1W'] = pf_Dict[t]['1X'] = [0.0 for _ in range(
-                    8760)]  # grid cannot sell back, so '0's for Wholesale and Export
-
-            elif t is 'PV':
-
-                pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = \
-                    pf_Dict[t]['1W'] = pf_Dict[t]['1X'] = self.pv.prod_factor  # PV can serve all loads
-
-            elif t is 'PVNM':
-
-                pf_Dict[t]['1R'] = pf_Dict[t]['1S'] = \
-                    pf_Dict[t]['1W'] = pf_Dict[t]['1X'] = self.pv.prod_factor  # PV can serve all loads
-
-        for t in tech_bau:
-            pf_Dict_bau[t] = {ld: None for ld in load}
-            if t is 'UTIL1':
-                pf_Dict_bau[t]['1R'] = pf_Dict_bau[t]['1S'] = [1.0 for _ in range(8760)]
-                pf_Dict_bau[t]['1W'] = pf_Dict_bau[t]['1X'] = [0.0 for _ in range(8760)]
-
-        # convert dictionaries to lists for writing flat files
-        prod_factor = []
-        prod_factor_bau = []
-        for t in tech:
-            for ld in load:
-                for pf in pf_Dict[t][ld]:
-                    prod_factor.append(str(pf))
-        for t in tech_bau:
-            for ld in load:
-                for pf in pf_Dict_bau[t][ld]:
-                    prod_factor_bau.append(str(pf))
+        prod_factor = self._get_REopt_prodfactor(self.available_techs)
+        prod_factor_bau = self._get_REopt_prodfactor(self.bau_techs)
 
         file_gis = os.path.join(self.path_inputs, "GIS_" + str(self.run_id) + ".dat")
         file_gis_bau = os.path.join(self.path_inputs, "GIS_" + str(self.run_id) + "_bau.dat")
