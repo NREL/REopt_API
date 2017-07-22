@@ -173,7 +173,7 @@ declarations
 
 end-declarations
 
-!setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
+setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
 !setparam("XPRS_MIPRELSTOP",.001)
 !setparam("XPRS_MAXTIME",180)
 

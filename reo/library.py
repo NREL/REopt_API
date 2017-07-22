@@ -13,7 +13,6 @@ from log_levels import log
 # user defined
 
 import economics
-import pvwatts
 from results import Results
 from api_definitions import *
 
@@ -164,6 +163,7 @@ class DatLibrary:
         self.dfm = DatFileManager()
         self.dfm.run_id = self.run_input_id  # dfm is a singleton
         self.dfm.path_inputs = self.path_run_inputs
+        self.dfm.n_timesteps = inputs_dict['time_steps_per_hour'] * 8760
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
