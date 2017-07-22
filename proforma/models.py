@@ -43,7 +43,7 @@ class ProForma(models.Model):
 
     @property
     def output_file_name(self):
-        return "ProForma.xls"
+        return "ProForma.xlsm"
 
     @property
     def output_file(self):
