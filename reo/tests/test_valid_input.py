@@ -18,7 +18,7 @@ def u2s (d):
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
-    REopt_tol = 5e-5
+    REopt_tol = 1e-2
 
     def setUp(self):
         super(EntryResourceTest, self).setUp()
