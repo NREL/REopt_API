@@ -154,15 +154,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             else:
                
                 d = json.loads(resp.content)
-		lcc = 12650203.0
-                npv = 386675.0
+                lcc = 12651213.0
+                npv = 385668.0
                 pv_kw = 185.798
-                batt_kw = 199.134
-                batt_kwh = 945.509
-                yr_one_kwh = 9709096.8185 #9693788.4005
-                r_min = 0.08
-                r_max = 14.62
-                r_avg = 3.38
+                batt_kw = 200.866
+                batt_kwh = 960.659
+                yr_one_kwh = 9709753.5354
+                r_min = 0.07
+                r_max = 2.4
+                r_avg = 0.34
                 self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol)
                 self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
