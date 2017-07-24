@@ -16,6 +16,7 @@ def u2s (d):
     sub_d = d['reopt']['Error']
     return {'reopt':{'Error':{str(k):[str(i) for i in v]  for k,v in sub_d.items()}}}
 
+
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
@@ -110,39 +111,167 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_valid_test_defaults(self):
 
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
+        null = None
+        true = True
+        data = {"losses": null, "roof_area": 5000.0, "batt_rebate_utility_max": null, "batt_rebate_utility": null,
+                "owner_tax_rate": null, "pv_itc_federal": null, "batt_can_gridcharge": true,
+                "load_profile_name": "RetailStore", "batt_replacement_cost_kwh": null, "pv_rebate_state_max": null,
+                "batt_itc_utility_max": null, "batt_rebate_state_max": null, "pv_rebate_utility": null,
+                "pv_itc_utility": null, "pv_rebate_federal": null, "analysis_period": null, "pv_rebate_state": null,
+                "offtaker_tax_rate": null, "pv_macrs_schedule": 5, "pv_kw_max": null, "load_size": 10000000.0,
+                "tilt": null, "batt_kwh_max": null, "pv_rebate_federal_max": null, "batt_replacement_cost_kw": null,
+                "batt_rebate_federal": null, "longitude": -118.1164613, "pv_itc_state": null, "batt_kw_max": null,
+                "pv_pbi": null, "batt_inverter_efficiency": null, "offtaker_discount_rate": null,
+                "batt_efficiency": null, "batt_itc_federal_max": null, "batt_soc_min": null, "batt_itc_state_max": null,
+                "batt_rebate_state": null, "batt_itc_utility": null, "batt_macrs_schedule": 5,
+                "batt_replacement_year_kwh": null, "latitude": 34.5794343, "owner_discount_rate": null,
+                "batt_replacement_year_kw": null, "module_type": 1, "batt_kw_min": null, "array_type": 1,
+                "rate_escalation": null, "batt_cost_kw": null, "pv_kw_min": null, "pv_pbi_max": null,
+                "pv_pbi_years": null, "land_area": 1.0, "dc_ac_ratio": null, "net_metering_limit": null,
+                "batt_itc_state": null, "batt_itc_federal": null, "batt_rebate_federal_max": null, "azimuth": null,
+                "batt_soc_init": null, "pv_rebate_utility_max": null, "pv_itc_utility_max": null,
+                "pv_itc_federal_max": null, "urdb_rate": {"sector": "Commercial", "peakkwcapacitymax": 200,
+                                                          "energyweekdayschedule": [
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3,
+                                                               3, 3, 3, 3, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3,
+                                                               3, 3, 3, 3, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3,
+                                                               3, 3, 3, 3, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3,
+                                                               3, 3, 3, 3, 2],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                               1, 1, 0, 0, 0]], "demandattrs": [
+                    {"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"},
+                    {"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"},
+                    {"Facilties Voltage Discount >220 kV": "$-9.96/KW"},
+                    {"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"},
+                    {"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"},
+                    {"Time Voltage Discount >220 kV": "$-1.95/KW"}],
+                                                          "energyratestructure": [[{"rate": 0.0712, "unit": "kWh"}],
+                                                                                  [{"rate": 0.09368, "unit": "kWh"}],
+                                                                                  [{"rate": 0.066, "unit": "kWh"}],
+                                                                                  [{"rate": 0.08888, "unit": "kWh"}],
+                                                                                  [{"rate": 0.1355, "unit": "kWh"}]],
+                                                          "energyweekendschedule": [
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                                                               2, 2, 2, 2, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                                                               2, 2, 2, 2, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                                                               2, 2, 2, 2, 2],
+                                                              [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                                                               2, 2, 2, 2, 2],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0],
+                                                              [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                               0, 0, 0, 0, 0]], "demandweekendschedule": [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]],
+                                                          "utility": "Southern California Edison Co",
+                                                          "flatdemandstructure": [[{"rate": 13.2}]],
+                                                          "startdate": 1433116800, "phasewiring": "Single Phase",
+                                                          "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf",
+                                                          "label": "55fc81d7682bea28da64f9ae", "flatdemandunit": "kW",
+                                                          "eiaid": 17609, "voltagecategory": "Primary",
+                                                          "revisions": [1433408708, 1433409358, 1433516188, 1441198316,
+                                                                        1441199318, 1441199417, 1441199824, 1441199996,
+                                                                        1454521683], "demandweekdayschedule": [
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "voltageminimum": 2000,
+                                                          "description": "- Energy tiered charge = generation charge + delivery charge\r\n\r\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).",
+                                                          "energyattrs": [
+                                                              {"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"},
+                                                              {"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"},
+                                                              {"Voltage Discount at 220 KV": "$-0.0024/Kwh"},
+                                                              {"California Climate credit": "$-0.00669/kwh"}],
+                                                          "demandrateunit": "kW",
+                                                          "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                                          "approved": true, "fixedmonthlycharge": 259.2,
+                                                          "enddate": 1451520000,
+                                                          "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase",
+                                                          "country": "USA",
+                                                          "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae",
+                                                          "voltagemaximum": 50000, "peakkwcapacitymin": 20,
+                                                          "peakkwcapacityhistory": 12,
+                                                          "demandratestructure": [[{"rate": 0}], [{"rate": 5.3}],
+                                                                                  [{"rate": 18.11}]]}, "pv_cost": null,
+                "rate_inflation": null, "batt_kwh_min": null, "pv_itc_state_max": null, "pv_pbi_system_max": null,
+                "batt_rectifier_efficiency": null, "pv_om": null, "batt_cost_kwh": null, "crit_load_factor": 1.0
+                }
 
         for add in swaps:
-            null = None
-            true = True 
            # Test All  Data and  Valid Rate Inputs
-            
-            data = {"losses":null, "roof_area": 5000.0, "batt_rebate_utility_max": null, "batt_rebate_utility": null, "owner_tax_rate": null, "pv_itc_federal": null, "batt_can_gridcharge": true, "load_profile_name": "RetailStore", "batt_replacement_cost_kwh": null, "pv_rebate_state_max": null, "batt_itc_utility_max": null, "batt_rebate_state_max": null, "pv_rebate_utility": null, "pv_itc_utility": null, "pv_rebate_federal": null, "analysis_period": null, "pv_rebate_state": null, "offtaker_tax_rate": null, "pv_macrs_schedule": 5, "pv_kw_max": null, "load_size": 10000000.0, "tilt": null, "batt_kwh_max": null, "pv_rebate_federal_max": null, "batt_replacement_cost_kw": null, "batt_rebate_federal": null, "longitude": -118.1164613, "pv_itc_state": null, "batt_kw_max": null, "pv_pbi": null, "batt_inverter_efficiency": null, "offtaker_discount_rate": null, "batt_efficiency": null, "batt_itc_federal_max": null, "batt_soc_min": null, "batt_itc_state_max": null, "batt_rebate_state": null, "batt_itc_utility": null, "batt_macrs_schedule": 5, "batt_replacement_year_kwh": null, "latitude": 34.5794343, "owner_discount_rate": null, "batt_replacement_year_kw": null, "module_type": 1, "batt_kw_min": null, "array_type": 1, "rate_escalation": null, "batt_cost_kw": null, "pv_kw_min": null, "pv_pbi_max": null, "pv_pbi_years": null, "land_area": 1.0, "dc_ac_ratio": null, "net_metering_limit": null, "batt_itc_state": null, "batt_itc_federal": null, "batt_rebate_federal_max": null, "azimuth": null, "batt_soc_init": null, "pv_rebate_utility_max": null, "pv_itc_utility_max": null, "pv_itc_federal_max": null, "urdb_rate": {"sector": "Commercial", "peakkwcapacitymax": 200, "energyweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], "demandattrs": [{"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"}, {"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"}, {"Facilties Voltage Discount >220 kV": "$-9.96/KW"}, {"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"}, {"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"}, {"Time Voltage Discount >220 kV": "$-1.95/KW"}], "energyratestructure": [[{"rate": 0.0712, "unit": "kWh"}], [{"rate": 0.09368, "unit": "kWh"}], [{"rate": 0.066, "unit": "kWh"}], [{"rate": 0.08888, "unit": "kWh"}], [{"rate": 0.1355, "unit": "kWh"}]], "energyweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "demandweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "utility": "Southern California Edison Co", "flatdemandstructure": [[{"rate": 13.2}]], "startdate": 1433116800, "phasewiring": "Single Phase", "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf", "label": "55fc81d7682bea28da64f9ae", "flatdemandunit": "kW", "eiaid": 17609, "voltagecategory": "Primary", "revisions": [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], "demandweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "voltageminimum": 2000, "description": "- Energy tiered charge = generation charge + delivery charge\r\n\r\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).", "energyattrs": [{"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"}, {"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"}, {"Voltage Discount at 220 KV": "$-0.0024/Kwh"}, {"California Climate credit": "$-0.00669/kwh"}], "demandrateunit": "kW", "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "approved": true, "fixedmonthlycharge": 259.2, "enddate": 1451520000, "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase", "country": "USA", "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae", "voltagemaximum": 50000, "peakkwcapacitymin": 20, "peakkwcapacityhistory": 12, "demandratestructure": [[{"rate": 0}], [{"rate": 5.3}], [{"rate": 18.11}]]}, "pv_cost": null, "rate_inflation": null, "batt_kwh_min": null, "pv_itc_state_max": null, "pv_pbi_system_max": null, "batt_rectifier_efficiency": null, "pv_om": null, "batt_cost_kwh": null, "crit_load_factor": 1.0
-}
-            if add != swaps[0]:
+
+            if add == swaps[1]:
                 del data['urdb_rate']
                 del data['load_size']
                 data['load_monthly_kwh'] = default_load_monthly()
                 data['blended_utility_rate'] = [i*2 for i in default_blended_rate()]
                 data['demand_charge'] = default_demand_charge()                    
 
-            
-            resp = self.api_client.post(self.url_base, format='json', data=data)
-            self.assertHttpCreated(resp)
-           
-            if add == swaps[1]:
-                npv = 722.0
-                lcc = 3055.0
-                pv_kw = 1.24622
-                batt_kw = 0.163791
-                batt_kwh = 0.52211
-                yr_one = 1488.5226
-                r_min = 0.13
-                r_max = 24.18
-                r_avg = 5.67
-
+                resp = self.api_client.post(self.url_base, format='json', data=data)
+                self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
+           
+                npv = 800.0
+                lcc = 2973.0
+                pv_kw = 1.25342
+                batt_kw = 0.208157
+                batt_kwh = 0.644807
+                yr_one = 1353.2225
+                r_min = 0.16
+                r_max = 22.44
+                r_avg = 4.23
+
                 self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
-                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol)
+                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
                 self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
@@ -152,8 +281,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['resilience_hours_avg']) - r_avg) / r_avg < self.REopt_tol)
             
             else:
-               
+                resp = self.api_client.post(self.url_base, format='json', data=data)
+                self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
+
                 lcc = 12651213.0
                 npv = 385668.0
                 pv_kw = 185.798
@@ -163,8 +294,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 r_min = 0.07
                 r_max = 2.4
                 r_avg = 0.34
+
                 self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
-                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol)
+                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
                 self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)

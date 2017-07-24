@@ -1,25 +1,18 @@
 # python libraries
-import os
-import traceback
-import shutil
-import math
-import pandas as pd
-from datetime import datetime, timedelta
+# some libraries are being imported via the 'import *' statements below
+# including at least 'os' and 'json'
 import re
-import json
-# logging
-from log_levels import log
+import shutil
 
 # user defined
-
 import economics
-from results import Results
 from api_definitions import *
-
+from reo.src.dat_file_manager import DatFileManager
+from reo.src.techs import PV, Util
+from reo.src.load_profile import LoadProfile
+from results import Results
 from urdb_parse import *
 from utilities import Command, check_directory_created, write_single_variable, is_error
-from dat_file_manager import DatFileManager
-from techs import PV, Util
 
 
 def alphanum(s):
@@ -146,10 +139,6 @@ class DatLibrary:
 
         if self.tilt is None:
             self.tilt = self.latitude
-
-        self.default_load_profiles = [p.lower() for p in default_load_profiles()]
-        self.default_building = default_building()
-        self.default_city = default_cities()[self.localize_load()]
 
         for k in self.outputs():
             setattr(self, k, None)
@@ -452,114 +441,18 @@ class DatLibrary:
         :return: None
         """
 
+        lp = LoadProfile(user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+
         log("INFO", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        if self.load_8760_kw:  # user load profile
-            self.load_size = sum(self.load_8760_kw)
-            load_profile = self.load_8760_kw
-
-        else:  # building type and (load_size OR load_monthly_kwh) defined by user
-            profile_path = os.path.join(self.folder_load_profile,
-                                        "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
-            if self.load_monthly_kwh:
-                self.load_size = sum(self.load_monthly_kwh)
-                load_profile = self.scale_load_by_month(profile_path)
-
-            else:  # load_size is "swap_for" load_monthly_kwh
-                load_profile = self.scale_load(profile_path, self.load_size)
-
-        # resilience: modify load during outage with crit_load_factor
-        if self.crit_load_factor and self.outage_start and self.outage_end:
-            # modify load
-            load_profile = load_profile[0:self.outage_start] \
-                            + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
-                            + load_profile[self.outage_end:]
-
-        #  fill in W, X, S bins
-        for _ in range(8760 * 3):
-            load_profile.append(self.max_big_number)
-
-        write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
-        write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-
         self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
         self.DAT_bau[2] = self.DAT[2]
         self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
         self.DAT_bau[3] = self.DAT[3]
-
-    def scale_load(self, file_load_profile, scale_factor):
-
-        load_profile = []
-        f = open(file_load_profile, 'r')
-        for line in f:
-            load_profile.append(float(line.strip('\n')) * scale_factor)
-
-        return load_profile
-
-    def scale_load_by_month(self, profile_file):
-
-        load_profile = []
-        f = open(profile_file, 'r')
-
-        datetime_current = datetime(self.load_year, 1, 1, 0)
-        month_total = 0
-        month_scale_factor = []
-        normalized_load = []
-
-        for line in f:
-            month = datetime_current.month
-            normalized_load.append(float(line.strip('\n')))
-            month_total += self.load_size * float(line.strip('\n'))
-
-            # add an hour
-            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-
-            if month != datetime_current.month:
-                if month_total == 0:
-                    month_scale_factor.append(0)
-                else:
-                    month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
-                month_total = 0
-
-                log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
-                    ", Month scale factor: " + str(month_scale_factor[month - 1]) +
-                    ", Annual load: " + str(self.load_size))
-
-        datetime_current = datetime(self.load_year, 1, 1, 0)
-        for load in normalized_load:
-            month = datetime_current.month
-
-            load_profile.append(self.load_size * load * month_scale_factor[month - 1])
-
-            # add an hour
-            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-
-        return load_profile
-
-    def localize_load(self):
-
-        min_distance = self.max_big_number
-        min_index = 0
-
-        idx = 0
-        for _ in default_cities():
-            lat = default_latitudes()[idx]
-            lon = default_longitudes()[idx]
-            lat_dist = self.latitude - lat
-            lon_dist = self.longitude - lon
-
-            distance = math.sqrt(math.pow(lat_dist, 2) + math.pow(lon_dist, 2))
-            if distance < min_distance:
-                min_distance = distance
-                min_index = idx
-
-            idx += 1
-
-        return min_index
 
     def create_Solar(self):
 

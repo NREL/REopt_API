@@ -1,5 +1,5 @@
-from pvwatts import PVWatts
-from dat_file_manager import DatFileManager
+from reo.src.dat_file_manager import DatFileManager
+from reo.src.pvwatts import PVWatts
 
 big_number = 100000000
 

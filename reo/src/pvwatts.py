@@ -28,6 +28,7 @@ class PVWatts:
                  longitude=None,
                  tilt=None,
                  time_steps_per_hour=1,
+                 offline=False,
                  **kwargs):
 
         self.url_base = url_base
@@ -47,6 +48,7 @@ class PVWatts:
         self.longitude = longitude
         self.tilt = tilt
         self.time_steps_per_hour = time_steps_per_hour
+        self.offline = offline  # used for testing
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -69,29 +71,38 @@ class PVWatts:
 
     @property
     def pv_prod_factor(self):
-        outputs = self.data['outputs']
-        ac_hourly = outputs.get('ac')
 
-        if ac_hourly is None:
-            ac_hourly = [0] * 8760
+        if not self.offline:
+            outputs = self.data['outputs']
+            ac_hourly = outputs.get('ac')
 
-        dc_nameplate = self.system_capacity * 1000  # W
-        prod_factor = []
+            if ac_hourly is None:
+                ac_hourly = [0] * 8760
 
-        # subhourly (i.e 15 minute data)
-        if self.time_steps_per_hour >= 1:
-            timesteps = []
-            timesteps_base = range(0, 8760)
-            for ts_b in timesteps_base:
-                for step in range(0, self.time_steps_per_hour):
-                   timesteps.append(ts_b)
+            dc_nameplate = self.system_capacity * 1000  # W
+            prod_factor = []
 
-        # downscaled run (i.e 288 steps per year)
+            # subhourly (i.e 15 minute data)
+            if self.time_steps_per_hour >= 1:
+                timesteps = []
+                timesteps_base = range(0, 8760)
+                for ts_b in timesteps_base:
+                    for step in range(0, self.time_steps_per_hour):
+                       timesteps.append(ts_b)
+
+            # downscaled run (i.e 288 steps per year)
+            else:
+                timesteps = range(0, 8760, int(1 / self.time_steps_per_hour))
+
+            for hour in timesteps:
+                # degradation (levelization factor) applied in mosel model
+                prod_factor.append(round(ac_hourly[hour]/ dc_nameplate, 4))
+
         else:
-            timesteps = range(0, 8760, int(1 / self.time_steps_per_hour))
-
-        for hour in timesteps:
-            # degradation (levelization factor) applied in mosel model
-            prod_factor.append(round(ac_hourly[hour]/ dc_nameplate, 4))
+            prod_factor = list()
+            import os
+            with open(os.path.join('tests', 'offline_pv_prod_factor.txt'), 'r') as f:
+                for line in f:
+                    prod_factor.append(float(line.strip('\n')))
 
         return prod_factor

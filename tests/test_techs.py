@@ -1,9 +1,10 @@
-from reo.techs import PV, Util
-from reo.dat_file_manager import DatFileManager
-import unittest
 import json
 import os
 import shutil
+import unittest
+
+from reo.src.dat_file_manager import DatFileManager
+from reo.src.techs import PV, Util
 
 temp_folder = os.path.join('tmp', 'test_techs_outputs')
 n_timesteps = 8760
@@ -15,11 +16,13 @@ class TestTechs(unittest.TestCase):
         self.dfm = DatFileManager()
         self.dfm.run_id = 123 # dfm is a singleton
         self.dfm.path_inputs = temp_folder
-        os.mkdir(temp_folder)
+
+        if not os.path.exists(temp_folder):
+            os.mkdir(temp_folder)
         self.dfm.n_timesteps = n_timesteps
 
         post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
-        self.pv = PV(**post)
+        self.pv = PV(offline=True, **post)
         self.util = Util(**post)
 
         self.dfm.finalize()

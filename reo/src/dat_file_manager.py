@@ -1,5 +1,5 @@
 import os
-from log_levels import log
+from reo.log_levels import log
 
 
 def _write_var(f, var, dat_var):
@@ -35,7 +35,7 @@ class DatFileManager():
     run_id = None
     path_inputs = None
     n_timesteps = 8760
-    max_big_number = 100000000
+    big_number = 100000000
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
@@ -59,7 +59,7 @@ class DatFileManager():
 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
-            load.load_list.append(self.max_big_number)
+            load.load_list.append(self.big_number)
 
         write_single_variable(file_load_profile, load.load_list, "LoadProfile")
         write_single_variable(file_load_size, load.annual_kwh, "AnnualElecLoad")
