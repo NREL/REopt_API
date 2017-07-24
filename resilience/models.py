@@ -79,7 +79,7 @@ class ResilienceCase(models.Model):
                 reo_k = res_k
 
             if res_k == 'batt_roundtrip_efficiency':
-                value = data['batt_efficiency'] * data['batt_inverter_efficiency'] * data['batt_rectifier_efficiency']
+                value = data.get('batt_efficiency') * data.get('batt_inverter_efficiency') * data.get('batt_rectifier_efficiency')
             else:
                 value = data.get(reo_k)
 
