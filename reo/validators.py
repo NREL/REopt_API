@@ -1,7 +1,6 @@
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest
 from api_definitions import *
-from api_input_validation import *
 from log_levels import log
 
 class REoptResourceValidation(Validation):
