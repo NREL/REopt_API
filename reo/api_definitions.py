@@ -6,7 +6,7 @@ analysis_period = 25
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
-        'user_id': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": [], 'default': None
+       'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
             , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
 
         # Required
@@ -642,6 +642,50 @@ def outputs():
 
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
+
+            'year_one_demand_cost':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total demand cost", "units": 'hours'},
+
+            'year_one_energy_cost':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy cost", "units": 'hours'},
+
+            'year_one_export_benefit':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+            
+            'year_one_demand_cost_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total demand cost business as ususal", "units": 'hours'},
+            
+            'year_one_energy_cost_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy cost business as ususal", "units": 'hours'},
+            
+            'year_one_energy_produced':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy produced", "units": 'hours'},
+
+            'pv_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
+            'batt_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
+            'year_one_bill':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill", "units": 'hours'},
+
+            'year_one_bill_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill bau", "units": 'hours'},
+
+            'pv_degradation_rate':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "pv_degredation rate", "units": 'hours'},
 
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
