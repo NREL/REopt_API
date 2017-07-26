@@ -14,6 +14,7 @@ urlpatterns = [
     url(r'^reopt/', include('reo.urls'), name='reopt'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
+    url(r'^resilience_stats/', include('resilience_stats.urls'), name='resilience_stats'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()
