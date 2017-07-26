@@ -1,5 +1,6 @@
 import math
 import os
+import copy
 from collections import namedtuple
 from datetime import datetime, timedelta
 
@@ -118,9 +119,6 @@ class LoadProfile(BuiltInProfile):
 
     def __init__(self, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
 
-        self.annual_kwh = None
-        self.load_list = None
-
         if user_profile:
             self.load_list = user_profile
             self.annual_kwh = sum(user_profile)
@@ -130,10 +128,11 @@ class LoadProfile(BuiltInProfile):
             self.load_list = self.built_in_profile
             self.annual_kwh = sum(self.load_list)
 
+        self.unmodified_load_list = copy.copy(self.load_list)
+
         if crit_load_factor and outage_start and outage_end:
             # modify load
             self.load_list = self.load_list[0:outage_start] \
                            + [ld * crit_load_factor for ld in self.load_list[outage_start:outage_end]] \
                            + self.load_list[outage_end:]
-        dfm = DatFileManager()
-        dfm.add_load(self)
+        DatFileManager().add_load(self)

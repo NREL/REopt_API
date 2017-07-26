@@ -442,6 +442,7 @@ class DatLibrary:
         """
 
         lp = LoadProfile(user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+        self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
         log("INFO", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +

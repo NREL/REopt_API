@@ -56,12 +56,13 @@ class DatFileManager():
     def add_load(self, load):
         file_load_profile = os.path.join(self.path_inputs, 'Load8760_' + str(self.run_id) + '.dat')
         file_load_size = os.path.join(self.path_inputs, 'LoadSize_' + str(self.run_id) + '.dat')
+        reopt_load = load.load_list
 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
-            load.load_list.append(self.big_number)
+            reopt_load.append(self.big_number)
 
-        write_single_variable(file_load_profile, load.load_list, "LoadProfile")
+        write_single_variable(file_load_profile, reopt_load, "LoadProfile")
         write_single_variable(file_load_size, load.annual_kwh, "AnnualElecLoad")
 
         self.DAT[2] = "DAT3=" + "'" + file_load_size + "'"
