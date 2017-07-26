@@ -173,7 +173,16 @@ declarations
 
 end-declarations
 
+
+! This option sets the tolerance of the integer solution
 setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
+
+! This option only allows the problem to parallelize onto 2 cores
+setparam("XPRS_MIPTHREADS", 2)
+
+! This option limits the system memory for storing branch and bound search tree, default is to let Xpress calculate
+ setparam("XPRS_TREEMEMORYLIMIT", 0) ! Change to non-zero number of MB if desired to override default
+
 !setparam("XPRS_MIPRELSTOP",.001)
 !setparam("XPRS_MAXTIME",180)
 
