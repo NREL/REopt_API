@@ -1,4 +1,5 @@
 import os
+import copy
 from reo.log_levels import log
 
 
@@ -35,7 +36,7 @@ class DatFileManager():
     run_id = None
     path_inputs = None
     n_timesteps = 8760
-    big_number = 100000000
+    big_number = 1e8
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
@@ -44,6 +45,7 @@ class DatFileManager():
     available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
+    NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
 
     def _add_constants(self):
         pass
@@ -79,7 +81,8 @@ class DatFileManager():
 
     def add_pv(self, pv):
         self.pv = pv
-        self.pvnm = self.pv
+        self.pvnm = copy.deepcopy(pv)
+        self.pvnm.nmil_regime = 'NMtoIL'
 
     def add_util(self, util):
         self.util = util
@@ -87,11 +90,51 @@ class DatFileManager():
     def add_maxsizes(self):
         pass
 
-    def add_nmil(self):
-        pass
+    def add_net_metering(self, net_metering_limit, interconnection_limit):
+
+        # constant.dat contains NMILRegime and TechToNMILMapping
+        # NMIL.dat contains NMILLimits
+        # placing all three in NMIL.dat will require a new NMIL_bau.dat
+
+        TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
+        TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+
+        file_NEM = os.path.join(self.path_inputs, 'NMIL_' + str(self.run_id) + '.dat')
+        file_NEM_bau = os.path.join(self.path_inputs, 'NMIL_' + str(self.run_id) + '_bau.dat')
+
+        write_single_variable(file_NEM,
+                              [net_metering_limit, interconnection_limit, interconnection_limit*10],
+                              'NMILLimits')
+        write_single_variable(file_NEM, self.NMILRegime, 'NMILRegime', mode='a')
+        write_single_variable(file_NEM, TechToNMILMapping, 'TechToNMILMapping', mode='a')
+
+        write_single_variable(file_NEM_bau,
+                              [net_metering_limit, interconnection_limit, interconnection_limit*10],
+                              'NMILLimits')
+        write_single_variable(file_NEM_bau, self.NMILRegime, 'NMILRegime', mode='a')
+        write_single_variable(file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
+
+        self.DAT[16] = "DAT17=" + "'" + file_NEM + "'"
+        self.DAT_bau[16] = "DAT17=" + "'" + file_NEM_bau + "'"
 
     def add_storage(self):
         pass
+
+    def _get_REopt_techToNMILMapping(self, techs):
+        TechToNMILMapping = list()
+
+        for tech in techs:
+
+            if eval('self.' + tech) is not None:
+
+                tech_regime = eval('self.' + tech + '.nmil_regime')
+
+                for regime in self.NMILRegime:
+                    if regime == tech_regime:
+                        TechToNMILMapping.append(1)
+                    else:
+                        TechToNMILMapping.append(0)
+        return TechToNMILMapping
 
     def _get_REopt_prodfactor(self, techs):
         prod_factor = []

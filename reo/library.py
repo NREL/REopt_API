@@ -117,6 +117,7 @@ class DatLibrary:
         self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
         self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
         self.file_NEM = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '.dat')
+        self.file_NEM_bau = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '_bau.dat')
 
         self.path_utility = os.path.join(self.path_run_inputs, "Utility")
         self.path_various = os.path.join(self.path_run_inputs)
@@ -212,11 +213,13 @@ class DatLibrary:
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        self.create_nem()
         self.create_utility()
 
         solar_data = self.create_Solar()
         self.pv_kw_ac_hourly = solar_data
+
+        self.create_nem()
+        self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
@@ -459,8 +462,6 @@ class DatLibrary:
         pv = PV(**self.inputs_dict)
         util = Util(**self.inputs_dict)
 
-        self.dfm.finalize()  # needed for ProdFactor (depends on which Techs are defined)
-
         solar_data = pv.prod_factor
 
         self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
@@ -673,22 +674,14 @@ class DatLibrary:
 
     def create_nem(self):
 
-        net_metering_limit = 0
-        interconnection_limit = 1000000
-
-        nem_input = getattr(self, "net_metering_limit")
-        ic_input = getattr(self, "interconnection_limit")
-
-        if nem_input is not None:
-            net_metering_limit = nem_input
-        if ic_input is not None:
-            interconnection_limit = ic_input
+        net_metering_limit = self.inputs_dict.get("net_metering_limit")
         if net_metering_limit > 0:
             self.net_metering = True
 
-        # check on if NM, IC are in right spot
-        write_single_variable(self.file_NEM,
-                                   [net_metering_limit, interconnection_limit, self.max_big_number],
-                                   "NMILLimits")
+        self.dfm.add_net_metering(
+            net_metering_limit=net_metering_limit,
+            interconnection_limit=self.inputs_dict.get("interconnection_limit")
+        )
 
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
+        self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"

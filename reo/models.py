@@ -5,15 +5,13 @@ from api_definitions import *
 import json
 import uuid
 from picklefield.fields import PickledObjectField
-from library import *
+from library import DatLibrary
 from utilities import is_error
 import numpy as np
 
 from resilience.models import ResilienceCase
-from resilience.api_definitions import inputs as resilience_inputs
-from resilience.outage_simulator import simulate_outage
 
-# Create your models here.
+
 class RunInput(models.Model):
 
     user = models.ForeignKey(User, null=True) 

@@ -120,7 +120,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                       "tool_tip": 'Battery initial state-of-charge'},
 
         'interconnection_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                                  'max': None, 'default': None,
+                                  'max': None, 'default': max_big_number,
                                   "description": "Limit on Power flowing from System to the Grid", "units": 'kilowatt',
                                   "tool_tip": 'The maximum power that can be transmitted to the grid at any one time, in kilowatts. Interconnection limits are typically established by state policy.'},
 

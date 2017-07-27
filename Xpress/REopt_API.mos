@@ -186,6 +186,8 @@ setparam("XPRS_MIPTHREADS", 2)
 !setparam("XPRS_MIPRELSTOP",.001)
 !setparam("XPRS_MAXTIME",180)
 
+!!! NOTE: any arguments that are used to dimension others must be within an initilization clause before
+!!! the arguments that depend on them are initialized (such as NMILRegime).
 
 initializations from DAT1 ! constants
 	Tech
@@ -193,10 +195,9 @@ initializations from DAT1 ! constants
 	TechIsGrid
 	TechToLoadMatrix
 	TechClass
-	NMILRegime
-	TechToNMILMapping
 	TurbineDerate
 	TechToTechClassMatrix
+	NMILRegime
 end-initializations
 
 initializations from DAT2 ! economics
@@ -283,8 +284,9 @@ initializations from DAT16
 	FuelBurnRateM
 end-initializations
 
-initializations from DAT17
+initializations from DAT17  ! net metering
 	NMILLimits
+	TechToNMILMapping
 end-initializations
 
 

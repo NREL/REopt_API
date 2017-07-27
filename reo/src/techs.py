@@ -17,6 +17,7 @@ class Tech(object):
         self.max_size = max_size
         self.cost_per_kw = cost_per_kw
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
+        self.nmil_regime = None
 
         # self.fuel_cost = fuel_cost
         # self.om_capacity_cost = om_capacity_cost
@@ -58,8 +59,7 @@ class Util(Tech):
         self.outage_end = outage_end
         self.loads_served = ['retail', 'storage']
 
-        dfm = DatFileManager()
-        dfm.add_util(self)
+        DatFileManager().add_util(self)
 
     @property
     def prod_factor(self):
@@ -78,9 +78,9 @@ class PV(Tech):
                                  max_size=kwargs.get('pv_kw_max'),
                                  cost_per_kw=kwargs.get('pv_cost'),
                                  **kwargs)
+        self.nmil_regime = 'BelowNM'
 
-        dfm = DatFileManager()
-        dfm.add_pv(self)
+        DatFileManager().add_pv(self)
 
     @property
     def prod_factor(self):
