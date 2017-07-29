@@ -50,8 +50,29 @@ class DatFileManager():
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
 
-    def _add_constants(self):
-        pass
+    file_constant = os.path.join(path_inputs, 'constant_' + str(run_id) + '.dat')
+    file_constant_bau = os.path.join(path_inputs, 'constant_' + str(run_id) + '_bau.dat')
+    file_load_profile = os.path.join(path_inputs, 'Load8760_' + str(run_id) + '.dat')
+    file_load_size = os.path.join(path_inputs, 'LoadSize_' + str(run_id) + '.dat')
+    file_gis = os.path.join(path_inputs, "GIS_" + str(run_id) + ".dat")
+    file_gis_bau = os.path.join(path_inputs, "GIS_" + str(run_id) + "_bau.dat")
+    file_storage = os.path.join(path_inputs, 'storage_' + str(run_id) + '.dat')
+    file_storage_bau = os.path.join(path_inputs, 'storage_' + str(run_id) + '_bau.dat')
+    file_NEM = os.path.join(path_inputs, 'NMIL_' + str(run_id) + '.dat')
+    file_NEM_bau = os.path.join(path_inputs, 'NMIL_' + str(run_id) + '_bau.dat')
+    
+    DAT[0] = "DAT1=" + "'" + file_constant + "'"
+    DAT_bau[0] = "DAT1=" + "'" + file_constant_bau + "'"
+    DAT[2] = "DAT3=" + "'" + file_load_size + "'"
+    DAT_bau[2] = DAT[2]
+    DAT[3] = "DAT4=" + "'" + file_load_profile + "'"
+    DAT_bau[3] = DAT[3]
+    DAT[4] = "DAT5=" + "'" + file_gis + "'"
+    DAT_bau[4] = "DAT5=" + "'" + file_gis_bau + "'"
+    DAT[5] = "DAT6=" + "'" + file_storage + "'"
+    DAT_bau[5] = "DAT6=" + "'" + file_storage_bau + "'"
+    DAT[16] = "DAT17=" + "'" + file_NEM + "'"
+    DAT_bau[16] = "DAT17=" + "'" + file_NEM_bau + "'"
 
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
@@ -59,20 +80,13 @@ class DatFileManager():
         return True
 
     def add_load(self, load):
-        file_load_profile = os.path.join(self.path_inputs, 'Load8760_' + str(self.run_id) + '.dat')
-        file_load_size = os.path.join(self.path_inputs, 'LoadSize_' + str(self.run_id) + '.dat')
 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
             load.load_list.append(self.big_number)
 
-        write_to_dat(file_load_profile, load.load_list, "LoadProfile")
-        write_to_dat(file_load_size, load.annual_kwh, "AnnualElecLoad")
-
-        self.DAT[2] = "DAT3=" + "'" + file_load_size + "'"
-        self.DAT_bau[2] = self.DAT[2]
-        self.DAT[3] = "DAT4=" + "'" + file_load_profile + "'"
-        self.DAT_bau[3] = self.DAT[3]
+        write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
+        write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
     def add_economics(self, economics_dict):
         file_path = os.path.join(self.path_inputs, 'economics_' + str(self.run_id) + '.dat'),
@@ -95,31 +109,42 @@ class DatFileManager():
 
     def add_net_metering(self, net_metering_limit, interconnection_limit):
 
-        # constant.dat contains NMILRegime and TechToNMILMapping
-        # NMIL.dat contains NMILLimits
-        # placing all three in NMIL.dat will require a new NMIL_bau.dat
+        # constant.dat contains NMILRegime
+        # NMIL.dat contains NMILLimits and TechToNMILMapping
 
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
 
-        file_NEM = os.path.join(self.path_inputs, 'NMIL_' + str(self.run_id) + '.dat')
-        file_NEM_bau = os.path.join(self.path_inputs, 'NMIL_' + str(self.run_id) + '_bau.dat')
-
-        write_to_dat(file_NEM,
+        write_to_dat(self.file_NEM,
                               [net_metering_limit, interconnection_limit, interconnection_limit*10],
                               'NMILLimits')
-        write_to_dat(file_NEM, TechToNMILMapping, 'TechToNMILMapping', mode='a')
+        write_to_dat(self.file_NEM, TechToNMILMapping, 'TechToNMILMapping', mode='a')
 
-        write_to_dat(file_NEM_bau,
+        write_to_dat(self.file_NEM_bau,
                               [net_metering_limit, interconnection_limit, interconnection_limit*10],
                               'NMILLimits')
-        write_to_dat(file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
-
-        self.DAT[16] = "DAT17=" + "'" + file_NEM + "'"
-        self.DAT_bau[16] = "DAT17=" + "'" + file_NEM_bau + "'"
+        write_to_dat(self.file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
 
     def add_storage(self, storage):
         self.storage = storage
+
+        batt_level_coef = list()
+        for batt_level in range(storage.level_count):
+            for coef in storage.level_coefs:
+                batt_level_coef.append(coef)
+
+        # storage_bau.dat gets same definitions as storage.dat so that initializations don't fail in bau case
+        # however, storage is typically 'turned off' by having max size set to zero in maxsizes_bau.dat
+        write_to_dat(self.file_storage, batt_level_coef, 'BattLevelCoef')
+        write_to_dat(self.file_storage_bau, batt_level_coef, 'BattLevelCoef')
+
+        write_to_dat(self.file_storage, storage.soc_min, 'StorageMinChargePcent', mode='a')
+        write_to_dat(self.file_storage_bau, storage.soc_min, 'StorageMinChargePcent', mode='a')
+
+        write_to_dat(self.file_storage, storage.soc_init, 'InitSOC', mode='a')
+        write_to_dat(self.file_storage_bau, storage.soc_init, 'InitSOC', mode='a')
+
+        # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -137,15 +162,17 @@ class DatFileManager():
                         TechToNMILMapping.append(0)
         return TechToNMILMapping
 
-    def _get_REopt_prodfactor_techToLoad_derate(self, techs):
+    def _get_REopt_array_tech_load(self, techs):
         """
-        building prod_factor and tech_to_load concurrently for speed (they require the same for-loops)
+        Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
-        :return: prod_factor, tech_to_load, derate
+        :return: prod_factor, tech_to_load, derate, etaStorIn, etaStorOut
         """
-        prod_factor = []
-        tech_to_load = []
-        derate = []
+        prod_factor = list()
+        tech_to_load = list()
+        derate = list()
+        eta_storage_in = list()
+        eta_storage_out = list()
 
         for tech in techs:
 
@@ -154,6 +181,10 @@ class DatFileManager():
                 derate.append(eval('self.' + tech + '.derate'))
 
                 for load in self.available_loads:
+                    
+                    eta_storage_in.append(self.storage.roundtrip_efficiency if load == 'storage' else 1)
+                    eta_storage_out.append(self.storage.roundtrip_efficiency if load == 'storage' else 1)
+                    # only eta_storage_in is used in REopt currently
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
 
@@ -176,10 +207,10 @@ class DatFileManager():
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, derate
+        return prod_factor, tech_to_load, derate, eta_storage_in, eta_storage_out
 
     def _get_REopt_techs(self, techs):
-        reopt_techs = []
+        reopt_techs = list()
         for tech in techs:
 
             if eval('self.' + tech) is not None:
@@ -194,8 +225,8 @@ class DatFileManager():
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
         :return: tech_classes, tech_to_tech_class
         """
-        tech_classes = []
-        tech_to_tech_class = []
+        tech_classes = list()
+        tech_to_tech_class = list()
         for tech in techs:
 
             if eval('self.' + tech) is not None:
@@ -232,39 +263,35 @@ class DatFileManager():
         reopt_tech_classes, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
         reopt_tech_classes_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
 
-        prod_factor, tech_to_load, derate = self._get_REopt_prodfactor_techToLoad_derate(self.available_techs)
-        prod_factor_bau, tech_to_load_bau, derate_bau = self._get_REopt_prodfactor_techToLoad_derate(self.bau_techs)
+        prod_factor, tech_to_load, derate, eta_storage_in, eta_storage_out = \
+            self._get_REopt_array_tech_load(self.available_techs)
+        prod_factor_bau, tech_to_load_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau = \
+            self._get_REopt_array_tech_load(self.bau_techs)
 
-        file_constant = os.path.join(self.path_inputs, 'constant_' + str(self.run_id) + '.dat')
-        self.DAT[0] = "DAT1=" + "'" + file_constant + "'"
-        file_constant_bau = os.path.join(self.path_inputs, 'constant_' + str(self.run_id) + '_bau.dat')
-        self.DAT_bau[0] = "DAT1=" + "'" + file_constant_bau + "'"
+        write_to_dat(self.file_constant, reopt_techs, 'Tech')
+        write_to_dat(self.file_constant, tech_is_grid, 'TechIsGrid', mode='a')
+        write_to_dat(self.file_constant, load_list, 'Load', mode='a')
+        write_to_dat(self.file_constant, tech_to_load, 'TechToLoadMatrix', mode='a')
+        write_to_dat(self.file_constant, reopt_tech_classes, 'TechClass', mode='a')
+        write_to_dat(self.file_constant, self.NMILRegime, 'NMILRegime', mode='a')
+        write_to_dat(self.file_constant, derate, 'TurbineDerate', mode='a')
+        write_to_dat(self.file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
 
-        write_to_dat(file_constant, reopt_techs, 'Tech')
-        write_to_dat(file_constant, tech_is_grid, 'TechIsGrid', mode='a')
-        write_to_dat(file_constant, load_list, 'Load', mode='a')
-        write_to_dat(file_constant, tech_to_load, 'TechToLoadMatrix', mode='a')
-        write_to_dat(file_constant, reopt_tech_classes, 'TechClass', mode='a')
-        write_to_dat(file_constant, self.NMILRegime, 'NMILRegime', mode='a')
-        write_to_dat(file_constant, derate, 'TurbineDerate', mode='a')
-        write_to_dat(file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
-
-        write_to_dat(file_constant_bau, reopt_techs_bau, 'Tech')
-        write_to_dat(file_constant_bau, tech_is_grid_bau, 'TechIsGrid', mode='a')
-        write_to_dat(file_constant_bau, load_list, 'Load', mode='a')
-        write_to_dat(file_constant_bau, tech_to_load_bau, 'TechToLoadMatrix', mode='a')
-        write_to_dat(file_constant_bau, reopt_tech_classes_bau, 'TechClass', mode='a')
-        write_to_dat(file_constant_bau, self.NMILRegime, 'NMILRegime', mode='a')
-        write_to_dat(file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
-        write_to_dat(file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
+        write_to_dat(self.file_constant_bau, reopt_techs_bau, 'Tech')
+        write_to_dat(self.file_constant_bau, tech_is_grid_bau, 'TechIsGrid', mode='a')
+        write_to_dat(self.file_constant_bau, load_list, 'Load', mode='a')
+        write_to_dat(self.file_constant_bau, tech_to_load_bau, 'TechToLoadMatrix', mode='a')
+        write_to_dat(self.file_constant_bau, reopt_tech_classes_bau, 'TechClass', mode='a')
+        write_to_dat(self.file_constant_bau, self.NMILRegime, 'NMILRegime', mode='a')
+        write_to_dat(self.file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
+        write_to_dat(self.file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
 
         # ProdFactor stored in GIS.dat
-        file_gis = os.path.join(self.path_inputs, "GIS_" + str(self.run_id) + ".dat")
-        file_gis_bau = os.path.join(self.path_inputs, "GIS_" + str(self.run_id) + "_bau.dat")
+        write_to_dat(self.file_gis, prod_factor, "ProdFactor")
+        write_to_dat(self.file_gis_bau, prod_factor_bau, "ProdFactor")
 
-        write_to_dat(file_gis, prod_factor, "ProdFactor")
-        write_to_dat(file_gis_bau, prod_factor_bau, "ProdFactor")
-
-        self.DAT[4] = "DAT5=" + "'" + file_gis + "'"
-        self.DAT_bau[4] = "DAT5=" + "'" + file_gis_bau + "'"
-
+        # storage.dat
+        write_to_dat(self.file_storage, eta_storage_in, 'EtaStorIn', mode='a')
+        write_to_dat(self.file_storage, eta_storage_out, 'EtaStorOut', mode='a')
+        write_to_dat(self.file_storage_bau, eta_storage_in_bau, 'EtaStorIn', mode='a')
+        write_to_dat(self.file_storage_bau, eta_storage_out_bau, 'EtaStorOut', mode='a')

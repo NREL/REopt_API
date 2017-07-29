@@ -10,6 +10,7 @@ from api_definitions import *
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.techs import PV, Util
 from reo.src.load_profile import LoadProfile
+from reo.src.storage import Storage
 from results import Results
 from urdb_parse import *
 from utilities import Command, check_directory_created, write_single_variable, is_error
@@ -350,42 +351,22 @@ class DatLibrary:
             InitSOC
         NOTE: EtaStorIn and EtaStorOut are array(Tech,Load)
         """
-        Tech = ['PV', 'PVNM', 'UTIL1']  # copied from create_constants, needs to adjusted for future techs
-        Load = ['1R', '1W', '1X', '1S']
+        storage = Storage(
+            min_kw=self.batt_kw_min,
+            max_kw=self.batt_kw_max,
+            min_kwh=self.batt_kwh_min,
+            max_kwh=self.batt_kwh_max,
+            batt_efficiency=self.batt_efficiency,
+            batt_inverter_efficiency=self.batt_inverter_efficiency,
+            batt_rectifier_efficiency=self.batt_rectifier_efficiency,
+            soc_min=self.batt_soc_min,
+            soc_init=self.batt_soc_init,
+            can_grid_charge=self.batt_can_gridcharge,
+        )
+        self.dfm.add_storage(storage)
 
         self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
-
-        roundtrip_efficiency = self.batt_efficiency * self.batt_inverter_efficiency * self.batt_rectifier_efficiency
-
-        etaStorIn = list()
-        etaStorOut = list()
-        for t in Tech:
-            for ld in Load:
-                etaStorIn.append(roundtrip_efficiency if ld is '1S' else 1)
-                etaStorOut.append(roundtrip_efficiency if ld is '1S' else 1)
-
-        write_single_variable(self.file_storage, self.batt_soc_min, 'StorageMinChargePcent')
-        write_single_variable(self.file_storage, etaStorIn, 'EtaStorIn', mode='a')
-        write_single_variable(self.file_storage, etaStorOut, 'EtaStorOut', mode='a')
-        write_single_variable(self.file_storage, [-1, 0], 'BattLevelCoef', mode='a')
-        write_single_variable(self.file_storage, self.batt_soc_init, 'InitSOC', mode='a')
-
-        # NOTE: All bau dat files except maxsizes can be eliminated by just placing zeros in maxsizes_bau.dat
-        # (including all utility bau files)
         self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
-        Tech_bau = ['UTIL1']
-        etaStorIn_bau = list()
-        etaStorOut_bau = list()
-        for t in Tech_bau:
-            for ld in Load:
-                etaStorIn_bau.append(roundtrip_efficiency if ld is '1S' else 1)
-                etaStorOut_bau.append(roundtrip_efficiency if ld is '1S' else 1)
-
-        write_single_variable(self.file_storage_bau, self.batt_soc_min, 'StorageMinChargePcent')
-        write_single_variable(self.file_storage_bau, etaStorIn_bau, 'EtaStorIn', mode='a')
-        write_single_variable(self.file_storage_bau, etaStorOut_bau, 'EtaStorOut', mode='a')
-        write_single_variable(self.file_storage_bau, [-1, 0], 'BattLevelCoef', mode='a')
-        write_single_variable(self.file_storage_bau, self.batt_soc_init, 'InitSOC', mode='a')
 
     # DAT2 - Economics
     def create_economics(self):
