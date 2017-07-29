@@ -32,7 +32,7 @@ parameters
   DAT3 = ScenarioPath + "/LoadSize_" + ScenarioNum + ".dat"
   DAT4 = ScenarioPath + "/Load8760_" + ScenarioNum + ".dat"
   DAT5 = ScenarioPath + "/GIS_" + ScenarioNum + ".dat"
-  DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"
+  DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"   ! Default dat file has empty arrays
   DAT7 = ScenarioPath + "/maxsizes_" + ScenarioNum + ".dat"
   DAT8  = ScenarioPath + "/Utility/TimeStepsDemand.dat"
   DAT9  = ScenarioPath + "/Utility/DemandRate.dat"
@@ -236,7 +236,7 @@ initializations from DAT5 ! GIS
 	ProdFactor
 end-initializations
 
-initializations from DAT6 ! storage
+initializations from DAT6 ! storage <--NEED A BAU VERSION WITH EMPTY PARAMS?
 	StorageMinChargePcent
 	EtaStorIn
 	EtaStorOut

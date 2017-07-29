@@ -332,41 +332,12 @@ class DatLibrary:
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
 
-        shutil.copyfile(os.path.join(self.folder_various, 'constant_bau.dat'), self.file_constant_bau)
         shutil.copyfile(os.path.join(self.folder_various, 'maxsizes_bau.dat'), self.file_max_size_bau)
 
     # Constant file
     def create_constants(self):
 
-        can_grid_charge = getattr(self, "batt_can_gridcharge", 1)
-
-        Tech = ['PV', 'PVNM', 'UTIL1']
-        TechIsGrid = [0, 0, 1]
-        Load = ['1R', '1W', '1X', '1S']
-        TechToLoadMatrix = [1, 1, 1, 1, \
-                            1, 1, 1, 1, \
-                            1, 0, 0, int(can_grid_charge)]
-        TechClass = ['PV', 'UTIL']
-        NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        TechToNMILMapping = [1, 0, 0, \
-                             0, 1, 0, \
-                             0, 0, 0]
-        TurbineDerate = [1, 1, 0]
-        TechToTechClassMatrix = [1, 0, \
-                                 1, 0, \
-                                 0, 0]
-
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
-
-        write_single_variable(self.file_constant, Tech, 'Tech')
-        write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
-        write_single_variable(self.file_constant, Load, 'Load', 'a')
-        write_single_variable(self.file_constant, TechToLoadMatrix, 'TechToLoadMatrix', 'a')
-        write_single_variable(self.file_constant, TechClass, 'TechClass', 'a')
-        write_single_variable(self.file_constant, NMILRegime, 'NMILRegime', 'a')
-        write_single_variable(self.file_constant, TechToNMILMapping, 'TechToNMILMapping', 'a')
-        write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
-        write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
 
     # storage
     def create_storage(self):
