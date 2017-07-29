@@ -16,9 +16,10 @@ class Tech(object):
         self.max_kw = max_kw
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
-        self.reopt_class = None
+        self.reopt_class = ""
         self.is_grid = False
         self.derate = 1
+        self.acres_per_kw = None
 
         # self._check_inputs()
         self.kwargs = kwargs
@@ -45,7 +46,7 @@ class Tech(object):
 class Util(Tech):
 
     def __init__(self, outage_start=None, outage_end=None, **kwargs):
-        super(Util, self).__init__(**kwargs)
+        super(Util, self).__init__(max_kw=12000000, **kwargs)
 
         self.outage_start = outage_start
         self.outage_end = outage_end
@@ -67,13 +68,14 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, **kwargs):
+    def __init__(self, acres_per_kw=6000, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
                                  cost_per_kw=kwargs.get('pv_cost'),
                                  **kwargs)
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
+        self.acres_per_kw = acres_per_kw
 
         DatFileManager().add_pv(self)
 

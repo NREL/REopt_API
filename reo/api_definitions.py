@@ -136,7 +136,7 @@ def inputs(filter='', full_list=False, just_required=False):
                            "tool_tip": 'The estimated price of electricity on the wholesale market in dollars per kilowatt.'},
 
         'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': 1e9, 'default': None,
+                      'max': 1e9, 'default': 1e9,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 

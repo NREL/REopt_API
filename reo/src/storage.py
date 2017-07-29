@@ -1,5 +1,5 @@
 from reo.src.dat_file_manager import DatFileManager
-big_number = 1000000
+big_number = 100000
 
 
 class Storage(object):

@@ -11,6 +11,7 @@ from reo.src.dat_file_manager import DatFileManager
 from reo.src.techs import PV, Util
 from reo.src.load_profile import LoadProfile
 from reo.src.storage import Storage
+from reo.src.site import Site
 from results import Results
 from urdb_parse import *
 from utilities import Command, check_directory_created, write_single_variable, is_error
@@ -151,10 +152,8 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
-        self.dfm = DatFileManager()
-        self.dfm.run_id = self.run_input_id  # dfm is a singleton
-        self.dfm.path_inputs = self.path_run_inputs
-        self.dfm.n_timesteps = inputs_dict['time_steps_per_hour'] * 8760
+        self.dfm = DatFileManager(run_id=self.run_input_id, inputs_path=self.path_run_inputs,
+                                  n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
@@ -333,8 +332,6 @@ class DatLibrary:
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
 
-        shutil.copyfile(os.path.join(self.folder_various, 'maxsizes_bau.dat'), self.file_max_size_bau)
-
     # Constant file
     def create_constants(self):
 
@@ -423,67 +420,8 @@ class DatLibrary:
 
     def create_size_limits(self):
 
-        acres_per_MW = 6
-        squarefeet_to_acre = 2.2957e-5
-        total_acres = 0
-
-        # Internal working defaults, probably need to revamp and move to api_definitions.py
-        pv_kw_min = 0
-        pv_kw_max = 200000
-        util_kw_max = 12000000
-
-        batt_kw_min = 0
-        batt_kwh_min = 0
-        batt_kw_max = 10000
-        batt_kwh_max = 10000
-
-
-        # pv max size based on user input
-        if self.pv_kw_max is not None:
-            pv_kw_max = self.pv_kw_max
-        else:
-            # don't restrict unless they specify both land_area and roof_area, otherwise one of them is "unlimited" in UI
-            if self.roof_area is not None and self.land_area is not None:
-                total_acres += (self.roof_area * squarefeet_to_acre) + self.land_area
-                pv_kw_max = (total_acres / acres_per_MW) * 1000
-
-        if self.pv_kw_min is not None:
-            pv_kw_min = self.pv_kw_min
-
-        if pv_kw_min > pv_kw_max:
-            pv_kw_min = pv_kw_max
-
-        # battery constraints
-        if self.batt_kw_max is not None:
-            batt_kw_max = self.batt_kw_max
-        if self.batt_kwh_max is not None:
-            batt_kwh_max = self.batt_kwh_max
-        if self.batt_kw_min is not None:
-            batt_kw_min = self.batt_kw_min
-        if self.batt_kwh_min is not None:
-            batt_kwh_min = self.batt_kwh_min
-
-        # update outputs
-        self.pv_kw_min = pv_kw_min
-        self.pv_kw_max = pv_kw_max
-        self.batt_kwh_min = batt_kwh_min
-        self.batt_kwh_max = batt_kwh_max
-        self.batt_kw_min = batt_kw_min
-        self.batt_kw_max = batt_kw_max
-
-        MaxSize = [pv_kw_max, pv_kw_max, util_kw_max]
-        MinStorageSizeKW = batt_kw_min
-        MinStorageSizeKWH = batt_kwh_min
-        MaxStorageSizeKW = batt_kw_max
-        MaxStorageSizeKWH = batt_kwh_max
-        TechClassMinSize = [pv_kw_min, 0]
-
-        write_single_variable(self.file_max_size, MaxSize, "MaxSize", 'a')
-        write_single_variable(self.file_max_size, MinStorageSizeKW, "MinStorageSizeKW", 'a')
-        write_single_variable(self.file_max_size, MaxStorageSizeKW, "MaxStorageSizeKW", 'a')
-        write_single_variable(self.file_max_size, MinStorageSizeKWH, "MinStorageSizeKWH", 'a')
-        write_single_variable(self.file_max_size, MaxStorageSizeKWH, "MaxStorageSizeKWH", 'a')
-        write_single_variable(self.file_max_size, TechClassMinSize, "TechClassMinSize", 'a')
+        site = Site(**self.inputs_dict)
+        self.dfm.add_site(site)
 
         self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
 

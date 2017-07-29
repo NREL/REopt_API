@@ -2,6 +2,7 @@ import os
 import copy
 from reo.log_levels import log
 
+squarefeet_to_acre = 2.2957e-5
 
 def _write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
@@ -33,9 +34,6 @@ class DatFileManager():
     """
 
     __metaclass__ = Singleton
-    run_id = None
-    path_inputs = None
-    n_timesteps = 8760
     big_number = 1e8
     DAT = [None] * 20
     DAT_bau = [None] * 20
@@ -43,36 +41,50 @@ class DatFileManager():
     pvnm = None
     util = None
     storage = None
+    site = None
 
     available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
     available_tech_classes = ['PV', 'UTIL']  # this is a REopt 'class', not a python class
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-
-    file_constant = os.path.join(path_inputs, 'constant_' + str(run_id) + '.dat')
-    file_constant_bau = os.path.join(path_inputs, 'constant_' + str(run_id) + '_bau.dat')
-    file_load_profile = os.path.join(path_inputs, 'Load8760_' + str(run_id) + '.dat')
-    file_load_size = os.path.join(path_inputs, 'LoadSize_' + str(run_id) + '.dat')
-    file_gis = os.path.join(path_inputs, "GIS_" + str(run_id) + ".dat")
-    file_gis_bau = os.path.join(path_inputs, "GIS_" + str(run_id) + "_bau.dat")
-    file_storage = os.path.join(path_inputs, 'storage_' + str(run_id) + '.dat')
-    file_storage_bau = os.path.join(path_inputs, 'storage_' + str(run_id) + '_bau.dat')
-    file_NEM = os.path.join(path_inputs, 'NMIL_' + str(run_id) + '.dat')
-    file_NEM_bau = os.path.join(path_inputs, 'NMIL_' + str(run_id) + '_bau.dat')
     
-    DAT[0] = "DAT1=" + "'" + file_constant + "'"
-    DAT_bau[0] = "DAT1=" + "'" + file_constant_bau + "'"
-    DAT[2] = "DAT3=" + "'" + file_load_size + "'"
-    DAT_bau[2] = DAT[2]
-    DAT[3] = "DAT4=" + "'" + file_load_profile + "'"
-    DAT_bau[3] = DAT[3]
-    DAT[4] = "DAT5=" + "'" + file_gis + "'"
-    DAT_bau[4] = "DAT5=" + "'" + file_gis_bau + "'"
-    DAT[5] = "DAT6=" + "'" + file_storage + "'"
-    DAT_bau[5] = "DAT6=" + "'" + file_storage_bau + "'"
-    DAT[16] = "DAT17=" + "'" + file_NEM + "'"
-    DAT_bau[16] = "DAT17=" + "'" + file_NEM_bau + "'"
+    def __init__(self, run_id, inputs_path, n_timesteps=8760):
+        self.n_timesteps = n_timesteps
+        file_tail = str(run_id) + '.dat'
+        file_tail_bau = str(run_id) + '_bau.dat'
+        
+        self.file_constant = os.path.join(inputs_path, 'constant_' + file_tail)
+        self.file_constant_bau = os.path.join(inputs_path, 'constant_' + file_tail_bau)
+        self.file_economics = os.path.join(inputs_path, 'economics_' + file_tail)
+        self.file_economics_bau = os.path.join(inputs_path, 'economics_' + file_tail_bau)
+        self.file_load_profile = os.path.join(inputs_path, 'Load8760_' + file_tail)
+        self.file_load_size = os.path.join(inputs_path, 'LoadSize_' + file_tail)
+        self.file_gis = os.path.join(inputs_path, "GIS_" + file_tail)
+        self.file_gis_bau = os.path.join(inputs_path, "GIS_" + file_tail_bau)
+        self.file_storage = os.path.join(inputs_path, 'storage_' + file_tail)
+        self.file_storage_bau = os.path.join(inputs_path, 'storage_' + file_tail_bau)
+        self.file_max_size = os.path.join(inputs_path, 'maxsizes_' + file_tail)
+        self.file_max_size_bau = os.path.join(inputs_path, 'maxsizes_' + file_tail_bau)
+        self.file_NEM = os.path.join(inputs_path, 'NMIL_' + file_tail)
+        self.file_NEM_bau = os.path.join(inputs_path, 'NMIL_' + file_tail_bau)
+        
+        self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
+        self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
+        self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
+        self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
+        self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
+        self.DAT_bau[2] = self.DAT[2]
+        self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
+        self.DAT_bau[3] = self.DAT[3]
+        self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
+        self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
+        self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
+        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
+        self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
+        self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
+        self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
+        self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
@@ -89,10 +101,9 @@ class DatFileManager():
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
     def add_economics(self, economics_dict):
-        file_path = os.path.join(self.path_inputs, 'economics_' + str(self.run_id) + '.dat'),
         for k, v in economics_dict.iteritems():
             try:
-                write_to_dat(file_path, v, k, 'a')
+                write_to_dat(self.file_economics, v, k, 'a')
             except:
                 log('ERROR', 'Error writing economics for ' + k)
 
@@ -104,8 +115,8 @@ class DatFileManager():
     def add_util(self, util):
         self.util = util
 
-    def add_maxsizes(self):
-        pass
+    def add_site(self, site):
+        self.site = site
 
     def add_net_metering(self, net_metering_limit, interconnection_limit):
 
@@ -166,10 +177,11 @@ class DatFileManager():
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
-        :return: prod_factor, tech_to_load, derate, etaStorIn, etaStorOut
+        :return: prod_factor, tech_to_load, tech_is_grid, derate, etaStorIn, etaStorOut
         """
         prod_factor = list()
         tech_to_load = list()
+        tech_is_grid = list()
         derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
@@ -178,6 +190,7 @@ class DatFileManager():
 
             if eval('self.' + tech) is not None:
 
+                tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
 
                 for load in self.available_loads:
@@ -207,7 +220,7 @@ class DatFileManager():
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, derate, eta_storage_in, eta_storage_out
+        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -223,9 +236,10 @@ class DatFileManager():
         """
         
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
-        :return: tech_classes, tech_to_tech_class
+        :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
         tech_classes = list()
+        tech_class_min_size = list()
         tech_to_tech_class = list()
         for tech in techs:
 
@@ -235,13 +249,35 @@ class DatFileManager():
 
                     if tech.upper() == tc:
                         tech_classes.append(tc)
+                        tech_class_min_size.append(eval('self.' + tech + '.min_kw'))
 
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
                         tech_to_tech_class.append(1)
                     else:
                         tech_to_tech_class.append(0)
 
-        return tech_classes, tech_to_tech_class
+        return tech_classes, tech_class_min_size, tech_to_tech_class
+
+    def _get_REopt_tech_max_sizes(self, techs):
+        max_sizes = list()
+        for tech in techs:
+
+            if eval('self.' + tech) is not None:
+
+                site_kw_max = eval('self.' + tech + '.max_kw')
+                
+                if eval('self.' + tech + '.acres_per_kw') is not None:
+
+                    if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
+                        # don't restrict unless they specify both land_area and roof_area,
+                        # otherwise one of them is "unlimited" in UI
+                        acres_available = self.site.roof_squarefeet * squarefeet_to_acre \
+                                          + self.site.land_acres
+                        site_kw_max = acres_available / eval('self.' + tech + '.acres_per_kw')
+
+                max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
+
+        return max_sizes
 
     def finalize(self):
         """
@@ -251,23 +287,24 @@ class DatFileManager():
         :return: None
         """
 
-        # DAT1 = constant.dat, contains parameters that others depend on for initialization
         reopt_techs = self._get_REopt_techs(self.available_techs)
         reopt_techs_bau = self._get_REopt_techs(self.bau_techs)
 
-        tech_is_grid = [int(eval('self.' + tech + '.is_grid')) for tech in reopt_techs]
-        tech_is_grid_bau = [int(eval('self.' + tech + '.is_grid')) for tech in reopt_techs_bau]
-
         load_list = ['1R', '1W', '1X', '1S']  # same for BAU
 
-        reopt_tech_classes, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
-        reopt_tech_classes_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
+        reopt_tech_classes, tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
+        reopt_tech_classes_bau, tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
+        reopt_tech_classes_bau = ['PV', 'UTIL']  # not sure why bau needs PV tech class?
 
-        prod_factor, tech_to_load, derate, eta_storage_in, eta_storage_out = \
+        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out = \
             self._get_REopt_array_tech_load(self.available_techs)
-        prod_factor_bau, tech_to_load_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau = \
+        prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau = \
             self._get_REopt_array_tech_load(self.bau_techs)
+        
+        max_sizes = self._get_REopt_tech_max_sizes(self.available_techs)
+        max_sizes_bau = self._get_REopt_tech_max_sizes(self.bau_techs)
 
+        # DAT1 = constant.dat, contains parameters that others depend on for initialization
         write_to_dat(self.file_constant, reopt_techs, 'Tech')
         write_to_dat(self.file_constant, tech_is_grid, 'TechIsGrid', mode='a')
         write_to_dat(self.file_constant, load_list, 'Load', mode='a')
@@ -295,3 +332,18 @@ class DatFileManager():
         write_to_dat(self.file_storage, eta_storage_out, 'EtaStorOut', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_in_bau, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_out_bau, 'EtaStorOut', mode='a')
+
+        # maxsizes.dat
+        write_to_dat(self.file_max_size, max_sizes, 'MaxSize')
+        write_to_dat(self.file_max_size, self.storage.min_kw, 'MinStorageSizeKW', mode='a')
+        write_to_dat(self.file_max_size, self.storage.max_kw, 'MaxStorageSizeKW', mode='a')
+        write_to_dat(self.file_max_size, self.storage.min_kwh, 'MinStorageSizeKWH', mode='a')
+        write_to_dat(self.file_max_size, self.storage.max_kwh, 'MaxStorageSizeKWH', mode='a')
+        write_to_dat(self.file_max_size, tech_class_min_size, 'TechClassMinSize', mode='a')
+
+        write_to_dat(self.file_max_size_bau, max_sizes_bau, 'MaxSize')
+        write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKW', mode='a')
+        write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKW', mode='a')
+        write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKWH', mode='a')
+        write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKWH', mode='a')
+        write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
