@@ -25,10 +25,16 @@ class Singleton(type):
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        else:
+            # if passing a new run_id, replace old DFM with new one
+            # probably only used when running tests, but could have application for parallel runs
+            if 'run_id' in kwargs:
+                    if kwargs['run_id'] != cls._instances.values()[0].run_id:
+                        cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
-class DatFileManager():
+class DatFileManager:
     """
     writes dat files and creates command line strings for dat file paths
     """
@@ -50,6 +56,7 @@ class DatFileManager():
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
     
     def __init__(self, run_id, inputs_path, n_timesteps=8760):
+        self.run_id = run_id
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'

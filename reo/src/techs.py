@@ -68,7 +68,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, acres_per_kw=6000, **kwargs):
+    def __init__(self, acres_per_kw=6e-3, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
                                  cost_per_kw=kwargs.get('pv_cost'),
