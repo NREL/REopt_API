@@ -62,10 +62,6 @@ class DatLibrary:
         self.timed_out = False
         self.net_metering = False
 
-        # DAT files to overwrite
-        self.DAT = [None] * 20
-        self.DAT_bau = [None] * 20
-
         # Command line constants
         self.command_line_constants = list()
         self.command_line_constants.append("ScenarioNum=" + str(run_input_id))
@@ -106,28 +102,10 @@ class DatLibrary:
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
         self.file_cmd_input_bau = os.path.join(self.path_run_inputs, "cmd_bau.log")
-        self.file_constant = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '.dat')
-        self.file_constant_bau = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '_bau.dat')
-        self.file_storage = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '.dat')
-        self.file_storage_bau = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '_bau.dat')
-        self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
-        self.file_max_size_bau = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '_bau.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
-        self.file_NEM = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '.dat')
-        self.file_NEM_bau = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '_bau.dat')
 
         self.path_utility = os.path.join(self.path_run_inputs, "Utility")
-        self.path_various = os.path.join(self.path_run_inputs)
-
-        self.folder_utility = os.path.join(self.path_dat_library, "Utility")
-        self.folder_load_profile = os.path.join(self.path_dat_library, "LoadProfiles")
-        self.folder_load_size = os.path.join(self.path_dat_library, "LoadSize")
-        self.folder_various = os.path.join(self.path_dat_library, "Various")
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
@@ -207,8 +185,6 @@ class DatLibrary:
 
         output_dict = dict()
 
-        self.create_simple_bau()
-        self.create_constants()
         self.create_storage()
         self.create_size_limits()
         self.create_economics()
@@ -221,8 +197,8 @@ class DatLibrary:
         self.create_nem()
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
 
-        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
-        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.dfm.DAT, False)
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
 
         log("INFO", "Initializing Command")
         command = Command(run_command)
@@ -251,7 +227,6 @@ class DatLibrary:
 
         ins_and_outs_dict = self._add_inputs(output_dict)
         return ins_and_outs_dict
-
 
     def _add_inputs(self, od):
         for k in self.inputs(full_list=True).keys():
@@ -328,26 +303,9 @@ class DatLibrary:
             shutil.rmtree(self.path_run)
 
    # BAU files
-    def create_simple_bau(self):
-        self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
-        self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
-
-    # Constant file
-    def create_constants(self):
-
-        self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
 
     # storage
     def create_storage(self):
-        """
-        writes storage_[run_input_id].dat, which contains:
-            StorageMinChargePcent
-            EtaStorIn  (same as roundtrip efficiency)
-            EtaStorOut (currently not used in REopt)
-            BattLevelCoef
-            InitSOC
-        NOTE: EtaStorIn and EtaStorOut are array(Tech,Load)
-        """
         storage = Storage(
             min_kw=self.batt_kw_min,
             max_kw=self.batt_kw_max,
@@ -362,26 +320,17 @@ class DatLibrary:
         )
         self.dfm.add_storage(storage)
 
-        self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
-        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
-
     # DAT2 - Economics
     def create_economics(self):
 
         econ_inputs = self.get_subtask_inputs('economics')
 
-        fp = self.file_economics
-        self.economics = economics.Economics(file_path=fp, business_as_usual=False,**econ_inputs)
+        self.economics = economics.Economics(file_path=self.file_economics, business_as_usual=False, **econ_inputs)
 
         for k in self.economics.__dict__.keys():
             setattr(self, k, getattr(self.economics, k))
 
-        self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
-
-        fp = self.file_economics_bau
-        econ = economics.Economics(file_path=fp, business_as_usual=True,**econ_inputs)
-
-        self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
+        econ = economics.Economics(file_path=self.file_economics_bau, business_as_usual=True, **econ_inputs)
         self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
 
     # DAT3 & DAT4 LoadSize, LoadProfile
@@ -401,29 +350,18 @@ class DatLibrary:
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
-        self.DAT_bau[2] = self.DAT[2]
-        self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
-        self.DAT_bau[3] = self.DAT[3]
-
     def create_Solar(self):
 
         pv = PV(**self.inputs_dict)
         util = Util(**self.inputs_dict)
 
         solar_data = pv.prod_factor
-
-        self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
-        self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
-
         return solar_data
 
     def create_size_limits(self):
 
         site = Site(**self.inputs_dict)
         self.dfm.add_site(site)
-
-        self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
 
     def create_utility(self):
 
@@ -572,6 +510,3 @@ class DatLibrary:
             net_metering_limit=net_metering_limit,
             interconnection_limit=self.inputs_dict.get("interconnection_limit")
         )
-
-        self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
-        self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
