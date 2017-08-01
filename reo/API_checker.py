@@ -4,6 +4,7 @@ import requests
 import json
 import logging
 import datetime
+from validators import URDB_RateValidator
 
 logging.basicConfig(filename='log_%s.log' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')), filemode='w', level=logging.DEBUG)
 
@@ -162,7 +163,7 @@ def case(
 def make_call(data):
 
   headers = { "Content-Type":"application/json", "Cache-Control": "no-cache" }
-  data =  json.dumps(data, ensure_ascii=False)
+  data =  json.dumps(data)
 
   if localhost:
     h = "http://127.0.0.1:8000"
@@ -171,7 +172,7 @@ def make_call(data):
     h = "https://reopt-dev-api1.nrel.gov"
 
   try:
-    r = requests.post(h + "/api/v1/reopt/?format=json",data=data, headers=headers)
+    r = requests.post(h + "/api/v1/reopt/",data=data, headers=headers)
     return r.content
 
   except Exception as e:
@@ -235,6 +236,26 @@ def check_rates(rates, sample_rate=1):
 
 ###########################
 #Check Utility Rates
+
+def get_rate(label):
+    key = "BLLsYv81d8y4w6UPYCfGFsuWlu4IujlZYliDmoq6"
+    base = "http://api.openei.org/utility_rates?version=3&format=json&detail=full"
+    url_base = base + "&api_key=" + key
+
+    label = urllib.quote_plus(label)
+    url = url_base + "&getpage=" + label
+    r = requests.get(url, verify=False)
+
+    response = json.loads(r.text, strict=False)
+    output = response['items']
+
+    return output
+
+
+r = get_rate('539fc25dec4f024c27d8b0a5')
+URDB_RateValidator(r)
+
+
 logging.info('Started Checking Utility Rates' + ' ' + datetime.datetime.now().strftime('%Y%m%d %H:%M:%S'))
 start_time = datetime.datetime.now()
 

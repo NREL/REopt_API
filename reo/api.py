@@ -1,3 +1,7 @@
+import sys
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import ReadOnlyAuthorization
@@ -14,7 +18,7 @@ from log_levels import log
 
 import library
 import random
-import os
+import os, json
 from api_definitions import *
 from validators import *
 from utilities import is_error
@@ -30,6 +34,7 @@ def setup_logging():
                         level=logging.INFO)
     log("INFO", "Logging setup")
 
+
 class RunInputResource(ModelResource):
 
     class Meta:
@@ -43,7 +48,7 @@ class RunInputResource(ModelResource):
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = REoptResourceValidation()
-
+        
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
 
@@ -54,10 +59,12 @@ class RunInputResource(ModelResource):
 
         return kwargs
 
-    def get_object_list(self, request):
+    def get_object_list(self, request): 
         return [request]
 
     def obj_get_list(self, bundle, **kwargs):
+        from IPython import embed
+        embed()
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):

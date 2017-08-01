@@ -1,7 +1,128 @@
 from tastypie.validation import Validation
 from tastypie.exceptions import BadRequest
+import numpy as np
 from api_definitions import *
 from log_levels import log
+
+
+
+class URDB_RateValidator:
+    def __init__(self,_log_errors=True, **kwargs):
+
+        self.errors = []
+
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
+
+        file_id = self.label or self.eiaid or ""
+        self.log_file = "urdb_rate_errors/%s.csv" % (file_id)
+
+        for key in kwargs:
+            v = 'validate_' + key
+            if hasattr(self, v):
+                getattr(self, v)()
+
+        if _log_errors:
+            if self.errors:
+                with open(self.log_file, 'w') as f:
+                    for e in self.errors:
+                        f.write(e+'\n')
+
+    @property
+    def dependencies(self):
+        return {
+            'energyweekdayschedule': ['energyratestructure'],
+            'energyweekendschedule': ['energyratestructure'],
+            'energyratestructure':['energyweekdayschedule','energyweekendschedule'],
+            'flatdemandmonths': ['flatdemandstructure'],
+            'flatdemandstructure': ['flatdemandmonths'],
+            'coincidentratestructure': ['coincidentrateschedule'],
+            'coincidentrateschedule': ['coincidentratestructure'],
+        }
+
+    @property
+    def isValid(self):
+        return self.errors == []
+
+    def validate_energyweekdayschedule(self):
+        name = 'energyweekdayschedule'
+        self.validDependencies(name)
+        self.validSchedule(name, 'energyratestructure')
+
+    def validate_energyweekendschedule(self):
+        name = 'energyweekendschedule'
+        self.validDependencies(name)
+        self.validSchedule(name, 'energyratestructure')
+
+    def validate_energyratestructure(self):
+        name = 'energyratestructure'
+        self.validDependencies(name)
+        self.validRate(name)
+
+    def validate_flatdemandstructure(self):
+        name = 'flatdemandstructure'
+        if hasattr(self, name):
+            self.validDependencies(name)
+            self.validRate(name)
+
+    def validate_flatdemandmonths(self):
+        name = 'flatdemandmonths'
+        if hasattr(self, name):
+            self.validDependencies(name)
+            self.validSchedule(name, 'flatdemandstructure')
+
+    def validate_coincidentratestructure(self):
+        name = 'coincidentratestructure'
+        if hasattr(self, name):
+            self.validDependencies(name)
+            self.validRate(name)
+
+    def validate_coincidentrateschedule(self):
+        name = 'coincidentrateschedule'
+        if hasattr(self, name):
+            self.validDependencies(name)
+            self.validSchedule(name, 'flatdemandstructure')
+
+    def validDependencies(self, name):
+        valid =True
+        d= self.dependencies.get(name)
+        if d is not None:
+            for dd in d:
+                error = False
+                if hasattr(self,dd):
+                    if getattr(self,dd) is None:
+                        error = True
+                else:
+                    error=True
+                if error:
+                    self.errors.append("Missing %s a dependency of %s" % (dd, name))
+                    valid = False
+        return valid
+
+    def validRate(self, rate):
+        valid = True
+        for i, r in enumerate(getattr(self, rate)):
+            for ii, t in enumerate(r):
+                if t.get('rate') is None:
+                    self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                    valid = False
+        return valid
+
+    def validSchedule(self, schedules, rate):
+        valid = True
+        s = getattr(self, schedules)
+        if np.array(s).ndim > 1:
+            s = np.concatenate(s)
+
+        periods = list(set(s))
+
+        for period in periods:
+            if period > len(getattr(self,rate)) - 1 or period < 0:
+                self.errors.append(
+                    '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
+                valid=False
+        return valid
+            
 
 class REoptResourceValidation(Validation):
 
@@ -56,6 +177,11 @@ class REoptResourceValidation(Validation):
     def is_valid(self, bundle, request=None):
 
         errors = {}
+
+        if 'urdb_rate' in bundle.data.keys():
+            rate_checker = URDB_RateValidator(**bundle.data['urdb_rate'])
+            if rate_checker.errors:
+                errors = self.append_errors(errors,"URDB Rate Errors",rate_checker.errors)
 
         missing_required = self.missing_required(bundle.data.keys())
 
