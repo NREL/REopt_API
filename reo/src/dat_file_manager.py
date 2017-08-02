@@ -98,24 +98,13 @@ class DatFileManager:
             return False
         return True
 
-    def add_load(self, load):
-        file_load_profile = os.path.join(self.path_inputs, 'Load8760_' + str(self.run_id) + '.dat')
-        file_load_size = os.path.join(self.path_inputs, 'LoadSize_' + str(self.run_id) + '.dat')
-        reopt_load = load.load_list
-
-
+    def add_load(self, load): 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
-            reopt_load.append(self.big_nu
+            load.load_list.append(self.big_number)
                               
-        write_single_variable(file_load_profile, reopt_load, "LoadProfile")
-        write_single_variable(file_load_size, load.annual_kwh, "AnnualElecLoad")
-
-        self.DAT[2] = "DAT3=" + "'" + file_load_size + "'"
-        self.DAT_bau[2] = self.DAT[2]
-        self.DAT[3] = "DAT4=" + "'" + file_load_profile + "'"
-        self.DAT_bau[3] = self.DAT[3]
-
+        write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
+        write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
     def add_economics(self, economics_dict):
         for k, v in economics_dict.iteritems():
