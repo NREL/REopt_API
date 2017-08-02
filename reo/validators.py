@@ -10,6 +10,7 @@ class URDB_RateValidator:
     def __init__(self,_log_errors=True, **kwargs):
 
         self.errors = []
+	self.warnings = []
 
         for key in kwargs:
             setattr(self, key, kwargs[key])
@@ -95,7 +96,7 @@ class URDB_RateValidator:
                 else:
                     error=True
                 if error:
-                    self.errors.append("Missing %s a dependency of %s" % (dd, name))
+                    self.warnings.append("Missing %s a dependency of %s" % (dd, name))
                     valid = False
         return valid
 
@@ -178,8 +179,9 @@ class REoptResourceValidation(Validation):
 
         errors = {}
 
-        if 'urdb_rate' in bundle.data.keys():
-            rate_checker = URDB_RateValidator(**bundle.data['urdb_rate'])
+	rate_data = bundle.data.get('urdb_rate')
+	if rate_data is not None and type(rate_data).__name__=='dict':
+            rate_checker = URDB_RateValidator(**rate_data)
             if rate_checker.errors:
                 errors = self.append_errors(errors,"URDB Rate Errors",rate_checker.errors)
 
