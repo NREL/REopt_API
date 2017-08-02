@@ -1,7 +1,3 @@
-import sys
-reload(sys)
-sys.setdefaultencoding('utf8')
-
 from django.contrib.auth.models import User
 from tastypie import fields
 from tastypie.authorization import ReadOnlyAuthorization
@@ -63,8 +59,6 @@ class RunInputResource(ModelResource):
         return [request]
 
     def obj_get_list(self, bundle, **kwargs):
-        from IPython import embed
-        embed()
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):

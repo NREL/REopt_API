@@ -653,8 +653,6 @@ class UrdbParse:
 
             period = 0
             for flat in current_rate.flatdemandstructure:
-                from IPython import embed
-                embed()
                 flat_rate = 0
                 flat_adj = 0
 
