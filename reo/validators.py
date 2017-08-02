@@ -7,6 +7,7 @@ import os
 
 
 class URDB_RateValidator:
+	
     def __init__(self,_log_errors=True, **kwargs):
 
         self.errors = []
@@ -87,7 +88,6 @@ class URDB_RateValidator:
             self.validSchedule(name, 'flatdemandstructure')
 
     def validDependencies(self, name):
-        valid =True
         d= self.dependencies.get(name)
         if d is not None:
             for dd in d:
@@ -99,20 +99,18 @@ class URDB_RateValidator:
                     error=True
                 if error:
                     self.warnings.append("Missing %s a dependency of %s" % (dd, name))
-                    valid = False
-        return valid
+                    return False
+        return True
 
     def validRate(self, rate):
-        valid = True
         for i, r in enumerate(getattr(self, rate)):
             for ii, t in enumerate(r):
                 if t.get('rate') is None:
                     self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
-                    valid = False
-        return valid
+                    return False
+        return True
 
     def validSchedule(self, schedules, rate):
-        valid = True
         s = getattr(self, schedules)
         if np.array(s).ndim > 1:
             s = np.concatenate(s)
@@ -123,8 +121,8 @@ class URDB_RateValidator:
             if period > len(getattr(self,rate)) - 1 or period < 0:
                 self.errors.append(
                     '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
-                valid=False
-        return valid
+                return False
+        return True
             
 
 class REoptResourceValidation(Validation):
@@ -221,8 +219,7 @@ class REoptResourceValidation(Validation):
         except Exception as e:
             if value is None:
                 return []
-            else:
-                return [invalid_msg]
+            return [invalid_msg]
 
     def check_min(self, key, value, fd):
         new_value = value
