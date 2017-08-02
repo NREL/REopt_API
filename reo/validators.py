@@ -3,7 +3,7 @@ from tastypie.exceptions import BadRequest
 import numpy as np
 from api_definitions import *
 from log_levels import log
-
+import os
 
 
 class URDB_RateValidator:
@@ -16,6 +16,8 @@ class URDB_RateValidator:
             setattr(self, key, kwargs[key])
 
         file_id = self.label or self.eiaid or ""
+	if not os.path.exists('urdb_rate_errors'):
+	    os.mkdir('urdb_rate_errors')
         self.log_file = "urdb_rate_errors/%s.csv" % (file_id)
 
         for key in kwargs:
