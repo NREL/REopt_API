@@ -98,12 +98,11 @@ class DatFileManager:
             return False
         return True
 
-    def add_load(self, load):
-
+    def add_load(self, load): 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
             load.load_list.append(self.big_number)
-
+                              
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
