@@ -78,7 +78,6 @@ class BuiltInProfile(object):
 
         for load in self.normalized_profile:
             month = datetime_current.month
-            import pdb; pdb.set_trace()
             month_total += self.annual_kwh * load
 
             # add an hour

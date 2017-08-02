@@ -9,31 +9,25 @@ class Tech(object):
     base class for REopt energy generation technology
     """
 
-    def __init__(self, min_size=0, max_size=big_number,
-                 cost_per_kw=1,
+    def __init__(self, min_kw=0, max_kw=big_number,
                  *args, **kwargs):
 
-        self.min_size = min_size
-        self.max_size = max_size
-        self.cost_per_kw = cost_per_kw
+        self.min_kw = min_kw
+        self.max_kw = max_kw
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
-
-        # self.fuel_cost = fuel_cost
-        # self.om_capacity_cost = om_capacity_cost
-        # self.om_variable_cost = om_variable_cost
-        #
-        # self.efficiency = efficiency
-        #
-        # self.n_cost_segments = len(cost_per_kw)
-        # self.n_fuel_tiers = len(fuel_cost)  # does anything besides UTIL use fuel tiers?
+        self.nmil_regime = None
+        self.reopt_class = ""
+        self.is_grid = False
+        self.derate = 1
+        self.acres_per_kw = None
 
         # self._check_inputs()
         self.kwargs = kwargs
 
     def _check_inputs(self):
 
-        assert self.max_size >= self.min_size,\
-                "max_size must be greater than or equal to min_size."
+        assert self.max_kw >= self.min_kw,\
+                "max_kw must be greater than or equal to min_kw."
 
     @property
     def prod_factor(self):
@@ -52,14 +46,15 @@ class Tech(object):
 class Util(Tech):
 
     def __init__(self, outage_start=None, outage_end=None, **kwargs):
-        super(Util, self).__init__(**kwargs)
+        super(Util, self).__init__(max_kw=12000000, **kwargs)
 
         self.outage_start = outage_start
         self.outage_end = outage_end
         self.loads_served = ['retail', 'storage']
+        self.is_grid = True
+        self.derate = 0
 
-        dfm = DatFileManager()
-        dfm.add_util(self)
+        DatFileManager().add_util(self)
 
     @property
     def prod_factor(self):
@@ -73,14 +68,16 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, **kwargs):
-        super(PV, self).__init__(min_size=kwargs.get('pv_kw_min'),
-                                 max_size=kwargs.get('pv_kw_max'),
+    def __init__(self, acres_per_kw=6e-3, **kwargs):
+        super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
+                                 max_kw=kwargs.get('pv_kw_max'),
                                  cost_per_kw=kwargs.get('pv_cost'),
                                  **kwargs)
+        self.nmil_regime = 'BelowNM'
+        self.reopt_class = 'PV'
+        self.acres_per_kw = acres_per_kw
 
-        dfm = DatFileManager()
-        dfm.add_pv(self)
+        DatFileManager().add_pv(self)
 
     @property
     def prod_factor(self):
