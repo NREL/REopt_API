@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
+    'annual_kwh',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -84,7 +85,7 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-if 'test' in sys.argv:
+if 'test' or 'runserver' in sys.argv:
     DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
