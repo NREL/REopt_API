@@ -30,13 +30,14 @@ class BuiltInProfile(object):
         Default_city('Fairbanks', 64.837778, -147.716389),
     ]
 
-    def __init__(self, latitude, longitude, load_size, load_monthly_kwh, load_profile_name, load_year, **kwargs):
+    def __init__(self, latitude, longitude, load_size, load_profile_name, load_year, load_monthly_kwh=None, **kwargs):
         """
+        load_size or load_monthly_kwh is required
 
-        :param latitude:
-        :param longitude:
-        :param annual_kwh:
-        :param monthly_kwh: list of 12 floats for montly energy sums
+        :param latitude: float
+        :param longitude: float
+        :param annual_kwh: float or int
+        :param monthly_kwh: list of 12 floats for monthly energy sums
         :param load_profile_name: building type chosen by user
         :param load_year: year of load profile, needed for monthly scaling
         :param kwargs:
@@ -62,7 +63,7 @@ class BuiltInProfile(object):
     @property
     def built_in_profile(self):
 
-        if self.annual_kwh:
+        if self.monthly_kwh is None:
             return [ld * self.annual_kwh for ld in self.normalized_profile]
 
         return self.monthly_scaled_profile
