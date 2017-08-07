@@ -594,16 +594,16 @@ class UrdbParse:
         self.prepare_demand_rate_summary()
 
     def prepare_demand_tiers(self, current_rate, n_tou):
-        n_tiers = 1
+
         demand_tiers = []
         for demand_rate in current_rate.demandratestructure:
             demand_tiers.append(len(demand_rate))
         demand_tier_set = set(demand_tiers)
         period_with_max_tiers = demand_tiers.index(max(demand_tiers)) #NOTE: this takes the first period if multiple periods have the same number of (max) tiers
+        n_tiers = max(demand_tier_set)
 
         if len(demand_tier_set) > 1:
             log("WARNING", "Warning: multiple lengths of demand tiers, using tiers from the earliest period with the max number of tiers")
-            n_tiers = max(demand_tier_set)
 
             # make the number of tiers the same across all periods by appending on identical tiers
             for r in range(n_tou):
@@ -871,10 +871,10 @@ class UrdbParse:
         file_name.write(var_name + ': [\n')
 
         if type(array) is int:
-            file_name.write(str(array) + ' , \n')
+            file_name.write(str(array) + '\n')
         else:
             for val in array:
-                file_name.write(str(val) + ' , \n')
+                file_name.write(str(val) + '\n')
 
         file_name.write(']\n')
 
