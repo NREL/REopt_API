@@ -1,7 +1,7 @@
 MaxSize: [
- 20000,
- 20000,
- 12000000,
+ 20000
+ 20000
+ 12000000
 ]
 MinStorageSizeKW: [
 0
@@ -16,6 +16,6 @@ MaxStorageSizeKWH: [
  10000
 ]
 TechClassMinSize: [
-0,
-0,
+0
+0
 ]

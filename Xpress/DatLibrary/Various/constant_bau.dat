@@ -1,36 +1,36 @@
 Tech: [
-UTIL1,
+UTIL1
 ]
 TechIsGrid: [
-1,
+1
 ]
 Load: [
-"1R",
-"1W",
-"1X",
-"1S",
+"1R"
+"1W"
+"1X"
+"1S"
 ]
 TechToLoadMatrix: [
-1,
-0,
-0,
-1,
+1
+0
+0
+1
 ]
 TechClass: [
-PV            ,
-UTIL          ,
+PV            
+UTIL          
 ]
 NMILRegime: [
-BelowNM       ,
-NMtoIL        ,
-AboveIL       ,
+BelowNM       
+NMtoIL        
+AboveIL       
 ]
 TechToNMILMapping: [
-0,0,0,
+000
 ]
 TurbineDerate: [
-0,
+0
 ]
 TechToTechClassMatrix: [
-0,0,
+00
 ]
