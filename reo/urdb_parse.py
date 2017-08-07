@@ -885,7 +885,7 @@ class UrdbParse:
         for i in range(0, len(lol)):
             file_name.write('[')
             for j in lol[i]:
-                file_name.write(str(j) + ',')
+                file_name.write(str(j) + ' ')
             file_name.write(']\n')
 
         file_name.write(']\n')
