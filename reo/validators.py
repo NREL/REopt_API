@@ -7,33 +7,99 @@ import os
 
 
 class URDB_RateValidator:
+
+    error_folder = 'urdb_rate_errors'
 	
     def __init__(self,_log_errors=True, **kwargs):
+    """
+    Takes a dictionary parsed from a URDB Rate Json response 
+    - See http://en.openei.org/services/doc/rest/util_rates/?version=3
 
-        self.errors = []
-	self.warnings = []
+    Rates may or mat not have the following keys:
 
-        for key in kwargs:
+        label                       Type: string
+        utility                     Type: string
+        name                        Type: string
+        uri                         Type: URI
+        approved                    Type: boolean
+        startdate                   Type: integer
+        enddate                     Type: integer
+        supercedes                  Type: string
+        sector                      Type: string
+        description                 Type: string
+        source                      Type: string
+        sourceparent                Type: URI
+        basicinformationcomments    Type: string
+        peakkwcapacitymin           Type: decimal
+        peakkwcapacitymax           Type: decimal
+        peakkwcapacityhistory       Type: decimal
+        peakkwhusagemin             Type: decimal
+        peakkwhusagemax             Type: decimal
+        peakkwhusagehistory         Type: decimal
+        voltageminimum              Type: decimal
+        voltagemaximum              Type: decimal
+        voltagecategory             Type: string
+        phasewiring                 Type: string
+        flatdemandunit              Type: string
+        flatdemandstructure         Type: array
+        demandrateunit              Type: string
+        demandweekdayschedule       Type: array
+        demandratchetpercentage     Type: array
+        demandwindow                Type: decimal
+        demandreactivepowercharge   Type: decimal
+        coincidentrateunit          Type: string
+        coincidentratestructure     Type: array
+        coincidentrateschedule      Type: array
+        demandattrs                 Type: array
+        demandcomments              Type: string
+        usenetmetering              Type: boolean
+        energyratestructure         Type: array
+        energyweekdayschedule       Type: array
+        energyweekendschedule       Type: array
+        energyattrs                 Type: array
+        energycomments              Type: string
+        fixedmonthlycharge          Type: decimal
+        minmonthlycharge            Type: decimal
+        annualmincharge             Type: decimal
+
+    """
+
+
+        self.errors = []                             #Catch Errors - write to output file
+        self.warnings = []                           #Catch Warnings 
+
+        for key in kwargs:                           #Load in attributes          
             setattr(self, key, kwargs[key])
 
-        file_id = self.label or self.eiaid or ""
-	if not os.path.exists('urdb_rate_errors'):
-	    os.mkdir('urdb_rate_errors')
-        self.log_file = "urdb_rate_errors/%s.csv" % (file_id)
+        self.validate()                              #Validate attributes
 
-        for key in kwargs:
+        if _log_errors:                              #Write errors to log file
+            self.setup_logging()
+            
+            if self.errors:
+                with open(self.log_file, 'w') as f:
+                    map(lambda e: f.write(e+'\n'), self.errors)
+                        
+    
+    def setup_logging(self):
+        #Creates logging folder and sets up file
+        file_id = self.label or self.eiaid or ''
+    
+        if not os.path.exists(self.error_folder):
+           os.mkdir(self.error_folder)
+        
+        self.log_file = "%s/%s.csv" % (self.error_folder, file_id)
+
+    def validate(self):
+         #Validate each attribute with custom valdidate function
+        for key in dir(self):                      
             v = 'validate_' + key
             if hasattr(self, v):
                 getattr(self, v)()
 
-        if _log_errors:
-            if self.errors:
-                with open(self.log_file, 'w') as f:
-                    for e in self.errors:
-                        f.write(e+'\n')
-
     @property
     def dependencies(self):
+        #map to tell if a field requires one or more other fields 
         return {
             'energyweekdayschedule': ['energyratestructure'],
             'energyweekendschedule': ['energyratestructure'],
@@ -46,8 +112,11 @@ class URDB_RateValidator:
 
     @property
     def isValid(self):
+        #True if no errors found during validation on init
         return self.errors == []
 
+    #### CUSTOM VALIDATION FUNCTIONS FOR EACH URDB ATTRIBUTE name validate_<attribute name> ####
+    
     def validate_energyweekdayschedule(self):
         name = 'energyweekdayschedule'
         self.validDependencies(name)
@@ -65,29 +134,29 @@ class URDB_RateValidator:
 
     def validate_flatdemandstructure(self):
         name = 'flatdemandstructure'
-        if hasattr(self, name):
-            self.validDependencies(name)
-            self.validRate(name)
+        self.validDependencies(name)
+        self.validRate(name)
 
     def validate_flatdemandmonths(self):
         name = 'flatdemandmonths'
-        if hasattr(self, name):
-            self.validDependencies(name)
-            self.validSchedule(name, 'flatdemandstructure')
+        self.validDependencies(name)
+        self.validSchedule(name, 'flatdemandstructure')
 
     def validate_coincidentratestructure(self):
         name = 'coincidentratestructure'
-        if hasattr(self, name):
-            self.validDependencies(name)
-            self.validRate(name)
+        self.validDependencies(name)
+        self.validRate(name)
 
     def validate_coincidentrateschedule(self):
         name = 'coincidentrateschedule'
-        if hasattr(self, name):
-            self.validDependencies(name)
-            self.validSchedule(name, 'flatdemandstructure')
+        self.validDependencies(name)
+        self.validSchedule(name, 'flatdemandstructure')
 
+
+    #### FUNCTIONS TO VALIDATE ATTRIBUTES ####
+    
     def validDependencies(self, name):
+        #check that all dependent attributes exist
         d= self.dependencies.get(name)
         if d is not None:
             for dd in d:
@@ -103,6 +172,7 @@ class URDB_RateValidator:
         return True
 
     def validRate(self, rate):
+        #check that each  tier in rate structure array has a rate attribute 
         for i, r in enumerate(getattr(self, rate)):
             for ii, t in enumerate(r):
                 if t.get('rate') is None:
@@ -111,6 +181,7 @@ class URDB_RateValidator:
         return True
 
     def validSchedule(self, schedules, rate):
+        #check that each rate an a schedule array has a valid set of tiered rates in the associated rate struture attribute
         s = getattr(self, schedules)
         if np.array(s).ndim > 1:
             s = np.concatenate(s)
