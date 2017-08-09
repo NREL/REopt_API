@@ -79,23 +79,23 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.url_base, format='json', data=data)
 
     def check_data_error_response(self, data, text):	
-	response = self.get_response(data)
-	self.assertTrue(text in response.content)
+      response = self.get_response(data)
+      self.assertTrue(text in response.content)
 
     def test_urdb_rate(self):
-	data = self.get_defaults_from_list(self.base_case_fields)
+      data = self.get_defaults_from_list(self.base_case_fields)
 
-	data['urdb_rate'] =self.missing_rate_urdb
-	text = "Missing rate attribute for tier 0 in rate 0 energyratestructure"
-	self.check_data_error_response(data,text)
+      data['urdb_rate'] =self.missing_rate_urdb
+      text = "Missing rate attribute for tier 0 in rate 0 energyratestructure"
+      self.check_data_error_response(data,text)
 
-	data['urdb_rate']=self.missing_schedule_urdb
+      data['urdb_rate']=self.missing_schedule_urdb
 
-	text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
-	self.check_data_error_response(data,text)
+      text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
+      self.check_data_error_response(data,text)
 
-	text = 'energyweekendschedule contains value 1 which has no associated rate in energyratestructure'
-	self.check_data_error_response(data,text)
+      text = 'energyweekendschedule contains value 1 which has no associated rate in energyratestructure'
+      self.check_data_error_response(data,text)
 	
 
     def test_valid_swapping(self):

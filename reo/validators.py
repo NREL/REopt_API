@@ -11,60 +11,57 @@ class URDB_RateValidator:
     error_folder = 'urdb_rate_errors'
 	
     def __init__(self,_log_errors=True, **kwargs):
-    """
-    Takes a dictionary parsed from a URDB Rate Json response 
-    - See http://en.openei.org/services/doc/rest/util_rates/?version=3
+        """
+        Takes a dictionary parsed from a URDB Rate Json response 
+        - See http://en.openei.org/services/doc/rest/util_rates/?version=3
 
-    Rates may or mat not have the following keys:
+        Rates may or mat not have the following keys:
 
-        label                       Type: string
-        utility                     Type: string
-        name                        Type: string
-        uri                         Type: URI
-        approved                    Type: boolean
-        startdate                   Type: integer
-        enddate                     Type: integer
-        supercedes                  Type: string
-        sector                      Type: string
-        description                 Type: string
-        source                      Type: string
-        sourceparent                Type: URI
-        basicinformationcomments    Type: string
-        peakkwcapacitymin           Type: decimal
-        peakkwcapacitymax           Type: decimal
-        peakkwcapacityhistory       Type: decimal
-        peakkwhusagemin             Type: decimal
-        peakkwhusagemax             Type: decimal
-        peakkwhusagehistory         Type: decimal
-        voltageminimum              Type: decimal
-        voltagemaximum              Type: decimal
-        voltagecategory             Type: string
-        phasewiring                 Type: string
-        flatdemandunit              Type: string
-        flatdemandstructure         Type: array
-        demandrateunit              Type: string
-        demandweekdayschedule       Type: array
-        demandratchetpercentage     Type: array
-        demandwindow                Type: decimal
-        demandreactivepowercharge   Type: decimal
-        coincidentrateunit          Type: string
-        coincidentratestructure     Type: array
-        coincidentrateschedule      Type: array
-        demandattrs                 Type: array
-        demandcomments              Type: string
-        usenetmetering              Type: boolean
-        energyratestructure         Type: array
-        energyweekdayschedule       Type: array
-        energyweekendschedule       Type: array
-        energyattrs                 Type: array
-        energycomments              Type: string
-        fixedmonthlycharge          Type: decimal
-        minmonthlycharge            Type: decimal
-        annualmincharge             Type: decimal
-
-    """
-
-
+            label                       Type: string
+            utility                     Type: string
+            name                        Type: string
+            uri                         Type: URI
+            approved                    Type: boolean
+            startdate                   Type: integer
+            enddate                     Type: integer
+            supercedes                  Type: string
+            sector                      Type: string
+            description                 Type: string
+            source                      Type: string
+            sourceparent                Type: URI
+            basicinformationcomments    Type: string
+            peakkwcapacitymin           Type: decimal
+            peakkwcapacitymax           Type: decimal
+            peakkwcapacityhistory       Type: decimal
+            peakkwhusagemin             Type: decimal
+            peakkwhusagemax             Type: decimal
+            peakkwhusagehistory         Type: decimal
+            voltageminimum              Type: decimal
+            voltagemaximum              Type: decimal
+            voltagecategory             Type: string
+            phasewiring                 Type: string
+            flatdemandunit              Type: string
+            flatdemandstructure         Type: array
+            demandrateunit              Type: string
+            demandweekdayschedule       Type: array
+            demandratchetpercentage     Type: array
+            demandwindow                Type: decimal
+            demandreactivepowercharge   Type: decimal
+            coincidentrateunit          Type: string
+            coincidentratestructure     Type: array
+            coincidentrateschedule      Type: array
+            demandattrs                 Type: array
+            demandcomments              Type: string
+            usenetmetering              Type: boolean
+            energyratestructure         Type: array
+            energyweekdayschedule       Type: array
+            energyweekendschedule       Type: array
+            energyattrs                 Type: array
+            energycomments              Type: string
+            fixedmonthlycharge          Type: decimal
+            minmonthlycharge            Type: decimal
+            annualmincharge             Type: decimal
+        """
         self.errors = []                             #Catch Errors - write to output file
         self.warnings = []                           #Catch Warnings 
 
@@ -106,8 +103,6 @@ class URDB_RateValidator:
             'energyratestructure':['energyweekdayschedule','energyweekendschedule'],
             'flatdemandmonths': ['flatdemandstructure'],
             'flatdemandstructure': ['flatdemandmonths'],
-            'coincidentratestructure': ['coincidentrateschedule'],
-            'coincidentrateschedule': ['coincidentratestructure'],
         }
 
     @property
@@ -119,82 +114,98 @@ class URDB_RateValidator:
     
     def validate_energyweekdayschedule(self):
         name = 'energyweekdayschedule'
-        self.validDependencies(name)
-        self.validSchedule(name, 'energyratestructure')
+        if self.validDependencies(name):
+            self.validSchedule(name, 'energyratestructure')
 
     def validate_energyweekendschedule(self):
         name = 'energyweekendschedule'
-        self.validDependencies(name)
-        self.validSchedule(name, 'energyratestructure')
+        if self.validDependencies(name):
+            self.validSchedule(name, 'energyratestructure')
 
     def validate_energyratestructure(self):
         name = 'energyratestructure'
-        self.validDependencies(name)
-        self.validRate(name)
+        if self.validDependencies(name):
+            self.validRate(name)
 
     def validate_flatdemandstructure(self):
         name = 'flatdemandstructure'
-        self.validDependencies(name)
-        self.validRate(name)
+        if self.validDependencies(name):
+            self.validRate(name)
 
     def validate_flatdemandmonths(self):
         name = 'flatdemandmonths'
-        self.validDependencies(name)
-        self.validSchedule(name, 'flatdemandstructure')
+        if self.validDependencies(name):
+            self.validSchedule(name, 'flatdemandstructure')
 
     def validate_coincidentratestructure(self):
         name = 'coincidentratestructure'
-        self.validDependencies(name)
-        self.validRate(name)
+        if self.validDependencies(name):
+            self.validRate(name)
 
     def validate_coincidentrateschedule(self):
         name = 'coincidentrateschedule'
-        self.validDependencies(name)
-        self.validSchedule(name, 'flatdemandstructure')
+        if self.validDependencies(name):
+            self.validSchedule(name, 'flatdemandstructure')
 
 
     #### FUNCTIONS TO VALIDATE ATTRIBUTES ####
     
     def validDependencies(self, name):
         #check that all dependent attributes exist
-        d= self.dependencies.get(name)
-        if d is not None:
-            for dd in d:
+        #return Boolean if any errors found
+        
+        all_dependencies = self.dependencies.get(name)
+        valid = True
+        if all_dependencies is not None:    
+            for d in all_dependencies:
                 error = False
-                if hasattr(self,dd):
-                    if getattr(self,dd) is None:
+                if hasattr(self,d):
+                    if getattr(self,d) is None:
                         error = True
                 else:
                     error=True
+                
                 if error:
-                    self.warnings.append("Missing %s a dependency of %s" % (dd, name))
-                    return False
-        return True
+                    self.errors.append("Missing %s a dependency of %s" % (d, name))
+                    valid = False
+        
+        return valid
 
     def validRate(self, rate):
-        #check that each  tier in rate structure array has a rate attribute 
-        for i, r in enumerate(getattr(self, rate)):
-            for ii, t in enumerate(r):
-                if t.get('rate') is None:
-                    self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
-                    return False
-        return True
+        #check that each  tier in rate structure array has a rate attribute
+        #return Boolean if any errors found
+        if hasattr(self,rate):
+            valid = True
+            for i, r in enumerate(getattr(self, rate)):
+                if len(r)==0:
+                    self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
+                    valid = False
+                for ii, t in enumerate(r):
+                    if t.get('rate') is None:
+                        self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                        valid = False
+            return valid
+        return False
 
     def validSchedule(self, schedules, rate):
         #check that each rate an a schedule array has a valid set of tiered rates in the associated rate struture attribute
-        s = getattr(self, schedules)
-        if np.array(s).ndim > 1:
-            s = np.concatenate(s)
+        #return Boolean if any errors found
+        if hasattr(self,schedules):
+            valid = True
+            s = getattr(self, schedules)
+            if np.array(s).ndim > 1:
+                s = np.concatenate(s)
 
-        periods = list(set(s))
+            periods = list(set(s))
 
-        for period in periods:
-            if period > len(getattr(self,rate)) - 1 or period < 0:
-                self.errors.append(
-                    '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
-                return False
-        return True
-            
+            # Loop though all periond and catch error if if exists
+            for period in periods:
+                if period > len(getattr(self,rate)) - 1 or period < 0:
+                    self.errors.append(
+                        '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
+                    valid = False
+            return valid
+        return False
 
 class REoptResourceValidation(Validation):
 
