@@ -1,21 +1,10 @@
-import json
-import datetime
-from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
-import unittest
-import requests
 import random
 import json
 from reo.src.load_profile import BuiltInProfile
-
-from django.db.models import signals
-from tastypie.models import ApiKey
-
-from IPython import embed
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -93,7 +82,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      resp = self.api_client.post(self.url_base, format='json', data=data) 
                     # try:
                      self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
-                    # except:     
+                    # except:
                          #embed()
     def test_required_fields(self):
         #try:
