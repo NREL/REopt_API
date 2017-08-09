@@ -1,15 +1,12 @@
 from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import *
-from api_definitions import *
-import json
 import uuid
 from picklefield.fields import PickledObjectField
 from library import DatLibrary
 from utilities import is_error
 import numpy as np
 
-from resilience.models import ResilienceCase
 
 
 class RunInput(models.Model):
@@ -162,12 +159,6 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
-        error = is_error(output_dictionary)
-        if error:
-            return error
-
-        # Add Resilience Stats to Output Dictionary
-        output_dictionary = ResilienceCase().append_resilience_stats(output_dictionary)
         error = is_error(output_dictionary)
         if error:
             return error
@@ -359,12 +350,6 @@ class RunOutput(models.Model):
 
     year_one_export_benefit = models.FloatField(null=True, blank=True)
     year_one_energy_produced = models.FloatField(null=True, blank=True)
-    
-    # Resilience Stats
-    resilience_by_timestep = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-    resilience_hours_min = models.FloatField(null=True, blank=True)
-    resilience_hours_max = models.FloatField(null=True, blank=True)
-    resilience_hours_avg = models.FloatField(null=True, blank=True)
 
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)

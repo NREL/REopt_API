@@ -1,8 +1,6 @@
 import os
-import shutil
 import json
 from api_definitions import *
-import pro_forma_writer as pf
 from dispatch import ProcessOutputs
 from tastypie.exceptions import ImmediateHttpResponse
 
@@ -82,8 +80,6 @@ class Results:
         self.economics = economics
         self.year = year
 
-        self.generate_pro_forma()
-
     @staticmethod
     def is_optimal(d):
 
@@ -91,26 +87,6 @@ class Results:
             status = str(d['status']).rstrip()
             return status == "Optimum found"
         return False
-
-    def generate_pro_forma(self):
-
-        cash_flow = pf.ProForma(self.path_templates, self.path_output, self.economics, self.results_dict)
-        cash_flow.update_template()
-        cash_flow.compute_cashflow()
-
-        # make results consistent
-        self.results_dict['irr'] = cash_flow.get_irr()
-        self.results_dict['npv'] = cash_flow.get_npv()
-        self.results_dict['lcc'] = cash_flow.get_lcc()
-        self.results_dict['lcc_bau'] = cash_flow.get_lcc_bau()
-
-        # rounding error handling
-        if not self.is_system():
-            self.results_dict['lcc'] = self.results_dict['lcc_bau']
-            self.results_dict['npv'] = 0
-            self.results_dict['irr'] = 0
-
-        shutil.copyfile(self.path_proforma, self.path_static)
 
     def get_output(self):
         output_dict = dict()

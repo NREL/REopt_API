@@ -1,5 +1,4 @@
 from tastypie.validation import Validation
-from tastypie.exceptions import BadRequest
 import numpy as np
 from api_definitions import *
 from log_levels import log

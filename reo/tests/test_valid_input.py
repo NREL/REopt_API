@@ -1,17 +1,9 @@
 import json
-import datetime
-from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
 import pickle
-
-from django.db.models import signals
-from tastypie.models import ApiKey
-
-from IPython import embed
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -285,15 +277,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
            
-                npv = 800.0
-                lcc = 2973.0
+                npv = 855.0
+                lcc = 2918.0
                 pv_kw = 1.25342
                 batt_kw = 0.208157
                 batt_kwh = 0.644807
                 yr_one = 1353.2225
-                r_min = 0.16
-                r_max = 22.44
-                r_avg = 4.23
 
                 self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
@@ -301,9 +290,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one) / yr_one < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_min']) - r_min) / r_min < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_max']) - r_max) / r_max < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_avg']) - r_avg) / r_avg < self.REopt_tol)
             
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
@@ -316,9 +302,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 batt_kw = 200.866
                 batt_kwh = 960.659
                 yr_one_kwh = 9709753.5354
-                r_min = 0.07
-                r_max = 2.4
-                r_avg = 0.34
 
                 self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
@@ -326,9 +309,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one_kwh) / yr_one_kwh < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_min']) - r_min)/r_min < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_max']) - r_max)/r_max < self.REopt_tol)
-                self.assertTrue((float(d['resilience_hours_avg']) -  r_avg)/r_avg < self.REopt_tol)
 
     def test_valid_data_types(self):
         #try: 
