@@ -46,8 +46,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
-    'annual_kwh',
-)
+    )
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',

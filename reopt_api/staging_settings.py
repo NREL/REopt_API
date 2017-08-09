@@ -46,7 +46,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
-    'annual_kwh',
+   
 )
 
 MIDDLEWARE_CLASSES = (

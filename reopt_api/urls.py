@@ -15,7 +15,6 @@ urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^api/', include(v1_api.urls)),
     url(r'^resilience_stats/', include('resilience_stats.urls'), name='resilience_stats'),
-    url(r'^annual_kwh/', include('annual_kwh.urls'), name='annual_kwh'),
 ]
 
 urlpatterns += staticfiles_urlpatterns()

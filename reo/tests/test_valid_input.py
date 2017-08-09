@@ -6,6 +6,11 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import *
 from reo.validators import *
 import numpy as np
+import unittest
+import requests
+import random
+import json
+from reo.src.load_profile import BuiltInProfile
 
 from django.db.models import signals
 from tastypie.models import ApiKey
@@ -395,3 +400,39 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      completed_checks = set(list(completed_checks) + ['restrict'])
 
         completed_checks = set(checks)
+
+    def test_annual_kwh_random_choice(self):
+        """
+        check a random building's expected annual_kwh
+        """
+        bldg = BuiltInProfile.default_buildings[random.choice(range(len(default_buildings)))]
+        city = BuiltInProfile.default_cities[random.choice(range(len(default_cities)))]
+        response = requests.get(self.make_url('annual_kwh'), params={
+            'load_profile_name': bldg,
+            'latitude': city.lat,
+            'longitude': city.lng,
+        })
+        annual_kwh_from_api = json.loads(response.text).get('annual_kwh')
+        assert annual_kwh_from_api == annual_loads[city.name][bldg]
+
+    def test_annual_kwh_bad_latitude(self):
+        bldg = BuiltInProfile.default_buildings[random.choice(range(len(default_buildings)))]
+        city = BuiltInProfile.default_cities[random.choice(range(len(default_cities)))]
+        response = requests.get(self.make_url('annual_kwh'), params={
+            'load_profile_name': bldg,
+            'latitude': 'bad latitude',
+            'longitude': city.lng,
+        })
+        assert "Exception Value: latitude or longitude contains invalid value. Please enter numeric value." \
+               in response.iter_lines()
+
+    def test_annual_kwh_bad_building_name(self):
+        bldg = BuiltInProfile.default_buildings[random.choice(range(len(default_buildings)))]
+        city = BuiltInProfile.default_cities[random.choice(range(len(default_cities)))]
+        response = requests.get(self.make_url('annual_kwh'), params={
+            'load_profile_name': bldg[:-1],
+            'latitude': city.lat,
+            'longitude': city.lng,
+        })
+        assert "Exception Value: Invalid load_profile_name. Select from the following:" \
+        in response.iter_lines()
