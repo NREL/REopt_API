@@ -7,6 +7,7 @@ keys.py
 .idea
 Xpress/
 !Xpress/REopt_API.mos
+urdb_rate_errors/
 
 
 # C extensions
