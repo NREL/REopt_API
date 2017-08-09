@@ -144,7 +144,7 @@ declarations
   MaxDemandInTier: array ( DemandBin) of real
   MaxUsageInTier: array ( FuelBin) of real
 
-  binDemandTier: array ( DemandBin) of mpvar
+  binDemandTier: array ( Ratchets, DemandBin) of mpvar
   binUsageTier: array ( FuelBin) of mpvar
 
   DemandLookbackPercent:  real
@@ -177,7 +177,7 @@ end-declarations
 
 
 ! This option sets the tolerance of the integer solution
-setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
+! setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
 
 ! This option only allows the problem to parallelize onto 2 cores
 setparam("XPRS_MIPTHREADS", 2)
@@ -526,18 +526,17 @@ forall ( fb in FuelBin | fb >= 2) do
 end-do
 
 ! Compute tiered demand rates
-forall (db in DemandBin) do
-	binDemandTier(db) is_binary
+forall (db in DemandBin, r in Ratchets) do
+	binDemandTier(r, db) is_binary
 end-do
 
-forall ( db in DemandBin, ts in TimeStep) do
-	DemandInTier(db) := sum(LD in Load, fb in FuelBin) dvGrid(LD,ts,db,fb)
-	DemandInTier(db) <= binDemandTier(db) * MaxDemandInTier(db)
+forall ( db in DemandBin, r in Ratchets) do
+	dvPeakDemandE(r, db) <= binDemandTier(r,db) * MaxDemandInTier(db)
 end-do
 
-forall ( db in DemandBin | db >= 2) do
-	binDemandTier(db) - binDemandTier(db-1) <= 0
-	binDemandTier(db)*MaxDemandInTier(db-1) - DemandInTier(db-1) <= 0
+forall ( db in DemandBin | db >= 2, r in Ratchets) do
+	binDemandTier(r, db) - binDemandTier(r, db-1) <= 0
+	binDemandTier(r, db)*MaxDemandInTier(db-1) - dvPeakDemandE(r, db-1) <= 0
 end-do
 
 forall ( db in DemandBin, r in Ratchets, ts in TimeStepRatchets(r))  do
