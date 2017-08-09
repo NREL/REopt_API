@@ -55,7 +55,7 @@ def annual_kwh(request):
 
     try:
 
-        kwargs = {k:v for k,v in request.GET.dict().items if k in ['latitude','longitude','load_profile_name']}
+        kwargs = {k:v for k,v in request.GET.dict().items() if k in ['latitude','longitude','load_profile_name']}
 
         b = BuiltInProfile(**kwargs)
         

@@ -353,8 +353,8 @@ class BuiltInProfile(object):
         :param kwargs:
         """
         try:
-            self.latitude = float(latitude) if latitude
-            self.longitude = float(longitude) if longitude
+            self.latitude = float(latitude) if latitude else None
+            self.longitude = float(longitude) if longitude else None
             self.monthly_kwh = load_monthly_kwh
             self.load_profile_name = load_profile_name
             self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
