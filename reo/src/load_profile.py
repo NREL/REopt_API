@@ -336,15 +336,15 @@ class BuiltInProfile(object):
         :param kwargs:
         """
         try:
-            self.latitude = float(latitude)
-            self.longitude = float(longitude)
+            self.latitude = float(latitude) if latitude
+            self.longitude = float(longitude) if longitude
             self.monthly_kwh = load_monthly_kwh
             self.load_profile_name = load_profile_name
-            self.annual_kwh = float(load_size) if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
+            self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
             self.year = load_year
       
         except Exception as e:
-            raise ValueError(e)                
+            raise ValueError(e)         
     
     @property
     def built_in_profile(self):
@@ -374,20 +374,19 @@ class BuiltInProfile(object):
 
     @property
     def default_annual_kwh(self):
-        if self.city and self.default_building_name:
-            return self.annual_loads[self.city][self.default_building_name]
+        if self.city and self.building_type:
+            return self.annual_loads[self.city][self.building_type]
 
     @property
-    def default_building_name(self):
+    def building_type(self):
         name = self.load_profile_name.replace(' ','').lower()
         if name not in self.default_buildings:
             raise ValueError("Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
         return name
+    
     @property
     def default_buildings(self):
         return self.annual_loads[self.city].keys()
-
-
 
     @property
     def monthly_scaled_profile(self):

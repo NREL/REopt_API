@@ -55,11 +55,8 @@ def annual_kwh(request):
 
     try:
 
-        kwargs = request.GET.dict()
+        kwargs = {k:v for k,v in request.GET.dict().items if k in ['latitude','longitude','load_profile_name']}
 
-        if 'load_monthly_kwh' in kwargs.keys():
-            kwargs['load_monthly_kwh'] = ast.literal_eval(kwargs['load_monthly_kwh'])
-        
         b = BuiltInProfile(**kwargs)
         
         response = JsonResponse(
