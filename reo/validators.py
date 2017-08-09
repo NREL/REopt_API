@@ -72,10 +72,10 @@ class URDB_RateValidator:
         if _log_errors:                              #Write errors to log file
             self.setup_logging()
             
-            if self.errors:
+            # if self.errors:
                 # with open(self.log_file, 'w') as f:
                 #     map(lambda e: f.write(e+'\n'), self.errors)
-                log("WARNING", self.errors)
+                # log("WARNING", self.errors)
                         
     
     def setup_logging(self):
