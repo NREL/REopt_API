@@ -11,7 +11,7 @@ from datetime import date, datetime
 class UtilityDatFiles:
 
     # constants
-    max_big_number = 100000000000000
+    max_big_number = 1e10
 
     # filenames to use
     name_fuel_rates = 'FuelCost.dat'
