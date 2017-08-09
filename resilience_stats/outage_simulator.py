@@ -29,6 +29,10 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
                     "resilience_hours_avg": 0,
                     }
 
+    if pv_kw == 0 and pv_kw_ac_hourly is None:
+        pv_kw_ac_hourly = [0] * n_timesteps
+
+
 
     # pv minus load is the burden on battery
     pvMld = [pf * pv_kw - crit_load_factor * ld for (pf, ld) in

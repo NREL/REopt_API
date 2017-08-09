@@ -3,8 +3,9 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.validators import *
 import numpy as np
 import random
-import json
 from reo.src.load_profile import BuiltInProfile
+import pickle
+
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -19,14 +20,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.required  = inputs(just_required=True).keys()
-
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
-
-        self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
-     
+        self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']
         self.url_base = '/api/v1/reopt/'
-	
-	self.annual_kwh_url = "/reopt/annual_kwh/"
+	      self.annual_kwh_url = "/reopt/annual_kwh/"
+        self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
+	      self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+
 
     def make_url(self,string):
         return self.url_base + string
@@ -68,6 +68,26 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def get_response(self, data):
         return self.api_client.post(self.url_base, format='json', data=data)
+
+    def check_data_error_response(self, data, text):	
+      response = self.get_response(data)
+      self.assertTrue(text in response.content)
+
+    def test_urdb_rate(self):
+      data = self.get_defaults_from_list(self.base_case_fields)
+
+      data['urdb_rate'] =self.missing_rate_urdb
+      text = "Missing rate attribute for tier 0 in rate 0 energyratestructure"
+      self.check_data_error_response(data,text)
+
+      data['urdb_rate']=self.missing_schedule_urdb
+
+      text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
+      self.check_data_error_response(data,text)
+
+      text = 'energyweekendschedule contains value 1 which has no associated rate in energyratestructure'
+      self.check_data_error_response(data,text)
+	
 
     def test_valid_swapping(self):
         swaps = [[['urdb_rate'],['demand_charge','blended_utility_rate']],[['load_profile_name'],['load_8760_kw']]]

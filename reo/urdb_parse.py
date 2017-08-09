@@ -653,7 +653,6 @@ class UrdbParse:
 
             period = 0
             for flat in current_rate.flatdemandstructure:
-
                 flat_rate = 0
                 flat_adj = 0
 
