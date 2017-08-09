@@ -40,7 +40,7 @@ namespace :app do
     on roles(:db) do
       within release_path do
         with "PATH" => "#{release_path}/env/bin:$PATH", "VIRTUAL_ENV" => "#{release_path}/env", "DJANGO_SETTINGS_MODULE" => fetch(:django_settings_module) do
-          execute "./env/bin/python", "manage.py", "migrate"
+          execute "./env/bin/python", "manage.py", "migrate", "--noinput"
         end
       end
     end
