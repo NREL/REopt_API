@@ -5,7 +5,7 @@ import numpy as np
 import random
 from reo.src.load_profile import BuiltInProfile
 import pickle
-
+import json
 
 def u2s (d):
     sub_d = d['reopt']['Error']
@@ -21,11 +21,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         self.required  = inputs(just_required=True).keys()
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
-        self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']
-        self.url_base = '/api/v1/reopt/'
-	      self.annual_kwh_url = "/reopt/annual_kwh/"
-        self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
-	      self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+	self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
+	self.url_base = '/api/v1/reopt/'
+	self.annual_kwh_url = "/reopt/annual_kwh/"
+	self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
+	self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
 
     def make_url(self,string):
