@@ -2,7 +2,6 @@ from api_definitions import *
 from django.shortcuts import render
 import json
 import os
-import ast
 from django.http import HttpResponse
 from validators import REoptResourceValidation
 from django.views.static import serve

@@ -342,8 +342,6 @@ class BuiltInProfile(object):
 
     def __init__(self, latitude=None, longitude=None, load_profile_name='', load_size=None, load_year=None, load_monthly_kwh=None, **kwargs):
         """
-        load_size or load_monthly_kwh is required
-
         :param latitude: float
         :param longitude: float
         :param annual_kwh: float or int
@@ -376,6 +374,7 @@ class BuiltInProfile(object):
             if hasattr(self,'nearest_city'):
                 return self.nearest_city
             else:
+                min_distance = None
                 for i,c in enumerate(self.default_cities):
                     distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
                     if i==0:
@@ -393,6 +392,7 @@ class BuiltInProfile(object):
     def default_annual_kwh(self):
         if self.city and self.building_type:
             return self.annual_loads[self.city][self.building_type.lower()]
+	return None
 
     @property
     def building_type(self):
