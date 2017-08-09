@@ -6,7 +6,7 @@ analysis_period = 25
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
-        'user_id': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": [], 'default': None
+       'user_id': {'req': False, 'type': str, 'null': False, 'pct': False, "needed_for": [], 'default': None
             , "description": "User ID", "units": None, "tool_tip": "Unique REopt user id."},
 
         # Required
@@ -120,7 +120,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                       "tool_tip": 'Battery initial state-of-charge'},
 
         'interconnection_limit': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                                  'max': None, 'default': None,
+                                  'max': None, 'default': max_big_number,
                                   "description": "Limit on Power flowing from System to the Grid", "units": 'kilowatt',
                                   "tool_tip": 'The maximum power that can be transmitted to the grid at any one time, in kilowatts. Interconnection limits are typically established by state policy.'},
 
@@ -136,7 +136,7 @@ def inputs(filter='', full_list=False, just_required=False):
                            "tool_tip": 'The estimated price of electricity on the wholesale market in dollars per kilowatt.'},
 
         'pv_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': 1e9, 'default': None,
+                      'max': 1e9, 'default': 1e9,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 
@@ -643,20 +643,52 @@ def outputs():
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
 
+            'year_one_demand_cost':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total demand cost", "units": 'hours'},
+
+            'year_one_energy_cost':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy cost", "units": 'hours'},
+
+            'year_one_export_benefit':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+            
+            'year_one_demand_cost_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total demand cost business as ususal", "units": 'hours'},
+            
+            'year_one_energy_cost_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy cost business as ususal", "units": 'hours'},
+            
+            'year_one_energy_produced':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total energy produced", "units": 'hours'},
+
+            'pv_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
+            'batt_macrs_itc_reduction':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - total export benefit", "units": 'hours'},
+
+            'year_one_bill':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill", "units": 'hours'},
+
+            'year_one_bill_bau':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "Result - year one bill bau", "units": 'hours'},
+
+            'pv_degradation_rate':
+                {'req': True, 'type': float, 'null': True, 'pct': False,
+                 "description": "pv_degredation rate", "units": 'hours'},
+
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
-            'resilience_by_timestep':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "List of hours survived for outages starting at every time step", "units": 'hours'},
-            'resilience_hours_min':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Minimum hours survived", "units": 'hours'},
-            'resilience_hours_max':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Maximum hours survived", "units": 'hours'},
-            'resilience_hours_avg':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Average hours survived", "units": 'hours'},
             }
 
 # default load profiles

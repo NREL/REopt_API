@@ -32,7 +32,7 @@ parameters
   DAT3 = ScenarioPath + "/LoadSize_" + ScenarioNum + ".dat"
   DAT4 = ScenarioPath + "/Load8760_" + ScenarioNum + ".dat"
   DAT5 = ScenarioPath + "/GIS_" + ScenarioNum + ".dat"
-  DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"
+  DAT6 = ScenarioPath + "/storage_" + ScenarioNum + ".dat"   ! Default dat file has empty arrays
   DAT7 = ScenarioPath + "/maxsizes_" + ScenarioNum + ".dat"
   DAT8  = ScenarioPath + "/Utility/TimeStepsDemand.dat"
   DAT9  = ScenarioPath + "/Utility/DemandRate.dat"
@@ -173,10 +173,21 @@ declarations
 
 end-declarations
 
-!setparam("XPRS_MIPTOL",5e-5)   !default is 5e-5
+
+! This option sets the tolerance of the integer solution
+setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
+
+! This option only allows the problem to parallelize onto 2 cores
+setparam("XPRS_MIPTHREADS", 2)
+
+! This option limits the system memory for storing branch and bound search tree, default is to let Xpress calculate
+ setparam("XPRS_TREEMEMORYLIMIT", 0) ! Change to non-zero number of MB if desired to override default
+
 !setparam("XPRS_MIPRELSTOP",.001)
 !setparam("XPRS_MAXTIME",180)
 
+!!! NOTE: any arguments that are used to dimension others must be within an initilization clause before
+!!! the arguments that depend on them are initialized (such as NMILRegime).
 
 initializations from DAT1 ! constants
 	Tech
@@ -184,10 +195,9 @@ initializations from DAT1 ! constants
 	TechIsGrid
 	TechToLoadMatrix
 	TechClass
-	NMILRegime
-	TechToNMILMapping
 	TurbineDerate
 	TechToTechClassMatrix
+	NMILRegime
 end-initializations
 
 initializations from DAT2 ! economics
@@ -226,7 +236,7 @@ initializations from DAT5 ! GIS
 	ProdFactor
 end-initializations
 
-initializations from DAT6 ! storage
+initializations from DAT6 ! storage <--NEED A BAU VERSION WITH EMPTY PARAMS?
 	StorageMinChargePcent
 	EtaStorIn
 	EtaStorOut
@@ -274,8 +284,9 @@ initializations from DAT16
 	FuelBurnRateM
 end-initializations
 
-initializations from DAT17
+initializations from DAT17  ! net metering
 	NMILLimits
+	TechToNMILMapping
 end-initializations
 
 

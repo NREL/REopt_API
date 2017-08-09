@@ -1,25 +1,20 @@
 # python libraries
-import os
-import traceback
-import shutil
-import math
-import pandas as pd
-from datetime import datetime, timedelta
+# some libraries are being imported via the 'import *' statements below
+# including at least 'os' and 'json'
 import re
-import json
-# logging
-from log_levels import log
+import shutil
 
 # user defined
 import economics
-import pvwatts
-from results import Results
 from api_definitions import *
-
+from reo.src.dat_file_manager import DatFileManager
+from reo.src.techs import PV, Util
+from reo.src.load_profile import LoadProfile
+from reo.src.storage import Storage
+from reo.src.site import Site
+from results import Results
 from urdb_parse import *
 from utilities import Command, check_directory_created, write_single_variable, is_error
-from dat_file_manager import DatFileManager
-from techs import PV, Util
 
 
 def alphanum(s):
@@ -67,10 +62,6 @@ class DatLibrary:
         self.timed_out = False
         self.net_metering = False
 
-        # DAT files to overwrite
-        self.DAT = [None] * 20
-        self.DAT_bau = [None] * 20
-
         # Command line constants
         self.command_line_constants = list()
         self.command_line_constants.append("ScenarioNum=" + str(run_input_id))
@@ -111,27 +102,10 @@ class DatLibrary:
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
         self.file_cmd_input_bau = os.path.join(self.path_run_inputs, "cmd_bau.log")
-        self.file_constant = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '.dat')
-        self.file_constant_bau = os.path.join(self.path_run_inputs, 'constant_' + str(self.run_input_id) + '_bau.dat')
-        self.file_storage = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '.dat')
-        self.file_storage_bau = os.path.join(self.path_run_inputs, 'storage_' + str(self.run_input_id) + '_bau.dat')
-        self.file_max_size = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '.dat')
-        self.file_max_size_bau = os.path.join(self.path_run_inputs, 'maxsizes_' + str(self.run_input_id) + '_bau.dat')
         self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
         self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
-        self.file_gis = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '.dat')
-        self.file_gis_bau = os.path.join(self.path_run_inputs, 'GIS_' + str(self.run_input_id) + '_bau.dat')
-        self.file_load_size = os.path.join(self.path_run_inputs, 'LoadSize_' + str(self.run_input_id) + '.dat')
-        self.file_load_profile = os.path.join(self.path_run_inputs, 'Load8760_' + str(self.run_input_id) + '.dat')
-        self.file_NEM = os.path.join(self.path_run_inputs, 'NMIL_' + str(self.run_input_id) + '.dat')
 
         self.path_utility = os.path.join(self.path_run_inputs, "Utility")
-        self.path_various = os.path.join(self.path_run_inputs)
-
-        self.folder_utility = os.path.join(self.path_dat_library, "Utility")
-        self.folder_load_profile = os.path.join(self.path_dat_library, "LoadProfiles")
-        self.folder_load_size = os.path.join(self.path_dat_library, "LoadSize")
-        self.folder_various = os.path.join(self.path_dat_library, "Various")
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
@@ -147,10 +121,6 @@ class DatLibrary:
         if self.tilt is None:
             self.tilt = self.latitude
 
-        self.default_load_profiles = [p.lower() for p in default_load_profiles()]
-        self.default_building = default_building()
-        self.default_city = default_cities()[self.localize_load()]
-
         for k in self.outputs():
             setattr(self, k, None)
 
@@ -160,9 +130,8 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
-        self.dfm = DatFileManager()
-        self.dfm.run_id = self.run_input_id  # dfm is a singleton
-        self.dfm.path_inputs = self.path_run_inputs
+        self.dfm = DatFileManager(run_id=self.run_input_id, inputs_path=self.path_run_inputs,
+                                  n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
@@ -216,20 +185,20 @@ class DatLibrary:
 
         output_dict = dict()
 
-        self.create_simple_bau()
-        self.create_constants()
         self.create_storage()
         self.create_size_limits()
         self.create_economics()
         self.create_loads()
-        self.create_nem()
         self.create_utility()
 
         solar_data = self.create_Solar()
         self.pv_kw_ac_hourly = solar_data
 
-        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.DAT, False)
-        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.DAT_bau, True)
+        self.create_nem()
+        self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
+
+        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.dfm.DAT, False)
+        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
 
         log("INFO", "Initializing Command")
         command = Command(run_command)
@@ -259,14 +228,10 @@ class DatLibrary:
         ins_and_outs_dict = self._add_inputs(output_dict)
         return ins_and_outs_dict
 
-
     def _add_inputs(self, od):
-
         for k in self.inputs(full_list=True).keys():
             if hasattr(self, k):
                 od[k] = getattr(self, k)
-            else:
-                od[k] = None  # should we set defaults here? Nope - defaults will already have been set by this point in the code
         return od
 
     def create_run_command(self, path_output, xpress_model, DATs, base_case):
@@ -315,9 +280,14 @@ class DatLibrary:
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
                                       self.path_static_outputs, self.economics, self.load_year)
+
             output_dict = process_results.get_output()
-            for key in ['run_input_id','pv_kw_ac_hourly']:
-                output_dict[key] = getattr(self,key)
+            output_dict['run_input_id'] = self.run_input_id
+
+            for k,v in self.__dict__.items():
+                if output_dict.get(k) is None and k in outputs():
+                    output_dict[k] = v
+
         else:
             msg = "Output file: " + self.file_output + " does not exist"
             output_dict = {'Error': [msg] }
@@ -333,113 +303,34 @@ class DatLibrary:
             shutil.rmtree(self.path_run)
 
    # BAU files
-    def create_simple_bau(self):
-        self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
-        self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
-
-        shutil.copyfile(os.path.join(self.folder_various, 'constant_bau.dat'), self.file_constant_bau)
-        shutil.copyfile(os.path.join(self.folder_various, 'maxsizes_bau.dat'), self.file_max_size_bau)
-
-    # Constant file
-    def create_constants(self):
-
-        can_grid_charge = getattr(self, "batt_can_gridcharge", 1)
-
-        Tech = ['PV', 'PVNM', 'UTIL1']
-        TechIsGrid = [0, 0, 1]
-        Load = ['1R', '1W', '1X', '1S']
-        TechToLoadMatrix = [1, 1, 1, 1, \
-                            1, 1, 1, 1, \
-                            1, 0, 0, int(can_grid_charge)]
-        TechClass = ['PV', 'UTIL']
-        NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        TechToNMILMapping = [1, 0, 0, \
-                             0, 1, 0, \
-                             0, 0, 0]
-        TurbineDerate = [1, 1, 0]
-        TechToTechClassMatrix = [1, 0, \
-                                 1, 0, \
-                                 0, 0]
-
-        self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
-
-        write_single_variable(self.file_constant, Tech, 'Tech')
-        write_single_variable(self.file_constant, TechIsGrid, 'TechIsGrid', 'a')
-        write_single_variable(self.file_constant, Load, 'Load', 'a')
-        write_single_variable(self.file_constant, TechToLoadMatrix, 'TechToLoadMatrix', 'a')
-        write_single_variable(self.file_constant, TechClass, 'TechClass', 'a')
-        write_single_variable(self.file_constant, NMILRegime, 'NMILRegime', 'a')
-        write_single_variable(self.file_constant, TechToNMILMapping, 'TechToNMILMapping', 'a')
-        write_single_variable(self.file_constant, TurbineDerate, 'TurbineDerate', 'a')
-        write_single_variable(self.file_constant, TechToTechClassMatrix, 'TechToTechClassMatrix', 'a')
 
     # storage
     def create_storage(self):
-        """
-        writes storage_[run_input_id].dat, which contains:
-            StorageMinChargePcent
-            EtaStorIn  (same as roundtrip efficiency)
-            EtaStorOut (currently not used in REopt)
-            BattLevelCoef
-            InitSOC
-        NOTE: EtaStorIn and EtaStorOut are array(Tech,Load)
-        """
-        Tech = ['PV', 'PVNM', 'UTIL1']  # copied from create_constants, needs to adjusted for future techs
-        Load = ['1R', '1W', '1X', '1S']
-
-        self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
-
-        roundtrip_efficiency = self.batt_efficiency * self.batt_inverter_efficiency * self.batt_rectifier_efficiency
-
-        etaStorIn = list()
-        etaStorOut = list()
-        for t in Tech:
-            for ld in Load:
-                etaStorIn.append(roundtrip_efficiency if ld is '1S' else 1)
-                etaStorOut.append(roundtrip_efficiency if ld is '1S' else 1)
-
-        write_single_variable(self.file_storage, self.batt_soc_min, 'StorageMinChargePcent')
-        write_single_variable(self.file_storage, etaStorIn, 'EtaStorIn', mode='a')
-        write_single_variable(self.file_storage, etaStorOut, 'EtaStorOut', mode='a')
-        write_single_variable(self.file_storage, [-1, 0], 'BattLevelCoef', mode='a')
-        write_single_variable(self.file_storage, self.batt_soc_init, 'InitSOC', mode='a')
-
-        # NOTE: All bau dat files except maxsizes can be eliminated by just placing zeros in maxsizes_bau.dat
-        # (including all utility bau files)
-        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
-        Tech_bau = ['UTIL1']
-        etaStorIn_bau = list()
-        etaStorOut_bau = list()
-        for t in Tech_bau:
-            for ld in Load:
-                etaStorIn_bau.append(roundtrip_efficiency if ld is '1S' else 1)
-                etaStorOut_bau.append(roundtrip_efficiency if ld is '1S' else 1)
-
-        write_single_variable(self.file_storage_bau, self.batt_soc_min, 'StorageMinChargePcent')
-        write_single_variable(self.file_storage_bau, etaStorIn_bau, 'EtaStorIn', mode='a')
-        write_single_variable(self.file_storage_bau, etaStorOut_bau, 'EtaStorOut', mode='a')
-        write_single_variable(self.file_storage_bau, [-1, 0], 'BattLevelCoef', mode='a')
-        write_single_variable(self.file_storage_bau, self.batt_soc_init, 'InitSOC', mode='a')
+        storage = Storage(
+            min_kw=self.batt_kw_min,
+            max_kw=self.batt_kw_max,
+            min_kwh=self.batt_kwh_min,
+            max_kwh=self.batt_kwh_max,
+            batt_efficiency=self.batt_efficiency,
+            batt_inverter_efficiency=self.batt_inverter_efficiency,
+            batt_rectifier_efficiency=self.batt_rectifier_efficiency,
+            soc_min=self.batt_soc_min,
+            soc_init=self.batt_soc_init,
+            can_grid_charge=self.batt_can_gridcharge,
+        )
+        self.dfm.add_storage(storage)
 
     # DAT2 - Economics
     def create_economics(self):
 
         econ_inputs = self.get_subtask_inputs('economics')
 
-        fp = self.file_economics
-        self.economics = economics.Economics(econ_inputs, file_path=fp, business_as_usual=False)
+        self.economics = economics.Economics(file_path=self.file_economics, business_as_usual=False, **econ_inputs)
 
-        for k in ['analysis_period', 'pv_cost', 'pv_om', 'batt_cost_kw', 'batt_replacement_cost_kw',
-                  'batt_replacement_cost_kwh', 'owner_discount_rate', 'offtaker_discount_rate', 'owner_tax_rate',
-                  'pv_levelization_factor', 'cap_cost_segments']:
+        for k in self.economics.__dict__.keys():
             setattr(self, k, getattr(self.economics, k))
 
-        self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
-
-        fp = self.file_economics_bau
-        econ = economics.Economics(econ_inputs, file_path=fp, business_as_usual=True)
-
-        self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
+        econ = economics.Economics(file_path=self.file_economics_bau, business_as_usual=True, **econ_inputs)
         self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
 
     # DAT3 & DAT4 LoadSize, LoadProfile
@@ -451,194 +342,27 @@ class DatLibrary:
         :return: None
         """
 
+        lp = LoadProfile(user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+        self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
+
         log("INFO", "Creating loads.  "
                      "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-        if self.load_8760_kw:  # user load profile
-            self.load_size = sum(self.load_8760_kw)
-            load_profile = self.load_8760_kw
-
-        else:  # building type and (load_size OR load_monthly_kwh) defined by user
-            profile_path = os.path.join(self.folder_load_profile,
-                                        "Load8760_norm_" + self.default_city + "_" + self.load_profile_name + ".dat")
-            if self.load_monthly_kwh:
-                self.load_size = sum(self.load_monthly_kwh)
-                load_profile = self.scale_load_by_month(profile_path)
-
-            else:  # load_size is "swap_for" load_monthly_kwh
-                load_profile = self.scale_load(profile_path, self.load_size)
-
-        # resilience: modify load during outage with crit_load_factor
-        if self.crit_load_factor and self.outage_start and self.outage_end:
-            # modify load
-            load_profile = load_profile[0:self.outage_start] \
-                            + [ld * self.crit_load_factor for ld in load_profile[self.outage_start:self.outage_end]] \
-                            + load_profile[self.outage_end:]
-
-        #  fill in W, X, S bins
-        for _ in range(8760 * 3):
-            load_profile.append(self.max_big_number)
-
-        write_single_variable(self.file_load_profile, load_profile, "LoadProfile")
-        write_single_variable(self.file_load_size, self.load_size, "AnnualElecLoad")
-
-        self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
-        self.DAT_bau[2] = self.DAT[2]
-        self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
-        self.DAT_bau[3] = self.DAT[3]
-
-    def scale_load(self, file_load_profile, scale_factor):
-
-        load_profile = []
-        f = open(file_load_profile, 'r')
-        for line in f:
-            load_profile.append(float(line.strip('\n')) * scale_factor)
-
-        return load_profile
-
-    def scale_load_by_month(self, profile_file):
-
-        load_profile = []
-        f = open(profile_file, 'r')
-
-        datetime_current = datetime(self.load_year, 1, 1, 0)
-        month_total = 0
-        month_scale_factor = []
-        normalized_load = []
-
-        for line in f:
-            month = datetime_current.month
-            normalized_load.append(float(line.strip('\n')))
-            month_total += self.load_size * float(line.strip('\n'))
-
-            # add an hour
-            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-
-            if month != datetime_current.month:
-                if month_total == 0:
-                    month_scale_factor.append(0)
-                else:
-                    month_scale_factor.append(float(self.load_monthly_kwh[month - 1] / month_total))
-                month_total = 0
-
-                log("DEBUG", "Monthly kwh: " + str(self.load_monthly_kwh[month - 1]) +
-                    ", Month scale factor: " + str(month_scale_factor[month - 1]) +
-                    ", Annual load: " + str(self.load_size))
-
-        datetime_current = datetime(self.load_year, 1, 1, 0)
-        for load in normalized_load:
-            month = datetime_current.month
-
-            load_profile.append(self.load_size * load * month_scale_factor[month - 1])
-
-            # add an hour
-            datetime_current = datetime_current + timedelta(0, 0, 0, 0, 0, 1, 0)
-
-        return load_profile
-
-    def localize_load(self):
-
-        min_distance = self.max_big_number
-        min_index = 0
-
-        idx = 0
-        for _ in default_cities():
-            lat = default_latitudes()[idx]
-            lon = default_longitudes()[idx]
-            lat_dist = self.latitude - lat
-            lon_dist = self.longitude - lon
-
-            distance = math.sqrt(math.pow(lat_dist, 2) + math.pow(lon_dist, 2))
-            if distance < min_distance:
-                min_distance = distance
-                min_index = idx
-
-            idx += 1
-
-        return min_index
-
     def create_Solar(self):
 
         pv = PV(**self.inputs_dict)
         util = Util(**self.inputs_dict)
 
-        self.dfm.finalize()  # needed for ProdFactor (depends on which Techs are defined)
-
         solar_data = pv.prod_factor
-
-        self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
-        self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
-
         return solar_data
 
     def create_size_limits(self):
 
-        acres_per_MW = 6
-        squarefeet_to_acre = 2.2957e-5
-        total_acres = 0
-
-        # Internal working defaults, probably need to revamp and move to api_definitions.py
-        pv_kw_min = 0
-        pv_kw_max = 200000
-        util_kw_max = 12000000
-
-        batt_kw_min = 0
-        batt_kwh_min = 0
-        batt_kw_max = 10000
-        batt_kwh_max = 10000
-
-
-        # pv max size based on user input
-        if self.pv_kw_max is not None:
-            pv_kw_max = self.pv_kw_max
-        else:
-            # don't restrict unless they specify both land_area and roof_area, otherwise one of them is "unlimited" in UI
-            if self.roof_area is not None and self.land_area is not None:
-                total_acres += (self.roof_area * squarefeet_to_acre) + self.land_area
-                pv_kw_max = (total_acres / acres_per_MW) * 1000
-
-        if self.pv_kw_min is not None:
-            pv_kw_min = self.pv_kw_min
-
-        if pv_kw_min > pv_kw_max:
-            pv_kw_min = pv_kw_max
-
-        # battery constraints
-        if self.batt_kw_max is not None:
-            batt_kw_max = self.batt_kw_max
-        if self.batt_kwh_max is not None:
-            batt_kwh_max = self.batt_kwh_max
-        if self.batt_kw_min is not None:
-            batt_kw_min = self.batt_kw_min
-        if self.batt_kwh_min is not None:
-            batt_kwh_min = self.batt_kwh_min
-
-        # update outputs
-        self.pv_kw_min = pv_kw_min
-        self.pv_kw_max = pv_kw_max
-        self.batt_kwh_min = batt_kwh_min
-        self.batt_kwh_max = batt_kwh_max
-        self.batt_kw_min = batt_kw_min
-        self.batt_kw_max = batt_kw_max
-
-        MaxSize = [pv_kw_max, pv_kw_max, util_kw_max]
-        MinStorageSizeKW = batt_kw_min
-        MinStorageSizeKWH = batt_kwh_min
-        MaxStorageSizeKW = batt_kw_max
-        MaxStorageSizeKWH = batt_kwh_max
-        TechClassMinSize = [pv_kw_min, 0]
-
-        write_single_variable(self.file_max_size, MaxSize, "MaxSize", 'a')
-        write_single_variable(self.file_max_size, MinStorageSizeKW, "MinStorageSizeKW", 'a')
-        write_single_variable(self.file_max_size, MaxStorageSizeKW, "MaxStorageSizeKW", 'a')
-        write_single_variable(self.file_max_size, MinStorageSizeKWH, "MinStorageSizeKWH", 'a')
-        write_single_variable(self.file_max_size, MaxStorageSizeKWH, "MaxStorageSizeKWH", 'a')
-        write_single_variable(self.file_max_size, TechClassMinSize, "TechClassMinSize", 'a')
-
-        self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
+        site = Site(**self.inputs_dict)
+        self.dfm.add_site(site)
 
     def create_utility(self):
 
@@ -779,22 +503,11 @@ class DatLibrary:
 
     def create_nem(self):
 
-        net_metering_limit = 0
-        interconnection_limit = 1000000
-
-        nem_input = getattr(self, "net_metering_limit")
-        ic_input = getattr(self, "interconnection_limit")
-
-        if nem_input is not None:
-            net_metering_limit = nem_input
-        if ic_input is not None:
-            interconnection_limit = ic_input
+        net_metering_limit = self.inputs_dict.get("net_metering_limit")
         if net_metering_limit > 0:
             self.net_metering = True
 
-        # check on if NM, IC are in right spot
-        write_single_variable(self.file_NEM,
-                                   [net_metering_limit, interconnection_limit, self.max_big_number],
-                                   "NMILLimits")
-
-        self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
+        self.dfm.add_net_metering(
+            net_metering_limit=net_metering_limit,
+            interconnection_limit=self.inputs_dict.get("interconnection_limit")
+        )
