@@ -323,6 +323,23 @@ class BuiltInProfile(object):
         },
     }
 
+    default_buildings =  [  'fastfoodrest',
+                            'fullservicerest',
+                            'hospital',
+                            'largehotel',
+                            'largeoffice',
+                            'mediumoffice',
+                            'midriseapartment',
+                            'outpatient',
+                            'primaryschool',
+                            'retailstore',
+                            'secondaryschool',
+                            'smallhotel',
+                            'smalloffice',
+                            'stripmall',
+                            'supermarket',
+                            'warehouse']
+
     def __init__(self, latitude=None, longitude=None, load_profile_name='', load_size=None, load_year=None, load_monthly_kwh=None, **kwargs):
         """
         load_size or load_monthly_kwh is required
@@ -375,18 +392,14 @@ class BuiltInProfile(object):
     @property
     def default_annual_kwh(self):
         if self.city and self.building_type:
-            return self.annual_loads[self.city][self.building_type]
+            return self.annual_loads[self.city][self.building_type.lower()]
 
     @property
     def building_type(self):
-        name = self.load_profile_name.replace(' ','').lower()
-        if name not in self.default_buildings:
+        name = self.load_profile_name.replace(' ','')
+        if name.lower() not in self.default_buildings:
             raise ValueError("Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
         return name
-    
-    @property
-    def default_buildings(self):
-        return self.annual_loads[self.city].keys()
 
     @property
     def monthly_scaled_profile(self):
