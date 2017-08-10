@@ -1,5 +1,5 @@
 from reo.src.dat_file_manager import DatFileManager
-big_number = 100000
+big_number = 100000  # should this be the 1e10 in DFM? typically use smaller battery max?
 
 
 class Storage(object):
@@ -12,6 +12,7 @@ class Storage(object):
                  soc_min=0.2, soc_init=0.5,
                  can_grid_charge=True,
                  level_count=1, level_coefs=(-1, 0),
+                 us_dollar_per_kw=1000, us_dollar_per_kwh=500,
                  **kwargs):
 
         self.min_kw = min_kw
@@ -31,5 +32,8 @@ class Storage(object):
 
         self.level_count = level_count
         self.level_coefs = level_coefs
+
+        self.us_dollar_per_kw = us_dollar_per_kw
+        self.us_dollar_per_kwh = us_dollar_per_kwh
 
         DatFileManager().add_storage(self)
