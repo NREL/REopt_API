@@ -146,7 +146,7 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
         'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                'min': 0, 'max': 1, 'default': None,
+                                'min': 0, 'max': 1, 'default': 0.10,
                                 "description": "Owner Discount Rate", "units": 'decimal percent',
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
@@ -234,7 +234,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'owner_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
-                           'max': 1, 'default': None,
+                           'max': 1, 'default': 0.35,
                            "description": "Tax Rate for System Developer", "units": 'decimal percent',
                            "tool_tip": 'The percent of income that goes to tax for the system host. Units: decimal percent. This value is not required.'},
 
@@ -258,19 +258,19 @@ def inputs(filter='', full_list=False, just_required=False):
         # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': 1e12,
+                           'max': None, 'default': 1e10,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
+                         'max': None, 'default': 1e10,
                          "description": "State Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
         'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
+                         'max': None, 'default': 1e10,
                          "description": "Local Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
