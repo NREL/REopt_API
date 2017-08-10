@@ -1,7 +1,5 @@
-from reo.src.dat_file_manager import DatFileManager
+from reo.src.dat_file_manager import DatFileManager, big_number
 from reo.src.pvwatts import PVWatts
-
-big_number = 100000000
 
 
 class Tech(object):

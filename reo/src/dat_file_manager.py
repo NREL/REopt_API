@@ -2,6 +2,7 @@ import os
 import copy
 from reo.log_levels import log
 
+big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
 
 def _write_var(f, var, dat_var):
@@ -40,7 +41,6 @@ class DatFileManager:
     """
 
     __metaclass__ = Singleton
-    big_number = 1e8
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
@@ -101,7 +101,7 @@ class DatFileManager:
     def add_load(self, load): 
         #  fill in W, X, S bins
         for _ in range(8760 * 3):
-            load.load_list.append(self.big_number)
+            load.load_list.append(big_number)
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
