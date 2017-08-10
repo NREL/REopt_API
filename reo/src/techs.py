@@ -74,6 +74,7 @@ class PV(Tech):
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
+        self.degradation_rate=kwargs.get('pv_degradation_rate')
 
         DatFileManager().add_pv(self)
 
