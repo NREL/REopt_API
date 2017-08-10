@@ -5,9 +5,9 @@ class Financials(object):
     def __init__(self,
                  rate_inflation=0.01,
                  rate_escalation=0.02,
-                 owner_tax_rate=0.35,
+                 owner_tax_rate=None,
                  offtaker_tax_rate=0.35,
-                 owner_discount_rate=0.10,
+                 owner_discount_rate=None,
                  offtaker_discount_rate=0.08,
                  analysis_period=25,
                  **kwargs
@@ -19,6 +19,12 @@ class Financials(object):
         self.owner_discount_rate = owner_discount_rate
         self.offtaker_discount_rate = offtaker_discount_rate
         self.analysis_period = analysis_period
+
+        # set-up direct ownership
+        if self.owner_discount_rate is None:
+            self.owner_discount_rate = self.offtaker_discount_rate
+        if self.owner_tax_rate is None:
+            self.owner_tax_rate = self.offtaker_tax_rate
 
 
 class Site(object):
