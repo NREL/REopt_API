@@ -24,9 +24,9 @@ def write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
     if isinstance(var, list):
         for i in var:
-            f.write(str(i) + "\t,\n")
+            f.write(str(i) + "\n")
     else:
-        f.write(str(var) + "\t,\n")
+        f.write(str(var) + "\n")
     f.write("]\n")
 
 
