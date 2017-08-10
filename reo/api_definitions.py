@@ -146,7 +146,7 @@ def inputs(filter='', full_list=False, just_required=False):
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
         'owner_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                'min': 0, 'max': 1, 'default': 0.10,
+                                'min': 0, 'max': 1, 'default': None,
                                 "description": "Owner Discount Rate", "units": 'decimal percent',
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
