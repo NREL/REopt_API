@@ -35,7 +35,6 @@ class DatLibrary:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
-    logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1
 
@@ -74,7 +73,6 @@ class DatLibrary:
 
         self.path_templates = os.path.join(self.path_egg, "reo", "templates")
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
-        self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
 
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
@@ -317,6 +315,8 @@ class DatLibrary:
             soc_min=self.batt_soc_min,
             soc_init=self.batt_soc_init,
             can_grid_charge=self.batt_can_gridcharge,
+            us_dollar_per_kw=self.batt_cost_kw,
+            us_dollar_per_kwh=self.batt_cost_kwh,
         )
         self.dfm.add_storage(storage)
 
