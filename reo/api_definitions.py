@@ -234,7 +234,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'owner_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
-                           'max': 1, 'default': 0.35,
+                           'max': 1, 'default': None,
                            "description": "Tax Rate for System Developer", "units": 'decimal percent',
                            "tool_tip": 'The percent of income that goes to tax for the system host. Units: decimal percent. This value is not required.'},
 
