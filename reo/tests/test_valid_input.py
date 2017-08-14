@@ -214,7 +214,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
 
     def test_valid_data_ranges(self):
-        #try:
         # Test Bad Data Types
         checks  = set(['min','max','minpct','maxpct','restrict'])
         completed_checks = []
