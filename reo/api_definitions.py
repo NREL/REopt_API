@@ -197,7 +197,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_year': {'req': False, 'type': float, 'null': True,
                       'pct': False, 'min': 2017,'max': 2017 + max_years,
-                      "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
+                      "needed_for": ['economics'], 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
