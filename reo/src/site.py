@@ -1,6 +1,9 @@
 
 
 class Financials(object):
+    """
+    All user-input discount and growth rates are assumed in real terms
+    """
 
     def __init__(self,
                  rate_inflation=0.01,
@@ -25,6 +28,10 @@ class Financials(object):
             self.owner_discount_rate = self.offtaker_discount_rate
         if self.owner_tax_rate is None:
             self.owner_tax_rate = self.offtaker_tax_rate
+
+        self.offtaker_discount_rate_nominal = (1 + self.offtaker_discount_rate) * (1 + self.rate_inflation) - 1
+        self.owner_discount_rate_nominal = (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1
+        self.rate_escalation_nominal = (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1
 
 
 class Site(object):
