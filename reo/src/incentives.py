@@ -31,8 +31,24 @@ class Incentives(object):
     """
     high level incentives object for attaching to production technologies and storage
     """
+    macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
+    macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
-    def __init__(self, POST, tech=None, include_production_based=False):
+    def __init__(self, POST, tech=None, macrs_years=5, macrs_bonus_fraction=0.5, macrs_itc_reduction=0.5,
+                 include_production_based=False):
+
+        self.macrs_bonus_fraction = macrs_bonus_fraction
+        self.macrs_itc_reduction = macrs_itc_reduction
+
+        if macrs_years == 5:
+            self.macrs_schedule = Incentives.macrs_five_year
+        elif macrs_years == 7:
+            self.macrs_schedule = Incentives.macrs_seven_year
+        elif macrs_years == 0:
+            self.macrs_bonus_fraction = 0
+            self.macrs_itc_reduction = 0
+        else:
+            raise ValueError("macrs_years must be 0, 5 or 7.")
 
         if tech:  # not needed once we modify POST dict
             filtered_kwargs = self._filter_inputs(tech, POST)
@@ -56,6 +72,5 @@ class Incentives(object):
         :param POST: POST dictionary
         :return:
         """
-        import pdb; pdb.set_trace()
         return dict((k[len(tech.lower() + '_'):] ,v) for (k, v) in POST.items() if k.startswith(tech.lower() + '_'))
 

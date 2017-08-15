@@ -1,5 +1,6 @@
 from reo.src.dat_file_manager import DatFileManager, big_number
 from reo.src.pvwatts import PVWatts
+from reo.src.incentives import Incentives
 
 
 class Tech(object):
@@ -75,6 +76,11 @@ class PV(Tech):
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
         self.degradation_rate=kwargs.get('pv_degradation_rate')
+        self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
+                                     macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
+                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction'),
+                                     include_production_based=True)
+
 
         DatFileManager().add_pv(self)
 
