@@ -185,7 +185,6 @@ class DatLibrary:
 
         self.create_storage()
         self.create_size_limits()
-        self.create_economics()
         self.create_loads()
         self.create_utility()
 
@@ -194,6 +193,7 @@ class DatLibrary:
 
         self.create_nem()
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
+        self.create_economics()
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.dfm.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
@@ -327,16 +327,26 @@ class DatLibrary:
 
     # DAT2 - Economics
     def create_economics(self):
+        """
+        Economics are now entirely created by DatFileManager.
 
-        econ_inputs = self.get_subtask_inputs('economics')
+        The old method for creating economics.dat was setting CapCostSegCount for the BAU case equal to the
+        with-tech case. This did not cause any problems because the with-tech CapCostSegCount has always been greater
+        than or equal to the BAU CapCostSegCount (and Xpress will dynamically build out any arrays that dimension from
+        CapCostSegCount, i.e. `Seg`).
 
-        self.economics = economics.Economics(file_path=self.file_economics, business_as_usual=False, **econ_inputs)
+        It appears that the only attributes from the Economics class that are being passed back as outputs are
+        pv_macrs_itc_reduction and batt_macrs_itc_reduction.
 
-        for k in self.economics.__dict__.keys():
-            setattr(self, k, getattr(self.economics, k))
+        :return:
+        """
 
-        econ = economics.Economics(file_path=self.file_economics_bau, business_as_usual=True, **econ_inputs)
-        self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
+        self.pv_macrs_itc_reduction = 0.5
+        self.batt_macrs_itc_reduction = 0.5
+
+        # add CapCostSegCount to command line args, this functionality will move to REopt class (using DFM)
+        self.command_line_constants.append(str(self.dfm.command_line_args[0]))  # only one so far
+        # self.command_line_constants_bau.append(str(self.dfm.command_line_args_bau[0]))  # only one so far
 
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
