@@ -56,6 +56,8 @@ class DatFileManager:
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
+    command_line_args = list()
+    command_line_args_bau = list()
     
     def __init__(self, run_id, inputs_path, n_timesteps=8760):
         self.run_id = run_id
@@ -108,94 +110,6 @@ class DatFileManager:
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
-    def add_economics(self, techs):
-        """
-        webtool and api inputs are assumed to be in real terms, this includes:
-        owner_discount_rate
-        offtaker_discount_rate
-        rate_escalation
-
-        REopt params:
-            r_tax_owner: float
-            r_tax_offtaker: float
-            pwf_om: float
-            pwf_e: float
-            pwf_prod_incent: float
-            two_party_factor: float
-            analysis_period: int
-            !pwf_op
-                StorageCostPerKW: array( BattLevel) of real
-                StorageCostPerKWH: array(BattLevel) of real
-
-            LevelizationFactor: array(Tech)
-            LevelizationFactorProdIncent: array(Tech)
-            OMperUnitSize: array (Tech) of real
-            CapCostSlope:  array (Tech, Seg) of real
-            CapCostYInt: array (Tech, Seg) of real
-            CapCostX: array (Tech, Points) of real
-            ProdIncentRate: array (Tech, Load) of real
-            MaxProdIncent: array (Tech) of real
-            MaxSizeForProdIncent: array (Tech) of real
-
-        :param economics_dict:
-        :return:
-        """
-
-        # Economics.setup_financial_parameters
-        sf = self.site.financials
-        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
-        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal) # not used in REopt
-        pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
-        pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
-        pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
-
-        if pwf_owner == 0 or sf.owner_tax_rate == 0:
-            two_party_factor = 0
-        else:
-            two_party_factor = (pwf_offtaker * sf.offtaker_tax_rate) \
-                                / (pwf_owner * sf.owner_tax_rate)
-
-        levelization_factor = list()
-        production_incentive_levelization_factor = list()
-
-        for tech in techs:
-
-            if eval('self.' + tech) is not None:
-
-                if tech != 'util':
-
-                    #################
-                    # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
-                    #       pv_levelization_factor_production_incentive, changed to nominal for consistency,
-                    #       which may break some tests.
-                    ################
-                    levelization_factor.append(
-                        round(
-                            annuity_degr(sf.analysis_period, sf.rate_escalation,
-                                         sf.offtaker_discount_rate,
-                                         -eval('self.' + tech + '.degradation_rate')) / pwf_e
-                            , 5
-                        )
-                    )
-                    production_incentive_levelization_factor.append(
-                        round(
-                            annuity_degr(eval('self.' + tech + '.incentives.production_based.years'),
-                                         sf.rate_escalation, sf.offtaker_discount_rate,
-                                         -eval('self.' + tech + '.degradation_rate')) / \
-                            annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                    sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
-                            , 5
-                        )
-                    )
-                    #################
-                    ################
-                elif tech == 'util':
-
-                    levelization_factor.append(self.util.degradation_rate)
-                    production_incentive_levelization_factor.append(1.0)
-        
-        return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor
-
     def add_pv(self, pv):
         self.pv = pv
         self.pvnm = copy.deepcopy(pv)
@@ -245,6 +159,62 @@ class DatFileManager:
         write_to_dat(self.file_storage_bau, storage.soc_init, 'InitSOC', mode='a')
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
+
+    def _get_REopt_pwfs(self, techs):
+
+        sf = self.site.financials
+        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal) # not used in REopt
+        pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
+        pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+        # pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
+
+        if pwf_owner == 0 or sf.owner_tax_rate == 0:
+            two_party_factor = 0
+        else:
+            two_party_factor = (pwf_offtaker * sf.offtaker_tax_rate) \
+                                / (pwf_owner * sf.owner_tax_rate)
+
+        levelization_factor = list()
+        production_incentive_levelization_factor = list()
+
+        for tech in techs:
+
+            if eval('self.' + tech) is not None:
+
+                if tech != 'util':
+
+                    #################
+                    # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
+                    #       pv_levelization_factor_production_incentive, changed to nominal for consistency,
+                    #       which may break some tests.
+                    ################
+                    levelization_factor.append(
+                        round(
+                            annuity_degr(sf.analysis_period, sf.rate_escalation,
+                                         sf.offtaker_discount_rate,
+                                         -eval('self.' + tech + '.degradation_rate')) / pwf_e
+                            , 5
+                        )
+                    )
+                    production_incentive_levelization_factor.append(
+                        round(
+                            annuity_degr(eval('self.' + tech + '.incentives.production_based.years'),
+                                         sf.rate_escalation, sf.offtaker_discount_rate,
+                                         -eval('self.' + tech + '.degradation_rate')) / \
+                            annuity(eval('self.' + tech + '.incentives.production_based.years'),
+                                    sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+                            , 5
+                        )
+                    )
+                    #################
+                    ################
+                elif tech == 'util':
+
+                    levelization_factor.append(self.util.degradation_rate)
+                    production_incentive_levelization_factor.append(1.0)
+
+        return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor
 
     def _get_REopt_production_incentives(self, techs):
 
@@ -515,6 +485,9 @@ class DatFileManager:
                         x = big_number
                     cap_cost_x.append(x)
 
+        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
+        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments))
+
         return cap_cost_slope, cap_cost_x, cap_cost_yint
 
     def _get_REopt_techToNMILMapping(self, techs):
@@ -668,9 +641,9 @@ class DatFileManager:
         max_sizes_bau = self._get_REopt_tech_max_sizes(self.bau_techs)
 
         levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
-            = self.add_economics(self.available_techs)
+            = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, production_incentive_levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau \
-            = self.add_economics(self.bau_techs)
+            = self._get_REopt_pwfs(self.bau_techs)
         
         pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent \
             = self._get_REopt_production_incentives(self.available_techs)
