@@ -1,48 +1,48 @@
 pwf_op: [
-11.06874,
+11.06874
 ]
 StorageCostPerKW: [
-834.7283,
+834.7283
 ]
 StorageCostPerKWH: [
-324.5417,
+324.5417
 ]
 CapCostSlope: [
-0,
+0
 ]
 pwf_e: [
-11.06874,
+11.06874
 ]
 LevelizationFactor: [
-1.0,
+1.0
 ]
 pwf_offtaker: [
-10.67478,
+10.67478
 ]
 pwf_owner: [
-10.67478,
+10.67478
 ]
 r_tax_offtaker: [
-0.35,
+0.35
 ]
 r_tax_owner: [
-0.35,
+0.35
 ]
 OMperUnitSize: [
-0,
+0
 ]
 pwf_om: [
-12.92752,
+12.92752
 ]
 ProdIncentRate: [
-0,
-0,
-0,
-0,
+0
+0
+0
+0
 ]
 MaxProdIncent: [
-0,
+0
 ]
 MaxSizeForProdIncent: [
-0,
+0
 ]
