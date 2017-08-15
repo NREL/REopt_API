@@ -157,7 +157,7 @@ declarations
 
   pwf_e: real
   pwf_om: real
-  pwf_prod_incent: real
+  pwf_prod_incent: array(Tech) of real
 
   !pwf_op: real
   !pwf_owner: real
@@ -423,14 +423,14 @@ forall (t in Tech) binProdIncent (t) is_binary
 
 !CONSTRAINT 22
 ! Number 1: The Production Incentive can't exceed a certain dollar max (and is "0" if system size is too big)
-forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent
+forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent(t)
 
 !CONSTRAINT 23
 ! Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that.
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent
+     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent(t)
 end-do
 
 !CONSTRAINT 24
