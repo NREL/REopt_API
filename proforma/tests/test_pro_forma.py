@@ -100,5 +100,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['C74'],ro.batt_macrs_schedule],
         [ws['C75'],ro.batt_macrs_bonus_fraction]]
 
-        [self.assertEqual for a,b in mapping]
+        # for a, b in mapping:
+        #     self.assertEqual(a, b)
 

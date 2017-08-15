@@ -184,7 +184,12 @@ class DatLibrary:
         output_dict = dict()
 
         self.create_storage()
-        self.create_size_limits()
+
+        site = Site(**self.inputs_dict)
+        self.dfm.add_site(site)
+        for k in site.financials.__dict__.keys():
+            setattr(self, k, getattr(site.financials, k))
+
         self.create_loads()
         self.create_utility()
 
@@ -369,15 +374,12 @@ class DatLibrary:
     def create_Solar(self):
 
         pv = PV(**self.inputs_dict)
+        self.pv_degradation_rate = pv.degradation_rate
+
         util = Util(**self.inputs_dict)
 
         solar_data = pv.prod_factor
         return solar_data
-
-    def create_size_limits(self):
-
-        site = Site(**self.inputs_dict)
-        self.dfm.add_site(site)
 
     def create_utility(self):
 
