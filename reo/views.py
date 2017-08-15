@@ -5,6 +5,8 @@ import os
 from django.http import HttpResponse
 from validators import REoptResourceValidation
 from django.views.static import serve
+from django.http import JsonResponse
+from src.load_profile import BuiltInProfile
 
 def index(request):
     api_inputs = {}
@@ -23,12 +25,6 @@ def index(request):
     api_outputs = outputs()
     return render(request,'template.html',{'api_inputs':api_inputs,'api_outputs':api_outputs})
 
-def definition(request):
-    reference = inputs(full_list=True)
-    for k,v in reference.items():
-        reference[k]['type'] = reference[k].get('type').__name__
-
-    return HttpResponse(json.dumps(reference), content_type='application/json')
 
 def check_inputs(request):
 
@@ -54,37 +50,22 @@ def check_inputs(request):
     else:
         return HttpResponse(json.dumps(errors), content_type='application/json')
 
-def get_download(request):
+def annual_kwh(request):
 
-    lookup_fileExt = {'proforma':".pdf"}
+    try:
 
-    file_type = request.GET['file_type']
-    run_id = request.GET['run_id']
-    filename = file_type + "_" + run_id + lookup_fileExt[file_type]
+        kwargs = {k:v for k,v in request.GET.dict().items() if k in ['latitude','longitude','load_profile_name']}
 
-    path_to_file = os.path.join(os.getcwd(),'Xpress','Downloads', filename)
-   
-    return serve(request, os.path.basename(path_to_file), os.path.dirname(path_to_file))
-   
-
-def get_tooltips(request):
-    response = {}
-    for k, df in inputs().items():
-        message = df['tool_tip'] + " "
+        b = BuiltInProfile(**kwargs)
         
-        if df.get('restrict_to') is not None:
-            message += "Possible values include " + ", ".join( [str(i) for i in df['restrict_to'] if i is not None ] ) + ". "
-        if df.get('units') is not None:
-            message += "Units: " + df['units'] + ". "
-        if message is None:
-            print k, df
-
-        if df.get('req'):
-            message += "This value is required. "
-        else:
-            message += "This value is not required. "
-
-        response[k] = message
+        response = JsonResponse(
+            {'annual_kwh': b.annual_kwh},
+        )
     
-    return HttpResponse(json.dumps(response), content_type='application/json')    
-    
+    except Exception as e:
+        response = JsonResponse(
+            {'Error': str(e)},
+        )
+
+    return response
+

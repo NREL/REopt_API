@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
+   
 )
 
 MIDDLEWARE_CLASSES = (
