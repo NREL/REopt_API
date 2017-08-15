@@ -20,7 +20,7 @@ class TestTechs(unittest.TestCase):
         self.dfm.n_timesteps = n_timesteps
 
         post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
-        self.pv = PV(offline=True, **post)
+        self.pv = PV(**post)
         self.dfm.add_pv(self.pv)
         self.util = Util(**post)
         self.dfm.add_util(self.util)

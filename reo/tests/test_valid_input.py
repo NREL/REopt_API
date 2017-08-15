@@ -140,8 +140,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
            
-                npv = 722.0
-                lcc = 3055.0
+                npv = 855.0
+                lcc = 2998.0
                 pv_kw = 1.24622
                 batt_kw = 0.163791
                 batt_kwh = 0.52211
