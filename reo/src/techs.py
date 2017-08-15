@@ -81,10 +81,10 @@ class PV(Tech):
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
-        self.degradation_rate=kwargs.get('pv_degradation_rate')
+        self.degradation_rate = kwargs.get('pv_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
-                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction'),
+                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction') or 0.5,
                                      include_production_based=True)
 
 
@@ -92,5 +92,5 @@ class PV(Tech):
 
     @property
     def prod_factor(self):
-        pvwatts = PVWatts(**self.kwargs)
+        pvwatts = PVWatts(offline=True, **self.kwargs)
         return pvwatts.pv_prod_factor

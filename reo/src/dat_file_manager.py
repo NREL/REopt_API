@@ -108,13 +108,38 @@ class DatFileManager:
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
-    def add_economics(self, economics_dict):
-        for k, v in economics_dict.iteritems():
-            try:
-                write_to_dat(self.file_economics, v, k, 'a')
-            except:
-                log('ERROR', 'Error writing economics for ' + k)
+    def add_economics(self, techs):
+        """
+        webtool and api inputs are assumed to be in real terms, this includes:
+        owner_discount_rate
+        offtaker_discount_rate
+        rate_escalation
 
+        REopt params:
+            r_tax_owner: float
+            r_tax_offtaker: float
+            pwf_om: float
+            pwf_e: float
+            pwf_prod_incent: float
+            two_party_factor: float
+            analysis_period: int
+            !pwf_op
+                StorageCostPerKW: array( BattLevel) of real
+                StorageCostPerKWH: array(BattLevel) of real
+
+            LevelizationFactor: array(Tech)
+            LevelizationFactorProdIncent: array(Tech)
+            OMperUnitSize: array (Tech) of real
+            CapCostSlope:  array (Tech, Seg) of real
+            CapCostYInt: array (Tech, Seg) of real
+            CapCostX: array (Tech, Points) of real
+            ProdIncentRate: array (Tech, Load) of real
+            MaxProdIncent: array (Tech) of real
+            MaxSizeForProdIncent: array (Tech) of real
+
+        :param economics_dict:
+        :return:
+        """
 
         # Economics.setup_financial_parameters
         sf = self.site.financials
@@ -130,11 +155,10 @@ class DatFileManager:
             two_party_factor = (pwf_offtaker * sf.offtaker_tax_rate) \
                                 / (pwf_owner * sf.owner_tax_rate)
 
-
         levelization_factor = list()
         production_incentive_levelization_factor = list()
 
-        for tech in self.available_techs:
+        for tech in techs:
 
             if eval('self.' + tech) is not None:
 
@@ -147,18 +171,18 @@ class DatFileManager:
                     ################
                     levelization_factor.append(
                         round(
-                            annuity_degr(sf.analysis_period, sf.rate_escalation_nominal,
-                                         sf.offtaker_discount_rate_nominal,
-                                         -eval('self.' + tech + '.degradation_rate'))
+                            annuity_degr(sf.analysis_period, sf.rate_escalation,
+                                         sf.offtaker_discount_rate,
+                                         -eval('self.' + tech + '.degradation_rate')) / pwf_e
                             , 5
                         )
                     )
                     production_incentive_levelization_factor.append(
                         round(
-                            annuity_degr(eval('self.' + tech + '.incentives.production_based.duration_years'),
-                                         sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal,
+                            annuity_degr(eval('self.' + tech + '.incentives.production_based.years'),
+                                         sf.rate_escalation, sf.offtaker_discount_rate,
                                          -eval('self.' + tech + '.degradation_rate')) / \
-                            annuity(eval('self.' + tech + '.incentives.production_based.duration_years'),
+                            annuity(eval('self.' + tech + '.incentives.production_based.years'),
                                     sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
                             , 5
                         )
@@ -169,6 +193,8 @@ class DatFileManager:
 
                     levelization_factor.append(self.util.degradation_rate)
                     production_incentive_levelization_factor.append(1.0)
+        
+        return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor
 
     def add_pv(self, pv):
         self.pv = pv
@@ -219,6 +245,47 @@ class DatFileManager:
         write_to_dat(self.file_storage_bau, storage.soc_init, 'InitSOC', mode='a')
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
+
+    def _get_REopt_production_incentives(self, techs):
+
+        sf = self.site.financials
+        pwf_prod_incent = list()
+        prod_incent_rate = list()
+        max_prod_incent = list()
+        max_size_for_prod_incent = list()
+
+        for tech in techs:
+
+            if eval('self.' + tech) is not None:
+                
+                if tech != 'util':
+    
+                    pwf_prod_incent.append(
+                        annuity(eval('self.' + tech + '.incentives.production_based.years'),
+                                sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+                    )
+                    max_prod_incent.append(
+                        eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
+                    )
+                    max_size_for_prod_incent.append(
+                        eval('self.' + tech + '.incentives.production_based.max_kw')
+                    )
+    
+                    for load in self.available_loads:
+                        prod_incent_rate.append(
+                            eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
+                        )
+    
+                elif tech == 'util':
+    
+                    pwf_prod_incent.append(0)
+                    max_prod_incent.append(0)
+                    max_size_for_prod_incent.append(0)
+    
+                    for load in self.available_loads:
+                        prod_incent_rate.append(0)
+                    
+        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent
         
     def _get_REopt_cost_curve(self, techs):
 
@@ -239,12 +306,12 @@ class DatFileManager:
                     tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
-        
+
                 # Cost curve
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, float(big_number)]  # kW
+                xp_array_incent['utility'] = [0.0, float(big_number/1e2)]  # kW
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, float(big_number * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
+                yp_array_incent['utility'] = [0.0, float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
                 
                 for r in range(len(regions)-1):
         
@@ -306,43 +373,52 @@ class DatFileManager:
                         elif (p * yp) < p_cap and (u * xp) >= u_cap:
                             if not switch_rebate:
                                 if u * xp != u_cap:
-                                    insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
+                                    xp_array_incent, yp_array_incent = \
+                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
                                 switch_rebate = True
                             ya = yp - (p * yp + u_cap)
                         elif (p * yp) >= p_cap and (u * xp) < u_cap:
                             if not switch_percentage:
                                 if p * yp != p_cap:
-                                    insert_p_bp(next_region, p_xbp, p_ybp, u, p_cap)
+                                    xp_array_incent, yp_array_incent = \
+                                        insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u, p_cap)
                                 switch_percentage = True
                             ya = yp - (p_cap + xp * u)
                         elif p * yp >= p_cap and u * xp >= u_cap:
                             if not switch_rebate and not switch_percentage:
                                 if p_xbp == u_xbp:
-                                    insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
+                                    xp_array_incent, yp_array_incent = \
+                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
                                     switch_percentage = True
                                     switch_rebate = True
                                 elif p_xbp < u_xbp:
                                     if p * yp != p_cap:
-                                        insert_p_bp(next_region, p_xbp, p_ybp, u, p_cap)
+                                        xp_array_incent, yp_array_incent = \
+                                            insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
+                                                        p_cap)
                                     switch_percentage = True
                                     if u * xp != u_cap:
-                                        insert_u_after_p_bp(next_region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                        xp_array_incent, yp_array_incent = \
+                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
                                     switch_rebate = True
                                 else:
                                     if u * xp != u_cap:
-                                        insert_u_bp(next_region, u_xbp, u_ybp, p, u_cap)
+                                        xp_array_incent, yp_array_incent = \
+                                            insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
                                     switch_rebate = True
                                     if p * yp != p_cap:
-                                        # insert p after u
-                                        insert_p_after_u_bp(next_region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                        xp_array_incent, yp_array_incent = \
+                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
                                     switch_percentage = True
                             elif switch_rebate and not switch_percentage:
                                 if p * yp != p_cap:
-                                    insert_p_after_u_bp(next_region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                    xp_array_incent, yp_array_incent = \
+                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
                                 switch_percentage = True
                             elif switch_percentage and not switch_rebate:
                                 if u * xp != u_cap:
-                                    insert_u_after_p_bp(next_region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                    xp_array_incent, yp_array_incent = \
+                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
                                 switch_rebate = True
         
                             # Finally compute adjusted values
@@ -392,7 +468,7 @@ class DatFileManager:
                     initial_unit_cost = 0
                     if cost_curve_bp_x[s + 1] > 0:
                         initial_unit_cost = ((tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * cost_curve_bp_x[s + 1]) /
-                                             ((1 - eval('self.' + tech + 'incentives.federal.itc')) 
+                                             ((1 - eval('self.' + tech + '.incentives.federal.itc')) 
                                               * cost_curve_bp_x[s + 1]))
                     sf = self.site.financials
                     updated_slope = setup_capital_cost_incentive(initial_unit_cost,
@@ -400,10 +476,10 @@ class DatFileManager:
                                                                  sf.analysis_period,
                                                                  sf.owner_discount_rate_nominal,
                                                                  sf.owner_tax_rate,
-                                                                 eval('self.' + tech + 'incentives.federal.itc'),
-                                                                 eval('self.' + tech + 'incentives.macrs_schedule'),
-                                                                 eval('self.' + tech + 'incentives.macrs_bonus_fraction'),
-                                                                 eval('self.' + tech + 'incentives.macrs_itc_reduction'),
+                                                                 eval('self.' + tech + '.incentives.federal.itc'),
+                                                                 eval('self.' + tech + '.incentives.macrs_schedule'),
+                                                                 eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'),
                                                                  )
                     updated_cap_cost_slope.append(updated_slope)
         
@@ -426,7 +502,10 @@ class DatFileManager:
 
             elif eval('self.' + tech) is not None and tech == 'util':
 
-                for seg in range(cap_cost_segments):
+                if len(techs) == 1:  # only util (usually BAU case)
+                    cap_cost_segments = 1
+
+                for seg in range(cap_cost_segments or 1):
                     cap_cost_slope.append(0)
                     cap_cost_yint.append(0)
 
@@ -588,6 +667,41 @@ class DatFileManager:
         max_sizes = self._get_REopt_tech_max_sizes(self.available_techs)
         max_sizes_bau = self._get_REopt_tech_max_sizes(self.bau_techs)
 
+        levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
+            = self.add_economics(self.available_techs)
+        levelization_factor_bau, production_incentive_levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau \
+            = self.add_economics(self.bau_techs)
+        
+        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent \
+            = self._get_REopt_production_incentives(self.available_techs)
+        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
+            = self._get_REopt_production_incentives(self.bau_techs)
+        
+        cap_cost_slope, cap_cost_x, cap_cost_yint = self._get_REopt_cost_curve(self.available_techs)
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau = self._get_REopt_cost_curve(self.bau_techs)
+
+        sf = self.site.financials
+        StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,
+                                                        self.storage.replace_us_dollar_per_kw,
+                                                        self.storage.replace_kw_years,
+                                                        sf.owner_discount_rate_nominal,
+                                                        sf.owner_tax_rate,
+                                                        self.storage.incentives.federal.itc,
+                                                        self.storage.incentives.macrs_schedule,
+                                                        self.storage.incentives.macrs_bonus_fraction,
+                                                        self.storage.incentives.macrs_itc_reduction,
+                                                        )
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,
+                                                         self.storage.replace_us_dollar_per_kwh,
+                                                         self.storage.replace_kwh_years,
+                                                         sf.owner_discount_rate_nominal,
+                                                         sf.owner_tax_rate,
+                                                         self.storage.incentives.federal.itc,
+                                                         self.storage.incentives.macrs_schedule,
+                                                         self.storage.incentives.macrs_bonus_fraction,
+                                                         self.storage.incentives.macrs_itc_reduction,
+                                                         )
+
         # DAT1 = constant.dat, contains parameters that others depend on for initialization
         write_to_dat(self.file_constant, reopt_techs, 'Tech')
         write_to_dat(self.file_constant, tech_is_grid, 'TechIsGrid', mode='a')
@@ -631,3 +745,42 @@ class DatFileManager:
         write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
+        
+        # economics.dat
+        write_to_dat(self.file_economics, levelization_factor, 'LevelizationFactor')
+        write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent', mode='a')
+        write_to_dat(self.file_economics, pwf_e, 'pwf_e', mode='a')
+        write_to_dat(self.file_economics, pwf_om, 'pwf_om', mode='a')
+        write_to_dat(self.file_economics, two_party_factor, 'two_party_factor', mode='a')
+        write_to_dat(self.file_economics, pwf_prod_incent, 'pwf_prod_incent', mode='a')
+        write_to_dat(self.file_economics, prod_incent_rate, 'ProdIncentRate', mode='a')
+        write_to_dat(self.file_economics, max_prod_incent, 'MaxProdIncent', mode='a')
+        write_to_dat(self.file_economics, max_size_for_prod_incent, 'MaxSizeForProdIncent', mode='a')
+        write_to_dat(self.file_economics, cap_cost_slope, 'CapCostSlope', mode='a')
+        write_to_dat(self.file_economics, cap_cost_x, 'CapCostX', mode='a')
+        write_to_dat(self.file_economics, cap_cost_yint, 'CapCostYInt', mode='a')
+        write_to_dat(self.file_economics, sf.owner_tax_rate, 'r_tax_owner', mode='a')
+        write_to_dat(self.file_economics, sf.offtaker_tax_rate, 'r_tax_offtaker', mode='a')
+        write_to_dat(self.file_economics, StorageCostPerKW, 'StorageCostPerKW', mode='a')
+        write_to_dat(self.file_economics, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
+        write_to_dat(self.file_economics, om_dollars_per_kw, 'OMperUnitSize', mode='a')
+        write_to_dat(self.file_economics, sf.analysis_period, 'analysis_period', mode='a')
+
+        write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
+        write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau, 'LevelizationFactorProdIncent', mode='a')
+        write_to_dat(self.file_economics_bau, pwf_e_bau, 'pwf_e', mode='a')
+        write_to_dat(self.file_economics_bau, pwf_om_bau, 'pwf_om', mode='a')
+        write_to_dat(self.file_economics_bau, two_party_factor_bau, 'two_party_factor', mode='a')
+        write_to_dat(self.file_economics_bau, pwf_prod_incent_bau, 'pwf_prod_incent', mode='a')
+        write_to_dat(self.file_economics_bau, prod_incent_rate_bau, 'ProdIncentRate', mode='a')
+        write_to_dat(self.file_economics_bau, max_prod_incent_bau, 'MaxProdIncent', mode='a')
+        write_to_dat(self.file_economics_bau, max_size_for_prod_incent_bau, 'MaxSizeForProdIncent', mode='a')
+        write_to_dat(self.file_economics_bau, cap_cost_slope_bau, 'CapCostSlope', mode='a')
+        write_to_dat(self.file_economics_bau, cap_cost_x_bau, 'CapCostX', mode='a')
+        write_to_dat(self.file_economics_bau, cap_cost_yint_bau, 'CapCostYInt', mode='a')
+        write_to_dat(self.file_economics_bau, sf.owner_tax_rate, 'r_tax_owner', mode='a')
+        write_to_dat(self.file_economics_bau, sf.offtaker_tax_rate, 'r_tax_offtaker', mode='a')
+        write_to_dat(self.file_economics_bau, StorageCostPerKW, 'StorageCostPerKW', mode='a')
+        write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
+        write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
+        write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
