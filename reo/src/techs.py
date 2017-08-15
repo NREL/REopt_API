@@ -8,11 +8,14 @@ class Tech(object):
     base class for REopt energy generation technology
     """
 
-    def __init__(self, min_kw=0, max_kw=big_number,
+    def __init__(self, min_kw=0, max_kw=big_number, om_dollars_per_kw=0, degradation_rate=1,
                  *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
+        self.om_dollars_per_kw = om_dollars_per_kw
+        self.degradation_rate = degradation_rate
+
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
         self.reopt_class = ""
@@ -70,7 +73,9 @@ class PV(Tech):
     def __init__(self, acres_per_kw=6e-3, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
+                                 om_dollars_per_kw=kwargs.get('pv_om'),
                                  cost_per_kw=kwargs.get('pv_cost'),
+                                 degradation_rate=kwargs.get('pv_degradation_rate'),
                                  **kwargs)
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'

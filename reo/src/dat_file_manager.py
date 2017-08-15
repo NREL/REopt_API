@@ -1,6 +1,7 @@
 import os
 import copy
 from reo.log_levels import log
+from reo.utilities import annuity, annuity_degr
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
@@ -113,6 +114,61 @@ class DatFileManager:
             except:
                 log('ERROR', 'Error writing economics for ' + k)
 
+
+        # Economics.setup_financial_parameters
+        sf = self.site.financials
+        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal) # not used in REopt
+        pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
+        pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+        pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
+
+        if pwf_owner == 0 or sf.owner_tax_rate == 0:
+            two_party_factor = 0
+        else:
+            two_party_factor = (pwf_offtaker * sf.offtaker_tax_rate) \
+                                / (pwf_owner * sf.owner_tax_rate)
+
+
+        levelization_factor = list()
+        production_incentive_levelization_factor = list()
+
+        for tech in self.available_techs:
+
+            if eval('self.' + tech) is not None:
+
+                if tech != 'util':
+
+                    #################
+                    # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
+                    #       pv_levelization_factor_production_incentive, changed to nominal for consistency,
+                    #       which may break some tests.
+                    ################
+                    levelization_factor.append(
+                        round(
+                            annuity_degr(sf.analysis_period, sf.rate_escalation_nominal,
+                                         sf.offtaker_discount_rate_nominal,
+                                         -eval('self.' + tech + '.degradation_rate'))
+                            , 5
+                        )
+                    )
+                    production_incentive_levelization_factor.append(
+                        round(
+                            annuity_degr(eval('self.' + tech + '.incentives.production_based.duration_years'),
+                                         sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal,
+                                         -eval('self.' + tech + '.degradation_rate')) / \
+                            annuity(eval('self.' + tech + '.incentives.production_based.duration_years'),
+                                    sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+                            , 5
+                        )
+                    )
+                    #################
+                    ################
+                elif tech == 'util':
+
+                    levelization_factor.append(self.util.degradation_rate)
+                    production_incentive_levelization_factor.append(1.0)
+
     def add_pv(self, pv):
         self.pv = pv
         self.pvnm = copy.deepcopy(pv)
@@ -191,6 +247,7 @@ class DatFileManager:
         derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
+        om_dollars_per_kw = list()
 
         for tech in techs:
 
@@ -198,6 +255,7 @@ class DatFileManager:
 
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
+                om_dollars_per_kw.append(eval('self.' + tech + '.om_dollars_per_kw'))
 
                 for load in self.available_loads:
                     
@@ -226,7 +284,7 @@ class DatFileManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out
+        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_dollars_per_kw
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -302,9 +360,10 @@ class DatFileManager:
         reopt_tech_classes_bau, tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
         reopt_tech_classes_bau = ['PV', 'UTIL']  # not sure why bau needs PV tech class?
 
-        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out = \
+        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_dollars_per_kw = \
             self._get_REopt_array_tech_load(self.available_techs)
-        prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau = \
+        prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+            om_dollars_per_kw_bau = \
             self._get_REopt_array_tech_load(self.bau_techs)
         
         max_sizes = self._get_REopt_tech_max_sizes(self.available_techs)
