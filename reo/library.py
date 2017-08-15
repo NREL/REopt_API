@@ -309,14 +309,19 @@ class DatLibrary:
             max_kw=self.batt_kw_max,
             min_kwh=self.batt_kwh_min,
             max_kwh=self.batt_kwh_max,
-            batt_efficiency=self.batt_efficiency,
-            batt_inverter_efficiency=self.batt_inverter_efficiency,
-            batt_rectifier_efficiency=self.batt_rectifier_efficiency,
+            efficiency=self.batt_efficiency,
+            inverter_efficiency=self.batt_inverter_efficiency,
+            rectifier_efficiency=self.batt_rectifier_efficiency,
             soc_min=self.batt_soc_min,
             soc_init=self.batt_soc_init,
             can_grid_charge=self.batt_can_gridcharge,
             us_dollar_per_kw=self.batt_cost_kw,
             us_dollar_per_kwh=self.batt_cost_kwh,
+            replace_us_dollar_per_kw=self.batt_replacement_cost_kw,
+            replace_us_dollar_per_kwh=self.batt_replacement_cost_kwh,
+            replace_kw_years=self.batt_replacement_year_kw,
+            replace_kwh_years=self.batt_replacement_year_kwh,
+            **self.inputs_dict
         )
         self.dfm.add_storage(storage)
 

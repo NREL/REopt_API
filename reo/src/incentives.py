@@ -19,11 +19,11 @@ class IncentiveProvider(object):
 
 class ProductionBasedIncentive(object):
 
-    def __init__(self, pbi=None, pbi_max=big_number, pbi_years=big_number, pbi_system_max=big_number):
+    def __init__(self, pbi=None, pbi_max=big_number, pbi_years=big_number, pbi_system_max=big_number, **kwargs):
 
         self.us_dollars_per_kw = pbi
         self.max_us_dollars_per_kw = pbi_max
-        self.duration_years = pbi_years
+        self.years = pbi_years
         self.max_kw = pbi_system_max
 
 

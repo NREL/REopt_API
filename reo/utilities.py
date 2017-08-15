@@ -106,34 +106,38 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
     return pwf
 
 
-def insert_u_bp(self, region, u_xbp, u_ybp, p, u_cap):
+def insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap):
 
-    self.xp_array_incent[region].append(u_xbp)
-    self.yp_array_incent[region].append(u_ybp - u_ybp * p + u_cap)
-
-
-def insert_p_bp(self, region, p_xbp, p_ybp, u, p_cap):
-
-    self.xp_array_incent[region].append(p_xbp)
-    self.yp_array_incent[region].append(p_ybp - (p_cap + p_xbp * u))
+    xp_array_incent[region].append(u_xbp)
+    yp_array_incent[region].append(u_ybp - u_ybp * p + u_cap)
+    return xp_array_incent, yp_array_incent
 
 
-def insert_u_after_p_bp(self, region, u_xbp, u_ybp, p, p_cap, u_cap):
+def insert_p_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, p_cap):
 
-    self.xp_array_incent[region].append(u_xbp)
+    xp_array_incent[region].append(p_xbp)
+    yp_array_incent[region].append(p_ybp - (p_cap + p_xbp * u))
+    return xp_array_incent, yp_array_incent
+
+
+def insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap):
+
+    xp_array_incent[region].append(u_xbp)
     if p_cap == 0:
-        self.yp_array_incent[region].append(u_ybp - (p * u_ybp + u_cap))
+        yp_array_incent[region].append(u_ybp - (p * u_ybp + u_cap))
     else:
-        self.yp_array_incent[region].append(u_ybp - (p_cap + u_cap))
+        yp_array_incent[region].append(u_ybp - (p_cap + u_cap))
+    return xp_array_incent, yp_array_incent
 
 
-def insert_p_after_u_bp(self, region, p_xbp, p_ybp, u, u_cap, p_cap):
+def insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap):
 
-    self.xp_array_incent[region].append(p_xbp)
+    xp_array_incent[region].append(p_xbp)
     if u_cap == 0:
-        self.yp_array_incent[region].append(p_ybp - (p_cap + u * p_xbp))
+        yp_array_incent[region].append(p_ybp - (p_cap + u * p_xbp))
     else:
-        self.yp_array_incent[region].append(p_ybp - (p_cap + u_cap))
+        yp_array_incent[region].append(p_ybp - (p_cap + u_cap))
+    return xp_array_incent, yp_array_incent
 
 
 def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
