@@ -669,11 +669,13 @@ def outputs():
 
             'pv_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'batt_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'year_one_bill':
                 {'req': True, 'type': float, 'null': True, 'pct': False,

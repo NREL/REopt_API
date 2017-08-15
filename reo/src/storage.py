@@ -1,4 +1,5 @@
 from reo.src.dat_file_manager import DatFileManager
+from reo.src.incentives import Incentives
 big_number = 100000  # should this be the 1e10 in DFM? typically use smaller battery max?
 
 
@@ -35,5 +36,9 @@ class Storage(object):
 
         self.us_dollar_per_kw = us_dollar_per_kw
         self.us_dollar_per_kwh = us_dollar_per_kwh
+
+        self.incentives = Incentives(kwargs, tech='batt', macrs_years=kwargs.get('batt_macrs_schedule'),
+                                     macrs_bonus_fraction=kwargs.get('batt_macrs_bonus_fraction'),
+                                     macrs_itc_reduction=kwargs.get('batt_macrs_itc_reduction'),)
 
         DatFileManager().add_storage(self)
