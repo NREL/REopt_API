@@ -7,6 +7,7 @@ from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_afte
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
 
+
 def _write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
     if isinstance(var, list):

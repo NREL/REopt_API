@@ -87,7 +87,6 @@ class PV(Tech):
                                      macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction') or 0.5,
                                      include_production_based=True)
 
-
         DatFileManager().add_pv(self)
 
     @property
