@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from tastypie.http import HttpResponse,HttpBadRequest
 from tastypie.exceptions import ImmediateHttpResponse
-from django.utils.encoding import smart_str
 from models import ProForma, RunOutput
 import os
 from django.http import HttpResponse
@@ -29,5 +27,3 @@ def proforma(request):
 
 	except:
 		raise ImmediateHttpResponse(HttpBadRequest("Invalid UUID"))
-    
-   
