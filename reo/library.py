@@ -418,10 +418,6 @@ class DatLibrary:
         check_directory_created(base_folder)
         check_directory_created(rate_output_folder)
 
-        with open(os.path.join(rate_output_folder, 'json.txt'), 'w') as outfile:
-            json.dump(urdb_rate, outfile)
-            outfile.close()
-
         with open(os.path.join(rate_output_folder, 'utility_name.txt'), 'w') as outfile:
             outfile.write(str(utility_name).replace(' ', '_'))
             outfile.close()
@@ -430,7 +426,7 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        urdb_parse = UrdbParse(utility_dats_dir=self.path_utility, outputs_dir=self.path_run_outputs,
+        urdb_parse = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=self.path_utility, outputs_dir=self.path_run_outputs,
                                outputs_dir_bau=self.path_run_outputs_bau, year=self.load_year,
                                time_steps_per_hour=self.time_steps_per_hour,
                                net_metering=self.net_metering, wholesale_rate=self.wholesale_rate)

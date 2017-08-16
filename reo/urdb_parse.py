@@ -169,11 +169,12 @@ class UrdbParse:
     last_hour_in_month = []
     utility_dat_files = []
 
-    def __init__(self, utility_dats_dir, outputs_dir, outputs_dir_bau, year, time_steps_per_hour=1,
+    def __init__(self, urdb_rate, utility_dats_dir, outputs_dir, outputs_dir_bau, year, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
 
         log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
 
+        self.urdb_rate = urdb_rate
         self.year = year
         self.utility_dats_dir = utility_dats_dir
         self.outputs_dir = outputs_dir
@@ -202,25 +203,16 @@ class UrdbParse:
             for rate in rates:
                 rate_dir = os.path.join(self.utility_dats_dir, utility, rate)
                 self.utility_dat_files = UtilityDatFiles(rate_dir, self.outputs_dir, self.outputs_dir_bau)
-                name_file = os.path.join(rate_dir, 'rate_name.txt')
-                if os.path.exists(name_file):
-                    rate_name = open(name_file, 'r')
-                    for filename in os.listdir(rate_dir):
-                        if filename == 'json.txt':
-                            json_path = os.path.join(rate_dir, filename)
 
-                            with open(json_path, 'r') as json_file:
-                                log("INFO", "Processing: " + utility + ", " + rate_name.read())
+                log("INFO", "Processing: " + utility + ", " + rate)
 
-                                data = json.loads(json_file.read())
-                                current_rate = self.parse_rate(data)
-                                self.prepare_summary(current_rate)
-                                self.prepare_demand_periods(current_rate)
-                                self.prepare_energy_costs(current_rate)
-                                self.prepare_techs_and_loads_basecase()
-                                self.prepare_techs_and_loads()
-                                self.write_dat_files()
-                                rate_name.close()
+                current_rate = self.parse_rate(self.urdb_rate)
+                self.prepare_summary(current_rate)
+                self.prepare_demand_periods(current_rate)
+                self.prepare_energy_costs(current_rate)
+                self.prepare_techs_and_loads_basecase()
+                self.prepare_techs_and_loads()
+                self.write_dat_files()
 
     def parse_rate(self, rate):
 
