@@ -1,15 +1,9 @@
 from django.db import models
 import uuid
 import os
-import math
 import datetime, tzlocal
-import numpy as np
 from openpyxl import load_workbook
-from reo.economics import Economics
 from reo.models import RunOutput
-
-# logging
-from log_levels import log
 
 
 class ProForma(models.Model):
