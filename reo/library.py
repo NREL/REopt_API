@@ -205,7 +205,7 @@ class DatLibrary:
         pv = PV(**self.inputs_dict)
         # following 2 lines are necessary for returning the assigned values
         self.pv_degradation_rate = pv.degradation_rate
-        self.pv_kw_ac_hourly = pv.pvwatts.pv_prod_factor
+        self.pv_kw_ac_hourly = pv.prod_factor
 
         util = Util(**self.inputs_dict)
 
