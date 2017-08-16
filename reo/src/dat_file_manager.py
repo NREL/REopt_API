@@ -187,7 +187,7 @@ class DatFileManager:
 
                     #################
                     # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
-                    #       pv_levelization_factor_production_incentive, changed to nominal for consistency,
+                    #       pv_levelization_factor_production_incentive, need to change to nominal for consistency,
                     #       which may break some tests.
                     ################
                     levelization_factor.append(
