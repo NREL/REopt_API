@@ -52,7 +52,7 @@ class UtilityDatFiles:
     Tech = ['PV', 'PVNM', 'UTIL1']
     Load = ['1R', '1W', '1X', '1S']
 
-    def __init__(self, rate_dir):
+    def __init__(self, rate_dir, out_dir, out_dir_bau):
 
         self.path_fuel_rates = os.path.join(rate_dir, self.name_fuel_rates)
         self.path_fuel_rates_base = os.path.join(rate_dir, self.name_fuel_rates_base)
@@ -69,8 +69,10 @@ class UtilityDatFiles:
         self.path_fuel_burn_rate = os.path.join(rate_dir, self.name_fuel_burn_rate)
         self.path_fuel_burn_rate_base = os.path.join(rate_dir, self.name_fuel_burn_rate_base)
         self.path_summary = os.path.join(rate_dir, self.name_summary)
-        self.path_energy_cost = os.path.join(rate_dir, self.name_energy_cost)
-        self.path_demand_cost = os.path.join(rate_dir, self.name_demand_cost)
+        self.path_energy_cost = os.path.join(out_dir, self.name_energy_cost)
+        self.path_demand_cost = os.path.join(out_dir, self.name_demand_cost)
+        self.path_energy_cost_bau = os.path.join(out_dir_bau, self.name_energy_cost)
+        self.path_demand_cost_bau = os.path.join(out_dir_bau, self.name_demand_cost)
 
         self.data_minimum_demand = 0
         self.data_demand_flat_rates = 12 * [0]
@@ -167,13 +169,15 @@ class UrdbParse:
     last_hour_in_month = []
     utility_dat_files = []
 
-    def __init__(self, output_root, year, time_steps_per_hour=1,
+    def __init__(self, utility_dats_dir, outputs_dir, outputs_dir_bau, year, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
 
         log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
 
         self.year = year
-        self.output_root = output_root
+        self.utility_dats_dir = utility_dats_dir
+        self.outputs_dir = outputs_dir
+        self.outputs_dir_bau = outputs_dir_bau
         self.time_steps_per_hour = time_steps_per_hour
         self.net_metering = net_metering
         self.wholesale_rate = wholesale_rate
@@ -188,16 +192,16 @@ class UrdbParse:
             self.last_hour_in_month.append(days_elapsed * 24)
 
     def parse_all_output(self):
-        for utility in os.listdir(self.output_root):
-            for rate in os.listdir(os.path.join(self.output_root, utility)):
+        for utility in os.listdir(self.utility_dats_dir):
+            for rate in os.listdir(os.path.join(self.utility_dats_dir, utility)):
                 self.parse_specific_rates([utility], [rate])
 
     def parse_specific_rates(self, utilities, rates):
-        log("INFO", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.output_root)
+        log("INFO", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.utility_dats_dir)
         for utility in utilities:
             for rate in rates:
-                rate_dir = os.path.join(self.output_root, utility, rate)
-                self.utility_dat_files = UtilityDatFiles(rate_dir)
+                rate_dir = os.path.join(self.utility_dats_dir, utility, rate)
+                self.utility_dat_files = UtilityDatFiles(rate_dir, self.outputs_dir, self.outputs_dir_bau)
                 name_file = os.path.join(rate_dir, 'rate_name.txt')
                 if os.path.exists(name_file):
                     rate_name = open(name_file, 'r')
@@ -780,6 +784,8 @@ class UrdbParse:
         # hourly cost summary
         self.write_energy_cost(self.utility_dat_files.path_energy_cost)
         self.write_demand_cost(self.utility_dat_files.path_demand_cost)
+        self.write_energy_cost(self.utility_dat_files.path_energy_cost_bau)
+        self.write_demand_cost(self.utility_dat_files.path_demand_cost_bau)
 
     def write_summary(self, file_name):
         file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')

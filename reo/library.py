@@ -430,24 +430,11 @@ class DatLibrary:
             outfile.write(str(rate_name).replace(' ', '_'))
             outfile.close()
 
-        urdb_parse = UrdbParse(self.path_utility, self.load_year, self.time_steps_per_hour,
-                               self.net_metering, self.wholesale_rate)
+        urdb_parse = UrdbParse(utility_dats_dir=self.path_utility, outputs_dir=self.path_run_outputs,
+                               outputs_dir_bau=self.path_run_outputs_bau, year=self.load_year,
+                               time_steps_per_hour=self.time_steps_per_hour,
+                               net_metering=self.net_metering, wholesale_rate=self.wholesale_rate)
         urdb_parse.parse_specific_rates([utility_name], [rate_name])
-
-        # Copy hourly rate summary to outputs
-        if os.path.exists(urdb_parse.utility_dat_files.path_energy_cost):
-
-            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
-                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_energy_cost))
-            shutil.copyfile(urdb_parse.utility_dat_files.path_energy_cost,
-                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_energy_cost))
-
-        if os.path.exists(urdb_parse.utility_dat_files.path_demand_cost):
-
-            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
-                            os.path.join(self.path_run_outputs, urdb_parse.utility_dat_files.name_demand_cost))
-            shutil.copyfile(urdb_parse.utility_dat_files.path_demand_cost,
-                            os.path.join(self.path_run_outputs_bau, urdb_parse.utility_dat_files.name_demand_cost))
 
         self.utility_name = utility_name
         self.rate_name = rate_name
