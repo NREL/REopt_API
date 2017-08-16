@@ -193,8 +193,13 @@ class DatLibrary:
         self.create_loads()
         self.create_utility()
 
-        solar_data = self.create_Solar()
-        self.pv_kw_ac_hourly = solar_data
+        pv = PV(**self.inputs_dict)
+        # following 2 lines are necessary for returning the assigned values
+        self.pv_degradation_rate = pv.degradation_rate
+        self.pv_kw_ac_hourly = pv.pvwatts.pv_prod_factor
+
+        util = Util(**self.inputs_dict)
+
 
         self.create_nem()
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
@@ -370,16 +375,6 @@ class DatLibrary:
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
-
-    def create_Solar(self):
-
-        pv = PV(**self.inputs_dict)
-        self.pv_degradation_rate = pv.degradation_rate
-
-        util = Util(**self.inputs_dict)
-
-        solar_data = pv.prod_factor
-        return solar_data
 
     def create_utility(self):
 
