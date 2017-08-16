@@ -113,7 +113,6 @@ declarations
   dvPeakDemandE: array ( Ratchets, DemandBin) of mpvar  !Peak electric demand for the month
   dvPeakDemandEMonth: array ( Month) of mpvar  !Peak electric demand for the month
 
-  !dvPeakDemandSummer: array (Loc) of mpvar  !Peak electric demand for the month    !uncomment for RMI
   DemandRates: array ( Ratchets, DemandBin) of real !Demand rate for the quarter
   DemandRatesMonth: array ( Month) of real !Demand rate for the quarter
 
@@ -148,7 +147,7 @@ declarations
   binUsageTier: array ( FuelBin) of mpvar
 
   DemandLookbackPercent:  real
-  dvPeakDemandELookback:mpvar
+  dvPeakDemandELookback: mpvar
   DemandLookbackMonths: set of integer
   binBattLevel: array(BattLevel) of mpvar
   BattLevelCoef: array(BattLevel,1..2) of real
