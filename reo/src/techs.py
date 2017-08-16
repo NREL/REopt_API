@@ -86,10 +86,11 @@ class PV(Tech):
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
                                      macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction') or 0.5,
                                      include_production_based=True)
-
+        self.pvwatts = None
         DatFileManager().add_pv(self)
 
     @property
     def prod_factor(self):
-        pvwatts = PVWatts(**self.kwargs)
-        return pvwatts.pv_prod_factor
+        if self.pvwatts is None:
+            self.pvwatts = PVWatts(**self.kwargs)
+        return self.pvwatts.pv_prod_factor
