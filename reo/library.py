@@ -5,7 +5,6 @@ import re
 import shutil
 
 # user defined
-import economics
 from api_definitions import *
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.techs import PV, Util
@@ -14,7 +13,7 @@ from reo.src.storage import Storage
 from reo.src.site import Site
 from results import Results
 from urdb_parse import *
-from utilities import Command, check_directory_created, write_single_variable, is_error
+from utilities import Command, check_directory_created, is_error
 
 
 def alphanum(s):
@@ -27,15 +26,8 @@ class DatLibrary:
     which in turn is called by RunInputResource.obj_create in api.py
     """
 
-    # statically constant
-    max_big_number = 100000000
-
-    # timeout is slightly less than server timeout of 5 minutes by default
-    timed_out = False
-
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
-    logfile = "reopt_api.log"
     xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1
 
@@ -59,22 +51,19 @@ class DatLibrary:
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
 
-        self.timed_out = False
+        self.timed_out = False  # is this used?
         self.net_metering = False
 
         # Command line constants
         self.command_line_constants = list()
         self.command_line_constants.append("ScenarioNum=" + str(run_input_id))
 
-        # Economic inputs and calculated vals
-        self.economics = list()
-
+        # calculated values
         self.run_input_id = run_input_id
         self.path_egg = self.get_egg()
 
         self.path_templates = os.path.join(self.path_egg, "reo", "templates")
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
-        self.file_logfile = os.path.join(self.path_egg, 'log', self.logfile)
 
         self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
@@ -102,8 +91,6 @@ class DatLibrary:
         self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
         self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
         self.file_cmd_input_bau = os.path.join(self.path_run_inputs, "cmd_bau.log")
-        self.file_economics = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '.dat')
-        self.file_economics_bau = os.path.join(self.path_run_inputs, 'economics_' + str(self.run_input_id) + '_bau.dat')
 
         self.path_utility = os.path.join(self.path_run_inputs, "Utility")
 
@@ -185,17 +172,53 @@ class DatLibrary:
 
         output_dict = dict()
 
-        self.create_storage()
-        self.create_size_limits()
-        self.create_economics()
+        storage = Storage(
+            min_kw=self.batt_kw_min,
+            max_kw=self.batt_kw_max,
+            min_kwh=self.batt_kwh_min,
+            max_kwh=self.batt_kwh_max,
+            efficiency=self.batt_efficiency,
+            inverter_efficiency=self.batt_inverter_efficiency,
+            rectifier_efficiency=self.batt_rectifier_efficiency,
+            soc_min=self.batt_soc_min,
+            soc_init=self.batt_soc_init,
+            can_grid_charge=self.batt_can_gridcharge,
+            us_dollar_per_kw=self.batt_cost_kw,
+            us_dollar_per_kwh=self.batt_cost_kwh,
+            replace_us_dollar_per_kw=self.batt_replacement_cost_kw,
+            replace_us_dollar_per_kwh=self.batt_replacement_cost_kwh,
+            replace_kw_years=self.batt_replacement_year_kw,
+            replace_kwh_years=self.batt_replacement_year_kwh,
+            **self.inputs_dict
+        )
+
+        site = Site(**self.inputs_dict)
+        # following 2 lines are necessary for returning *some* of the assigned values.
+        # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
+        # and then we assign them to the off_taker values to represent single party model)
+        for k in site.financials.__dict__.keys():
+            setattr(self, k, getattr(site.financials, k))
+
         self.create_loads()
         self.create_utility()
 
-        solar_data = self.create_Solar()
-        self.pv_kw_ac_hourly = solar_data
+        pv = PV(**self.inputs_dict)
+        # following 2 lines are necessary for returning the assigned values
+        self.pv_degradation_rate = pv.degradation_rate
+        self.pv_kw_ac_hourly = pv.prod_factor
 
-        self.create_nem()
+        util = Util(**self.inputs_dict)
+
+        net_metering_limit = self.inputs_dict.get("net_metering_limit")
+        if net_metering_limit > 0:
+            self.net_metering = True  # used in urdb_parse
+
+        self.dfm.add_net_metering(
+            net_metering_limit=net_metering_limit,
+            interconnection_limit=self.inputs_dict.get("interconnection_limit")
+        )
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
+        self.create_economics()  # see comments in this method
 
         run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.dfm.DAT, False)
         run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
@@ -204,7 +227,6 @@ class DatLibrary:
         command = Command(run_command)
         log("INFO", "Initializing Command BAU")
         command_bau = Command(run_command_bau)
-
 
         log("INFO", "Running Command")
         error = command.run(self.timeout)
@@ -279,7 +301,7 @@ class DatLibrary:
        
         if os.path.exists(self.file_output):
             process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
-                                      self.path_static_outputs, self.economics, self.load_year)
+                                      self.path_static_outputs, self.load_year)
 
             output_dict = process_results.get_output()
             output_dict['run_input_id'] = self.run_input_id
@@ -304,34 +326,28 @@ class DatLibrary:
 
    # BAU files
 
-    # storage
-    def create_storage(self):
-        storage = Storage(
-            min_kw=self.batt_kw_min,
-            max_kw=self.batt_kw_max,
-            min_kwh=self.batt_kwh_min,
-            max_kwh=self.batt_kwh_max,
-            batt_efficiency=self.batt_efficiency,
-            batt_inverter_efficiency=self.batt_inverter_efficiency,
-            batt_rectifier_efficiency=self.batt_rectifier_efficiency,
-            soc_min=self.batt_soc_min,
-            soc_init=self.batt_soc_init,
-            can_grid_charge=self.batt_can_gridcharge,
-        )
-        self.dfm.add_storage(storage)
-
     # DAT2 - Economics
     def create_economics(self):
+        """
+        Economics are now entirely created by DatFileManager.
 
-        econ_inputs = self.get_subtask_inputs('economics')
+        The old method for creating economics.dat was setting CapCostSegCount for the BAU case equal to the
+        with-tech case. This did not cause any problems because the with-tech CapCostSegCount has always been greater
+        than or equal to the BAU CapCostSegCount (and Xpress will dynamically build out any arrays that dimension from
+        CapCostSegCount, i.e. `Seg`).  NOT FIXED YET: NEED TO USE command_line_constants_bau
 
-        self.economics = economics.Economics(file_path=self.file_economics, business_as_usual=False, **econ_inputs)
+        It appears that the only attributes from the Economics class that are being passed back as outputs are
+        pv_macrs_itc_reduction and batt_macrs_itc_reduction.
 
-        for k in self.economics.__dict__.keys():
-            setattr(self, k, getattr(self.economics, k))
+        :return:
+        """
 
-        econ = economics.Economics(file_path=self.file_economics_bau, business_as_usual=True, **econ_inputs)
-        self.command_line_constants.append("CapCostSegCount=" + str(self.cap_cost_segments))
+        self.pv_macrs_itc_reduction = 0.5
+        self.batt_macrs_itc_reduction = 0.5
+
+        # add CapCostSegCount to command line args, this functionality will move to REopt class (using DFM)
+        self.command_line_constants.append(str(self.dfm.command_line_args[0]))  # only one so far
+        # self.command_line_constants_bau.append(str(self.dfm.command_line_args_bau[0]))  # only one so far
 
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
@@ -350,19 +366,6 @@ class DatLibrary:
             ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
-
-    def create_Solar(self):
-
-        pv = PV(**self.inputs_dict)
-        util = Util(**self.inputs_dict)
-
-        solar_data = pv.prod_factor
-        return solar_data
-
-    def create_size_limits(self):
-
-        site = Site(**self.inputs_dict)
-        self.dfm.add_site(site)
 
     def create_utility(self):
 
@@ -501,13 +504,3 @@ class DatLibrary:
         urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
         return urdb_rate
 
-    def create_nem(self):
-
-        net_metering_limit = self.inputs_dict.get("net_metering_limit")
-        if net_metering_limit > 0:
-            self.net_metering = True
-
-        self.dfm.add_net_metering(
-            net_metering_limit=net_metering_limit,
-            interconnection_limit=self.inputs_dict.get("interconnection_limit")
-        )

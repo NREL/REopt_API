@@ -197,7 +197,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_year': {'req': False, 'type': float, 'null': True,
                       'pct': False, 'min': 2017,'max': 2017 + max_years,
-                      "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
+                      "needed_for": ['economics'], 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
@@ -258,19 +258,19 @@ def inputs(filter='', full_list=False, just_required=False):
         # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': 1e12,
+                           'max': None, 'default': 1e10,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
+                         'max': None, 'default': 1e10,
                          "description": "State Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
         'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
+                         'max': None, 'default': 1e10,
                          "description": "Local Investment Tax Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
@@ -669,11 +669,13 @@ def outputs():
 
             'pv_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'batt_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'year_one_bill':
                 {'req': True, 'type': float, 'null': True, 'pct': False,

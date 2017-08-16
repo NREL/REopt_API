@@ -22,14 +22,13 @@ class Results:
         "total_demand_cost",
     ]
 
-    def __init__(self, path_templates, path_output, path_output_bau, path_static, economics, year):
+    def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
         """
 
         :param path_templates: path to proForma template
         :param path_output: path to scenario output dir
         :param path_output_bau: path to bau results json
         :param path_static: path to copy proForma to for user download
-        :param economics: economics.Economics object
         :param year: load_year
         """
 
@@ -77,7 +76,6 @@ class Results:
         self.path_output = path_output
         self.path_static = os.path.join(path_static, self.file_proforma)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
-        self.economics = economics
         self.year = year
 
     @staticmethod

@@ -1,18 +1,14 @@
 from openpyxl import load_workbook
-import os
 import tzlocal
 import json
-import datetime
-from django.contrib.auth.models import User
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.api_definitions import *
 from reo.validators import *
-import numpy as np
 from reo.models import RunOutput
 from django.test import Client
 from proforma.models import ProForma
 import datetime
+
 
 def now():
     return tzlocal.get_localzone().localize(datetime.datetime.now())
@@ -33,17 +29,17 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.url_base, format='json', data=data)
 
     def test_creation(self):
-        run_output =  json.loads(self.get_response(self.example_reopt_request_data).content)
+        run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
         uuid = run_output['uuid']
         id = run_output['id']
 
-	start_time = now()
+        start_time = now()
         response = Client().get('/proforma/?run_uuid='+uuid)
-	self.assertEqual(response.status_code,200)
+        self.assertEqual(response.status_code,200)
 
         pf = ProForma.objects.get(run_output_id=id)
-	
-	self.assertTrue(os.path.exists(pf.output_file))
+
+        self.assertTrue(os.path.exists(pf.output_file))
         self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
 
         wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
@@ -104,5 +100,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['C74'],ro.batt_macrs_schedule],
         [ws['C75'],ro.batt_macrs_bonus_fraction]]
 
-        [self.assertEqual for a,b in mapping]
-
+        [self.assertAlmostEqual(a.value, b, places = 2) for a,b in mapping]
