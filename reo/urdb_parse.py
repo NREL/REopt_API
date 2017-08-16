@@ -3,15 +3,11 @@ import os
 import operator
 import calendar
 import numpy
-import csv
 from log_levels import log
-from datetime import date, datetime
+from reo.src.dat_file_manager import big_number
 
 
 class UtilityDatFiles:
-
-    # constants
-    max_big_number = 1e10
 
     # filenames to use
     name_fuel_rates = 'FuelCost.dat'
@@ -51,56 +47,6 @@ class UtilityDatFiles:
     var_n_demand_tiers = 'DemandBinCount'
     var_fuel_burn_rate = 'FuelBurnRateM'
 
-    # paths
-    path_fuel_rates = []
-    path_fuel_rates_base = []
-    path_export_rates = []
-    path_export_rates_base = []
-    path_demand_periods = []
-    path_demand_rates = []
-    path_demand_flat_rates = []
-    path_utility_tiers = []
-    path_num_ratchets = []
-    path_lookback = []
-    path_timesteps_month = []
-    path_n_tiers = []
-    path_fuel_burn_rate = []
-    path_fuel_burn_rate_base = []
-    path_summary = []
-    path_hourly_summary = []
-
-    # output arrays
-    data_minimum_demand = 0
-    data_demand_flat_rates = []
-    data_demand_rates = []
-    data_demand_periods = []
-    data_demand_max_in_bin = []
-    data_usage_max_in_bin = []
-    data_fuel_rate = []
-    data_fuel_rate_base = []
-    data_fuel_avail = []
-    data_fuel_avail_base = []
-    data_num_ratchets = 12
-    data_export_rates = []
-    data_export_rates_base = []
-    data_lookback_months = []
-    data_lookback_percent = 0
-    data_timesteps_month = []
-    data_n_fuel_tiers = 1
-    data_n_demand_tiers = 1
-    data_fuel_burn_rate = []
-    data_fuel_burn_rate_base = []
-    data_fuel_rate_summary = []
-    data_demand_rate_summary = []
-
-    # summary
-    has_fixed_demand = "no"
-    has_tou_demand = "no"
-    has_demand_tiers = "no"
-    has_tou_energy = "no"
-    has_energy_tiers = "no"
-    max_demand_rate = 0
-
     # fixed data
     TechBase = ['UTIL1']
     Tech = ['PV', 'PVNM', 'UTIL1']
@@ -130,8 +76,8 @@ class UtilityDatFiles:
         self.data_demand_flat_rates = 12 * [0]
         self.data_demand_rates = []
         self.data_demand_periods = []
-        self.data_demand_max_in_bin = 1 * [self.max_big_number]
-        self.data_usage_max_in_bin = 1 * [self.max_big_number]
+        self.data_demand_max_in_bin = 1 * [big_number]
+        self.data_usage_max_in_bin = 1 * [big_number]
         self.data_fuel_rate = []
         self.data_fuel_rate_base = []
         self.data_fuel_avail = []
@@ -217,17 +163,9 @@ class UrdbParse:
     net_metering = False
     wholesale_rate = 0.0
     excess_rate = 0.0
-
-
     cum_days_in_yr = numpy.cumsum(calendar.mdays)
     last_hour_in_month = []
-
-    time_steps_per_hour = 1
-    output_root = []
     utility_dat_files = []
-
-    path_log = []
-    file_logfile = []
 
     def __init__(self, output_root, year, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
@@ -439,7 +377,7 @@ class UrdbParse:
         self.utility_dat_files.data_usage_max_in_bin = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
-            energy_tier_max = self.utility_dat_files.max_big_number
+            energy_tier_max = big_number
 
             if 'max' in energy_tier:
                 energy_tier_max = energy_tier['max']
@@ -458,7 +396,7 @@ class UrdbParse:
             rate_average = float(sum(rates)) / max(len(rates), 1)
             self.utility_dat_files.data_n_fuel_tiers = 1
             self.utility_dat_files.data_usage_max_in_bin = []
-            self.utility_dat_files.data_usage_max_in_bin.append(self.utility_dat_files.max_big_number)
+            self.utility_dat_files.data_usage_max_in_bin.append(big_number)
             log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
         for tier in range(0, self.utility_dat_files.data_n_fuel_tiers): # for each tier
@@ -508,7 +446,7 @@ class UrdbParse:
         # Extract 8760 before modified, NOTE: must be rounded to the same decimal places as energy_costs for zero NPV with no Tech
         self.utility_dat_files.data_fuel_rate_base = [round(x,5) for x in self.utility_dat_files.data_fuel_rate]
 
-        self.utility_dat_files.data_fuel_avail_base = [self.utility_dat_files.max_big_number]
+        self.utility_dat_files.data_fuel_avail_base = [big_number]
 
         # Build base case export rate
         tmp_list = []
@@ -539,7 +477,7 @@ class UrdbParse:
                 self.utility_dat_files.data_fuel_rate = operator.add(self.utility_dat_files.data_fuel_rate, zero_array)
                 self.utility_dat_files.data_fuel_avail.append(0)
         self.utility_dat_files.data_fuel_rate += energy_costs
-        self.utility_dat_files.data_fuel_avail.append(self.utility_dat_files.max_big_number)
+        self.utility_dat_files.data_fuel_avail.append(big_number)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -625,7 +563,7 @@ class UrdbParse:
                 demand_max = []
                 for tier in range(n_tiers):
                     demand_tier = current_rate.demandratestructure[period][tier]
-                    demand_tier_max = self.utility_dat_files.max_big_number
+                    demand_tier_max = big_number
                     if 'max' in demand_tier:
                         demand_tier_max = demand_tier['max']
                     demand_max.append(demand_tier_max)
