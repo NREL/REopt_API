@@ -101,4 +101,3 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['C75'],ro.batt_macrs_bonus_fraction]]
 
         [self.assertAlmostEqual(a.value, b, places = 2) for a,b in mapping]
- 	
