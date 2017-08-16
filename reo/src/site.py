@@ -1,4 +1,4 @@
-
+from reo.src.dat_file_manager import DatFileManager
 
 class Financials(object):
     """
@@ -41,3 +41,4 @@ class Site(object):
         self.land_acres = land_area
         self.roof_squarefeet = roof_area
         self.financials = Financials(**kwargs)
+        DatFileManager().add_site(self)
