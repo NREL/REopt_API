@@ -91,5 +91,5 @@ class PV(Tech):
 
     @property
     def prod_factor(self):
-        pvwatts = PVWatts(offline=True, **self.kwargs)
+        pvwatts = PVWatts(**self.kwargs)
         return pvwatts.pv_prod_factor
