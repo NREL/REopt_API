@@ -55,13 +55,6 @@ class RunLibraryTests(unittest.TestCase):
         if os.path.exists(self.path_static):
             shutil.rmtree(self.path_static)
 
-    def get_output_paths(self, run_set):
-
-        self.path_run = run_set.get_path_run()
-        self.path_input = run_set.get_path_run_inputs()
-        self.path_output = run_set.get_path_run_outputs()
-        self.path_output_bau = run_set.get_path_run_outputs_bau()
-
     def compare_directory_contents(self, path_valid_results, path_to_test):
 
         list_files_valid = {}
@@ -103,13 +96,12 @@ class RunLibraryTests(unittest.TestCase):
         json_data = self.setUpScenario(scenario_num)
         run_set = DatLibrary(self.run_uuid, scenario_num, json_data)
         run_set.run()
-        self.get_output_paths(run_set)
         print "Test Inputs"
-        self.compare_directory_contents(self.path_valid_input, self.path_input)
+        self.compare_directory_contents(self.path_valid_input, run_set.paths.inputs)
         print "Test BAU Output"
-        self.compare_directory_contents(self.path_valid_output_bau, self.path_output_bau)
+        self.compare_directory_contents(self.path_valid_output_bau, run_set.paths.outputs_bau)
         print "Test Output"
-        self.compare_directory_contents(self.path_valid_output, self.path_output)
+        self.compare_directory_contents(self.path_valid_output, run_set.paths.outputs)
         self.tearDownScenario()
 
     @unittest.skip("test_library.test_base_case broken")

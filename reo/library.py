@@ -70,10 +70,6 @@ class DatLibrary:
         self.timed_out = False  # is this used?
         self.net_metering = False
 
-        # Command line constants
-        self.command_line_constants = list()
-
-        # calculated values
         self.run_input_id = run_input_id
 
         self.file_output = os.path.join(self.paths.outputs, "REopt_results.json")
@@ -110,18 +106,6 @@ class DatLibrary:
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
             json.dump(json_POST, file_post)
-
-    def get_path_run(self):
-        return self.paths.run
-
-    def get_path_run_inputs(self):
-        return self.paths.inputs
-
-    def get_path_run_outputs(self):
-        return self.paths.outputs
-
-    def get_path_run_outputs_bau(self):
-        return self.paths.outputs_bau
 
     def update_types(self):
         for group in [self.inputs(full_list=True), self.outputs()]:
