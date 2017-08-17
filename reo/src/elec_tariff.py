@@ -1,6 +1,4 @@
 import re
-from collections import namedtuple
-
 from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.urdb_parse import UrdbParse
@@ -35,14 +33,10 @@ class REoptElecTariff(object):
             demand_min  'MinDemand'  - int (kW)
 
         """
-
-        UtilArg = namedtuple('util_arg', "REopt_name type units required_length array_of")
-
-        energy_rates = UtilArg('FuelRate', 'list of floats', 'US$/kWh', 'energy_tiers_num, timesteps',
-                               'Tech, FuelBin, TimeStep')
+        pass
 
 
-class ElecTariff(REoptElecTariff):
+class ElecTariff(object):
 
     def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
                  load_year, wholesale_rate, time_steps_per_hour,
@@ -64,13 +58,13 @@ class ElecTariff(REoptElecTariff):
 
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
+        self.urdb_rate = urdb_rate
 
         parser = UrdbParse(urdb_rate=urdb_rate, paths=paths, year=load_year,
                            time_steps_per_hour=time_steps_per_hour,
                            net_metering=net_metering, wholesale_rate=wholesale_rate)
-        parser.parse_rate(self.utility_name, self.rate_name)
+        self.reopt_args = parser.parse_rate(self.utility_name, self.rate_name)
 
-        super(ElecTariff, self).__init__(urdb_rate)
         DatFileManager().add_elec_tariff(self)
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):

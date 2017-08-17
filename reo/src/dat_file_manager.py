@@ -68,6 +68,7 @@ class DatFileManager:
     util = None
     storage = None
     site = None
+    elec_tariff = None
 
     available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
     available_tech_classes = ['PV', 'UTIL']  # this is a REopt 'class', not a python class
@@ -96,9 +97,23 @@ class DatFileManager:
         self.file_storage_bau = os.path.join(paths.inputs, 'storage_' + file_tail_bau)
         self.file_max_size = os.path.join(paths.inputs, 'maxsizes_' + file_tail)
         self.file_max_size_bau = os.path.join(paths.inputs, 'maxsizes_' + file_tail_bau)
-
         self.file_NEM = os.path.join(paths.inputs, 'NMIL_' + file_tail)
         self.file_NEM_bau = os.path.join(paths.inputs, 'NMIL_' + file_tail_bau)
+
+        self.file_demand_periods = os.path.join(paths.utility, 'TimeStepsDemand.dat')
+        self.file_demand_rates = os.path.join(paths.utility, 'DemandRate.dat')
+        self.file_demand_rates_monthly = os.path.join(paths.utility, 'DemandRateMonth.dat')
+        self.file_demand_ratchets_monthly = os.path.join(paths.utility, 'TimeStepsDemandMonth.dat')
+        self.file_demand_lookback = os.path.join(paths.utility, 'LookbackMonthsAndPercent.dat')
+        self.file_demand_num_ratchets = os.path.join(paths.utility, 'NumRatchets.dat')
+        self.file_energy_rates = os.path.join(paths.utility, 'FuelCost.dat')
+        self.file_energy_rates_bau = os.path.join(paths.utility, 'FuelCostBase.dat')
+        self.file_energy_tiers_num = os.path.join(paths.utility, 'bins.dat')
+        self.file_energy_burn_rate = os.path.join(paths.utility, 'FuelBurnRate.dat')
+        self.file_energy_burn_rate_bau = os.path.join(paths.utility, 'FuelBurnRateBase.dat')
+        self.file_max_in_tiers = os.path.join(paths.utility, 'UtilityTiers.dat')
+        self.file_export_rates = os.path.join(paths.utility, 'ExportRates.dat')
+        self.file_export_rates_bau = os.path.join(paths.utility, 'ExportRatesBase.dat')
         
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
@@ -114,7 +129,6 @@ class DatFileManager:
         self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
         self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
-
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
@@ -181,14 +195,19 @@ class DatFileManager:
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
-    def add_elec_tariff(self, utility_rate):
-
+    def add_elec_tariff(self, elec_tariff):
+        self.elec_tariff = elec_tariff
+        
         with open(os.path.join(self.paths.utility, 'utility_name.txt'), 'w') as outfile:
-            outfile.write(str(utility_rate.utility_name).replace(' ', '_'))
+            outfile.write(str(elec_tariff.utility_name).replace(' ', '_'))
 
         with open(os.path.join(self.paths.utility, 'rate_name.txt'), 'w') as outfile:
-            outfile.write(str(utility_rate.rate_name).replace(' ', '_'))
-
+            outfile.write(str(elec_tariff.rate_name).replace(' ', '_'))
+        
+        # self.command_line_args.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
+        # self.command_line_args.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
+        # self.command_line_args.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))
+            
     def _get_REopt_pwfs(self, techs):
 
         sf = self.site.financials
@@ -794,3 +813,55 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
+
+        # elec_tariff args
+        er = self.elec_tariff.reopt_args
+        # flat demand
+        write_to_dat(self.file_demand_rates_monthly, er.demand_rates_monthly,
+                     'DemandRatesMonth')
+
+        # tou demand (minimum demand and rates
+        write_to_dat(self.file_demand_rates, er.demand_rates_tou, 'DemandRates')
+        # write_to_dat(self.file_demand_rates, er.demand_min, 'MinDemand', 'a')  # not used in REopt
+
+        write_to_dat(self.file_demand_periods, er.demand_ratchets_tou, 'TimeStepRatchets')
+
+        # num ratchets
+        write_to_dat(self.file_demand_num_ratchets, er.demand_num_ratchets,
+                     'NumRatchets')
+
+        # utility tiers
+        write_to_dat(self.file_max_in_tiers, er.demand_max_in_tiers, 'MaxDemandInTier')
+        write_to_dat(self.file_max_in_tiers, er.energy_max_in_tiers, 'MaxUsageInTier', 'a')
+
+        # fuel rate
+        write_to_dat(self.file_energy_rates, er.energy_rates, 'FuelRate')
+        # write_to_dat(self.file_energy_rates, er.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+
+        # fuel rate base case
+        write_to_dat(self.file_energy_rates_bau, er.energy_rates_bau, 'FuelRate')
+        # write_to_dat(self.file_energy_rates_bau, er.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+
+        # export rate
+        write_to_dat(self.file_export_rates, er.export_rates, 'ExportRates')
+        write_to_dat(self.file_export_rates_bau, er.export_rates_bau, 'ExportRates')
+
+        # lookback months and percent
+        write_to_dat(self.file_demand_lookback, er.demand_lookback_months,
+                     'DemandLookbackMonths')
+        write_to_dat(self.file_demand_lookback, er.demand_lookback_percent,
+                     'DemandLookbackPercent', 'a')
+
+        # timestep ratchets month
+        write_to_dat(self.file_demand_ratchets_monthly, er.demand_ratchets_monthly,
+                     'TimeStepRatchetsMonth')
+
+        # bins/tiers
+        write_to_dat(self.file_energy_tiers_num, er.energy_tiers_num, 'FuelBinCount')
+        write_to_dat(self.file_energy_tiers_num, er.demand_tiers_num, 'DemandBinCount', 'a')
+
+        # fuel burn rate
+        write_to_dat(self.file_energy_burn_rate, er.energy_burn_rate, 'FuelBurnRateM')
+
+        # fuel burn rate base
+        write_to_dat(self.file_energy_burn_rate_bau, er.energy_burn_rate_bau, 'FuelBurnRateM')

@@ -360,19 +360,11 @@ class DatLibrary:
 
     def create_utility(self):
 
-        elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict)
+        elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
 
-        if self.utility_name is not None and self.rate_name is not None:
-
-            with open(os.path.join(self.paths.utility, "NumRatchets.dat"), 'r') as f:
-                num_ratchets = str(f.readline())
-
-            with open(os.path.join(self.paths.utility, "bins.dat"), 'r') as f:
-                fuel_bin_count = str(f.readline())
-                demand_bin_count = str(f.readline())
-
-            self.command_line_constants.append(num_ratchets)
-            self.command_line_constants.append(fuel_bin_count)
-            self.command_line_constants.append(demand_bin_count)
+        # command line constants will move to REopt class (using DFM)
+        self.command_line_constants.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
+        self.command_line_constants.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
+        self.command_line_constants.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))

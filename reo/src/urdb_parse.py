@@ -6,37 +6,21 @@ from reo.log_levels import log
 from reo.src.dat_file_manager import big_number, write_to_dat
 
 
-class UtilityDatFiles:
+class REoptArgs:
 
     # fixed data
     TechBase = ['UTIL1']
     Tech = ['PV', 'PVNM', 'UTIL1']
     Load = ['1R', '1W', '1X', '1S']
 
-    def __init__(self, rate_dir, out_dir, out_dir_bau):
-
-        # these paths move to DFM
-        self.file_demand_periods = os.path.join(rate_dir, 'TimeStepsDemand.dat')
-        self.file_demand_rates = os.path.join(rate_dir, 'DemandRate.dat')
-        self.file_demand_rates_monthly = os.path.join(rate_dir, 'DemandRateMonth.dat')
-        self.file_demand_ratchets_monthly = os.path.join(rate_dir, 'TimeStepsDemandMonth.dat')
-        self.file_demand_lookback = os.path.join(rate_dir, 'LookbackMonthsAndPercent.dat')
-        self.file_demand_num_ratchets_tou = os.path.join(rate_dir, 'NumRatchets.dat')
-        self.file_energy_rates = os.path.join(rate_dir, 'FuelCost.dat')
-        self.file_energy_rates_bau = os.path.join(rate_dir, 'FuelCostBase.dat')
-        self.file_energy_tiers_num = os.path.join(rate_dir, 'bins.dat')
-        self.file_energy_burn_rate = os.path.join(rate_dir, 'FuelBurnRate.dat')
-        self.file_energy_burn_rate_bau = os.path.join(rate_dir, 'FuelBurnRateBase.dat')
-        self.file_max_in_tiers = os.path.join(rate_dir, 'UtilityTiers.dat')
-        self.file_export_rates = os.path.join(rate_dir, 'ExportRates.dat')
-        self.file_export_rates_bau = os.path.join(rate_dir, 'ExportRatesBase.dat')
+    def __init__(self):
 
         # these vars are passed to DFM as REopt params, written to dats
         self.demand_rates_monthly = 12 * [0]
         self.demand_ratchets_monthly = []
         self.demand_rates_tou = []
         self.demand_ratchets_tou = []
-        self.demand_num_ratchets_tou = 12
+        self.demand_num_ratchets = 12
         self.demand_tiers_num = 1
         self.demand_max_in_tiers = 1 * [big_number]
         self.demand_lookback_months = []
@@ -129,7 +113,7 @@ class UrdbParse:
         self.wholesale_rate = wholesale_rate
         self.excess_rate = excess_rate
         self.max_demand_rate = 0
-        self.utility_dat_files = UtilityDatFiles(paths.utility, paths.outputs, paths.outputs_bau)
+        self.reopt_args = REoptArgs()
 
         self.file_summary = os.path.join(paths.utility, 'Summary.csv')
         self.file_energy_summary = os.path.join(paths.outputs, "energy_cost.txt")
@@ -165,6 +149,8 @@ class UrdbParse:
         self.prepare_techs_and_loads_basecase()
         self.prepare_techs_and_loads()
         self.write_dat_files()
+        
+        return self.reopt_args
 
     def prepare_summary(self, current_rate):
 
@@ -223,14 +209,14 @@ class UrdbParse:
         if len(energy_tier_set) > 1:
             log("WARNING", "Warning: energy periods contain different numbers of tiers, using limits of period with most tiers")
 
-        self.utility_dat_files.energy_tiers_num = max(energy_tier_set)
+        self.reopt_args.energy_tiers_num = max(energy_tier_set)
 
         average_rates = False
         rates = []
         rate_average = 0
 
         # set energy rate tier(bin) limits
-        self.utility_dat_files.energy_max_in_tiers = []
+        self.reopt_args.energy_max_in_tiers = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
             energy_tier_max = big_number
@@ -246,16 +232,16 @@ class UrdbParse:
 
             if 'rate' in energy_tier:
                 rates.append(energy_tier['rate']) # only used for kWh/kw pricing
-                self.utility_dat_files.energy_max_in_tiers.append(energy_tier_max) # should be under if 'max'?
+                self.reopt_args.energy_max_in_tiers.append(energy_tier_max) # should be under if 'max'?
 
         if average_rates:
             rate_average = float(sum(rates)) / max(len(rates), 1)
-            self.utility_dat_files.energy_tiers_num = 1
-            self.utility_dat_files.energy_max_in_tiers = []
-            self.utility_dat_files.energy_max_in_tiers.append(big_number)
+            self.reopt_args.energy_tiers_num = 1
+            self.reopt_args.energy_max_in_tiers = []
+            self.reopt_args.energy_max_in_tiers.append(big_number)
             log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
-        for tier in range(0, self.utility_dat_files.energy_tiers_num): # for each tier
+        for tier in range(0, self.reopt_args.energy_tiers_num): # for each tier
             hour_of_year = 1
             for month in range(0, 12):
                 for day in range(0, self.days_in_month[month]):
@@ -291,7 +277,7 @@ class UrdbParse:
                             adj = current_rate.energyratestructure[period][tier_use]['adj']
 
                         for step in range(0, self.time_steps_per_hour):
-                            self.utility_dat_files.energy_rates.append(rate + adj)
+                            self.reopt_args.energy_rates.append(rate + adj)
 
                         hour_of_year += 1
 
@@ -300,22 +286,22 @@ class UrdbParse:
         zero_array = 8760 * [0]
 
         # Extract 8760 before modified, NOTE: must be rounded to the same decimal places as energy_costs for zero NPV with no Tech
-        self.utility_dat_files.energy_rates_bau = [round(x,5) for x in self.utility_dat_files.energy_rates]
+        self.reopt_args.energy_rates_bau = [round(x,5) for x in self.reopt_args.energy_rates]
 
-        self.utility_dat_files.energy_avail_bau = [big_number]
+        self.reopt_args.energy_avail_bau = [big_number]
 
         # Build base case export rate
         tmp_list = []
-        for tech in self.utility_dat_files.TechBase:
-            for load in self.utility_dat_files.Load:
+        for tech in self.reopt_args.TechBase:
+            for load in self.reopt_args.Load:
                 tmp_list = operator.add(tmp_list, zero_array)
 
-        self.utility_dat_files.export_rates_bau = tmp_list
+        self.reopt_args.export_rates_bau = tmp_list
 
     def prepare_techs_and_loads(self):
 
         zero_array = 8760 * [0]
-        energy_costs = [round(cost, 5) for cost in self.utility_dat_files.energy_rates]
+        energy_costs = [round(cost, 5) for cost in self.reopt_args.energy_rates]
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
         self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]
@@ -326,20 +312,20 @@ class UrdbParse:
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
         # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        self.utility_dat_files.energy_rates = []
+        self.reopt_args.energy_rates = []
 
-        for i in range(0, len(self.utility_dat_files.Tech) - 1):
-            for _ in range(self.utility_dat_files.energy_tiers_num):
-                self.utility_dat_files.energy_rates = operator.add(self.utility_dat_files.energy_rates, zero_array)
-                self.utility_dat_files.energy_avail.append(0)
-        self.utility_dat_files.energy_rates += energy_costs
-        self.utility_dat_files.energy_avail.append(big_number)
+        for i in range(0, len(self.reopt_args.Tech) - 1):
+            for _ in range(self.reopt_args.energy_tiers_num):
+                self.reopt_args.energy_rates = operator.add(self.reopt_args.energy_rates, zero_array)
+                self.reopt_args.energy_avail.append(0)
+        self.reopt_args.energy_rates += energy_costs
+        self.reopt_args.energy_avail.append(big_number)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         tmp_list = []
-        for tech in self.utility_dat_files.Tech:
-            for load in self.utility_dat_files.Load:
+        for tech in self.reopt_args.Tech:
+            for load in self.reopt_args.Load:
                 if tech is 'PV':
                     if load is '1W':
                         if self.net_metering:
@@ -353,21 +339,21 @@ class UrdbParse:
                 else:
                     tmp_list = operator.add(tmp_list, zero_array)
 
-        self.utility_dat_files.export_rates = tmp_list
+        self.reopt_args.export_rates = tmp_list
 
         #FuelBurnRateM = array(Tech,Load,FuelBin)
         FuelBurnRateM = []
         FuelBurnRateMBase = []
-        for tech in self.utility_dat_files.Tech:
-            for load in self.utility_dat_files.Load:
-                for _ in range(self.utility_dat_files.energy_tiers_num):
+        for tech in self.reopt_args.Tech:
+            for load in self.reopt_args.Load:
+                for _ in range(self.reopt_args.energy_tiers_num):
                     if tech is 'UTIL1':
                         FuelBurnRateM.append(1)
                         FuelBurnRateMBase.append(1)
                     else:
                         FuelBurnRateM.append(0)
-        self.utility_dat_files.energy_burn_rate = FuelBurnRateM
-        self.utility_dat_files.energy_burn_rate_bau = FuelBurnRateMBase
+        self.reopt_args.energy_burn_rate = FuelBurnRateM
+        self.reopt_args.energy_burn_rate_bau = FuelBurnRateMBase
 
     def prepare_demand_periods(self, current_rate):
 
@@ -414,7 +400,7 @@ class UrdbParse:
         demand_maxes = []
 
         if n_tou > 0:
-            self.utility_dat_files.demand_max_in_tiers = []
+            self.reopt_args.demand_max_in_tiers = []
             for period in range(n_tou):
                 demand_max = []
                 for tier in range(n_tiers):
@@ -431,19 +417,19 @@ class UrdbParse:
         if len(test_demand_max) > 1:
             log("WARNING", "Warning: highest demand tiers do not match across periods, using max from largest set of tiers")
 
-        self.utility_dat_files.demand_max_in_tiers = demand_tiers[period_with_max_tiers]
+        self.reopt_args.demand_max_in_tiers = demand_tiers[period_with_max_tiers]
 
-        self.utility_dat_files.demand_tiers_num = n_tiers
+        self.reopt_args.demand_tiers_num = n_tiers
 
     def prepare_flat_demand(self, current_rate):
 
-        self.utility_dat_files.demand_rates_monthly = []
-        self.utility_dat_files.demand_ratchets_monthly = [[] for i in range(12)]
+        self.reopt_args.demand_rates_monthly = []
+        self.reopt_args.demand_ratchets_monthly = [[] for i in range(12)]
 
         for month in range(12):
 
             for hour in range(24*self.cum_days_in_yr[month]+1, 24*self.cum_days_in_yr[month+1]+1):
-                self.utility_dat_files.demand_ratchets_monthly[month].append(hour)
+                self.reopt_args.demand_ratchets_monthly[month].append(hour)
 
             period = 0
             for flat in current_rate.flatdemandstructure:
@@ -460,10 +446,10 @@ class UrdbParse:
                     period_in_month = current_rate.flatdemandmonths[month]
 
                     if period_in_month == period:
-                        self.utility_dat_files.demand_rates_monthly.append(flat_rate + flat_adj)
+                        self.reopt_args.demand_rates_monthly.append(flat_rate + flat_adj)
 
                 else:
-                    self.utility_dat_files.demand_rates_monthly.append(flat_rate + flat_adj)
+                    self.reopt_args.demand_rates_monthly.append(flat_rate + flat_adj)
 
                 period += 1
 
@@ -475,21 +461,20 @@ class UrdbParse:
         """
 
         for month in range(12):
-            flat_rate = self.utility_dat_files.demand_rates_monthly[month]
+            flat_rate = self.reopt_args.demand_rates_monthly[month]
             month_hours = self.get_hours_in_month(month)
 
             for hour in month_hours:
                 self.demand_rates_summary[hour] += flat_rate
 
     def prepare_tou_demand(self, current_rate):
-
         demand_periods = []
         demand_rates = []
 
         if type(current_rate.peakkwcapacitymin) is int:
-            self.utility_dat_files.demand_min = current_rate.peakkwcapacitymin
+            self.reopt_args.demand_min = current_rate.peakkwcapacitymin
 
-        self.utility_dat_files.demand_rates = []
+        self.reopt_args.demand_rates = []
         for month in range(12):
 
             for demand_period in range(len(current_rate.demandratestructure)):
@@ -513,56 +498,11 @@ class UrdbParse:
                         for step in time_steps:
                             self.demand_rates_summary[step - 1] += tou_rate + tou_adj
 
-        self.utility_dat_files.demand_ratchets_tou = demand_periods
-        self.utility_dat_files.demand_rates_tou = demand_rates
-        self.utility_dat_files.demand_num_ratchets_tou = len(demand_periods)
+        self.reopt_args.demand_ratchets_tou = demand_periods
+        self.reopt_args.demand_rates_tou = demand_rates
+        self.reopt_args.demand_num_ratchets = len(demand_periods)
 
     def write_dat_files(self):
-
-        # flat demand
-        write_to_dat(self.utility_dat_files.file_demand_rates_monthly, self.utility_dat_files.demand_rates_monthly, 'DemandRatesMonth')
-
-        # tou demand (minimum demand and rates
-        write_to_dat(self.utility_dat_files.file_demand_rates, self.utility_dat_files.demand_rates_tou, 'DemandRates')
-        # write_to_dat(self.utility_dat_files.file_demand_rates, self.utility_dat_files.demand_min, 'MinDemand', 'a')  # not used in REopt
-
-        write_to_dat(self.utility_dat_files.file_demand_periods, self.utility_dat_files.demand_ratchets_tou, 'TimeStepRatchets')
-
-        # num ratchets
-        write_to_dat(self.utility_dat_files.file_demand_num_ratchets_tou, self.utility_dat_files.demand_num_ratchets_tou, 'NumRatchets')
-        
-        # utility tiers
-        write_to_dat(self.utility_dat_files.file_max_in_tiers, self.utility_dat_files.demand_max_in_tiers, 'MaxDemandInTier')
-        write_to_dat(self.utility_dat_files.file_max_in_tiers, self.utility_dat_files.energy_max_in_tiers, 'MaxUsageInTier', 'a')
-
-        # fuel rate
-        write_to_dat(self.utility_dat_files.file_energy_rates, self.utility_dat_files.energy_rates, 'FuelRate')
-        # write_to_dat(self.utility_dat_files.file_energy_rates, self.utility_dat_files.energy_avail, 'FuelAvail', 'a')  # not used in REopt
-
-        # fuel rate base case
-        write_to_dat(self.utility_dat_files.file_energy_rates_bau, self.utility_dat_files.energy_rates_bau, 'FuelRate')
-        # write_to_dat(self.utility_dat_files.file_energy_rates_bau, self.utility_dat_files.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
-
-        # export rate
-        write_to_dat(self.utility_dat_files.file_export_rates, self.utility_dat_files.export_rates, 'ExportRates')
-        write_to_dat(self.utility_dat_files.file_export_rates_bau, self.utility_dat_files.export_rates_bau, 'ExportRates')
-
-        # lookback months and percent
-        write_to_dat(self.utility_dat_files.file_demand_lookback, self.utility_dat_files.demand_lookback_months, 'DemandLookbackMonths')
-        write_to_dat(self.utility_dat_files.file_demand_lookback, self.utility_dat_files.demand_lookback_percent, 'DemandLookbackPercent', 'a')
-
-        # timestep ratchets month
-        write_to_dat(self.utility_dat_files.file_demand_ratchets_monthly, self.utility_dat_files.demand_ratchets_monthly, 'TimeStepRatchetsMonth')
-
-        # bins/tiers
-        write_to_dat(self.utility_dat_files.file_energy_tiers_num, self.utility_dat_files.energy_tiers_num, 'FuelBinCount')
-        write_to_dat(self.utility_dat_files.file_energy_tiers_num, self.utility_dat_files.demand_tiers_num, 'DemandBinCount', 'a')
-
-        # fuel burn rate
-        write_to_dat(self.utility_dat_files.file_energy_burn_rate, self.utility_dat_files.energy_burn_rate, 'FuelBurnRateM')
-
-        # fuel burn rate base
-        write_to_dat(self.utility_dat_files.file_energy_burn_rate_bau, self.utility_dat_files.energy_burn_rate_bau, 'FuelBurnRateM')
 
         # summary
         file_path = open(self.file_summary, 'w')
