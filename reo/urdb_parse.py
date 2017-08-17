@@ -8,44 +8,6 @@ from reo.src.dat_file_manager import big_number
 
 class UtilityDatFiles:
 
-    # filenames to use
-    name_fuel_rates = 'FuelCost.dat'
-    name_demand_periods = 'TimeStepsDemand.dat'
-    name_demand_rates = 'DemandRate.dat'
-    name_demand_flat_rates = 'DemandRateMonth.dat'
-    name_utility_tiers = 'UtilityTiers.dat'
-    name_num_ratchets = 'NumRatchets.dat'
-    name_export_rates = 'ExportRates.dat'
-    name_lookback = 'LookbackMonthsAndPercent.dat'
-    name_timesteps_month = 'TimeStepsDemandMonth.dat'
-    name_n_tiers = 'bins.dat'
-    name_fuel_burn_rate = 'FuelBurnRate.dat'
-    name_fuel_rates_base = 'FuelCostBase.dat'
-    name_export_rates_base = 'ExportRatesBase.dat'
-    name_fuel_burn_rate_base = 'FuelBurnRateBase.dat'
-    name_summary = 'Summary.csv'
-    name_energy_cost = "energy_cost.txt"
-    name_demand_cost = "demand_cost.txt"
-
-
-    # varnames to use
-    var_demand_flat_rates = 'DemandRatesMonth'
-    var_demand_rates = 'DemandRates'
-    var_demand_periods = 'TimeStepRatchets'
-    var_minimum_demand = 'MinDemand'
-    var_max_demand_in_tier = 'MaxDemandInTier'
-    var_max_usage_in_tier = 'MaxUsageInTier'
-    var_fuel_rate = 'FuelRate'
-    var_fuel_avail = 'FuelAvail'
-    var_num_ratchets = 'NumRatchets'
-    var_export_rates = 'ExportRates'
-    var_lookback_months = 'DemandLookbackMonths'
-    var_lookback_percent = 'DemandLookbackPercent'
-    var_timesteps_month = 'TimeStepRatchetsMonth'
-    var_n_fuel_tiers = 'FuelBinCount'
-    var_n_demand_tiers = 'DemandBinCount'
-    var_fuel_burn_rate = 'FuelBurnRateM'
-
     # fixed data
     TechBase = ['UTIL1']
     Tech = ['PV', 'PVNM', 'UTIL1']
@@ -53,48 +15,48 @@ class UtilityDatFiles:
 
     def __init__(self, rate_dir, out_dir, out_dir_bau):
 
-        self.path_fuel_rates = os.path.join(rate_dir, self.name_fuel_rates)
-        self.path_fuel_rates_base = os.path.join(rate_dir, self.name_fuel_rates_base)
-        self.path_demand_periods = os.path.join(rate_dir, self.name_demand_periods)
-        self.path_demand_rates = os.path.join(rate_dir, self.name_demand_rates)
-        self.path_demand_flat_rates = os.path.join(rate_dir, self.name_demand_flat_rates)
-        self.path_utility_tiers = os.path.join(rate_dir, self.name_utility_tiers)
-        self.path_num_ratchets = os.path.join(rate_dir, self.name_num_ratchets)
-        self.path_export_rates = os.path.join(rate_dir, self.name_export_rates)
-        self.path_export_rates_base = os.path.join(rate_dir, self.name_export_rates_base)
-        self.path_lookback = os.path.join(rate_dir, self.name_lookback)
-        self.path_timesteps_month = os.path.join(rate_dir, self.name_timesteps_month)
-        self.path_n_tiers = os.path.join(rate_dir, self.name_n_tiers)
-        self.path_fuel_burn_rate = os.path.join(rate_dir, self.name_fuel_burn_rate)
-        self.path_fuel_burn_rate_base = os.path.join(rate_dir, self.name_fuel_burn_rate_base)
-        self.path_summary = os.path.join(rate_dir, self.name_summary)
-        self.path_energy_cost = os.path.join(out_dir, self.name_energy_cost)
-        self.path_demand_cost = os.path.join(out_dir, self.name_demand_cost)
-        self.path_energy_cost_bau = os.path.join(out_dir_bau, self.name_energy_cost)
-        self.path_demand_cost_bau = os.path.join(out_dir_bau, self.name_demand_cost)
+        self.path_fuel_rates = os.path.join(rate_dir, 'FuelCost.dat')
+        self.path_fuel_rates_base = os.path.join(rate_dir, 'FuelCostBase.dat')
+        self.path_demand_periods = os.path.join(rate_dir, 'TimeStepsDemand.dat')
+        self.path_demand_rates = os.path.join(rate_dir, 'DemandRate.dat')
+        self.path_demand_flat_rates = os.path.join(rate_dir, 'DemandRateMonth.dat')
+        self.path_utility_tiers = os.path.join(rate_dir, 'UtilityTiers.dat')
+        self.path_num_ratchets = os.path.join(rate_dir, 'NumRatchets.dat')
+        self.path_export_rates = os.path.join(rate_dir, 'ExportRates.dat')
+        self.path_export_rates_base = os.path.join(rate_dir, 'ExportRatesBase.dat')
+        self.path_lookback = os.path.join(rate_dir, 'LookbackMonthsAndPercent.dat')
+        self.path_timesteps_month = os.path.join(rate_dir, 'TimeStepsDemandMonth.dat')
+        self.path_n_tiers = os.path.join(rate_dir, 'bins.dat')
+        self.path_fuel_burn_rate = os.path.join(rate_dir, 'FuelBurnRate.dat')
+        self.path_fuel_burn_rate_base = os.path.join(rate_dir, 'FuelBurnRateBase.dat')
+        self.path_summary = os.path.join(rate_dir, 'Summary.csv')
+        self.path_energy_cost = os.path.join(out_dir, "energy_cost.txt")
+        self.path_demand_cost = os.path.join(out_dir, "demand_cost.txt")
+        self.path_energy_cost_bau = os.path.join(out_dir_bau, "energy_cost.txt")
+        self.path_demand_cost_bau = os.path.join(out_dir_bau, "demand_cost.txt")
 
-        self.data_minimum_demand = 0
-        self.data_demand_flat_rates = 12 * [0]
-        self.data_demand_rates = []
-        self.data_demand_periods = []
-        self.data_demand_max_in_bin = 1 * [big_number]
-        self.data_usage_max_in_bin = 1 * [big_number]
-        self.data_fuel_rate = []
-        self.data_fuel_rate_base = []
-        self.data_fuel_avail = []
-        self.data_fuel_avail_base = []
-        self.data_num_ratchets = 12
-        self.data_export_rates = []
-        self.data_export_rates_base = []
-        self.data_lookback_months = []
-        self.data_lookback_percent = 0
-        self.data_timesteps_month = []
-        self.data_n_fuel_tiers = 1
-        self.data_n_demand_tiers = 1
-        self.data_fuel_burn_rate = []
-        self.data_fuel_burn_rate_base = []
-        self.data_fuel_rate_summary = []
-        self.data_demand_rate_summary = []
+        self.demand_min = 0
+        self.demand_rates_monthly = 12 * [0]
+        self.demand_rates_tou = []
+        self.demand_ratchets_tou = []
+        self.demand_max_in_tiers = 1 * [big_number]
+        self.energy_max_in_tiers = 1 * [big_number]
+        self.energy_rates = []
+        self.energy_rates_bau = []
+        self.energy_avail = []
+        self.energy_avail_bau = []
+        self.demand_num_ratchets_tou = 12
+        self.export_rates = []
+        self.export_rates_bau = []
+        self.demand_lookback_months = []
+        self.demand_lookback_percent = 0
+        self.demand_ratchets_monthly = []
+        self.energy_tiers_num = 1
+        self.demand_tiers_num = 1
+        self.energy_burn_rate = []
+        self.energy_burn_rate_bau = []
+        self.energy_rates_summary = []
+        self.demand_rates_summary = []
 
         self.has_fixed_demand = "no"
         self.has_tou_demand = "no"
@@ -133,7 +95,7 @@ class RateData:
     demandwindow = []
     demandreactivepowercharge = []
 
-    # coincident rates 
+    # coincident rates
     coincidentrateunit = []
     coincidentratestructure = []
     coincidentrateschedule = []
@@ -353,14 +315,14 @@ class UrdbParse:
         if len(energy_tier_set) > 1:
             log("WARNING", "Warning: energy periods contain different numbers of tiers, using limits of period with most tiers")
 
-        self.utility_dat_files.data_n_fuel_tiers = max(energy_tier_set)
+        self.utility_dat_files.energy_tiers_num = max(energy_tier_set)
 
         average_rates = False
         rates = []
         rate_average = 0
 
         # set energy rate tier(bin) limits
-        self.utility_dat_files.data_usage_max_in_bin = []
+        self.utility_dat_files.energy_max_in_tiers = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
             energy_tier_max = big_number
@@ -376,16 +338,16 @@ class UrdbParse:
 
             if 'rate' in energy_tier:
                 rates.append(energy_tier['rate']) # only used for kWh/kw pricing
-                self.utility_dat_files.data_usage_max_in_bin.append(energy_tier_max) # should be under if 'max'?
+                self.utility_dat_files.energy_max_in_tiers.append(energy_tier_max) # should be under if 'max'?
 
         if average_rates:
             rate_average = float(sum(rates)) / max(len(rates), 1)
-            self.utility_dat_files.data_n_fuel_tiers = 1
-            self.utility_dat_files.data_usage_max_in_bin = []
-            self.utility_dat_files.data_usage_max_in_bin.append(big_number)
+            self.utility_dat_files.energy_tiers_num = 1
+            self.utility_dat_files.energy_max_in_tiers = []
+            self.utility_dat_files.energy_max_in_tiers.append(big_number)
             log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
-        for tier in range(0, self.utility_dat_files.data_n_fuel_tiers): # for each tier
+        for tier in range(0, self.utility_dat_files.energy_tiers_num): # for each tier
             hour_of_year = 1
             for month in range(0, 12):
                 for day in range(0, self.days_in_month[month]):
@@ -421,7 +383,7 @@ class UrdbParse:
                             adj = current_rate.energyratestructure[period][tier_use]['adj']
 
                         for step in range(0, self.time_steps_per_hour):
-                            self.utility_dat_files.data_fuel_rate.append(rate + adj)
+                            self.utility_dat_files.energy_rates.append(rate + adj)
 
                         hour_of_year += 1
 
@@ -430,9 +392,9 @@ class UrdbParse:
         zero_array = 8760 * [0]
 
         # Extract 8760 before modified, NOTE: must be rounded to the same decimal places as energy_costs for zero NPV with no Tech
-        self.utility_dat_files.data_fuel_rate_base = [round(x,5) for x in self.utility_dat_files.data_fuel_rate]
+        self.utility_dat_files.energy_rates_bau = [round(x,5) for x in self.utility_dat_files.energy_rates]
 
-        self.utility_dat_files.data_fuel_avail_base = [big_number]
+        self.utility_dat_files.energy_avail_bau = [big_number]
 
         # Build base case export rate
         tmp_list = []
@@ -440,15 +402,15 @@ class UrdbParse:
             for load in self.utility_dat_files.Load:
                 tmp_list = operator.add(tmp_list, zero_array)
 
-        self.utility_dat_files.data_export_rates_base = tmp_list
+        self.utility_dat_files.export_rates_bau = tmp_list
 
     def prepare_techs_and_loads(self):
 
         zero_array = 8760 * [0]
-        energy_costs = [round(cost, 5) for cost in self.utility_dat_files.data_fuel_rate]
+        energy_costs = [round(cost, 5) for cost in self.utility_dat_files.energy_rates]
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
-        self.utility_dat_files.data_fuel_rate_summary = energy_costs[start_index:len(energy_costs)]
+        self.utility_dat_files.energy_rates_summary = energy_costs[start_index:len(energy_costs)]
 
         # Assuming ExportRate is the equivalent to the first fuel rate tier:
         negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
@@ -456,14 +418,14 @@ class UrdbParse:
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
         # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        self.utility_dat_files.data_fuel_rate = []
+        self.utility_dat_files.energy_rates = []
 
         for i in range(0, len(self.utility_dat_files.Tech) - 1):
-            for _ in range(self.utility_dat_files.data_n_fuel_tiers):
-                self.utility_dat_files.data_fuel_rate = operator.add(self.utility_dat_files.data_fuel_rate, zero_array)
-                self.utility_dat_files.data_fuel_avail.append(0)
-        self.utility_dat_files.data_fuel_rate += energy_costs
-        self.utility_dat_files.data_fuel_avail.append(big_number)
+            for _ in range(self.utility_dat_files.energy_tiers_num):
+                self.utility_dat_files.energy_rates = operator.add(self.utility_dat_files.energy_rates, zero_array)
+                self.utility_dat_files.energy_avail.append(0)
+        self.utility_dat_files.energy_rates += energy_costs
+        self.utility_dat_files.energy_avail.append(big_number)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -483,21 +445,21 @@ class UrdbParse:
                 else:
                     tmp_list = operator.add(tmp_list, zero_array)
 
-        self.utility_dat_files.data_export_rates = tmp_list
+        self.utility_dat_files.export_rates = tmp_list
 
         #FuelBurnRateM = array(Tech,Load,FuelBin)
         FuelBurnRateM = []
         FuelBurnRateMBase = []
         for tech in self.utility_dat_files.Tech:
             for load in self.utility_dat_files.Load:
-                for _ in range(self.utility_dat_files.data_n_fuel_tiers):
+                for _ in range(self.utility_dat_files.energy_tiers_num):
                     if tech is 'UTIL1':
                         FuelBurnRateM.append(1)
                         FuelBurnRateMBase.append(1)
                     else:
                         FuelBurnRateM.append(0)
-        self.utility_dat_files.data_fuel_burn_rate = FuelBurnRateM
-        self.utility_dat_files.data_fuel_burn_rate_base = FuelBurnRateMBase
+        self.utility_dat_files.energy_burn_rate = FuelBurnRateM
+        self.utility_dat_files.energy_burn_rate_bau = FuelBurnRateMBase
 
     def prepare_demand_periods(self, current_rate):
 
@@ -505,7 +467,7 @@ class UrdbParse:
         n_tou = len(current_rate.demandratestructure)
         n_rates = n_flat + n_tou
 
-        self.utility_dat_files.data_demand_rate_summary = 8760 * self.time_steps_per_hour * [0]
+        self.utility_dat_files.demand_rates_summary = 8760 * self.time_steps_per_hour * [0]
 
         if n_rates == 0:
             return
@@ -544,7 +506,7 @@ class UrdbParse:
         demand_maxes = []
 
         if n_tou > 0:
-            self.utility_dat_files.data_demand_max_in_bin = []
+            self.utility_dat_files.demand_max_in_tiers = []
             for period in range(n_tou):
                 demand_max = []
                 for tier in range(n_tiers):
@@ -561,19 +523,19 @@ class UrdbParse:
         if len(test_demand_max) > 1:
             log("WARNING", "Warning: highest demand tiers do not match across periods, using max from largest set of tiers")
 
-        self.utility_dat_files.data_demand_max_in_bin = demand_tiers[period_with_max_tiers]
+        self.utility_dat_files.demand_max_in_tiers = demand_tiers[period_with_max_tiers]
 
-        self.utility_dat_files.data_n_demand_tiers = n_tiers
+        self.utility_dat_files.demand_tiers_num = n_tiers
 
     def prepare_flat_demand(self, current_rate):
 
-        self.utility_dat_files.data_demand_flat_rates = []
-        self.utility_dat_files.data_timesteps_month = [[] for i in range(12)]
+        self.utility_dat_files.demand_rates_monthly = []
+        self.utility_dat_files.demand_ratchets_monthly = [[] for i in range(12)]
 
         for month in range(12):
 
             for hour in range(24*self.cum_days_in_yr[month]+1, 24*self.cum_days_in_yr[month+1]+1):
-                self.utility_dat_files.data_timesteps_month[month].append(hour)
+                self.utility_dat_files.demand_ratchets_monthly[month].append(hour)
 
             period = 0
             for flat in current_rate.flatdemandstructure:
@@ -590,26 +552,26 @@ class UrdbParse:
                     period_in_month = current_rate.flatdemandmonths[month]
 
                     if period_in_month == period:
-                        self.utility_dat_files.data_demand_flat_rates.append(flat_rate + flat_adj)
+                        self.utility_dat_files.demand_rates_monthly.append(flat_rate + flat_adj)
 
                 else:
-                    self.utility_dat_files.data_demand_flat_rates.append(flat_rate + flat_adj)
+                    self.utility_dat_files.demand_rates_monthly.append(flat_rate + flat_adj)
 
                 period += 1
 
     def prepare_demand_rate_summary(self):
         """
-        adds flat demand rate for each timestep to self.utility_dat_files.data_demand_rate_summary
+        adds flat demand rate for each timestep to self.utility_dat_files.demand_rates_summary
         (which is full of zeros before this step)
         :return:
         """
 
         for month in range(12):
-            flat_rate = self.utility_dat_files.data_demand_flat_rates[month]
+            flat_rate = self.utility_dat_files.demand_rates_monthly[month]
             month_hours = self.get_hours_in_month(month)
 
             for hour in month_hours:
-                self.utility_dat_files.data_demand_rate_summary[hour] += flat_rate
+                self.utility_dat_files.demand_rates_summary[hour] += flat_rate
 
     def prepare_tou_demand(self, current_rate):
 
@@ -617,7 +579,7 @@ class UrdbParse:
         demand_rates = []
 
         if type(current_rate.peakkwcapacitymin) is int:
-            self.utility_dat_files.data_minimum_demand = current_rate.peakkwcapacitymin
+            self.utility_dat_files.demand_min = current_rate.peakkwcapacitymin
 
         self.utility_dat_files.demand_rates = []
         for month in range(12):
@@ -641,126 +603,126 @@ class UrdbParse:
                         demand_rates.append(tou_rate + tou_adj)
 
                         for step in time_steps:
-                            self.utility_dat_files.data_demand_rate_summary[step - 1] += tou_rate + tou_adj
+                            self.utility_dat_files.demand_rates_summary[step - 1] += tou_rate + tou_adj
 
-        self.utility_dat_files.data_demand_periods = demand_periods
-        self.utility_dat_files.data_demand_rates = demand_rates
-        self.utility_dat_files.data_num_ratchets = len(demand_periods)
+        self.utility_dat_files.demand_ratchets_tou = demand_periods
+        self.utility_dat_files.demand_rates_tou = demand_rates
+        self.utility_dat_files.demand_num_ratchets_tou = len(demand_periods)
 
     def write_dat_files(self):
 
         # flat demand
         file_path = open(self.utility_dat_files.path_demand_flat_rates, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_demand_flat_rates,
-                                   self.utility_dat_files.data_demand_flat_rates)
+                                   'DemandRatesMonth',
+                                   self.utility_dat_files.demand_rates_monthly)
         file_path.close()
 
         # tou demand (minimum demand and rates
         file_path = open(self.utility_dat_files.path_demand_rates, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_minimum_demand,
-                                   self.utility_dat_files.data_minimum_demand)
+                                   'MinDemand',
+                                   self.utility_dat_files.demand_min)
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_demand_rates,
-                                   self.utility_dat_files.data_demand_rates)
+                                   'DemandRates',
+                                   self.utility_dat_files.demand_rates_tou)
         file_path.close()
         file_path = open(self.utility_dat_files.path_demand_periods, 'w')
         self.write_list_of_lists(file_path,
-                                 self.utility_dat_files.var_demand_periods,
-                                 self.utility_dat_files.data_demand_periods)
+                                 'TimeStepRatchets',
+                                 self.utility_dat_files.demand_ratchets_tou)
         file_path.close()
 
         # num ratchets
         file_path = open(self.utility_dat_files.path_num_ratchets, 'w')
         self.write_variable_equals(file_path,
-                                   self.utility_dat_files.var_num_ratchets,
-                                   self.utility_dat_files.data_num_ratchets)
+                                   'NumRatchets',
+                                   self.utility_dat_files.demand_num_ratchets_tou)
         file_path.close()
 
         # utility tiers
         file_path = open(self.utility_dat_files.path_utility_tiers, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_max_demand_in_tier,
-                                   self.utility_dat_files.data_demand_max_in_bin)
+                                   'MaxDemandInTier',
+                                   self.utility_dat_files.demand_max_in_tiers)
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_max_usage_in_tier,
-                                   self.utility_dat_files.data_usage_max_in_bin)
+                                   'MaxUsageInTier',
+                                   self.utility_dat_files.energy_max_in_tiers)
         file_path.close()
 
         # fuel rate
         file_path = open(self.utility_dat_files.path_fuel_rates, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_rate,
-                                   self.utility_dat_files.data_fuel_rate)
-        self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_avail,
-                                   self.utility_dat_files.data_fuel_avail)
+                                   'FuelRate',
+                                   self.utility_dat_files.energy_rates)
+        # self.write_single_variable(file_path,
+        #                            'FuelAvail',
+        #                            self.utility_dat_files.energy_avail)
         file_path.close()
 
         # fuel rate base case
         file_path = open(self.utility_dat_files.path_fuel_rates_base, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_rate,
-                                   self.utility_dat_files.data_fuel_rate_base)
-        self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_avail,
-                                   self.utility_dat_files.data_fuel_avail_base)
+                                   'FuelRate',
+                                   self.utility_dat_files.energy_rates_bau)
+        # self.write_single_variable(file_path,
+        #                            'FuelAvail',
+        #                            self.utility_dat_files.energy_avail_bau)
         file_path.close()
 
         # export rate
         file_path = open(self.utility_dat_files.path_export_rates, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_export_rates,
-                                   self.utility_dat_files.data_export_rates)
+                                   'ExportRates',
+                                   self.utility_dat_files.export_rates)
         file_path.close()
 
         # export rate base case
         file_path = open(self.utility_dat_files.path_export_rates_base, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_export_rates,
-                                   self.utility_dat_files.data_export_rates_base)
+                                   'ExportRates',
+                                   self.utility_dat_files.export_rates_bau)
         file_path.close()
 
         # lookback months and percent
         file_path = open(self.utility_dat_files.path_lookback, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_lookback_months,
-                                   self.utility_dat_files.data_lookback_months)
+                                   'DemandLookbackMonths',
+                                   self.utility_dat_files.demand_lookback_months)
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_lookback_percent,
-                                   self.utility_dat_files.data_lookback_percent)
+                                   'DemandLookbackPercent',
+                                   self.utility_dat_files.demand_lookback_percent)
         file_path.close()
 
         # timestep ratchets month
         file_path = open(self.utility_dat_files.path_timesteps_month, 'w')
         self.write_list_of_lists(file_path,
-                                   self.utility_dat_files.var_timesteps_month,
-                                   self.utility_dat_files.data_timesteps_month)
+                                 'TimeStepRatchetsMonth',
+                                 self.utility_dat_files.demand_ratchets_monthly)
         file_path.close()
 
         # bins/tiers
         file_path = open(self.utility_dat_files.path_n_tiers, 'w')
         self.write_variable_equals(file_path,
-                                   self.utility_dat_files.var_n_fuel_tiers,
-                                   self.utility_dat_files.data_n_fuel_tiers)
+                                   'FuelBinCount',
+                                   self.utility_dat_files.energy_tiers_num)
         self.write_variable_equals(file_path,
-                                   self.utility_dat_files.var_n_demand_tiers,
-                                   self.utility_dat_files.data_n_demand_tiers)
+                                   'DemandBinCount',
+                                   self.utility_dat_files.demand_tiers_num)
         file_path.close()
 
         # fuel burn rate
         file_path = open(self.utility_dat_files.path_fuel_burn_rate, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_burn_rate,
-                                   self.utility_dat_files.data_fuel_burn_rate)
+                                   'FuelBurnRateM',
+                                   self.utility_dat_files.energy_burn_rate)
         file_path.close()
 
         # fuel burn rate base
         file_path = open(self.utility_dat_files.path_fuel_burn_rate_base, 'w')
         self.write_single_variable(file_path,
-                                   self.utility_dat_files.var_fuel_burn_rate,
-                                   self.utility_dat_files.data_fuel_burn_rate_base)
+                                   'FuelBurnRateM',
+                                   self.utility_dat_files.energy_burn_rate_bau)
         file_path.close()
 
         # summary
@@ -787,13 +749,13 @@ class UrdbParse:
     def write_energy_cost(self, file_path):
 
         with open(file_path, 'wb') as f:
-            for v in self.utility_dat_files.data_fuel_rate_summary:
+            for v in self.utility_dat_files.energy_rates_summary:
                 f.write(str(v)+'\n')
 
     def write_demand_cost(self, file_path):
 
         with open(file_path, 'wb') as f:
-            for v in self.utility_dat_files.data_demand_rate_summary:
+            for v in self.utility_dat_files.demand_rates_summary:
                 f.write(str(v)+'\n')
 
     @staticmethod
