@@ -397,16 +397,9 @@ class DatLibrary:
         utility_name = alphanum(urdb_rate['utility'])
         rate_name = alphanum(urdb_rate['name'])
 
-        base_folder = os.path.join(self.path_utility, utility_name)
-
-        if os.path.exists(base_folder):
-            shutil.rmtree(base_folder)
-
-        for f in [self.path_utility, base_folder]:
-            os.mkdir(f)
+        os.mkdir(self.path_utility)
 
         check_directory_created(self.path_utility)
-        check_directory_created(base_folder)
         check_directory_created(self.path_utility)
 
         with open(os.path.join(self.path_utility, 'utility_name.txt'), 'w') as outfile:
