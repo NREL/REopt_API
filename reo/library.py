@@ -28,10 +28,6 @@ class DatLibrary:
     xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1
 
-    def get_egg(self):
-        wd = os.getcwd()
-        return wd
-
     def inputs(self, **args):
         return inputs(**args)
 
@@ -57,12 +53,11 @@ class DatLibrary:
 
         # calculated values
         self.run_input_id = run_input_id
-        self.path_egg = self.get_egg()
+        self.path_egg = os.getcwd()
 
         self.path_templates = os.path.join(self.path_egg, "reo", "templates")
         self.path_xpress = os.path.join(self.path_egg, "Xpress")
 
-        self.path_dat_library = os.path.join(self.path_xpress, "DatLibrary")
         self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
         self.path_files_to_download = os.path.join(self.path_xpress, "Downloads")
 
@@ -278,8 +273,8 @@ class DatLibrary:
 
         outline.replace('\n', '')
 
-        cmd = r"mosel %s '%s' %s OutputDir='%s' DatLibraryPath='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, xpress_model_path, outline, path_output, self.path_dat_library, self.path_run_inputs, base_string)
+        cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
+                 % (header, xpress_model_path, outline, path_output, self.path_run_inputs, base_string)
 
         log("DEBUG", "Returning Process Command " + cmd)
 
