@@ -11,10 +11,13 @@ class ElecTariff(object):
                  **kwargs):
 
         self.run_id = run_id
+        self.wholesale_rate = wholesale_rate
+        self.time_steps_per_hour = time_steps_per_hour
+        self.load_year = load_year
 
-        net_metering = False
+        self.net_metering = False
         if net_metering_limit > 0:
-            net_metering = True
+            self.net_metering = True
 
         if urdb_rate is not None:
             log("INFO", "Parsing URDB rate")
@@ -27,11 +30,6 @@ class ElecTariff(object):
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
         self.urdb_rate = urdb_rate
-
-        parser = UrdbParse(urdb_rate=urdb_rate, paths=paths, year=load_year,
-                           time_steps_per_hour=time_steps_per_hour,
-                           net_metering=net_metering, wholesale_rate=wholesale_rate)
-        self.reopt_args = parser.parse_rate(self.utility_name, self.rate_name)
 
         DatFileManager().add_elec_tariff(self)
 

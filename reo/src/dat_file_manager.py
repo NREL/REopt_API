@@ -1,5 +1,6 @@
 import os
 import copy
+from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
 
@@ -202,10 +203,16 @@ class DatFileManager:
 
         with open(os.path.join(self.paths.utility, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(elec_tariff.rate_name).replace(' ', '_'))
+
+        parser = UrdbParse(urdb_rate=elec_tariff.urdb_rate, paths=self.paths, year=elec_tariff.load_year, 
+                           big_number=big_number,  time_steps_per_hour=elec_tariff.time_steps_per_hour,
+                           net_metering=elec_tariff.net_metering, wholesale_rate=elec_tariff.wholesale_rate)
         
-        # self.command_line_args.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
-        # self.command_line_args.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
-        # self.command_line_args.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))
+        self.tariff_args = parser.parse_rate(elec_tariff.utility_name, elec_tariff.rate_name)
+
+        DatFileManager.command_line_args.append('NumRatchets=' + str(self.tariff_args.demand_num_ratchets))
+        DatFileManager.command_line_args.append('FuelBinCount=' + str(self.tariff_args.energy_tiers_num))
+        DatFileManager.command_line_args.append('DemandBinCount=' + str(self.tariff_args.demand_tiers_num))
             
     def _get_REopt_pwfs(self, techs):
 
@@ -532,10 +539,7 @@ class DatFileManager:
                         x = big_number
                     cap_cost_x.append(x)
 
-        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
-        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments))
-
-        return cap_cost_slope, cap_cost_x, cap_cost_yint
+        return cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -661,14 +665,6 @@ class DatFileManager:
 
         return max_sizes
 
-    def _get_REopt_elec_tariff(self, techs):
-        """
-        uses UrdbParse to convert urdb_rate into dat files for REopt
-        :param techs:
-        :return:
-        """
-        pass
-
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -705,8 +701,10 @@ class DatFileManager:
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
         
-        cap_cost_slope, cap_cost_x, cap_cost_yint = self._get_REopt_cost_curve(self.available_techs)
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau = self._get_REopt_cost_curve(self.bau_techs)
+        cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments = self._get_REopt_cost_curve(self.available_techs)
+        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        # DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,
@@ -814,24 +812,24 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
 
         # elec_tariff args
-        er = self.elec_tariff.reopt_args
-        write_to_dat(self.file_demand_rates_monthly, er.demand_rates_monthly, 'DemandRatesMonth')
-        write_to_dat(self.file_demand_rates, er.demand_rates_tou, 'DemandRates')
-        # write_to_dat(self.file_demand_rates, er.demand_min, 'MinDemand', 'a')  # not used in REopt
-        write_to_dat(self.file_demand_periods, er.demand_ratchets_tou, 'TimeStepRatchets')
-        write_to_dat(self.file_demand_num_ratchets, er.demand_num_ratchets, 'NumRatchets')
-        write_to_dat(self.file_max_in_tiers, er.demand_max_in_tiers, 'MaxDemandInTier')
-        write_to_dat(self.file_max_in_tiers, er.energy_max_in_tiers, 'MaxUsageInTier', 'a')
-        write_to_dat(self.file_energy_rates, er.energy_rates, 'FuelRate')
-        # write_to_dat(self.file_energy_rates, er.energy_avail, 'FuelAvail', 'a')  # not used in REopt
-        write_to_dat(self.file_energy_rates_bau, er.energy_rates_bau, 'FuelRate')
-        # write_to_dat(self.file_energy_rates_bau, er.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
-        write_to_dat(self.file_export_rates, er.export_rates, 'ExportRates')
-        write_to_dat(self.file_export_rates_bau, er.export_rates_bau, 'ExportRates')
-        write_to_dat(self.file_demand_lookback, er.demand_lookback_months, 'DemandLookbackMonths')
-        write_to_dat(self.file_demand_lookback, er.demand_lookback_percent, 'DemandLookbackPercent', 'a')
-        write_to_dat(self.file_demand_ratchets_monthly, er.demand_ratchets_monthly, 'TimeStepRatchetsMonth')
-        write_to_dat(self.file_energy_tiers_num, er.energy_tiers_num, 'FuelBinCount')
-        write_to_dat(self.file_energy_tiers_num, er.demand_tiers_num, 'DemandBinCount', 'a')
-        write_to_dat(self.file_energy_burn_rate, er.energy_burn_rate, 'FuelBurnRateM')
-        write_to_dat(self.file_energy_burn_rate_bau, er.energy_burn_rate_bau, 'FuelBurnRateM')
+        ta = self.tariff_args
+        write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
+        write_to_dat(self.file_demand_rates, ta.demand_rates_tou, 'DemandRates')
+        # write_to_dat(self.file_demand_rates, ta.demand_min, 'MinDemand', 'a')  # not used in REopt
+        write_to_dat(self.file_demand_periods, ta.demand_ratchets_tou, 'TimeStepRatchets')
+        write_to_dat(self.file_demand_num_ratchets, ta.demand_num_ratchets, 'NumRatchets')
+        write_to_dat(self.file_max_in_tiers, ta.demand_max_in_tiers, 'MaxDemandInTier')
+        write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
+        write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
+        # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')
+        # write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_export_rates, ta.export_rates, 'ExportRates')
+        write_to_dat(self.file_export_rates_bau, ta.export_rates_bau, 'ExportRates')
+        write_to_dat(self.file_demand_lookback, ta.demand_lookback_months, 'DemandLookbackMonths')
+        write_to_dat(self.file_demand_lookback, ta.demand_lookback_percent, 'DemandLookbackPercent', 'a')
+        write_to_dat(self.file_demand_ratchets_monthly, ta.demand_ratchets_monthly, 'TimeStepRatchetsMonth')
+        write_to_dat(self.file_energy_tiers_num, ta.energy_tiers_num, 'FuelBinCount')
+        write_to_dat(self.file_energy_tiers_num, ta.demand_tiers_num, 'DemandBinCount', 'a')
+        write_to_dat(self.file_energy_burn_rate, ta.energy_burn_rate, 'FuelBurnRateM')
+        write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_rate_bau, 'FuelBurnRateM')

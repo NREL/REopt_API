@@ -260,6 +260,11 @@ class DatLibrary:
 
         # Command line constants and Dat file overrides
         outline = ''
+
+        # hack for partial port of command line args to DFM
+        for line in self.dfm.command_line_args:
+            self.command_line_constants.append(line)
+
         for constant in self.command_line_constants:
             outline = ' '.join([outline, constant.strip('\n')])
 
@@ -334,7 +339,7 @@ class DatLibrary:
         self.batt_macrs_itc_reduction = 0.5
 
         # add CapCostSegCount to command line args, this functionality will move to REopt class (using DFM)
-        self.command_line_constants.append(str(self.dfm.command_line_args[0]))  # only one so far
+        # self.command_line_constants.append(str(self.dfm.command_line_args[0]))  # only one so far
         # self.command_line_constants_bau.append(str(self.dfm.command_line_args_bau[0]))  # only one so far
 
     # DAT3 & DAT4 LoadSize, LoadProfile
@@ -362,6 +367,6 @@ class DatLibrary:
         self.rate_name = elec_tariff.rate_name
 
         # command line constants will move to REopt class (using DFM)
-        self.command_line_constants.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
-        self.command_line_constants.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
-        self.command_line_constants.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))
+        # self.command_line_constants.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
+        # self.command_line_constants.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
+        # self.command_line_constants.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))

@@ -3,7 +3,6 @@ import operator
 import calendar
 import numpy
 from reo.log_levels import log
-from reo.src.dat_file_manager import big_number
 
 
 class REoptArgs:
@@ -13,7 +12,7 @@ class REoptArgs:
     Tech = ['PV', 'PVNM', 'UTIL1']
     Load = ['1R', '1W', '1X', '1S']
 
-    def __init__(self):
+    def __init__(self, big_number):
 
         # these vars are passed to DFM as REopt params, written to dats
         self.demand_rates_monthly = 12 * [0]
@@ -97,11 +96,15 @@ class RateData:
 
 
 class UrdbParse:
+    """
+    Sub-function of DatFileManager.
+    Makes all REopt args for dat files in Inputs/Utility directory
+    """
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
-    def __init__(self, urdb_rate, paths, year, time_steps_per_hour=1,
+    def __init__(self, urdb_rate, paths, year,  big_number, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
 
         log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
@@ -113,7 +116,8 @@ class UrdbParse:
         self.wholesale_rate = wholesale_rate
         self.excess_rate = excess_rate
         self.max_demand_rate = 0
-        self.reopt_args = REoptArgs()
+        self.big_number = big_number
+        self.reopt_args = REoptArgs(big_number)
 
         self.file_summary = os.path.join(paths.utility, 'Summary.csv')
         self.file_energy_summary = os.path.join(paths.outputs, "energy_cost.txt")
@@ -148,7 +152,7 @@ class UrdbParse:
         self.prepare_energy_costs(current_rate)
         self.prepare_techs_and_loads_basecase()
         self.prepare_techs_and_loads()
-        self.write_dat_files()
+        self.write_files()
         
         return self.reopt_args
 
@@ -219,7 +223,7 @@ class UrdbParse:
         self.reopt_args.energy_max_in_tiers = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
-            energy_tier_max = big_number
+            energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
                 energy_tier_max = energy_tier['max']
@@ -238,7 +242,7 @@ class UrdbParse:
             rate_average = float(sum(rates)) / max(len(rates), 1)
             self.reopt_args.energy_tiers_num = 1
             self.reopt_args.energy_max_in_tiers = []
-            self.reopt_args.energy_max_in_tiers.append(big_number)
+            self.reopt_args.energy_max_in_tiers.append(self.big_number)
             log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
         for tier in range(0, self.reopt_args.energy_tiers_num): # for each tier
@@ -288,7 +292,7 @@ class UrdbParse:
         # Extract 8760 before modified, NOTE: must be rounded to the same decimal places as energy_costs for zero NPV with no Tech
         self.reopt_args.energy_rates_bau = [round(x,5) for x in self.reopt_args.energy_rates]
 
-        self.reopt_args.energy_avail_bau = [big_number]
+        self.reopt_args.energy_avail_bau = [self.big_number]
 
         # Build base case export rate
         tmp_list = []
@@ -319,7 +323,7 @@ class UrdbParse:
                 self.reopt_args.energy_rates = operator.add(self.reopt_args.energy_rates, zero_array)
                 self.reopt_args.energy_avail.append(0)
         self.reopt_args.energy_rates += energy_costs
-        self.reopt_args.energy_avail.append(big_number)
+        self.reopt_args.energy_avail.append(self.big_number)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -405,7 +409,7 @@ class UrdbParse:
                 demand_max = []
                 for tier in range(n_tiers):
                     demand_tier = current_rate.demandratestructure[period][tier]
-                    demand_tier_max = big_number
+                    demand_tier_max = self.big_number
                     if 'max' in demand_tier:
                         demand_tier_max = demand_tier['max']
                     demand_max.append(demand_tier_max)
@@ -502,7 +506,7 @@ class UrdbParse:
         self.reopt_args.demand_rates_tou = demand_rates
         self.reopt_args.demand_num_ratchets = len(demand_periods)
 
-    def write_dat_files(self):
+    def write_files(self):
 
         # summary
         file_path = open(self.file_summary, 'w')
