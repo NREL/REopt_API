@@ -7,11 +7,6 @@ from reo.log_levels import log
 
 class REoptArgs:
 
-    # fixed data
-    TechBase = ['UTIL1']
-    Tech = ['PV', 'PVNM', 'UTIL1']
-    Load = ['1R', '1W', '1X', '1S']
-
     def __init__(self, big_number):
 
         # these vars are passed to DFM as REopt params, written to dats
@@ -104,20 +99,22 @@ class UrdbParse:
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
-    def __init__(self, urdb_rate, paths, year,  big_number, time_steps_per_hour=1,
-                 net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
+    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0):
 
-        log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
-
-        self.urdb_rate = urdb_rate
-        self.year = year
-        self.time_steps_per_hour = time_steps_per_hour
-        self.net_metering = net_metering
-        self.wholesale_rate = wholesale_rate
+        self.urdb_rate = elec_tariff.urdb_rate
+        self.year = elec_tariff.load_year
+        self.time_steps_per_hour = elec_tariff.time_steps_per_hour
+        self.net_metering = elec_tariff.net_metering
+        self.wholesale_rate = elec_tariff.wholesale_rate
         self.excess_rate = excess_rate
         self.max_demand_rate = 0
         self.big_number = big_number
         self.reopt_args = REoptArgs(big_number)
+        self.techs = techs
+        self.bau_techs = bau_techs
+        self.loads = loads
+
+        log("INFO", "URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
         self.file_summary = os.path.join(paths.utility, 'Summary.csv')
         self.file_energy_summary = os.path.join(paths.outputs, "energy_cost.txt")
@@ -296,8 +293,8 @@ class UrdbParse:
 
         # Build base case export rate
         tmp_list = []
-        for tech in self.reopt_args.TechBase:
-            for load in self.reopt_args.Load:
+        for tech in self.bau_techs:
+            for load in self.loads:
                 tmp_list = operator.add(tmp_list, zero_array)
 
         self.reopt_args.export_rates_bau = tmp_list
@@ -318,7 +315,7 @@ class UrdbParse:
         # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         self.reopt_args.energy_rates = []
 
-        for i in range(0, len(self.reopt_args.Tech) - 1):
+        for i in range(len(self.techs) - 1):
             for _ in range(self.reopt_args.energy_tiers_num):
                 self.reopt_args.energy_rates = operator.add(self.reopt_args.energy_rates, zero_array)
                 self.reopt_args.energy_avail.append(0)
@@ -328,15 +325,16 @@ class UrdbParse:
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         tmp_list = []
-        for tech in self.reopt_args.Tech:
-            for load in self.reopt_args.Load:
-                if tech is 'PV':
-                    if load is '1W':
+        for tech in self.techs:
+            for load in self.loads:
+                if tech.lower() != 'util' and not tech.lower().endswith('nm'):
+                    # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
+                    if load == 'wholesale':
                         if self.net_metering:
                             tmp_list = operator.add(tmp_list, negative_energy_costs)
                         else:
                             tmp_list = operator.add(tmp_list, negative_wholesale_rate_costs)
-                    elif load is '1X':
+                    elif load == 'export':
                         tmp_list = operator.add(tmp_list, negative_excess_rate_costs)
                     else:
                         tmp_list = operator.add(tmp_list, zero_array)
@@ -347,15 +345,23 @@ class UrdbParse:
 
         #FuelBurnRateM = array(Tech,Load,FuelBin)
         FuelBurnRateM = []
-        FuelBurnRateMBase = []
-        for tech in self.reopt_args.Tech:
-            for load in self.reopt_args.Load:
+        for tech in self.techs:
+            for load in self.loads:
                 for _ in range(self.reopt_args.energy_tiers_num):
-                    if tech is 'UTIL1':
+                    if tech.lower() == 'util':
                         FuelBurnRateM.append(1)
-                        FuelBurnRateMBase.append(1)
                     else:
                         FuelBurnRateM.append(0)
+
+        FuelBurnRateMBase = []
+        for tech in self.bau_techs:
+            for load in self.loads:
+                for _ in range(self.reopt_args.energy_tiers_num):
+                    if tech.lower() == 'util':
+                        FuelBurnRateMBase.append(1)
+                    else:
+                        FuelBurnRateMBase.append(0)
+                        
         self.reopt_args.energy_burn_rate = FuelBurnRateM
         self.reopt_args.energy_burn_rate_bau = FuelBurnRateMBase
 

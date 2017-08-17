@@ -203,16 +203,6 @@ class DatFileManager:
 
         with open(os.path.join(self.paths.utility, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(elec_tariff.rate_name).replace(' ', '_'))
-
-        parser = UrdbParse(urdb_rate=elec_tariff.urdb_rate, paths=self.paths, year=elec_tariff.load_year, 
-                           big_number=big_number,  time_steps_per_hour=elec_tariff.time_steps_per_hour,
-                           net_metering=elec_tariff.net_metering, wholesale_rate=elec_tariff.wholesale_rate)
-        
-        self.tariff_args = parser.parse_rate(elec_tariff.utility_name, elec_tariff.rate_name)
-
-        DatFileManager.command_line_args.append('NumRatchets=' + str(self.tariff_args.demand_num_ratchets))
-        DatFileManager.command_line_args.append('FuelBinCount=' + str(self.tariff_args.energy_tiers_num))
-        DatFileManager.command_line_args.append('DemandBinCount=' + str(self.tariff_args.demand_tiers_num))
             
     def _get_REopt_pwfs(self, techs):
 
@@ -811,8 +801,19 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
 
+        parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
+                           techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
+                           bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
+                           loads=self.available_loads)
+
+        tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
+
+        DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+
         # elec_tariff args
-        ta = self.tariff_args
+        ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
         write_to_dat(self.file_demand_rates, ta.demand_rates_tou, 'DemandRates')
         # write_to_dat(self.file_demand_rates, ta.demand_min, 'MinDemand', 'a')  # not used in REopt
