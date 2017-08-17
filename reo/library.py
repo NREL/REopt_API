@@ -74,8 +74,8 @@ class DatLibrary:
 
         self.file_output = os.path.join(self.paths.outputs, "REopt_results.json")
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
-        self.file_cmd_input = os.path.join(self.paths.inputs, "cmd.log")
-        self.file_cmd_input_bau = os.path.join(self.paths.inputs, "cmd_bau.log")
+        self.file_cmd = os.path.join(self.paths.inputs, "cmd.log")
+        self.file_cmd_bau = os.path.join(self.paths.inputs, "cmd_bau.log")
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
@@ -191,8 +191,11 @@ class DatLibrary:
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
         self.create_economics()  # see comments in this method
 
-        run_command = self.create_run_command(self.paths.outputs, self.xpress_model, self.dfm.DAT, False)
-        run_command_bau = self.create_run_command(self.paths.outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
+        run_command = self.create_run_command(self.paths.outputs, self.xpress_model, self.dfm.DAT,
+                                              self.dfm.command_line_args, bau_string='', cmd_file=self.file_cmd)
+
+        run_command_bau = self.create_run_command(self.paths.outputs_bau, self.xpress_model, self.dfm.DAT_bau,
+                                                  self.dfm.command_line_args_bau, bau_string='Base', cmd_file=self.file_cmd_bau)
 
         log("INFO", "Initializing Command")
         command = Command(run_command)
@@ -227,15 +230,10 @@ class DatLibrary:
                 od[k] = getattr(self, k)
         return od
 
-    def create_run_command(self, path_output, xpress_model, DATs, base_case):
+    def create_run_command(self, path_output, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
         log("INFO", "Creating output directory: " + path_output)
-
-        # base case
-        base_string = ""
-        if base_case:
-            base_string = "Base"
 
         # RE case
         header = 'exec '
@@ -244,7 +242,7 @@ class DatLibrary:
         # Command line constants and Dat file overrides
         outline = ''
 
-        for constant in self.dfm.command_line_args:
+        for constant in cmd_line_args:
             outline = ' '.join([outline, constant.strip('\n')])
 
         for dat_file in DATs:
@@ -254,18 +252,13 @@ class DatLibrary:
         outline.replace('\n', '')
 
         cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, xpress_model_path, outline, path_output, self.paths.inputs, base_string)
+                 % (header, xpress_model_path, outline, path_output, self.paths.inputs, bau_string)
 
         log("DEBUG", "Returning Process Command " + cmd)
 
         # write a cmd file for easy debugging
-        filename = self.file_cmd_input
-        if base_case:
-            filename = self.file_cmd_input_bau
-
-        f = open(filename, 'w')
-        f.write(cmd)
-        f.close()
+        with open(cmd_file, 'w') as f:
+            f.write(cmd)
 
         return cmd
 

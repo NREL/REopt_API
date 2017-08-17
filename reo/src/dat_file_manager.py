@@ -133,6 +133,7 @@ class DatFileManager:
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
         DatFileManager.command_line_args.append("ScenarioNum=" + str(run_id))
+        DatFileManager.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
@@ -690,7 +691,7 @@ class DatFileManager:
         cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments = self._get_REopt_cost_curve(self.available_techs)
         DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        # DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
+        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,
@@ -808,6 +809,10 @@ class DatFileManager:
         DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+
+        DatFileManager.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        DatFileManager.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        DatFileManager.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
