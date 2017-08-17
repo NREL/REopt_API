@@ -102,7 +102,6 @@ class UtilityDatFiles:
         self.has_demand_tiers = "no"
         self.has_tou_energy = "no"
         self.has_energy_tiers = "no"
-        self.max_demand_rate = 0
 
 
 class RateData:
@@ -183,6 +182,7 @@ class UrdbParse:
         self.net_metering = net_metering
         self.wholesale_rate = wholesale_rate
         self.excess_rate = excess_rate
+        self.max_demand_rate = 0
 
         # Count the leap day
         if calendar.isleap(self.year):
@@ -201,8 +201,7 @@ class UrdbParse:
         log("INFO", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.utility_dats_dir)
         for utility in utilities:
             for rate in rates:
-                rate_dir = os.path.join(self.utility_dats_dir, utility, rate)
-                self.utility_dat_files = UtilityDatFiles(rate_dir, self.outputs_dir, self.outputs_dir_bau)
+                self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
 
                 log("INFO", "Processing: " + utility + ", " + rate)
 
