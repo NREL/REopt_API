@@ -84,10 +84,8 @@ class RateData:
         for k in possible_URDB_keys:
             if k in rate:
                 setattr(self, k, rate.get(k))
-                # exec('self.' + k + ' = rate["' + k + '"]')
             else:
                 setattr(self, k, list())
-                # exec('self.' + k + ' = list()')
 
 
 class UrdbParse:

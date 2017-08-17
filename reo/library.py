@@ -72,7 +72,6 @@ class DatLibrary:
 
         # Command line constants
         self.command_line_constants = list()
-        self.command_line_constants.append("ScenarioNum=" + str(run_input_id))
 
         # calculated values
         self.run_input_id = run_input_id
@@ -261,11 +260,7 @@ class DatLibrary:
         # Command line constants and Dat file overrides
         outline = ''
 
-        # hack for partial port of command line args to DFM
-        for line in self.dfm.command_line_args:
-            self.command_line_constants.append(line)
-
-        for constant in self.command_line_constants:
+        for constant in self.dfm.command_line_args:
             outline = ' '.join([outline, constant.strip('\n')])
 
         for dat_file in DATs:
@@ -338,10 +333,6 @@ class DatLibrary:
         self.pv_macrs_itc_reduction = 0.5
         self.batt_macrs_itc_reduction = 0.5
 
-        # add CapCostSegCount to command line args, this functionality will move to REopt class (using DFM)
-        # self.command_line_constants.append(str(self.dfm.command_line_args[0]))  # only one so far
-        # self.command_line_constants_bau.append(str(self.dfm.command_line_args_bau[0]))  # only one so far
-
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
         """
@@ -365,8 +356,3 @@ class DatLibrary:
         elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
-
-        # command line constants will move to REopt class (using DFM)
-        # self.command_line_constants.append('NumRatchets=' + str(elec_tariff.reopt_args.demand_num_ratchets))
-        # self.command_line_constants.append('FuelBinCount=' + str(elec_tariff.reopt_args.energy_tiers_num))
-        # self.command_line_constants.append('DemandBinCount=' + str(elec_tariff.reopt_args.demand_tiers_num))

@@ -132,6 +132,8 @@ class DatFileManager:
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
+        DatFileManager.command_line_args.append("ScenarioNum=" + str(run_id))
+
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
             return False
@@ -197,12 +199,6 @@ class DatFileManager:
 
     def add_elec_tariff(self, elec_tariff):
         self.elec_tariff = elec_tariff
-        
-        with open(os.path.join(self.paths.utility, 'utility_name.txt'), 'w') as outfile:
-            outfile.write(str(elec_tariff.utility_name).replace(' ', '_'))
-
-        with open(os.path.join(self.paths.utility, 'rate_name.txt'), 'w') as outfile:
-            outfile.write(str(elec_tariff.rate_name).replace(' ', '_'))
             
     def _get_REopt_pwfs(self, techs):
 
@@ -801,6 +797,7 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
 
+        # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
                            bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
@@ -812,7 +809,6 @@ class DatFileManager:
         DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
 
-        # elec_tariff args
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
         write_to_dat(self.file_demand_rates, ta.demand_rates_tou, 'DemandRates')
