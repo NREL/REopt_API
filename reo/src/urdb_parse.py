@@ -15,6 +15,7 @@ class UtilityDatFiles:
 
     def __init__(self, rate_dir, out_dir, out_dir_bau):
 
+        # these paths move to DFM
         self.file_demand_periods = os.path.join(rate_dir, 'TimeStepsDemand.dat')
         self.file_demand_rates = os.path.join(rate_dir, 'DemandRate.dat')
         self.file_demand_rates_monthly = os.path.join(rate_dir, 'DemandRateMonth.dat')
@@ -30,12 +31,7 @@ class UtilityDatFiles:
         self.file_export_rates = os.path.join(rate_dir, 'ExportRates.dat')
         self.file_export_rates_bau = os.path.join(rate_dir, 'ExportRatesBase.dat')
 
-        self.file_summary = os.path.join(rate_dir, 'Summary.csv')
-        self.file_energy_summary = os.path.join(out_dir, "energy_cost.txt")
-        self.file_demand_summary = os.path.join(out_dir, "demand_cost.txt")
-        self.file_energy_summary_bau = os.path.join(out_dir_bau, "energy_cost.txt")
-        self.file_demand_summary_bau = os.path.join(out_dir_bau, "demand_cost.txt")
-
+        # these vars are passed to DFM as REopt params, written to dats
         self.demand_rates_monthly = 12 * [0]
         self.demand_ratchets_monthly = []
         self.demand_rates_tou = []
@@ -56,17 +52,8 @@ class UtilityDatFiles:
         self.energy_burn_rate = []
         self.energy_burn_rate_bau = []
 
-        self.energy_rates_summary = []
-        self.demand_rates_summary = []
-
         self.export_rates = []
         self.export_rates_bau = []
-
-        self.has_fixed_demand = "no"
-        self.has_tou_demand = "no"
-        self.has_demand_tiers = "no"
-        self.has_tou_energy = "no"
-        self.has_energy_tiers = "no"
 
 
 class RateData:
@@ -137,15 +124,26 @@ class UrdbParse:
 
         self.urdb_rate = urdb_rate
         self.year = year
-        self.utility_dats_dir = paths.utility
-        self.outputs_dir = paths.outputs
-        self.outputs_dir_bau = paths.outputs_bau
         self.time_steps_per_hour = time_steps_per_hour
         self.net_metering = net_metering
         self.wholesale_rate = wholesale_rate
         self.excess_rate = excess_rate
         self.max_demand_rate = 0
-        self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
+        self.utility_dat_files = UtilityDatFiles(paths.utility, paths.outputs, paths.outputs_bau)
+
+        self.file_summary = os.path.join(paths.utility, 'Summary.csv')
+        self.file_energy_summary = os.path.join(paths.outputs, "energy_cost.txt")
+        self.file_demand_summary = os.path.join(paths.outputs, "demand_cost.txt")
+        self.file_energy_summary_bau = os.path.join(paths.outputs_bau, "energy_cost.txt")
+        self.file_demand_summary_bau = os.path.join(paths.outputs_bau, "demand_cost.txt")
+        
+        self.energy_rates_summary = []
+        self.demand_rates_summary = []
+        self.has_fixed_demand = "no"
+        self.has_tou_demand = "no"
+        self.has_demand_tiers = "no"
+        self.has_tou_energy = "no"
+        self.has_energy_tiers = "no"
 
         # Count the leap day
         self.is_leap_year = False
@@ -172,21 +170,21 @@ class UrdbParse:
 
         if len(current_rate.energyratestructure) > 0:
             if len(current_rate.energyratestructure[0]) > 1:
-                self.utility_dat_files.has_energy_tiers = "yes"
+                self.has_energy_tiers = "yes"
             # tou energy only if greater than one period
             if len(current_rate.energyratestructure) > 1:
-                self.utility_dat_files.has_tou_energy = "yes"
+                self.has_tou_energy = "yes"
 
         if len(current_rate.demandratestructure) > 0:
             if len(current_rate.demandratestructure[0]) > 1:
-                self.utility_dat_files.has_demand_tiers = "yes"
+                self.has_demand_tiers = "yes"
             if len(current_rate.energyratestructure) > 1:
-                self.utility_dat_files.has_tou_demand = "yes"
+                self.has_tou_demand = "yes"
 
         if len(current_rate.flatdemandstructure) > 0:
-            self.utility_dat_files.has_fixed_demand = "yes"
+            self.has_fixed_demand = "yes"
             if len(current_rate.flatdemandstructure[0]) > 1:
-                self.utility_dat_files.has_demand_tiers = "yes"
+                self.has_demand_tiers = "yes"
 
         max_demand_rate = 0
         for period in current_rate.demandratestructure:
@@ -320,7 +318,7 @@ class UrdbParse:
         energy_costs = [round(cost, 5) for cost in self.utility_dat_files.energy_rates]
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
-        self.utility_dat_files.energy_rates_summary = energy_costs[start_index:len(energy_costs)]
+        self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]
 
         # Assuming ExportRate is the equivalent to the first fuel rate tier:
         negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
@@ -377,7 +375,7 @@ class UrdbParse:
         n_tou = len(current_rate.demandratestructure)
         n_rates = n_flat + n_tou
 
-        self.utility_dat_files.demand_rates_summary = 8760 * self.time_steps_per_hour * [0]
+        self.demand_rates_summary = 8760 * self.time_steps_per_hour * [0]
 
         if n_rates == 0:
             return
@@ -471,7 +469,7 @@ class UrdbParse:
 
     def prepare_demand_rate_summary(self):
         """
-        adds flat demand rate for each timestep to self.utility_dat_files.demand_rates_summary
+        adds flat demand rate for each timestep to self.demand_rates_summary
         (which is full of zeros before this step)
         :return:
         """
@@ -481,7 +479,7 @@ class UrdbParse:
             month_hours = self.get_hours_in_month(month)
 
             for hour in month_hours:
-                self.utility_dat_files.demand_rates_summary[hour] += flat_rate
+                self.demand_rates_summary[hour] += flat_rate
 
     def prepare_tou_demand(self, current_rate):
 
@@ -513,7 +511,7 @@ class UrdbParse:
                         demand_rates.append(tou_rate + tou_adj)
 
                         for step in time_steps:
-                            self.utility_dat_files.demand_rates_summary[step - 1] += tou_rate + tou_adj
+                            self.demand_rates_summary[step - 1] += tou_rate + tou_adj
 
         self.utility_dat_files.demand_ratchets_tou = demand_periods
         self.utility_dat_files.demand_rates_tou = demand_rates
@@ -567,36 +565,36 @@ class UrdbParse:
         write_to_dat(self.utility_dat_files.file_energy_burn_rate_bau, self.utility_dat_files.energy_burn_rate_bau, 'FuelBurnRateM')
 
         # summary
-        file_path = open(self.utility_dat_files.file_summary, 'w')
+        file_path = open(self.file_summary, 'w')
         self.write_summary(file_path)
         file_path.close()
 
         # hourly cost summary
-        self.write_energy_cost(self.utility_dat_files.file_energy_summary)
-        self.write_demand_cost(self.utility_dat_files.file_demand_summary)
-        self.write_energy_cost(self.utility_dat_files.file_energy_summary_bau)
-        self.write_demand_cost(self.utility_dat_files.file_demand_summary_bau)
+        self.write_energy_cost(self.file_energy_summary)
+        self.write_demand_cost(self.file_demand_summary)
+        self.write_energy_cost(self.file_energy_summary_bau)
+        self.write_demand_cost(self.file_demand_summary_bau)
 
     def write_summary(self, file_name):
         file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')
-        file_name.write(self.utility_dat_files.has_fixed_demand + ',' +
-                        self.utility_dat_files.has_tou_demand + ',' +
-                        self.utility_dat_files.has_demand_tiers + ',' +
-                        self.utility_dat_files.has_tou_energy + ',' +
-                        self.utility_dat_files.has_energy_tiers + ',' +
+        file_name.write(self.has_fixed_demand + ',' +
+                        self.has_tou_demand + ',' +
+                        self.has_demand_tiers + ',' +
+                        self.has_tou_energy + ',' +
+                        self.has_energy_tiers + ',' +
                         str(self.max_demand_rate)
                         )
 
     def write_energy_cost(self, file_path):
 
         with open(file_path, 'wb') as f:
-            for v in self.utility_dat_files.energy_rates_summary:
+            for v in self.energy_rates_summary:
                 f.write(str(v)+'\n')
 
     def write_demand_cost(self, file_path):
 
         with open(file_path, 'wb') as f:
-            for v in self.utility_dat_files.demand_rates_summary:
+            for v in self.demand_rates_summary:
                 f.write(str(v)+'\n')
 
     def get_hours_in_month(self, month):

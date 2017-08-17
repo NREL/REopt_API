@@ -44,8 +44,8 @@ class REoptElecTariff(object):
 
 class ElecTariff(REoptElecTariff):
 
-    def __init__(self, run_id, dat_lib, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
-                 load_year,
+    def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
+                 load_year, wholesale_rate, time_steps_per_hour,
                  **kwargs):
 
         self.run_id = run_id
@@ -65,9 +65,9 @@ class ElecTariff(REoptElecTariff):
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
 
-        parser = UrdbParse(urdb_rate=urdb_rate, paths=dat_lib.paths, year=load_year,
-                           time_steps_per_hour=dat_lib.time_steps_per_hour,
-                           net_metering=net_metering, wholesale_rate=dat_lib.wholesale_rate)
+        parser = UrdbParse(urdb_rate=urdb_rate, paths=paths, year=load_year,
+                           time_steps_per_hour=time_steps_per_hour,
+                           net_metering=net_metering, wholesale_rate=wholesale_rate)
         parser.parse_rate(self.utility_name, self.rate_name)
 
         super(ElecTariff, self).__init__(urdb_rate)

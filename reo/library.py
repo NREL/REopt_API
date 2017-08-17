@@ -360,7 +360,7 @@ class DatLibrary:
 
     def create_utility(self):
 
-        elec_tariff = ElecTariff(self.run_input_id, dat_lib=self, **self.inputs_dict)
+        elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict)
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
 
