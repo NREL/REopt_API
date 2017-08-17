@@ -1,4 +1,3 @@
-import json
 import os
 import operator
 import calendar
@@ -155,7 +154,6 @@ class RateData:
     annualmincharge = []
 
 
-
 class UrdbParse:
 
     year = 2018
@@ -192,28 +190,21 @@ class UrdbParse:
             days_elapsed = sum(self.days_in_month[0:month + 1])
             self.last_hour_in_month.append(days_elapsed * 24)
 
-    def parse_all_output(self):
-        for utility in os.listdir(self.utility_dats_dir):
-            for rate in os.listdir(os.path.join(self.utility_dats_dir, utility)):
-                self.parse_specific_rates([utility], [rate])
+    def parse_rate(self, utility, rate):
+        self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
 
-    def parse_specific_rates(self, utilities, rates):
-        log("INFO", "Parsing " + str(len(utilities)) + " rate(s) into: " + self.utility_dats_dir)
-        for utility in utilities:
-            for rate in rates:
-                self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
+        log("INFO", "Processing: " + utility + ", " + rate)
 
-                log("INFO", "Processing: " + utility + ", " + rate)
+        current_rate = self._get_rate_data(self.urdb_rate)
+        self.prepare_summary(current_rate)
+        self.prepare_demand_periods(current_rate)  # makes demand rates too
+        self.prepare_energy_costs(current_rate)
+        self.prepare_techs_and_loads_basecase()
+        self.prepare_techs_and_loads()
+        self.write_dat_files()
 
-                current_rate = self.parse_rate(self.urdb_rate)
-                self.prepare_summary(current_rate)
-                self.prepare_demand_periods(current_rate)
-                self.prepare_energy_costs(current_rate)
-                self.prepare_techs_and_loads_basecase()
-                self.prepare_techs_and_loads()
-                self.write_dat_files()
-
-    def parse_rate(self, rate):
+    @staticmethod
+    def _get_rate_data(rate):
 
         # parse header
         current_rate = RateData()
@@ -607,6 +598,11 @@ class UrdbParse:
                 period += 1
 
     def prepare_demand_rate_summary(self):
+        """
+        adds flat demand rate for each timestep to self.utility_dat_files.data_demand_rate_summary
+        (which is full of zeros before this step)
+        :return:
+        """
 
         for month in range(12):
             flat_rate = self.utility_dat_files.data_demand_flat_rates[month]

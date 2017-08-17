@@ -67,7 +67,7 @@ class ElecTariff(REoptElecTariff):
                            outputs_dir_bau=paths.path_run_outputs_bau, year=load_year,
                            time_steps_per_hour=paths.time_steps_per_hour,
                            net_metering=net_metering, wholesale_rate=paths.wholesale_rate)
-        parser.parse_specific_rates([self.utility_name], [self.rate_name])
+        parser.parse_rate(self.utility_name, self.rate_name)
 
         super(ElecTariff, self).__init__(urdb_rate)
         DatFileManager().add_elec_tariff(self)
