@@ -1,6 +1,6 @@
 import os
 import copy
-from reo.log_levels import log
+# from reo.src.urdb_parse import UrdbParse  # need to pass big_number and paths
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, check_directory_created
 
@@ -11,16 +11,30 @@ squarefeet_to_acre = 2.2957e-5
 def _write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
     if isinstance(var, list):
-        for i in var:
-            f.write(str(i) + "\n")
+        for v in var:
+            if isinstance(v, list):  # elec_tariff contains list of lists
+                f.write('[')
+                for i in v:
+                    f.write(str(i) + ' ')
+                f.write(']\n')
+            else:
+                f.write(str(v) + "\n")
     else:
         f.write(str(var) + "\n")
     f.write("]\n")
 
 
 def write_to_dat(path, var, dat_var, mode='w'):
+    cmd_line_vars = (
+        'DemandBinCount',
+        'FuelBinCount',
+        'NumRatchets',
+    )
     with open(path, mode) as f:
-        _write_var(f, var, dat_var)
+        if var in cmd_line_vars:
+            f.write(dat_var + '=' + str(var) + '\n')
+        else:
+            _write_var(f, var, dat_var)
 
 
 class Singleton(type):
@@ -63,32 +77,32 @@ class DatFileManager:
     command_line_args = list()
     command_line_args_bau = list()
     
-    def __init__(self, run_id, inputs_path, n_timesteps=8760):
+    def __init__(self, run_id, paths, n_timesteps=8760):
         self.run_id = run_id
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
-        rate_dats_path = os.path.join(inputs_path, "Utility")
+        rate_dats_path = os.path.join(paths.inputs, "Utility")
         os.mkdir(rate_dats_path)
         check_directory_created(rate_dats_path)
         self.rate_dats_path = rate_dats_path
         
-        self.file_constant = os.path.join(inputs_path, 'constant_' + file_tail)
-        self.file_constant_bau = os.path.join(inputs_path, 'constant_' + file_tail_bau)
-        self.file_economics = os.path.join(inputs_path, 'economics_' + file_tail)
-        self.file_economics_bau = os.path.join(inputs_path, 'economics_' + file_tail_bau)
-        self.file_load_profile = os.path.join(inputs_path, 'Load8760_' + file_tail)
-        self.file_load_size = os.path.join(inputs_path, 'LoadSize_' + file_tail)
-        self.file_gis = os.path.join(inputs_path, "GIS_" + file_tail)
-        self.file_gis_bau = os.path.join(inputs_path, "GIS_" + file_tail_bau)
-        self.file_storage = os.path.join(inputs_path, 'storage_' + file_tail)
-        self.file_storage_bau = os.path.join(inputs_path, 'storage_' + file_tail_bau)
-        self.file_max_size = os.path.join(inputs_path, 'maxsizes_' + file_tail)
-        self.file_max_size_bau = os.path.join(inputs_path, 'maxsizes_' + file_tail_bau)
+        self.file_constant = os.path.join(paths.inputs, 'constant_' + file_tail)
+        self.file_constant_bau = os.path.join(paths.inputs, 'constant_' + file_tail_bau)
+        self.file_economics = os.path.join(paths.inputs, 'economics_' + file_tail)
+        self.file_economics_bau = os.path.join(paths.inputs, 'economics_' + file_tail_bau)
+        self.file_load_profile = os.path.join(paths.inputs, 'Load8760_' + file_tail)
+        self.file_load_size = os.path.join(paths.inputs, 'LoadSize_' + file_tail)
+        self.file_gis = os.path.join(paths.inputs, "GIS_" + file_tail)
+        self.file_gis_bau = os.path.join(paths.inputs, "GIS_" + file_tail_bau)
+        self.file_storage = os.path.join(paths.inputs, 'storage_' + file_tail)
+        self.file_storage_bau = os.path.join(paths.inputs, 'storage_' + file_tail_bau)
+        self.file_max_size = os.path.join(paths.inputs, 'maxsizes_' + file_tail)
+        self.file_max_size_bau = os.path.join(paths.inputs, 'maxsizes_' + file_tail_bau)
 
-        self.file_NEM = os.path.join(inputs_path, 'NMIL_' + file_tail)
-        self.file_NEM_bau = os.path.join(inputs_path, 'NMIL_' + file_tail_bau)
+        self.file_NEM = os.path.join(paths.inputs, 'NMIL_' + file_tail)
+        self.file_NEM_bau = os.path.join(paths.inputs, 'NMIL_' + file_tail_bau)
         
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
@@ -632,6 +646,14 @@ class DatFileManager:
                 max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
 
         return max_sizes
+
+    def _get_REopt_elec_tariff(self, techs):
+        """
+        uses UrdbParse to convert urdb_rate into dat files for REopt
+        :param techs:
+        :return:
+        """
+        pass
 
     def finalize(self):
         """

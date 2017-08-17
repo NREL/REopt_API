@@ -1,20 +1,51 @@
 # python libraries
 # some libraries are being imported via the 'import *' statements below
 # including at least 'os' and 'json'
-import shutil
 import json
+import shutil
 
-# user defined
 from api_definitions import *
 from reo.src.dat_file_manager import DatFileManager
-from reo.src.techs import PV, Util
-from reo.src.load_profile import LoadProfile
-from reo.src.storage import Storage
-from reo.src.site import Site
 from reo.src.elec_tariff import ElecTariff
+from reo.src.load_profile import LoadProfile
+from reo.src.site import Site
+from reo.src.storage import Storage
+from reo.src.techs import PV, Util
+from reo.src.urdb_parse import *
 from results import Results
-from urdb_parse import *
 from utilities import Command, check_directory_created, is_error
+
+
+class Paths(object):
+    """
+    object for contain project paths. facilitates passing paths to other objects.
+    """
+    def __init__(self, run_uuid, run_input_id):
+        
+        self.egg = os.getcwd()
+        self.templates = os.path.join(self.egg, "Xpress")
+        self.xpress = os.path.join(self.egg, "Xpress")
+
+        self.run = os.path.join(self.xpress, "Run" + str(run_input_id))
+        self.files_to_download = os.path.join(self.xpress, "Downloads")
+
+        self.inputs = os.path.join(self.run, "Inputs")
+        self.outputs = os.path.join(self.run, "Outputs")
+        self.outputs_bau = os.path.join(self.run, "Outputs_bau")
+        self.static_outputs = os.path.join(self.egg, "static", "files", str(run_uuid))
+        self.utility = os.path.join(self.inputs, "Utility")
+
+        if os.path.exists(self.run):
+            shutil.rmtree(self.run)
+
+        for f in [self.run, self.inputs, self.outputs, self.outputs_bau,
+                  self.static_outputs]:
+            os.mkdir(f)
+
+        check_directory_created(self.run)
+        check_directory_created(self.inputs)
+        check_directory_created(self.outputs)
+        check_directory_created(self.outputs_bau)
 
 
 class DatLibrary:
@@ -43,7 +74,7 @@ class DatLibrary:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
-
+        self.paths = Paths(run_uuid, run_input_id)
         self.timed_out = False  # is this used?
         self.net_metering = False
 
@@ -53,38 +84,11 @@ class DatLibrary:
 
         # calculated values
         self.run_input_id = run_input_id
-        self.path_egg = os.getcwd()
 
-        self.path_templates = os.path.join(self.path_egg, "reo", "templates")
-        self.path_xpress = os.path.join(self.path_egg, "Xpress")
-
-        self.path_run = os.path.join(self.path_xpress, "Run" + str(self.run_input_id))
-        self.path_files_to_download = os.path.join(self.path_xpress, "Downloads")
-
-        self.path_run_inputs = os.path.join(self.path_run, "Inputs")
-        self.path_run_outputs = os.path.join(self.path_run, "Outputs")
-        self.path_run_outputs_bau = os.path.join(self.path_run, "Outputs_bau")
-        self.path_static_outputs = os.path.join(self.path_egg, "static", "files", str(run_uuid))
-
-        if os.path.exists(self.path_run):
-            shutil.rmtree(self.path_run)
-
-        for f in [self.path_run, self.path_run_inputs, self.path_run_outputs, self.path_run_outputs_bau,
-                  self.path_static_outputs]:
-            os.mkdir(f)
-
-        check_directory_created(self.path_run)
-        check_directory_created(self.path_run_inputs)
-        check_directory_created(self.path_run_outputs)
-        check_directory_created(self.path_run_outputs_bau)
-
-        self.file_output = os.path.join(self.path_run_outputs, "REopt_results.json")
-
-        self.file_post_input = os.path.join(self.path_run_inputs, "POST.json")
-        self.file_cmd_input = os.path.join(self.path_run_inputs, "cmd.log")
-        self.file_cmd_input_bau = os.path.join(self.path_run_inputs, "cmd_bau.log")
-
-        self.path_utility = os.path.join(self.path_run_inputs, "Utility")
+        self.file_output = os.path.join(self.paths.outputs, "REopt_results.json")
+        self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
+        self.file_cmd_input = os.path.join(self.paths.inputs, "cmd.log")
+        self.file_cmd_input_bau = os.path.join(self.paths.inputs, "cmd_bau.log")
 
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
@@ -109,7 +113,7 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
-        self.dfm = DatFileManager(run_id=self.run_input_id, inputs_path=self.path_run_inputs,
+        self.dfm = DatFileManager(run_id=self.run_input_id, paths=self.paths,
                                   n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
 
     def log_post(self, json_POST):
@@ -117,16 +121,16 @@ class DatLibrary:
             json.dump(json_POST, file_post)
 
     def get_path_run(self):
-        return self.path_run
+        return self.paths.run
 
     def get_path_run_inputs(self):
-        return self.path_run_inputs
+        return self.paths.inputs
 
     def get_path_run_outputs(self):
-        return self.path_run_outputs
+        return self.paths.outputs
 
     def get_path_run_outputs_bau(self):
-        return self.path_run_outputs_bau
+        return self.paths.outputs_bau
 
     def update_types(self):
         for group in [self.inputs(full_list=True), self.outputs()]:
@@ -212,8 +216,8 @@ class DatLibrary:
         self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
         self.create_economics()  # see comments in this method
 
-        run_command = self.create_run_command(self.path_run_outputs, self.xpress_model, self.dfm.DAT, False)
-        run_command_bau = self.create_run_command(self.path_run_outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
+        run_command = self.create_run_command(self.paths.outputs, self.xpress_model, self.dfm.DAT, False)
+        run_command_bau = self.create_run_command(self.paths.outputs_bau, self.xpress_model, self.dfm.DAT_bau, True)
 
         log("INFO", "Initializing Command")
         command = Command(run_command)
@@ -260,7 +264,7 @@ class DatLibrary:
 
         # RE case
         header = 'exec '
-        xpress_model_path = os.path.join(self.path_xpress, xpress_model)
+        xpress_model_path = os.path.join(self.paths.xpress, xpress_model)
 
         # Command line constants and Dat file overrides
         outline = ''
@@ -274,7 +278,7 @@ class DatLibrary:
         outline.replace('\n', '')
 
         cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, xpress_model_path, outline, path_output, self.path_run_inputs, base_string)
+                 % (header, xpress_model_path, outline, path_output, self.paths.inputs, base_string)
 
         log("DEBUG", "Returning Process Command " + cmd)
 
@@ -292,8 +296,8 @@ class DatLibrary:
     def parse_run_outputs(self):
        
         if os.path.exists(self.file_output):
-            process_results = Results(self.path_templates, self.path_run_outputs, self.path_run_outputs_bau,
-                                      self.path_static_outputs, self.load_year)
+            process_results = Results(self.paths.templates, self.paths.outputs, self.paths.outputs_bau,
+                                      self.paths.static_outputs, self.load_year)
 
             output_dict = process_results.get_output()
             output_dict['run_input_id'] = self.run_input_id
@@ -313,8 +317,8 @@ class DatLibrary:
     def cleanup(self):
         # do not call until alternate means of accessing data is developed!
         if not self.debug:
-            log("INFO", "Cleaning up folders from: " + self.path_run)
-            shutil.rmtree(self.path_run)
+            log("INFO", "Cleaning up folders from: " + self.paths.run)
+            shutil.rmtree(self.paths.run)
 
    # BAU files
 
@@ -361,16 +365,16 @@ class DatLibrary:
 
     def create_utility(self):
 
-        elec_tariff = ElecTariff(self.run_input_id, paths=self, **self.inputs_dict)
+        elec_tariff = ElecTariff(self.run_input_id, dat_lib=self, **self.inputs_dict)
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
 
         if self.utility_name is not None and self.rate_name is not None:
 
-            with open(os.path.join(self.path_utility, "NumRatchets.dat"), 'r') as f:
+            with open(os.path.join(self.paths.utility, "NumRatchets.dat"), 'r') as f:
                 num_ratchets = str(f.readline())
 
-            with open(os.path.join(self.path_utility, "bins.dat"), 'r') as f:
+            with open(os.path.join(self.paths.utility, "bins.dat"), 'r') as f:
                 fuel_bin_count = str(f.readline())
                 demand_bin_count = str(f.readline())
 

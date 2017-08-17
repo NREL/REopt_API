@@ -1,8 +1,10 @@
 import re
 from collections import namedtuple
+
 from reo.log_levels import log
-from reo.urdb_parse import UrdbParse
 from reo.src.dat_file_manager import DatFileManager
+from reo.src.urdb_parse import UrdbParse
+
 
 class REoptElecTariff(object):
     """
@@ -42,7 +44,7 @@ class REoptElecTariff(object):
 
 class ElecTariff(REoptElecTariff):
 
-    def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
+    def __init__(self, run_id, dat_lib, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
                  load_year,
                  **kwargs):
 
@@ -63,10 +65,10 @@ class ElecTariff(REoptElecTariff):
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
 
-        parser = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=paths.path_utility, outputs_dir=paths.path_run_outputs,
-                           outputs_dir_bau=paths.path_run_outputs_bau, year=load_year,
-                           time_steps_per_hour=paths.time_steps_per_hour,
-                           net_metering=net_metering, wholesale_rate=paths.wholesale_rate)
+        parser = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=dat_lib.paths.utility, outputs_dir=dat_lib.paths.outputs,
+                           outputs_dir_bau=dat_lib.paths.outputs_bau, year=load_year,
+                           time_steps_per_hour=dat_lib.time_steps_per_hour,
+                           net_metering=net_metering, wholesale_rate=dat_lib.wholesale_rate)
         parser.parse_rate(self.utility_name, self.rate_name)
 
         super(ElecTariff, self).__init__(urdb_rate)
