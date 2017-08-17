@@ -171,7 +171,7 @@ class DatLibrary:
             setattr(self, k, getattr(site.financials, k))
 
         self.create_loads()
-        self.create_utility()
+        self.create_elec_tariff()
 
         pv = PV(**self.inputs_dict)
         # following 2 lines are necessary for returning the assigned values
@@ -188,8 +188,9 @@ class DatLibrary:
             net_metering_limit=net_metering_limit,
             interconnection_limit=self.inputs_dict.get("interconnection_limit")
         )
-        self.dfm.finalize()  # dfm has an evolving role, this step will most likely become internal to dfm
-        self.create_economics()  # see comments in this method
+        self.dfm.finalize()
+        self.pv_macrs_itc_reduction = 0.5
+        self.batt_macrs_itc_reduction = 0.5
 
         run_command = self.create_run_command(self.paths.outputs, self.xpress_model, self.dfm.DAT,
                                               self.dfm.command_line_args, bau_string='', cmd_file=self.file_cmd)
@@ -290,26 +291,7 @@ class DatLibrary:
             shutil.rmtree(self.paths.run)
 
    # BAU files
-
-    # DAT2 - Economics
-    def create_economics(self):
-        """
-        Economics are now entirely created by DatFileManager.
-
-        The old method for creating economics.dat was setting CapCostSegCount for the BAU case equal to the
-        with-tech case. This did not cause any problems because the with-tech CapCostSegCount has always been greater
-        than or equal to the BAU CapCostSegCount (and Xpress will dynamically build out any arrays that dimension from
-        CapCostSegCount, i.e. `Seg`).  NOT FIXED YET: NEED TO USE command_line_constants_bau
-
-        It appears that the only attributes from the Economics class that are being passed back as outputs are
-        pv_macrs_itc_reduction and batt_macrs_itc_reduction.
-
-        :return:
-        """
-
-        self.pv_macrs_itc_reduction = 0.5
-        self.batt_macrs_itc_reduction = 0.5
-
+        
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
         """
@@ -328,7 +310,7 @@ class DatLibrary:
             ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
             ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
-    def create_utility(self):
+    def create_elec_tariff(self):
 
         elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
