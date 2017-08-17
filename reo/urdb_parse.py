@@ -15,25 +15,26 @@ class UtilityDatFiles:
 
     def __init__(self, rate_dir, out_dir, out_dir_bau):
 
-        self.file_energy_rates = os.path.join(rate_dir, 'FuelCost.dat')
-        self.file_energy_rates_base = os.path.join(rate_dir, 'FuelCostBase.dat')
         self.file_demand_periods = os.path.join(rate_dir, 'TimeStepsDemand.dat')
         self.file_demand_rates = os.path.join(rate_dir, 'DemandRate.dat')
         self.file_demand_rates_monthly = os.path.join(rate_dir, 'DemandRateMonth.dat')
-        self.file_utility_tiers = os.path.join(rate_dir, 'UtilityTiers.dat')
-        self.file_num_ratchets = os.path.join(rate_dir, 'NumRatchets.dat')
+        self.file_demand_ratchets_monthly = os.path.join(rate_dir, 'TimeStepsDemandMonth.dat')
+        self.file_demand_max_in_tiers = os.path.join(rate_dir, 'UtilityTiers.dat')
+        self.file_demand_lookback = os.path.join(rate_dir, 'LookbackMonthsAndPercent.dat')
+        self.file_demand_num_ratchets_tou = os.path.join(rate_dir, 'NumRatchets.dat')
+        self.file_energy_rates = os.path.join(rate_dir, 'FuelCost.dat')
+        self.file_energy_rates_base = os.path.join(rate_dir, 'FuelCostBase.dat')
+        self.file_energy_tiers_num = os.path.join(rate_dir, 'bins.dat')
+        self.file_energy_burn_rate = os.path.join(rate_dir, 'FuelBurnRate.dat')
+        self.file_energy_burn_rate_base = os.path.join(rate_dir, 'FuelBurnRateBase.dat')
         self.file_export_rates = os.path.join(rate_dir, 'ExportRates.dat')
         self.file_export_rates_base = os.path.join(rate_dir, 'ExportRatesBase.dat')
-        self.file_lookback = os.path.join(rate_dir, 'LookbackMonthsAndPercent.dat')
-        self.file_timesteps_month = os.path.join(rate_dir, 'TimeStepsDemandMonth.dat')
-        self.file_n_tiers = os.path.join(rate_dir, 'bins.dat')
-        self.file_fuel_burn_rate = os.path.join(rate_dir, 'FuelBurnRate.dat')
-        self.file_fuel_burn_rate_base = os.path.join(rate_dir, 'FuelBurnRateBase.dat')
+
         self.file_summary = os.path.join(rate_dir, 'Summary.csv')
-        self.file_energy_cost = os.path.join(out_dir, "energy_cost.txt")
-        self.file_demand_cost = os.path.join(out_dir, "demand_cost.txt")
-        self.file_energy_cost_bau = os.path.join(out_dir_bau, "energy_cost.txt")
-        self.file_demand_cost_bau = os.path.join(out_dir_bau, "demand_cost.txt")
+        self.file_energy_summary = os.path.join(out_dir, "energy_cost.txt")
+        self.file_demand_summary = os.path.join(out_dir, "demand_cost.txt")
+        self.file_energy_summary_bau = os.path.join(out_dir_bau, "energy_cost.txt")
+        self.file_demand_summary_bau = os.path.join(out_dir_bau, "demand_cost.txt")
 
         self.demand_rates_monthly = 12 * [0]
         self.demand_ratchets_monthly = []
@@ -69,54 +70,57 @@ class UtilityDatFiles:
 
 
 class RateData:
-    # basic header
-    utility = []
-    rate = []
-    sector = []
-    label = []
-    uri = []
-    startdate = []
-    enddate = []
-    description = []
-    usenetmetering = []
-    source = []
+    
+    def __init__(self, rate):
+        
+        possible_URDB_keys = (
+            'utility',
+            'rate',
+            'sector',
+            'label',
+            'uri',
+            'startdate',
+            'enddate',
+            'description',
+            'usenetmetering',
+            'source',
+            # demand charges
+            'peakkwcapacitymin',
+            'peakkwcapacitymax',
+            'peakkwcapacityhistory',
+            'flatdemandunit',
+            'flatdemandstructure',
+            'flatdemandmonths',
+            'demandrateunit',
+            'demandratestructure',
+            'demandweekdayschedule',
+            'demandweekendschedule',
+            'demandratchetpercentage',
+            'demandwindow',
+            'demandreactivepowercharge',
+            # coincident rates
+            'coincidentrateunit',
+            'coincidentratestructure',
+            'coincidentrateschedule',
+            # energy charges
+            'peakkwhusagemin',
+            'peakkwhusagemax',
+            'peakkwhusagehistory',
+            'energyratestructure',
+            'energyweekdayschedule',
+            'energyweekendschedule',
+            'energycomments',
+            # other charges
+            'fixedmonthlycharge',
+            'minmonthlycharge',
+            'annualmincharge',
+        )
 
-    # demand charges
-    peakkwcapacitymin = []
-    peakkwcapacitymax = []
-    peakkwcapacityhistory = []
-
-    flatdemandunit = []
-    flatdemandstructure = []
-    flatdemandmonths = []
-
-    demandrateunit = []
-    demandratestructure = []
-    demandweekdayschedule = []
-    demandweekendschedule = []
-    demandratchetpercentage = []
-    demandwindow = []
-    demandreactivepowercharge = []
-
-    # coincident rates
-    coincidentrateunit = []
-    coincidentratestructure = []
-    coincidentrateschedule = []
-
-    # energy charges
-    peakkwhusagemin = []
-    peakkwhusagemax = []
-    peakkwhusagehistory = []
-
-    energyratestructure = []
-    energyweekdayschedule = []
-    energyweekendschedule = []
-    energycomments = []
-
-    # other charges
-    fixedmonthlycharge = []
-    minmonthlycharge = []
-    annualmincharge = []
+        for k in possible_URDB_keys:
+            if k in rate:
+                exec('self.' + k + ' = rate["' + k + '"]')
+            else:
+                exec('self.' + k + ' = list()')
 
 
 class UrdbParse:
@@ -160,106 +164,13 @@ class UrdbParse:
 
         log("INFO", "Processing: " + utility + ", " + rate)
 
-        current_rate = self._get_rate_data(self.urdb_rate)
+        current_rate = RateData(self.urdb_rate)
         self.prepare_summary(current_rate)
         self.prepare_demand_periods(current_rate)  # makes demand rates too
         self.prepare_energy_costs(current_rate)
         self.prepare_techs_and_loads_basecase()
         self.prepare_techs_and_loads()
         self.write_dat_files()
-
-    @staticmethod
-    def _get_rate_data(rate):
-
-        # parse header
-        current_rate = RateData()
-        current_rate.utility = rate['utility']
-        current_rate.rate = rate['name']
-        current_rate.label = rate['label']
-
-        if 'uri' in rate:
-            current_rate.uri = rate['uri']
-        if 'sector' in rate:
-            current_rate.sector = rate['sector']
-        if ('startdate' in rate):
-            current_rate.startdate = rate['startdate']
-        if ('enddate' in rate):
-            current_rate.enddate = rate['enddate']
-
-        if ('description' in rate):
-            current_rate.description = rate['description']
-
-        if ('source' in rate):
-            current_rate.source = rate['source']
-
-        if ('usenetmetering' in rate):
-            current_rate.usenetmetering = rate['usenetmetering']
-
-        # demand charges
-        if ('peakkwcapacitymin' in rate):
-            current_rate.peakkwcapacitymin = rate['peakkwcapacitymin']
-        if ('peakkwcapacitymax' in rate):
-            current_rate.peakkwcapacitymax = rate['peakkwcapacitymax']
-        if ('peakkwcapacityhistory' in rate):
-            current_rate.peakkwcapacityhistory = rate['peakkwcapacityhistory']
-
-        if ('flatdemandunit' in rate):
-            current_rate.flatdemandunit = rate['flatdemandunit']
-        if ('flatdemandstructure' in rate):
-            current_rate.flatdemandstructure = rate['flatdemandstructure']
-        if ('flatdemandmonths' in rate):
-            current_rate.flatdemandmonths = rate['flatdemandmonths']
-
-        if ('demandrateunit' in rate):
-            current_rate.demandrateunit = rate['demandrateunit']
-        if ('demandratestructure' in rate):
-            current_rate.demandratestructure = rate['demandratestructure']
-        if ('demandweekdayschedule' in rate):
-            current_rate.demandweekdayschedule = rate['demandweekdayschedule']
-        if ('demandweekendschedule' in rate):
-            current_rate.demandweekendschedule = rate['demandweekendschedule']
-        if ('demandratchetpercentage' in rate):
-            current_rate.demandratchetpercentage = rate['demandratchetpercentage']
-        if ('demandwindow' in rate):
-            current_rate.demandwindow = rate['demandwindow']
-        if ('demandreactivepowercharge' in rate):
-            current_rate.demandreactivepowercharge = rate['demandreactivepowercharge']
-
-        # energy charges
-        if ('peakkwhusagemin' in rate):
-            current_rate.peakkwhusagemin = rate['peakkwhusagemin']
-        if ('peakkwhusagemax' in rate):
-            current_rate.peakkwhusagemax = rate['peakkwhusagemax']
-        if ('peakkwhusagehistory' in rate):
-            current_rate.peakkwhusagehistory = rate['peakkwhusagehistory']
-
-        if ('energyratestructure' in rate):
-            current_rate.energyratestructure = rate['energyratestructure']
-        if ('energyweekdayschedule' in rate):
-            current_rate.energyweekdayschedule = rate['energyweekdayschedule']
-        if ('energyweekendschedule' in rate):
-            current_rate.energyweekendschedule = rate['energyweekendschedule']
-
-        if ('energycomments' in rate):
-            current_rate.energycomments = rate['energycomments']
-
-            # coincident rates
-        if ('coincidentrateunit' in rate):
-            current_rate.coincidentrateunit = rate['coincidentrateunit']
-        if ('coincidentratestructure' in rate):
-            current_rate.coincidentratestructure = rate['coincidentratestructure']
-        if ('coincidentrateschedule' in rate):
-            current_rate.coincidentrateschedule = rate['coincidentrateschedule']
-
-        # other charges
-        if ('fixedmonthlycharge' in rate):
-            current_rate.fixedmonthlycharge = rate['fixedmonthlycharge']
-        if ('minmonthlycharge' in rate):
-            current_rate.minmonthlycharge = rate['minmonthlycharge']
-        if ('annualmincharge' in rate):
-            current_rate.annualmincharge = rate['annualmincharge']
-
-        return current_rate
 
     def prepare_summary(self, current_rate):
 
@@ -636,14 +547,14 @@ class UrdbParse:
         file_path.close()
 
         # num ratchets
-        file_path = open(self.utility_dat_files.file_num_ratchets, 'w')
+        file_path = open(self.utility_dat_files.file_demand_num_ratchets_tou, 'w')
         self.write_variable_equals(file_path,
                                    'NumRatchets',
                                    self.utility_dat_files.demand_num_ratchets_tou)
         file_path.close()
 
         # utility tiers
-        file_path = open(self.utility_dat_files.file_utility_tiers, 'w')
+        file_path = open(self.utility_dat_files.file_demand_max_in_tiers, 'w')
         self.write_single_variable(file_path,
                                    'MaxDemandInTier',
                                    self.utility_dat_files.demand_max_in_tiers)
@@ -687,7 +598,7 @@ class UrdbParse:
         file_path.close()
 
         # lookback months and percent
-        file_path = open(self.utility_dat_files.file_lookback, 'w')
+        file_path = open(self.utility_dat_files.file_demand_lookback, 'w')
         self.write_single_variable(file_path,
                                    'DemandLookbackMonths',
                                    self.utility_dat_files.demand_lookback_months)
@@ -697,14 +608,14 @@ class UrdbParse:
         file_path.close()
 
         # timestep ratchets month
-        file_path = open(self.utility_dat_files.file_timesteps_month, 'w')
+        file_path = open(self.utility_dat_files.file_demand_ratchets_monthly, 'w')
         self.write_list_of_lists(file_path,
                                  'TimeStepRatchetsMonth',
                                  self.utility_dat_files.demand_ratchets_monthly)
         file_path.close()
 
         # bins/tiers
-        file_path = open(self.utility_dat_files.file_n_tiers, 'w')
+        file_path = open(self.utility_dat_files.file_energy_tiers_num, 'w')
         self.write_variable_equals(file_path,
                                    'FuelBinCount',
                                    self.utility_dat_files.energy_tiers_num)
@@ -714,14 +625,14 @@ class UrdbParse:
         file_path.close()
 
         # fuel burn rate
-        file_path = open(self.utility_dat_files.file_fuel_burn_rate, 'w')
+        file_path = open(self.utility_dat_files.file_energy_burn_rate, 'w')
         self.write_single_variable(file_path,
                                    'FuelBurnRateM',
                                    self.utility_dat_files.energy_burn_rate)
         file_path.close()
 
         # fuel burn rate base
-        file_path = open(self.utility_dat_files.file_fuel_burn_rate_base, 'w')
+        file_path = open(self.utility_dat_files.file_energy_burn_rate_base, 'w')
         self.write_single_variable(file_path,
                                    'FuelBurnRateM',
                                    self.utility_dat_files.energy_burn_rate_bau)
@@ -733,10 +644,10 @@ class UrdbParse:
         file_path.close()
 
         # hourly cost summary
-        self.write_energy_cost(self.utility_dat_files.file_energy_cost)
-        self.write_demand_cost(self.utility_dat_files.file_demand_cost)
-        self.write_energy_cost(self.utility_dat_files.file_energy_cost_bau)
-        self.write_demand_cost(self.utility_dat_files.file_demand_cost_bau)
+        self.write_energy_cost(self.utility_dat_files.file_energy_summary)
+        self.write_demand_cost(self.utility_dat_files.file_demand_summary)
+        self.write_energy_cost(self.utility_dat_files.file_energy_summary_bau)
+        self.write_demand_cost(self.utility_dat_files.file_demand_summary_bau)
 
     def write_summary(self, file_name):
         file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')
