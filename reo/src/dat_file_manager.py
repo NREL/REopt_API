@@ -2,7 +2,7 @@ import os
 import copy
 from reo.log_levels import log
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, check_directory_created
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
@@ -65,6 +65,11 @@ class DatFileManager:
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
+
+        rate_dats_path = os.path.join(inputs_path, "Utility")
+        os.mkdir(rate_dats_path)
+        check_directory_created(rate_dats_path)
+        self.rate_dats_path = rate_dats_path
         
         self.file_constant = os.path.join(inputs_path, 'constant_' + file_tail)
         self.file_constant_bau = os.path.join(inputs_path, 'constant_' + file_tail_bau)
@@ -78,6 +83,7 @@ class DatFileManager:
         self.file_storage_bau = os.path.join(inputs_path, 'storage_' + file_tail_bau)
         self.file_max_size = os.path.join(inputs_path, 'maxsizes_' + file_tail)
         self.file_max_size_bau = os.path.join(inputs_path, 'maxsizes_' + file_tail_bau)
+
         self.file_NEM = os.path.join(inputs_path, 'NMIL_' + file_tail)
         self.file_NEM_bau = os.path.join(inputs_path, 'NMIL_' + file_tail_bau)
         
@@ -95,6 +101,7 @@ class DatFileManager:
         self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
         self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
+
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
@@ -160,6 +167,14 @@ class DatFileManager:
         write_to_dat(self.file_storage_bau, storage.soc_init, 'InitSOC', mode='a')
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
+
+    def add_utility_rate(self, utility_rate):
+
+        with open(os.path.join(self.rate_dats_path, 'utility_name.txt'), 'w') as outfile:
+            outfile.write(str(utility_rate.utility_name).replace(' ', '_'))
+
+        with open(os.path.join(self.rate_dats_path, 'rate_name.txt'), 'w') as outfile:
+            outfile.write(str(utility_rate.rate_name).replace(' ', '_'))
 
     def _get_REopt_pwfs(self, techs):
 

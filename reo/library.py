@@ -1,7 +1,6 @@
 # python libraries
 # some libraries are being imported via the 'import *' statements below
 # including at least 'os' and 'json'
-import re
 import shutil
 import json
 
@@ -12,13 +11,10 @@ from reo.src.techs import PV, Util
 from reo.src.load_profile import LoadProfile
 from reo.src.storage import Storage
 from reo.src.site import Site
+from reo.src.elec_tariff import ElecTariff
 from results import Results
 from urdb_parse import *
 from utilities import Command, check_directory_created, is_error
-
-
-def alphanum(s):
-    return re.sub(r'\W+', '', s)
 
 
 class DatLibrary:
@@ -394,30 +390,17 @@ class DatLibrary:
 
     def parse_urdb(self, urdb_rate):
 
-        utility_name = alphanum(urdb_rate['utility'])
-        rate_name = alphanum(urdb_rate['name'])
-
-        os.mkdir(self.path_utility)
-
-        check_directory_created(self.path_utility)
-        check_directory_created(self.path_utility)
-
-        with open(os.path.join(self.path_utility, 'utility_name.txt'), 'w') as outfile:
-            outfile.write(str(utility_name).replace(' ', '_'))
-            outfile.close()
-
-        with open(os.path.join(self.path_utility, 'rate_name.txt'), 'w') as outfile:
-            outfile.write(str(rate_name).replace(' ', '_'))
-            outfile.close()
+        utility_rate = ElecTariff(self.run_input_id, **self.inputs_dict)
+        self.dfm.add_utility_rate(utility_rate)
 
         urdb_parse = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=self.path_utility, outputs_dir=self.path_run_outputs,
                                outputs_dir_bau=self.path_run_outputs_bau, year=self.load_year,
                                time_steps_per_hour=self.time_steps_per_hour,
                                net_metering=self.net_metering, wholesale_rate=self.wholesale_rate)
-        urdb_parse.parse_specific_rates([utility_name], [rate_name])
+        urdb_parse.parse_specific_rates([utility_rate.utility_name], [utility_rate.rate_name])
 
-        self.utility_name = utility_name
-        self.rate_name = rate_name
+        self.utility_name = utility_rate.utility_name
+        self.rate_name = utility_rate.rate_name
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):
 
