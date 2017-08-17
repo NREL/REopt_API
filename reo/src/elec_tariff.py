@@ -65,8 +65,7 @@ class ElecTariff(REoptElecTariff):
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
 
-        parser = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=dat_lib.paths.utility, outputs_dir=dat_lib.paths.outputs,
-                           outputs_dir_bau=dat_lib.paths.outputs_bau, year=load_year,
+        parser = UrdbParse(urdb_rate=urdb_rate, paths=dat_lib.paths, year=load_year,
                            time_steps_per_hour=dat_lib.time_steps_per_hour,
                            net_metering=net_metering, wholesale_rate=dat_lib.wholesale_rate)
         parser.parse_rate(self.utility_name, self.rate_name)

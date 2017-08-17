@@ -127,43 +127,37 @@ class RateData:
 
 class UrdbParse:
 
-    year = 2018
-    is_leap_year = False
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    net_metering = False
-    wholesale_rate = 0.0
-    excess_rate = 0.0
     cum_days_in_yr = numpy.cumsum(calendar.mdays)
-    last_hour_in_month = []
-    utility_dat_files = []
 
-    def __init__(self, urdb_rate, utility_dats_dir, outputs_dir, outputs_dir_bau, year, time_steps_per_hour=1,
+    def __init__(self, urdb_rate, paths, year, time_steps_per_hour=1,
                  net_metering=False, wholesale_rate=0.0, excess_rate=0.0):
 
         log("INFO", "URDB parse with year: " + str(year) + " net_metering: " + str(net_metering))
 
         self.urdb_rate = urdb_rate
         self.year = year
-        self.utility_dats_dir = utility_dats_dir
-        self.outputs_dir = outputs_dir
-        self.outputs_dir_bau = outputs_dir_bau
+        self.utility_dats_dir = paths.utility
+        self.outputs_dir = paths.outputs
+        self.outputs_dir_bau = paths.outputs_bau
         self.time_steps_per_hour = time_steps_per_hour
         self.net_metering = net_metering
         self.wholesale_rate = wholesale_rate
         self.excess_rate = excess_rate
         self.max_demand_rate = 0
+        self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
 
         # Count the leap day
+        self.is_leap_year = False
         if calendar.isleap(self.year):
             self.is_leap_year = True
 
+        self.last_hour_in_month = []
         for month in range(0, 12):
             days_elapsed = sum(self.days_in_month[0:month + 1])
             self.last_hour_in_month.append(days_elapsed * 24)
 
     def parse_rate(self, utility, rate):
-        self.utility_dat_files = UtilityDatFiles(self.utility_dats_dir, self.outputs_dir, self.outputs_dir_bau)
-
         log("INFO", "Processing: " + utility + ", " + rate)
 
         current_rate = RateData(self.urdb_rate)
