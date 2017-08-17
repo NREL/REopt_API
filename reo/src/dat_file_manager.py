@@ -31,7 +31,7 @@ def write_to_dat(path, var, dat_var, mode='w'):
         'NumRatchets',
     )
     with open(path, mode) as f:
-        if var in cmd_line_vars:
+        if dat_var in cmd_line_vars:
             f.write(dat_var + '=' + str(var) + '\n')
         else:
             _write_var(f, var, dat_var)
