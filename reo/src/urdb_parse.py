@@ -3,7 +3,7 @@ import operator
 import calendar
 import numpy
 from reo.log_levels import log
-from reo.src.dat_file_manager import big_number, write_to_dat
+from reo.src.dat_file_manager import big_number
 
 
 class REoptArgs:

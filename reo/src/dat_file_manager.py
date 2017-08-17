@@ -1,8 +1,7 @@
 import os
 import copy
-# from reo.src.urdb_parse import UrdbParse  # need to pass big_number and paths
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, check_directory_created
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
@@ -212,7 +211,7 @@ class DatFileManager:
 
         sf = self.site.financials
         pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
-        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal)  # not used in REopt
         pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
         pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
         # pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
@@ -816,52 +815,23 @@ class DatFileManager:
 
         # elec_tariff args
         er = self.elec_tariff.reopt_args
-        # flat demand
-        write_to_dat(self.file_demand_rates_monthly, er.demand_rates_monthly,
-                     'DemandRatesMonth')
-
-        # tou demand (minimum demand and rates
+        write_to_dat(self.file_demand_rates_monthly, er.demand_rates_monthly, 'DemandRatesMonth')
         write_to_dat(self.file_demand_rates, er.demand_rates_tou, 'DemandRates')
         # write_to_dat(self.file_demand_rates, er.demand_min, 'MinDemand', 'a')  # not used in REopt
-
         write_to_dat(self.file_demand_periods, er.demand_ratchets_tou, 'TimeStepRatchets')
-
-        # num ratchets
-        write_to_dat(self.file_demand_num_ratchets, er.demand_num_ratchets,
-                     'NumRatchets')
-
-        # utility tiers
+        write_to_dat(self.file_demand_num_ratchets, er.demand_num_ratchets, 'NumRatchets')
         write_to_dat(self.file_max_in_tiers, er.demand_max_in_tiers, 'MaxDemandInTier')
         write_to_dat(self.file_max_in_tiers, er.energy_max_in_tiers, 'MaxUsageInTier', 'a')
-
-        # fuel rate
         write_to_dat(self.file_energy_rates, er.energy_rates, 'FuelRate')
         # write_to_dat(self.file_energy_rates, er.energy_avail, 'FuelAvail', 'a')  # not used in REopt
-
-        # fuel rate base case
         write_to_dat(self.file_energy_rates_bau, er.energy_rates_bau, 'FuelRate')
         # write_to_dat(self.file_energy_rates_bau, er.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
-
-        # export rate
         write_to_dat(self.file_export_rates, er.export_rates, 'ExportRates')
         write_to_dat(self.file_export_rates_bau, er.export_rates_bau, 'ExportRates')
-
-        # lookback months and percent
-        write_to_dat(self.file_demand_lookback, er.demand_lookback_months,
-                     'DemandLookbackMonths')
-        write_to_dat(self.file_demand_lookback, er.demand_lookback_percent,
-                     'DemandLookbackPercent', 'a')
-
-        # timestep ratchets month
-        write_to_dat(self.file_demand_ratchets_monthly, er.demand_ratchets_monthly,
-                     'TimeStepRatchetsMonth')
-
-        # bins/tiers
+        write_to_dat(self.file_demand_lookback, er.demand_lookback_months, 'DemandLookbackMonths')
+        write_to_dat(self.file_demand_lookback, er.demand_lookback_percent, 'DemandLookbackPercent', 'a')
+        write_to_dat(self.file_demand_ratchets_monthly, er.demand_ratchets_monthly, 'TimeStepRatchetsMonth')
         write_to_dat(self.file_energy_tiers_num, er.energy_tiers_num, 'FuelBinCount')
         write_to_dat(self.file_energy_tiers_num, er.demand_tiers_num, 'DemandBinCount', 'a')
-
-        # fuel burn rate
         write_to_dat(self.file_energy_burn_rate, er.energy_burn_rate, 'FuelBurnRateM')
-
-        # fuel burn rate base
         write_to_dat(self.file_energy_burn_rate_bau, er.energy_burn_rate_bau, 'FuelBurnRateM')

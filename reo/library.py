@@ -1,9 +1,7 @@
-# python libraries
-# some libraries are being imported via the 'import *' statements below
-# including at least 'os' and 'json'
 import json
 import shutil
-
+import os
+from reo.log_levels import log
 from api_definitions import *
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
@@ -11,7 +9,6 @@ from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util
-from reo.src.urdb_parse import *
 from results import Results
 from utilities import Command, check_directory_created, is_error
 

@@ -4,38 +4,6 @@ from reo.src.dat_file_manager import DatFileManager
 from reo.src.urdb_parse import UrdbParse
 
 
-class REoptElecTariff(object):
-    """
-    uses a URDB formatted JSON (python dict) to create REopt input parameters
-    """
-
-    def __init__(self, urdb_rate):
-        """
-        demand_rates_monthly (monthly)  'DemandRatesMonth'  - list of floats, length = 12
-        demand_ratchets_monthly  'TimeStepRatchetsMonth'  - list of 12 lists, containing integers for timesteps in each month
-        demand_rates_tou  'DemandRates'   - list of demand rates, length = demand_num_ratchets_tou
-        demand_ratchets_tou  'TimeStepRatchets'  - list of lists, containing integers for timesteps in each TOU ratchet
-        demand_num_ratchets_tou  'NumRatchets' - int, number of TOU ratchets
-        demand_tiers_num  'DemandBinCount'  - int, number of demand tiers
-        demand_max_in_tiers  'MaxDemandInTier'  - list of floats, max demand for each demand tier (referred to 'bins' in REopt)
-        demand_lookback_months  'DemandLookbackMonths'  - list of 1's and 0's, length = 12, 1's indicate months that facility demand charge applies to
-        demand_lookback_percent  'DemandLookbackPercent'  - float, percent of the peak demand over the lookback months that facility demand charge applies to
-
-        energy_rates  'FuelRate' - list of floats, US$/kWh cost of energy at each time step
-        energy_tiers_num  'FuelBinCount' - int, number of energy tiers
-        energy_max_in_tiers  'MaxUsageInTier' - list of floats, max energy for each energy tier (referred to 'bins' in REopt)
-
-        export_rates  'ExportRates' - list of floats, US$/kWh rate at which a Tech can export energy to the grid
-        energy_burn_rate  'FuelBurnRateM' - list of floats, fuel burn rate of each Tech (currently 1's and 0's)
-
-        NOT USED IN REopt:
-            energy_avail  'FuelAvail' - list of floats, amount of energy available from each Tech (UTIL1 is set to big_number)
-            demand_min  'MinDemand'  - int (kW)
-
-        """
-        pass
-
-
 class ElecTariff(object):
 
     def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
