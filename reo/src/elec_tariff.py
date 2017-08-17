@@ -1,7 +1,8 @@
 import re
 from collections import namedtuple
 from reo.log_levels import log
-
+from reo.urdb_parse import UrdbParse
+from reo.src.dat_file_manager import DatFileManager
 
 class REoptElecTariff(object):
     """
@@ -41,7 +42,8 @@ class REoptElecTariff(object):
 
 class ElecTariff(REoptElecTariff):
 
-    def __init__(self, run_id, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
+    def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
+                 load_year,
                  **kwargs):
 
         self.run_id = run_id
@@ -56,14 +58,19 @@ class ElecTariff(REoptElecTariff):
                 log("INFO", "Making URDB rate from blended data")
                 urdb_rate = self.make_urdb_rate(blended_utility_rate, demand_charge)
         else:
-            raise ValueError("urdb_rate or blended_utility_rate and demand_charge are required inputs")
+            raise ValueError("urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
 
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
 
-        # self.parse_urdb(urdb_rate)
+        parser = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=paths.path_utility, outputs_dir=paths.path_run_outputs,
+                           outputs_dir_bau=paths.path_run_outputs_bau, year=load_year,
+                           time_steps_per_hour=paths.time_steps_per_hour,
+                           net_metering=net_metering, wholesale_rate=paths.wholesale_rate)
+        parser.parse_specific_rates([self.utility_name], [self.rate_name])
 
         super(ElecTariff, self).__init__(urdb_rate)
+        DatFileManager().add_elec_tariff(self)
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):
 

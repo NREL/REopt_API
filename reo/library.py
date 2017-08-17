@@ -366,14 +366,9 @@ class DatLibrary:
 
     def create_utility(self):
 
-        if self.urdb_rate is not None:
-            log("INFO", "Parsing URDB rate")
-            self.parse_urdb(self.urdb_rate)
-        else:
-            if None not in [self.blended_utility_rate, self.demand_charge]:
-                log("INFO", "Making URDB rate from blended data")
-                urdb_rate = self.make_urdb_rate(self.blended_utility_rate, self.demand_charge)
-                self.parse_urdb(urdb_rate)
+        elec_tariff = ElecTariff(self.run_input_id, paths=self, **self.inputs_dict)
+        self.utility_name = elec_tariff.utility_name
+        self.rate_name = elec_tariff.rate_name
 
         if self.utility_name is not None and self.rate_name is not None:
 
@@ -387,70 +382,3 @@ class DatLibrary:
             self.command_line_constants.append(num_ratchets)
             self.command_line_constants.append(fuel_bin_count)
             self.command_line_constants.append(demand_bin_count)
-
-    def parse_urdb(self, urdb_rate):
-
-        utility_rate = ElecTariff(self.run_input_id, **self.inputs_dict)
-        self.dfm.add_utility_rate(utility_rate)
-
-        urdb_parse = UrdbParse(urdb_rate=urdb_rate, utility_dats_dir=self.path_utility, outputs_dir=self.path_run_outputs,
-                               outputs_dir_bau=self.path_run_outputs_bau, year=self.load_year,
-                               time_steps_per_hour=self.time_steps_per_hour,
-                               net_metering=self.net_metering, wholesale_rate=self.wholesale_rate)
-        urdb_parse.parse_specific_rates([utility_rate.utility_name], [utility_rate.rate_name])
-
-        self.utility_name = utility_rate.utility_name
-        self.rate_name = utility_rate.rate_name
-
-    def make_urdb_rate(self, blended_utility_rate, demand_charge):
-
-        urdb_rate = {}
-
-        # energy rate
-        energyratestructure = []
-        energyweekdayschedule = []
-        energyweekendschedule = []
-
-        flatdemandstructure = []
-        flatdemandmonths = []
-
-        unique_energy_rate = set(blended_utility_rate)
-        unique_demand_rate = set(demand_charge)
-
-        for energy_rate in unique_energy_rate:
-            rate = [{'rate': energy_rate, 'unit': 'kWh'}]
-            energyratestructure.append(rate)
-
-        for demand_rate in unique_demand_rate:
-            rate = [{'rate': demand_rate}]
-            flatdemandstructure.append(rate)
-
-        for month in range(0, 12):
-            energy_period = 0
-            demand_period = 0
-            for energy_rate in unique_energy_rate:
-                if energy_rate == blended_utility_rate[month]:
-                    tmp = [energy_period] * 24
-                    energyweekdayschedule.append(tmp)
-                    energyweekendschedule.append(tmp)
-                energy_period += 1
-            for demand_rate in unique_demand_rate:
-                if demand_rate == demand_charge[month]:
-                    flatdemandmonths.append(demand_period)
-                demand_period += 1
-
-        # ouput
-        urdb_rate['energyweekdayschedule'] = energyweekdayschedule
-        urdb_rate['energyweekendschedule'] = energyweekendschedule
-        urdb_rate['energyratestructure'] = energyratestructure
-
-        if sum(unique_demand_rate) > 0:
-            urdb_rate['flatdemandstructure'] = flatdemandstructure
-            urdb_rate['flatdemandmonths'] = flatdemandmonths
-            urdb_rate['flatdemandunit'] = 'kW'
-
-        urdb_rate['label'] = self.run_input_id
-        urdb_rate['name'] = "Custom_rate_" + str(self.run_input_id)
-        urdb_rate['utility'] = "Custom_utility_" + str(self.run_input_id)
-        return urdb_rate
-

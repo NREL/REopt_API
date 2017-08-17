@@ -24,6 +24,9 @@ def write_to_dat(path, var, dat_var, mode='w'):
 
 
 class Singleton(type):
+    """
+    metaclass for DatFileManager
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -168,7 +171,7 @@ class DatFileManager:
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
-    def add_utility_rate(self, utility_rate):
+    def add_elec_tariff(self, utility_rate):
 
         with open(os.path.join(self.rate_dats_path, 'utility_name.txt'), 'w') as outfile:
             outfile.write(str(utility_rate.utility_name).replace(' ', '_'))
