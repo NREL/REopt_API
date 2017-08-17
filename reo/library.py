@@ -38,14 +38,9 @@ class Paths(object):
         if os.path.exists(self.run):
             shutil.rmtree(self.run)
 
-        for f in [self.run, self.inputs, self.outputs, self.outputs_bau,
-                  self.static_outputs]:
+        for f in [self.run, self.inputs, self.outputs, self.outputs_bau, self.static_outputs, self.utility]:
             os.mkdir(f)
-
-        check_directory_created(self.run)
-        check_directory_created(self.inputs)
-        check_directory_created(self.outputs)
-        check_directory_created(self.outputs_bau)
+            check_directory_created(f)
 
 
 class DatLibrary:

@@ -79,14 +79,10 @@ class DatFileManager:
     
     def __init__(self, run_id, paths, n_timesteps=8760):
         self.run_id = run_id
+        self.paths = paths
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
-
-        rate_dats_path = os.path.join(paths.inputs, "Utility")
-        os.mkdir(rate_dats_path)
-        check_directory_created(rate_dats_path)
-        self.rate_dats_path = rate_dats_path
         
         self.file_constant = os.path.join(paths.inputs, 'constant_' + file_tail)
         self.file_constant_bau = os.path.join(paths.inputs, 'constant_' + file_tail_bau)
@@ -187,10 +183,10 @@ class DatFileManager:
 
     def add_elec_tariff(self, utility_rate):
 
-        with open(os.path.join(self.rate_dats_path, 'utility_name.txt'), 'w') as outfile:
+        with open(os.path.join(self.paths.utility, 'utility_name.txt'), 'w') as outfile:
             outfile.write(str(utility_rate.utility_name).replace(' ', '_'))
 
-        with open(os.path.join(self.rate_dats_path, 'rate_name.txt'), 'w') as outfile:
+        with open(os.path.join(self.paths.utility, 'rate_name.txt'), 'w') as outfile:
             outfile.write(str(utility_rate.rate_name).replace(' ', '_'))
 
     def _get_REopt_pwfs(self, techs):
