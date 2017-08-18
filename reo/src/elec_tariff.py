@@ -21,6 +21,7 @@ class ElecTariff(object):
 
         if urdb_rate is not None:
             log("INFO", "Parsing URDB rate")
+        
         elif None not in [blended_utility_rate, demand_charge]:
                 log("INFO", "Making URDB rate from blended data")
                 urdb_rate = self.make_urdb_rate(blended_utility_rate, demand_charge)
