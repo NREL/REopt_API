@@ -77,6 +77,7 @@ class DatLibrary:
         self.file_cmd = os.path.join(self.paths.inputs, "cmd.log")
         self.file_cmd_bau = os.path.join(self.paths.inputs, "cmd_bau.log")
 
+
         for k, v in self.inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
             if k == 'load_profile_name' and inputs_dict.get(k) is not None:
@@ -290,8 +291,6 @@ class DatLibrary:
             log("INFO", "Cleaning up folders from: " + self.paths.run)
             shutil.rmtree(self.paths.run)
 
-   # BAU files
-        
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):
         """
@@ -315,3 +314,4 @@ class DatLibrary:
         elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
+        
