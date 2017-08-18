@@ -1,6 +1,6 @@
 import os
 import copy
-from reo.log_levels import log
+from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
 
@@ -11,19 +11,36 @@ squarefeet_to_acre = 2.2957e-5
 def _write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
     if isinstance(var, list):
-        for i in var:
-            f.write(str(i) + "\n")
+        for v in var:
+            if isinstance(v, list):  # elec_tariff contains list of lists
+                f.write('[')
+                for i in v:
+                    f.write(str(i) + ' ')
+                f.write(']\n')
+            else:
+                f.write(str(v) + "\n")
     else:
         f.write(str(var) + "\n")
     f.write("]\n")
 
 
 def write_to_dat(path, var, dat_var, mode='w'):
+    cmd_line_vars = (
+        'DemandBinCount',
+        'FuelBinCount',
+        'NumRatchets',
+    )
     with open(path, mode) as f:
-        _write_var(f, var, dat_var)
+        if dat_var in cmd_line_vars:
+            f.write(dat_var + '=' + str(var) + '\n')
+        else:
+            _write_var(f, var, dat_var)
 
 
 class Singleton(type):
+    """
+    metaclass for DatFileManager
+    """
     _instances = {}
 
     def __call__(cls, *args, **kwargs):
@@ -51,6 +68,7 @@ class DatFileManager:
     util = None
     storage = None
     site = None
+    elec_tariff = None
 
     available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
     available_tech_classes = ['PV', 'UTIL']  # this is a REopt 'class', not a python class
@@ -60,26 +78,42 @@ class DatFileManager:
     command_line_args = list()
     command_line_args_bau = list()
     
-    def __init__(self, run_id, inputs_path, n_timesteps=8760):
+    def __init__(self, run_id, paths, n_timesteps=8760):
         self.run_id = run_id
+        self.paths = paths
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
         
-        self.file_constant = os.path.join(inputs_path, 'constant_' + file_tail)
-        self.file_constant_bau = os.path.join(inputs_path, 'constant_' + file_tail_bau)
-        self.file_economics = os.path.join(inputs_path, 'economics_' + file_tail)
-        self.file_economics_bau = os.path.join(inputs_path, 'economics_' + file_tail_bau)
-        self.file_load_profile = os.path.join(inputs_path, 'Load8760_' + file_tail)
-        self.file_load_size = os.path.join(inputs_path, 'LoadSize_' + file_tail)
-        self.file_gis = os.path.join(inputs_path, "GIS_" + file_tail)
-        self.file_gis_bau = os.path.join(inputs_path, "GIS_" + file_tail_bau)
-        self.file_storage = os.path.join(inputs_path, 'storage_' + file_tail)
-        self.file_storage_bau = os.path.join(inputs_path, 'storage_' + file_tail_bau)
-        self.file_max_size = os.path.join(inputs_path, 'maxsizes_' + file_tail)
-        self.file_max_size_bau = os.path.join(inputs_path, 'maxsizes_' + file_tail_bau)
-        self.file_NEM = os.path.join(inputs_path, 'NMIL_' + file_tail)
-        self.file_NEM_bau = os.path.join(inputs_path, 'NMIL_' + file_tail_bau)
+        self.file_constant = os.path.join(paths.inputs, 'constant_' + file_tail)
+        self.file_constant_bau = os.path.join(paths.inputs, 'constant_' + file_tail_bau)
+        self.file_economics = os.path.join(paths.inputs, 'economics_' + file_tail)
+        self.file_economics_bau = os.path.join(paths.inputs, 'economics_' + file_tail_bau)
+        self.file_load_profile = os.path.join(paths.inputs, 'Load8760_' + file_tail)
+        self.file_load_size = os.path.join(paths.inputs, 'LoadSize_' + file_tail)
+        self.file_gis = os.path.join(paths.inputs, "GIS_" + file_tail)
+        self.file_gis_bau = os.path.join(paths.inputs, "GIS_" + file_tail_bau)
+        self.file_storage = os.path.join(paths.inputs, 'storage_' + file_tail)
+        self.file_storage_bau = os.path.join(paths.inputs, 'storage_' + file_tail_bau)
+        self.file_max_size = os.path.join(paths.inputs, 'maxsizes_' + file_tail)
+        self.file_max_size_bau = os.path.join(paths.inputs, 'maxsizes_' + file_tail_bau)
+        self.file_NEM = os.path.join(paths.inputs, 'NMIL_' + file_tail)
+        self.file_NEM_bau = os.path.join(paths.inputs, 'NMIL_' + file_tail_bau)
+
+        self.file_demand_periods = os.path.join(paths.utility, 'TimeStepsDemand.dat')
+        self.file_demand_rates = os.path.join(paths.utility, 'DemandRate.dat')
+        self.file_demand_rates_monthly = os.path.join(paths.utility, 'DemandRateMonth.dat')
+        self.file_demand_ratchets_monthly = os.path.join(paths.utility, 'TimeStepsDemandMonth.dat')
+        self.file_demand_lookback = os.path.join(paths.utility, 'LookbackMonthsAndPercent.dat')
+        self.file_demand_num_ratchets = os.path.join(paths.utility, 'NumRatchets.dat')
+        self.file_energy_rates = os.path.join(paths.utility, 'FuelCost.dat')
+        self.file_energy_rates_bau = os.path.join(paths.utility, 'FuelCostBase.dat')
+        self.file_energy_tiers_num = os.path.join(paths.utility, 'bins.dat')
+        self.file_energy_burn_rate = os.path.join(paths.utility, 'FuelBurnRate.dat')
+        self.file_energy_burn_rate_bau = os.path.join(paths.utility, 'FuelBurnRateBase.dat')
+        self.file_max_in_tiers = os.path.join(paths.utility, 'UtilityTiers.dat')
+        self.file_export_rates = os.path.join(paths.utility, 'ExportRates.dat')
+        self.file_export_rates_bau = os.path.join(paths.utility, 'ExportRatesBase.dat')
         
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
@@ -97,6 +131,9 @@ class DatFileManager:
         self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
+
+        DatFileManager.command_line_args.append("ScenarioNum=" + str(run_id))
+        DatFileManager.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
@@ -161,11 +198,14 @@ class DatFileManager:
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
+    def add_elec_tariff(self, elec_tariff):
+        self.elec_tariff = elec_tariff
+            
     def _get_REopt_pwfs(self, techs):
 
         sf = self.site.financials
         pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
-        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal)  # not used in REopt
         pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
         pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
         # pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
@@ -486,10 +526,7 @@ class DatFileManager:
                         x = big_number
                     cap_cost_x.append(x)
 
-        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
-        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments))
-
-        return cap_cost_slope, cap_cost_x, cap_cost_yint
+        return cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -651,8 +688,10 @@ class DatFileManager:
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
         
-        cap_cost_slope, cap_cost_x, cap_cost_yint = self._get_REopt_cost_curve(self.available_techs)
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau = self._get_REopt_cost_curve(self.bau_techs)
+        cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments = self._get_REopt_cost_curve(self.available_techs)
+        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,
@@ -758,3 +797,41 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
+
+        # elec_tariff args
+        parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
+                           techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
+                           bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
+                           loads=self.available_loads)
+
+        tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
+
+        DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+
+        DatFileManager.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        DatFileManager.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        DatFileManager.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+
+        ta = tariff_args
+        write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
+        write_to_dat(self.file_demand_rates, ta.demand_rates_tou, 'DemandRates')
+        # write_to_dat(self.file_demand_rates, ta.demand_min, 'MinDemand', 'a')  # not used in REopt
+        write_to_dat(self.file_demand_periods, ta.demand_ratchets_tou, 'TimeStepRatchets')
+        write_to_dat(self.file_demand_num_ratchets, ta.demand_num_ratchets, 'NumRatchets')
+        write_to_dat(self.file_max_in_tiers, ta.demand_max_in_tiers, 'MaxDemandInTier')
+        write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
+        write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
+        # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')
+        # write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_export_rates, ta.export_rates, 'ExportRates')
+        write_to_dat(self.file_export_rates_bau, ta.export_rates_bau, 'ExportRates')
+        write_to_dat(self.file_demand_lookback, ta.demand_lookback_months, 'DemandLookbackMonths')
+        write_to_dat(self.file_demand_lookback, ta.demand_lookback_percent, 'DemandLookbackPercent', 'a')
+        write_to_dat(self.file_demand_ratchets_monthly, ta.demand_ratchets_monthly, 'TimeStepRatchetsMonth')
+        write_to_dat(self.file_energy_tiers_num, ta.energy_tiers_num, 'FuelBinCount')
+        write_to_dat(self.file_energy_tiers_num, ta.demand_tiers_num, 'DemandBinCount', 'a')
+        write_to_dat(self.file_energy_burn_rate, ta.energy_burn_rate, 'FuelBurnRateM')
+        write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_rate_bau, 'FuelBurnRateM')
