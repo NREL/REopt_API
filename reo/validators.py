@@ -181,8 +181,8 @@ class URDB_RateValidator:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
                     valid = False
                 for ii, t in enumerate(r):
-                    if t.get('rate') is None and t.get('sell') is None t.get('adj') is None:
-                        self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                    if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
+                        self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
                         valid = False
             return valid
         return False

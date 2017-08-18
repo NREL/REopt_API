@@ -77,7 +77,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data = self.get_defaults_from_list(self.base_case_fields)
 
         data['urdb_rate'] =self.missing_rate_urdb
-        text = "Missing rate attribute for tier 0 in rate 0 energyratestructure"
+        text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
         data['urdb_rate']=self.missing_schedule_urdb

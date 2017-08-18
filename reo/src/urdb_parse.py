@@ -269,11 +269,9 @@ class UrdbParse:
                         if average_rates:
                             rate = rate_average
                         else:
-                            rate = current_rate.energyratestructure[period][tier_use]['rate']
+                            rate = current_rate.energyratestructure[period][tier_use].get('rate') or 0
 
-                        adj = 0
-                        if 'adj' in current_rate.energyratestructure[period][tier_use]:
-                            adj = current_rate.energyratestructure[period][tier_use]['adj']
+                        adj = current_rate.energyratestructure[period][tier_use].get('adj') or 0
 
                         for step in range(0, self.time_steps_per_hour):
                             self.reopt_args.energy_rates.append(rate + adj)
