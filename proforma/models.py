@@ -4,7 +4,8 @@ import os
 import datetime, tzlocal
 from openpyxl import load_workbook
 from reo.models import RunOutput
-from reo.library import max_big_number
+from reo.src.dat_file_manager import big_number
+
 
 class ProForma(models.Model):
 
@@ -104,17 +105,17 @@ class ProForma(models.Model):
 
         # Battery Tax Credits and Incentives
         ws['B61'] = ro.batt_itc_total * 100
-        ws['C61'] = max_big_number  # max itc
+        ws['C61'] = big_number  # max itc
         ws['B66'] = 0  # state ITC
-        ws['C66'] = max_big_number  # state ITC max
+        ws['C66'] = big_number  # state ITC max
         ws['B67'] = 0  # utility ITC
-        ws['C67'] = max_big_number  # utility ITC max
+        ws['C67'] = big_number  # utility ITC max
         ws['B69'] = ro.batt_rebate_total
-        ws['C69'] = max_big_number  # max rebate
+        ws['C69'] = big_number  # max rebate
         ws['B70'] = 0  # state rebate
-        ws['C70'] = max_big_number  # max state rebate
+        ws['C70'] = big_number  # max state rebate
         ws['B71'] = 0  # utility rebate
-        ws['C71'] = max_big_number  # max utility rebate
+        ws['C71'] = big_number  # max utility rebate
 
         # Depreciation
         if ro.pv_macrs_schedule > 0:
