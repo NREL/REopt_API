@@ -672,10 +672,10 @@ class RunOutput(models.Model):
             o_and_m_capacity_cost[year] = self.pv_om * self.pv_kw * inflation_modifier_n
 
             if self.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
+                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw
 
             if self.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
+                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh
 
             tech_operating_expenses['PV'] = o_and_m_capacity_cost[year]
             tech_operating_expenses['BATT'] = batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]

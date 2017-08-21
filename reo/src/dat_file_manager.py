@@ -704,6 +704,7 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_bonus_fraction,
                                                         self.storage.incentives.macrs_itc_reduction,
                                                         )
+        StorageCostPerKW -= self.storage.incentives.total.rebate
         StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,
                                                          self.storage.replace_us_dollar_per_kwh,
                                                          self.storage.replace_kwh_years,
