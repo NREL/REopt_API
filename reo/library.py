@@ -9,8 +9,8 @@ from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util
-from results import Results
-from utilities import Command, check_directory_created, is_error
+from reo.src.reopt import REopt
+from utilities import check_directory_created, is_error
 
 
 class Paths(object):
@@ -48,7 +48,6 @@ class DatLibrary:
 
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
-    xpress_model = "REopt_API.mos"
     time_steps_per_hour = 1
 
     def inputs(self, **args):
@@ -72,10 +71,7 @@ class DatLibrary:
 
         self.run_input_id = run_input_id
 
-        self.file_output = os.path.join(self.paths.outputs, "REopt_results.json")
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
-        self.file_cmd = os.path.join(self.paths.inputs, "cmd.log")
-        self.file_cmd_bau = os.path.join(self.paths.inputs, "cmd_bau.log")
 
 
         for k, v in self.inputs(full_list=True).items():
@@ -142,8 +138,6 @@ class DatLibrary:
 
     def run(self):
 
-        output_dict = dict()
-
         storage = Storage(
             min_kw=self.batt_kw_min,
             max_kw=self.batt_kw_max,
@@ -193,30 +187,13 @@ class DatLibrary:
         self.pv_macrs_itc_reduction = 0.5
         self.batt_macrs_itc_reduction = 0.5
 
-        run_command = self.create_run_command(self.paths.outputs, self.xpress_model, self.dfm.DAT,
-                                              self.dfm.command_line_args, bau_string='', cmd_file=self.file_cmd)
+        r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
+        output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
+        output_dict['run_input_id'] = self.run_input_id
 
-        run_command_bau = self.create_run_command(self.paths.outputs_bau, self.xpress_model, self.dfm.DAT_bau,
-                                                  self.dfm.command_line_args_bau, bau_string='Base', cmd_file=self.file_cmd_bau)
-
-        log("INFO", "Initializing Command")
-        command = Command(run_command)
-        log("INFO", "Initializing Command BAU")
-        command_bau = Command(run_command_bau)
-
-        log("INFO", "Running Command")
-        error = command.run(self.timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
-
-        log("INFO", "Running BAU")
-        error = command_bau.run(self.timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
-
-        output_dict = self.parse_run_outputs()
+        for k, v in self.__dict__.items():
+            if output_dict.get(k) is None and k in outputs():
+                output_dict[k] = v
 
         self.cleanup()
 
@@ -231,59 +208,6 @@ class DatLibrary:
             if hasattr(self, k):
                 od[k] = getattr(self, k)
         return od
-
-    def create_run_command(self, path_output, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
-
-        log("DEBUG", "Current Directory: " + os.getcwd())
-        log("INFO", "Creating output directory: " + path_output)
-
-        # RE case
-        header = 'exec '
-        xpress_model_path = os.path.join(self.paths.xpress, xpress_model)
-
-        # Command line constants and Dat file overrides
-        outline = ''
-
-        for constant in cmd_line_args:
-            outline = ' '.join([outline, constant.strip('\n')])
-
-        for dat_file in DATs:
-            if dat_file is not None:
-                outline = ' '.join([outline, dat_file.strip('\n')])
-
-        outline.replace('\n', '')
-
-        cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, xpress_model_path, outline, path_output, self.paths.inputs, bau_string)
-
-        log("DEBUG", "Returning Process Command " + cmd)
-
-        # write a cmd file for easy debugging
-        with open(cmd_file, 'w') as f:
-            f.write(cmd)
-
-        return cmd
-
-    def parse_run_outputs(self):
-       
-        if os.path.exists(self.file_output):
-            process_results = Results(self.paths.templates, self.paths.outputs, self.paths.outputs_bau,
-                                      self.paths.static_outputs, self.load_year)
-
-            output_dict = process_results.get_output()
-            output_dict['run_input_id'] = self.run_input_id
-
-            for k,v in self.__dict__.items():
-                if output_dict.get(k) is None and k in outputs():
-                    output_dict[k] = v
-
-        else:
-            msg = "Output file: " + self.file_output + " does not exist"
-            output_dict = {'Error': [msg] }
-            log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", msg)
-
-        return output_dict
 
     def cleanup(self):
         # do not call until alternate means of accessing data is developed!
@@ -314,4 +238,3 @@ class DatLibrary:
         elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
-        
