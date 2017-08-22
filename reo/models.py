@@ -71,12 +71,12 @@ class RunInput(models.Model):
 
     # PV Capital Cost Based Incentives
     pv_itc_federal = models.FloatField(null=True, blank=True)
-    pv_itc_state = models.FloatField(null=True, blank=True)
-    pv_itc_utility = models.FloatField(null=True, blank=True)
+    pv_ibi_state = models.FloatField(null=True, blank=True)
+    pv_ibi_utility = models.FloatField(null=True, blank=True)
 
     pv_itc_federal_max = models.FloatField(null=True, blank=True)
-    pv_itc_state_max = models.FloatField(null=True, blank=True)
-    pv_itc_utility_max = models.FloatField(null=True, blank=True)
+    pv_ibi_state_max = models.FloatField(null=True, blank=True)
+    pv_ibi_utility_max = models.FloatField(null=True, blank=True)
 
     pv_rebate_federal = models.FloatField(null=True, blank=True)
     pv_rebate_state = models.FloatField(null=True, blank=True)
@@ -225,12 +225,12 @@ class RunOutput(models.Model):
 
     # PV Capital Cost Based Incentives
     pv_itc_federal = models.FloatField(null=True, blank=True)
-    pv_itc_state = models.FloatField(null=True, blank=True)
-    pv_itc_utility = models.FloatField(null=True, blank=True)
+    pv_ibi_state = models.FloatField(null=True, blank=True)
+    pv_ibi_utility = models.FloatField(null=True, blank=True)
 
     pv_itc_federal_max = models.FloatField(null=True, blank=True)
-    pv_itc_state_max = models.FloatField(null=True, blank=True)
-    pv_itc_utility_max = models.FloatField(null=True, blank=True)
+    pv_ibi_state_max = models.FloatField(null=True, blank=True)
+    pv_ibi_utility_max = models.FloatField(null=True, blank=True)
 
     pv_rebate_federal = models.FloatField(null=True, blank=True)
     pv_rebate_state = models.FloatField(null=True, blank=True)
@@ -396,11 +396,11 @@ class RunOutput(models.Model):
                 self.incentives[t]['itc_fed_percent'] = self.pv_itc_federal
                 self.incentives[t]['itc_fed_percent_maxvalue'] = self.pv_itc_federal_max
 
-                # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = self.pv_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = self.pv_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_itc_utility_max
+                # cash incentives
+                self.incentives[t]['ibi_sta_percent'] = self.pv_ibi_state
+                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_ibi_state_max
+                self.incentives[t]['ibi_uti_percent'] = self.pv_ibi_utility
+                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_ibi_utility_max
 
                 # capacity based incentives
                 self.incentives[t]['cbi_fed_amount'] = self.pv_rebate_federal

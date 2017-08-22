@@ -313,8 +313,14 @@ class DatFileManager:
                 
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
-                    tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
-                    tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
+
+                    if region == 'federal' or region == 'total':
+                        tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
+                        tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
+                    else: # region == 'state' or region == 'utility'
+                        tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
+                        tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
+
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
 

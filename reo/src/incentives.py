@@ -11,8 +11,14 @@ class IncentiveProvider(object):
 
         NOTE: future POST structure will not require filtering by 'pv' or 'batt'
         """
-        self.itc = incentives_dict.get('itc_' + name)
-        self.itc_max = incentives_dict.get('itc_' + name + '_max') or big_number
+
+        # ITC only applies to federal, since don't track other tax rates
+        if name == 'federal' or name == 'total':
+            self.itc = incentives_dict.get('itc_' + name)
+            self.itc_max = incentives_dict.get('itc_' + name + '_max') or big_number
+        else: # region == 'state' or region == 'utility'
+            self.ibi = incentives_dict.get('ibi_' + name)
+            self.ibi_max = incentives_dict.get('ibi_' + name + '_max') or big_number
         self.rebate = incentives_dict.get('rebate_' + name)   # $/kW
         self.rebate_max = incentives_dict.get('rebate_' + name + '_max') or big_number
 
@@ -57,7 +63,6 @@ class Incentives(object):
 
         # the "total" incentive used by storage, since not a standard TECH
         self.total = IncentiveProvider('total', incentives_dict=filtered_kwargs)
-
         self.federal = IncentiveProvider('federal', incentives_dict=filtered_kwargs)
         self.state = IncentiveProvider('state', incentives_dict=filtered_kwargs)
         self.utility = IncentiveProvider('utility', incentives_dict=filtered_kwargs)

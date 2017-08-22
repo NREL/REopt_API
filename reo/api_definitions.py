@@ -245,16 +245,16 @@ def inputs(filter='', full_list=False, just_required=False):
                      "description": "Investment Tax Credit rate", "units": 'decimal percent',
                      "tool_tip": 'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
 
-        'pv_itc_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+        'pv_ibi_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
-                           "description": "State Investment Tax Credit rate", "units": 'decimal percent',
+                           "description": "State Investment Based Incentive rate", "units": 'decimal percent',
                            "tool_tip": 'The percent of system costs that are subsudized by the current state tax credit.'},
 
-        'pv_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+        'pv_ibi_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
-                           "description": "Local Investment Tax Credit rate", "units": 'decimal percent',
+                           "description": "Local Investment Based Incentive rate", "units": 'decimal percent',
                            "tool_tip": 'The percent of system costs that are subsudized by a utility or local tax credit.'},
 
         # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
@@ -264,16 +264,16 @@ def inputs(filter='', full_list=False, just_required=False):
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
-        'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_ibi_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
                          'max': None, 'default': 1e10,
-                         "description": "State Investment Tax Credit max", "units": 'dollars',
+                         "description": "State Investment Based Incentive Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
-        'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_ibi_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
                          'max': None, 'default': 1e10,
-                         "description": "Local Investment Tax Credit max", "units": 'dollars',
+                         "description": "Local Investment Based Incentive max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
         'pv_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
