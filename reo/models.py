@@ -117,21 +117,8 @@ class RunInput(models.Model):
     batt_can_gridcharge = models.FloatField(null=True,blank=True)
 
     # Battery Capital Cost Incentives
-    batt_itc_federal = models.FloatField(null=True, blank=True)
-    batt_itc_state = models.FloatField(null=True, blank=True)
-    batt_itc_utility = models.FloatField(null=True, blank=True)
-
-    batt_itc_federal_max = models.FloatField(null=True, blank=True)
-    batt_itc_state_max = models.FloatField(null=True, blank=True)
-    batt_itc_utility_max = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal = models.FloatField(null=True, blank=True)
-    batt_rebate_state = models.FloatField(null=True, blank=True)
-    batt_rebate_utility = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal_max = models.FloatField(null=True, blank=True)
-    batt_rebate_state_max = models.FloatField(null=True, blank=True)
-    batt_rebate_utility_max = models.FloatField(null=True, blank=True)
+    batt_itc_total = models.FloatField(null=True, blank=True)
+    batt_rebate_total = models.FloatField(null=True, blank=True)
 
     # Battery MACRS
     batt_macrs_schedule = models.IntegerField(null=True,blank=True)
@@ -285,21 +272,8 @@ class RunOutput(models.Model):
     batt_can_gridcharge = models.FloatField(null=True, blank=True)
 
     # Battery Capital Cost Incentives
-    batt_itc_federal = models.FloatField(null=True, blank=True)
-    batt_itc_state = models.FloatField(null=True, blank=True)
-    batt_itc_utility = models.FloatField(null=True, blank=True)
-
-    batt_itc_federal_max = models.FloatField(null=True, blank=True)
-    batt_itc_state_max = models.FloatField(null=True, blank=True)
-    batt_itc_utility_max = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal = models.FloatField(null=True, blank=True)
-    batt_rebate_state = models.FloatField(null=True, blank=True)
-    batt_rebate_utility = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal_max = models.FloatField(null=True, blank=True)
-    batt_rebate_state_max = models.FloatField(null=True, blank=True)
-    batt_rebate_utility_max = models.FloatField(null=True, blank=True)
+    batt_itc_total = models.FloatField(null=True, blank=True)
+    batt_rebate_total = models.FloatField(null=True, blank=True)
 
     # Battery MACRS
     batt_macrs_schedule = models.IntegerField(null=True, blank=True)
@@ -452,22 +426,11 @@ class RunOutput(models.Model):
                 self.incentives[t]['macrs_itc_reduction'] = self.batt_macrs_itc_reduction
 
                 # tax credits
-                self.incentives[t]['itc_fed_percent'] = self.batt_itc_federal
-                self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
-
-                # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = self.batt_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.batt_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = self.batt_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.batt_itc_utility_max
+                self.incentives[t]['itc_fed_percent'] = self.batt_itc_total
+                #self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
 
                 # capacity based incentives
-                self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_federal
-                self.incentives[t]['cbi_fed_maxvalue'] = self.batt_rebate_federal_max
-                self.incentives[t]['cbi_sta_amount'] = self.batt_rebate_state
-                self.incentives[t]['cbi_sta_maxvalue'] = self.batt_rebate_state_max
-                self.incentives[t]['cbi_uti_amount'] = self.batt_rebate_utility
-                self.incentives[t]['cbi_uti_maxvalue'] = self.batt_rebate_utility_max
+                self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_total
 
                 # production based incentives
                 self.incentives[t]['pbi_combined_amount'] = 0
@@ -709,10 +672,10 @@ class RunOutput(models.Model):
             o_and_m_capacity_cost[year] = self.pv_om * self.pv_kw * inflation_modifier_n
 
             if self.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
+                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw
 
             if self.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
+                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh
 
             tech_operating_expenses['PV'] = o_and_m_capacity_cost[year]
             tech_operating_expenses['BATT'] = batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]

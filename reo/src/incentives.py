@@ -6,7 +6,7 @@ class IncentiveProvider(object):
     def __init__(self, name, incentives_dict):
         """
 
-        :param name: str, either 'federal', 'state', or 'utility'
+        :param name: str, either 'total', 'federal', 'state', or 'utility'
         :param incentives_dict: dict of POST params, filtered by 'pv' or 'batt'
 
         NOTE: future POST structure will not require filtering by 'pv' or 'batt'
@@ -54,6 +54,9 @@ class Incentives(object):
             filtered_kwargs = self._filter_inputs(tech, POST)
         else:
             filtered_kwargs = POST
+
+        # the "total" incentive used by storage, since not a standard TECH
+        self.total = IncentiveProvider('total', incentives_dict=filtered_kwargs)
 
         self.federal = IncentiveProvider('federal', incentives_dict=filtered_kwargs)
         self.state = IncentiveProvider('state', incentives_dict=filtered_kwargs)
