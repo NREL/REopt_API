@@ -1,9 +1,9 @@
 import requests
 import json
-import os
 import urllib
 import pandas
 import random
+
 
 class urdb_download:
     # API specific

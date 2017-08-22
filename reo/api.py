@@ -1,16 +1,20 @@
+import logging
+import os
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
 from models import RunInput
-
-import logging
-from validators import *
+from validators import REoptResourceValidation
 from utilities import is_error
+from api_definitions import inputs
+from log_levels import log
+
 
 def get_current_api():
     return "version 0.0.1"
+
 
 def setup_logging():
     file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")

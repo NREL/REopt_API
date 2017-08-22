@@ -3,6 +3,8 @@ from datetime import datetime
 max_big_number = 1e8
 max_years = 75
 analysis_period = 25
+
+
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
@@ -500,10 +502,10 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
-            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+            'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
-            'year_one_demand_cost': {'type': float, 'null': True, 'pct': False,
+            'year_one_demand_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility demand charge", "units": '$'},
 
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
@@ -543,9 +545,6 @@ def outputs():
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
 
-            'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                     "description": "Year 1 utility energy charge", "units": '$'},
-
             'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
 
@@ -582,25 +581,9 @@ def outputs():
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
 
-            'year_one_demand_cost':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total demand cost", "units": 'hours'},
-
-            'year_one_energy_cost':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total energy cost", "units": 'hours'},
-
             'year_one_export_benefit':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Result - total export benefit", "units": 'hours'},
-            
-            'year_one_demand_cost_bau':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total demand cost business as ususal", "units": 'hours'},
-            
-            'year_one_energy_cost_bau':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total energy cost business as ususal", "units": 'hours'},
             
             'year_one_energy_produced':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
@@ -631,6 +614,7 @@ def outputs():
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
             }
+
 
 # default load profiles
 def default_load_profiles():

@@ -1,14 +1,13 @@
 from tastypie.validation import Validation
 import numpy as np
-from api_definitions import *
+from api_definitions import inputs
 from log_levels import log
-import os
 
 
 class URDB_RateValidator:
 
     error_folder = 'urdb_rate_errors'
-	
+
     def __init__(self,_log_errors=True, **kwargs):
         """
         Takes a dictionary parsed from a URDB Rate Json response 
@@ -71,15 +70,14 @@ class URDB_RateValidator:
 
         if _log_errors:                              #Write errors to log file
             self.setup_logging()
-            
+
             # if self.errors:
                 # with open(self.log_file, 'w') as f:
                 #     map(lambda e: f.write(e+'\n'), self.errors)
                 # log("WARNING", self.errors)
-                        
-    
+
     def setup_logging(self):
-        #Creates logging folder and sets up file
+        # Creates logging folder and sets up file
         file_id = self.label or self.eiaid or ''
     
         # if not os.path.exists(self.error_folder):
@@ -88,7 +86,7 @@ class URDB_RateValidator:
         self.log_file = "%s/%s.csv" % (self.error_folder, file_id)
 
     def validate(self):
-         #Validate each attribute with custom valdidate function
+         # Validate each attribute with custom valdidate function
         for key in dir(self):                      
             v = 'validate_' + key
             if hasattr(self, v):
@@ -96,7 +94,7 @@ class URDB_RateValidator:
 
     @property
     def dependencies(self):
-        #map to tell if a field requires one or more other fields 
+        # map to tell if a field requires one or more other fields
         return {
             'energyweekdayschedule': ['energyratestructure'],
             'energyweekendschedule': ['energyratestructure'],
@@ -110,7 +108,7 @@ class URDB_RateValidator:
         #True if no errors found during validation on init
         return self.errors == []
 
-    #### CUSTOM VALIDATION FUNCTIONS FOR EACH URDB ATTRIBUTE name validate_<attribute name> ####
+    # CUSTOM VALIDATION FUNCTIONS FOR EACH URDB ATTRIBUTE name validate_<attribute name>
     
     def validate_energyweekdayschedule(self):
         name = 'energyweekdayschedule'
@@ -151,8 +149,8 @@ class URDB_RateValidator:
     #### FUNCTIONS TO VALIDATE ATTRIBUTES ####
     
     def validDependencies(self, name):
-        #check that all dependent attributes exist
-        #return Boolean if any errors found
+        # check that all dependent attributes exist
+        # return Boolean if any errors found
         
         all_dependencies = self.dependencies.get(name)
         valid = True
@@ -172,8 +170,8 @@ class URDB_RateValidator:
         return valid
 
     def validRate(self, rate):
-        #check that each  tier in rate structure array has a rate attribute
-        #return Boolean if any errors found
+        # check that each  tier in rate structure array has a rate attribute
+        # return Boolean if any errors found
         if hasattr(self,rate):
             valid = True
             for i, r in enumerate(getattr(self, rate)):
@@ -181,15 +179,15 @@ class URDB_RateValidator:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
                     valid = False
                 for ii, t in enumerate(r):
-                    if t.get('rate') is None:
-                        self.errors.append('Missing rate attribute for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                    if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
+                        self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
                         valid = False
             return valid
         return False
 
     def validSchedule(self, schedules, rate):
-        #check that each rate an a schedule array has a valid set of tiered rates in the associated rate struture attribute
-        #return Boolean if any errors found
+        # check that each rate an a schedule array has a valid set of tiered rates in the associated rate struture attribute
+        # return Boolean if any errors found
         if hasattr(self,schedules):
             valid = True
             s = getattr(self, schedules)
@@ -206,6 +204,7 @@ class URDB_RateValidator:
                     valid = False
             return valid
         return False
+
 
 class REoptResourceValidation(Validation):
 
@@ -250,10 +249,10 @@ class REoptResourceValidation(Validation):
                     if 'length' in field_def and field_def['length'] is not None:
                         format_errors += self.check_length(key, value, field_def['length'])
 
-                #specific_errors 
+                # specific_errors
                 if format_errors:
                     errors = self.append_errors(errors, key, format_errors)
-                 #   raise BadRequest(format_errors)
+                    # raise BadRequest(format_errors)
 
         return errors
 
@@ -261,11 +260,11 @@ class REoptResourceValidation(Validation):
 
         errors = {}
 
-	rate_data = bundle.data.get('urdb_rate')
-	if rate_data is not None and type(rate_data).__name__=='dict':
-            rate_checker = URDB_RateValidator(**rate_data)
-            if rate_checker.errors:
-                errors = self.append_errors(errors,"URDB Rate Errors",rate_checker.errors)
+        rate_data = bundle.data.get('urdb_rate')
+        if rate_data is not None and type(rate_data).__name__=='dict':
+                rate_checker = URDB_RateValidator(**rate_data)
+                if rate_checker.errors:
+                    errors = self.append_errors(errors,"URDB Rate Errors",rate_checker.errors)
 
         missing_required = self.missing_required(bundle.data.keys())
 

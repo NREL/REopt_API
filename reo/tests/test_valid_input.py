@@ -1,13 +1,16 @@
 import json
-from django.test import TestCase
-from tastypie.test import ResourceTestCaseMixin
-from reo.validators import *
 import numpy as np
+import pickle
 import random
 from reo.src.load_profile import BuiltInProfile
-import pickle
+from django.test import TestCase
+from tastypie.test import ResourceTestCaseMixin
+from reo.validators import REoptResourceValidation
+from reo.api_definitions import default_load_profiles, default_load_monthly, default_latitudes, default_longitudes,\
+    default_urdb_rate, default_demand_charge, default_blended_rate, inputs
 
-def u2s (d):
+
+def u2s(d):
     sub_d = d['reopt']['Error']
     return {'reopt':{'Error':{str(k):[str(i) for i in v]  for k,v in sub_d.items()}}}
 
@@ -26,7 +29,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.annual_kwh_url = "/reopt/annual_kwh/"
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
-
 
     def make_url(self,string):
         return self.url_base + string
@@ -77,7 +79,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data = self.get_defaults_from_list(self.base_case_fields)
 
         data['urdb_rate'] =self.missing_rate_urdb
-        text = "Missing rate attribute for tier 0 in rate 0 energyratestructure"
+        text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
         data['urdb_rate']=self.missing_schedule_urdb
