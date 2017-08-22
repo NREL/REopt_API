@@ -2,7 +2,7 @@ import json
 import shutil
 import os
 from reo.log_levels import log
-from api_definitions import *
+from api_definitions import inputs, outputs
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile

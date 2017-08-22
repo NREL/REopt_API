@@ -1,9 +1,11 @@
-from api_definitions import *
-from urdb_download import *
+from api_definitions import inputs, outputs
+from urdb_download import urdb_download
 import requests
 import json
 import logging
 import datetime
+import random
+import urllib
 from validators import URDB_RateValidator
 
 logging.basicConfig(filename='log_%s.log' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')), filemode='w', level=logging.DEBUG)
