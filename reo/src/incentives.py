@@ -13,12 +13,12 @@ class IncentiveProvider(object):
         """
 
         # ITC only applies to federal, since don't track other tax rates
-        if name is 'federal':
+        if name == 'federal' or name == 'total':
             self.itc = incentives_dict.get('itc_' + name)
             self.itc_max = incentives_dict.get('itc_' + name + '_max') or big_number
         else:
-            self.pbi = incentives_dict.get('pbi_' + name)
-            self.pbi_max = incentives_dict.get('pbi_' + name + '_max') or big_number
+            self.ibi = incentives_dict.get('ibi_' + name)
+            self.ibi_max = incentives_dict.get('ibi_' + name + '_max') or big_number
         self.rebate = incentives_dict.get('rebate_' + name)   # $/kW
         self.rebate_max = incentives_dict.get('rebate_' + name + '_max') or big_number
 
