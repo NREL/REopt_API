@@ -3,6 +3,8 @@ from datetime import datetime
 max_big_number = 1e8
 max_years = 75
 analysis_period = 25
+
+
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
@@ -612,6 +614,7 @@ def outputs():
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
             }
+
 
 # default load profiles
 def default_load_profiles():

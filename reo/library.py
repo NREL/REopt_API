@@ -50,12 +50,6 @@ class DatLibrary:
     debug = True
     time_steps_per_hour = 1
 
-    def inputs(self, **args):
-        return inputs(**args)
-
-    def outputs(self, **args):
-        return outputs(**args)
-
     def __init__(self, run_uuid, run_input_id, inputs_dict):
         """
 
@@ -73,14 +67,13 @@ class DatLibrary:
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
-
-        for k, v in self.inputs(full_list=True).items():
+        for k, v in inputs(full_list=True).items():
             # see api_definitions.py for attributes set here
             if k == 'load_profile_name' and inputs_dict.get(k) is not None:
                 setattr(self, k, inputs_dict.get(k).replace(" ", ""))
 
             elif inputs_dict.get(k) is None:
-                setattr(self, k, self.inputs()[k].get('default'))
+                setattr(self, k, inputs()[k].get('default'))
 
             else:
                 setattr(self, k, inputs_dict.get(k))
@@ -88,7 +81,7 @@ class DatLibrary:
         if self.tilt is None:
             self.tilt = self.latitude
 
-        for k in self.outputs():
+        for k in outputs():
             setattr(self, k, None)
 
         self.update_types()
@@ -105,7 +98,7 @@ class DatLibrary:
             json.dump(json_POST, file_post)
 
     def update_types(self):
-        for group in [self.inputs(full_list=True), self.outputs()]:
+        for group in [inputs(full_list=True), outputs()]:
             for k, v in group.items():
                 value = getattr(self, k)
 
@@ -125,7 +118,7 @@ class DatLibrary:
 
     def get_subtask_inputs(self, name):
         output = {}
-        defaults = self.inputs(filter=name)
+        defaults = inputs(filter=name)
 
         for k in defaults.keys():
             output[k] = getattr(self, k)
@@ -204,7 +197,7 @@ class DatLibrary:
         return ins_and_outs_dict
 
     def _add_inputs(self, od):
-        for k in self.inputs(full_list=True).keys():
+        for k in inputs(full_list=True).keys():
             if hasattr(self, k):
                 od[k] = getattr(self, k)
         return od
