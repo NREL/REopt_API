@@ -317,7 +317,7 @@ class DatFileManager:
                     if region == 'federal' or region == 'total':
                         tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
                         tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
-                    else:
+                    else: # region == 'state' or region == 'utility'
                         tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
                         tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
 
