@@ -49,7 +49,7 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
     :return: present worth factor with degradation
     '''
     pwf = 0
-    for yr in range(1, analysis_period + 1):
+    for yr in range(1, int(analysis_period + 1)):
         pwf += (1 + rate_escalation) ** yr / (1 + rate_discount) ** yr * (1 + rate_degradation) ** (yr - 1)
     return pwf
 

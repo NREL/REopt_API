@@ -1,8 +1,8 @@
 from datetime import datetime
 
 max_big_number = 1e8
-max_years = 75
-analysis_period = 25
+max_years = int(75)
+analysis_period = int(25)
 
 
 def inputs(filter='', full_list=False, just_required=False):
