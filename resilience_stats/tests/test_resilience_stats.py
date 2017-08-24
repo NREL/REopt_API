@@ -133,14 +133,12 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=3)
         self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=3)
         self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=3)
-        import pdb; pdb.set_trace()
         for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
             self.assertAlmostEquals(x, y, places=3)
 
     def test_no_resilience(self):
         self.inputs.update(pv_kw=0, batt_kw=0)
 
-        # r = self.api_client.get(self.url, format='json', data=self.inputs)
         resp = simulate_outage(**self.inputs)
 
         self.assertEqual(0, resp['resilience_hours_min'])
@@ -149,8 +147,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['outage_durations'])
         self.assertEqual(None, resp['probs_of_surviving'])
 
-    # def test_resil_endpoint(self):
-    #     """
-    #     Need to add call to reopt API, the hit resilience_stats with uuid and check results
-    #     :return:
-    #     """
+    def test_resil_endpoint(self):
+        post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
+        r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        data = {'run_uuid': reopt_resp['uuid']}
+        resp = self.api_client.get(self.url, format='json', data=data)
+        self.assertEqual(resp.status_code, 200)
