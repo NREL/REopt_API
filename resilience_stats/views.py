@@ -18,6 +18,8 @@ def resilience_stats(request):
          'resilience_hours_min': rm.resilience_hours_min,
          'resilience_hours_max': rm.resilience_hours_max,
          'resilience_hours_avg': rm.resilience_hours_avg,
+         'outage_durations': rm.outage_durations,
+         'probs_of_surviving': rm.probs_of_surviving,
         }
     )
     return response
