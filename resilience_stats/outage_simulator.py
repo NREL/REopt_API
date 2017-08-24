@@ -72,7 +72,7 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     x_vals = range(1, r_max+1)
     y_vals = list()
     for hrs in x_vals:
-        y_vals.append(round(float(sum([1 if h > hrs else 0 for h in r])) / float(n_timesteps), 4))
+        y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
     
     return {"resilience_by_timestep": r,
             "resilience_hours_min": r_min,
