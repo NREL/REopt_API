@@ -550,27 +550,27 @@ forall ( db in DemandBin, r in Ratchets, ts in TimeStepRatchets(r))  do
 end-do
 
 ! Compute tiered monthly demand rates
-forall (db in DemandMonthsBin, m in Month) do
-	binDemandMonthsTier(m, db) is_binary
+forall (dbm in DemandMonthsBin, m in Month) do
+	binDemandMonthsTier(m, dbm) is_binary
 end-do
 
-forall ( db in DemandMonthsBin, m in Month) do
-	dvPeakDemandEMonth(m, db) <= binDemandMonthsTier(m,db) * MaxDemandMonthsInTier(db)
+forall ( dbm in DemandMonthsBin, m in Month) do
+	dvPeakDemandEMonth(m, dbm) <= binDemandMonthsTier(m,dbm) * MaxDemandMonthsInTier(dbm)
 end-do
 
-forall ( db in DemandMonthsBin | db >= 2, m in Month) do
-	binDemandMonthsTier(m, db) - binDemandTier(m, db-1) <= 0
-	binDemandMonthsTier(m, db)*MaxDemandMonthsInTier(db-1) - dvPeakDemandEMonth(m, db-1) <= 0
+forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
+	binDemandMonthsTier(m, dbm) - binDemandTier(m, dbm-1) <= 0
+	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) - dvPeakDemandEMonth(m, dbm-1) <= 0
 end-do
 
-forall ( db in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
-	dvPeakDemandEMonth(m, db) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb)
-   	dvPeakDemandEMonth(m, db) >= 0
+forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
+	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb)
+   	dvPeakDemandEMonth(m, dbm) >= 0
 end-do
 
 ! find the peak demand of the lookback months (lbm)
-forall ( db in DemandMonthsBin, LD in Load, lbm in DemandLookbackMonths)  do
-	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm, db)
+forall ( dbm in DemandMonthsBin, LD in Load, lbm in DemandLookbackMonths)  do
+	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm, dbm)
 end-do
 
 !! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.

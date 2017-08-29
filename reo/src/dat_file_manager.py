@@ -821,10 +821,12 @@ class DatFileManager:
         DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        DatFileManager.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_months_tiers_num))
 
         DatFileManager.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         DatFileManager.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        DatFileManager.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_months_tiers_num))
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
