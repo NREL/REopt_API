@@ -62,7 +62,6 @@ class URDB_RateValidator:
         """
         self.errors = []                             #Catch Errors - write to output file
         self.warnings = []                           #Catch Warnings 
-
         for key in kwargs:                           #Load in attributes          
             setattr(self, key, kwargs[key])
 
@@ -114,12 +113,14 @@ class URDB_RateValidator:
         name = 'energyweekdayschedule'
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
+            self.validCompleteHours(name, [12,24])
 
     def validate_energyweekendschedule(self):
         name = 'energyweekendschedule'
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
-
+            self.validCompleteHours(name, [12,24])
+ 
     def validate_energyratestructure(self):
         name = 'energyratestructure'
         if self.validDependencies(name):
@@ -134,6 +135,7 @@ class URDB_RateValidator:
         name = 'flatdemandmonths'
         if self.validDependencies(name):
             self.validSchedule(name, 'flatdemandstructure')
+            self.validCompleteHours(name, [12])
 
     def validate_coincidentratestructure(self):
         name = 'coincidentratestructure'
@@ -169,6 +171,24 @@ class URDB_RateValidator:
         
         return valid
 
+    def validCompleteHours(self, schedule_name,expected_counts):
+        # check that each array in a schedule contains the correct number of entries
+        # return Boolean if any errors found
+       
+        if hasattr(self,schedule_name):
+            valid = True
+            schedule = getattr(self,schedule_name)
+            
+            def recursive_search(item,level=0, entry=0):
+                if type(item)==list:
+                    if len(item)!=expected_counts[level]:
+                        self.errors.append('Entry %s %s%s does not contain %s entries' % (entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level]))
+                        valid = False 
+                    for ii,subitem in enumerate(item):
+                        recursive_search(subitem,level=level+1, entry=ii)
+            recursive_search(schedule)
+        return valid 
+    
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute
         # return Boolean if any errors found
@@ -191,7 +211,7 @@ class URDB_RateValidator:
         if hasattr(self,schedules):
             valid = True
             s = getattr(self, schedules)
-            if np.array(s).ndim > 1:
+            if type(s[0])==list:
                 s = np.concatenate(s)
 
             periods = list(set(s))
