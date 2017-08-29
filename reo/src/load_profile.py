@@ -454,18 +454,24 @@ class LoadProfile(BuiltInProfile):
 
         if user_profile:
             self.load_list = user_profile
-            self.annual_kwh = sum(user_profile)
 
         else:  # building type and (load_size OR load_monthly_kwh) defined by user
             super(LoadProfile, self).__init__(**kwargs)
             self.load_list = self.built_in_profile
-            self.annual_kwh = sum(self.load_list)
 
         self.unmodified_load_list = copy.copy(self.load_list)
+        self.bau_load_list = copy.copy(self.load_list)
 
         if crit_load_factor and outage_start and outage_end:
             # modify load
             self.load_list = self.load_list[0:outage_start] \
                            + [ld * crit_load_factor for ld in self.load_list[outage_start:outage_end]] \
                            + self.load_list[outage_end:]
+            self.bau_load_list = self.load_list[0:outage_start] \
+                                + [0 for _ in self.load_list[outage_start:outage_end]] \
+                                + self.load_list[outage_end:]
+
+        self.annual_kwh = sum(self.load_list)
+        self.bau_annual_kwh = sum(self.bau_load_list)
+
         DatFileManager().add_load(self)

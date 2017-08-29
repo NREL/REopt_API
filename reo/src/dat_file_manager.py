@@ -91,6 +91,8 @@ class DatFileManager:
         self.file_economics_bau = os.path.join(paths.inputs, 'economics_' + file_tail_bau)
         self.file_load_profile = os.path.join(paths.inputs, 'Load8760_' + file_tail)
         self.file_load_size = os.path.join(paths.inputs, 'LoadSize_' + file_tail)
+        self.file_load_profile_bau = os.path.join(paths.inputs, 'Load8760_' + file_tail_bau)
+        self.file_load_size_bau = os.path.join(paths.inputs, 'LoadSize_' + file_tail_bau)
         self.file_gis = os.path.join(paths.inputs, "GIS_" + file_tail)
         self.file_gis_bau = os.path.join(paths.inputs, "GIS_" + file_tail_bau)
         self.file_storage = os.path.join(paths.inputs, 'storage_' + file_tail)
@@ -120,9 +122,9 @@ class DatFileManager:
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
         self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
         self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
-        self.DAT_bau[2] = self.DAT[2]
+        self.DAT_bau[2] = "DAT3=" + "'" + self.file_load_size_bau + "'"
         self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
-        self.DAT_bau[3] = self.DAT[3]
+        self.DAT_bau[3] = "DAT4=" + "'" + self.file_load_profile_bau + "'"
         self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
         self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
         self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
@@ -147,6 +149,9 @@ class DatFileManager:
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
+
+        write_to_dat(self.file_load_profile_bau, load.bau_load_list, "LoadProfile")
+        write_to_dat(self.file_load_size_bau, load.bau_annual_kwh, "AnnualElecLoad")
 
     def add_pv(self, pv):
         self.pv = pv
