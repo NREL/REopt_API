@@ -834,6 +834,7 @@ class DatFileManager:
         write_to_dat(self.file_demand_num_ratchets, ta.demand_num_ratchets, 'NumRatchets')
         write_to_dat(self.file_max_in_tiers, ta.demand_max_in_tiers, 'MaxDemandInTier')
         write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
+        write_to_dat(self.file_max_in_tiers, ta.demand_month_max_in_tiers, 'MaxDemandMonthsInTier', 'a')
         write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
         # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
         write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')

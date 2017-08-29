@@ -19,6 +19,7 @@ parameters
   CapCostSegCount = 1
   FuelBinCount = 1
   DemandBinCount = 1
+  DemandMonthsBinCount = 1
   BattLevelCount = 1
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
@@ -57,6 +58,7 @@ declarations
   Ratchets = 1..NumRatchets
   FuelBin = 1..FuelBinCount
   DemandBin = 1..DemandBinCount
+  DemandMonthsBin = 1..DemandMonthsBinCount
   BattLevel=1..BattLevelCount
 
   StartTime: real
@@ -111,10 +113,10 @@ declarations
   binSingleBasicTech: array (Tech,TechClass) of mpvar
 
   dvPeakDemandE: array ( Ratchets, DemandBin) of mpvar  !Peak electric demand for the month
-  dvPeakDemandEMonth: array ( Month) of mpvar  !Peak electric demand for the month
+  dvPeakDemandEMonth: array ( Month, DemandMonthsBin) of mpvar  !Peak electric demand for the month
 
   DemandRates: array ( Ratchets, DemandBin) of real !Demand rate for the quarter
-  DemandRatesMonth: array ( Month) of real !Demand rate for the quarter
+  DemandRatesMonth: array ( Month, DemandMonthsBin) of real !Demand rate for the quarter
 
   dvElecToStor: array( TimeStep) of mpvar  !Electricity going to the storage system during each timestep
   dvElecFromStor: array ( TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
@@ -141,9 +143,11 @@ declarations
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
 
   MaxDemandInTier: array ( DemandBin) of real
+  MaxDemandMonthsInTier: array ( DemandMonthsBin) of real
   MaxUsageInTier: array ( FuelBin) of real
 
   binDemandTier: array ( Ratchets, DemandBin) of mpvar
+  binDemandMonthsTier: array (Month, DemandMonthsBin) of mpvar
   binUsageTier: array ( FuelBin) of mpvar
 
   DemandLookbackPercent:  real
@@ -279,6 +283,7 @@ initializations from DAT14 ! LookbackMonthsAndPercent
 end-initializations
 initializations from DAT15 ! UtilityTiers
 	MaxDemandInTier
+	MaxDemandMonthsInTier
 	MaxUsageInTier
 end-initializations
 initializations from DAT16
@@ -544,14 +549,28 @@ forall ( db in DemandBin, r in Ratchets, ts in TimeStepRatchets(r))  do
    	dvPeakDemandE(r,db) >= DemandLookbackPercent * dvPeakDemandELookback
 end-do
 
-forall ( m in Month, ts in TimeStepRatchetsMonth(m))  do
-	dvPeakDemandEMonth( m) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb)
-   	dvPeakDemandEMonth( m) >= 0
+! Compute tiered monthly demand rates
+forall (db in DemandMonthsBin, m in Month) do
+	binDemandMonthsTier(m, db) is_binary
+end-do
+
+forall ( db in DemandMonthsBin, m in Month) do
+	dvPeakDemandEMonth(m, db) <= binDemandMonthsTier(m,db) * MaxDemandMonthsInTier(db)
+end-do
+
+forall ( db in DemandMonthsBin | db >= 2, m in Month) do
+	binDemandMonthsTier(m, db) - binDemandTier(m, db-1) <= 0
+	binDemandMonthsTier(m, db)*MaxDemandMonthsInTier(db-1) - dvPeakDemandEMonth(m, db-1) <= 0
+end-do
+
+forall ( db in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
+	dvPeakDemandEMonth(m, db) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb)
+   	dvPeakDemandEMonth(m, db) >= 0
 end-do
 
 ! find the peak demand of the lookback months (lbm)
-forall ( LD in Load, lbm in DemandLookbackMonths)  do
-	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm)
+forall ( db in DemandMonthsBin, LD in Load, lbm in DemandLookbackMonths)  do
+	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm, db)
 end-do
 
 !! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
@@ -596,7 +615,7 @@ TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSiz
 ! Utility and Taxable Costs
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
-DemandFlatCharges := sum( m in Month) dvPeakDemandEMonth( m) * DemandRatesMonth( m) * pwf_e
+DemandFlatCharges := sum( m in Month, db in DemandMonthsBin) dvPeakDemandEMonth( m, db) * DemandRatesMonth( m, db) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
 
 ! Incentives
