@@ -7,9 +7,9 @@ from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
 from models import RunInput
 from validators import REoptResourceValidation
-from utilities import is_error
 from api_definitions import inputs
 from log_levels import log
+from utilities import API_Error
 
 
 def get_current_api():
@@ -61,27 +61,24 @@ class RunInputResource(ModelResource):
             raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
         # Format  and  Save Inputs
+           
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
 
         model_inputs['api_version'] = get_current_api()       
 
+
         run = RunInput(**model_inputs)
         run.save()
-    
-        # Return  Results
-        output_obj = run.create_output(model_inputs.keys(), bundle.data)
+        try:
+            # Return  Results
+            output_obj = run.create_output(model_inputs.keys(), bundle.data)
 
-        if hasattr(output_obj, 'keys'):
-            if is_error(output_obj):
-                raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_obj))
-        
-        # not sure how this is happening
-        if isinstance(output_obj, dict):
-            output_dict = dict()
-            output_dict['error'] = "REopt optimization error or timeout, please contact reopt@nrel.gov"
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, output_dict))
+            bundle.obj = output_obj
+            bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
 
-        bundle.obj = output_obj
-        bundle.data = {k:v for k,v in output_obj.__dict__.items() if not k.startswith('_')}
+            return self.full_hydrate(bundle)
 
-        return self.full_hydrate(bundle)
+        except Exception as e:
+            e_type,e_message = e
+            API_Error(e_type,e_message)
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e_type,e_message).response))

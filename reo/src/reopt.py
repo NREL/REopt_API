@@ -34,8 +34,8 @@ class Command(object):
             log("ERROR", "XPRESS Thread Timeout")
             self.process.terminate()
             thread.join()
-            error = "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support"\
-                    .format(timeout)
+            raise RuntimeError('reopt.py', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support"\
+                    .format(timeout))
         return error
 
 
@@ -121,12 +121,10 @@ class REopt(object):
         if os.path.exists(self.output_file):
             process_results = Results(self.paths.templates, self.paths.outputs, self.paths.outputs_bau,
                                       self.paths.static_outputs, self.year)
-            output_dict = process_results.get_output()
+            return process_results.get_output()
 
         else:
-            msg = "Output file: " + self.output_file + " does not exist"
-            output_dict = {'Error': [msg]}
+            msg = "REopt failed to run. Output file does not exist: " + self.output_file 
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", msg)
-
-        return output_dict
+            raise RuntimeError('reopt.py', msg)

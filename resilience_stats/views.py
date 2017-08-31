@@ -9,7 +9,7 @@ def resilience_stats(request):
     try:
         run_output = RunOutput.objects.get(uuid=uuid)
     except:
-        return HttpResponseBadRequest("Invalid run_uuid")
+        return ValueError("Invalid run_uuid")
 
     rm = ResilienceModel.create(run_output=run_output)
 

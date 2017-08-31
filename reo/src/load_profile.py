@@ -350,17 +350,14 @@ class BuiltInProfile(object):
         :param load_year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
-        try:
-            self.latitude = float(latitude) if latitude else None
-            self.longitude = float(longitude) if longitude else None
-            self.monthly_kwh = load_monthly_kwh
-            self.load_profile_name = load_profile_name
-            self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
-            self.year = load_year
-      
-        except Exception as e:
-            raise ValueError(e)         
-    
+        
+        self.latitude = float(latitude) if latitude else None
+        self.longitude = float(longitude) if longitude else None
+        self.monthly_kwh = load_monthly_kwh
+        self.load_profile_name = load_profile_name
+        self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
+        self.year = load_year
+
     @property
     def built_in_profile(self):
         if self.monthly_kwh is None:
@@ -386,7 +383,7 @@ class BuiltInProfile(object):
                 return self.nearest_city
         
         else:
-            raise Exception('Cannot determine nearest city - missing city or latitude and longitude inputs')
+            raise AttributeError('load_profile', 'Cannot determine nearest city - missing city or latitude and longitude inputs')
 
     @property
     def default_annual_kwh(self):
@@ -398,7 +395,7 @@ class BuiltInProfile(object):
     def building_type(self):
         name = self.load_profile_name.replace(' ','')
         if name.lower() not in self.default_buildings:
-            raise ValueError("Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
+            raise AttributeError('load_profile', "Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
         return name
 
     @property

@@ -26,7 +26,7 @@ class ElecTariff(object):
                 log("INFO", "Making URDB rate from blended data")
                 urdb_rate = self.make_urdb_rate(blended_utility_rate, demand_charge)
         else:
-            raise ValueError("urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
+            raise AttributeError('elec_tariff', "urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
 
         self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
         self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
