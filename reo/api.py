@@ -79,7 +79,7 @@ class RunInputResource(ModelResource):
             return self.full_hydrate(bundle)
 
         except Exception as e:
-            if len(e)==2:
+            if len(e.args)==2:
                 e_type,e_message = e
             else:
                 e_type,e_message = "New Error",e
