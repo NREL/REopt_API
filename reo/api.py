@@ -79,9 +79,4 @@ class RunInputResource(ModelResource):
             return self.full_hydrate(bundle)
 
         except Exception as e:
-            if len(e.args)==2:
-                e_type,e_message = e
-            else:
-                e_type,e_message = "New Error",e
-
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e_type,e_message).response))
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))

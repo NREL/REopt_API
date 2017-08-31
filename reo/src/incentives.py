@@ -54,7 +54,7 @@ class Incentives(object):
             self.macrs_bonus_fraction = 0
             self.macrs_itc_reduction = 0
         else:
-            raise Exception("macrs_years must be 0, 5 or 7.")
+            raise ValueError("macrs_years must be 0, 5 or 7.")
 
         if tech:  # not needed once we modify POST dict
             filtered_kwargs = self._filter_inputs(tech, POST)

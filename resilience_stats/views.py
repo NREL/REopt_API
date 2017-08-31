@@ -1,15 +1,15 @@
 from django.http import JsonResponse, HttpResponseBadRequest
 from reo.models import RunOutput
 from models import ResilienceModel
-
+from reo.utilities import API_Error
 
 def resilience_stats(request):
     uuid = request.GET.get('run_uuid')
 
     try:
         run_output = RunOutput.objects.get(uuid=uuid)
-    except:
-        return ValueError("Invalid run_uuid")
+    except Exception as e:
+        return API_Error(e).response
 
     rm = ResilienceModel.create(run_output=run_output)
 

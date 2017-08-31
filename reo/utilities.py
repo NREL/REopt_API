@@ -3,16 +3,15 @@ from log_levels import log
 
 
 class API_Error:
-    def __init__(self, error_type, messages):
+    def __init__(self, e):
+        #e is a caught Exception
         self.errors = {}
-        self.errors[error_type]= messages
-
-    def add(self, error_type, messages):
-        if error_type not in self.errors.keys():
-            self.errors[error_type]= messages
-        
+        if len(e.args)==2:
+            error_type,messages = e
         else:
-            self.errors[error_type].append(messages)
+            error_type,messages = 'Exception',e
+
+        self.errors[error_type]= messages
 
     @property
     def response(self):
