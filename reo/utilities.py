@@ -7,8 +7,11 @@ class API_Error:
         #e is a caught Exception
         self.errors = {}
         if len(e.args)==2:
+            #arg 1 - filename where exception was thrown
+            #arg 2 - custom error message
             error_type,messages = e
         else:
+            #error was not thrown intentiallty in this code
             error_type,messages = 'Exception',e
 
         self.errors[error_type]= messages
