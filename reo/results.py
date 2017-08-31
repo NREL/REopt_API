@@ -39,7 +39,7 @@ class Results:
             results_dict_bau = json.loads(f.read())
 
         if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
-            raise Exception("No solution could be found for these inputs")
+            raise RuntimeError('results',"No solution could be found for these inputs")
 
         # add bau outputs to results_dict
         for k in Results.bau_attributes:
