@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from validators import REoptResourceValidation
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
+from models import URDBError
 
 
 def index(request):
@@ -49,6 +50,18 @@ def check_inputs(request):
     else:
         return HttpResponse(json.dumps(errors), content_type='application/json')
 
+
+def invalid_urdb(request):
+
+    try:
+        invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
+        response = JsonResponse( {"Invalid IDs": invalid_set} )
+        
+    except Exception as e:
+        response = JsonResponse(
+            {'Error': str(e)},
+        )
+    return response
 
 def annual_kwh(request):
 
