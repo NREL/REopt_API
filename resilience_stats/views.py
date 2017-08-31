@@ -1,4 +1,4 @@
-from django.http import JsonResponse, HttpResponseBadRequest
+from django.http import JsonResponse
 from reo.models import RunOutput
 from models import ResilienceModel
 from reo.utilities import API_Error

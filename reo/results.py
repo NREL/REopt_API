@@ -2,8 +2,6 @@ import os
 import json
 from api_definitions import outputs
 from dispatch import ProcessOutputs
-from tastypie.exceptions import ImmediateHttpResponse
-
 
 class Results:
 
