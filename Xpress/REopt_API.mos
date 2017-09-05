@@ -615,7 +615,7 @@ TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSiz
 ! Utility and Taxable Costs
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
-DemandFlatCharges := sum( m in Month, db in DemandMonthsBin) dvPeakDemandEMonth( m, db) * DemandRatesMonth( m, db) * pwf_e
+DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
 
 ! Incentives
@@ -774,8 +774,8 @@ fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
     end-do
     writeln(",")
     writeln("Month,Peak_Demand")
-    forall  ( m in Month)  do
-       writeln (m, ",", getsol(dvPeakDemandEMonth(m)),",")
+    forall  ( m in Month, dbm in DemandMonthsBin)  do
+       writeln (m, ",", getsol(dvPeakDemandEMonth(m, dbm)),",")
     end-do
 fclose(F_OUTPUT)
 
