@@ -53,6 +53,7 @@ class Incentives(object):
         elif macrs_years == 0:
             self.macrs_bonus_fraction = 0
             self.macrs_itc_reduction = 0
+            self.macrs_schedule = [0]
         else:
             raise ValueError("macrs_years must be 0, 5 or 7.")
 
