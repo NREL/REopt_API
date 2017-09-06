@@ -116,8 +116,6 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
         depreciation_amount += (rate * macrs_basis) / (1 + discount_rate) ** (idx + 1)
 
     # Compute the effective tax savings ($/kW)
-    import pdb
-    pdb.set_trace()
     tax_savings = depreciation_amount * tax_rate
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
