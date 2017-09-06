@@ -560,7 +560,7 @@ end-do
 
 forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
 	binDemandMonthsTier(m, dbm) - binDemandMonthsTier(m, dbm-1) <= 0
-	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) - dvPeakDemandEMonth(m, dbm-1) <= 0
+	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) <= dvPeakDemandEMonth(m, dbm-1) ! enforces full bins
 end-do
 
 forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
@@ -569,8 +569,8 @@ forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
 end-do
 
 ! find the peak demand of the lookback months (lbm)
-forall ( dbm in DemandMonthsBin, LD in Load, lbm in DemandLookbackMonths)  do
-	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm, dbm)
+forall (LD in Load, lbm in DemandLookbackMonths)  do
+	dvPeakDemandELookback >= sum(dbm in DemandMonthsBin) dvPeakDemandEMonth(lbm, dbm)
 end-do
 
 !! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
