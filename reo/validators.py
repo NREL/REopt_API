@@ -182,7 +182,8 @@ class URDB_RateValidator:
             def recursive_search(item,level=0, entry=0):
                 if type(item)==list:
                     if len(item)!=expected_counts[level]:
-                        self.errors.append('Entry %s %s%s does not contain %s entries' % (entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level]))
+                        msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
+                        self.errors.append(msg)
                         valid = False 
                     for ii,subitem in enumerate(item):
                         recursive_search(subitem,level=level+1, entry=ii)
@@ -211,7 +212,7 @@ class URDB_RateValidator:
         if hasattr(self,schedules):
             valid = True
             s = getattr(self, schedules)
-            if type(s[0])==list:
+            if isinstance(s[0],list):
                 s = np.concatenate(s)
 
             periods = list(set(s))
