@@ -28,8 +28,8 @@ class ElecTariff(object):
         else:
             raise ValueError("urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
 
-        self.utility_name = re.sub(r'\W+', '', urdb_rate.get('utility'))
-        self.rate_name = re.sub(r'\W+', '', urdb_rate.get('name'))
+        self.utility_name = re.sub(r'\W+', '', str(urdb_rate.get('utility')))
+        self.rate_name = re.sub(r'\W+', '', str(urdb_rate.get('name')))
         self.urdb_rate = urdb_rate
 
         DatFileManager().add_elec_tariff(self)
