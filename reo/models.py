@@ -4,10 +4,7 @@ from django.contrib.postgres.fields import *
 import uuid
 from picklefield.fields import PickledObjectField
 from library import DatLibrary
-from utilities import is_error
 import numpy as np
-
-
 
 class RunInput(models.Model):
 
@@ -134,6 +131,8 @@ class RunInput(models.Model):
     created = models.DateTimeField(auto_now_add=True)
 
     def create_output(self, fields, json_POST):
+        
+       
         response_inputs = {f: getattr(self, f) for f in fields}
 
         run_uuid = uuid.uuid4()
@@ -146,9 +145,6 @@ class RunInput(models.Model):
 
         # Run Optimization
         output_dictionary = run_set.run()
-        error = is_error(output_dictionary)
-        if error:
-            return error
 
         # API level outputs
         output_dictionary['api_version'] = self.api_version
@@ -156,8 +152,10 @@ class RunInput(models.Model):
 
         result = RunOutput(**output_dictionary)
         result.save()
+    
 
         return result
+            
     
 class RunOutput(models.Model):
 

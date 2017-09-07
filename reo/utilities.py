@@ -1,21 +1,29 @@
 import os
-from tastypie.exceptions import ImmediateHttpResponse
 from log_levels import log
 
 
+class API_Error:
+    def __init__(self, e):
+        #e is a caught Exception
+        self.errors = {}
+        if len(e.args)==2:
+            #arg 1 - filename where exception was thrown
+            #arg 2 - custom error message
+            error_type,messages = e
+        else:
+            #error was not thrown intentiallty in this code
+            error_type,messages = 'Exception',e
+
+        self.errors[error_type]= messages
+
+    @property
+    def response(self):
+        return {"REopt": {"Error":self.errors}}
+            
 def check_directory_created(path):
     if not os.path.exists(path):
         log('ERROR', "Directory: " + path + " failed to create")
-        raise ImmediateHttpResponse("Directory failed to create")
-
-
-def is_error(output_dictionary):
-    error = False
-    [d.lower() for d in output_dictionary]
-    if 'error' in output_dictionary:
-        error = output_dictionary
-    return error
-
+        raise RuntimeError('utilties', "Directory failed to create: " + path)
 
 def slope(x1, y1, x2, y2):
     return (y2 - y1) / (x2 - x1)

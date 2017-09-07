@@ -234,7 +234,7 @@ class REoptResourceValidation(Validation):
         for key, value in input_dictionary.items():
 
             if key not in inputs(full_list=True):
-                errors = self.append_errors(errors, key, ['This key name does not match a valid input.'])
+                errors = self.append_errors(errors, key, ['This key name does not match a valid web input.'])
                 logstring = "Key: '" + str(key) + "' does not match a valid input!"
                 log("ERROR", logstring)
                # raise BadRequest(logstring)
@@ -247,34 +247,34 @@ class REoptResourceValidation(Validation):
                 #    raise BadRequest(logstring)
 
             else:
-                field_def = inputs(full_list=True)[key]
-                format_errors = self.check_input_format(key,value,field_def)
-                if not format_errors:
-                    if 'max' in field_def and field_def['max'] is not None:
-                        max_value = field_def['max']
-                        # handle case that one input depends upon another
-                        if type(field_def['max']) == str and field_def['max'] in input_dictionary:
-                            field_def_depend = inputs(full_list=True)[field_def['max']]
-                            max_value = field_def_depend['default']
-                            if input_dictionary[field_def['max']] is not None:
-                                max_value = input_dictionary[field_def['max']]
+                field_def = inputs(full_list=True).get(key)
+                if field_def is not None:
+                    format_errors = self.check_input_format(key,value,field_def)
+                    if not format_errors:
+                        if 'max' in field_def and field_def['max'] is not None:
+                            max_value = field_def['max']
+                            # handle case that one input depends upon another
+                            if type(field_def['max']) == str and field_def['max'] in input_dictionary:
+                                field_def_depend = inputs(full_list=True)[field_def['max']]
+                                max_value = field_def_depend['default']
+                                if input_dictionary[field_def['max']] is not None:
+                                    max_value = input_dictionary[field_def['max']]
 
-                        format_errors += self.check_max(key, value, field_def, max_value)
+                            format_errors += self.check_max(key, value, field_def, max_value)
 
-                    if 'min' in field_def and field_def['min'] is not None:
-                        format_errors += self.check_min(key, value, field_def)
+                        if 'min' in field_def and field_def['min'] is not None:
+                            format_errors += self.check_min(key, value, field_def)
 
-                    if 'restrict_to' in field_def and field_def['restrict_to'] is not None:
-                        format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
+                        if 'restrict_to' in field_def and field_def['restrict_to'] is not None:
+                            format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
 
-                    if 'length' in field_def and field_def['length'] is not None:
-                        format_errors += self.check_length(key, value, field_def['length'])
+                        if 'length' in field_def and field_def['length'] is not None:
+                            format_errors += self.check_length(key, value, field_def['length'])
 
-                # specific_errors
-                if format_errors:
-                    errors = self.append_errors(errors, key, format_errors)
-                    # raise BadRequest(format_errors)
-
+                    # specific_errors
+                    if format_errors:
+                        errors = self.append_errors(errors, key, format_errors)
+                        # raise BadRequest(format_errors)
         return errors
 
     def is_valid(self, bundle, request=None):
