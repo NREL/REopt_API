@@ -53,6 +53,7 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
         pwf += (1 + rate_escalation) ** yr / (1 + rate_discount) ** yr * (1 + rate_degradation) ** (yr - 1)
     return pwf
 
+
 def insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap):
 
     xp_array_incent[region].append(u_xbp)
