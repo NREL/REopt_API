@@ -1,7 +1,7 @@
 import os
 from tastypie.exceptions import ImmediateHttpResponse
 from log_levels import log
-
+from numpy import npv
 
 def check_directory_created(path):
     if not os.path.exists(path):
@@ -52,7 +52,6 @@ def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradati
     for yr in range(1, int(analysis_period + 1)):
         pwf += (1 + rate_escalation) ** yr / (1 + rate_discount) ** yr * (1 + rate_degradation) ** (yr - 1)
     return pwf
-
 
 def insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap):
 
@@ -108,12 +107,10 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     macrs_basis = itc_basis * (1 - (1 - macrs_itc_reduction) * itc)
 
     # Compute depreciation amount before tax.  ($/kW)
-    depreciation_amount = 0
-    for idx, r in enumerate(macrs_schedule):
-        rate = r
-        if idx == 0:
-            rate += macrs_bonus_fraction
-        depreciation_amount += (rate * macrs_basis) / (1 + discount_rate) ** (idx + 1)
+    macrs_schedule[0] += macrs_bonus_fraction
+    macrs_schedule.insert(0, 0)
+    macrs_percentage = npv(discount_rate, macrs_schedule)
+    depreciation_amount = macrs_percentage * macrs_basis
 
     # Compute the effective tax savings ($/kW)
     tax_savings = depreciation_amount * tax_rate

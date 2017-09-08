@@ -329,17 +329,21 @@ class DatFileManager:
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
 
-                # Cost curve
+                # Intermediate Cost curve
                 xp_array_incent = dict()
                 xp_array_incent['utility'] = [0.0, float(big_number/1e2)]  # kW
                 yp_array_incent = dict()
                 yp_array_incent['utility'] = [0.0, float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
-                
+
+                # Final cost curve
+                cost_curve_bp_x = [0]
+                cost_curve_bp_y = [0]
+
                 for r in range(len(regions)-1):
-        
+
                     region = regions[r]
                     next_region = regions[r + 1]
-        
+
                     # Apply incentives, initialize first value
                     xp_array_incent[next_region] = [0]
                     yp_array_incent[next_region] = [0]
@@ -352,15 +356,15 @@ class DatFileManager:
                     u = float(tech_incentives[region]['rebate'])
                     u_cap = float(tech_incentives[region]['rebate_max'])
         
-                    # check discounts
+                    # reset switches and break point counter
                     switch_percentage = False
                     switch_rebate = False
-        
+
                     if p == 0 or p_cap == 0:
                         switch_percentage = True
                     if u == 0 or u_cap == 0:
                         switch_rebate = True
-        
+
                     # start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
         
@@ -396,7 +400,7 @@ class DatFileManager:
                             if not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                 switch_rebate = True
                             ya = yp - (p * yp + u_cap)
                         elif (p * yp) >= p_cap and (u * xp) < u_cap:
@@ -410,7 +414,7 @@ class DatFileManager:
                             if not switch_rebate and not switch_percentage:
                                 if p_xbp == u_xbp:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_percentage = True
                                     switch_rebate = True
                                 elif p_xbp < u_xbp:
@@ -421,26 +425,30 @@ class DatFileManager:
                                     switch_percentage = True
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
+                                                                p, p_cap, u_cap)
                                     switch_rebate = True
                                 else:
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_rebate = True
                                     if p * yp != p_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
+                                                                u, u_cap, p_cap)
                                     switch_percentage = True
                             elif switch_rebate and not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
+                                                            u_cap, p_cap)
                                 switch_percentage = True
                             elif switch_percentage and not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                                            p_cap, u_cap)
                                 switch_rebate = True
         
                             # Finally compute adjusted values
@@ -453,18 +461,11 @@ class DatFileManager:
         
                         xp_array_incent[next_region].append(xa)
                         yp_array_incent[next_region].append(ya)
-        
-                # clean up any duplicates
-                for region in regions:
-                    for i in range(1, len(xp_array_incent[region])):
-                        if xp_array_incent[region][i] == xp_array_incent[region][i - 1]:
-                            xp_array_incent[region] = xp_array_incent[region][0:i]
-                            yp_array_incent[region] = yp_array_incent[region][0:i]
-                            break
-        
-                # compute cost curve
-                cost_curve_bp_x = xp_array_incent['combined']
-                cost_curve_bp_y = yp_array_incent['combined']
+
+                        # compute cost curve, funky logic in REopt ignores everything except xa, ya
+                        if region == 'federal':
+                            cost_curve_bp_x.append(xa)
+                            cost_curve_bp_y.append(ya)
 
                 tmp_cap_cost_slope = list()
                 tmp_cap_cost_yint = list()
@@ -484,7 +485,7 @@ class DatFileManager:
                 # include MACRS
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
-        
+
                 for s in range(cap_cost_segments):
                     
                     initial_unit_cost = 0
