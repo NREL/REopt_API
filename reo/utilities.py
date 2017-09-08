@@ -1,7 +1,6 @@
 import os
 from log_levels import log
 
-
 class API_Error:
     def __init__(self, e):
         #e is a caught Exception

@@ -2,7 +2,7 @@ from tastypie.validation import Validation
 import numpy as np
 from api_definitions import inputs
 from log_levels import log
-
+from urdb_logger import log_urdb_errors
 
 class URDB_RateValidator:
 
@@ -67,22 +67,8 @@ class URDB_RateValidator:
 
         self.validate()                              #Validate attributes
 
-        if _log_errors:                              #Write errors to log file
-            self.setup_logging()
-
-            # if self.errors:
-                # with open(self.log_file, 'w') as f:
-                #     map(lambda e: f.write(e+'\n'), self.errors)
-                # log("WARNING", self.errors)
-
-    def setup_logging(self):
-        # Creates logging folder and sets up file
-        file_id = self.label or self.eiaid or ''
-    
-        # if not os.path.exists(self.error_folder):
-        #    os.mkdir(self.error_folder)
-        
-        self.log_file = "%s/%s.csv" % (self.error_folder, file_id)
+        if _log_errors:
+            log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
          # Validate each attribute with custom valdidate function
