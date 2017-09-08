@@ -104,14 +104,19 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     # Amount of money the ITC can be applied against ($/kW)
     itc_basis = tech_cost - depreciable_cash_incentives
 
-    # Assume the ITC reduces the depreciable basis ($/kW)
+    # itc reduces depreciable_basis
     macrs_basis = itc_basis * (1 - (1 - macrs_itc_reduction) * itc)
 
-    # Compute depreciation amount before tax.  ($/kW)
-    macrs_schedule[0] += macrs_bonus_fraction
+    # Bonus depreciation taken from tech cost after itc reduction ($/kW)
+    bonus_depreciation = macrs_basis * macrs_bonus_fraction
+
+    # Assume the ITC and bonus depreciation reduce the depreciable basis ($/kW)
+    macrs_basis -= bonus_depreciation
+
+    # Must prepend year 0, as numpy NPV does SUM from year 0 (Excel does from year 1)
     macrs_schedule.insert(0, 0)
     macrs_percentage = npv(discount_rate, macrs_schedule)
-    depreciation_amount = macrs_percentage * macrs_basis
+    depreciation_amount = macrs_percentage * macrs_basis + bonus_depreciation
 
     # Compute the effective tax savings ($/kW)
     tax_savings = depreciation_amount * tax_rate
