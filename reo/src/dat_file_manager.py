@@ -656,12 +656,14 @@ class DatFileManager:
                 
                 if eval('self.' + tech + '.acres_per_kw') is not None:
 
-                    if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
-                        # don't restrict unless they specify both land_area and roof_area,
-                        # otherwise one of them is "unlimited" in UI
-                        acres_available = self.site.roof_squarefeet * squarefeet_to_acre \
-                                          + self.site.land_acres
-                        site_kw_max = acres_available / eval('self.' + tech + '.acres_per_kw')
+                    if eval('self.' + tech + '.kw_per_square_foot') is not None:
+
+                        if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
+                            # don't restrict unless they specify both land_area and roof_area,
+                            # otherwise one of them is "unlimited" in UI
+                            roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
+                            land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
+                            site_kw_max = roof_max_kw + land_max_kw
 
                 max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
 
