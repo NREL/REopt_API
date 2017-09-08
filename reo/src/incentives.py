@@ -15,23 +15,27 @@ class IncentiveProvider(object):
         # ITC only applies to federal, since don't track other tax rates
         if name == 'federal' or name == 'total':
             self.itc = incentives_dict.get('itc_' + name)
-
             # Set maxes to 0 if there is no incentive (critical for cap cost calculation)
             self.itc_max = 0
             if self.itc > 0:
-                self.itc_max = incentives_dict.get('itc_' + name + '_max') or big_number
+                self.itc_max = big_number
+                if 'itc_' + name + '_max' in incentives_dict:
+                    self.itc_max = incentives_dict.get('itc_' + name + '_max')
 
         else: # region == 'state' or region == 'utility'
             self.ibi = incentives_dict.get('ibi_' + name)
             self.ibi_max = 0
             if self.ibi > 0:
-                self.ibi_max = incentives_dict.get('ibi_' + name + '_max') or big_number
+                self.ibi_max = big_number
+                if 'ibi_' + name + '_max' in incentives_dict:
+                    self.ibi_max = incentives_dict.get('ibi_' + name + '_max')
 
         self.rebate = incentives_dict.get('rebate_' + name)   # $/kW
         self.rebate_max = 0
         if self.rebate > 0:
-            self.rebate_max = incentives_dict.get('rebate_' + name + '_max') or big_number
-
+            self.rebate_max = big_number
+            if 'rebate_' + name + '_max' in incentives_dict:
+                self.rebate_max = incentives_dict.get('rebate_' + name + '_max')
 
 
 class ProductionBasedIncentive(object):
@@ -92,5 +96,5 @@ class Incentives(object):
         :param POST: POST dictionary
         :return:
         """
-        return dict((k[len(tech.lower() + '_'):] ,v) for (k, v) in POST.items() if k.startswith(tech.lower() + '_'))
+        return dict((k[len(tech.lower() + '_'):], v) for (k, v) in POST.items() if k.startswith(tech.lower() + '_'))
 
