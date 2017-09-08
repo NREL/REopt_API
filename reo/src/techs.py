@@ -93,7 +93,7 @@ class PV(Tech):
     @property
     def prod_factor(self):
         if self.pvwatts is None:
-            self.pvwatts = PVWatts(offline=True, **self.kwargs)
+            self.pvwatts = PVWatts(**self.kwargs)
         return self.pvwatts.pv_prod_factor
 
 
@@ -107,7 +107,7 @@ class Wind(Tech):
                                    degradation_rate=kwargs.get('wind_degradation_rate'),
                                    **kwargs)
         self.nmil_regime = 'BelowNM'
-        self.reopt_class = 'PV'
+        self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
         self.degradation_rate = kwargs.get('wind_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('wind_macrs_schedule'),
