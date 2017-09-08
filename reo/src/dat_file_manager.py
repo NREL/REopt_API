@@ -65,13 +65,15 @@ class DatFileManager:
     DAT_bau = [None] * 20
     pv = None
     pvnm = None
+    wind = None
+    windnm = None
     util = None
     storage = None
     site = None
     elec_tariff = None
 
-    available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
-    available_tech_classes = ['PV', 'UTIL']  # this is a REopt 'class', not a python class
+    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'util']  # order is critical for REopt!
+    available_tech_classes = ['PV', 'WIND', 'UTIL']  # this is a REopt 'class', not a python class
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
@@ -157,6 +159,11 @@ class DatFileManager:
         self.pv = pv
         self.pvnm = copy.deepcopy(pv)
         self.pvnm.nmil_regime = 'NMtoIL'
+
+    def add_wind(self, wind):
+        self.wind = wind
+        self.windnm = copy.deepcopy(wind)
+        self.windnm.nmil_regime = 'NMtoIL'
 
     def add_util(self, util):
         self.util = util

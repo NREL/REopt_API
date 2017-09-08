@@ -1,6 +1,7 @@
 from reo.src.dat_file_manager import DatFileManager, big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.incentives import Incentives
+from reo.src.ventyx import Ventyx
 
 
 class Tech(object):
@@ -92,5 +93,32 @@ class PV(Tech):
     @property
     def prod_factor(self):
         if self.pvwatts is None:
-            self.pvwatts = PVWatts(**self.kwargs)
+            self.pvwatts = PVWatts(offline=True, **self.kwargs)
         return self.pvwatts.pv_prod_factor
+
+
+class Wind(Tech):
+
+    def __init__(self, acres_per_kw=6e-3, **kwargs):
+        super(Wind, self).__init__(min_kw=kwargs.get('wind_kw_min'),
+                                   max_kw=kwargs.get('wind_kw_max'),
+                                   om_dollars_per_kw=kwargs.get('wind_om'),
+                                   cost_dollars_per_kw=kwargs.get('wind_cost'),
+                                   degradation_rate=kwargs.get('wind_degradation_rate'),
+                                   **kwargs)
+        self.nmil_regime = 'BelowNM'
+        self.reopt_class = 'PV'
+        self.acres_per_kw = acres_per_kw
+        self.degradation_rate = kwargs.get('wind_degradation_rate')
+        self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('wind_macrs_schedule'),
+                                     macrs_bonus_fraction=kwargs.get('wind_macrs_bonus_fraction'),
+                                     macrs_itc_reduction=kwargs.get('wind_macrs_itc_reduction') or 0.5,
+                                     include_production_based=True)
+        self.ventyx = None
+        DatFileManager().add_wind(self)
+
+    @property
+    def prod_factor(self):
+        if self.ventyx is None:
+            self.ventyx = Ventyx()
+        return self.ventyx.wind_prod_factor
