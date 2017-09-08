@@ -411,7 +411,7 @@ class UrdbParse:
                     last_tier = demand_rate[n_tiers_in_period - 1]
                     for i in range(0, n_tiers - n_tiers_in_period):
                         demand_rate_new.append(last_tier)
-                        demand_rate_structure[r] = demand_rate_new
+                demand_rate_structure[r] = demand_rate_new
 
         demand_tiers = {} # for all periods
         demand_maxes = []
