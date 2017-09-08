@@ -309,6 +309,7 @@ class DatFileManager:
         cap_cost_slope = list()
         cap_cost_x = list()
         cap_cost_yint = list()
+        cap_cost_segments = None
 
         for tech in techs:
 
@@ -524,7 +525,7 @@ class DatFileManager:
 
             elif eval('self.' + tech) is not None and tech == 'util':
 
-                if len(techs) == 1:  # only util (usually BAU case)
+                if cap_cost_segments is None:  # only util in techs (usually BAU case)
                     cap_cost_segments = 1
 
                 for seg in range(cap_cost_segments or 1):
@@ -622,25 +623,28 @@ class DatFileManager:
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
-        tech_classes = list()
-        tech_class_min_size = list()
-        tech_to_tech_class = list()
+        tech_class_min_size = list()  # array(TechClass)
+        tech_to_tech_class = list()  # array(Tech, TechClass)
+
+        for tc in self.available_tech_classes:
+
+            if eval('self.' + tc.lower()) is not None:
+                tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
+            else:
+                tech_class_min_size.append(0)
+
         for tech in techs:
 
             if eval('self.' + tech) is not None:
 
                 for tc in self.available_tech_classes:
 
-                    if tech.upper() == tc:
-                        tech_classes.append(tc)
-                        tech_class_min_size.append(eval('self.' + tech + '.min_kw'))
-
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
                         tech_to_tech_class.append(1)
                     else:
                         tech_to_tech_class.append(0)
 
-        return tech_classes, tech_class_min_size, tech_to_tech_class
+        return tech_class_min_size, tech_to_tech_class
 
     def _get_REopt_tech_max_sizes(self, techs):
         max_sizes = list()
@@ -676,9 +680,8 @@ class DatFileManager:
 
         load_list = ['1R', '1W', '1X', '1S']  # same for BAU
 
-        reopt_tech_classes, tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
-        reopt_tech_classes_bau, tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
-        reopt_tech_classes_bau = ['PV', 'UTIL']  # not sure why bau needs PV tech class?
+        tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
+        tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
 
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_dollars_per_kw = \
             self._get_REopt_array_tech_load(self.available_techs)
@@ -732,7 +735,7 @@ class DatFileManager:
         write_to_dat(self.file_constant, tech_is_grid, 'TechIsGrid', mode='a')
         write_to_dat(self.file_constant, load_list, 'Load', mode='a')
         write_to_dat(self.file_constant, tech_to_load, 'TechToLoadMatrix', mode='a')
-        write_to_dat(self.file_constant, reopt_tech_classes, 'TechClass', mode='a')
+        write_to_dat(self.file_constant, self.available_tech_classes, 'TechClass', mode='a')
         write_to_dat(self.file_constant, self.NMILRegime, 'NMILRegime', mode='a')
         write_to_dat(self.file_constant, derate, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
@@ -741,7 +744,7 @@ class DatFileManager:
         write_to_dat(self.file_constant_bau, tech_is_grid_bau, 'TechIsGrid', mode='a')
         write_to_dat(self.file_constant_bau, load_list, 'Load', mode='a')
         write_to_dat(self.file_constant_bau, tech_to_load_bau, 'TechToLoadMatrix', mode='a')
-        write_to_dat(self.file_constant_bau, reopt_tech_classes_bau, 'TechClass', mode='a')
+        write_to_dat(self.file_constant_bau, self.available_tech_classes, 'TechClass', mode='a')
         write_to_dat(self.file_constant_bau, self.NMILRegime, 'NMILRegime', mode='a')
         write_to_dat(self.file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
@@ -821,10 +824,12 @@ class DatFileManager:
         DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        DatFileManager.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
         DatFileManager.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         DatFileManager.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         DatFileManager.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        DatFileManager.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
@@ -834,6 +839,7 @@ class DatFileManager:
         write_to_dat(self.file_demand_num_ratchets, ta.demand_num_ratchets, 'NumRatchets')
         write_to_dat(self.file_max_in_tiers, ta.demand_max_in_tiers, 'MaxDemandInTier')
         write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
+        write_to_dat(self.file_max_in_tiers, ta.demand_month_max_in_tiers, 'MaxDemandMonthsInTier', 'a')
         write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
         # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
         write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')

@@ -79,6 +79,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
 
+        data['urdb_rate']['flatdemandmonths'] = [0]
+        data['urdb_rate']['flatdemandstructure']=[{}]
+        text = "Entry 0 flatdemandmonths does not contain 12 entries"
+        self.check_data_error_response(data,text)
+       
         data['urdb_rate'] =self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
