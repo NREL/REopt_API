@@ -161,10 +161,11 @@ class DatLibrary:
             self.create_loads()
             self.create_elec_tariff()
 
-            pv = PV(**self.inputs_dict)
-            # following 2 lines are necessary for returning the assigned values
-            self.pv_degradation_rate = pv.degradation_rate
-            self.pv_kw_ac_hourly = pv.prod_factor
+            if self.pv_kw_max > 0:
+                pv = PV(**self.inputs_dict)
+                # following 2 lines are necessary for returning the assigned values
+                self.pv_degradation_rate = pv.degradation_rate
+                self.pv_kw_ac_hourly = pv.prod_factor
 
             util = Util(**self.inputs_dict)
 
