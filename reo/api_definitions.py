@@ -1,6 +1,7 @@
 from datetime import datetime
 
 max_big_number = 1e8
+max_incentive = 1e10
 max_years = int(75)
 analysis_period = int(25)
 
@@ -260,19 +261,19 @@ def inputs(filter='', full_list=False, just_required=False):
         # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': 1e10,
+                           'max': None, 'default': max_incentive,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
         'pv_ibi_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e10,
+                         'max': None, 'default': max_incentive,
                          "description": "State Investment Based Incentive Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
         'pv_ibi_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e10,
+                         'max': None, 'default': max_incentive,
                          "description": "Local Investment Based Incentive max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
@@ -294,22 +295,21 @@ def inputs(filter='', full_list=False, just_required=False):
                          "description": "Local rebate", "units": 'dollars-per-kilowatt',
                          "tool_tip": 'Utility or Local rebate for PV panels in $/kW'},
 
-        # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': 1e12,
+                              'max': None, 'default': max_incentive,
                               "description": "Maximum federal rebate", "units": 'dollars',
                               "tool_tip": 'Maximum federal rebate for PV panels in $'},
 
         'pv_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': 1e12, 'default': 1e12,
+                            'max': 1e12, 'default': max_incentive,
                             "description": "Maximum state rebate", "units": 'dollars',
                             "tool_tip": 'Maximum state rebate for PV panels in $'},
 
         'pv_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': 1e12,
+                            'max': None, 'default': max_incentive,
                             "description": "Maximum utility rebate", "units": 'dollars',
                             "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
 

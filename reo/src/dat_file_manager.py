@@ -3,6 +3,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
+from reo.api_definitions import max_incentive
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
@@ -328,6 +329,13 @@ class DatFileManager:
 
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
+
+                # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
+                for region in regions[:-1]:
+                    if tech_incentives[region]['%_max'] == max_incentive:
+                        tech_incentives[region]['%_max'] = 0
+                    if tech_incentives[region]['rebate_max'] == max_incentive:
+                        tech_incentives[region]['rebate_max'] = 0
 
                 # Intermediate Cost curve
                 xp_array_incent = dict()
