@@ -113,7 +113,10 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     # Assume the ITC and bonus depreciation reduce the depreciable basis ($/kW)
     macrs_basis -= bonus_depreciation
 
-    # Compute MACRS savings
+    # Calculate replacement cost, discounted to the replacement year accounting for tax deduction
+    replacement = replacement_cost * (1-tax_rate) / ((1 + discount_rate) ** replacement_year)
+
+    # Compute tax savings from depreciation
     tax_savings_array = [0]
     for idx, macrs_rate in enumerate(macrs_schedule):
         depreciation_amount = macrs_rate * macrs_basis
@@ -125,10 +128,7 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     tax_savings = npv(discount_rate, tax_savings_array)
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
-    cap_cost_slope = tech_cost * (1 - itc) - tax_savings
-
-    # Factor in any out year replacements
-    cap_cost_slope += replacement_cost / (1 + discount_rate) ** replacement_year
+    cap_cost_slope = tech_cost * (1 - itc) - tax_savings + replacement
 
     # Sanity check
     if cap_cost_slope < 0:
