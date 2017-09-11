@@ -2,8 +2,6 @@ import os
 import json
 from api_definitions import outputs
 from dispatch import ProcessOutputs
-from tastypie.exceptions import ImmediateHttpResponse
-
 
 class Results:
 
@@ -39,7 +37,7 @@ class Results:
             results_dict_bau = json.loads(f.read())
 
         if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
-            raise ImmediateHttpResponse("No solution could be found for these inputs")
+            raise RuntimeError('results',"No solution could be found for these inputs")
 
         # add bau outputs to results_dict
         for k in Results.bau_attributes:

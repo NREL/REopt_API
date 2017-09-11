@@ -16,7 +16,9 @@ class REoptArgs:
         self.demand_ratchets_tou = []
         self.demand_num_ratchets = 12
         self.demand_tiers_num = 1
+        self.demand_month_tiers_num = 1
         self.demand_max_in_tiers = 1 * [big_number]
+        self.demand_month_max_in_tiers = 1 * [big_number]
         self.demand_lookback_months = []
         self.demand_lookback_percent = 0
         self.demand_min = 0
@@ -372,17 +374,26 @@ class UrdbParse:
         if n_rates == 0:
             return
         if n_flat > 0:
+            self.prepare_demand_tiers(current_rate, n_flat, True)
             self.prepare_flat_demand(current_rate)
         if n_tou > 0:
-            self.prepare_demand_tiers(current_rate, n_tou)
+            self.prepare_demand_tiers(current_rate, n_tou, False)
             self.prepare_tou_demand(current_rate)
 
         self.prepare_demand_rate_summary()
 
-    def prepare_demand_tiers(self, current_rate, n_tou):
+    def prepare_demand_tiers(self, current_rate, n_periods, monthly):
+
+        # use same method for monthly and tou tiers, just different names
+        if monthly:
+            demand_rate_structure = current_rate.flatdemandstructure
+            self.reopt_args.demand_month_max_in_tiers = []
+        else:
+            demand_rate_structure = current_rate.demandratestructure
+            self.reopt_args.demand_max_in_tiers = []
 
         demand_tiers = []
-        for demand_rate in current_rate.demandratestructure:
+        for demand_rate in demand_rate_structure:
             demand_tiers.append(len(demand_rate))
         demand_tier_set = set(demand_tiers)
         period_with_max_tiers = demand_tiers.index(max(demand_tiers)) #NOTE: this takes the first period if multiple periods have the same number of (max) tiers
@@ -392,25 +403,24 @@ class UrdbParse:
             log("WARNING", "Warning: multiple lengths of demand tiers, using tiers from the earliest period with the max number of tiers")
 
             # make the number of tiers the same across all periods by appending on identical tiers
-            for r in range(n_tou):
-                demand_rate = current_rate.demandratestructure[r]
+            for r in range(n_periods):
+                demand_rate = demand_rate_structure[r]
                 demand_rate_new = demand_rate
                 n_tiers_in_period = len(demand_rate)
                 if n_tiers_in_period != n_tiers:
                     last_tier = demand_rate[n_tiers_in_period - 1]
                     for i in range(0, n_tiers - n_tiers_in_period):
                         demand_rate_new.append(last_tier)
-                current_rate.demandratestructure[r] = demand_rate_new
+                demand_rate_structure[r] = demand_rate_new
 
         demand_tiers = {} # for all periods
         demand_maxes = []
 
-        if n_tou > 0:
-            self.reopt_args.demand_max_in_tiers = []
-            for period in range(n_tou):
+        if n_periods > 0:
+            for period in range(n_periods):
                 demand_max = []
                 for tier in range(n_tiers):
-                    demand_tier = current_rate.demandratestructure[period][tier]
+                    demand_tier = demand_rate_structure[period][tier]
                     demand_tier_max = self.big_number
                     if 'max' in demand_tier:
                         demand_tier_max = demand_tier['max']
@@ -423,9 +433,12 @@ class UrdbParse:
         if len(test_demand_max) > 1:
             log("WARNING", "Warning: highest demand tiers do not match across periods, using max from largest set of tiers")
 
-        self.reopt_args.demand_max_in_tiers = demand_tiers[period_with_max_tiers]
-
-        self.reopt_args.demand_tiers_num = n_tiers
+        if monthly:
+            self.reopt_args.demand_month_max_in_tiers = demand_tiers[period_with_max_tiers]
+            self.reopt_args.demand_month_tiers_num = n_tiers
+        else:
+            self.reopt_args.demand_max_in_tiers = demand_tiers[period_with_max_tiers]
+            self.reopt_args.demand_tiers_num = n_tiers
 
     def prepare_flat_demand(self, current_rate):
 
@@ -437,27 +450,18 @@ class UrdbParse:
             for hour in range(24*self.cum_days_in_yr[month]+1, 24*self.cum_days_in_yr[month+1]+1):
                 self.reopt_args.demand_ratchets_monthly[month].append(hour)
 
-            period = 0
-            for flat in current_rate.flatdemandstructure:
-                flat_rate = 0
-                flat_adj = 0
-
-                if 'rate' in flat[0]:
-                    flat_rate = flat[0]['rate']
-
-                if 'adj' in flat[0]:
-                    flat_adj = flat[0]['adj']
-
+            for period_idx, seasonal_period in enumerate(current_rate.flatdemandstructure):
+                period_in_month = 0
                 if len(current_rate.flatdemandmonths) > 0:
                     period_in_month = current_rate.flatdemandmonths[month]
 
-                    if period_in_month == period:
-                        self.reopt_args.demand_rates_monthly.append(flat_rate + flat_adj)
+                    if period_in_month == period_idx:
 
-                else:
-                    self.reopt_args.demand_rates_monthly.append(flat_rate + flat_adj)
+                        for tier in seasonal_period:
+                            seasonal_rate = tier.get('rate') or 0
+                            seasonal_adj = tier.get('adj') or 0
+                            self.reopt_args.demand_rates_monthly.append(seasonal_rate + seasonal_adj)
 
-                period += 1
 
     def prepare_demand_rate_summary(self):
         """

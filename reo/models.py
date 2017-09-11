@@ -3,11 +3,13 @@ from django.db import models
 from django.contrib.postgres.fields import *
 import uuid
 from picklefield.fields import PickledObjectField
-from library import DatLibrary
-from utilities import is_error
 import numpy as np
 
+class URDBError(models.Model):
 
+    label = models.TextField(blank=True, default='', null=False)
+    type = models.TextField(blank=True, default='', null=False)
+    message = models.TextField(blank=True, default='', null=False)
 
 class RunInput(models.Model):
 
@@ -132,32 +134,7 @@ class RunInput(models.Model):
 
     # Metadata
     created = models.DateTimeField(auto_now_add=True)
-
-    def create_output(self, fields, json_POST):
-        response_inputs = {f: getattr(self, f) for f in fields}
-
-        run_uuid = uuid.uuid4()
-        run_input_id = self.id
-
-        run_set = DatLibrary(run_uuid, run_input_id, response_inputs)
-
-        # Log POST request
-        run_set.log_post(json_POST)
-
-        # Run Optimization
-        output_dictionary = run_set.run()
-        error = is_error(output_dictionary)
-        if error:
-            return error
-
-        # API level outputs
-        output_dictionary['api_version'] = self.api_version
-        output_dictionary['uuid'] = run_uuid
-
-        result = RunOutput(**output_dictionary)
-        result.save()
-
-        return result
+            
     
 class RunOutput(models.Model):
 

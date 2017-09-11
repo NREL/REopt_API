@@ -2,7 +2,7 @@ from tastypie.validation import Validation
 import numpy as np
 from api_definitions import inputs
 from log_levels import log
-
+from urdb_logger import log_urdb_errors
 
 class URDB_RateValidator:
 
@@ -62,28 +62,13 @@ class URDB_RateValidator:
         """
         self.errors = []                             #Catch Errors - write to output file
         self.warnings = []                           #Catch Warnings 
-
         for key in kwargs:                           #Load in attributes          
             setattr(self, key, kwargs[key])
 
         self.validate()                              #Validate attributes
 
-        if _log_errors:                              #Write errors to log file
-            self.setup_logging()
-
-            # if self.errors:
-                # with open(self.log_file, 'w') as f:
-                #     map(lambda e: f.write(e+'\n'), self.errors)
-                # log("WARNING", self.errors)
-
-    def setup_logging(self):
-        # Creates logging folder and sets up file
-        file_id = self.label or self.eiaid or ''
-    
-        # if not os.path.exists(self.error_folder):
-        #    os.mkdir(self.error_folder)
-        
-        self.log_file = "%s/%s.csv" % (self.error_folder, file_id)
+        if _log_errors:
+            log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
          # Validate each attribute with custom valdidate function
@@ -114,12 +99,14 @@ class URDB_RateValidator:
         name = 'energyweekdayschedule'
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
+            self.validCompleteHours(name, [12,24])
 
     def validate_energyweekendschedule(self):
         name = 'energyweekendschedule'
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
-
+            self.validCompleteHours(name, [12,24])
+ 
     def validate_energyratestructure(self):
         name = 'energyratestructure'
         if self.validDependencies(name):
@@ -134,6 +121,7 @@ class URDB_RateValidator:
         name = 'flatdemandmonths'
         if self.validDependencies(name):
             self.validSchedule(name, 'flatdemandstructure')
+            self.validCompleteHours(name, [12])
 
     def validate_coincidentratestructure(self):
         name = 'coincidentratestructure'
@@ -169,6 +157,25 @@ class URDB_RateValidator:
         
         return valid
 
+    def validCompleteHours(self, schedule_name,expected_counts):
+        # check that each array in a schedule contains the correct number of entries
+        # return Boolean if any errors found
+       
+        if hasattr(self,schedule_name):
+            valid = True
+            schedule = getattr(self,schedule_name)
+            
+            def recursive_search(item,level=0, entry=0):
+                if type(item)==list:
+                    if len(item)!=expected_counts[level]:
+                        msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
+                        self.errors.append(msg)
+                        valid = False 
+                    for ii,subitem in enumerate(item):
+                        recursive_search(subitem,level=level+1, entry=ii)
+            recursive_search(schedule)
+        return valid 
+    
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute
         # return Boolean if any errors found
@@ -191,7 +198,7 @@ class URDB_RateValidator:
         if hasattr(self,schedules):
             valid = True
             s = getattr(self, schedules)
-            if np.array(s).ndim > 1:
+            if isinstance(s[0],list):
                 s = np.concatenate(s)
 
             periods = list(set(s))
@@ -213,7 +220,7 @@ class REoptResourceValidation(Validation):
         for key, value in input_dictionary.items():
 
             if key not in inputs(full_list=True):
-                errors = self.append_errors(errors, key, ['This key name does not match a valid input.'])
+                errors = self.append_errors(errors, key, ['This key name does not match a valid web input.'])
                 logstring = "Key: '" + str(key) + "' does not match a valid input!"
                 log("ERROR", logstring)
                # raise BadRequest(logstring)
@@ -226,34 +233,34 @@ class REoptResourceValidation(Validation):
                 #    raise BadRequest(logstring)
 
             else:
-                field_def = inputs(full_list=True)[key]
-                format_errors = self.check_input_format(key,value,field_def)
-                if not format_errors:
-                    if 'max' in field_def and field_def['max'] is not None:
-                        max_value = field_def['max']
-                        # handle case that one input depends upon another
-                        if type(field_def['max']) == str and field_def['max'] in input_dictionary:
-                            field_def_depend = inputs(full_list=True)[field_def['max']]
-                            max_value = field_def_depend['default']
-                            if input_dictionary[field_def['max']] is not None:
-                                max_value = input_dictionary[field_def['max']]
+                field_def = inputs(full_list=True).get(key)
+                if field_def is not None:
+                    format_errors = self.check_input_format(key,value,field_def)
+                    if not format_errors:
+                        if 'max' in field_def and field_def['max'] is not None:
+                            max_value = field_def['max']
+                            # handle case that one input depends upon another
+                            if type(field_def['max']) == str and field_def['max'] in input_dictionary:
+                                field_def_depend = inputs(full_list=True)[field_def['max']]
+                                max_value = field_def_depend['default']
+                                if input_dictionary[field_def['max']] is not None:
+                                    max_value = input_dictionary[field_def['max']]
 
-                        format_errors += self.check_max(key, value, field_def, max_value)
+                            format_errors += self.check_max(key, value, field_def, max_value)
 
-                    if 'min' in field_def and field_def['min'] is not None:
-                        format_errors += self.check_min(key, value, field_def)
+                        if 'min' in field_def and field_def['min'] is not None:
+                            format_errors += self.check_min(key, value, field_def)
 
-                    if 'restrict_to' in field_def and field_def['restrict_to'] is not None:
-                        format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
+                        if 'restrict_to' in field_def and field_def['restrict_to'] is not None:
+                            format_errors += self.check_restrict_to(key, value, field_def['restrict_to'])
 
-                    if 'length' in field_def and field_def['length'] is not None:
-                        format_errors += self.check_length(key, value, field_def['length'])
+                        if 'length' in field_def and field_def['length'] is not None:
+                            format_errors += self.check_length(key, value, field_def['length'])
 
-                # specific_errors
-                if format_errors:
-                    errors = self.append_errors(errors, key, format_errors)
-                    # raise BadRequest(format_errors)
-
+                    # specific_errors
+                    if format_errors:
+                        errors = self.append_errors(errors, key, format_errors)
+                        # raise BadRequest(format_errors)
         return errors
 
     def is_valid(self, bundle, request=None):

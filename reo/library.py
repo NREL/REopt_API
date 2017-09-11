@@ -10,7 +10,7 @@ from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util
 from reo.src.reopt import REopt
-from utilities import check_directory_created, is_error
+from utilities import check_directory_created
 
 
 class Paths(object):
@@ -130,72 +130,75 @@ class DatLibrary:
         return output
 
     def run(self):
+        try:
+            storage = Storage(
+                min_kw=self.batt_kw_min,
+                max_kw=self.batt_kw_max,
+                min_kwh=self.batt_kwh_min,
+                max_kwh=self.batt_kwh_max,
+                efficiency=self.batt_efficiency,
+                inverter_efficiency=self.batt_inverter_efficiency,
+                rectifier_efficiency=self.batt_rectifier_efficiency,
+                soc_min=self.batt_soc_min,
+                soc_init=self.batt_soc_init,
+                can_grid_charge=self.batt_can_gridcharge,
+                us_dollar_per_kw=self.batt_cost_kw,
+                us_dollar_per_kwh=self.batt_cost_kwh,
+                replace_us_dollar_per_kw=self.batt_replacement_cost_kw,
+                replace_us_dollar_per_kwh=self.batt_replacement_cost_kwh,
+                replace_kw_years=self.batt_replacement_year_kw,
+                replace_kwh_years=self.batt_replacement_year_kwh,
+                **self.inputs_dict
+            )
 
-        storage = Storage(
-            min_kw=self.batt_kw_min,
-            max_kw=self.batt_kw_max,
-            min_kwh=self.batt_kwh_min,
-            max_kwh=self.batt_kwh_max,
-            efficiency=self.batt_efficiency,
-            inverter_efficiency=self.batt_inverter_efficiency,
-            rectifier_efficiency=self.batt_rectifier_efficiency,
-            soc_min=self.batt_soc_min,
-            soc_init=self.batt_soc_init,
-            can_grid_charge=self.batt_can_gridcharge,
-            us_dollar_per_kw=self.batt_cost_kw,
-            us_dollar_per_kwh=self.batt_cost_kwh,
-            replace_us_dollar_per_kw=self.batt_replacement_cost_kw,
-            replace_us_dollar_per_kwh=self.batt_replacement_cost_kwh,
-            replace_kw_years=self.batt_replacement_year_kw,
-            replace_kwh_years=self.batt_replacement_year_kwh,
-            **self.inputs_dict
-        )
+            site = Site(**self.inputs_dict)
+            # following 2 lines are necessary for returning *some* of the assigned values.
+            # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
+            # and then we assign them to the off_taker values to represent single party model)
+            for k in site.financials.__dict__.keys():
+                setattr(self, k, getattr(site.financials, k))
 
-        site = Site(**self.inputs_dict)
-        # following 2 lines are necessary for returning *some* of the assigned values.
-        # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
-        # and then we assign them to the off_taker values to represent single party model)
-        for k in site.financials.__dict__.keys():
-            setattr(self, k, getattr(site.financials, k))
+            self.create_loads()
+            self.create_elec_tariff()
 
-        self.create_loads()
-        self.create_elec_tariff()
+            if self.pv_kw_max > 0:
+                pv = PV(**self.inputs_dict)
+                # following 2 lines are necessary for returning the assigned values
+                self.pv_degradation_rate = pv.degradation_rate
+                self.pv_kw_ac_hourly = pv.prod_factor
 
-        pv = PV(**self.inputs_dict)
-        # following 2 lines are necessary for returning the assigned values
-        self.pv_degradation_rate = pv.degradation_rate
-        self.pv_kw_ac_hourly = pv.prod_factor
+            util = Util(**self.inputs_dict)
 
-        util = Util(**self.inputs_dict)
+            net_metering_limit = self.inputs_dict.get("net_metering_limit")
+            if net_metering_limit > 0:
+                self.net_metering = True  # used in urdb_parse
 
-        net_metering_limit = self.inputs_dict.get("net_metering_limit")
-        if net_metering_limit > 0:
-            self.net_metering = True  # used in urdb_parse
+            self.dfm.add_net_metering(
+                net_metering_limit=net_metering_limit,
+                interconnection_limit=self.inputs_dict.get("interconnection_limit")
+            )
+            self.dfm.finalize()
+            self.pv_macrs_itc_reduction = 0.5
+            self.batt_macrs_itc_reduction = 0.5
 
-        self.dfm.add_net_metering(
-            net_metering_limit=net_metering_limit,
-            interconnection_limit=self.inputs_dict.get("interconnection_limit")
-        )
-        self.dfm.finalize()
-        self.pv_macrs_itc_reduction = 0.5
-        self.batt_macrs_itc_reduction = 0.5
+            r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
+            
+            output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
+            output_dict['run_input_id'] = self.run_input_id
 
-        r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
-        output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
-        output_dict['run_input_id'] = self.run_input_id
+            for k, v in self.__dict__.items():
+                if output_dict.get(k) is None and k in outputs():
+                    output_dict[k] = v
+            
+            self.cleanup()
+            
+            ins_and_outs_dict = self._add_inputs(output_dict)
+            return ins_and_outs_dict
 
-        for k, v in self.__dict__.items():
-            if output_dict.get(k) is None and k in outputs():
-                output_dict[k] = v
-
-        self.cleanup()
-
-        if is_error(output_dict):
-            return output_dict
-
-        ins_and_outs_dict = self._add_inputs(output_dict)
-        return ins_and_outs_dict
-
+        except Exception as e:
+            self.cleanup()
+            raise e
+ 
     def _add_inputs(self, od):
         for k in inputs(full_list=True).keys():
             if hasattr(self, k):
