@@ -121,10 +121,16 @@ class ProForma(models.Model):
         if ro.pv_macrs_schedule > 0:
             ws['B74'] = ro.pv_macrs_schedule
             ws['B75'] = ro.pv_macrs_bonus_fraction
-        
+        elif ro.pv_macrs_schedule == 0:
+            ws['B74'] = "None"
+            ws['B75'] = 0
+
         if ro.batt_macrs_schedule > 0:
             ws['C74'] = ro.batt_macrs_schedule
             ws['C75'] = ro.batt_macrs_bonus_fraction
+        if ro.batt_macrs_schedule == 0:
+            ws['C74'] = "None"
+            ws['C75'] = 0
 
         # Save
         wb.save(self.output_file)
