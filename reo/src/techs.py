@@ -84,7 +84,7 @@ class PV(Tech):
         self.degradation_rate = kwargs.get('pv_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
-                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction') or 0.5,
+                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
                                      include_production_based=True)
         self.pvwatts = None
         DatFileManager().add_pv(self)
