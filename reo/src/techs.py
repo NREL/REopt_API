@@ -85,7 +85,9 @@ class PV(Tech):
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
                                      macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
-                                     include_production_based=True)
+                                     include_production_based=True,
+                                     incentive_providers=['federal', 'state', 'utility']
+)
         self.pvwatts = None
         DatFileManager().add_pv(self)
 

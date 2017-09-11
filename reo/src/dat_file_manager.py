@@ -494,6 +494,11 @@ class DatFileManager:
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
+                # Compute taxable cash incentives
+                taxable_cash_incentives = 0
+                for name in eval('self.' + tech + '.incentives.incentive_providers'):
+                    taxable_cash_incentives += eval('self.' + tech + '.incentives.' + name + '.rebate')
+
                 for s in range(cap_cost_segments):
                     
                     initial_unit_cost = 0
@@ -502,6 +507,7 @@ class DatFileManager:
                                              ((1 - eval('self.' + tech + '.incentives.federal.itc')) 
                                               * cost_curve_bp_x[s + 1]))
                     sf = self.site.financials
+
                     updated_slope = setup_capital_cost_incentive(initial_unit_cost,
                                                                  0,
                                                                  sf.analysis_period,
@@ -511,6 +517,7 @@ class DatFileManager:
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
                                                                  eval('self.' + tech + '.incentives.macrs_itc_reduction'),
+                                                                 taxable_cash_incentives
                                                                  )
                     updated_cap_cost_slope.append(updated_slope)
         
@@ -723,8 +730,9 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_schedule,
                                                         self.storage.incentives.macrs_bonus_fraction,
                                                         self.storage.incentives.macrs_itc_reduction,
+                                                        self.storage.incentives.total.rebate,
+                                                        self.storage.incentives.total.rebate
                                                         )
-        StorageCostPerKW -= self.storage.incentives.total.rebate
         StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,
                                                          self.storage.replace_us_dollar_per_kwh,
                                                          self.storage.replace_kwh_years,

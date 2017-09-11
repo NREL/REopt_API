@@ -90,7 +90,8 @@ def insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, 
 
 def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
                                  discount_rate, tax_rate, itc,
-                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction):
+                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction,
+                                 taxable_cash_incentives=0, cash_incentives_to_apply=0):
 
     """ effective PV and battery prices with ITC and depreciation
         (i) depreciation tax shields are inherently nominal --> no need to account for inflation
@@ -121,7 +122,7 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     for idx, macrs_rate in enumerate(macrs_schedule):
         depreciation_amount = macrs_rate * macrs_basis
         if idx == 0:
-            depreciation_amount += bonus_depreciation
+            depreciation_amount += bonus_depreciation - taxable_cash_incentives
         savings_array.append(depreciation_amount * tax_rate)
     savings_array[1] += tech_cost * itc
 
@@ -129,7 +130,7 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     savings = npv(discount_rate, savings_array)
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
-    cap_cost_slope = tech_cost - savings + replacement
+    cap_cost_slope = tech_cost - cash_incentives_to_apply - savings + replacement
 
     # Sanity check
     if cap_cost_slope < 0:

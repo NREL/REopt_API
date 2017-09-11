@@ -110,7 +110,7 @@ class ProForma(models.Model):
         ws['C66'] = big_number  # state ITC max
         ws['B67'] = 0  # utility ITC
         ws['C67'] = big_number  # utility ITC max
-        ws['B69'] = ro.batt_rebate_total
+        ws['B69'] = ro.batt_rebate_total * 0.001
         ws['C69'] = big_number  # max rebate
         ws['B70'] = 0  # state rebate
         ws['C70'] = big_number  # max state rebate
