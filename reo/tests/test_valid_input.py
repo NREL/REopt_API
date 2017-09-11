@@ -142,12 +142,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
            
-                npv = 855.0
-                lcc = 2998.0
-                pv_kw = 1.24622
-                batt_kw = 0.163791
-                batt_kwh = 0.52211
-                yr_one = 1488.5226
+                npv = 447.0
+                lcc = 3331
+                pv_kw = 0.968784
+                batt_kw = 0.0828384
+                batt_kwh = 0.103548
+                yr_one = 1835.0559
             
                 self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
@@ -161,12 +161,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
 
-                lcc = 12651213.0
-                npv = 385668.0
+                lcc = 12740363
+                npv = 296518
                 pv_kw = 185.798
-                batt_kw = 200.866
-                batt_kwh = 960.659
-                yr_one_kwh = 9709753.5354
+                batt_kw = 101.299
+                batt_kwh = 309.418
+                yr_one_kwh = 9681665.4427
 
                 self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
