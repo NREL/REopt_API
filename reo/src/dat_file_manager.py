@@ -494,11 +494,6 @@ class DatFileManager:
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
-                # Compute taxable cash incentives
-                taxable_cash_incentives = 0
-                for name in eval('self.' + tech + '.incentives.incentive_providers'):
-                    taxable_cash_incentives += eval('self.' + tech + '.incentives.' + name + '.rebate')
-
                 for s in range(cap_cost_segments):
                     
                     initial_unit_cost = 0
@@ -516,8 +511,7 @@ class DatFileManager:
                                                                  eval('self.' + tech + '.incentives.federal.itc'),
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'),
-                                                                 taxable_cash_incentives
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction')
                                                                  )
                     updated_cap_cost_slope.append(updated_slope)
         

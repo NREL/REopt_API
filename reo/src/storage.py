@@ -45,7 +45,5 @@ class Storage(object):
 
         self.incentives = Incentives(kwargs, tech='batt', macrs_years=kwargs.get('batt_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('batt_macrs_bonus_fraction', 0.5),
-                                     macrs_itc_reduction=kwargs.get('batt_macrs_itc_reduction', 0.5),
-                                     incentive_providers=['total'])
-
+                                     macrs_itc_reduction=kwargs.get('batt_macrs_itc_reduction', 0.5))
         DatFileManager().add_storage(self)

@@ -41,14 +41,12 @@ class Incentives(object):
     macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
     def __init__(self, POST, tech=None, macrs_years=5, macrs_bonus_fraction=0.5, macrs_itc_reduction=0.5,
-                 include_production_based=False, incentive_providers=['federal', 'state', 'utility']):
+                 include_production_based=False):
 
         if tech:  # not needed once we modify POST dict
             filtered_kwargs = self._filter_inputs(tech, POST)
         else:
             filtered_kwargs = POST
-
-        self.incentive_providers = incentive_providers
 
         # the "total" incentive used by storage, since not a standard TECH
         self.total = IncentiveProvider('total', incentives_dict=filtered_kwargs)
