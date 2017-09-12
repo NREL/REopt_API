@@ -93,7 +93,7 @@ class DatLibrary:
 
         self.dfm = DatFileManager(run_id=self.run_input_id, paths=self.paths,
                                   n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
-        
+    
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
             json.dump(json_POST, file_post)
@@ -192,7 +192,7 @@ class DatLibrary:
                     output_dict[k] = v
             
             self.cleanup()
-                
+            
             ins_and_outs_dict = self._add_inputs(output_dict)
             return ins_and_outs_dict
 
