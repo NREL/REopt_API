@@ -12,6 +12,7 @@ from reo.src.techs import PV, Util
 from reo.src.reopt import REopt
 from utilities import check_directory_created
 
+
 class Paths(object):
     """
     object for contain project paths. facilitates passing paths to other objects.
@@ -60,8 +61,6 @@ class DatLibrary:
         """
         for k in outputs():
             setattr(self, k, None)
-
- 
 
         self.paths = Paths(run_uuid, run_input_id)
         self.timed_out = False  # is this used?
