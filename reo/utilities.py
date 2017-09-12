@@ -1,5 +1,4 @@
 import os
-import traceback
 from log_levels import log
 from numpy import npv
 
