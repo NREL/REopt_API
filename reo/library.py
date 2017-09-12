@@ -12,7 +12,6 @@ from reo.src.techs import PV, Util
 from reo.src.reopt import REopt
 from utilities import check_directory_created
 
-
 class Paths(object):
     """
     object for contain project paths. facilitates passing paths to other objects.
@@ -59,6 +58,11 @@ class DatLibrary:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
+        for k in outputs():
+            setattr(self, k, None)
+
+ 
+
         self.paths = Paths(run_uuid, run_input_id)
         self.timed_out = False  # is this used?
         self.net_metering = False
@@ -82,9 +86,6 @@ class DatLibrary:
         if self.tilt is None:
             self.tilt = self.latitude
 
-        for k in outputs():
-            setattr(self, k, None)
-
         self.update_types()
 
         for k, v in inputs(full_list=True).iteritems():
@@ -93,7 +94,7 @@ class DatLibrary:
 
         self.dfm = DatFileManager(run_id=self.run_input_id, paths=self.paths,
                                   n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
-
+        
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
             json.dump(json_POST, file_post)
@@ -192,7 +193,7 @@ class DatLibrary:
                     output_dict[k] = v
             
             self.cleanup()
-            
+                
             ins_and_outs_dict = self._add_inputs(output_dict)
             return ins_and_outs_dict
 
