@@ -1,6 +1,7 @@
 import json
 import shutil
 import os
+import traceback
 from reo.log_levels import log
 from api_definitions import inputs, outputs
 from reo.src.dat_file_manager import DatFileManager
@@ -198,6 +199,7 @@ class DatLibrary:
 
         except Exception as e:
             self.cleanup()
+            setattr(e, "traceback", traceback.format_exc())
             raise e
  
     def _add_inputs(self, od):

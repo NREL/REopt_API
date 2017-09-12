@@ -1,21 +1,23 @@
 import os
+import traceback
 from log_levels import log
 from numpy import npv
 
 
 class API_Error:
     def __init__(self, e):
-        #e is a caught Exception
+        # e is a caught Exception
         self.errors = {}
-        if len(e.args)==2:
-            #arg 1 - filename where exception was thrown
-            #arg 2 - custom error message
-            error_type,messages = e
+        if len(e.args) == 2:
+            # arg 1 - filename where exception was thrown
+            # arg 2 - custom error message
+            error_type, messages = e
         else:
-            #error was not thrown intentiallty in this code
-            error_type,messages = 'Exception',e
+            # error was not thrown intentionally
+            error_type, messages = 'Exception', e.args
+            self.errors["Traceback"] = e.traceback
 
-        self.errors[error_type]= messages
+        self.errors[error_type] = messages
 
     @property
     def response(self):
