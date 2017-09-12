@@ -9,7 +9,7 @@ from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
-from reo.src.techs import PV, Util
+from reo.src.techs import PV, Util, Wind
 from reo.src.reopt import REopt
 from utilities import check_directory_created
 
@@ -168,6 +168,9 @@ class DatLibrary:
                 # following 2 lines are necessary for returning the assigned values
                 self.pv_degradation_rate = pv.degradation_rate
                 self.pv_kw_ac_hourly = pv.prod_factor
+
+            if self.wind_kw_max > 0:
+                wind = Wind(**self.inputs_dict)
 
             util = Util(**self.inputs_dict)
 
