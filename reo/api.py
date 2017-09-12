@@ -94,7 +94,6 @@ class RunInputResource(ModelResource):
         output_dictionary = run_set.run()
 
         # API level outputs
-        output_dictionary['api_version'] = self.api_version
         output_dictionary['uuid'] = run_uuid
 
         result = RunOutput(**output_dictionary)

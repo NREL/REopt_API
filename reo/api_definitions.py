@@ -480,6 +480,8 @@ def outputs():
     return {'uuid': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Unique id", "units": 'none'},
 
+            'api_version': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": []},
+
             'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
 
