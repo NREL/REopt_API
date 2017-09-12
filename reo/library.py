@@ -59,11 +59,15 @@ class DatLibrary:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
+        for k in outputs():
+            setattr(self, k, None)
+
         self.paths = Paths(run_uuid, run_input_id)
         self.timed_out = False  # is this used?
         self.net_metering = False
 
         self.run_input_id = run_input_id
+        self.api_version = inputs_dict['api_version']
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
@@ -80,9 +84,6 @@ class DatLibrary:
 
         if self.tilt is None:
             self.tilt = self.latitude
-
-        for k in outputs():
-            setattr(self, k, None)
 
         self.update_types()
 

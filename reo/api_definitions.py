@@ -2,8 +2,8 @@ from datetime import datetime
 
 max_big_number = 1e8
 max_incentive = 1e10
-max_years = int(75)
-analysis_period = int(25)
+max_years = int(40)
+analysis_period = int(20)
 
 
 def inputs(filter='', full_list=False, just_required=False):
@@ -14,7 +14,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': analysis_period, 'min': 1, 'max': max_years,
+                            'default': analysis_period, 'min': 10, 'max': max_years,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -54,7 +54,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
 
         'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                  'max': 1e3, 'default': 20,
+                  'max': 1e3, 'default': 16,
                   "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
@@ -96,7 +96,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": "Is battery allowed to charge from the grid?"},
 
         'batt_efficiency': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                         'max': 1, 'default': 0.90,
+                         'max': 1, 'default': 0.975,
                          "description": "Battery internal efficiency", "units": 'percent',
                          "tool_tip": 'Battery internal efficiency'},
 
@@ -154,9 +154,9 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
         'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                   'min': 0, 'max': 1, 'default': 0.08,
+                                   'min': 0, 'max': 1, 'default': 0.068,
                                    "description": "Offtaker Discount Rate", "units": 'decimal percent',
-                                   "tool_tip": 'In the third party-ownership scenario, this is the rate at which the third-party owner discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
+                                   "tool_tip": 'This is the rate at which the electricity consumer discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
 
         'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                  'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
@@ -219,19 +219,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': -1,
-                           'max': 1, 'default': 0.01,
+                           'max': 1, 'default': 0.025,
                            "description": "Annual Inflation Rate", "units": 'decimal percent per year',
                            "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.02,
+                            'min': -1, 'max': 1, 'default': 0.005,
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
 
         'offtaker_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0,
-                              'max': 1, 'default': 0.35,
+                              'max': 1, 'default': 0.40,
                               "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
                               "tool_tip": 'In the third party-ownership scenario, this is the percent of income that goes to tax for the third party owner of the system. Units: decimal percent. This value is not required.'},
 
@@ -350,12 +350,12 @@ def inputs(filter='', full_list=False, just_required=False):
                               "tool_tip": 'Total rebate for battery in $/kW'},
 
         'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                     "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
+                                     "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 460,
                                      "description": "Battery Inverter Replacement Cost", "units": '$/kW',
                                      "tool_tip": "Power capacity replacement cost is the expected cost, in today's dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required."},
 
         'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                      "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
+                                      "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 230,
                                       "description": "Battery Replacement Cost", "units": '$/kWh',
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
@@ -407,7 +407,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": "The inverter's nominal rated DC-to-AC conversion efficiency, defined as the inverter's rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
 
         'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
-                        'default': 1.1, 'min': 0, 'max': 2, "description": "DC to AC ratio",
+                        'default': 1.1, 'min': 1.0, 'max': 2, "description": "DC to AC ratio",
                         "tool_tip": "The expected DC to AC conversion ratio."},
 
         'azimuth': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 180,
@@ -444,7 +444,9 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'tilt': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
                  'min': 0, 'max': 90, "description": "Tilt Angle", "units": "degrees",
-                 "tool_tip": "The tilt of the proposed PV System, commonly matches the latitide for optimal performance."},
+                 "tool_tip": "The tilt of the proposed PV System. The default behavior is to set the tilt to the site \
+                             latitude. However, for roof-mounted systems it is common to use a value from 10-20 \
+                             degrees to reduce wind loading and shading losses"},
 
         'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
                 'min': 0.01, 'max': 0.99, "description": "Ground Cover Ratio",
@@ -477,6 +479,8 @@ def inputs(filter='', full_list=False, just_required=False):
 def outputs():
     return {'uuid': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Unique id", "units": 'none'},
+
+            'api_version': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": []},
 
             'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
