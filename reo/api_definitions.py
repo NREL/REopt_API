@@ -476,7 +476,7 @@ def inputs(filter='', full_list=False, just_required=False):
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
         'wind_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': 1e9, 'default': 1e9,
+                      'max': 1e9, 'default': 0,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 
