@@ -64,6 +64,7 @@ class DatLibrary:
         self.net_metering = False
 
         self.run_input_id = run_input_id
+        self.api_version = inputs_dict['api_version']
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
