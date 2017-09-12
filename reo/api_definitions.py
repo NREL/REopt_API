@@ -464,6 +464,142 @@ def inputs(filter='', full_list=False, just_required=False):
                      'default': 0.5, "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
                      "tool_tip": "Critical load factor is used to scale the load during an outage. \
                                   Value must be between zero and one, inclusive."},
+        # wind inputs
+        'wind_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                    'max': 1e5, 'default': 2000,
+                    "description": "Nominal PV Cost", "units": 'dollars per kilowatt',
+                    "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
+
+        'wind_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                  'max': 1e3, 'default': 16,
+                  "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
+                  "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
+
+        'wind_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                      'max': 1e9, 'default': 1e9,
+                      "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                      "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
+
+        'wind_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                      'max': 1e9, 'default': 0,
+                      "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                      "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
+
+        'wind_degradation_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
+                                'min': 0, 'max': 1, 'default': 0.005,
+                                "description": "Annual Degradation for Solar PV Panels", "units": 'decimal percent',
+                                "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
+
+        'wind_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                           'min': 0,
+                           'max': 1, 'default': 0.30,
+                           "description": "Investment Tax Credit rate", "units": 'decimal percent',
+                           "tool_tip": 'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
+
+        'wind_ibi_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                         'min': 0,
+                         'max': 1, 'default': 0.00,
+                         "description": "State Investment Based Incentive rate", "units": 'decimal percent',
+                         "tool_tip": 'The percent of system costs that are subsudized by the current state tax credit.'},
+
+        'wind_ibi_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                           'min': 0,
+                           'max': 1, 'default': 0.00,
+                           "description": "Local Investment Based Incentive rate", "units": 'decimal percent',
+                           "tool_tip": 'The percent of system costs that are subsudized by a utility or local tax credit.'},
+
+        # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
+        'wind_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                               'min': 0,
+                               'max': None, 'default': max_incentive,
+                               "description": "Federal Investment Tax Credit max", "units": 'dollars',
+                               "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
+
+        'wind_ibi_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                             'min': 0,
+                             'max': None, 'default': max_incentive,
+                             "description": "State Investment Based Incentive Credit max", "units": 'dollars',
+                             "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
+
+        'wind_ibi_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                               'min': 0,
+                               'max': None, 'default': max_incentive,
+                               "description": "Local Investment Based Incentive max", "units": 'dollars',
+                               "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
+
+        'wind_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': None, 'default': 0,
+                              "description": "Federal rate", "units": 'dollars-per-kilowatt',
+                              "tool_tip": 'Federal rebate for PV panels in $/kW'},
+
+        'wind_rebate_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                            'min': 0,
+                            'max': None, 'default': 0,
+                            "description": "State rebate", "units": 'dollars-per-kilowatt',
+                            "tool_tip": 'State rebate for PV panels in $/kW'},
+
+        'wind_rebate_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': None, 'default': 0,
+                              "description": "Local rebate", "units": 'dollars-per-kilowatt',
+                              "tool_tip": 'Utility or Local rebate for PV panels in $/kW'},
+
+        'wind_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                  'min': 0,
+                                  'max': None, 'default': max_incentive,
+                                  "description": "Maximum federal rebate", "units": 'dollars',
+                                  "tool_tip": 'Maximum federal rebate for PV panels in $'},
+
+        'wind_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                'min': 0,
+                                'max': 1e12, 'default': max_incentive,
+                                "description": "Maximum state rebate", "units": 'dollars',
+                                "tool_tip": 'Maximum state rebate for PV panels in $'},
+
+        'wind_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                  'min': 0,
+                                  'max': None, 'default': max_incentive,
+                                  "description": "Maximum utility rebate", "units": 'dollars',
+                                  "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
+
+        'wind_pbi': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                   'min': 0,
+                   'max': 1e2, 'default': 0.00,
+                   "description": "Federal Production Incentive", "units": 'dollars-per-kilowatt-hour',
+                   "tool_tip": 'Federal production based incentives'},
+
+        'wind_pbi_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                       'min': 0,
+                       'max': 1e9, 'default': 1e9,
+                       "description": "Total Production Incentive Maximum", "units": 'dollars',
+                       "tool_tip": 'Total production based incentive maximum'},
+
+        'wind_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                         'min': 0,
+                         'max': analysis_period, 'default': 1,
+                         "description": "Total Production Incentive Year Duration", "units": 'years',
+                         "tool_tip": 'Total production based incentive years'},
+
+        'wind_pbi_system_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': 1e9, 'default': 1e9,
+                              "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
+                              "tool_tip": 'Total production based incentive system maximum size'},
+
+        'wind_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
+                              'default': 5,
+                              'restrict_to': [0, 5, 7],
+                              "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
+                              "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
+
+        'wind_macrs_bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True,
+                                    "needed_for": ['economics'],
+                                    'default': 0.5, 'min': 0, 'max': 1,
+                                    "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
+                                    "units": 'decimal percent',
+                                    "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
+
     }
     if full_list:
         return output
@@ -616,6 +752,9 @@ def outputs():
                  "description": "pv_degredation rate", "units": 'hours'},
 
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
+
+            'wind_kw': {'type': float, 'null': True, 'pct': False,
+                      "description": "Recommended Wind System Size", "units": 'kW'},
 
             }
 
