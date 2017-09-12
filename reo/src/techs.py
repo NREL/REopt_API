@@ -23,7 +23,8 @@ class Tech(object):
         self.reopt_class = ""
         self.is_grid = False
         self.derate = 1
-        self.acres_per_kw = None
+        self.acres_per_kw = None  # for land constraints
+        self.kw_per_square_foot = None  # for roof constraints
 
         # self._check_inputs()
         self.kwargs = kwargs
@@ -72,7 +73,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, acres_per_kw=6e-3, **kwargs):
+    def __init__(self, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
                                  om_dollars_per_kw=kwargs.get('pv_om'),
@@ -82,11 +83,13 @@ class PV(Tech):
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
+        self.kw_per_square_foot = kw_per_square_foot
         self.degradation_rate = kwargs.get('pv_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
-                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction') or 0.5,
-                                     include_production_based=True)
+                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
+                                     include_production_based=True
+)
         self.pvwatts = None
         DatFileManager().add_pv(self)
 

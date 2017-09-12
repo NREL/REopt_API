@@ -1,5 +1,6 @@
 import os
 from log_levels import log
+from numpy import npv
 
 
 class API_Error:
@@ -19,7 +20,7 @@ class API_Error:
     @property
     def response(self):
         return {"REopt": {"Error":self.errors}}
-            
+
 def check_directory_created(path):
     if not os.path.exists(path):
         log('ERROR', "Directory: " + path + " failed to create")
@@ -98,7 +99,8 @@ def insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, 
 
 def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
                                  discount_rate, tax_rate, itc,
-                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction):
+                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction,
+                                 taxable_cash_incentives=0, cash_incentives_to_apply=0):
 
     """ effective PV and battery prices with ITC and depreciation
         (i) depreciation tax shields are inherently nominal --> no need to account for inflation
@@ -112,24 +114,35 @@ def setup_capital_cost_incentive(tech_cost, replacement_cost, replacement_year,
     # Amount of money the ITC can be applied against ($/kW)
     itc_basis = tech_cost - depreciable_cash_incentives
 
-    # Assume the ITC reduces the depreciable basis ($/kW)
-    macrs_basis = itc_basis * (1 - (1 - macrs_itc_reduction) * itc)
+    # itc reduces depreciable_basis
+    depr_basis = itc_basis * (1 - macrs_itc_reduction * itc)
 
-    # Compute depreciation amount before tax.  ($/kW)
-    depreciation_amount = 0
-    for idx, r in enumerate(macrs_schedule):
-        rate = r
+    # Bonus depreciation taken from tech cost after itc reduction ($/kW)
+    bonus_depreciation = depr_basis * macrs_bonus_fraction
+
+    # Assume the ITC and bonus depreciation reduce the depreciable basis ($/kW)
+    depr_basis -= bonus_depreciation
+
+    # Calculate replacement cost, discounted to the replacement year accounting for tax deduction
+    replacement = replacement_cost * (1-tax_rate) / ((1 + discount_rate) ** replacement_year)
+
+    # Compute savings from depreciation and itc in array to capture NPV
+    savings_array = [0]
+    for idx, macrs_rate in enumerate(macrs_schedule):
+        depreciation_amount = macrs_rate * depr_basis
         if idx == 0:
-            rate += macrs_bonus_fraction
-        depreciation_amount += (rate * macrs_basis) / (1 + discount_rate) ** (idx + 1)
+            depreciation_amount += bonus_depreciation - taxable_cash_incentives
+        savings_array.append(depreciation_amount * tax_rate)
+    savings_array[1] += tech_cost * itc
 
-    # Compute the effective tax savings ($/kW)
-    tax_savings = depreciation_amount * tax_rate
+    # Compute the net present value of the tax savings
+    savings = npv(discount_rate, savings_array)
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
-    cap_cost_slope = tech_cost * (1 - itc) - tax_savings
+    cap_cost_slope = tech_cost - cash_incentives_to_apply - savings + replacement
 
-    # Factor in any out year replacements
-    cap_cost_slope += replacement_cost / (1 + discount_rate) ** replacement_year
+    # Sanity check
+    if cap_cost_slope < 0:
+        cap_cost_slope = 0
 
     return round(cap_cost_slope, 4)

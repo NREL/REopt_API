@@ -5,6 +5,11 @@ import uuid
 from picklefield.fields import PickledObjectField
 import numpy as np
 
+class URDBError(models.Model):
+
+    label = models.TextField(blank=True, default='', null=False)
+    type = models.TextField(blank=True, default='', null=False)
+    message = models.TextField(blank=True, default='', null=False)
 
 class RunInput(models.Model):
 

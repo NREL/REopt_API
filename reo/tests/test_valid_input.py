@@ -27,6 +27,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
         self.url_base = '/api/v1/reopt/'
         self.annual_kwh_url = "/reopt/annual_kwh/"
+        self.invalid_urdb_url = '/reopt/invalid_urdb/'
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -86,6 +87,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data['urdb_rate'] =self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
+        self.assertTrue(data['urdb_rate']['label'] in json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs'])
 
         data['urdb_rate']=self.missing_schedule_urdb
 
@@ -147,12 +149,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
            
-                npv = 855.0
-                lcc = 2998.0
-                pv_kw = 1.24622
-                batt_kw = 0.163791
-                batt_kwh = 0.52211
-                yr_one = 1488.5226
+                npv = 447.0
+                lcc = 3331
+                pv_kw = 0.968784
+                batt_kw = 0.0828384
+                batt_kwh = 0.103548
+                yr_one = 1835.0559
             
                 self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
@@ -166,12 +168,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
 
-                lcc = 12651213.0
-                npv = 385668.0
-                pv_kw = 185.798
-                batt_kw = 200.866
-                batt_kwh = 960.659
-                yr_one_kwh = 9709753.5354
+                lcc = 12703930
+                npv = 332951
+                pv_kw = 216.667
+                batt_kw = 105.995
+                batt_kwh = 307.14
+                yr_one_kwh = 9626472.7392
 
                 self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
                 self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
