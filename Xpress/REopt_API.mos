@@ -595,7 +595,7 @@ end-do
 !Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.
 !This prevents PV and wind from 'turning down'.  They always produce at max.
 !CONSTRAINT 47
-forall ( t in Tech, ts in TimeStep, s in Seg | TechToTechClassMatrix(t, "PV") = 1 ) do
+forall ( t in Tech, ts in TimeStep, s in Seg | TechToTechClassMatrix(t, "PV") = 1 or TechToTechClassMatrix(t, "WIND") = 1) do
 	sum (fb in FuelBin, LD in Load |exists (dvRatedProd (t,LD,ts,s,fb)) and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))
 		dvRatedProd (t,LD,ts,s,fb) =  dvSystemSize (t, s)
 end-do
