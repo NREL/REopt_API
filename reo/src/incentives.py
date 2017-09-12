@@ -15,12 +15,12 @@ class IncentiveProvider(object):
         # ITC only applies to federal, since don't track other tax rates
         if name == 'federal' or name == 'total':
             self.itc = incentives_dict.get('itc_' + name)
-            self.itc_max = incentives_dict.get('itc_' + name + '_max') or big_number
+            self.itc_max = incentives_dict.get('itc_' + name + '_max', big_number)
         else: # region == 'state' or region == 'utility'
             self.ibi = incentives_dict.get('ibi_' + name)
-            self.ibi_max = incentives_dict.get('ibi_' + name + '_max') or big_number
+            self.ibi_max = incentives_dict.get('ibi_' + name + '_max', big_number)
         self.rebate = incentives_dict.get('rebate_' + name)   # $/kW
-        self.rebate_max = incentives_dict.get('rebate_' + name + '_max') or big_number
+        self.rebate_max = incentives_dict.get('rebate_' + name + '_max', big_number)
 
 
 class ProductionBasedIncentive(object):
@@ -43,6 +43,17 @@ class Incentives(object):
     def __init__(self, POST, tech=None, macrs_years=5, macrs_bonus_fraction=0.5, macrs_itc_reduction=0.5,
                  include_production_based=False):
 
+        if tech:  # not needed once we modify POST dict
+            filtered_kwargs = self._filter_inputs(tech, POST)
+        else:
+            filtered_kwargs = POST
+
+        # the "total" incentive used by storage, since not a standard TECH
+        self.total = IncentiveProvider('total', incentives_dict=filtered_kwargs)
+        self.federal = IncentiveProvider('federal', incentives_dict=filtered_kwargs)
+        self.state = IncentiveProvider('state', incentives_dict=filtered_kwargs)
+        self.utility = IncentiveProvider('utility', incentives_dict=filtered_kwargs)
+
         self.macrs_bonus_fraction = macrs_bonus_fraction
         self.macrs_itc_reduction = macrs_itc_reduction
 
@@ -57,16 +68,9 @@ class Incentives(object):
         else:
             raise ValueError("macrs_years must be 0, 5 or 7.")
 
-        if tech:  # not needed once we modify POST dict
-            filtered_kwargs = self._filter_inputs(tech, POST)
-        else:
-            filtered_kwargs = POST
-
-        # the "total" incentive used by storage, since not a standard TECH
-        self.total = IncentiveProvider('total', incentives_dict=filtered_kwargs)
-        self.federal = IncentiveProvider('federal', incentives_dict=filtered_kwargs)
-        self.state = IncentiveProvider('state', incentives_dict=filtered_kwargs)
-        self.utility = IncentiveProvider('utility', incentives_dict=filtered_kwargs)
+        # Modify MACRs reduction if no itc
+        if self.federal.itc == 0 and self.total.itc == 0:
+            self.macrs_itc_reduction = 0
 
         if include_production_based:
             self.production_based = ProductionBasedIncentive(**filtered_kwargs)
@@ -81,5 +85,5 @@ class Incentives(object):
         :param POST: POST dictionary
         :return:
         """
-        return dict((k[len(tech.lower() + '_'):] ,v) for (k, v) in POST.items() if k.startswith(tech.lower() + '_'))
+        return dict((k[len(tech.lower() + '_'):], v) for (k, v) in POST.items() if k.startswith(tech.lower() + '_'))
 

@@ -3,6 +3,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
+from reo.api_definitions import max_incentive
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
@@ -330,17 +331,28 @@ class DatFileManager:
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
 
-                # Cost curve
+                # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
+                for region in regions[:-1]:
+                    if tech_incentives[region]['%_max'] == max_incentive:
+                        tech_incentives[region]['%_max'] = 0
+                    if tech_incentives[region]['rebate_max'] == max_incentive:
+                        tech_incentives[region]['rebate_max'] = 0
+
+                # Intermediate Cost curve
                 xp_array_incent = dict()
                 xp_array_incent['utility'] = [0.0, float(big_number/1e2)]  # kW
                 yp_array_incent = dict()
                 yp_array_incent['utility'] = [0.0, float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
-                
+
+                # Final cost curve
+                cost_curve_bp_x = [0]
+                cost_curve_bp_y = [0]
+
                 for r in range(len(regions)-1):
-        
+
                     region = regions[r]
                     next_region = regions[r + 1]
-        
+
                     # Apply incentives, initialize first value
                     xp_array_incent[next_region] = [0]
                     yp_array_incent[next_region] = [0]
@@ -353,15 +365,15 @@ class DatFileManager:
                     u = float(tech_incentives[region]['rebate'])
                     u_cap = float(tech_incentives[region]['rebate_max'])
         
-                    # check discounts
+                    # reset switches and break point counter
                     switch_percentage = False
                     switch_rebate = False
-        
+
                     if p == 0 or p_cap == 0:
                         switch_percentage = True
                     if u == 0 or u_cap == 0:
                         switch_rebate = True
-        
+
                     # start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
         
@@ -397,7 +409,7 @@ class DatFileManager:
                             if not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                 switch_rebate = True
                             ya = yp - (p * yp + u_cap)
                         elif (p * yp) >= p_cap and (u * xp) < u_cap:
@@ -411,7 +423,7 @@ class DatFileManager:
                             if not switch_rebate and not switch_percentage:
                                 if p_xbp == u_xbp:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_percentage = True
                                     switch_rebate = True
                                 elif p_xbp < u_xbp:
@@ -422,26 +434,30 @@ class DatFileManager:
                                     switch_percentage = True
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
+                                                                p, p_cap, u_cap)
                                     switch_rebate = True
                                 else:
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, u_cap)
+                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_rebate = True
                                     if p * yp != p_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
+                                                                u, u_cap, p_cap)
                                     switch_percentage = True
                             elif switch_rebate and not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, u, u_cap, p_cap)
+                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
+                                                            u_cap, p_cap)
                                 switch_percentage = True
                             elif switch_percentage and not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, region, u_xbp, u_ybp, p, p_cap, u_cap)
+                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                                            p_cap, u_cap)
                                 switch_rebate = True
         
                             # Finally compute adjusted values
@@ -454,18 +470,11 @@ class DatFileManager:
         
                         xp_array_incent[next_region].append(xa)
                         yp_array_incent[next_region].append(ya)
-        
-                # clean up any duplicates
-                for region in regions:
-                    for i in range(1, len(xp_array_incent[region])):
-                        if xp_array_incent[region][i] == xp_array_incent[region][i - 1]:
-                            xp_array_incent[region] = xp_array_incent[region][0:i]
-                            yp_array_incent[region] = yp_array_incent[region][0:i]
-                            break
-        
-                # compute cost curve
-                cost_curve_bp_x = xp_array_incent['combined']
-                cost_curve_bp_y = yp_array_incent['combined']
+
+                        # compute cost curve, funky logic in REopt ignores everything except xa, ya
+                        if region == 'federal':
+                            cost_curve_bp_x.append(xa)
+                            cost_curve_bp_y.append(ya)
 
                 tmp_cap_cost_slope = list()
                 tmp_cap_cost_yint = list()
@@ -485,7 +494,7 @@ class DatFileManager:
                 # include MACRS
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
-        
+
                 for s in range(cap_cost_segments):
                     
                     initial_unit_cost = 0
@@ -494,6 +503,7 @@ class DatFileManager:
                                              ((1 - eval('self.' + tech + '.incentives.federal.itc')) 
                                               * cost_curve_bp_x[s + 1]))
                     sf = self.site.financials
+
                     updated_slope = setup_capital_cost_incentive(initial_unit_cost,
                                                                  0,
                                                                  sf.analysis_period,
@@ -502,7 +512,7 @@ class DatFileManager:
                                                                  eval('self.' + tech + '.incentives.federal.itc'),
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'),
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction')
                                                                  )
                     updated_cap_cost_slope.append(updated_slope)
         
@@ -719,8 +729,9 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_schedule,
                                                         self.storage.incentives.macrs_bonus_fraction,
                                                         self.storage.incentives.macrs_itc_reduction,
+                                                        self.storage.incentives.total.rebate,
+                                                        self.storage.incentives.total.rebate
                                                         )
-        StorageCostPerKW -= self.storage.incentives.total.rebate
         StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,
                                                          self.storage.replace_us_dollar_per_kwh,
                                                          self.storage.replace_kwh_years,
