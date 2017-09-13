@@ -673,14 +673,20 @@ def outputs():
                                   "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
 
 
-            'net_capital_costs_plus_om' : {'type': float, 'null': True, 'pct': False,
+            'net_capital_costs_plus_om': {'type': float, 'null': True, 'pct': False,
                          "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},
 
-            'average_yearly_pv_energy_produced' : {'req': True, 'type': float, 'null': True, 'pct': False,
+            'average_yearly_pv_energy_produced': {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
+
+            'average_wind_energy_produced': {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Average energy produced by the wind system over one year", "units": 'kWh'},
 
             'average_annual_energy_exported': {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average annual energy exported by the PV system", "units": 'kWh'},
+
+            'average_annual_energy_exported_wind': {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Average annual energy exported by the wind system", "units": 'kWh'},
 
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
@@ -696,6 +702,15 @@ def outputs():
 
             'year_one_pv_to_grid_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 PV to grid time series", "units": 'kW'},
+
+            'year_one_wind_to_battery_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to battery time series", "units": 'kW'},
+
+            'year_one_wind_to_load_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to load time series", "units": 'kW'},
+
+            'year_one_wind_to_grid_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to grid time series", "units": 'kW'},
 
             'year_one_grid_to_load_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 grid to load time series", "units": 'kW'},

@@ -355,8 +355,10 @@ class RunOutput(models.Model):
 
     total_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
     net_capital_costs_plus_om = models.FloatField(null=True, blank=True)
-    average_yearly_pv_energy_produced = models.FloatField(null=True, blank=True)  # once wind is added, this will include wind production
+    average_yearly_pv_energy_produced = models.FloatField(null=True, blank=True)
     average_annual_energy_exported = models.FloatField(null=True, blank=True)
+    average_annual_energy_exported_wind = models.FloatField(null=True, blank=True)
+    average_wind_energy_produced = models.FloatField(null=True, blank=True)
 
     year_one_electric_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_pv_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -369,6 +371,9 @@ class RunOutput(models.Model):
     year_one_battery_soc_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_grid_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
     year_one_export_benefit = models.FloatField(null=True, blank=True)
