@@ -16,11 +16,23 @@ class IncentiveProvider(object):
         if name == 'federal' or name == 'total':
             self.itc = incentives_dict.get('itc_' + name)
             self.itc_max = incentives_dict.get('itc_' + name + '_max', big_number)
+
+            # if 0 max passed in with an incentive, treat incentive as 0
+            if self.itc_max == 0:
+                self.itc = 0
+
         else: # region == 'state' or region == 'utility'
             self.ibi = incentives_dict.get('ibi_' + name)
             self.ibi_max = incentives_dict.get('ibi_' + name + '_max', big_number)
+
+            if self.ibi_max == 0:
+                self.ibi = 0
+
         self.rebate = incentives_dict.get('rebate_' + name)   # $/kW
         self.rebate_max = incentives_dict.get('rebate_' + name + '_max', big_number)
+
+        if self.rebate_max == 0:
+            self.rebate = 0
 
 
 class ProductionBasedIncentive(object):
