@@ -67,6 +67,9 @@ class Results:
         results_dict['year_one_electric_load_series'] = po.get_load_profile()
         results_dict['year_one_battery_to_load_series'] = po.get_batt_to_load()
         results_dict['year_one_battery_to_grid_series'] = po.get_batt_to_grid()
+        results_dict['year_one_wind_to_load_series'] = po.get_wind_to_load()
+        results_dict['year_one_wind_to_battery_series'] = po.get_wind_to_batt()
+        results_dict['year_one_wind_to_grid_series'] = po.get_wind_to_grid()
 
         self.results_dict = results_dict
         self.results_dict_bau = results_dict_bau
