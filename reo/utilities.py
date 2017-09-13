@@ -14,7 +14,8 @@ class API_Error:
         else:
             # error was not thrown intentionally
             error_type, messages = 'Exception', e.args
-            self.errors["Traceback"] = e.traceback
+            if hasattr(e, 'traceback'):
+                self.errors["Traceback"] = e.traceback
 
         self.errors[error_type] = messages
 
