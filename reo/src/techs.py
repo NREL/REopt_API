@@ -102,7 +102,7 @@ class PV(Tech):
 
 class Wind(Tech):
 
-    def __init__(self, acres_per_kw=6e-3, **kwargs):
+    def __init__(self, acres_per_kw=.03, **kwargs):
         super(Wind, self).__init__(min_kw=kwargs.get('wind_kw_min'),
                                    max_kw=kwargs.get('wind_kw_max'),
                                    om_dollars_per_kw=kwargs.get('wind_om'),
