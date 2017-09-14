@@ -141,6 +141,7 @@ declarations
   dvFuelCost: array(Tech,FuelBin) of mpvar
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
+  FixedMonthlyCharge: real ! utility rate fixed monthly charge
 
   MaxDemandInTier: array ( DemandBin) of real
   MaxDemandMonthsInTier: array ( DemandMonthsBin) of real
@@ -266,6 +267,7 @@ initializations from DAT9
 end-initializations
 initializations from DAT10
 	FuelRate
+	FixedMonthlyCharge
 end-initializations
 initializations from DAT11
 	ExportRates
@@ -617,6 +619,7 @@ TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
+TotalFixedCharges := FixedMonthlyCharge * 12 * pwf_e
 
 ! Incentives
 TotalEnergyExports := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
@@ -640,7 +643,7 @@ TotalTechCapCosts + TotalStorageCapCosts +
 TotalOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
-(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) * r_tax_fraction_offtaker -
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges) * r_tax_fraction_offtaker -
 
 ! Subtract Incentives, which are taxable
 TotalProductionIncentive * r_tax_fraction_owner
@@ -816,6 +819,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElec), 10, 0))
+    Node:=addnode(out_json, Root, "total_fixed_energy_cost", strfmt(getsol(TotalFixedCharges), 10, 2))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 

@@ -35,6 +35,8 @@ class REoptArgs:
         self.export_rates = []
         self.export_rates_bau = []
 
+        self.fixed_monthly_charge = 0
+
 
 class RateData:
     
@@ -149,6 +151,7 @@ class UrdbParse:
         self.prepare_energy_costs(current_rate)
         self.prepare_techs_and_loads_basecase()
         self.prepare_techs_and_loads()
+        self.prepare_fixed_charges(current_rate)
         self.write_files()
         
         return self.reopt_args
@@ -462,7 +465,6 @@ class UrdbParse:
                             seasonal_adj = tier.get('adj') or 0
                             self.reopt_args.demand_rates_monthly.append(seasonal_rate + seasonal_adj)
 
-
     def prepare_demand_rate_summary(self):
         """
         adds flat demand rate for each timestep to self.demand_rates_summary
@@ -508,6 +510,10 @@ class UrdbParse:
         self.reopt_args.demand_ratchets_tou = demand_periods
         self.reopt_args.demand_rates_tou = demand_rates
         self.reopt_args.demand_num_ratchets = len(demand_periods)
+
+    def prepare_fixed_charges(self, current_rate):
+        if not isinstance(current_rate.fixedmonthlycharge, list):
+            self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
 
     def write_files(self):
 
@@ -586,4 +592,3 @@ class UrdbParse:
                 hour_of_year += 1
 
         return step_array
-
