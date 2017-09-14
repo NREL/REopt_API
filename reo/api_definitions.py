@@ -471,7 +471,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
 
         'wind_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                  'max': 1e3, 'default': 16,
+                  'max': 1e3, 'default': 35,
                   "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
