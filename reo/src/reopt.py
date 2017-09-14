@@ -1,6 +1,6 @@
 import threading
 import os
-from subprocess import Popen
+import subprocess
 from shlex import split
 from reo.log_levels import log
 from reo.results import Results
@@ -12,14 +12,13 @@ class Command(object):
     def __init__(self, cmd):
         self.cmd = cmd
         self.process = None
+        self.error = False
 
     def run(self, timeout):
 
-        error = False
-
         def target():
-            self.process = Popen(split(self.cmd))
-            log("INFO", "XPRESS" + str(self.process.communicate()))
+            self.process = subprocess.Popen(split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            _, self.error = self.process.communicate()
 
         log("DEBUG", "XPRESS Creating Thread")
         thread = threading.Thread(target=target)
@@ -36,7 +35,10 @@ class Command(object):
             thread.join()
             raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support"\
                     .format(timeout))
-        return error
+
+        if self.error:
+            log("ERROR", self.error)
+            raise RuntimeError('reopt', self.error)
 
 
 class REopt(object):
@@ -70,16 +72,10 @@ class REopt(object):
         output_dict = dict()
 
         log("INFO", "Running Command")
-        error = self.command.run(timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
+        self.command.run(timeout)
 
         log("INFO", "Running BAU")
-        error = self.command_bau.run(timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
+        self.command_bau.run(timeout)
 
         output_dict = self.parse_run_outputs()
         return output_dict
