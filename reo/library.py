@@ -18,13 +18,13 @@ class Paths(object):
     """
     object for contain project paths. facilitates passing paths to other objects.
     """
-    def __init__(self, run_uuid, run_input_id):
+    def __init__(self, run_uuid):
         
         self.egg = os.getcwd()
         self.templates = os.path.join(self.egg, "Xpress")
         self.xpress = os.path.join(self.egg, "Xpress")
 
-        self.run = os.path.join(self.xpress, "Run" + str(run_input_id))
+        self.run = os.path.join(self.xpress, "Run" + str(run_uuid))
         self.files_to_download = os.path.join(self.xpress, "Downloads")
 
         self.inputs = os.path.join(self.run, "Inputs")
@@ -51,23 +51,22 @@ class DatLibrary:
     debug = True
     time_steps_per_hour = 1
 
-    def __init__(self, run_uuid, run_input_id, inputs_dict):
+    def __init__(self, run_uuid, inputs_dict):
         """
 
         All error handling is done in validators.py before data is passed to library.py
         :param run_uuid:
-        :param run_input_id:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
         for k in outputs():
             setattr(self, k, None)
 
-        self.paths = Paths(run_uuid, run_input_id)
+        self.paths = Paths(run_uuid)
         self.timed_out = False  # is this used?
         self.net_metering = False
 
-        self.run_input_id = run_input_id
+        self.run_uuid = run_uuid
         self.api_version = inputs_dict['api_version']
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
@@ -92,7 +91,7 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
-        self.dfm = DatFileManager(run_id=self.run_input_id, paths=self.paths,
+        self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
                                   n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
 
     def log_post(self, json_POST):
@@ -186,7 +185,6 @@ class DatLibrary:
             r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
             
             output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
-            output_dict['run_input_id'] = self.run_input_id
 
             for k, v in self.__dict__.items():
                 if output_dict.get(k) is None and k in outputs():
@@ -234,6 +232,6 @@ class DatLibrary:
 
     def create_elec_tariff(self):
 
-        elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
+        elec_tariff = ElecTariff(self.run_uuid, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
