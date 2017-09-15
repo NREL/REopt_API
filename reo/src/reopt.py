@@ -3,7 +3,6 @@ import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
 from reo.results import Results
-from reo.src.dat_file_manager import DatFileManager
 
 
 class Command(object):
@@ -36,12 +35,12 @@ class REopt(object):
 
     xpress_model = "REopt_API.mos"
 
-    def __init__(self, paths, year):
+    def __init__(self, dfm, paths, year):
 
         self.paths = paths
         self.year = year
 
-        self.dfm = DatFileManager()
+        self.dfm = dfm
         file_cmd = os.path.join(paths.inputs, "cmd.log")
         file_cmd_bau = os.path.join(paths.inputs, "cmd_bau.log")
         self.output_file = os.path.join(paths.outputs, "REopt_results.json")

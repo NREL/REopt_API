@@ -1,4 +1,4 @@
-from reo.src.dat_file_manager import DatFileManager, big_number
+from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.incentives import Incentives
 
@@ -49,7 +49,7 @@ class Tech(object):
 
 class Util(Tech):
 
-    def __init__(self, outage_start=None, outage_end=None, **kwargs):
+    def __init__(self, dfm, outage_start=None, outage_end=None, **kwargs):
         super(Util, self).__init__(max_kw=12000000, **kwargs)
 
         self.outage_start = outage_start
@@ -58,7 +58,7 @@ class Util(Tech):
         self.is_grid = True
         self.derate = 0
 
-        DatFileManager().add_util(self)
+        dfm.add_util(self)
 
     @property
     def prod_factor(self):
@@ -72,7 +72,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
+    def __init__(self, dfm, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
                                  om_dollars_per_kw=kwargs.get('pv_om'),
@@ -90,10 +90,10 @@ class PV(Tech):
                                      include_production_based=True
 )
         self.pvwatts = None
-        DatFileManager().add_pv(self)
+        dfm.add_pv(self)
 
     @property
     def prod_factor(self):
         if self.pvwatts is None:
-            self.pvwatts = PVWatts(**self.kwargs)
+            self.pvwatts = PVWatts(offline=True, **self.kwargs)
         return self.pvwatts.pv_prod_factor

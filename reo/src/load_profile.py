@@ -4,8 +4,6 @@ import copy
 from collections import namedtuple
 from datetime import datetime, timedelta
 
-from reo.src.dat_file_manager import DatFileManager
-
 
 class BuiltInProfile(object):
 
@@ -447,7 +445,7 @@ class BuiltInProfile(object):
 
 class LoadProfile(BuiltInProfile):
 
-    def __init__(self, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
+    def __init__(self, dfm, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
@@ -470,5 +468,4 @@ class LoadProfile(BuiltInProfile):
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)
-
-        DatFileManager().add_load(self)
+        dfm.add_load(self)

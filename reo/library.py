@@ -133,6 +133,7 @@ class DatLibrary:
     def run(self):
         try:
             storage = Storage(
+                dfm=self.dfm,
                 min_kw=self.batt_kw_min,
                 max_kw=self.batt_kw_max,
                 min_kwh=self.batt_kwh_min,
@@ -152,7 +153,7 @@ class DatLibrary:
                 **self.inputs_dict
             )
 
-            site = Site(**self.inputs_dict)
+            site = Site(dfm=self.dfm, **self.inputs_dict)
             # following 2 lines are necessary for returning *some* of the assigned values.
             # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
             # and then we assign them to the off_taker values to represent single party model)
@@ -163,12 +164,12 @@ class DatLibrary:
             self.create_elec_tariff()
 
             if self.pv_kw_max > 0:
-                pv = PV(**self.inputs_dict)
+                pv = PV(dfm=self.dfm, **self.inputs_dict)
                 # following 2 lines are necessary for returning the assigned values
                 self.pv_degradation_rate = pv.degradation_rate
                 self.pv_kw_ac_hourly = pv.prod_factor
 
-            util = Util(**self.inputs_dict)
+            util = Util(dfm=self.dfm, **self.inputs_dict)
 
             net_metering_limit = self.inputs_dict.get("net_metering_limit")
             if net_metering_limit > 0:
@@ -182,7 +183,7 @@ class DatLibrary:
             self.pv_macrs_itc_reduction = 0.5
             self.batt_macrs_itc_reduction = 0.5
 
-            r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
+            r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict.get('load_year'))
             
             output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
 
@@ -221,7 +222,7 @@ class DatLibrary:
         :return: None
         """
 
-        lp = LoadProfile(user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
         self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
         log("INFO", "Creating loads.  "
@@ -232,6 +233,6 @@ class DatLibrary:
 
     def create_elec_tariff(self):
 
-        elec_tariff = ElecTariff(self.run_uuid, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
+        elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
