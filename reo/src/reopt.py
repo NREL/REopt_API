@@ -1,6 +1,5 @@
-import threading
 import os
-import subprocess
+import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
 from reo.results import Results
@@ -16,29 +15,21 @@ class Command(object):
 
     def run(self, timeout):
 
-        def target():
-            self.process = subprocess.Popen(split(self.cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            _, self.error = self.process.communicate()
+        try:
+            status = sp.check_output(split(self.cmd), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
 
-        log("DEBUG", "XPRESS Creating Thread")
-        thread = threading.Thread(target=target)
+        except sp.CalledProcessError as e:
+            msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+            log("ERROR", msg)
+            raise RuntimeError('reopt', msg)
 
-        log("DEBUG", "XPRESS Starting Thread")
-        thread.start()
+        except sp.TimeoutExpired:
+            raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
+                                         for support".format(timeout))
+        log("INFO", "REopt run successfully. Status {}".format(status))
 
-        log("DEBUG", "XPRESS Join Thread")
-        thread.join(timeout)
-
-        if thread.is_alive():
-            log("ERROR", "XPRESS Thread Timeout")
-            self.process.terminate()
-            thread.join()
-            raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support"\
-                    .format(timeout))
-
-        if self.error:
-            log("ERROR", self.error)
-            raise RuntimeError('reopt', self.error)
+        if status.strip() != 'optimal':
+            raise RuntimeError('reopt', "REopt could not find an optimal solution for these inputs.")
 
 
 class REopt(object):
@@ -83,7 +74,6 @@ class REopt(object):
     def create_run_command(self, path_output, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
-        log("INFO", "Creating output directory: " + path_output)
 
         # RE case
         header = 'exec '

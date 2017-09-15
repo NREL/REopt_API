@@ -36,9 +36,6 @@ class Results:
         with open(os.path.join(path_output_bau, "REopt_results.json"), 'r') as f:
             results_dict_bau = json.loads(f.read())
 
-        if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
-            raise RuntimeError('results',"No solution could be found for these inputs")
-
         # add bau outputs to results_dict
         for k in Results.bau_attributes:
             results_dict[k+'_bau'] = results_dict_bau[k]
@@ -75,14 +72,6 @@ class Results:
         self.path_static = os.path.join(path_static, self.file_proforma)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.year = year
-
-    @staticmethod
-    def is_optimal(d):
-
-        if 'status' in d.keys():
-            status = str(d['status']).rstrip()
-            return status == "Optimum found"
-        return False
 
     def get_output(self):
         output_dict = dict()

@@ -669,13 +669,14 @@ end-if
 EndTime:= gettime
 
 case getprobstat of
-  XPRS_OPT: status:="Optimum found"
-  XPRS_UNF: status:="Unfinished"
-  XPRS_INF: status:="Infeasible"
-  XPRS_UNB: status:="Unbounded"
-  XPRS_OTH: status:="Failed"
+  XPRS_OPT: status:="optimal"
+  XPRS_UNF: status:="unfinished"
+  XPRS_INF: status:="infeasible"
+  XPRS_UNB: status:="unbounded"
+  XPRS_OTH: status:="failed"
   else status:="???"
 end-case
+writeln(status)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
