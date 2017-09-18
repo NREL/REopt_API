@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -e -u
-
 . /opt/xpressmp/bin/xpvars.sh
 export XPRESS=/opt/xpressmp/bin
 
