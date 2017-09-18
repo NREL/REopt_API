@@ -2,7 +2,7 @@ import os
 import multiprocessing
 
 # Bind to unix socket that nginx will proxy to.
-bind = 'unix:' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'tmp/gunicorn.sock')
+bind = 'unix:' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__file__))), 'tmp/gunicorn.sock')
 
 # Based the number of workers on the number of CPU cores.
 workers = multiprocessing.cpu_count()
