@@ -18,13 +18,13 @@ class Paths(object):
     """
     object for contain project paths. facilitates passing paths to other objects.
     """
-    def __init__(self, run_uuid, run_input_id):
+    def __init__(self, run_uuid):
         
         self.egg = os.getcwd()
         self.templates = os.path.join(self.egg, "Xpress")
         self.xpress = os.path.join(self.egg, "Xpress")
 
-        self.run = os.path.join(self.xpress, "Run" + str(run_input_id))
+        self.run = os.path.join(self.xpress, "Run" + str(run_uuid))
         self.files_to_download = os.path.join(self.xpress, "Downloads")
 
         self.inputs = os.path.join(self.run, "Inputs")
@@ -51,23 +51,22 @@ class DatLibrary:
     debug = True
     time_steps_per_hour = 1
 
-    def __init__(self, run_uuid, run_input_id, inputs_dict):
+    def __init__(self, run_uuid, inputs_dict):
         """
 
         All error handling is done in validators.py before data is passed to library.py
         :param run_uuid:
-        :param run_input_id:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
         for k in outputs():
             setattr(self, k, None)
 
-        self.paths = Paths(run_uuid, run_input_id)
+        self.paths = Paths(run_uuid)
         self.timed_out = False  # is this used?
         self.net_metering = False
 
-        self.run_input_id = run_input_id
+        self.run_uuid = run_uuid
         self.api_version = inputs_dict['api_version']
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
@@ -92,7 +91,7 @@ class DatLibrary:
             inputs_dict.setdefault(k, v['default'])
         self.inputs_dict = inputs_dict
 
-        self.dfm = DatFileManager(run_id=self.run_input_id, paths=self.paths,
+        self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
                                   n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
 
     def log_post(self, json_POST):
@@ -134,6 +133,7 @@ class DatLibrary:
     def run(self):
         try:
             storage = Storage(
+                dfm=self.dfm,
                 min_kw=self.batt_kw_min,
                 max_kw=self.batt_kw_max,
                 min_kwh=self.batt_kwh_min,
@@ -153,7 +153,7 @@ class DatLibrary:
                 **self.inputs_dict
             )
 
-            site = Site(**self.inputs_dict)
+            site = Site(dfm=self.dfm, **self.inputs_dict)
             # following 2 lines are necessary for returning *some* of the assigned values.
             # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
             # and then we assign them to the off_taker values to represent single party model)
@@ -164,15 +164,15 @@ class DatLibrary:
             self.create_elec_tariff()
 
             if self.pv_kw_max > 0:
-                pv = PV(**self.inputs_dict)
+                pv = PV(dfm=self.dfm, **self.inputs_dict)
                 # following 2 lines are necessary for returning the assigned values
                 self.pv_degradation_rate = pv.degradation_rate
                 self.pv_kw_ac_hourly = pv.prod_factor
 
             if self.wind_kw_max > 0:
-                wind = Wind(**self.inputs_dict)
+                wind = Wind(dfm=self.dfm, **self.inputs_dict)
 
-            util = Util(**self.inputs_dict)
+            util = Util(dfm=self.dfm, **self.inputs_dict)
 
             net_metering_limit = self.inputs_dict.get("net_metering_limit")
             if net_metering_limit > 0:
@@ -186,10 +186,9 @@ class DatLibrary:
             self.pv_macrs_itc_reduction = 0.5
             self.batt_macrs_itc_reduction = 0.5
 
-            r = REopt(paths=self.paths, year=self.inputs_dict.get('load_year'))
+            r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict.get('load_year'))
             
             output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
-            output_dict['run_input_id'] = self.run_input_id
 
             for k, v in self.__dict__.items():
                 if output_dict.get(k) is None and k in outputs():
@@ -226,7 +225,7 @@ class DatLibrary:
         :return: None
         """
 
-        lp = LoadProfile(user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
         self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
         log("INFO", "Creating loads.  "
@@ -237,6 +236,6 @@ class DatLibrary:
 
     def create_elec_tariff(self):
 
-        elec_tariff = ElecTariff(self.run_input_id, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
+        elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name

@@ -1,12 +1,10 @@
 import re
 from reo.log_levels import log
-from reo.src.dat_file_manager import DatFileManager
-from reo.src.urdb_parse import UrdbParse
 
 
 class ElecTariff(object):
 
-    def __init__(self, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
+    def __init__(self, dfm, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
                  load_year, wholesale_rate, time_steps_per_hour,
                  **kwargs):
 
@@ -32,7 +30,7 @@ class ElecTariff(object):
         self.rate_name = re.sub(r'\W+', '', str(urdb_rate.get('name')))
         self.urdb_rate = urdb_rate
 
-        DatFileManager().add_elec_tariff(self)
+        dfm.add_elec_tariff(self)
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):
 

@@ -1,4 +1,4 @@
-from reo.src.dat_file_manager import DatFileManager
+
 
 class Financials(object):
     """
@@ -36,9 +36,9 @@ class Financials(object):
 
 class Site(object):
 
-    def __init__(self, land_area=None, roof_area=None, **kwargs):
+    def __init__(self, dfm, land_area=None, roof_area=None, **kwargs):
 
         self.land_acres = land_area
         self.roof_squarefeet = roof_area
         self.financials = Financials(**kwargs)
-        DatFileManager().add_site(self)
+        dfm.add_site(self)

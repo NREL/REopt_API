@@ -38,22 +38,22 @@ def write_to_dat(path, var, dat_var, mode='w'):
             _write_var(f, var, dat_var)
 
 
-class Singleton(type):
-    """
-    metaclass for DatFileManager
-    """
-    _instances = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        else:
-            # if passing a new run_id, replace old DFM with new one
-            # probably only used when running tests, but could have application for parallel runs
-            if 'run_id' in kwargs:
-                    if kwargs['run_id'] != cls._instances.values()[0].run_id:
-                        cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
+# class Singleton(type):
+#     """
+#     metaclass for DatFileManager
+#     """
+#     _instances = {}
+#
+#     def __call__(cls, *args, **kwargs):
+#         if cls not in cls._instances:
+#             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+#         else:
+#             # if passing a new run_id, replace old DFM with new one
+#             # probably only used when running tests, but could have application for parallel runs
+#             if 'run_id' in kwargs:
+#                     if kwargs['run_id'] != cls._instances.values()[0].run_id:
+#                         cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+#         return cls._instances[cls]
 
 
 class DatFileManager:
@@ -61,7 +61,7 @@ class DatFileManager:
     writes dat files and creates command line strings for dat file paths
     """
 
-    __metaclass__ = Singleton
+    # __metaclass__ = Singleton
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
@@ -862,8 +862,10 @@ class DatFileManager:
         write_to_dat(self.file_max_in_tiers, ta.demand_month_max_in_tiers, 'MaxDemandMonthsInTier', 'a')
         write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
         # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')
         # write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates_bau, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_export_rates, ta.export_rates, 'ExportRates')
         write_to_dat(self.file_export_rates_bau, ta.export_rates_bau, 'ExportRates')
         write_to_dat(self.file_demand_lookback, ta.demand_lookback_months, 'DemandLookbackMonths')

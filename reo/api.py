@@ -71,7 +71,7 @@ class RunInputResource(ModelResource):
         run.save()
         try:
             # Return  Results
-            output_model = self.create_output(model_inputs, run.id, bundle.data)
+            output_model = self.create_output(model_inputs, bundle.data)
 
             bundle.obj = output_model
             bundle.data = {k:v for k,v in output_model.__dict__.items() if not k.startswith('_')}
@@ -81,11 +81,11 @@ class RunInputResource(ModelResource):
         except Exception as e:
             raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
 
-    def create_output(self, inputs_dict, run_number, json_POST):
+    def create_output(self, inputs_dict, json_POST):
 
         run_uuid = uuid.uuid4()
 
-        run_set = DatLibrary(run_uuid=run_uuid, run_input_id=run_number, inputs_dict=inputs_dict)
+        run_set = DatLibrary(run_uuid=run_uuid, inputs_dict=inputs_dict)
 
         # Log POST request
         run_set.log_post(json_POST)
@@ -94,7 +94,8 @@ class RunInputResource(ModelResource):
         output_dictionary = run_set.run()
 
         # API level outputs
-        output_dictionary['uuid'] = run_uuid
+        output_dictionary['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
+        output_dictionary['run_input_id'] = 0  # hack for now, this field can be removed from database
 
         result = RunOutput(**output_dictionary)
         result.save()

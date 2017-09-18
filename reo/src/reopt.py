@@ -1,10 +1,8 @@
-import threading
 import os
-from subprocess import Popen
+import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
 from reo.results import Results
-from reo.src.dat_file_manager import DatFileManager
 
 
 class Command(object):
@@ -12,43 +10,37 @@ class Command(object):
     def __init__(self, cmd):
         self.cmd = cmd
         self.process = None
+        self.error = False
 
     def run(self, timeout):
 
-        error = False
+        try:
+            status = sp.check_output(split(self.cmd), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
 
-        def target():
-            self.process = Popen(split(self.cmd))
-            log("INFO", "XPRESS" + str(self.process.communicate()))
+        except sp.CalledProcessError as e:
+            msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+            log("ERROR", msg)
+            raise RuntimeError('reopt', msg)
 
-        log("DEBUG", "XPRESS Creating Thread")
-        thread = threading.Thread(target=target)
+        except sp.TimeoutExpired:
+            raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
+                                         for support".format(timeout))
+        log("INFO", "REopt run successfully. Status {}".format(status))
 
-        log("DEBUG", "XPRESS Starting Thread")
-        thread.start()
-
-        log("DEBUG", "XPRESS Join Thread")
-        thread.join(timeout)
-
-        if thread.is_alive():
-            log("ERROR", "XPRESS Thread Timeout")
-            self.process.terminate()
-            thread.join()
-            raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support"\
-                    .format(timeout))
-        return error
+        if status.strip() != 'optimal':
+            raise RuntimeError('reopt', "REopt could not find an optimal solution for these inputs.")
 
 
 class REopt(object):
 
     xpress_model = "REopt_API.mos"
 
-    def __init__(self, paths, year):
+    def __init__(self, dfm, paths, year):
 
         self.paths = paths
         self.year = year
 
-        self.dfm = DatFileManager()
+        self.dfm = dfm
         file_cmd = os.path.join(paths.inputs, "cmd.log")
         file_cmd_bau = os.path.join(paths.inputs, "cmd_bau.log")
         self.output_file = os.path.join(paths.outputs, "REopt_results.json")
@@ -70,16 +62,10 @@ class REopt(object):
         output_dict = dict()
 
         log("INFO", "Running Command")
-        error = self.command.run(timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
+        self.command.run(timeout)
 
         log("INFO", "Running BAU")
-        error = self.command_bau.run(timeout)
-        if error:
-            output_dict['error'] = error
-            return output_dict
+        self.command_bau.run(timeout)
 
         output_dict = self.parse_run_outputs()
         return output_dict
@@ -87,7 +73,6 @@ class REopt(object):
     def create_run_command(self, path_output, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
         log("DEBUG", "Current Directory: " + os.getcwd())
-        log("INFO", "Creating output directory: " + path_output)
 
         # RE case
         header = 'exec '
