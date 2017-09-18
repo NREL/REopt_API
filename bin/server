@@ -3,4 +3,4 @@
 . /opt/xpressmp/bin/xpvars.sh
 export XPRESS=/opt/xpressmp/bin
 
-exec ./env/bin/gunicorn ./config/gunicorn.conf.py reopt_api.wsgi
+exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi
