@@ -1,7 +1,6 @@
-from reo.src.dat_file_manager import DatFileManager
+from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
-
-big_number = 100000000
+from reo.src.incentives import Incentives
 
 
 class Tech(object):
@@ -9,17 +8,22 @@ class Tech(object):
     base class for REopt energy generation technology
     """
 
-    def __init__(self, min_kw=0, max_kw=big_number,
+    def __init__(self, min_kw=0, max_kw=big_number, cost_dollars_per_kw=0, om_dollars_per_kw=0, degradation_rate=1,
                  *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
+        self.cost_dollars_per_kw = cost_dollars_per_kw
+        self.om_dollars_per_kw = om_dollars_per_kw
+        self.degradation_rate = degradation_rate
+
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
         self.reopt_class = ""
         self.is_grid = False
         self.derate = 1
-        self.acres_per_kw = None
+        self.acres_per_kw = None  # for land constraints
+        self.kw_per_square_foot = None  # for roof constraints
 
         # self._check_inputs()
         self.kwargs = kwargs
@@ -45,7 +49,7 @@ class Tech(object):
 
 class Util(Tech):
 
-    def __init__(self, outage_start=None, outage_end=None, **kwargs):
+    def __init__(self, dfm, outage_start=None, outage_end=None, **kwargs):
         super(Util, self).__init__(max_kw=12000000, **kwargs)
 
         self.outage_start = outage_start
@@ -54,7 +58,7 @@ class Util(Tech):
         self.is_grid = True
         self.derate = 0
 
-        DatFileManager().add_util(self)
+        dfm.add_util(self)
 
     @property
     def prod_factor(self):
@@ -68,18 +72,28 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, acres_per_kw=6e-3, **kwargs):
+    def __init__(self, dfm, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
         super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
                                  max_kw=kwargs.get('pv_kw_max'),
-                                 cost_per_kw=kwargs.get('pv_cost'),
+                                 om_dollars_per_kw=kwargs.get('pv_om'),
+                                 cost_dollars_per_kw=kwargs.get('pv_cost'),
+                                 degradation_rate=kwargs.get('pv_degradation_rate'),
                                  **kwargs)
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
-
-        DatFileManager().add_pv(self)
+        self.kw_per_square_foot = kw_per_square_foot
+        self.degradation_rate = kwargs.get('pv_degradation_rate')
+        self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
+                                     macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
+                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
+                                     include_production_based=True
+)
+        self.pvwatts = None
+        dfm.add_pv(self)
 
     @property
     def prod_factor(self):
-        pvwatts = PVWatts(**self.kwargs)
-        return pvwatts.pv_prod_factor
+        if self.pvwatts is None:
+            self.pvwatts = PVWatts(**self.kwargs)
+        return self.pvwatts.pv_prod_factor

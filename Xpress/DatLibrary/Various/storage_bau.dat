@@ -2,18 +2,18 @@ StorageMinChargePcent: [
  0.2
 ]
 EtaStorIn: [
-1,
-1,
-1,
- 0.82944       ,
+1
+1
+1
+ 0.82944       
 ]
 EtaStorOut: [
-1,
-1,
-1,
- 0.82944       ,
+1
+1
+1
+ 0.82944       
 ]
 BattLevelCoef: [
--1,
-0,
+-1
+0
 ]

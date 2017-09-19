@@ -1,6 +1,6 @@
 filename = 'Load8760_norm_Albuquerque_FastFoodRest.dat'
 
-f = open(filename, 'r')
+f = open(filename 'r')
 
 f.readline()
 

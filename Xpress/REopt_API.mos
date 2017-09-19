@@ -11,21 +11,22 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "1715"
-  ScenarioPath = "/local/workspace/django_env/reopt_api/Xpress/Run" + ScenarioNum + "/Inputs"
-  OutputDir = "local/workspace/django_env/reopt_api/Xpress/Output"
-  BaseString = ""
+  ScenarioNum = "114479"
+  ScenarioPath = "C:\\Users\\nlaws\\Desktop\\Run114479\\Inputs"
+  OutputDir = "C:\\Users\\nlaws\\Desktop\\Run114479\\trial_outputs"
+  BaseString = "Base"
 
-  CapCostSegCount = 1
+  CapCostSegCount = 2
   FuelBinCount = 1
   DemandBinCount = 1
+  DemandMonthsBinCount = 2
   BattLevelCount = 1
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
   Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
 
   ! Utility info
-  NumRatchets = 20
+  NumRatchets = 12
 
   DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
   DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
@@ -57,6 +58,7 @@ declarations
   Ratchets = 1..NumRatchets
   FuelBin = 1..FuelBinCount
   DemandBin = 1..DemandBinCount
+  DemandMonthsBin = 1..DemandMonthsBinCount
   BattLevel=1..BattLevelCount
 
   StartTime: real
@@ -97,7 +99,7 @@ declarations
 
   binSegChosen: array (Tech, Seg) of mpvar ! for the appropriate segment of the cost curve
   dvSystemSize: array (Tech, Seg) of mpvar
-  dvGrid: array (Load,TimeStep,DemandBin, FuelBin) of mpvar
+  dvGrid: array (Load,TimeStep,DemandBin, FuelBin, DemandMonthsBin) of mpvar
   dvRatedProd: dynamic array (Tech,Load,TimeStep,Seg,FuelBin) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
 
   !Next 2 for ProductionIncentive Cap
@@ -111,11 +113,10 @@ declarations
   binSingleBasicTech: array (Tech,TechClass) of mpvar
 
   dvPeakDemandE: array ( Ratchets, DemandBin) of mpvar  !Peak electric demand for the month
-  dvPeakDemandEMonth: array ( Month) of mpvar  !Peak electric demand for the month
+  dvPeakDemandEMonth: array ( Month, DemandMonthsBin) of mpvar  !Peak electric demand for the month
 
-  !dvPeakDemandSummer: array (Loc) of mpvar  !Peak electric demand for the month    !uncomment for RMI
   DemandRates: array ( Ratchets, DemandBin) of real !Demand rate for the quarter
-  DemandRatesMonth: array ( Month) of real !Demand rate for the quarter
+  DemandRatesMonth: array ( Month, DemandMonthsBin) of real !Demand rate for the quarter
 
   dvElecToStor: array( TimeStep) of mpvar  !Electricity going to the storage system during each timestep
   dvElecFromStor: array ( TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
@@ -140,13 +141,18 @@ declarations
   dvFuelCost: array(Tech,FuelBin) of mpvar
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
+  FixedMonthlyCharge: real ! utility rate fixed monthly charge
 
   MaxDemandInTier: array ( DemandBin) of real
+  MaxDemandMonthsInTier: array ( DemandMonthsBin) of real
   MaxUsageInTier: array ( FuelBin) of real
+
+  binDemandTier: array ( Ratchets, DemandBin) of mpvar
+  binDemandMonthsTier: array (Month, DemandMonthsBin) of mpvar
   binUsageTier: array ( FuelBin) of mpvar
 
   DemandLookbackPercent:  real
-  dvPeakDemandELookback:mpvar
+  dvPeakDemandELookback: mpvar
   DemandLookbackMonths: set of integer
   binBattLevel: array(BattLevel) of mpvar
   BattLevelCoef: array(BattLevel,1..2) of real
@@ -155,7 +161,7 @@ declarations
 
   pwf_e: real
   pwf_om: real
-  pwf_prod_incent: real
+  pwf_prod_incent: array(Tech) of real
 
   !pwf_op: real
   !pwf_owner: real
@@ -175,7 +181,7 @@ end-declarations
 
 
 ! This option sets the tolerance of the integer solution
-setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
+! setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
 
 ! This option only allows the problem to parallelize onto 2 cores
 setparam("XPRS_MIPTHREADS", 2)
@@ -261,6 +267,7 @@ initializations from DAT9
 end-initializations
 initializations from DAT10
 	FuelRate
+	FixedMonthlyCharge
 end-initializations
 initializations from DAT11
 	ExportRates
@@ -278,6 +285,7 @@ initializations from DAT14 ! LookbackMonthsAndPercent
 end-initializations
 initializations from DAT15 ! UtilityTiers
 	MaxDemandInTier
+	MaxDemandMonthsInTier
 	MaxUsageInTier
 end-initializations
 initializations from DAT16
@@ -421,14 +429,14 @@ forall (t in Tech) binProdIncent (t) is_binary
 
 !CONSTRAINT 22
 ! Number 1: The Production Incentive can't exceed a certain dollar max (and is "0" if system size is too big)
-forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent
+forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent(t)
 
 !CONSTRAINT 23
 ! Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that.
 ! added LD to Prod Incent ExportRates 8912
 forall (t in Tech) do
      dvProdIncent (t) <= sum (LD in Load, ts in TimeStep, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent
+     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent(t)
 end-do
 
 !CONSTRAINT 24
@@ -508,22 +516,13 @@ end-do
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
-	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin) dvGrid(LD,ts,db,fb)
+	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 end-do
 
-forall ( db in DemandBin, ts in TimeStep) do
-	sum(LD in Load, fb in FuelBin) dvGrid(LD,ts,db,fb) <= MaxDemandInTier(db)
-end-do
-
+! Compute tiered energy rates
 forall ( fb in FuelBin) do
 	binUsageTier(fb) is_binary
-end-do
-
-forall ( fb in FuelBin) do
-	UsageInTier(fb) := sum(LD in Load, db in DemandBin,ts in TimeStep) dvGrid(LD,ts,db,fb) !<= MaxUsageInTier(fb)
-end-do
-
-forall ( fb in FuelBin) do
+	UsageInTier(fb) := sum(LD in Load, db in DemandBin,ts in TimeStep, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 	UsageInTier(fb) <= binUsageTier(fb) * MaxUsageInTier(fb)
 end-do
 
@@ -532,20 +531,48 @@ forall ( fb in FuelBin | fb >= 2) do
 	binUsageTier(fb)*MaxUsageInTier(fb-1) - UsageInTier(fb-1) <= 0
 end-do
 
+! Compute tiered demand rates
+forall (db in DemandBin, r in Ratchets) do
+	binDemandTier(r, db) is_binary
+end-do
+
+forall ( db in DemandBin, r in Ratchets) do
+	dvPeakDemandE(r, db) <= binDemandTier(r,db) * MaxDemandInTier(db)
+end-do
+
+forall ( db in DemandBin | db >= 2, r in Ratchets) do
+	binDemandTier(r, db) - binDemandTier(r, db-1) <= 0
+	binDemandTier(r, db)*MaxDemandInTier(db-1) - dvPeakDemandE(r, db-1) <= 0
+end-do
+
 forall ( db in DemandBin, r in Ratchets, ts in TimeStepRatchets(r))  do
-	dvPeakDemandE(r,db) >= sum(LD in Load, fb in FuelBin) dvGrid(LD,ts,db,fb)
+	dvPeakDemandE(r,db) >= sum(LD in Load, fb in FuelBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
    	dvPeakDemandE(r,db) >= 0
    	dvPeakDemandE(r,db) >= DemandLookbackPercent * dvPeakDemandELookback
 end-do
 
-forall ( m in Month, ts in TimeStepRatchetsMonth(m))  do
-	dvPeakDemandEMonth( m) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb)
-   	dvPeakDemandEMonth( m) >= 0
+! Compute tiered monthly demand rates
+forall (dbm in DemandMonthsBin, m in Month) do
+	binDemandMonthsTier(m, dbm) is_binary
+end-do
+
+forall ( dbm in DemandMonthsBin, m in Month) do
+	dvPeakDemandEMonth(m, dbm) <= binDemandMonthsTier(m,dbm) * MaxDemandMonthsInTier(dbm)
+end-do
+
+forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
+	binDemandMonthsTier(m, dbm) - binDemandMonthsTier(m, dbm-1) <= 0
+	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) <= dvPeakDemandEMonth(m, dbm-1) ! enforces full bins
+end-do
+
+forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
+	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb,dbm) ! validate
+   	dvPeakDemandEMonth(m, dbm) >= 0
 end-do
 
 ! find the peak demand of the lookback months (lbm)
-forall ( LD in Load, lbm in DemandLookbackMonths)  do
-	dvPeakDemandELookback >= dvPeakDemandEMonth(lbm)
+forall (LD in Load, lbm in DemandLookbackMonths)  do
+	dvPeakDemandELookback >= sum(dbm in DemandMonthsBin) dvPeakDemandEMonth(lbm, dbm)
 end-do
 
 !! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
@@ -590,8 +617,9 @@ TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSiz
 ! Utility and Taxable Costs
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
-DemandFlatCharges := sum( m in Month) dvPeakDemandEMonth( m) * DemandRatesMonth( m) * pwf_e
+DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
+TotalFixedCharges := FixedMonthlyCharge * 12 * pwf_e
 
 ! Incentives
 TotalEnergyExports := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
@@ -615,7 +643,7 @@ TotalTechCapCosts + TotalStorageCapCosts +
 TotalOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
-(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) * r_tax_fraction_offtaker -
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges) * r_tax_fraction_offtaker -
 
 ! Subtract Incentives, which are taxable
 TotalProductionIncentive * r_tax_fraction_owner
@@ -641,13 +669,14 @@ end-if
 EndTime:= gettime
 
 case getprobstat of
-  XPRS_OPT: status:="Optimum found"
-  XPRS_UNF: status:="Unfinished"
-  XPRS_INF: status:="Infeasible"
-  XPRS_UNB: status:="Unbounded"
-  XPRS_OTH: status:="Failed"
+  XPRS_OPT: status:="optimal"
+  XPRS_UNF: status:="unfinished"
+  XPRS_INF: status:="infeasible"
+  XPRS_UNB: status:="unbounded"
+  XPRS_OTH: status:="failed"
   else status:="???"
 end-case
+writeln(status)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
@@ -663,6 +692,8 @@ ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in 
 
 Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
+Year1DemandTOUCost := DemandTOUCharges / pwf_e
+Year1DemandFlatCost := DemandFlatCharges / pwf_e
 
 
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
@@ -749,8 +780,8 @@ fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
     end-do
     writeln(",")
     writeln("Month,Peak_Demand")
-    forall  ( m in Month)  do
-       writeln (m, ",", getsol(dvPeakDemandEMonth(m)),",")
+    forall  ( m in Month, dbm in DemandMonthsBin)  do
+       writeln (m, ",", getsol(dvPeakDemandEMonth(m, dbm)),",")
     end-do
 fclose(F_OUTPUT)
 
@@ -778,6 +809,8 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (Year1UtilityEnergy) , 10, 4))
     Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
+    Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
+    Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
     !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
     Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges), 10, 2))
@@ -787,6 +820,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElec), 10, 0))
+    Node:=addnode(out_json, Root, "total_fixed_energy_cost", strfmt(getsol(TotalFixedCharges), 10, 2))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 

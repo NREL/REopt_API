@@ -3,11 +3,13 @@ from django.db import models
 from django.contrib.postgres.fields import *
 import uuid
 from picklefield.fields import PickledObjectField
-from library import DatLibrary
-from utilities import is_error
 import numpy as np
 
+class URDBError(models.Model):
 
+    label = models.TextField(blank=True, default='', null=False)
+    type = models.TextField(blank=True, default='', null=False)
+    message = models.TextField(blank=True, default='', null=False)
 
 class RunInput(models.Model):
 
@@ -71,12 +73,12 @@ class RunInput(models.Model):
 
     # PV Capital Cost Based Incentives
     pv_itc_federal = models.FloatField(null=True, blank=True)
-    pv_itc_state = models.FloatField(null=True, blank=True)
-    pv_itc_utility = models.FloatField(null=True, blank=True)
+    pv_ibi_state = models.FloatField(null=True, blank=True)
+    pv_ibi_utility = models.FloatField(null=True, blank=True)
 
     pv_itc_federal_max = models.FloatField(null=True, blank=True)
-    pv_itc_state_max = models.FloatField(null=True, blank=True)
-    pv_itc_utility_max = models.FloatField(null=True, blank=True)
+    pv_ibi_state_max = models.FloatField(null=True, blank=True)
+    pv_ibi_utility_max = models.FloatField(null=True, blank=True)
 
     pv_rebate_federal = models.FloatField(null=True, blank=True)
     pv_rebate_state = models.FloatField(null=True, blank=True)
@@ -117,21 +119,8 @@ class RunInput(models.Model):
     batt_can_gridcharge = models.FloatField(null=True,blank=True)
 
     # Battery Capital Cost Incentives
-    batt_itc_federal = models.FloatField(null=True, blank=True)
-    batt_itc_state = models.FloatField(null=True, blank=True)
-    batt_itc_utility = models.FloatField(null=True, blank=True)
-
-    batt_itc_federal_max = models.FloatField(null=True, blank=True)
-    batt_itc_state_max = models.FloatField(null=True, blank=True)
-    batt_itc_utility_max = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal = models.FloatField(null=True, blank=True)
-    batt_rebate_state = models.FloatField(null=True, blank=True)
-    batt_rebate_utility = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal_max = models.FloatField(null=True, blank=True)
-    batt_rebate_state_max = models.FloatField(null=True, blank=True)
-    batt_rebate_utility_max = models.FloatField(null=True, blank=True)
+    batt_itc_total = models.FloatField(null=True, blank=True)
+    batt_rebate_total = models.FloatField(null=True, blank=True)
 
     # Battery MACRS
     batt_macrs_schedule = models.IntegerField(null=True,blank=True)
@@ -145,32 +134,42 @@ class RunInput(models.Model):
 
     # Metadata
     created = models.DateTimeField(auto_now_add=True)
+    
+    # Wind
+    wind_cost = models.FloatField(null=True, blank=True)
+    wind_om = models.FloatField(null=True, blank=True)
+    wind_kw_max = models.FloatField(null=True, blank=True)
+    wind_kw_min = models.FloatField(null=True, blank=True)
+    wind_degradation_rate = models.FloatField(null=True, blank=True)
 
-    def create_output(self, fields, json_POST):
-        response_inputs = {f: getattr(self, f) for f in fields}
+    # Wind Capital Cost Based Incentives
+    wind_itc_federal = models.FloatField(null=True, blank=True)
+    wind_ibi_state = models.FloatField(null=True, blank=True)
+    wind_ibi_utility = models.FloatField(null=True, blank=True)
 
-        run_uuid = uuid.uuid4()
-        run_input_id = self.id
+    wind_itc_federal_max = models.FloatField(null=True, blank=True)
+    wind_ibi_state_max = models.FloatField(null=True, blank=True)
+    wind_ibi_utility_max = models.FloatField(null=True, blank=True)
 
-        run_set = DatLibrary(run_uuid, run_input_id, response_inputs)
+    wind_rebate_federal = models.FloatField(null=True, blank=True)
+    wind_rebate_state = models.FloatField(null=True, blank=True)
+    wind_rebate_utility = models.FloatField(null=True, blank=True)
 
-        # Log POST request
-        run_set.log_post(json_POST)
+    wind_rebate_federal_max = models.FloatField(null=True, blank=True)
+    wind_rebate_state_max = models.FloatField(null=True, blank=True)
+    wind_rebate_utility_max = models.FloatField(null=True, blank=True)
 
-        # Run Optimization
-        output_dictionary = run_set.run()
-        error = is_error(output_dictionary)
-        if error:
-            return error
+    # Wind Production Based Incentives
+    wind_pbi = models.FloatField(null=True, blank=True)
+    wind_pbi_max = models.FloatField(null=True, blank=True)
+    wind_pbi_years = models.FloatField(null=True, blank=True)
+    wind_pbi_system_max = models.FloatField(null=True, blank=True)
 
-        # API level outputs
-        output_dictionary['api_version'] = self.api_version
-        output_dictionary['uuid'] = run_uuid
-
-        result = RunOutput(**output_dictionary)
-        result.save()
-
-        return result
+    # Wind MACRS
+    wind_macrs_schedule = models.IntegerField(null=True, blank=True)
+    wind_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
+    wind_macrs_itc_reduction = models.FloatField(null=True, blank=True)
+            
     
 class RunOutput(models.Model):
 
@@ -200,6 +199,7 @@ class RunOutput(models.Model):
     blended_utility_rate = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     demand_charge = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
     pv_kw_ac_hourly = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
+    wind_production_factor = ArrayField(models.FloatField(blank=True), null=True, blank=True, default=[])
 
     # Financial Inputs
     analysis_period = models.IntegerField(null=True, blank=True)
@@ -238,12 +238,12 @@ class RunOutput(models.Model):
 
     # PV Capital Cost Based Incentives
     pv_itc_federal = models.FloatField(null=True, blank=True)
-    pv_itc_state = models.FloatField(null=True, blank=True)
-    pv_itc_utility = models.FloatField(null=True, blank=True)
+    pv_ibi_state = models.FloatField(null=True, blank=True)
+    pv_ibi_utility = models.FloatField(null=True, blank=True)
 
     pv_itc_federal_max = models.FloatField(null=True, blank=True)
-    pv_itc_state_max = models.FloatField(null=True, blank=True)
-    pv_itc_utility_max = models.FloatField(null=True, blank=True)
+    pv_ibi_state_max = models.FloatField(null=True, blank=True)
+    pv_ibi_utility_max = models.FloatField(null=True, blank=True)
 
     pv_rebate_federal = models.FloatField(null=True, blank=True)
     pv_rebate_state = models.FloatField(null=True, blank=True)
@@ -263,6 +263,41 @@ class RunOutput(models.Model):
     pv_macrs_schedule = models.IntegerField(null=True, blank=True)
     pv_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
     pv_macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    
+    # Wind
+    wind_cost = models.FloatField(null=True, blank=True)
+    wind_om = models.FloatField(null=True, blank=True)
+    wind_kw_max = models.FloatField(null=True, blank=True)
+    wind_kw_min = models.FloatField(null=True, blank=True)
+    wind_degradation_rate = models.FloatField(null=True, blank=True)
+
+    # Wind Capital Cost Based Incentives
+    wind_itc_federal = models.FloatField(null=True, blank=True)
+    wind_ibi_state = models.FloatField(null=True, blank=True)
+    wind_ibi_utility = models.FloatField(null=True, blank=True)
+
+    wind_itc_federal_max = models.FloatField(null=True, blank=True)
+    wind_ibi_state_max = models.FloatField(null=True, blank=True)
+    wind_ibi_utility_max = models.FloatField(null=True, blank=True)
+
+    wind_rebate_federal = models.FloatField(null=True, blank=True)
+    wind_rebate_state = models.FloatField(null=True, blank=True)
+    wind_rebate_utility = models.FloatField(null=True, blank=True)
+
+    wind_rebate_federal_max = models.FloatField(null=True, blank=True)
+    wind_rebate_state_max = models.FloatField(null=True, blank=True)
+    wind_rebate_utility_max = models.FloatField(null=True, blank=True)
+
+    # Wind Production Based Incentives
+    wind_pbi = models.FloatField(null=True, blank=True)
+    wind_pbi_max = models.FloatField(null=True, blank=True)
+    wind_pbi_years = models.FloatField(null=True, blank=True)
+    wind_pbi_system_max = models.FloatField(null=True, blank=True)
+
+    # Wind MACRS
+    wind_macrs_schedule = models.IntegerField(null=True, blank=True)
+    wind_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
+    wind_macrs_itc_reduction = models.FloatField(null=True, blank=True)
 
     # Battery Costs
     batt_cost_kwh = models.FloatField(null=True, blank=True)
@@ -285,21 +320,8 @@ class RunOutput(models.Model):
     batt_can_gridcharge = models.FloatField(null=True, blank=True)
 
     # Battery Capital Cost Incentives
-    batt_itc_federal = models.FloatField(null=True, blank=True)
-    batt_itc_state = models.FloatField(null=True, blank=True)
-    batt_itc_utility = models.FloatField(null=True, blank=True)
-
-    batt_itc_federal_max = models.FloatField(null=True, blank=True)
-    batt_itc_state_max = models.FloatField(null=True, blank=True)
-    batt_itc_utility_max = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal = models.FloatField(null=True, blank=True)
-    batt_rebate_state = models.FloatField(null=True, blank=True)
-    batt_rebate_utility = models.FloatField(null=True, blank=True)
-
-    batt_rebate_federal_max = models.FloatField(null=True, blank=True)
-    batt_rebate_state_max = models.FloatField(null=True, blank=True)
-    batt_rebate_utility_max = models.FloatField(null=True, blank=True)
+    batt_itc_total = models.FloatField(null=True, blank=True)
+    batt_rebate_total = models.FloatField(null=True, blank=True)
 
     # Battery MACRS
     batt_macrs_schedule = models.IntegerField(null=True, blank=True)
@@ -317,6 +339,7 @@ class RunOutput(models.Model):
     irr = models.FloatField(null=True, blank=True)
     year_one_utility_kwh = models.FloatField(null=True, blank=True)
     pv_kw = models.FloatField(null=True, blank=True, default=0)
+    wind_kw = models.FloatField(null=True, blank=True, default=0)
     batt_kw = models.FloatField(null=True, blank=True, default=0)
     batt_kwh = models.FloatField(null=True, blank=True, default=0)
     year_one_energy_cost = models.FloatField(null=True, blank=True)
@@ -332,8 +355,10 @@ class RunOutput(models.Model):
 
     total_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
     net_capital_costs_plus_om = models.FloatField(null=True, blank=True)
-    average_yearly_pv_energy_produced = models.FloatField(null=True, blank=True)  # once wind is added, this will include wind production
+    average_yearly_pv_energy_produced = models.FloatField(null=True, blank=True)
     average_annual_energy_exported = models.FloatField(null=True, blank=True)
+    average_annual_energy_exported_wind = models.FloatField(null=True, blank=True)
+    average_wind_energy_produced = models.FloatField(null=True, blank=True)
 
     year_one_electric_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_pv_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -346,6 +371,9 @@ class RunOutput(models.Model):
     year_one_battery_soc_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_demand_cost_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_battery_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_load_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_wind_to_grid_series = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_datetime_start = models.DateTimeField(null=True, blank=True)
 
     year_one_export_benefit = models.FloatField(null=True, blank=True)
@@ -354,9 +382,8 @@ class RunOutput(models.Model):
     # Resilience
     outage_start = models.IntegerField(null=True, blank=True)
     outage_end = models.IntegerField(null=True, blank=True)
-
     crit_load_factor = models.FloatField(null=True, blank=True)
-    
+        
     @property
     def pv_installed_cost(self):
         return self.pv_kw * self.pv_cost
@@ -422,11 +449,11 @@ class RunOutput(models.Model):
                 self.incentives[t]['itc_fed_percent'] = self.pv_itc_federal
                 self.incentives[t]['itc_fed_percent_maxvalue'] = self.pv_itc_federal_max
 
-                # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = self.pv_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = self.pv_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_itc_utility_max
+                # cash incentives
+                self.incentives[t]['ibi_sta_percent'] = self.pv_ibi_state
+                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_ibi_state_max
+                self.incentives[t]['ibi_uti_percent'] = self.pv_ibi_utility
+                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_ibi_utility_max
 
                 # capacity based incentives
                 self.incentives[t]['cbi_fed_amount'] = self.pv_rebate_federal
@@ -452,22 +479,11 @@ class RunOutput(models.Model):
                 self.incentives[t]['macrs_itc_reduction'] = self.batt_macrs_itc_reduction
 
                 # tax credits
-                self.incentives[t]['itc_fed_percent'] = self.batt_itc_federal
-                self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
-
-                # cash incentives (need to rename state, util from ITC)
-                self.incentives[t]['ibi_sta_percent'] = self.batt_itc_state
-                self.incentives[t]['ibi_sta_percent_maxvalue'] = self.batt_itc_state_max
-                self.incentives[t]['ibi_uti_percent'] = self.batt_itc_utility
-                self.incentives[t]['ibi_uti_percent_maxvalue'] = self.batt_itc_utility_max
+                self.incentives[t]['itc_fed_percent'] = self.batt_itc_total
+                #self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
 
                 # capacity based incentives
-                self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_federal
-                self.incentives[t]['cbi_fed_maxvalue'] = self.batt_rebate_federal_max
-                self.incentives[t]['cbi_sta_amount'] = self.batt_rebate_state
-                self.incentives[t]['cbi_sta_maxvalue'] = self.batt_rebate_state_max
-                self.incentives[t]['cbi_uti_amount'] = self.batt_rebate_utility
-                self.incentives[t]['cbi_uti_maxvalue'] = self.batt_rebate_utility_max
+                self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_total
 
                 # production based incentives
                 self.incentives[t]['pbi_combined_amount'] = 0
@@ -709,10 +725,10 @@ class RunOutput(models.Model):
             o_and_m_capacity_cost[year] = self.pv_om * self.pv_kw * inflation_modifier_n
 
             if self.batt_replacement_year_kw == year:
-                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw * inflation_modifier_n
+                batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw
 
             if self.batt_replacement_year_kwh == year:
-                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh * inflation_modifier_n
+                batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh
 
             tech_operating_expenses['PV'] = o_and_m_capacity_cost[year]
             tech_operating_expenses['BATT'] = batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]

@@ -27,6 +27,8 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
                     "resilience_hours_min": 0,
                     "resilience_hours_max": 0,
                     "resilience_hours_avg": 0,
+                    "outage_durations": None,
+                    "probs_of_surviving": None,
                     }
 
     if pv_kw == 0 and pv_kw_ac_hourly is None:
@@ -63,14 +65,19 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
 
     pvMld = pvMld[1:] + pvMld[:1]  # shift back to original state
 
-
     r_min = min(r)
     r_max = max(r)
-    r_avg = round( float(sum(r)) / float(len(r)),2)
-    r_list = r
+    r_avg = round(float(sum(r)) / float(len(r)), 2)
+
+    x_vals = range(1, r_max+1)
+    y_vals = list()
+    for hrs in x_vals:
+        y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
     
-    return {"resilience_by_timestep": r_list,
+    return {"resilience_by_timestep": r,
             "resilience_hours_min": r_min,
             "resilience_hours_max": r_max,
             "resilience_hours_avg": r_avg,
+            "outage_durations": x_vals,
+            "probs_of_surviving": y_vals,
             }

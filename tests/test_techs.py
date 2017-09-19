@@ -10,17 +10,22 @@ temp_folder = os.path.join('tmp', 'test_techs_outputs')
 n_timesteps = 8760
 
 
+class Paths(object):
+    inputs = temp_folder
+    outputs = temp_folder
+    outputs_bau = temp_folder
+
 class TestTechs(unittest.TestCase):
 
     def setUp(self):
-        self.dfm = DatFileManager(run_id=123, inputs_path=temp_folder)
+        self.dfm = DatFileManager(run_id=123, paths=Paths())
 
         if not os.path.exists(temp_folder):
             os.mkdir(temp_folder)
         self.dfm.n_timesteps = n_timesteps
 
         post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
-        self.pv = PV(offline=True, **post)
+        self.pv = PV(**post)
         self.dfm.add_pv(self.pv)
         self.util = Util(**post)
         self.dfm.add_util(self.util)

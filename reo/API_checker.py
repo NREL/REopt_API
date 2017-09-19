@@ -1,9 +1,11 @@
-from api_definitions import *
-from urdb_download import *
+from api_definitions import inputs, outputs
+from urdb_download import urdb_download
 import requests
 import json
 import logging
 import datetime
+import random
+import urllib
 from validators import URDB_RateValidator
 
 logging.basicConfig(filename='log_%s.log' % (datetime.datetime.now().strftime('%Y%m%d %H:%M:%S')), filemode='w', level=logging.DEBUG)
@@ -13,11 +15,9 @@ localhost = False
 def case(
         analysis_period=20,user_id="123",latitude=34.5794343,longitude=-118,pv_om=20,batt_cost_kw=1600,batt_cost_kwh=500,
         load_profile_name="RetailStore",load_size=500000,pv_cost=2160,offtaker_discount_rate=0.07,offtaker_tax_rate=0.35,
-        owner_discount_rate=0.1,owner_tax_rate=0.35,rate_inflation=0.02,rate_escalation=0.0,load_year=2018,batt_itc_federal=0.3,
-        batt_itc_state=0.0,batt_itc_utility=0.0,batt_itc_federal_max=10000000,batt_itc_state_max=0,batt_itc_utility_max=0,
-        batt_rebate_federal=0,batt_rebate_state=0,batt_rebate_utility=0,batt_rebate_federal_max=0,batt_rebate_state_max=0,
-        batt_rebate_utility_max=0,pv_pbi=0.3,pv_pbi_max=1000,pv_pbi_years=20,pv_pbi_system_max=1000,pv_itc_federal=0.3,
-        pv_itc_state=0.0,pv_itc_utility=0.0, pv_itc_federal_max=10000000,pv_itc_state_max=0,pv_itc_utility_max=0,pv_rebate_federal=0,
+        owner_discount_rate=0.1,owner_tax_rate=0.35,rate_inflation=0.02,rate_escalation=0.0,load_year=2018,batt_itc_total=0.3,
+        batt_rebate_total=0,pv_pbi=0.3,pv_pbi_max=1000,pv_pbi_years=20,pv_pbi_system_max=1000,pv_itc_federal=0.3,
+        pv_ibi_state=0.0,pv_ibi_utility=0.0, pv_itc_federal_max=10000000,pv_ibi_state_max=0,pv_ibi_utility_max=0,pv_rebate_federal=0,
         pv_rebate_state=0,pv_rebate_utility=0,pv_rebate_federal_max=0,pv_rebate_state_max=0,pv_rebate_utility_max=0, urdb_rate=None,
         blended_utility_rate=None, demand_charge=None
   ):
@@ -40,28 +40,18 @@ def case(
     "rate_inflation": rate_inflation,
     "rate_escalation": rate_escalation,
     "load_year": load_year,
-    "batt_itc_federal": batt_itc_federal,
-    "batt_itc_state": batt_itc_state,
-    "batt_itc_utility": batt_itc_utility,
-    "batt_itc_federal_max": batt_itc_federal_max,
-    "batt_itc_state_max": batt_itc_state_max,
-    "batt_itc_utility_max": batt_itc_utility_max,
-    "batt_rebate_federal": batt_rebate_federal,
-    "batt_rebate_state": batt_rebate_state,
-    "batt_rebate_utility": batt_rebate_utility,
-    "batt_rebate_federal_max": batt_rebate_federal_max,
-    "batt_rebate_state_max": batt_rebate_state_max,
-    "batt_rebate_utility_max": batt_rebate_utility_max,
+    "batt_itc_total": batt_itc_total,
+    "batt_rebate_total": batt_rebate_total,
     "pv_pbi": pv_pbi,
     "pv_pbi_max": pv_pbi_max,
     "pv_pbi_years": pv_pbi_years,
     "pv_pbi_system_max": pv_pbi_system_max,
     "pv_itc_federal": pv_itc_federal,
-    "pv_itc_state": pv_itc_state,
-    "pv_itc_utility": pv_itc_utility,
+    "pv_ibi_state": pv_ibi_state,
+    "pv_ibi_utility": pv_ibi_utility,
     "pv_itc_federal_max": pv_itc_federal_max,
-    "pv_itc_state_max": pv_itc_state_max,
-    "pv_itc_utility_max": pv_itc_utility_max,
+    "pv_ibi_state_max": pv_ibi_state_max,
+    "pv_ibi_utility_max": pv_ibi_utility_max,
     "pv_rebate_federal": pv_rebate_federal,
     "pv_rebate_state": pv_rebate_state,
     "pv_rebate_utility": pv_rebate_utility,

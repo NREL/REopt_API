@@ -4,13 +4,13 @@ import copy
 from collections import namedtuple
 from datetime import datetime, timedelta
 
-from reo.src.dat_file_manager import DatFileManager
-
 
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
+    
     Default_city = namedtuple("Default_city", "name lat lng")
+    
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790),
         Default_city('Houston', 29.760427, -95.369803),
@@ -30,42 +30,371 @@ class BuiltInProfile(object):
         Default_city('Fairbanks', 64.837778, -147.716389),
     ]
 
-    def __init__(self, latitude, longitude, load_size, load_monthly_kwh, load_profile_name, load_year, **kwargs):
-        """
+    annual_loads = {
+        'Albuquerque': {
+            'fastfoodrest': 193235,
+            'fullservicerest': 367661,
+            'hospital': 8468546,
+            'largehotel': 2407649,
+            'largeoffice': 6303595,
+            'mediumoffice': 884408,
+            'midriseapartment': 269734,
+            'outpatient': 1678720,
+            'primaryschool': 1070908,
+            'retailstore': 505417,
+            'secondaryschool': 2588879,
+            'smallhotel': 755373,
+            'smalloffice': 87008,
+            'stripmall': 497132,
+            'supermarket': 1947654,
+            'warehouse': 228939,
+        },
+        'Atlanta': {
+            'fastfoodrest': 197467,
+            'fullservicerest': 353750,
+            'hospital': 9054747,
+            'largehotel': 2649819,
+            'largeoffice': 6995864,
+            'mediumoffice': 929349,
+            'midriseapartment': 285349,
+            'outpatient': 1672434,
+            'primaryschool': 1128702,
+            'retailstore': 543340,
+            'secondaryschool': 2849901,
+            'smallhotel': 795777,
+            'smalloffice': 90162,
+            'stripmall': 529719,
+            'supermarket': 2092966,
+            'warehouse': 223009,
+        },
+        'Baltimore': {
+            'fastfoodrest': 192831,
+            'fullservicerest': 341893,
+            'hospital': 8895223,
+            'largehotel': 2534272,
+            'largeoffice': 6836130,
+            'mediumoffice': 945425,
+            'midriseapartment': 273225,
+            'outpatient': 1623103,
+            'primaryschool': 1077312,
+            'retailstore': 510257,
+            'secondaryschool': 2698987,
+            'smallhotel': 767538,
+            'smalloffice': 86112,
+            'stripmall': 504715,
+            'supermarket': 2018760,
+            'warehouse': 229712,
+        },
+        'Boulder': {
+            'fastfoodrest': 189092,
+            'fullservicerest': 334005,
+            'hospital': 8281865,
+            'largehotel': 2313151,
+            'largeoffice': 6127030,
+            'mediumoffice': 884726,
+            'midriseapartment': 255428,
+            'outpatient': 1621950,
+            'primaryschool': 1018424,
+            'retailstore': 504256,
+            'secondaryschool': 2441588,
+            'smallhotel': 736174,
+            'smalloffice': 84900,
+            'stripmall': 495018,
+            'supermarket': 1956244,
+            'warehouse': 243615,
+        },
+        'Chicago': {
+            'fastfoodrest': 189558,
+            'fullservicerest': 333659,
+            'hospital': 8567087,
+            'largehotel': 2402021,
+            'largeoffice': 6369028,
+            'mediumoffice': 972772,
+            'midriseapartment': 265528,
+            'outpatient': 1587062,
+            'primaryschool': 1045477,
+            'retailstore': 513106,
+            'secondaryschool': 2568086,
+            'smallhotel': 759657,
+            'smalloffice': 86224,
+            'stripmall': 506886,
+            'supermarket': 2025507,
+            'warehouse': 245750,
+        },
+        'Duluth': {
+            'fastfoodrest': 183713,
+            'fullservicerest': 318867,
+            'hospital': 8134328,
+            'largehotel': 2231678,
+            'largeoffice': 6036003,
+            'mediumoffice': 1032533,
+            'midriseapartment': 256393,
+            'outpatient': 1534322,
+            'primaryschool': 982163,
+            'retailstore': 532503,
+            'secondaryschool': 2333466,
+            'smallhotel': 752284,
+            'smalloffice': 83759,
+            'stripmall': 500979,
+            'supermarket': 1980986,
+            'warehouse': 256575,
+        },
+        'Fairbanks': {
+            'fastfoodrest': 182495,
+            'fullservicerest': 314760,
+            'hospital': 7899166,
+            'largehotel': 2181664,
+            'largeoffice': 5956232,
+            'mediumoffice': 1267132,
+            'midriseapartment': 271840,
+            'outpatient': 1620270,
+            'primaryschool': 986128,
+            'retailstore': 573411,
+            'secondaryschool': 2344790,
+            'smallhotel': 831480,
+            'smalloffice': 86614,
+            'stripmall': 545421,
+            'supermarket': 2033295,
+            'warehouse': 285064,
+        },
+        'Helena': {
+            'fastfoodrest': 185877,
+            'fullservicerest': 325263,
+            'hospital': 8068698,
+            'largehotel': 2246239,
+            'largeoffice': 6003137,
+            'mediumoffice': 930630,
+            'midriseapartment': 252659,
+            'outpatient': 1568262,
+            'primaryschool': 994496,
+            'retailstore': 534933,
+            'secondaryschool': 2357548,
+            'smallhotel': 729797,
+            'smalloffice': 84219,
+            'stripmall': 503504,
+            'supermarket': 1969137,
+            'warehouse': 252245,
+        },
+        'Houston': {
+            'fastfoodrest': 210283,
+            'fullservicerest': 383987,
+            'hospital': 9634661,
+            'largehotel': 3050370,
+            'largeoffice': 7539308,
+            'mediumoffice': 972535,
+            'midriseapartment': 335063,
+            'outpatient': 1756541,
+            'primaryschool': 1258146,
+            'retailstore': 589419,
+            'secondaryschool': 3421024,
+            'smallhotel': 863952,
+            'smalloffice': 98508,
+            'stripmall': 577987,
+            'supermarket': 2225265,
+            'warehouse': 221593,
+        },
+        'LasVegas': {
+            'fastfoodrest': 208062,
+            'fullservicerest': 372350,
+            'hospital': 9011047,
+            'largehotel': 2758835,
+            'largeoffice': 6776744,
+            'mediumoffice': 964533,
+            'midriseapartment': 332446,
+            'outpatient': 1810988,
+            'primaryschool': 1197325,
+            'retailstore': 546177,
+            'secondaryschool': 3120809,
+            'smallhotel': 818012,
+            'smalloffice': 96263,
+            'stripmall': 546026,
+            'supermarket': 2001224,
+            'warehouse': 236853,
+        },
+        'LosAngeles': {
+            'fastfoodrest': 188857,
+            'fullservicerest': 352240,
+            'hospital': 8498389,
+            'largehotel': 2458786,
+            'largeoffice': 6642784,
+            'mediumoffice': 846742,
+            'midriseapartment': 248028,
+            'outpatient': 1565008,
+            'primaryschool': 1095263,
+            'retailstore': 486188,
+            'secondaryschool': 2584380,
+            'smallhotel': 751880,
+            'smalloffice': 86655,
+            'stripmall': 491972,
+            'supermarket': 1935886,
+            'warehouse': 182085,
+        },
+        'Miami': {
+            'fastfoodrest': 224494,
+            'fullservicerest': 448713,
+            'hospital': 10062043,
+            'largehotel': 3437188,
+            'largeoffice': 8002063,
+            'mediumoffice': 1021224,
+            'midriseapartment': 424956,
+            'outpatient': 1929148,
+            'primaryschool': 1426635,
+            'retailstore': 635086,
+            'secondaryschool': 4074081,
+            'smallhotel': 972090,
+            'smalloffice': 108279,
+            'stripmall': 675793,
+            'supermarket': 2260929,
+            'warehouse': 202082,
+        },
+        'Minneapolis': {
+            'fastfoodrest': 188368,
+            'fullservicerest': 330920,
+            'hospital': 8425063,
+            'largehotel': 2378872,
+            'largeoffice': 6306693,
+            'mediumoffice': 1005875,
+            'midriseapartment': 267383,
+            'outpatient': 1582701,
+            'primaryschool': 1022667,
+            'retailstore': 539203,
+            'secondaryschool': 2498647,
+            'smallhotel': 774571,
+            'smalloffice': 85921,
+            'stripmall': 511567,
+            'supermarket': 2034650,
+            'warehouse': 249332,
+        },
+        'Phoenix': {
+            'fastfoodrest': 216088,
+            'fullservicerest': 389739,
+            'hospital': 9265786,
+            'largehotel': 2990053,
+            'largeoffice': 7211666,
+            'mediumoffice': 1004988,
+            'midriseapartment': 378378,
+            'outpatient': 1849358,
+            'primaryschool': 1289084,
+            'retailstore': 593924,
+            'secondaryschool': 3503727,
+            'smallhotel': 881843,
+            'smalloffice': 104583,
+            'stripmall': 590954,
+            'supermarket': 2056195,
+            'warehouse': 241585,
+        },
+        'SanFrancisco': {
+            'fastfoodrest': 183953,
+            'fullservicerest': 317124,
+            'hospital': 7752817,
+            'largehotel': 2206880,
+            'largeoffice': 6085403,
+            'mediumoffice': 792199,
+            'midriseapartment': 229671,
+            'outpatient': 1394447,
+            'primaryschool': 1009369,
+            'retailstore': 449025,
+            'secondaryschool': 2327074,
+            'smallhotel': 698095,
+            'smalloffice': 78132,
+            'stripmall': 455802,
+            'supermarket': 1841655,
+            'warehouse': 185889,
+        },
+        'Seattle': {
+            'fastfoodrest': 184142,
+            'fullservicerest': 318741,
+            'hospital': 7912504,
+            'largehotel': 2212410,
+            'largeoffice': 6019271,
+            'mediumoffice': 878390,
+            'midriseapartment': 237242,
+            'outpatient': 1434195,
+            'primaryschool': 983498,
+            'retailstore': 455854,
+            'secondaryschool': 2282972,
+            'smallhotel': 693921,
+            'smalloffice': 79716,
+            'stripmall': 460449,
+            'supermarket': 1868973,
+            'warehouse': 210300,
+        },
+    }
 
-        :param latitude:
-        :param longitude:
-        :param annual_kwh:
-        :param monthly_kwh: list of 12 floats for montly energy sums
+    default_buildings =  [  'fastfoodrest',
+                            'fullservicerest',
+                            'hospital',
+                            'largehotel',
+                            'largeoffice',
+                            'mediumoffice',
+                            'midriseapartment',
+                            'outpatient',
+                            'primaryschool',
+                            'retailstore',
+                            'secondaryschool',
+                            'smallhotel',
+                            'smalloffice',
+                            'stripmall',
+                            'supermarket',
+                            'warehouse']
+
+    def __init__(self, latitude=None, longitude=None, load_profile_name='', load_size=None, load_year=None, load_monthly_kwh=None, **kwargs):
+        """
+        :param latitude: float
+        :param longitude: float
+        :param annual_kwh: float or int
+        :param monthly_kwh: list of 12 floats for monthly energy sums
         :param load_profile_name: building type chosen by user
         :param load_year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
-
-        self.city = self._nearest_city(latitude, longitude)
-        self.annual_kwh = load_size if load_size else sum(load_monthly_kwh)
+        
+        self.latitude = float(latitude) if latitude else None
+        self.longitude = float(longitude) if longitude else None
         self.monthly_kwh = load_monthly_kwh
-        self.building_type = load_profile_name
-        self.normalized_profile = self._normalized_profile()
+        self.load_profile_name = load_profile_name
+        self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
         self.year = load_year
-
-    def _normalized_profile(self):
-
-        profile_path = os.path.join(BuiltInProfile.library_path, "Load8760_norm_" + self.city + "_" + self.building_type + ".dat")
-        normalized_profile = list()
-        f = open(profile_path, 'r')
-        for line in f:
-            normalized_profile.append(float(line.strip('\n')))
-
-        return normalized_profile
 
     @property
     def built_in_profile(self):
-
-        if self.annual_kwh:
+        if self.monthly_kwh is None:
             return [ld * self.annual_kwh for ld in self.normalized_profile]
 
         return self.monthly_scaled_profile
+
+    @property
+    def city(self):
+        if self.latitude and self.longitude:
+            if hasattr(self,'nearest_city'):
+                return self.nearest_city
+            else:
+                min_distance = None
+                for i,c in enumerate(self.default_cities):
+                    distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
+                    if i==0:
+                        min_distance = distance
+                        self.nearest_city = c.name
+                    elif distance < min_distance:
+                        min_distance = distance
+                        self.nearest_city = c.name
+                return self.nearest_city
+        
+        else:
+            raise AttributeError('load_profile', 'Cannot determine nearest city - missing city or latitude and longitude inputs')
+
+    @property
+    def default_annual_kwh(self):
+        if self.city and self.building_type:
+            return self.annual_loads[self.city][self.building_type.lower()]
+	return None
+
+    @property
+    def building_type(self):
+        name = self.load_profile_name.replace(' ','')
+        if name.lower() not in self.default_buildings:
+            raise AttributeError('load_profile', "Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
+        return name
 
     @property
     def monthly_scaled_profile(self):
@@ -102,36 +431,41 @@ class BuiltInProfile(object):
 
         return load_profile
 
-    def _nearest_city(self, lat, lng):
-        min_distance = 1e9
-        nearest_city = None
+    @property
+    def normalized_profile(self):
 
-        for c in BuiltInProfile.default_cities:
-            distance = math.sqrt((lat - c.lat)**2 + (lng - c.lng)**2)
-            if distance < min_distance:
-                min_distance = distance
-                nearest_city = c.name
-        return nearest_city
+        profile_path = os.path.join(BuiltInProfile.library_path, "Load8760_norm_" + self.city + "_" + self.building_type + ".dat")
+        normalized_profile = list()
+        f = open(profile_path, 'r')
+        for line in f:
+            normalized_profile.append(float(line.strip('\n')))
+
+        return normalized_profile
 
 
 class LoadProfile(BuiltInProfile):
 
-    def __init__(self, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
+    def __init__(self, dfm, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
-            self.annual_kwh = sum(user_profile)
 
         else:  # building type and (load_size OR load_monthly_kwh) defined by user
             super(LoadProfile, self).__init__(**kwargs)
             self.load_list = self.built_in_profile
-            self.annual_kwh = sum(self.load_list)
 
         self.unmodified_load_list = copy.copy(self.load_list)
+        self.bau_load_list = copy.copy(self.load_list)
 
         if crit_load_factor and outage_start and outage_end:
             # modify load
             self.load_list = self.load_list[0:outage_start] \
                            + [ld * crit_load_factor for ld in self.load_list[outage_start:outage_end]] \
                            + self.load_list[outage_end:]
-        DatFileManager().add_load(self)
+            self.bau_load_list = self.load_list[0:outage_start] \
+                                + [0 for _ in self.load_list[outage_start:outage_end]] \
+                                + self.load_list[outage_end:]
+
+        self.annual_kwh = sum(self.load_list)
+        self.bau_annual_kwh = sum(self.bau_load_list)
+        dfm.add_load(self)

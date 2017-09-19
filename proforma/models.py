@@ -1,15 +1,10 @@
 from django.db import models
 import uuid
 import os
-import math
 import datetime, tzlocal
-import numpy as np
 from openpyxl import load_workbook
-from reo.economics import Economics
 from reo.models import RunOutput
-
-# logging
-from log_levels import log
+from reo.src.dat_file_manager import big_number
 
 
 class ProForma(models.Model):
@@ -93,10 +88,10 @@ class ProForma(models.Model):
         # PV Tax Credits and Incentives
         ws['B44'] = ro.pv_itc_federal * 100
         ws['C44'] = ro.pv_itc_federal_max
-        ws['B49'] = ro.pv_itc_state * 100
-        ws['C49'] = ro.pv_itc_state_max
-        ws['B50'] = ro.pv_itc_utility * 100
-        ws['C50'] = ro.pv_itc_utility_max
+        ws['B49'] = ro.pv_ibi_state * 100
+        ws['C49'] = ro.pv_ibi_state_max
+        ws['B50'] = ro.pv_ibi_utility * 100
+        ws['C50'] = ro.pv_ibi_utility_max
         ws['B52'] = ro.pv_rebate_federal * 0.001
         ws['C52'] = ro.pv_rebate_federal_max
         ws['B53'] = ro.pv_rebate_state * 0.001
@@ -109,27 +104,33 @@ class ProForma(models.Model):
         ws['F56'] = ro.pv_pbi_system_max
 
         # Battery Tax Credits and Incentives
-        ws['B61'] = ro.batt_itc_federal * 100
-        ws['C61'] = ro.batt_itc_federal_max
-        ws['B66'] = ro.batt_itc_state * 100
-        ws['C66'] = ro.batt_itc_state_max
-        ws['B67'] = ro.batt_itc_utility * 100
-        ws['C67'] = ro.batt_itc_utility_max
-        ws['B69'] = ro.batt_rebate_federal
-        ws['C69'] = ro.batt_rebate_federal_max
-        ws['B70'] = ro.batt_rebate_state
-        ws['C70'] = ro.batt_rebate_state_max
-        ws['B71'] = ro.batt_rebate_utility
-        ws['C71'] = ro.batt_rebate_utility_max
+        ws['B61'] = ro.batt_itc_total * 100
+        ws['C61'] = big_number  # max itc
+        ws['B66'] = 0  # state ITC
+        ws['C66'] = big_number  # state ITC max
+        ws['B67'] = 0  # utility ITC
+        ws['C67'] = big_number  # utility ITC max
+        ws['B69'] = ro.batt_rebate_total * 0.001
+        ws['C69'] = big_number  # max rebate
+        ws['B70'] = 0  # state rebate
+        ws['C70'] = big_number  # max state rebate
+        ws['B71'] = 0  # utility rebate
+        ws['C71'] = big_number  # max utility rebate
 
         # Depreciation
         if ro.pv_macrs_schedule > 0:
             ws['B74'] = ro.pv_macrs_schedule
             ws['B75'] = ro.pv_macrs_bonus_fraction
-        
+        elif ro.pv_macrs_schedule == 0:
+            ws['B74'] = "None"
+            ws['B75'] = 0
+
         if ro.batt_macrs_schedule > 0:
             ws['C74'] = ro.batt_macrs_schedule
             ws['C75'] = ro.batt_macrs_bonus_fraction
+        if ro.batt_macrs_schedule == 0:
+            ws['C74'] = "None"
+            ws['C75'] = 0
 
         # Save
         wb.save(self.output_file)

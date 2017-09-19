@@ -1,9 +1,7 @@
 import os
 import json
-from api_definitions import *
+from api_definitions import outputs
 from dispatch import ProcessOutputs
-from tastypie.exceptions import ImmediateHttpResponse
-
 
 class Results:
 
@@ -22,14 +20,13 @@ class Results:
         "total_demand_cost",
     ]
 
-    def __init__(self, path_templates, path_output, path_output_bau, path_static, economics, year):
+    def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
         """
 
         :param path_templates: path to proForma template
         :param path_output: path to scenario output dir
         :param path_output_bau: path to bau results json
         :param path_static: path to copy proForma to for user download
-        :param economics: economics.Economics object
         :param year: load_year
         """
 
@@ -38,9 +35,6 @@ class Results:
 
         with open(os.path.join(path_output_bau, "REopt_results.json"), 'r') as f:
             results_dict_bau = json.loads(f.read())
-
-        if not self.is_optimal(results_dict) and not self.is_optimal(results_dict_bau):
-            raise ImmediateHttpResponse("No solution could be found for these inputs")
 
         # add bau outputs to results_dict
         for k in Results.bau_attributes:
@@ -77,16 +71,7 @@ class Results:
         self.path_output = path_output
         self.path_static = os.path.join(path_static, self.file_proforma)
         self.path_proforma = os.path.join(path_output, self.file_proforma)
-        self.economics = economics
         self.year = year
-
-    @staticmethod
-    def is_optimal(d):
-
-        if 'status' in d.keys():
-            status = str(d['status']).rstrip()
-            return status == "Optimum found"
-        return False
 
     def get_output(self):
         output_dict = dict()

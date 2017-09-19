@@ -13,6 +13,8 @@ class ResilienceModel(models.Model):
     resilience_hours_min = models.FloatField(null=True)
     resilience_hours_max = models.FloatField(null=True)
     resilience_hours_avg = models.FloatField(null=True)
+    outage_durations = ArrayField(models.FloatField(null=True), null=True)
+    probs_of_surviving = ArrayField(models.FloatField(null=True), null=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -38,6 +40,8 @@ class ResilienceModel(models.Model):
         rm.resilience_hours_min = results.get('resilience_hours_min')
         rm.resilience_hours_max = results.get('resilience_hours_max')
         rm.resilience_hours_avg = results.get('resilience_hours_avg')
+        rm.outage_durations = results.get('outage_durations')
+        rm.probs_of_surviving = results.get('probs_of_surviving')
 
         rm.save()
         return rm

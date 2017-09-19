@@ -73,6 +73,7 @@ class PVWatts:
     def pv_prod_factor(self):
 
         if not self.offline:
+
             outputs = self.data['outputs']
             ac_hourly = outputs.get('ac')
 

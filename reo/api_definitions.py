@@ -1,8 +1,11 @@
 from datetime import datetime
 
 max_big_number = 1e8
-max_years = 75
-analysis_period = 25
+max_incentive = 1e10
+max_years = int(40)
+analysis_period = int(20)
+
+
 def inputs(filter='', full_list=False, just_required=False):
     output = {
 
@@ -11,7 +14,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         # Required
         'analysis_period': {'req': False, 'type': int, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'default': analysis_period, 'min': 1, 'max': max_years,
+                            'default': analysis_period, 'min': 10, 'max': max_years,
                             "description": "Period of Analysis", "units": 'years',
                             "tool_tip": 'The financial life of the project in years. Replacement costs and salvage value are not considered. Units: years. This value is not required.'},
 
@@ -51,7 +54,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
 
         'pv_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                  'max': 1e3, 'default': 20,
+                  'max': 1e3, 'default': 16,
                   "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
@@ -93,7 +96,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": "Is battery allowed to charge from the grid?"},
 
         'batt_efficiency': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": [], 'min': 0,
-                         'max': 1, 'default': 0.90,
+                         'max': 1, 'default': 0.975,
                          "description": "Battery internal efficiency", "units": 'percent',
                          "tool_tip": 'Battery internal efficiency'},
 
@@ -151,9 +154,9 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
         'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                   'min': 0, 'max': 1, 'default': 0.08,
+                                   'min': 0, 'max': 1, 'default': 0.068,
                                    "description": "Offtaker Discount Rate", "units": 'decimal percent',
-                                   "tool_tip": 'In the third party-ownership scenario, this is the rate at which the third-party owner discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
+                                   "tool_tip": 'This is the rate at which the electricity consumer discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
 
         'blended_utility_rate': {'req': True, 'depends_on': ['demand_charge'], 'swap_for': ['urdb_rate'], 'type': list,
                                  'null': False, 'pct': False, "needed_for": ['economics', 'utility'],
@@ -197,7 +200,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'load_year': {'req': False, 'type': float, 'null': True,
                       'pct': False, 'min': 2017,'max': 2017 + max_years,
-                      "needed_for": ['economics'], 'min': 0, 'max': None, 'default': 2018,
+                      "needed_for": ['economics'], 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
 
@@ -216,19 +219,19 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': -1,
-                           'max': 1, 'default': 0.01,
+                           'max': 1, 'default': 0.025,
                            "description": "Annual Inflation Rate", "units": 'decimal percent per year',
                            "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.02,
+                            'min': -1, 'max': 1, 'default': 0.005,
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},
 
         'offtaker_tax_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                               'min': 0,
-                              'max': 1, 'default': 0.35,
+                              'max': 1, 'default': 0.40,
                               "description": "Tax Rate for Electricity Customer", "units": 'decimal percent',
                               "tool_tip": 'In the third party-ownership scenario, this is the percent of income that goes to tax for the third party owner of the system. Units: decimal percent. This value is not required.'},
 
@@ -243,35 +246,35 @@ def inputs(filter='', full_list=False, just_required=False):
                      "description": "Investment Tax Credit rate", "units": 'decimal percent',
                      "tool_tip": 'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
 
-        'pv_itc_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+        'pv_ibi_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
-                           "description": "State Investment Tax Credit rate", "units": 'decimal percent',
+                           "description": "State Investment Based Incentive rate", "units": 'decimal percent',
                            "tool_tip": 'The percent of system costs that are subsudized by the current state tax credit.'},
 
-        'pv_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+        'pv_ibi_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.00,
-                           "description": "Local Investment Tax Credit rate", "units": 'decimal percent',
+                           "description": "Local Investment Based Incentive rate", "units": 'decimal percent',
                            "tool_tip": 'The percent of system costs that are subsudized by a utility or local tax credit.'},
 
         # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                            'min': 0,
-                           'max': None, 'default': 1e12,
+                           'max': max_incentive, 'default': max_incentive,
                            "description": "Federal Investment Tax Credit max", "units": 'dollars',
                            "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
 
-        'pv_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_ibi_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
-                         "description": "State Investment Tax Credit max", "units": 'dollars',
+                         'max': max_incentive, 'default': max_incentive,
+                         "description": "State Investment Based Incentive Credit max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
 
-        'pv_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'pv_ibi_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                          'min': 0,
-                         'max': None, 'default': 1e12,
-                         "description": "Local Investment Tax Credit max", "units": 'dollars',
+                         'max': max_incentive, 'default': max_incentive,
+                         "description": "Local Investment Based Incentive max", "units": 'dollars',
                          "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
 
         'pv_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
@@ -292,22 +295,21 @@ def inputs(filter='', full_list=False, just_required=False):
                          "description": "Local rebate", "units": 'dollars-per-kilowatt',
                          "tool_tip": 'Utility or Local rebate for PV panels in $/kW'},
 
-        # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
         'pv_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
-                              'max': None, 'default': 1e12,
+                              'max': max_incentive, 'default': max_incentive,
                               "description": "Maximum federal rebate", "units": 'dollars',
                               "tool_tip": 'Maximum federal rebate for PV panels in $'},
 
         'pv_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': 1e12, 'default': 1e12,
+                            'max': max_incentive, 'default': max_incentive,
                             "description": "Maximum state rebate", "units": 'dollars',
                             "tool_tip": 'Maximum state rebate for PV panels in $'},
 
         'pv_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                             'min': 0,
-                            'max': None, 'default': 1e12,
+                            'max': max_incentive, 'default': max_incentive,
                             "description": "Maximum utility rebate", "units": 'dollars',
                             "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
 
@@ -335,86 +337,25 @@ def inputs(filter='', full_list=False, just_required=False):
                                "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
                                "tool_tip": 'Total production based incentive system maximum size'},
 
-        'batt_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+        'batt_itc_total': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.30,
                            "description": "Investment Tax Credit rate applied to battery", "units": 'decimal percent',
-                           "tool_tip": 'The percent of battery system costs that are subsidized by the current Federal Investment Tax Credit.'},
+                           "tool_tip": 'The percent of battery system costs that are subsidized by the current Investment Tax Credit.'},
 
-        'batt_itc_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
-                         'min': 0,
-                         'max': 1, 'default': 0.00,
-                         "description": "State Investment Tax Credit rate for battery", "units": 'decimal percent',
-                         "tool_tip": 'The percent of battery system costs that are subsidized by the current state tax credit.'},
-
-        'batt_itc_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
-                           'min': 0,
-                           'max': 1, 'default': 0.00,
-                           "description": "Local Investment Tax Credit rate for battery", "units": 'decimal percent',
-                           "tool_tip": 'The percent of battery system costs that are subsidized by a utility or local tax credit.'},
-
-        'batt_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                               'min': 0,
-                               'max': None, 'default': 1e12,
-                               "description": "Federal Investment Tax Credit for battery max", "units": 'dollars',
-                               "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current Federal Investment Tax Credit.'},
-
-        'batt_itc_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                             'min': 0,
-                             'max': None, 'default': 1e12,
-                             "description": "State Investment Tax Credit battery max", "units": 'dollars',
-                             "tool_tip": 'The maximum $ of battery system costs that are subsidized by the current state tax credit.'},
-
-        'batt_itc_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                               'min': 0,
-                               'max': None, 'default': 1e12,
-                               "description": "Local Investment Tax Credit max for battery", "units": 'dollars',
-                               "tool_tip": 'The maximum $ of battery system costs that are subsidized by a utility or local tax credit.'},
-
-        'batt_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+        'batt_rebate_total': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
                               'min': 0,
                               'max': None, 'default': 0,
-                              "description": "Federal rate", "units": 'dollars-per-kilowatt',
-                              "tool_tip": 'Federal rebate for battery in $/kW'},
-
-        'batt_rebate_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                            'min': 0,
-                            'max': None, 'default': 0,
-                            "description": "State rebate", "units": 'dollars-per-kilowatt',
-                            "tool_tip": 'State rebate for battery in $/kW'},
-
-        'batt_rebate_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                              'min': 0,
-                              'max': 1e9, 'default': 0,
-                              "description": "Local rebate", "units": 'dollars-per-kilowatt',
-                              "tool_tip": 'Utility or Local rebate for battery in $/kW'},
-
-        'batt_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                                  'min': 0,
-                                  'max': None, 'default': 1e12,
-                                  "description": "Maximum federal rebate", "units": 'dollars',
-                                  "tool_tip": 'Maximum federal rebate for battery in $'},
-
-        'batt_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                                'min': 0,
-                                'max': None, 'default': 1e12,
-                                "description": "Maximum state rebate", "units": 'dollars',
-                                "tool_tip": 'Maximum state rebate for battery in $'},
-
-        'batt_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
-                                  'min': 0,
-                                  'max': None, 'default': 1e12,
-                                  "description": "Maximum utility rebate", "units": 'dollars',
-                                  "tool_tip": 'Maximum local or utility rebate for battery in $'},
-
+                              "description": "Total rate", "units": 'dollars-per-kilowatt',
+                              "tool_tip": 'Total rebate for battery in $/kW'},
 
         'batt_replacement_cost_kw': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                     "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
+                                     "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 460,
                                      "description": "Battery Inverter Replacement Cost", "units": '$/kW',
                                      "tool_tip": "Power capacity replacement cost is the expected cost, in today's dollars, of replacing the power components of the battery system (e.g. inverter, balance of systems) during the project lifecycle. This value is not required."},
 
         'batt_replacement_cost_kwh': {'req': False, 'type': float, 'null': False, 'pct': False,
-                                      "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 200,
+                                      "needed_for": ['economics'], 'min': 0, 'max': 1e4, 'default': 230,
                                       "description": "Battery Replacement Cost", "units": '$/kWh',
                                       "tool_tip": "Energy capacity replacement cost is the expected cost, in today's dollars, of replacing the energy components of the battery system (e.g. battery pack) during the project lifecycle. This value is not required."},
 
@@ -466,7 +407,7 @@ def inputs(filter='', full_list=False, just_required=False):
                     "tool_tip": "The inverter's nominal rated DC-to-AC conversion efficiency, defined as the inverter's rated AC power output divided by its rated DC power output. The default value is 96%. This value is not required."},
 
         'dc_ac_ratio': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'],
-                        'default': 1.1, 'min': 0, 'max': 2, "description": "DC to AC ratio",
+                        'default': 1.1, 'min': 1.0, 'max': 2, "description": "DC to AC ratio",
                         "tool_tip": "The expected DC to AC conversion ratio."},
 
         'azimuth': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 180,
@@ -503,7 +444,9 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'tilt': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': None,
                  'min': 0, 'max': 90, "description": "Tilt Angle", "units": "degrees",
-                 "tool_tip": "The tilt of the proposed PV System, commonly matches the latitide for optimal performance."},
+                 "tool_tip": "The tilt of the proposed PV System. The default behavior is to set the tilt to the site \
+                             latitude. However, for roof-mounted systems it is common to use a value from 10-20 \
+                             degrees to reduce wind loading and shading losses"},
 
         'gcr': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['pvwatts'], 'default': 0.4,
                 'min': 0.01, 'max': 0.99, "description": "Ground Cover Ratio",
@@ -521,6 +464,142 @@ def inputs(filter='', full_list=False, just_required=False):
                      'default': 0.5, "min": 0, "max": 1, "description": "Critical Load Factor", "units": None,
                      "tool_tip": "Critical load factor is used to scale the load during an outage. \
                                   Value must be between zero and one, inclusive."},
+        # wind inputs
+        'wind_cost': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                    'max': 1e5, 'default': 2000,
+                    "description": "Nominal PV Cost", "units": 'dollars per kilowatt',
+                    "tool_tip": 'Fully burdened cost of installed PV system in dollars per kilowatt. This value is not required.'},
+
+        'wind_om': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                  'max': 1e3, 'default': 35,
+                  "description": "Nominal PV Operation and Maintenance Cost", "units": 'dollars per kilowatt-year',
+                  "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
+
+        'wind_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                      'max': 1e9, 'default': 1e9,
+                      "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                      "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
+
+        'wind_kw_min': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
+                      'max': 1e9, 'default': 0,
+                      "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
+                      "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
+
+        'wind_degradation_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
+                                'min': 0, 'max': 1, 'default': 0.005,
+                                "description": "Annual Degradation for Solar PV Panels", "units": 'decimal percent',
+                                "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
+
+        'wind_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                           'min': 0,
+                           'max': 1, 'default': 0.30,
+                           "description": "Investment Tax Credit rate", "units": 'decimal percent',
+                           "tool_tip": 'The percent of system costs that are subsudized by the current Federal Investment Tax Credit.'},
+
+        'wind_ibi_state': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                         'min': 0,
+                         'max': 1, 'default': 0.00,
+                         "description": "State Investment Based Incentive rate", "units": 'decimal percent',
+                         "tool_tip": 'The percent of system costs that are subsudized by the current state tax credit.'},
+
+        'wind_ibi_utility': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
+                           'min': 0,
+                           'max': 1, 'default': 0.00,
+                           "description": "Local Investment Based Incentive rate", "units": 'decimal percent',
+                           "tool_tip": 'The percent of system costs that are subsudized by a utility or local tax credit.'},
+
+        # The internal max values have to be very large (bigger that self.max_big_number) or else computing the cap cost slope breaks
+        'wind_itc_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                               'min': 0,
+                               'max': None, 'default': max_incentive,
+                               "description": "Federal Investment Tax Credit max", "units": 'dollars',
+                               "tool_tip": 'The maximum $ of system costs that are subsidized by the current Federal Investment Tax Credit.'},
+
+        'wind_ibi_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                             'min': 0,
+                             'max': None, 'default': max_incentive,
+                             "description": "State Investment Based Incentive Credit max", "units": 'dollars',
+                             "tool_tip": 'The maximum $ of system costs that are subsidized by the current state tax credit.'},
+
+        'wind_ibi_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                               'min': 0,
+                               'max': None, 'default': max_incentive,
+                               "description": "Local Investment Based Incentive max", "units": 'dollars',
+                               "tool_tip": 'The maximum $ of system costs that are subsidized by a utility or local tax credit.'},
+
+        'wind_rebate_federal': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': None, 'default': 0,
+                              "description": "Federal rate", "units": 'dollars-per-kilowatt',
+                              "tool_tip": 'Federal rebate for PV panels in $/kW'},
+
+        'wind_rebate_state': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                            'min': 0,
+                            'max': None, 'default': 0,
+                            "description": "State rebate", "units": 'dollars-per-kilowatt',
+                            "tool_tip": 'State rebate for PV panels in $/kW'},
+
+        'wind_rebate_utility': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': None, 'default': 0,
+                              "description": "Local rebate", "units": 'dollars-per-kilowatt',
+                              "tool_tip": 'Utility or Local rebate for PV panels in $/kW'},
+
+        'wind_rebate_federal_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                  'min': 0,
+                                  'max': None, 'default': max_incentive,
+                                  "description": "Maximum federal rebate", "units": 'dollars',
+                                  "tool_tip": 'Maximum federal rebate for PV panels in $'},
+
+        'wind_rebate_state_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                'min': 0,
+                                'max': 1e12, 'default': max_incentive,
+                                "description": "Maximum state rebate", "units": 'dollars',
+                                "tool_tip": 'Maximum state rebate for PV panels in $'},
+
+        'wind_rebate_utility_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                                  'min': 0,
+                                  'max': None, 'default': max_incentive,
+                                  "description": "Maximum utility rebate", "units": 'dollars',
+                                  "tool_tip": 'Maximum local or utility rebate for PV panels in $'},
+
+        'wind_pbi': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                   'min': 0,
+                   'max': 1e2, 'default': 0.00,
+                   "description": "Federal Production Incentive", "units": 'dollars-per-kilowatt-hour',
+                   "tool_tip": 'Federal production based incentives'},
+
+        'wind_pbi_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                       'min': 0,
+                       'max': 1e9, 'default': 1e9,
+                       "description": "Total Production Incentive Maximum", "units": 'dollars',
+                       "tool_tip": 'Total production based incentive maximum'},
+
+        'wind_pbi_years': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                         'min': 0,
+                         'max': analysis_period, 'default': 1,
+                         "description": "Total Production Incentive Year Duration", "units": 'years',
+                         "tool_tip": 'Total production based incentive years'},
+
+        'wind_pbi_system_max': {'req': False, 'type': float, 'null': True, 'pct': False, "needed_for": ['economics'],
+                              'min': 0,
+                              'max': 1e9, 'default': 1e9,
+                              "description": "Total Production Incentive System Maximum Size", "units": 'kilowatts',
+                              "tool_tip": 'Total production based incentive system maximum size'},
+
+        'wind_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
+                              'default': 5,
+                              'restrict_to': [0, 5, 7],
+                              "description": "MACRS depreciation timeline for Solar and Storage", "units": 'years',
+                              "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
+
+        'wind_macrs_bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True,
+                                    "needed_for": ['economics'],
+                                    'default': 0.5, 'min': 0, 'max': 1,
+                                    "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
+                                    "units": 'decimal percent',
+                                    "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
+
     }
     if full_list:
         return output
@@ -536,6 +615,8 @@ def inputs(filter='', full_list=False, just_required=False):
 def outputs():
     return {'uuid': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Unique id", "units": 'none'},
+
+            'api_version': {'req': False, 'type': str, 'null': True, 'pct': False, "needed_for": []},
 
             'status': {'req': True, 'type': str, 'null': True, 'pct': False,
                        "description": "Problem Status", "units": 'none'},
@@ -561,10 +642,10 @@ def outputs():
             'batt_kwh': {'type': float, 'null': True, 'pct': False,
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
-            'year_one_energy_cost': {'type': float, 'null': True, 'pct': False,
+            'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility energy charge", "units": '$'},
 
-            'year_one_demand_cost': {'type': float, 'null': True, 'pct': False,
+            'year_one_demand_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility demand charge", "units": '$'},
 
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
@@ -592,20 +673,23 @@ def outputs():
                                   "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
 
 
-            'net_capital_costs_plus_om' : {'type': float, 'null': True, 'pct': False,
+            'net_capital_costs_plus_om': {'type': float, 'null': True, 'pct': False,
                          "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},
 
-            'average_yearly_pv_energy_produced' : {'req': True, 'type': float, 'null': True, 'pct': False,
+            'average_yearly_pv_energy_produced': {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
+
+            'average_wind_energy_produced': {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Average energy produced by the wind system over one year", "units": 'kWh'},
 
             'average_annual_energy_exported': {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average annual energy exported by the PV system", "units": 'kWh'},
 
+            'average_annual_energy_exported_wind': {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Average annual energy exported by the wind system", "units": 'kWh'},
+
             'year_one_utility_kwh': {'req': True, 'type': float, 'null': True, 'pct': False,
                             "description": "Energy Supplied from the Grid", "units": 'kWh'},
-
-            'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                     "description": "Year 1 utility energy charge", "units": '$'},
 
             'year_one_electric_load_series': {'req': True, 'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 electric load time series", "units": 'kW'},
@@ -618,6 +702,15 @@ def outputs():
 
             'year_one_pv_to_grid_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 PV to grid time series", "units": 'kW'},
+
+            'year_one_wind_to_battery_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to battery time series", "units": 'kW'},
+
+            'year_one_wind_to_load_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to load time series", "units": 'kW'},
+
+            'year_one_wind_to_grid_series': {'type': list, 'null': True, 'pct': False,
+                                     "description": "Year 1 wind to grid time series", "units": 'kW'},
 
             'year_one_grid_to_load_series': {'type': list, 'null': True, 'pct': False,
                                      "description": "Year 1 grid to load time series", "units": 'kW'},
@@ -643,25 +736,9 @@ def outputs():
             'year_one_datetime_start': {'req': True, 'type': datetime, 'null': True, 'pct': False,
                                          "description": "Year 1 time start", "units": 'Year/month/day/hour/minute/second'},
 
-            'year_one_demand_cost':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total demand cost", "units": 'hours'},
-
-            'year_one_energy_cost':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total energy cost", "units": 'hours'},
-
             'year_one_export_benefit':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
                  "description": "Result - total export benefit", "units": 'hours'},
-            
-            'year_one_demand_cost_bau':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total demand cost business as ususal", "units": 'hours'},
-            
-            'year_one_energy_cost_bau':
-                {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total energy cost business as ususal", "units": 'hours'},
             
             'year_one_energy_produced':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
@@ -669,11 +746,13 @@ def outputs():
 
             'pv_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'batt_macrs_itc_reduction':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
-                 "description": "Result - total export benefit", "units": 'hours'},
+                 "description": "Amount that the MACRS debreciable base is reduced if the ITC is also taken.",
+                 },
 
             'year_one_bill':
                 {'req': True, 'type': float, 'null': True, 'pct': False,
@@ -689,7 +768,11 @@ def outputs():
 
             'pv_kw_ac_hourly': {'type': list, 'null': True, 'pct': False, "description": "Hourly Solar Resource", "units": 'kw'},
 
+            'wind_kw': {'type': float, 'null': True, 'pct': False,
+                      "description": "Recommended Wind System Size", "units": 'kW'},
+
             }
+
 
 # default load profiles
 def default_load_profiles():
