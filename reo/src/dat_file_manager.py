@@ -237,7 +237,7 @@ class DatFileManager:
             if eval('self.' + tech) is not None:
                 import pdb; pdb.set_trace()
 
-                if tech != 'util' and tech != 'wind':  # pv has degradation
+                if tech != 'util' and not tech.startswith('wind'):  # pv has degradation
 
                     #################
                     # NOTE: economics.py uses real rates to calculate pv_levelization_factor and

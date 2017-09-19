@@ -110,7 +110,7 @@ class Wind(Tech):
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
-        self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('wind_macrs_schedule'),
+        self.incentives = Incentives(kwargs, tech='wind', macrs_years=kwargs.get('wind_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('wind_macrs_bonus_fraction'),
                                      macrs_itc_reduction=kwargs.get('wind_macrs_itc_reduction') or 0.5,
                                      include_production_based=True)
