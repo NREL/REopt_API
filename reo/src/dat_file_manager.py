@@ -340,9 +340,9 @@ class DatFileManager:
 
                 # Intermediate Cost curve
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, float(big_number/1e2)]  # kW
+                xp_array_incent['utility'] = [0.0, 1]#float(big_number/1e2)]  # kW
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
+                yp_array_incent['utility'] = [0.0, float(eval('self.' + tech + '.cost_dollars_per_kw'))]#float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
 
                 # Final cost curve
                 cost_curve_bp_x = [0]
@@ -467,7 +467,7 @@ class DatFileManager:
                                 ya = yp - (p_cap + u * xp)
                             else:
                                 ya = yp - (p_cap + u_cap)
-        
+
                         xp_array_incent[next_region].append(xa)
                         yp_array_incent[next_region].append(ya)
 
@@ -499,17 +499,25 @@ class DatFileManager:
                     
                     initial_unit_cost = 0
                     if cost_curve_bp_x[s + 1] > 0:
-                        initial_unit_cost = ((tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * cost_curve_bp_x[s + 1]) /
-                                             ((1 - eval('self.' + tech + '.incentives.federal.itc')) 
-                                              * cost_curve_bp_x[s + 1]))
-                    sf = self.site.financials
 
+                        # initial unit cost must consider ITC max
+                        itc = eval('self.' + tech + '.incentives.federal.itc')
+                        itc_max = eval('self.' + tech + '.incentives.federal.itc_max')
+                        incentivized_cost = (tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * cost_curve_bp_x[s + 1])
+                        itc_amount = min(incentivized_cost * itc, itc_max)
+                        itc_effective = itc * (itc_amount / (incentivized_cost * itc))
+                        initial_cost = incentivized_cost + itc_amount
+                        initial_unit_cost = initial_cost / (cost_curve_bp_x[s + 1])
+
+                        # this doesn't consider, what if we're on a curve beyond the max?
+
+                    sf = self.site.financials
                     updated_slope = setup_capital_cost_incentive(initial_unit_cost,
                                                                  0,
                                                                  sf.analysis_period,
                                                                  sf.owner_discount_rate_nominal,
                                                                  sf.owner_tax_rate,
-                                                                 eval('self.' + tech + '.incentives.federal.itc'),
+                                                                 itc_effective,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
                                                                  eval('self.' + tech + '.incentives.macrs_itc_reduction')
