@@ -235,8 +235,9 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
+                import pdb; pdb.set_trace()
 
-                if tech != 'util':
+                if tech != 'util' and tech != 'wind':  # pv has degradation
 
                     #################
                     # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
@@ -263,9 +264,9 @@ class DatFileManager:
                     )
                     #################
                     ################
-                elif tech == 'util':
+                else:
 
-                    levelization_factor.append(self.util.degradation_rate)
+                    levelization_factor.append(1.0)
                     production_incentive_levelization_factor.append(1.0)
 
         return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor

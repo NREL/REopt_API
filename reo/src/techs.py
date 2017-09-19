@@ -9,14 +9,13 @@ class Tech(object):
     base class for REopt energy generation technology
     """
 
-    def __init__(self, min_kw=0, max_kw=big_number, cost_dollars_per_kw=0, om_dollars_per_kw=0, degradation_rate=1,
+    def __init__(self, min_kw=0, max_kw=big_number, cost_dollars_per_kw=big_number, om_dollars_per_kw=0,
                  *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.cost_dollars_per_kw = cost_dollars_per_kw
         self.om_dollars_per_kw = om_dollars_per_kw
-        self.degradation_rate = degradation_rate
 
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
@@ -80,11 +79,11 @@ class PV(Tech):
                                  cost_dollars_per_kw=kwargs.get('pv_cost'),
                                  degradation_rate=kwargs.get('pv_degradation_rate'),
                                  **kwargs)
+        self.degradation_rate = degradation_rate
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
-        self.degradation_rate = kwargs.get('pv_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('pv_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
                                      macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
@@ -107,12 +106,10 @@ class Wind(Tech):
                                    max_kw=kwargs.get('wind_kw_max'),
                                    om_dollars_per_kw=kwargs.get('wind_om'),
                                    cost_dollars_per_kw=kwargs.get('wind_cost'),
-                                   degradation_rate=kwargs.get('wind_degradation_rate'),
                                    **kwargs)
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
-        self.degradation_rate = kwargs.get('wind_degradation_rate')
         self.incentives = Incentives(kwargs, tech='pv', macrs_years=kwargs.get('wind_macrs_schedule'),
                                      macrs_bonus_fraction=kwargs.get('wind_macrs_bonus_fraction'),
                                      macrs_itc_reduction=kwargs.get('wind_macrs_itc_reduction') or 0.5,
