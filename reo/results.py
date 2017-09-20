@@ -17,9 +17,11 @@ class Results:
         "year_one_energy_cost",
         "year_one_demand_cost",
         "year_one_fixed_cost",
+        "year_one_min_charge_adder",
         "total_energy_cost",
         "total_demand_cost",
         "total_fixed_cost",
+        "total_min_charge_adder",
     ]
 
     def __init__(self, path_templates, path_output, path_output_bau, path_static, year):

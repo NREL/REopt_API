@@ -651,6 +651,9 @@ def outputs():
             'year_one_fixed_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 Utility Fixed Cost", "units": '$'},
 
+            'year_one_min_charge_adder': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 Utility Minimum Charge Adder", "units": '$'},
+
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
                          "description": "Business as Usual Year 1 Utility Energy Cost", "units": '$'},
 
@@ -659,6 +662,9 @@ def outputs():
 
             'year_one_fixed_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Business as Usual Year 1 Utility Fixed Cost", "units": '$'},
+
+            'year_one_min_charge_adder_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Business as Usual Year 1 Utility Minimum Charge Adder", "units": '$'},
 
             'year_one_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
                          "description": "Revenue to Battery Owner", "units": '$'},
@@ -675,6 +681,9 @@ def outputs():
             'total_fixed_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
 
+            'total_min_charge_adder': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Total Utility Minimum Charge Adder", "units": '$'},
+
             'total_energy_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
                                   "description": "Business as Usual Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
 
@@ -684,6 +693,8 @@ def outputs():
             'total_fixed_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Business as Usual Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
 
+            'total_min_charge_adder_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Business as Usual Total Utility Minimum Charge Adder", "units": '$'},
 
             'net_capital_costs_plus_om': {'type': float, 'null': True, 'pct': False,
                          "description": "Capital Cost plus Operations and Maintenance over Project Lifetime", "units": '$'},
