@@ -235,7 +235,6 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-                import pdb; pdb.set_trace()
 
                 if tech != 'util' and not tech.startswith('wind'):  # pv has degradation
 
