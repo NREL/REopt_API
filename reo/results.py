@@ -16,8 +16,10 @@ class Results:
         "lcc",
         "year_one_energy_cost",
         "year_one_demand_cost",
+        "year_one_fixed_cost",
         "total_energy_cost",
         "total_demand_cost",
+        "total_fixed_cost",
     ]
 
     def __init__(self, path_templates, path_output, path_output_bau, path_static, year):

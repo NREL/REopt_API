@@ -643,16 +643,22 @@ def outputs():
                          "description": "Recommended Battery Size", "units": 'kWh'},
 
             'year_one_energy_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                     "description": "Year 1 utility energy charge", "units": '$'},
+                                     "description": "Year 1 Utility Energy Cost", "units": '$'},
 
             'year_one_demand_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                     "description": "Year 1 utility demand charge", "units": '$'},
+                                     "description": "Year 1 Utility Demand Cost", "units": '$'},
+
+            'year_one_fixed_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 Utility Fixed Cost", "units": '$'},
 
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
-                         "description": "Energy Cost Business as Usual", "units": '$'},
+                         "description": "Business as Usual Year 1 Utility Energy Cost", "units": '$'},
 
             'year_one_demand_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
-                         "description": "Demand Charges Year One Business as Usual", "units": '$'},
+                         "description": "Business as Usual Year 1 Utility Demand Cost", "units": '$'},
+
+            'year_one_fixed_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Business as Usual Year 1 Utility Fixed Cost", "units": '$'},
 
             'year_one_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
                          "description": "Revenue to Battery Owner", "units": '$'},
@@ -661,20 +667,26 @@ def outputs():
                          "description": "Revenue to Battery Owner", "units": '$'},
 
             'total_energy_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
-                         "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
+                         "description": "Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
 
             'total_demand_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
-                         "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
+                         "description": "Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
+
+            'total_fixed_cost' : {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
 
             'total_energy_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                  "description": "Cost Paid by to Owner over Project Lifetime", "units": '$'},
+                                  "description": "Business as Usual Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
 
             'total_demand_cost_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
-                                  "description": "Total Demand Charges over the Project Lifetime", "units": '$'},
+                                  "description": "Business as Usual Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
+
+            'total_fixed_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
+                         "description": "Business as Usual Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
 
 
             'net_capital_costs_plus_om': {'type': float, 'null': True, 'pct': False,
-                         "description": "Capital Costs plus Operations and Maintenance over Project Lifetime", "units": '$'},
+                         "description": "Capital Cost plus Operations and Maintenance over Project Lifetime", "units": '$'},
 
             'average_yearly_pv_energy_produced': {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
