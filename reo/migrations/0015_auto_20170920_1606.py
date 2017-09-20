@@ -14,21 +14,21 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='runoutput',
             name='total_fixed_cost',
-            field=models.FloatField(default=0, null=True, blank=True),
+            field=models.FloatField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='runoutput',
             name='total_fixed_cost_bau',
-            field=models.FloatField(default=0, null=True, blank=True),
+            field=models.FloatField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='runoutput',
             name='year_one_fixed_cost',
-            field=models.FloatField(default=0, null=True, blank=True),
+            field=models.FloatField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='runoutput',
             name='year_one_fixed_cost_bau',
-            field=models.FloatField(default=0, null=True, blank=True),
+            field=models.FloatField(null=True, blank=True),
         ),
     ]
