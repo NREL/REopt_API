@@ -90,7 +90,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue(data['urdb_rate']['label'] in json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs'])
 
         data['urdb_rate']=self.missing_schedule_urdb
-
+        print data
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
 
