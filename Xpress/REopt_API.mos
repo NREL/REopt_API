@@ -142,6 +142,8 @@ declarations
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
+  AnnualMinCharge: real ! utility min annual charge
+  MonthlyMinCharge: real ! utility min monthly charge
 
   MaxDemandInTier: array ( DemandBin) of real
   MaxDemandMonthsInTier: array ( DemandMonthsBin) of real
@@ -262,13 +264,18 @@ end-initializations
 initializations from DAT8
 	TimeStepRatchets
 end-initializations
+
 initializations from DAT9
 	DemandRates
 end-initializations
-initializations from DAT10
+
+initializations from DAT10 ! FuelCost
 	FuelRate
 	FixedMonthlyCharge
+	AnnualMinCharge
+	MonthlyMinCharge
 end-initializations
+
 initializations from DAT11
 	ExportRates
 end-initializations
@@ -276,18 +283,22 @@ end-initializations
 initializations from DAT12
 	TimeStepRatchetsMonth
 end-initializations
+
 initializations from DAT13
 	DemandRatesMonth
 end-initializations
+
 initializations from DAT14 ! LookbackMonthsAndPercent
 	DemandLookbackMonths
 	DemandLookbackPercent
 end-initializations
+
 initializations from DAT15 ! UtilityTiers
 	MaxDemandInTier
 	MaxDemandMonthsInTier
 	MaxUsageInTier
 end-initializations
+
 initializations from DAT16
 	FuelBurnRateM
 end-initializations
@@ -629,6 +640,10 @@ TotalProductionIncentive := sum(t in Tech ) dvProdIncent (t)
 ! Tax benefit to system owner
 r_tax_fraction_owner := (1 - r_tax_owner)
 r_tax_fraction_offtaker := (1 - r_tax_offtaker)
+
+! Utility min charges
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) / pwf_e >= AnnualMinCharge
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports) / pwf_e / 12 >= MonthlyMinCharge
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
