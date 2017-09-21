@@ -315,7 +315,9 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None and tech != 'util':
-                
+
+                tech_cost = eval('self.' + tech + '.cost_dollars_per_kw')
+                tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
                 tech_incentives = dict()
                 
                 for region in regions[:-1]:
@@ -340,9 +342,9 @@ class DatFileManager:
 
                 # Intermediate Cost curve
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, 1]#float(big_number/1e2)]  # kW
+                xp_array_incent['utility'] = [0.0, tech_to_size]  #kW
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, float(eval('self.' + tech + '.cost_dollars_per_kw'))]#float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
+                yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  #$
 
                 # Final cost curve
                 cost_curve_bp_x = [0]
@@ -501,14 +503,14 @@ class DatFileManager:
                     if cost_curve_bp_x[s + 1] > 0:
 
                         # initial unit cost must consider ITC max
+                        segment_size_kw = cost_curve_bp_x[s + 1]
                         itc = eval('self.' + tech + '.incentives.federal.itc')
                         itc_max = eval('self.' + tech + '.incentives.federal.itc_max')
-                        incentivized_cost = (tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * cost_curve_bp_x[s + 1])
-                        itc_amount = min(incentivized_cost * itc, itc_max)
-                        itc_effective = itc * (itc_amount / (incentivized_cost * itc))
+                        incentivized_cost = (tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * segment_size_kw)
+                        itc_amount = min(tech_cost * segment_size_kw * itc, itc_max)
+                        itc_effective = itc * (itc_amount / (tech_cost * segment_size_kw * itc))
                         initial_cost = incentivized_cost + itc_amount
-                        initial_unit_cost = initial_cost / (cost_curve_bp_x[s + 1])
-
+                        initial_unit_cost = initial_cost / segment_size_kw
                         # this doesn't consider, what if we're on a curve beyond the max?
 
                     sf = self.site.financials
