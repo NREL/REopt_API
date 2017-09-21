@@ -18,7 +18,7 @@ class ProForma(models.Model):
     @classmethod
     def create(cls, **kwargs):
         pf = cls(**kwargs)
-        
+
         file_dir = os.path.dirname(pf.output_file)
         
         if not os.path.exists(file_dir):

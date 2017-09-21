@@ -648,11 +648,17 @@ def outputs():
             'year_one_demand_cost': {'req': True, 'type': float, 'null': True, 'pct': False,
                                      "description": "Year 1 utility demand charge", "units": '$'},
 
+            'year_one_fixed_charges': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                     "description": "Year 1 utility fixed charge", "units": '$'},
+
             'year_one_energy_cost_bau' : {'type': float, 'null': True, 'pct': False,
                          "description": "Energy Cost Business as Usual", "units": '$'},
 
             'year_one_demand_cost_bau' : {'req': True, 'type': float, 'null': True, 'pct': False,
                          "description": "Demand Charges Year One Business as Usual", "units": '$'},
+
+            'year_one_fixed_charges_bau': {'req': True, 'type': float, 'null': True, 'pct': False,
+                                       "description": "Fixed Charges Year One Business as Usual", "units": '$'},
 
             'year_one_payments_to_third_party_owner' : {'type': float, 'null': True, 'pct': False,
                          "description": "Revenue to Battery Owner", "units": '$'},

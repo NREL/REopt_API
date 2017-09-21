@@ -344,8 +344,10 @@ class RunOutput(models.Model):
     batt_kwh = models.FloatField(null=True, blank=True, default=0)
     year_one_energy_cost = models.FloatField(null=True, blank=True)
     year_one_demand_cost = models.FloatField(null=True, blank=True)
+    year_one_fixed_charges = models.FloatField(null=True, blank=True)
     year_one_energy_cost_bau = models.FloatField(null=True, blank=True)
     year_one_demand_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_fixed_charges_bau = models.FloatField(null=True, blank=True)
 
     year_one_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
     total_energy_cost = models.FloatField(null=True, blank=True)
@@ -399,11 +401,11 @@ class RunOutput(models.Model):
     
     @property
     def year_one_bill(self):
-        return  self.year_one_demand_cost + self.year_one_energy_cost
+        return  self.year_one_demand_cost + self.year_one_energy_cost + self.year_one_fixed_charges
 
     @property
     def year_one_bill_bau(self):
-        return self.year_one_demand_cost_bau + self.year_one_energy_cost_bau
+        return self.year_one_demand_cost_bau + self.year_one_energy_cost_bau + self.year_one_fixed_charges_bau
     @property
     def year_one_savings(self):
         return self.year_one_bill_bau - self.year_one_bill

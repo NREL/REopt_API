@@ -44,6 +44,9 @@ class Results:
         for k in outputs().iterkeys():
             results_dict.setdefault(k, None)
 
+        import pdb
+        pdb.set_trace()
+
         # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
         if results_dict['pv_kw'] is None:
             results_dict['pv_kw'] = 0
