@@ -129,6 +129,46 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
 
+    def check_common_ouputs(self, d_calculated, d_expected):
+
+        c = d_calculated
+        e = d_expected
+
+        # check all calculated keys against the expected
+        for key, value in e.iteritems():
+            tolerance = self.REopt_tol
+            if key == 'npv':
+                tolerance = 2 * self.REopt_tol
+
+            if key in c:
+                self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
+
+        # Total LCC BAU is sum of utility costs
+        self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau'])
+                         - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']) < self.REopt_tol)
+
+
+    def test_complex_incentives(self):
+        #  Tests scenario where: PV has ITC, rebate, MACRS, bonus, Battery has ITC, rebate, MACRS, bonus.  (No state or utility % or rebate incentives still)
+
+        null = None
+        true = True
+        data = {"roof_area": 5000.0, "pv_ibi_state": null, "batt_soc_min": null, "offtaker_discount_rate": null, "owner_tax_rate": null, "pv_itc_federal": null, "load_profile_name": "RetailStore", "batt_can_gridcharge": true, "array_type": 1, "pv_ibi_utility": null, "batt_replacement_cost_kwh": null, "longitude": -118.1164613, "pv_rebate_utility": null, "pv_rebate_federal": 100, "analysis_period": null, "pv_rebate_state": null, "offtaker_tax_rate": null, "pv_macrs_schedule": 5, "pv_kw_max": null, "load_size": 10000000.0, "batt_kwh_min": null, "pv_rebate_federal_max": null, "batt_replacement_cost_kw": null, "batt_kw_max": null, "pv_pbi": null, "batt_inverter_efficiency": null, "owner_discount_rate": null, "batt_efficiency": null, "batt_kwh_max": null, "azimuth": null, "pv_ibi_state_max": null, "batt_macrs_schedule": 5, "dc_ac_ratio": null, "batt_replacement_year_kwh": null, "latitude": 34.5794343, "batt_replacement_year_kw": null, "module_type": 1, "batt_rebate_total": 100, "batt_kw_min": null, "tilt": null, "rate_escalation": null, "batt_cost_kw": null, "pv_kw_min": null, "pv_pbi_max": null, "pv_pbi_years": null, "land_area": 1.0, "pv_ibi_utility_max": null, "net_metering_limit": null, "batt_soc_init": null, "losses": 0.14, "pv_rebate_state_max": null, "urdb_rate": {"sector": "Commercial", "peakkwcapacitymax": 200, "utility": "Southern California Edison Co", "peakkwcapacityhistory": 12, "energyratestructure": [[{"rate": 0.0712, "unit": "kWh"}], [{"rate": 0.09368, "unit": "kWh"}], [{"rate": 0.066, "unit": "kWh"}], [{"rate": 0.08888, "unit": "kWh"}], [{"rate": 0.1355, "unit": "kWh"}]], "energyweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "demandweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "demandrateunit": "kW", "flatdemandstructure": [[{"rate": 13.2}]], "startdate": 1433116800, "phasewiring": "Single Phase", "eiaid": 17609, "label": "55fc81d7682bea28da64f9ae", "flatdemandunit": "kW", "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf", "voltagecategory": "Primary", "fixedmonthlycharge": 259.2, "revisions": [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], "demandweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "voltageminimum": 2000, "description": "- Energy tiered charge = generation charge + delivery charge\r\n\r\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).", "energyattrs": [{"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"}, {"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"}, {"Voltage Discount at 220 KV": "$-0.0024/Kwh"}, {"California Climate credit": "$-0.00669/kwh"}], "energyweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "approved": true, "enddate": 1451520000, "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase", "country": "USA", "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae", "voltagemaximum": 50000, "peakkwcapacitymin": 20, "demandattrs": [{"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"}, {"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"}, {"Facilties Voltage Discount >220 kV": "$-9.96/KW"}, {"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"}, {"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"}, {"Time Voltage Discount >220 kV": "$-1.95/KW"}], "demandratestructure": [[{"rate": 0}], [{"rate": 5.3}], [{"rate": 18.11}]]}, "pv_cost": null, "rate_inflation": null, "batt_itc_total": null, "pv_itc_federal_max": null, "pv_pbi_system_max": null, "pv_rebate_utility_max": null, "batt_rectifier_efficiency": null, "pv_om": null, "batt_cost_kwh": null}
+
+        resp = self.api_client.post(self.url_base, format='json', data=data)
+        self.assertHttpCreated(resp)
+        d_calculated = json.loads(resp.content)
+
+        d_expected = dict()
+        d_expected['npv'] = 243113
+        d_expected['lcc'] = 10226002
+        d_expected['pv_kw'] = 216.667
+        d_expected['batt_kw'] = 93.9769
+        d_expected['batt_kwh'] = 248.244
+        d_expected['year_one_utility_kwh'] = 9616064.1966
+
+        self.check_common_ouputs(d_calculated, d_expected)
+
     def test_valid_test_defaults(self):
 
         swaps = [['urdb_rate'], ['demand_charge', 'blended_utility_rate']]
@@ -147,43 +187,33 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
-                d = json.loads(resp.content)
-           
-                npv = 251.0
-                lcc = 2776
-                pv_kw = 0.86051
-                batt_kw = 0.0323696
-                batt_kwh = 0.040462
-                yr_one = 1968.0093
+                d_calculated = json.loads(resp.content)
+
+                d_expected = dict()
+                d_expected['npv'] = 251.0
+                d_expected['lcc'] = 2776
+                d_expected['pv_kw'] = 0.86051
+                d_expected['batt_kw'] = 0.0323696
+                d_expected['batt_kwh'] = 0.040462
+                d_expected['year_one_utility_kwh'] = 1968.0093
             
-                self.assertTrue((float(d['lcc']) - lcc) / lcc < self.REopt_tol)
-                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
-                self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
-                self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
-                self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
-                self.assertTrue((float(d['year_one_utility_kwh']) - yr_one) / yr_one < self.REopt_tol)
-                self.assertTrue((float(d['lcc_bau']) - float(d['total_energy_cost_bau'])
-                                 - float(d['total_demand_cost_bau']) - float(d['total_fixed_cost_bau'])) / float(d['lcc_bau']) < self.REopt_tol)
+                self.check_common_ouputs(d_calculated, d_expected)
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
-                d = json.loads(resp.content)
+                d_calculated = json.loads(resp.content)
 
-                lcc = 12703930
-                npv = 332951
-                pv_kw = 216.667
-                batt_kw = 105.995
-                batt_kwh = 307.14
-                yr_one_kwh = 9626472.7392
+                d_expected = dict()
+                d_expected['lcc'] = 12703930
+                d_expected['npv'] = 332951
+                d_expected['pv_kw'] = 216.667
+                d_expected['batt_kw'] = 105.995
+                d_expected['batt_kwh'] = 307.14
+                d_expected['year_one_utility_kwh'] = 9626472.7392
 
-                self.assertTrue((float(d['lcc']) -lcc) /lcc  < self.REopt_tol)
-                self.assertTrue((float(d['npv']) - npv) / npv < self.REopt_tol * 2)  # *2 b/c npv is difference of two outputs
-                self.assertTrue((float(d['pv_kw']) - pv_kw) / pv_kw < self.REopt_tol)
-                self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
-                self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
-                self.assertTrue((float(d['year_one_utility_kwh']) - yr_one_kwh) / yr_one_kwh < self.REopt_tol)
-                self.assertTrue((float(d['lcc_bau']) - float(d['total_energy_cost_bau'])
-                                 - float(d['total_demand_cost_bau']) - float(d['total_fixed_cost_bau'])) / float(d['lcc_bau']) < self.REopt_tol)
+                self.check_common_ouputs(d_calculated, d_expected)
+
+
 
     def test_valid_data_types(self):
 
@@ -215,7 +245,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_valid_data_ranges(self):
         # Test Bad Data Types
-        checks  = set(['min','max','minpct','maxpct','restrict'])
+        checks = set(['min','max','minpct','maxpct','restrict'])
         completed_checks = []
 
         while completed_checks != checks:
