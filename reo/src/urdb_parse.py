@@ -36,6 +36,8 @@ class REoptArgs:
         self.export_rates_bau = []
 
         self.fixed_monthly_charge = 0
+        self.annual_min_charge = 0
+        self.min_monthly_charge = 0
 
 
 class RateData:
@@ -514,6 +516,10 @@ class UrdbParse:
     def prepare_fixed_charges(self, current_rate):
         if not isinstance(current_rate.fixedmonthlycharge, list):
             self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
+        if not isinstance(current_rate.annualmincharge, list):
+            self.reopt_args.annual_min_charge = current_rate.annualmincharge
+        if not isinstance(current_rate.minmonthlycharge, list):
+            self.reopt_args.min_monthly_charge = current_rate.minmonthlycharge
 
     def write_files(self):
 
