@@ -638,7 +638,7 @@ class DatFileManager:
 
         for tc in self.available_tech_classes:
 
-            if eval('self.' + tc.lower()) is not None:
+            if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
                 tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
             else:
                 tech_class_min_size.append(0)
