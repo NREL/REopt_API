@@ -198,17 +198,26 @@ class URDB_RateValidator:
         return valid 
     
     def validRate(self, rate):
-        # check that each  tier in rate structure array has a rate attribute
+        # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
         if hasattr(self,rate):
             valid = True
+            
             for i, r in enumerate(getattr(self, rate)):
                 if len(r)==0:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
                     valid = False
+                num_max_tags = 0
                 for ii, t in enumerate(r):
+                    if t.get('max') is not None:
+                        num_max_tags +=1
                     if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
                         self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                        valid = False
+                if len(r)>1:
+                    num_missing_max_tags = len(r)- 1 - num_max_tags
+                    if num_missing_max_tags > 0:
+                        self.errors.append("Missing 'max' tag for {} tiers in rate {} for {}".format( num_missing_max_tags, i, rate ))
                         valid = False
             return valid
         return False

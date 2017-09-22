@@ -1,3 +1,4 @@
+import copy
 import json
 import numpy as np
 import pickle
@@ -78,6 +79,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
+
+        missing_tier_data = copy.copy(data)
+        missing_tier_data['urdb_rate']['energyratestructure'][1].append({'rate':0.12})
+        text = "Missing 'max' tag for 1 tiers in rate 1 for energyratestructure"
+        self.check_data_error_response(missing_tier_data, text)
+        
 
         data['urdb_rate']['flatdemandmonths'] = [0]
         data['urdb_rate']['flatdemandstructure']=[{}]
