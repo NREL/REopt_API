@@ -16,8 +16,12 @@ class Results:
         "lcc",
         "year_one_energy_cost",
         "year_one_demand_cost",
+        "year_one_fixed_cost",
+        "year_one_min_charge_adder",
         "total_energy_cost",
         "total_demand_cost",
+        "total_fixed_cost",
+        "total_min_charge_adder",
     ]
 
     def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
@@ -43,9 +47,6 @@ class Results:
         # set missing outputs to None
         for k in outputs().iterkeys():
             results_dict.setdefault(k, None)
-
-        import pdb
-        pdb.set_trace()
 
         # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
         if results_dict['pv_kw'] is None:

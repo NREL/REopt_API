@@ -344,16 +344,22 @@ class RunOutput(models.Model):
     batt_kwh = models.FloatField(null=True, blank=True, default=0)
     year_one_energy_cost = models.FloatField(null=True, blank=True)
     year_one_demand_cost = models.FloatField(null=True, blank=True)
-    year_one_fixed_charges = models.FloatField(null=True, blank=True)
+    year_one_fixed_cost = models.FloatField(null=True, blank=True)
+    year_one_min_charge_adder = models.FloatField(null=True, blank=True)
     year_one_energy_cost_bau = models.FloatField(null=True, blank=True)
     year_one_demand_cost_bau = models.FloatField(null=True, blank=True)
-    year_one_fixed_charges_bau = models.FloatField(null=True, blank=True)
+    year_one_fixed_cost_bau = models.FloatField(null=True, blank=True)
+    year_one_min_charge_adder_bau = models.FloatField(null=True, blank=True)
 
     year_one_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
     total_energy_cost = models.FloatField(null=True, blank=True)
     total_demand_cost = models.FloatField(null=True, blank=True)
+    total_fixed_cost = models.FloatField(null=True, blank=True)
+    total_min_charge_adder = models.FloatField(null=True, blank=True)
     total_energy_cost_bau = models.FloatField(null=True, blank=True)
     total_demand_cost_bau = models.FloatField(null=True, blank=True)
+    total_fixed_cost_bau = models.FloatField(null=True, blank=True)
+    total_min_charge_adder_bau = models.FloatField(null=True, blank=True)
 
     total_payments_to_third_party_owner = models.FloatField(null=True, blank=True)
     net_capital_costs_plus_om = models.FloatField(null=True, blank=True)
@@ -397,15 +403,16 @@ class RunOutput(models.Model):
     @property    
     def total_capital_costs(self):
         return self.pv_installed_cost + self.battery_installed_cost
-    
-    
+
     @property
     def year_one_bill(self):
-        return  self.year_one_demand_cost + self.year_one_energy_cost + self.year_one_fixed_charges
+        return self.year_one_demand_cost + self.year_one_energy_cost + \
+               self.year_one_fixed_cost + self.year_one_min_charge_adder
 
     @property
     def year_one_bill_bau(self):
-        return self.year_one_demand_cost_bau + self.year_one_energy_cost_bau + self.year_one_fixed_charges_bau
+        return self.year_one_demand_cost_bau + self.year_one_energy_cost_bau + \
+               self.year_one_fixed_cost_bau + self.year_one_min_charge_adder_bau
     @property
     def year_one_savings(self):
         return self.year_one_bill_bau - self.year_one_bill
@@ -482,7 +489,6 @@ class RunOutput(models.Model):
 
                 # tax credits
                 self.incentives[t]['itc_fed_percent'] = self.batt_itc_total
-                #self.incentives[t]['itc_fed_percent_maxvalue'] = self.batt_itc_federal_max
 
                 # capacity based incentives
                 self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_total

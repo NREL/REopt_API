@@ -162,7 +162,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one) / yr_one < self.REopt_tol)
-            
+                self.assertTrue((float(d['lcc_bau']) - float(d['total_energy_cost_bau'])
+                                 - float(d['total_demand_cost_bau']) - float(d['total_fixed_cost_bau'])) / float(d['lcc_bau']) < self.REopt_tol)
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
@@ -181,6 +182,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['batt_kw']) - batt_kw) / batt_kw < self.REopt_tol)
                 self.assertTrue((float(d['batt_kwh']) - batt_kwh) / batt_kwh < self.REopt_tol)
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one_kwh) / yr_one_kwh < self.REopt_tol)
+                self.assertTrue((float(d['lcc_bau']) - float(d['total_energy_cost_bau'])
+                                 - float(d['total_demand_cost_bau']) - float(d['total_fixed_cost_bau'])) / float(d['lcc_bau']) < self.REopt_tol)
 
     def test_valid_data_types(self):
 

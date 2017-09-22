@@ -13,12 +13,22 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='runoutput',
-            name='year_one_fixed_charges',
+            name='total_fixed_cost',
             field=models.FloatField(null=True, blank=True),
         ),
         migrations.AddField(
             model_name='runoutput',
-            name='year_one_fixed_charges_bau',
+            name='total_fixed_cost_bau',
+            field=models.FloatField(null=True, blank=True),
+        ),
+        migrations.AddField(
+            model_name='runoutput',
+            name='year_one_fixed_cost',
+            field=models.FloatField(null=True, blank=True),
+        ),
+        migrations.AddField(
+            model_name='runoutput',
+            name='year_one_fixed_cost_bau',
             field=models.FloatField(null=True, blank=True),
         ),
     ]
