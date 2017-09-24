@@ -24,6 +24,7 @@ parameters
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
   Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
+  REoptTol = 5e-5
 
   ! Utility info
   NumRatchets = 12
@@ -185,7 +186,6 @@ end-declarations
 
 ! This option sets the tolerance of the integer solution
 ! setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
-REoptTol = 5e-5
 
 ! This option only allows the problem to parallelize onto 2 cores
 setparam("XPRS_MIPTHREADS", 2)
