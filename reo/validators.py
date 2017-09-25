@@ -81,6 +81,10 @@ class URDB_RateValidator:
     def dependencies(self):
         # map to tell if a field requires one or more other fields
         return {
+            
+            'demandweekdayschedule': ['demandratestructure'],
+            'demandweekendschedule': ['demandratestructure'],
+            'demandratestructure':['demandweekdayschedule','demandweekendschedule'],
             'energyweekdayschedule': ['energyratestructure'],
             'energyweekendschedule': ['energyratestructure'],
             'energyratestructure':['energyweekdayschedule','energyweekendschedule'],
@@ -95,18 +99,35 @@ class URDB_RateValidator:
 
     # CUSTOM VALIDATION FUNCTIONS FOR EACH URDB ATTRIBUTE name validate_<attribute name>
     
-    def validate_energyweekdayschedule(self):
-        name = 'energyweekdayschedule'
+    def validate_demandratestructure(self):
+        name = 'demandratestructure'
         if self.validDependencies(name):
-            self.validSchedule(name, 'energyratestructure')
-            self.validCompleteHours(name, [12,24])
+            self.validRate(name)
+
+    def validate_demandweekdayschedule(self):
+        name = 'demandweekdayschedule'
+        self.validCompleteHours(name, [12,24]) 
+        if self.validDependencies(name):
+            self.validSchedule(name, 'demandratestructure')
+
+    def validate_demandweekendschedule(self):
+        name = 'demandweekendschedule'
+        self.validCompleteHours(name, [12,24])
+        if self.validDependencies(name):
+            self.validSchedule(name, 'demandratestructure')
 
     def validate_energyweekendschedule(self):
         name = 'energyweekendschedule'
+        self.validCompleteHours(name, [12,24])  
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
-            self.validCompleteHours(name, [12,24])
- 
+
+    def validate_energyweekdayschedule(self):
+        name = 'energyweekdayschedule'
+        self.validCompleteHours(name, [12,24])  
+        if self.validDependencies(name):
+            self.validSchedule(name, 'energyratestructure')
+
     def validate_energyratestructure(self):
         name = 'energyratestructure'
         if self.validDependencies(name):
@@ -119,9 +140,9 @@ class URDB_RateValidator:
 
     def validate_flatdemandmonths(self):
         name = 'flatdemandmonths'
+        self.validCompleteHours(name, [12])
         if self.validDependencies(name):
             self.validSchedule(name, 'flatdemandstructure')
-            self.validCompleteHours(name, [12])
 
     def validate_coincidentratestructure(self):
         name = 'coincidentratestructure'
@@ -177,17 +198,26 @@ class URDB_RateValidator:
         return valid 
     
     def validRate(self, rate):
-        # check that each  tier in rate structure array has a rate attribute
+        # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
         if hasattr(self,rate):
             valid = True
+            
             for i, r in enumerate(getattr(self, rate)):
                 if len(r)==0:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
                     valid = False
+                num_max_tags = 0
                 for ii, t in enumerate(r):
+                    if t.get('max') is not None:
+                        num_max_tags +=1
                     if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
                         self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
+                        valid = False
+                if len(r)>1:
+                    num_missing_max_tags = len(r)- 1 - num_max_tags
+                    if num_missing_max_tags > 0:
+                        self.errors.append("Missing 'max' tag for {} tiers in rate {} for {}".format( num_missing_max_tags, i, rate ))
                         valid = False
             return valid
         return False
@@ -204,12 +234,15 @@ class URDB_RateValidator:
             periods = list(set(s))
 
             # Loop though all periond and catch error if if exists
-            for period in periods:
-                if period > len(getattr(self,rate)) - 1 or period < 0:
-                    self.errors.append(
-                        '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
-                    valid = False
-            return valid
+            if hasattr(self,rate):
+                for period in periods:
+                    if period > len(getattr(self,rate)) - 1 or period < 0:
+                        self.errors.append(
+                            '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
+                        valid = False
+                return valid
+            else:
+                self.warnings.append('{} does not exist to check {}'.format(rate,schedules))
         return False
 
 
