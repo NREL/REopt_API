@@ -58,7 +58,7 @@ def check_inputs(request):
 def invalid_urdb(request):
 
     try:
-        #invalid set is populated by the urb validator, hard problems defined in csv       
+        #invalid set is populated by the urdb validator, hard problems defined in csv       
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
         response = JsonResponse( {"Invalid IDs": list(set(invalid_set + hard_problem_labels))} )
         
