@@ -1,3 +1,4 @@
+import copy
 import json
 import numpy as np
 import pickle
@@ -79,6 +80,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
 
+        missing_tier_data = copy.copy(data)
+        missing_tier_data['urdb_rate']['energyratestructure'][1].append({'rate':0.12})
+        text = "Missing 'max' tag for 1 tiers in rate 1 for energyratestructure"
+        self.check_data_error_response(missing_tier_data, text)
+        
+
         data['urdb_rate']['flatdemandmonths'] = [0]
         data['urdb_rate']['flatdemandstructure']=[{}]
         text = "Entry 0 flatdemandmonths does not contain 12 entries"
@@ -90,7 +97,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue(data['urdb_rate']['label'] in json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs'])
 
         data['urdb_rate']=self.missing_schedule_urdb
-
+        
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
 

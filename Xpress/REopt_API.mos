@@ -24,6 +24,7 @@ parameters
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
   Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
+  REoptTol = 5e-5
 
   ! Utility info
   NumRatchets = 12
@@ -725,7 +726,7 @@ Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
 
 !Time series dispatch output
 
-if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
+if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > REoptTol then
 
     fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
         forall (ts in TimeStep) do
@@ -752,7 +753,7 @@ if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
         end-do
     fclose(F_OUTPUT)
 
-    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
 
         fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
             forall (ts in TimeStep) do
@@ -764,7 +765,7 @@ if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
 
 end-if
 
-forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
 
     fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
         forall (ts in TimeStep) do
@@ -823,7 +824,7 @@ fclose(F_OUTPUT)
         Node:=addnode(out_json, Root, "batt_kw", getsol (dvStorageSizeKW(b)))
     end-do
 
-    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
         Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
 
