@@ -7,8 +7,24 @@ bind = 'unix:' + os.path.join(os.path.abspath(os.path.dirname(os.path.dirname(__
 # Based the number of workers on the number of CPU cores.
 workers = multiprocessing.cpu_count()
 
+# Note that the app currently has threading issues, so we explicitly want a
+# non-thread worker process model.
+worker_class = "sync"
+threads = 1
+
 # Log access log details to stdout.
 accesslog = '-'
+
+# Increase timeout for longer response times.
+#
+# This value should be be kept in sync with the xpress/mosel run timeout
+# (defined in reo/models.py), and the nginx timeout (defined in
+# config/deploy/templates/nginx/proxy_settings.conf.erb).
+#
+# This timeout should be greater than the xpress timeout, but less than the
+# nginx timeout, to give the app an opportunity to handle timeouts more
+# gracefully.
+timeout = 315
 
 # Set the appropriate DJANGO_SETTINGS_MODULE environment variable based on the
 # current environment.
