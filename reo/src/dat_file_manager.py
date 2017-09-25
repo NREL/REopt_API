@@ -315,7 +315,9 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None and tech != 'util':
-                
+
+                tech_cost = eval('self.' + tech + '.cost_dollars_per_kw')
+                tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
                 tech_incentives = dict()
                 
                 for region in regions[:-1]:
@@ -340,9 +342,9 @@ class DatFileManager:
 
                 # Intermediate Cost curve
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, float(big_number/1e2)]  # kW
+                xp_array_incent['utility'] = [0.0, tech_to_size]  #kW
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, float(big_number/1e2 * eval('self.' + tech + '.cost_dollars_per_kw'))]  # $
+                yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  #$
 
                 # Final cost curve
                 cost_curve_bp_x = [0]
@@ -467,7 +469,7 @@ class DatFileManager:
                                 ya = yp - (p_cap + u * xp)
                             else:
                                 ya = yp - (p_cap + u_cap)
-        
+
                         xp_array_incent[next_region].append(xa)
                         yp_array_incent[next_region].append(ya)
 
@@ -497,23 +499,41 @@ class DatFileManager:
 
                 for s in range(cap_cost_segments):
                     
-                    initial_unit_cost = 0
                     if cost_curve_bp_x[s + 1] > 0:
-                        initial_unit_cost = ((tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * cost_curve_bp_x[s + 1]) /
-                                             ((1 - eval('self.' + tech + '.incentives.federal.itc')) 
-                                              * cost_curve_bp_x[s + 1]))
-                    sf = self.site.financials
 
-                    updated_slope = setup_capital_cost_incentive(initial_unit_cost,
+                        segment_size_kw = cost_curve_bp_x[s + 1]
+                        itc = eval('self.' + tech + '.incentives.federal.itc')
+                        itc_max = eval('self.' + tech + '.incentives.federal.itc_max')
+
+                        # Compute the tech cost with and without incentives at this break point ($)
+                        incentivized_cost = (tmp_cap_cost_yint[s] + tmp_cap_cost_slope[s] * segment_size_kw)
+                        raw_cost = segment_size_kw * tech_cost
+
+                        # ITC amount is restricted by max amount input
+                        itc_amount = min(tech_cost * segment_size_kw * itc, itc_max)
+
+                        # Reduce the ITC percentage to reflect max
+                        full_itc = raw_cost * itc if itc > 0 else raw_cost
+                        itc_effective = itc * (itc_amount / full_itc)
+
+                        # Compute the initial incentivized cost, but without ITC
+                        # this doesn't consider, what if we're on a curve beyond the max?
+                        incentivized_cost_no_itc = incentivized_cost + itc_amount
+                        incentivized_unit_cost_no_itc = incentivized_cost_no_itc / segment_size_kw
+                        taxable_cash_incentives_unit_cost = tech_cost - incentivized_unit_cost_no_itc
+
+                    sf = self.site.financials
+                    updated_slope = setup_capital_cost_incentive(incentivized_unit_cost_no_itc,  # input tech cost with incentives, but no ITC
+                                                                 tech_cost,                      # input full tech_cost as ITC basis
                                                                  0,
                                                                  sf.analysis_period,
                                                                  sf.owner_discount_rate_nominal,
                                                                  sf.owner_tax_rate,
-                                                                 eval('self.' + tech + '.incentives.federal.itc'),
+                                                                 itc_effective,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction')
-                                                                 )
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'),
+                                                                 taxable_cash_incentives_unit_cost)
                     updated_cap_cost_slope.append(updated_slope)
         
                 for p in range(1, cap_cost_points):
@@ -720,7 +740,9 @@ class DatFileManager:
         DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,
+        storage_kw_incentived_cost_no_itc = self.storage.us_dollar_per_kw - self.storage.incentives.total.rebate
+        StorageCostPerKW = setup_capital_cost_incentive(storage_kw_incentived_cost_no_itc,  # incentived storage cost without ITC
+                                                        self.storage.us_dollar_per_kw,      # itc basis is full tech_cost
                                                         self.storage.replace_us_dollar_per_kw,
                                                         self.storage.replace_kw_years,
                                                         sf.owner_discount_rate_nominal,
@@ -729,10 +751,10 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_schedule,
                                                         self.storage.incentives.macrs_bonus_fraction,
                                                         self.storage.incentives.macrs_itc_reduction,
-                                                        self.storage.incentives.total.rebate,
-                                                        self.storage.incentives.total.rebate
-                                                        )
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,
+                                                        self.storage.incentives.total.rebate)
+
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,  # there are no cash incentives for kwh
+                                                         self.storage.us_dollar_per_kwh,  # itc basis is full tech cost
                                                          self.storage.replace_us_dollar_per_kwh,
                                                          self.storage.replace_kwh_years,
                                                          sf.owner_discount_rate_nominal,
