@@ -8,6 +8,7 @@ from src.load_profile import BuiltInProfile
 from models import URDBError
 import csv
 
+#loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = 'reo/hard_problems.csv'
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
@@ -57,6 +58,7 @@ def check_inputs(request):
 def invalid_urdb(request):
 
     try:
+        #invalid set is populated by the urb validator, hard problems defined in csv       
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
         response = JsonResponse( {"Invalid IDs": list(set(invalid_set + hard_problem_labels))} )
         
