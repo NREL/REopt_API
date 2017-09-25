@@ -23,11 +23,12 @@ pipeline {
   stages {
     stage("checkout-deploy-branch") {
       steps {
+        sh "env"
         script {
           if(env.PARAM_STAGE == "development") {
-            git url: "git@github.nrel.gov:TADA/reopt-web.git", branch: "develop"
+            git url: "${GIT_REPO_URL}", branch: "develop"
           } else {
-            git url: "git@github.nrel.gov:TADA/reopt-web.git", branch: "master"
+            git url: "${GIT_REPO_URL}", branch: "master"
           }
         }
       }
