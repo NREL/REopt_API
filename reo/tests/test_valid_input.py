@@ -129,7 +129,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             self.assertTrue(u2s(self.deserialize(resp)) in possible_messages )
 
-    def check_common_ouputs(self, d_calculated, d_expected):
+    def check_common_outputs(self, d_calculated, d_expected):
 
         c = d_calculated
         e = d_expected
@@ -144,9 +144,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
 
         # Total LCC BAU is sum of utility costs
-        self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau'])
+        self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
                          - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']) < self.REopt_tol)
-
 
     def test_complex_incentives(self):
         #  Tests scenario where: PV has ITC, rebate, MACRS, bonus, Battery has ITC, rebate, MACRS, bonus.  (No state or utility % or rebate incentives still)
@@ -167,7 +166,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = 248.244
         d_expected['year_one_utility_kwh'] = 9616064.1966
 
-        self.check_common_ouputs(d_calculated, d_expected)
+        self.check_common_outputs(d_calculated, d_expected)
 
     def test_valid_test_defaults(self):
 
@@ -197,7 +196,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_expected['batt_kwh'] = 0.040462
                 d_expected['year_one_utility_kwh'] = 1968.0093
             
-                self.check_common_ouputs(d_calculated, d_expected)
+                self.check_common_outputs(d_calculated, d_expected)
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
@@ -211,7 +210,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_expected['batt_kwh'] = 307.14
                 d_expected['year_one_utility_kwh'] = 9626472.7392
 
-                self.check_common_ouputs(d_calculated, d_expected)
+                self.check_common_outputs(d_calculated, d_expected)
 
 
 
