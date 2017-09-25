@@ -9,7 +9,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.validators import REoptResourceValidation
 from reo.api_definitions import default_load_profiles, default_load_monthly, default_latitudes, default_longitudes,\
     default_urdb_rate, default_demand_charge, default_blended_rate, inputs
-
+import csv
 
 def u2s(d):
     sub_d = d['reopt']['Error']
@@ -77,6 +77,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
 
+    def test_problems(self):
+        invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
+        hard_problems = [i[0] for i in csv.reader(open('reo/hard_problems.csv','rb'))]
+        for hp in hard_problems:
+            self.assertTrue(hp in invalid_list)
+
+
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
 
@@ -94,7 +101,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data['urdb_rate'] =self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
-        self.assertTrue(data['urdb_rate']['label'] in json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs'])
+        invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
+        self.assertTrue(data['urdb_rate']['label'] in invalid_list)
 
         data['urdb_rate']=self.missing_schedule_urdb
         

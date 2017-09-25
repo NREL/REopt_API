@@ -6,7 +6,10 @@ from validators import REoptResourceValidation
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
+import csv
 
+hard_problems_csv = 'reo/hard_problems.csv'
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
 def index(request):
     api_inputs = {}
@@ -55,7 +58,7 @@ def invalid_urdb(request):
 
     try:
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
-        response = JsonResponse( {"Invalid IDs": invalid_set} )
+        response = JsonResponse( {"Invalid IDs": list(set(invalid_set + hard_problem_labels))} )
         
     except Exception as e:
         response = JsonResponse(
