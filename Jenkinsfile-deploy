@@ -1,0 +1,65 @@
+@Library("tada-jenkins-library") _
+
+properties([
+  parameters([
+    choice(
+      name: "PARAM_STAGE",
+      choices: "development\nstaging\nproduction",
+      description: "Where do you want to deploy to?"
+    ),
+  ])
+])
+
+pipeline {
+  agent any
+  options {
+    disableConcurrentBuilds()
+  }
+
+  environment {
+    PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
+  }
+
+  stages {
+    stage("checkout-deploy-branch") {
+      steps {
+        script {
+          if($PARAM_STAGE == "development") {
+            git url: "git@github.nrel.gov:TADA/reopt-web.git", branch: "develop"
+          } else {
+            git url: "git@github.nrel.gov:TADA/reopt-web.git", branch: "master"
+          }
+        }
+      }
+    }
+
+    stage("rbenv-install") {
+      steps {
+        sh "git status"
+        sh "git rev-parse --abbrev-ref HEAD"
+        sh "git rev-parse --short HEAD"
+        sh "exit 1"
+        sh 'rbenv install --skip-existing $(cat .ruby-version)'
+      }
+    }
+
+    stage("deploy") {
+      steps {
+        script {
+          currentBuild.description = "Stage: $PARAM_STAGE"
+
+          sh "bundle install"
+          sshagent(credentials: ["jenkins-ssh"]) {
+            sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEBUG_DEPLOY=true"
+          }
+        }
+      }
+    }
+  }
+
+  // post {
+  //   always {
+  //     tadaSendNotifications()
+  //   }
+  // }
+}
