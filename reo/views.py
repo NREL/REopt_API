@@ -6,13 +6,20 @@ from validators import REoptResourceValidation
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
+import csv
+import os
+
+
+# loading the labels of hard problems - doing it here so loading happens once on startup
+hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
 
 def index(request):
     api_inputs = {}
     reference = inputs(full_list=True)
     for k, v in reference.items():
-        api_inputs[k] = {'req':bool(reference[k].get('req'))}
+        api_inputs[k] = {'req': bool(reference[k].get('req'))}
         api_inputs[k]['type'] = reference[k].get('type').__name__
         api_inputs[k]['description'] = reference[k].get('description')
 
@@ -37,7 +44,7 @@ def check_inputs(request):
     parsed_request = json.loads(bdy)
     
     scrubbed_request = {}
-    for k,v in parsed_request.items():
+    for k, v in parsed_request.items():
         if k in inputs(full_list=True).keys():
             scrubbed_request[k] = v
         else:
@@ -54,8 +61,9 @@ def check_inputs(request):
 def invalid_urdb(request):
 
     try:
+        # invalid set is populated by the urdb validator, hard problems defined in csv
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
-        response = JsonResponse( {"Invalid IDs": invalid_set} )
+        response = JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
         
     except Exception as e:
         response = JsonResponse(
@@ -63,10 +71,11 @@ def invalid_urdb(request):
         )
     return response
 
+
 def annual_kwh(request):
 
     try:
-        kwargs = {k:v for k,v in request.GET.dict().items() if k in ['latitude', 'longitude', 'load_profile_name']}
+        kwargs = {k: v for k, v in request.GET.dict().items() if k in ['latitude', 'longitude', 'load_profile_name']}
 
         b = BuiltInProfile(**kwargs)
         
