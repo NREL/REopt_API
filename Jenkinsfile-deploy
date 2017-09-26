@@ -26,9 +26,9 @@ pipeline {
         sh "env"
         script {
           if(env.PARAM_STAGE == "development") {
-            git url: "${env.GIT_REPO_URL}", branch: "develop"
+            git url: "git@github.nrel.gov:ndiorio/reopt_api.git", branch: "develop"
           } else {
-            git url: "${env.GIT_REPO_URL}", branch: "master"
+            git url: "git@github.nrel.gov:ndiorio/reopt_api.git", branch: "master"
           }
         }
       }
