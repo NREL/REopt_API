@@ -86,7 +86,7 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 DATABASES = {
     'default':{
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'HOST': 'reopt-stage-db1.nrel.gov',
+        'HOST': 'reopt-prod-db1.nrel.gov',
         'NAME': 'reopt_production',
         'OPTIONS': {
             'options': '-c search_path=reopt_api'
