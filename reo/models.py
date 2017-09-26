@@ -43,7 +43,7 @@ class RunInput(models.Model):
     owner_discount_rate = models.FloatField(null=True, blank=True)
     owner_tax_rate = models.FloatField(null=True,blank=True)
     rate_escalation = models.FloatField(null=True,blank=True)
-    rate_inflation = models.FloatField(null=True,blank=True)
+    om_cost_growth_rate = models.FloatField(null=True,blank=True)
 
     # Grid connection inputs
     net_metering_limit = models.FloatField(null=True,blank=True)
@@ -208,7 +208,7 @@ class RunOutput(models.Model):
     owner_discount_rate = models.FloatField(null=True, blank=True)
     owner_tax_rate = models.FloatField(null=True, blank=True)
     rate_escalation = models.FloatField(null=True, blank=True)
-    rate_inflation = models.FloatField(null=True, blank=True)
+    om_cost_growth_rate = models.FloatField(null=True, blank=True)
 
     # Grid connection inputs
     net_metering_limit = models.FloatField(null=True, blank=True)
@@ -423,14 +423,6 @@ class RunOutput(models.Model):
     @property
     def macrs_seven_year(self):
         return [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
-
-    @property
-    def owner_discount_rate_nominal(self):
-        return (1 + self.owner_discount_rate) * (1 + self.rate_inflation) - 1
-    
-    @property
-    def rate_escalation_nominal(self):
-        return (1 + self.rate_escalation) * (1 + self.rate_inflation) - 1
     
     @property
     def techs(self):
@@ -709,8 +701,8 @@ class RunOutput(models.Model):
         net_annual_costs_without_system[0] = 0
 
         # year 1 initializations
-        nominal_escalation_modifier = 1 + self.rate_escalation_nominal
-        inflation_modifier = 1 + self.rate_inflation
+        nominal_escalation_modifier = 1 + self.rate_escalation
+        inflation_modifier = 1 + self.om_cost_growth_rate
         annual_energy[1] = self.year_one_energy_produced
         federal_taxable_income_before_deductions[1] = sum([self.federal_taxable_income_before_deductions(tech) for tech in self.techs])
 
@@ -805,7 +797,7 @@ class RunOutput(models.Model):
         if math.isnan(self.irr):
             self.irr = 0
 
-        self.npv = np.npv(self.owner_discount_rate_nominal, after_tax_cash_flow)
-        self.lcc = -np.npv(self.owner_discount_rate_nominal, net_annual_costs_with_system)
-        self.lcc_bau = -np.npv(self.owner_discount_rate_nominal, net_annual_costs_without_system)
+        self.npv = np.npv(self.owner_discount_rate, after_tax_cash_flow)
+        self.lcc = -np.npv(self.owner_discount_rate, net_annual_costs_with_system)
+        self.lcc_bau = -np.npv(self.owner_discount_rate, net_annual_costs_without_system)
 
