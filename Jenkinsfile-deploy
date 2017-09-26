@@ -26,9 +26,9 @@ pipeline {
         sh "env"
         script {
           if(env.PARAM_STAGE == "development") {
-            git url: "${GIT_REPO_URL}", branch: "develop"
+            git url: "${env.GIT_REPO_URL}", branch: "develop"
           } else {
-            git url: "${GIT_REPO_URL}", branch: "master"
+            git url: "${env.GIT_REPO_URL}", branch: "master"
           }
         }
       }
