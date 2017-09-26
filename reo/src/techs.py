@@ -94,7 +94,7 @@ class PV(Tech):
     @property
     def prod_factor(self):
         if self.pvwatts is None:
-            self.pvwatts = PVWatts(**self.kwargs)
+            self.pvwatts = PVWatts(offline=True, **self.kwargs)
         return self.pvwatts.pv_prod_factor
 
 
