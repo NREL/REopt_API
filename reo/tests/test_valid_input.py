@@ -83,7 +83,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for hp in hard_problems:
             self.assertTrue(hp in invalid_list)
 
-
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
 
@@ -111,7 +110,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         text = 'energyweekendschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
-	
 
     def test_valid_swapping(self):
         swaps = [[['urdb_rate'],['demand_charge','blended_utility_rate']],[['load_profile_name'],['load_8760_kw']]]
@@ -227,8 +225,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
                 self.check_common_outputs(d_calculated, d_expected)
 
-
-
     def test_valid_data_types(self):
 
         for k,v in inputs(full_list=True).items():
@@ -255,7 +251,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             resp = self.get_response(data)
             self.assertEqual(u2s(self.deserialize(resp)), {r"reopt": {"Error": {k: ['Invalid format: Expected %s, got %s'%(v['type'].__name__, type(dummy_data).__name__)]}}})
-
 
     def test_valid_data_ranges(self):
         # Test Bad Data Types
@@ -346,10 +341,41 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_annual_kwh_bad_building_name(self):
         bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-	
+
         response = self.api_client.get(self.annual_kwh_url, data={
             'load_profile_name': bldg[:-1],
             'latitude': city.lat,
             'longitude': city.lng,
         })
         assert "Invalid load_profile_name. Select from the following" in response.content
+
+    def test_wind(self):
+        """
+        Validation run for wind scenario that matches REopt desktop results as of 9/26/17.
+        Note no tax, no ITC, no MACRS.
+        :return:
+        """
+
+        wind_post = {
+            "load_profile_name": "MediumOffice", "load_size": 10000000,
+            "latitude": 39.91065, "longitude": -105.2348,
+            "rate_escalation": 0.006, "om_cost_growth_rate": 0.001, "analysis_period": 25,
+            "offtaker_tax_rate": 0.0, "offtaker_discount_rate": 0.07,
+            "batt_kw_max": 0, "batt_kwh_max": 0, "net_metering_limit": 1e6, "pv_kw_max": 0,
+            "demand_charge": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            "blended_utility_rate": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+            "wind_kw_max": 10000,  "wind_macrs_schedule": 0, "wind_macrs_bonus_fraction": 0.0, "wind_itc_federal": 0
+        }
+
+        d_expected = dict()
+        d_expected['lcc'] = 9849424
+        d_expected['npv'] = 14861356
+        d_expected['wind_kw'] = 4077.9
+        d_expected['average_annual_energy_exported_wind'] = 5751360
+        d_expected['net_capital_costs_plus_om'] = 9835212
+
+        resp = self.api_client.post(self.url_base, format='json', data=wind_post)
+        self.assertHttpCreated(resp)
+        d_calculated = json.loads(resp.content)
+
+        self.check_common_outputs(d_calculated, d_expected)
