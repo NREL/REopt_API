@@ -24,6 +24,7 @@ parameters
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
   Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
+  REoptTol = 5e-5
 
   ! Utility info
   NumRatchets = 12
@@ -142,6 +143,9 @@ declarations
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
+  AnnualMinCharge: real ! utility min annual charge
+  MonthlyMinCharge: real ! utility min monthly charge
+  MinChargeAdder: mpvar
 
   MaxDemandInTier: array ( DemandBin) of real
   MaxDemandMonthsInTier: array ( DemandMonthsBin) of real
@@ -262,13 +266,18 @@ end-initializations
 initializations from DAT8
 	TimeStepRatchets
 end-initializations
+
 initializations from DAT9
 	DemandRates
 end-initializations
-initializations from DAT10
+
+initializations from DAT10 ! FuelCost
 	FuelRate
 	FixedMonthlyCharge
+	AnnualMinCharge
+	MonthlyMinCharge
 end-initializations
+
 initializations from DAT11
 	ExportRates
 end-initializations
@@ -276,18 +285,22 @@ end-initializations
 initializations from DAT12
 	TimeStepRatchetsMonth
 end-initializations
+
 initializations from DAT13
 	DemandRatesMonth
 end-initializations
+
 initializations from DAT14 ! LookbackMonthsAndPercent
 	DemandLookbackMonths
 	DemandLookbackPercent
 end-initializations
+
 initializations from DAT15 ! UtilityTiers
 	MaxDemandInTier
 	MaxDemandMonthsInTier
 	MaxUsageInTier
 end-initializations
+
 initializations from DAT16
 	FuelBurnRateM
 end-initializations
@@ -631,6 +644,15 @@ TotalProductionIncentive := sum(t in Tech ) dvProdIncent (t)
 r_tax_fraction_owner := (1 - r_tax_owner)
 r_tax_fraction_offtaker := (1 - r_tax_offtaker)
 
+! Utility min charges
+if AnnualMinCharge > 12 * MonthlyMinCharge
+then TotalMinCharge := AnnualMinCharge * pwf_e
+else TotalMinCharge := 12 * MonthlyMinCharge * pwf_e
+end-if
+
+MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+MinChargeAdder >= 0
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
 
@@ -644,7 +666,7 @@ TotalTechCapCosts + TotalStorageCapCosts +
 TotalOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
-(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges) * r_tax_fraction_offtaker -
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + MinChargeAdder) * r_tax_fraction_offtaker -
 
 ! Subtract Incentives, which are taxable
 TotalProductionIncentive * r_tax_fraction_owner
@@ -698,6 +720,8 @@ Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
 Year1DemandTOUCost := DemandTOUCharges / pwf_e
 Year1DemandFlatCost := DemandFlatCharges / pwf_e
+Year1FixedCharges := TotalFixedCharges / pwf_e
+Year1MinCharges := MinChargeAdder / pwf_e
 
 
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
@@ -708,7 +732,7 @@ Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
 
 !Time series dispatch output
 
-if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
+if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > REoptTol then
 
     fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
         forall (ts in TimeStep) do
@@ -735,7 +759,7 @@ if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
         end-do
     fclose(F_OUTPUT)
 
-    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
 
         fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
             forall (ts in TimeStep) do
@@ -757,7 +781,7 @@ if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > 0 then
 
 end-if
 
-forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
 
     fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
         forall (ts in TimeStep) do
@@ -833,7 +857,7 @@ fclose(F_OUTPUT)
         Node:=addnode(out_json, Root, "batt_kw", getsol (dvStorageSizeKW(b)))
     end-do
 
-    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
         Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
 
@@ -847,11 +871,15 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
+    Node:=addnode(out_json, Root, "year_one_fixed_cost", strfmt(getsol(Year1FixedCharges), 10, 0))
+    Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
     !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
-    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges), 10, 2))
-    Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges), 10, 2))
+    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "total_fixed_cost", strfmt(getsol(TotalFixedCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
-    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts), 10, 0))
+    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))

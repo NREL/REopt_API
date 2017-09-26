@@ -6,7 +6,7 @@
 import requests
 import json
 import keys
-
+from reo.log_levels import log
 
 class PVWatts:
 
@@ -65,8 +65,13 @@ class PVWatts:
 
     @property
     def data(self):
-        r = requests.get(self.url, verify=True)
-        data = json.loads(r.text)
+        resp = requests.get(self.url, verify=True)
+
+        if not resp.ok:
+            log("ERROR", "PVWatts status code {}. {}".format(resp.status_code, resp.content))
+            raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+
+        data = json.loads(resp.text)
         return data
 
     @property

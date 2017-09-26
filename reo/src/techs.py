@@ -77,9 +77,8 @@ class PV(Tech):
                                  max_kw=kwargs.get('pv_kw_max'),
                                  om_dollars_per_kw=kwargs.get('pv_om'),
                                  cost_dollars_per_kw=kwargs.get('pv_cost'),
-                                 degradation_rate=kwargs.get('pv_degradation_rate'),
                                  **kwargs)
-        self.degradation_rate = degradation_rate
+        self.degradation_rate = kwargs.get('pv_degradation_rate')
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw

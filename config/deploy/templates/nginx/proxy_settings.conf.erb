@@ -16,4 +16,11 @@ proxy_set_header Host $host;
 proxy_redirect off;
 
 # Increase timeout for longer response times.
-proxy_read_timeout 300s;
+#
+# This value should be be kept in sync with the xpress/mosel run timeout
+# (defined in reo/models.py), and the gunicorn timeout (defined in
+# config/gunicorn.conf.py).
+#
+# This timeout should be greater than the gunicorn timeout, to give the app an
+# opportunity to handle timeouts more gracefully.
+proxy_read_timeout 330s;

@@ -2,4 +2,5 @@ server "reopt-stage-api1.nrel.gov", :user => "deploy", :roles => ["web", "app", 
 
 set :app_env, "staging"
 set :django_settings_module, "reopt_api.staging_settings"
-set :base_domain, "reopt-stage-api1.nrel.gov"
+set :base_domain, "reopt-stage-api.nrel.gov"
+set :base_domain_aliases, ["reopt-stage-api1.nrel.gov", "reopt-stage-api2.nrel.gov"]
