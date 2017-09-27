@@ -1447,7 +1447,7 @@
     ]
   },
   "pv_cost": null,
-  "rate_inflation": null,
+  "om_cost_growth_rate": null,
   "batt_kwh_min": null,
   "pv_ibi_state_max": null,
   "pv_pbi_system_max": null,

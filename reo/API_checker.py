@@ -15,7 +15,7 @@ localhost = False
 def case(
         analysis_period=20,user_id="123",latitude=34.5794343,longitude=-118,pv_om=20,batt_cost_kw=1600,batt_cost_kwh=500,
         load_profile_name="RetailStore",load_size=500000,pv_cost=2160,offtaker_discount_rate=0.07,offtaker_tax_rate=0.35,
-        owner_discount_rate=0.1,owner_tax_rate=0.35,rate_inflation=0.02,rate_escalation=0.0,load_year=2018,batt_itc_total=0.3,
+        owner_discount_rate=0.1,owner_tax_rate=0.35,om_cost_growth_rate=0.02,rate_escalation=0.0,load_year=2018,batt_itc_total=0.3,
         batt_rebate_total=0,pv_pbi=0.3,pv_pbi_max=1000,pv_pbi_years=20,pv_pbi_system_max=1000,pv_itc_federal=0.3,
         pv_ibi_state=0.0,pv_ibi_utility=0.0, pv_itc_federal_max=10000000,pv_ibi_state_max=0,pv_ibi_utility_max=0,pv_rebate_federal=0,
         pv_rebate_state=0,pv_rebate_utility=0,pv_rebate_federal_max=0,pv_rebate_state_max=0,pv_rebate_utility_max=0, urdb_rate=None,
@@ -37,7 +37,7 @@ def case(
     "offtaker_tax_rate": offtaker_tax_rate,
     "owner_discount_rate": owner_discount_rate,
     "owner_tax_rate": owner_tax_rate,
-    "rate_inflation": rate_inflation,
+    "om_cost_growth_rate": om_cost_growth_rate,
     "rate_escalation": rate_escalation,
     "load_year": load_year,
     "batt_itc_total": batt_itc_total,

@@ -154,7 +154,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
         'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                   'min': 0, 'max': 1, 'default': 0.068,
+                                   'min': 0, 'max': 1, 'default': 0.0947,
                                    "description": "Offtaker Discount Rate", "units": 'decimal percent',
                                    "tool_tip": 'This is the rate at which the electricity consumer discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
 
@@ -217,14 +217,14 @@ def inputs(filter='', full_list=False, just_required=False):
                              "description": "Annual Degradation for Solar PV Panels", "units": 'decimal percent',
                              "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
 
-        'rate_inflation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
+        'om_cost_growth_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
                            'min': -1,
                            'max': 1, 'default': 0.025,
-                           "description": "Annual Inflation Rate", "units": 'decimal percent per year',
-                           "tool_tip": 'The nominal expected annual rate of inflation over the financial life of the system. Units: decimal percent. This value is not required.'},
+                           "description": "Annual O&M Cost Growth Rate", "units": 'decimal percent per year',
+                           "tool_tip": 'The nominal expected annual growth rate of operations and maintenance costs. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.005,
+                            'min': -1, 'max': 1, 'default': 0.030125,  # real escalation of 0.5% gives (1.005)(1.025)-1 = 0.030125 nominal escalation
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},

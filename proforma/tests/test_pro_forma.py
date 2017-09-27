@@ -63,9 +63,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B22'],ro.batt_replacement_cost_kwh],
         [ws['B23'],ro.batt_replacement_year_kwh],
         [ws['B31'],ro.analysis_period],
-        [ws['B32'],ro.rate_inflation * 100],
-        [ws['B33'],ro.rate_escalation * 100],
-        [ws['B35'],ro.owner_discount_rate * 100],
+        [ws['B32'],ro.om_cost_growth_rate * 100],
+        [ws['B34'],ro.rate_escalation * 100],
+        [ws['B36'],ro.owner_discount_rate * 100],
         [ws['B39'],ro.owner_tax_rate * 100],
         [ws['B44'],ro.pv_itc_federal * 100],
         [ws['C44'],ro.pv_itc_federal_max],
@@ -90,4 +90,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['C74'],ro.batt_macrs_schedule],
         [ws['C75'],ro.batt_macrs_bonus_fraction]]
 
-        [self.assertAlmostEqual(a.value, b, places = 2) for a,b in mapping]
+        [self.assertAlmostEqual(float(a.value), b, places=2) for a,b in mapping]
