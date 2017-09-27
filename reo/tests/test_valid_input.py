@@ -27,6 +27,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
         self.url_base = '/api/v1/reopt/'
+        self.default_value_url = '/reopt/default_api_inputs/'
         self.annual_kwh_url = "/reopt/annual_kwh/"
         self.invalid_urdb_url = '/reopt/invalid_urdb/'
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
@@ -76,6 +77,14 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def check_data_error_response(self, data, text):	
         response = self.get_response(data)
         self.assertTrue(text in response.content)
+
+    def test_default_api(self):
+      
+        response = self.api_client.get(self.default_value_url)
+        expected_inputs = inputs(full_list=True)
+        for k,v in json.loads(response.content).items():
+            self.assertTrue(expected_inputs[k].get('default')==v)
+
 
     def test_problems(self):
         invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
@@ -329,13 +338,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'latitude': city.lat,
             'longitude': city.lng,
         })
+       
         annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
         assert annual_kwh_from_api == BuiltInProfile.annual_loads[city.name][bldg]
+   
 
     def test_annual_kwh_bad_latitude(self):
         bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-        
+       
         response = self.api_client.get(self.annual_kwh_url, data={
             'load_profile_name': bldg,
             'latitude': 'bad latitude',
