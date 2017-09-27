@@ -143,9 +143,6 @@ def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
     cap_cost_slope = itc_basis - tax_savings + replacement
 
-    import pdb
-    pdb.set_trace()
-
     # Sanity check
     if cap_cost_slope < 0:
         cap_cost_slope = 0
