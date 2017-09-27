@@ -78,9 +78,9 @@ class ProForma(models.Model):
 
         # Analysis Parameters
         ws['B31'] = ro.analysis_period
-        ws['B32'] = ro.rate_inflation * 100
-        ws['B33'] = ro.rate_escalation * 100
-        ws['B35'] = ro.owner_discount_rate * 100
+        ws['B32'] = ro.om_cost_growth_rate * 100
+        ws['B34'] = ro.rate_escalation * 100
+        ws['B36'] = ro.owner_discount_rate * 100
 
         # Tax rates
         ws['B39'] = ro.owner_tax_rate * 100

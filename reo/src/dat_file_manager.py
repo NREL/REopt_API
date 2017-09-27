@@ -210,11 +210,11 @@ class DatFileManager:
     def _get_REopt_pwfs(self, techs):
 
         sf = self.site.financials
-        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate_nominal) # not used in REopt
-        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate_nominal)  # not used in REopt
-        pwf_om = annuity(sf.analysis_period, sf.rate_inflation, sf.owner_discount_rate_nominal)
-        pwf_e = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
-        # pwf_op = annuity(sf.analysis_period, sf.rate_escalation_nominal, sf.owner_discount_rate_nominal)
+        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate)  # not used in REopt
+        pwf_om = annuity(sf.analysis_period, sf.om_cost_growth_rate, sf.owner_discount_rate)
+        pwf_e = annuity(sf.analysis_period, sf.rate_escalation, sf.offtaker_discount_rate)
+        # pwf_op = annuity(sf.analysis_period, sf.rate_escalation, sf.owner_discount_rate)
 
         if pwf_owner == 0 or sf.owner_tax_rate == 0:
             two_party_factor = 0
@@ -250,7 +250,7 @@ class DatFileManager:
                                          sf.rate_escalation, sf.offtaker_discount_rate,
                                          -eval('self.' + tech + '.degradation_rate')) / \
                             annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                    sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+                                    sf.rate_escalation, sf.offtaker_discount_rate)
                             , 5
                         )
                     )
@@ -279,7 +279,7 @@ class DatFileManager:
     
                     pwf_prod_incent.append(
                         annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                sf.rate_escalation_nominal, sf.offtaker_discount_rate_nominal)
+                                sf.rate_escalation, sf.offtaker_discount_rate)
                     )
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
@@ -527,7 +527,7 @@ class DatFileManager:
                                                                  tech_cost,                      # input full tech_cost as ITC basis
                                                                  0,
                                                                  sf.analysis_period,
-                                                                 sf.owner_discount_rate_nominal,
+                                                                 sf.owner_discount_rate,
                                                                  sf.owner_tax_rate,
                                                                  itc_effective,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
@@ -745,7 +745,7 @@ class DatFileManager:
                                                         self.storage.us_dollar_per_kw,      # itc basis is full tech_cost
                                                         self.storage.replace_us_dollar_per_kw,
                                                         self.storage.replace_kw_years,
-                                                        sf.owner_discount_rate_nominal,
+                                                        sf.owner_discount_rate,
                                                         sf.owner_tax_rate,
                                                         self.storage.incentives.total.itc,
                                                         self.storage.incentives.macrs_schedule,
@@ -757,7 +757,7 @@ class DatFileManager:
                                                          self.storage.us_dollar_per_kwh,  # itc basis is full tech cost
                                                          self.storage.replace_us_dollar_per_kwh,
                                                          self.storage.replace_kwh_years,
-                                                         sf.owner_discount_rate_nominal,
+                                                         sf.owner_discount_rate,
                                                          sf.owner_tax_rate,
                                                          self.storage.incentives.total.itc,
                                                          self.storage.incentives.macrs_schedule,

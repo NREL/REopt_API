@@ -13,7 +13,7 @@
   "offtaker_discount_rate": 0.102,
   "owner_tax_rate": 0.35,
   "offtaker_tax_rate": 0.35,
-  "rate_inflation": 0.025,
+  "om_cost_growth_rate": 0.025,
   "rate_degradation": 0.0,
   "rate_escalation": 0.0039,
   "net_metering_limit":1000,
