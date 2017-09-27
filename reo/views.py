@@ -10,7 +10,6 @@ import csv
 import os
 from utilities import API_Error
 
-
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -64,7 +63,7 @@ def default_api_inputs(request):
         defaults = {k:v.get('default') for k,v in inputs(full_list=True).items() if v.get('default') is not None}
         return JsonResponse(defaults)
     except Exception as e:
-        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
+        return JsonResponse(API_Error(e).response)
 
 
 def invalid_urdb(request):
@@ -76,8 +75,9 @@ def invalid_urdb(request):
         return response
         
     except Exception as e:
-        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
-    
+        return JsonResponse(API_Error(e).response)
+ 
+  
 
 def annual_kwh(request):
 
@@ -91,5 +91,5 @@ def annual_kwh(request):
         )
         return response
     except Exception as e:
-        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
-    
+        return JsonResponse(API_Error(e).response)
+   
