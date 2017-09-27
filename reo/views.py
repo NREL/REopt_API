@@ -8,6 +8,7 @@ from src.load_profile import BuiltInProfile
 from models import URDBError
 import csv
 import os
+from utilities import API_Error
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -58,19 +59,25 @@ def check_inputs(request):
         return HttpResponse(json.dumps(errors), content_type='application/json')
 
 
+def default_api_inputs(request):
+    try:
+        defaults = {k:v.get('default') for k,v in inputs(full_list=True).items() if v.get('default') is not None}
+        return JsonResponse(defaults)
+    except Exception as e:
+        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
+
+
 def invalid_urdb(request):
 
     try:
         # invalid set is populated by the urdb validator, hard problems defined in csv
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
         response = JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
+        return response
         
     except Exception as e:
-        response = JsonResponse(
-            {'Error': str(e)},
-        )
-    return response
-
+        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
+    
 
 def annual_kwh(request):
 
@@ -82,8 +89,7 @@ def annual_kwh(request):
         response = JsonResponse(
             {'annual_kwh': b.annual_kwh},
         )
+        return response
     except Exception as e:
-        response = JsonResponse(
-            {'Error': str(e)},
-        )
-    return response
+        raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
+    
