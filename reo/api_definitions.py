@@ -485,11 +485,6 @@ def inputs(filter='', full_list=False, just_required=False):
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
 
-        'wind_degradation_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                'min': 0, 'max': 1, 'default': 0.005,
-                                "description": "Annual Degradation for Solar PV Panels", "units": 'decimal percent',
-                                "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
-
         'wind_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
                            'max': 1, 'default': 0.30,
