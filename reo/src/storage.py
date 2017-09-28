@@ -10,7 +10,7 @@ class Storage(object):
     def __init__(self, dfm, min_kw=0, max_kw=big_number, min_kwh=0, max_kwh=big_number,
                  efficiency=0.90, inverter_efficiency=0.96, rectifier_efficiency=0.96,
                  soc_min=0.2, soc_init=0.5,
-                 can_grid_charge=True,
+                 can_grid_charge=False,
                  level_count=1, level_coefs=(-1, 0),
                  us_dollar_per_kw=1000, us_dollar_per_kwh=500,
                  replace_us_dollar_per_kw=200, replace_us_dollar_per_kwh=200,
