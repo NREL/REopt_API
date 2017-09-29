@@ -321,22 +321,24 @@ class BuiltInProfile(object):
         },
     }
 
-    default_buildings =  [  'fastfoodrest',
-                            'fullservicerest',
-                            'hospital',
-                            'largehotel',
-                            'largeoffice',
-                            'mediumoffice',
-                            'midriseapartment',
-                            'outpatient',
-                            'primaryschool',
-                            'retailstore',
-                            'secondaryschool',
-                            'smallhotel',
-                            'smalloffice',
-                            'stripmall',
-                            'supermarket',
-                            'warehouse']
+    default_buildings = ['fastfoodrest',
+                         'fullservicerest',
+                         'hospital',
+                         'largehotel',
+                         'largeoffice',
+                         'mediumoffice',
+                         'midriseapartment',
+                         'outpatient',
+                         'primaryschool',
+                         'retailstore',
+                         'secondaryschool',
+                         'smallhotel',
+                         'smalloffice',
+                         'stripmall',
+                         'supermarket',
+                         'warehouse',
+                         'flatload',
+                         ]
 
     def __init__(self, latitude=None, longitude=None, load_profile_name='', load_size=None, load_year=None, load_monthly_kwh=None, **kwargs):
         """
@@ -348,7 +350,7 @@ class BuiltInProfile(object):
         :param load_year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
-        
+
         self.latitude = float(latitude) if latitude else None
         self.longitude = float(longitude) if longitude else None
         self.monthly_kwh = load_monthly_kwh
@@ -379,7 +381,7 @@ class BuiltInProfile(object):
                         min_distance = distance
                         self.nearest_city = c.name
                 return self.nearest_city
-        
+
         else:
             raise AttributeError('load_profile', 'Cannot determine nearest city - missing city or latitude and longitude inputs')
 
@@ -387,7 +389,7 @@ class BuiltInProfile(object):
     def default_annual_kwh(self):
         if self.city and self.building_type:
             return self.annual_loads[self.city][self.building_type.lower()]
-	return None
+        return None
 
     @property
     def building_type(self):
