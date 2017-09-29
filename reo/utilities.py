@@ -52,7 +52,7 @@ def annuity(analysis_period, rate_escalation, rate_discount):
 def degradation_factor(analysis_period, rate_degradation):
     factor = 1
     factors = [factor]
-    for yr in range(1, analysis_period):
+    for yr in range(1, int(analysis_period)):
         factor *= (1 - rate_degradation)
         factors.append(factor)
     return sum(factors)/analysis_period
