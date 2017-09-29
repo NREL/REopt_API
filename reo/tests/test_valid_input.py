@@ -183,14 +183,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_calculated = json.loads(resp.content)
 
         d_expected = dict()
-        d_expected['lcc'] = 10182078
-        d_expected['npv'] = 10469115 - d_expected['lcc']
+        d_expected['lcc'] = 10946495
+        d_expected['npv'] = 11276785 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 100.85
-        d_expected['batt_kwh'] = 274.017
-        d_expected['year_one_utility_kwh'] = 9616669
+        d_expected['batt_kw'] = 105.516
+        d_expected['batt_kwh'] = 302.709
+        d_expected['year_one_utility_kwh'] = 9617865
 
-        self.check_common_outputs(d_calculated, d_expected)
+        try:
+            self.check_common_outputs(d_calculated, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('uuid')))
+            raise
 
     def test_valid_test_defaults(self):
 
@@ -213,14 +217,19 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_calculated = json.loads(resp.content)
 
                 d_expected = dict()
-                d_expected['npv'] = 251.0
-                d_expected['lcc'] = 2776
-                d_expected['pv_kw'] = 0.86051
-                d_expected['batt_kw'] = 0.0323696
-                d_expected['batt_kwh'] = 0.040462
-                d_expected['year_one_utility_kwh'] = 1968.0093
-            
-                self.check_common_outputs(d_calculated, d_expected)
+                d_expected['npv'] = 347.0
+                d_expected['lcc'] = 2914
+                d_expected['pv_kw'] = 0.931874
+                d_expected['batt_kw'] = 0.0526852
+                d_expected['batt_kwh'] = 0.0658565
+                d_expected['year_one_utility_kwh'] = 1876.4764
+
+                try:
+                    self.check_common_outputs(d_calculated, d_expected)
+                except:
+                    print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('uuid')))
+                    raise
+
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
@@ -234,7 +243,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_expected['batt_kwh'] = 307.14
                 d_expected['year_one_utility_kwh'] = 9626472.7392
 
-                self.check_common_outputs(d_calculated, d_expected)
+                try:
+                    self.check_common_outputs(d_calculated, d_expected)
+                except:
+                    print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('uuid')))
+                    raise
 
 
 
