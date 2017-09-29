@@ -2,7 +2,6 @@ import os
 from log_levels import log
 from numpy import npv
 
-
 class API_Error:
     def __init__(self, e):
         # e is a caught Exception
@@ -48,6 +47,15 @@ def annuity(analysis_period, rate_escalation, rate_discount):
     else:
         pwf = analysis_period
     return pwf
+
+
+def degradation_factor(analysis_period, rate_degradation):
+    factor = 1
+    factors = [factor]
+    for yr in range(1, analysis_period):
+        factor *= (1 - rate_degradation)
+        factors.append(factor)
+    return sum(factors)/analysis_period
 
 
 def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradation):

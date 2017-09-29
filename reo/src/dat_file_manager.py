@@ -1,7 +1,7 @@
 import os
 import copy
 from reo.src.urdb_parse import UrdbParse
-from reo.utilities import annuity, annuity_degr, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
+from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
 from reo.api_definitions import max_incentive
 
@@ -232,29 +232,14 @@ class DatFileManager:
                 if tech != 'util':
 
                     #################
-                    # NOTE: economics.py uses real rates to calculate pv_levelization_factor and
-                    #       pv_levelization_factor_production_incentive, need to change to nominal for consistency,
-                    #       which may break some tests.
+                    # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
+                    # does not escalate in out years.
                     ################
-                    levelization_factor.append(
-                        round(
-                            annuity_degr(sf.analysis_period, sf.rate_escalation,
-                                         sf.offtaker_discount_rate,
-                                         -eval('self.' + tech + '.degradation_rate')) / pwf_e
-                            , 5
-                        )
-                    )
+                    degradation_rate = eval('self.' + tech + '.degradation_rate')
+                    levelization_factor.append(round(degradation_factor(sf.analysis_period, degradation_rate), 5))
                     production_incentive_levelization_factor.append(
-                        round(
-                            annuity_degr(eval('self.' + tech + '.incentives.production_based.years'),
-                                         sf.rate_escalation, sf.offtaker_discount_rate,
-                                         -eval('self.' + tech + '.degradation_rate')) / \
-                            annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                    sf.rate_escalation, sf.offtaker_discount_rate)
-                            , 5
-                        )
-                    )
-                    #################
+                        round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
+                                                 degradation_rate), 5))
                     ################
                 elif tech == 'util':
 
@@ -276,10 +261,11 @@ class DatFileManager:
             if eval('self.' + tech) is not None:
                 
                 if tech != 'util':
-    
+
+                    # prod incentives don't need escalation
                     pwf_prod_incent.append(
                         annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                sf.rate_escalation, sf.offtaker_discount_rate)
+                                0, sf.offtaker_discount_rate)
                     )
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
