@@ -79,58 +79,58 @@ class ProForma(models.Model):
         # Analysis Parameters
         ws['B31'] = ro.analysis_period
         ws['B32'] = ro.om_cost_growth_rate * 100
-        ws['B34'] = ro.rate_escalation * 100
-        ws['B36'] = ro.owner_discount_rate * 100
+        ws['B33'] = ro.rate_escalation * 100
+        ws['B34'] = ro.owner_discount_rate * 100
 
         # Tax rates
-        ws['B39'] = ro.owner_tax_rate * 100
+        ws['B37'] = ro.owner_tax_rate * 100
 
         # PV Tax Credits and Incentives
-        ws['B44'] = ro.pv_itc_federal * 100
-        ws['C44'] = ro.pv_itc_federal_max
-        ws['B49'] = ro.pv_ibi_state * 100
-        ws['C49'] = ro.pv_ibi_state_max
-        ws['B50'] = ro.pv_ibi_utility * 100
-        ws['C50'] = ro.pv_ibi_utility_max
-        ws['B52'] = ro.pv_rebate_federal * 0.001
-        ws['C52'] = ro.pv_rebate_federal_max
-        ws['B53'] = ro.pv_rebate_state * 0.001
-        ws['C53'] = ro.pv_rebate_state_max
-        ws['B54'] = ro.pv_rebate_utility * 0.001
-        ws['C54'] = ro.pv_rebate_utility_max
-        ws['B56'] = ro.pv_pbi
-        ws['C56'] = ro.pv_pbi_max
-        ws['E56'] = ro.pv_pbi_years
-        ws['F56'] = ro.pv_pbi_system_max
+        ws['B42'] = ro.pv_itc_federal * 100
+        ws['C42'] = ro.pv_itc_federal_max
+        ws['B47'] = ro.pv_ibi_state * 100
+        ws['C47'] = ro.pv_ibi_state_max
+        ws['B48'] = ro.pv_ibi_utility * 100
+        ws['C48'] = ro.pv_ibi_utility_max
+        ws['B50'] = ro.pv_rebate_federal * 0.001
+        ws['C50'] = ro.pv_rebate_federal_max
+        ws['B51'] = ro.pv_rebate_state * 0.001
+        ws['C51'] = ro.pv_rebate_state_max
+        ws['B52'] = ro.pv_rebate_utility * 0.001
+        ws['C52'] = ro.pv_rebate_utility_max
+        ws['B54'] = ro.pv_pbi
+        ws['C54'] = ro.pv_pbi_max
+        ws['E54'] = ro.pv_pbi_years
+        ws['F54'] = ro.pv_pbi_system_max
 
         # Battery Tax Credits and Incentives
-        ws['B61'] = ro.batt_itc_total * 100
-        ws['C61'] = big_number  # max itc
-        ws['B66'] = 0  # state ITC
-        ws['C66'] = big_number  # state ITC max
-        ws['B67'] = 0  # utility ITC
-        ws['C67'] = big_number  # utility ITC max
-        ws['B69'] = ro.batt_rebate_total * 0.001
-        ws['C69'] = big_number  # max rebate
-        ws['B70'] = 0  # state rebate
-        ws['C70'] = big_number  # max state rebate
-        ws['B71'] = 0  # utility rebate
-        ws['C71'] = big_number  # max utility rebate
+        ws['B59'] = ro.batt_itc_total * 100
+        ws['C59'] = big_number  # max itc
+        ws['B64'] = 0  # state ITC
+        ws['C64'] = big_number  # state ITC max
+        ws['B65'] = 0  # utility ITC
+        ws['C65'] = big_number  # utility ITC max
+        ws['B67'] = ro.batt_rebate_total * 0.001
+        ws['C67'] = big_number  # max rebate
+        ws['B68'] = 0  # state rebate
+        ws['C68'] = big_number  # max state rebate
+        ws['B69'] = 0  # utility rebate
+        ws['C69'] = big_number  # max utility rebate
 
         # Depreciation
         if ro.pv_macrs_schedule > 0:
-            ws['B74'] = ro.pv_macrs_schedule
-            ws['B75'] = ro.pv_macrs_bonus_fraction
+            ws['B72'] = ro.pv_macrs_schedule
+            ws['B73'] = ro.pv_macrs_bonus_fraction
         elif ro.pv_macrs_schedule == 0:
-            ws['B74'] = "None"
-            ws['B75'] = 0
+            ws['B72'] = "None"
+            ws['B73'] = 0
 
         if ro.batt_macrs_schedule > 0:
-            ws['C74'] = ro.batt_macrs_schedule
-            ws['C75'] = ro.batt_macrs_bonus_fraction
+            ws['C72'] = ro.batt_macrs_schedule
+            ws['C73'] = ro.batt_macrs_bonus_fraction
         if ro.batt_macrs_schedule == 0:
-            ws['C74'] = "None"
-            ws['C75'] = 0
+            ws['C72'] = "None"
+            ws['C73'] = 0
 
         # Save
         wb.save(self.output_file)
