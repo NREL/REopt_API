@@ -183,12 +183,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_calculated = json.loads(resp.content)
 
         d_expected = dict()
-        d_expected['lcc'] = 10946495
+        d_expected['lcc'] = 10950029
         d_expected['npv'] = 11276785 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 105.516
-        d_expected['batt_kwh'] = 302.709
-        d_expected['year_one_utility_kwh'] = 9617865
+        d_expected['batt_kw'] = 106.055
+        d_expected['batt_kwh'] = 307.971
+        d_expected['year_one_utility_kwh'] = 9621290
 
         try:
             self.check_common_outputs(d_calculated, d_expected)

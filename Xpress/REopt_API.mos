@@ -816,7 +816,6 @@ fclose(F_OUTPUT)
 
     Node:=addnode(out_json, Root, "status", status)
     Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts), 10, 0))
-    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges), 10, 0))
 
     forall  (b in BattLevel)  do
         Node:=addnode(out_json, Root, "batt_kwh", getsol (dvStorageSizeKWH(b)))
