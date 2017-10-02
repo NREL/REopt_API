@@ -2,7 +2,6 @@ import os
 from log_levels import log
 from numpy import npv
 
-
 class API_Error:
     def __init__(self, e):
         # e is a caught Exception
@@ -48,6 +47,15 @@ def annuity(analysis_period, rate_escalation, rate_discount):
     else:
         pwf = analysis_period
     return pwf
+
+
+def degradation_factor(analysis_period, rate_degradation):
+    factor = 1
+    factors = [factor]
+    for yr in range(1, int(analysis_period)):
+        factor *= (1 - rate_degradation)
+        factors.append(factor)
+    return sum(factors)/analysis_period
 
 
 def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradation):
@@ -99,18 +107,17 @@ def insert_p_after_u_bp(xp_array_incent, yp_array_incent, region, p_xbp, p_ybp, 
     return xp_array_incent, yp_array_incent
 
 
-def setup_capital_cost_incentive(tech_cost, itc_basis, replacement_cost, replacement_year,
+def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
                                  discount_rate, tax_rate, itc,
-                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction,
-                                 taxable_cash_incentives=0):
+                                 macrs_schedule, macrs_bonus_fraction, macrs_itc_reduction):
 
     """ effective PV and battery prices with ITC and depreciation
         (i) depreciation tax shields are inherently nominal --> no need to account for inflation
         (ii) ITC and bonus depreciation are taken at end of year 1
         (iii) battery replacement cost: one time capex in user defined year discounted back to t=0 with r_owner
-        (iv) Assume that cash incentives do not reduce ITC basis
-        (v) Assume cash incentives do reduce the taxable income, and thus the total savings from depreciation
-        (vi) Cash incentives should be applied before this function into "tech_cost".
+        (iv) Assume that cash incentives reduce ITC basis
+        (v) Assume cash incentives are not taxable, (don't affect tax savings from MACRS)
+        (vi) Cash incentives should be applied before this function into "itc_basis".
              This includes all rebates and percentage-based incentives besides the ITC
     """
 
@@ -133,16 +140,17 @@ def setup_capital_cost_incentive(tech_cost, itc_basis, replacement_cost, replace
         taxable_income = depreciation_amount
         if idx == 0:
             depreciation_amount += bonus_depreciation
-            taxable_income = depreciation_amount - taxable_cash_incentives
-
+        taxable_income = depreciation_amount
         tax_savings_array.append(taxable_income * tax_rate)
+
+    # Add the ITC to the tax savings
     tax_savings_array[1] += itc_basis * itc
 
     # Compute the net present value of the tax savings
     tax_savings = npv(discount_rate, tax_savings_array)
 
     # Adjust cost curve to account for itc and depreciation savings ($/kW)
-    cap_cost_slope = tech_cost - tax_savings + replacement
+    cap_cost_slope = itc_basis - tax_savings + replacement
 
     # Sanity check
     if cap_cost_slope < 0:

@@ -91,7 +91,7 @@ def inputs(filter='', full_list=False, just_required=False):
                          "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum energy capacity size forces a battery energy capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
         'batt_can_gridcharge': {'req': False, 'type': bool, 'null': False, 'pct': False,
-                                "needed_for": ['economics'], 'default': True,
+                                "needed_for": ['economics'], 'default': False,
                                 "description": "Is battery allowed to charge from grid", "units": '0/1',
                                 "tool_tip": "Is battery allowed to charge from the grid?"},
 
@@ -154,7 +154,7 @@ def inputs(filter='', full_list=False, just_required=False):
                                 "tool_tip": 'The rate at which the host discounts the future value of electricity supplied by the system. Note this is an after tax discount rate if the Host is a taxable entity. Units: decimal percent. This value is not required.'},
 
         'offtaker_discount_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                   'min': 0, 'max': 1, 'default': 0.0947,
+                                   'min': 0, 'max': 1, 'default': 0.081,
                                    "description": "Offtaker Discount Rate", "units": 'decimal percent',
                                    "tool_tip": 'This is the rate at which the electricity consumer discounts future earnings from the installed system.  Note this is an after tax discount rate. Units: decimal percent. This value is not required.'},
 
@@ -224,7 +224,7 @@ def inputs(filter='', full_list=False, just_required=False):
                            "tool_tip": 'The nominal expected annual growth rate of operations and maintenance costs. Units: decimal percent. This value is not required.'},
 
         'rate_escalation': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                            'min': -1, 'max': 1, 'default': 0.030125,  # real escalation of 0.5% gives (1.005)(1.025)-1 = 0.030125 nominal escalation
+                            'min': -1, 'max': 1, 'default': 0.026,
                             "description": "Annual Cost of  Electricity Escalation Rate",
                             "units": 'decimal percent per year',
                             "tool_tip": 'The expected annual nominal escalation rate for the price of electricity provided by the utility over the financial life of the system. Units: decimal percent per year. This value is not required. For federal analysis, values are provided in the Energy Price Indices and Discount Factors for Life-Cycle Cost Analysis, Annual Supplement to NIST Handbook 135: http://nvlpubs.nist.gov/nistpubs/ir/2016/NIST.IR.85-3273-31.pdf.'},

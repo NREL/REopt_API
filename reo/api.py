@@ -16,7 +16,7 @@ from reo.models import RunOutput
 
 
 def get_current_api():
-    return "version 0.0.1"
+    return "version 1.0.0"
 
 
 def setup_logging():
