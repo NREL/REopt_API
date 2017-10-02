@@ -11,7 +11,7 @@ class Ventyx(object):
         # d = pd.DataFrame.from_csv(csv_file)
         # wind_speeds = d.loc[:, 'wind speed at 100m (m/s)'].tolist()
 
-        src_file = os.path.join('static', 'files', 'NWTC_pfs.txt')
+        src_file = os.path.join('reo', 'tests', 'NWTC_pfs.txt')
         with open(src_file, 'r') as f:
             wind_speeds = f.read().split('\r')
         wind_speeds = [float(s) for s in wind_speeds]
