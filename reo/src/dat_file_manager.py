@@ -66,13 +66,15 @@ class DatFileManager:
     DAT_bau = [None] * 20
     pv = None
     pvnm = None
+    wind = None
+    windnm = None
     util = None
     storage = None
     site = None
     elec_tariff = None
 
-    available_techs = ['pv', 'pvnm', 'util']  # order is critical for REopt!
-    available_tech_classes = ['PV', 'UTIL']  # this is a REopt 'class', not a python class
+    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'util']  # order is critical for REopt!
+    available_tech_classes = ['PV', 'WIND', 'UTIL']  # this is a REopt 'class', not a python class
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
@@ -159,6 +161,11 @@ class DatFileManager:
         self.pvnm = copy.deepcopy(pv)
         self.pvnm.nmil_regime = 'NMtoIL'
 
+    def add_wind(self, wind):
+        self.wind = wind
+        self.windnm = copy.deepcopy(wind)
+        self.windnm.nmil_regime = 'NMtoIL'
+
     def add_util(self, util):
         self.util = util
 
@@ -229,7 +236,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech != 'util':
+                if tech != 'util' and not tech.startswith('wind'):  # pv has degradation
 
                     #################
                     # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
@@ -241,9 +248,9 @@ class DatFileManager:
                         round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
                                                  degradation_rate), 5))
                     ################
-                elif tech == 'util':
+                else:
 
-                    levelization_factor.append(self.util.degradation_rate)
+                    levelization_factor.append(1.0)
                     production_incentive_levelization_factor.append(1.0)
 
         return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor
@@ -486,7 +493,6 @@ class DatFileManager:
                 for s in range(cap_cost_segments):
                     
                     if cost_curve_bp_x[s + 1] > 0:
-
                         # Remove federal incentives for ITC basis and tax benefit calculations
                         itc = eval('self.' + tech + '.incentives.federal.itc')
                         rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
@@ -506,7 +512,6 @@ class DatFileManager:
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
-
 
                 for p in range(1, cap_cost_points):
                     cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
