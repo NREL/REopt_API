@@ -821,7 +821,7 @@ class ValidateNestedInput():
                 missing = check_options(options,keys)
 
             if object_name == "ElectricTariff":
-                options = [["blended_monthly_rates_us_dollar_per_kwh", "monthly_demand_charges_us_dollar_per_kw"], ["urdb_response"]]
+                options = [["blended_monthly_rates_us_dollars_per_kwh", "monthly_demand_charges_us_dollars_per_kw"], ["urdb_response"]]
                 missing = check_options(options, keys)
 
 
@@ -873,10 +873,10 @@ class ValidateNestedInput():
                             "urdb_utilty_name": i.get("utility_name"),
                             "urdb_rate_name": i.get("rate_name"),
                             "urdb_response": i.get("urdb_rate"),
-                            "blended_monthly_rates_us_dollar_per_kwh": i.get("blended_utility_rate"),
-                            "monthly_demand_charges_us_dollar_per_kw": i.get("demand_charge"),
+                            "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
+                            "monthly_demand_charges_us_dollars_per_kw": i.get("demand_charge"),
                             "net_metering_limit_kw": i.get("net_metering_limit"),
-                            "wholesale_rate_us_dollar_per_kwh": i.get("wholesale_rate"),
+                            "wholesale_rate_us_dollars_per_kwh": i.get("wholesale_rate"),
                             "interconnection_limit_kw": i.get("interconnection_limit"),
                         },
 
@@ -885,8 +885,8 @@ class ValidateNestedInput():
                                 {
                                     "min_kw": i.get("pv_kw_min"),
                                     "max_kw": i.get("pv_kw_max"),
-                                    "installed_cost_us_dollar_per_kw": i.get("pv_cost"),
-                                    "om_cost_us_dollar_per_kw": i.get("pv_om"),
+                                    "installed_cost_us_dollars_per_kw": i.get("pv_cost"),
+                                    "om_cost_us_dollars_per_kw": i.get("pv_om"),
                                     "degradation_pct": i.get("pv_degradation_rate"),
 
                                     "PVWatt":{
@@ -905,14 +905,14 @@ class ValidateNestedInput():
                                     "macrs_bonus_pct": i.get("pv_macrs_bonus_fraction"),
                                     "federal_itc_pct":i.get("pv_itc_federal"),
                                     "state_ibi_pct": i.get("pv_itc_state"),
-                                    "state_ibi_max_pct": i.get("pv_ibi_state_max"),
+                                    "state_ibi_max_us_dollars": i.get("pv_ibi_state_max"),
                                     "utility_ibi_pct": i.get("pv_ibi_utility"),
-                                    "utility_ibi_max_pct": i.get("pv_ibi_utility_max"),
-                                    "federal_rebate_us_dollar_per_kw": i.get("pv_rebate_federal"),
-                                    "state_rebate_us_dollar_per_kw": i.get("pv_rebate_state"),
-                                    "state_rebate_max_us_dollar_per_kw": i.get("pv_rebate_state_max"),
-                                    "utility_rebate_us_dollar_per_kw": i.get("pv_rebate_utility"),
-                                    "utility_rebate_max_us_dollar_per_kw":i.get("pv_rebate_utility_max"),
+                                    "utility_ibi_max_us_dollars": i.get("pv_ibi_utility_max"),
+                                    "federal_rebate_us_dollars_per_kw": i.get("pv_rebate_federal"),
+                                    "state_rebate_us_dollars_per_kw": i.get("pv_rebate_state"),
+                                    "state_rebate_max_us_dollars": i.get("pv_rebate_state_max"),
+                                    "utility_rebate_us_dollars_per_kw": i.get("pv_rebate_utility"),
+                                    "utility_rebate_max_us_dollars":i.get("pv_rebate_utility_max"),
                                     "pbi_us_dollars_per_kwh": i.get("pv_pbi"),
                                     "pbi_max_us_dollars": i.get("pv_pbi_max"),
                                     "pbi_years": i.get("pv_pbi_years"),
@@ -924,21 +924,21 @@ class ValidateNestedInput():
                                 {
                                     "min_kw": i.get("wind_kw_min"),
                                     "max_kw": i.get("wind_kw_max"),
-                                    "installed_cost_us_dollar_per_kw": i.get("wind_cost"),
-                                    "om_cost_us_dollar_per_kw": i.get("wind_om"),
+                                    "installed_cost_us_dollars_per_kw": i.get("wind_cost"),
+                                    "om_cost_us_dollars_per_kw": i.get("wind_om"),
                                     "degradation_pct": i.get("wind_degradation_rate"),
                                     "macrs_option_years": i.get("wind_macrs_schedule"),
                                     "macrs_bonus_pct": i.get("wind_macrs_bonus_fraction"),
                                     "federal_itc_pct": i.get("wind_itc_federal"),
                                     "state_ibi_pct": i.get("wind_ibi_state"),
-                                    "state_ibi_max_pct": i.get("wind_ibi_state_max"),
+                                    "state_ibi_max_us_dollars": i.get("wind_ibi_state_max"),
                                     "utility_ibi_pct": i.get("wind_ibi_utility"),
-                                    "utility_ibi_max_pct": i.get("wind_ibi_utility_max"),
-                                    "federal_rebate_us_dollar_per_kw": i.get("wind_rebate_federal"),
-                                    "state_rebate_us_dollar_per_kw": i.get("wind_rebate_state_max"),
-                                    "state_rebate_max_us_dollar_per_kw": i.get("wind_rebate_state_max"),
-                                    "utility_rebate_us_dollar_per_kw": i.get("wind_rebate_utility"),
-                                    "utility_rebate_max_us_dollar_per_kw": i.get("wind_rebate_utility_max"),
+                                    "utility_ibi_max_us_dollars": i.get("wind_ibi_utility_max"),
+                                    "federal_rebate_us_dollars_per_kw": i.get("wind_rebate_federal"),
+                                    "state_rebate_us_dollars_per_kw": i.get("wind_rebate_state"),
+                                    "state_rebate_max_us_dollars": i.get("wind_rebate_state_max"),
+                                    "utility_rebate_us_dollars_per_kw": i.get("wind_rebate_utility"),
+                                    "utility_rebate_max_us_dollars": i.get("wind_rebate_utility_max"),
                                     "pbi_us_dollars_per_kwh": i.get("wind_pbi"),
                                     "pbi_max_us_dollars": i.get("wind_pbi_max"),
                                     "pbi_years": i.get("wind_pbi_years"),
@@ -956,16 +956,16 @@ class ValidateNestedInput():
                                     "soc_min_pct": i.get("batt_soc_min"),
                                     "soc_init_pct": i.get("batt_soc_init"),
                                     "canGridCharge": i.get("batt_can_gridcharge"),
-                                    "installed_cost_us_dollar_per_kw": i.get("batt_cost_kw"),
-                                    "installed_cost_us_dollar_per_kwh": i.get("batt_cost_kwh"),
-                                    "replace_cost_us_dollar_per_kw": i.get("batt_replacement_cost_kw"),
-                                    "replace_cost_us_dollar_per_kwh": i.get("batt_replacement_cost_kwh"),
+                                    "installed_cost_us_dollars_per_kw": i.get("batt_cost_kw"),
+                                    "installed_cost_us_dollars_per_kwh": i.get("batt_cost_kwh"),
+                                    "replace_cost_us_dollars_per_kw": i.get("batt_replacement_cost_kw"),
+                                    "replace_cost_us_dollars_per_kwh": i.get("batt_replacement_cost_kwh"),
                                     "inverter_replacement_year": i.get("batt_replacement_year_kw"),
                                     "battery_replacement_year": i.get("batt_replacement_year_kwh"),
                                     "macrs_option_years": i.get("batt_macrs_schedule"),
                                     "macrs_bonus_pct": i.get("batt_macrs_bonus_fraction"),
                                     "total_itc_pct":  i.get("batt_itc_total"),
-                                    "total_rebate_us_dollar_per_kw": i.get("batt_rebate_total"),
+                                    "total_rebate_us_dollars_per_kw": i.get("batt_rebate_total"),
 
                                 }
                             }

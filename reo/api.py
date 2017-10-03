@@ -7,7 +7,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
 from models import RunInput
-from validators import REoptResourceValidation
+from validators import REoptResourceValidation, ValidateNestedInput
 from api_definitions import inputs
 from log_levels import log
 from utilities import API_Error
@@ -59,9 +59,21 @@ class RunInputResource(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-        self.is_valid(bundle)
-        if bundle.errors:
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
+        if 'Scenario' not in bundle.data.keys():
+            self.is_valid(bundle)  # runs REoptResourceValidation
+
+            if bundle.errors:
+                raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
+
+            nested_input = ValidateNestedInput(bundle.data, nested=False)
+        else:  # nested input
+            nested_input = ValidateNestedInput(bundle.data, nested=True)
+
+        if not nested_input.isValid:
+            raise ImmediateHttpResponse(response=self.error_response(bundle.request, nested_input.error_response))
+
+        from IPython import embed
+        embed()
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
