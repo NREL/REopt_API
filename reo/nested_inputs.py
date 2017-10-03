@@ -18,12 +18,14 @@ default_buildings =  [  'FastFoodRest',
                     'Supermarket',
                     'Warehouse']
 
-nested_inputs = 
-{
+def list_of_float(input):
+    return [float(i) for i in input]
+
+nested_inputs = {
 
             "Scenario": {
                         "timeout_seconds": { 'type': float,'min': 1, 'max': 295 },
-                        "user_id": { 'type': str }
+                        "user_id": { 'type': str },
                         "time_steps_per_hour":{ 'type': float, 'min': 1, 'max': 1 }, #aspirational - we only handle 1 timetep per hour really, this touches all of the code really
                         },
 
@@ -66,7 +68,7 @@ nested_inputs =
                                 "urdb_label":{ 'type': str }
                         },
 
-              "Wind":{
+            "Wind":{
                                 "min_kw":{  'type': float, 'min': 0, 'max': 1e9  },
                                 "max_kw":{ 'type': float, 'min': 0, 'max': 1e9  },
                                 "installed_cost_us_dollar_per_kw":{ 'type': float, 'min': 0, 'max': 1e5 },
@@ -83,7 +85,7 @@ nested_inputs =
                                 "state_rebate_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "state_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "utility_rebate_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
-                                "state_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
+                                "utility_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_us_dollars_per_kwh": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_max_us_dollars": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_years": { 'type': float,'min': 0, 'max': 1 },
@@ -108,7 +110,7 @@ nested_inputs =
                                 "state_rebate_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "state_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "utility_rebate_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
-                                "state_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
+                                "utility_rebate_max_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_us_dollars_per_kwh": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_max_us_dollars": { 'type': float,'min': 0, 'max': 1 },
                                 "pbi_years": { 'type': float,'min': 0, 'max': 1 },
@@ -146,7 +148,7 @@ nested_inputs =
                                 "battery_replacement_year": { 'type': float, 'min': 0, 'max': max_years  },
                                 "macrs_option_years":{ 'type': int, 'restrict_to': macrs_schedules},
                                 "macrs_bonus_pct":{ 'type': float, 'min': 0, 'max': 1 },
-                                "macrs_itc_reduction_pct":{ 'type': float, 'min': 0, 'max': 1 }
+                                "macrs_itc_reduction_pct":{ 'type': float, 'min': 0, 'max': 1 },
                                 "total_itc_pct": { 'type': float,'min': 0, 'max': 1 },
                                 "total_rebate_us_dollar_per_kw": { 'type': float,'min': 0, 'max': 1 },
                                   
