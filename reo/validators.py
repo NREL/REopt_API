@@ -759,7 +759,7 @@ class ValidateNestedInput():
             for attribute_name,attribute_value in object_dictionary.items():
                 if self.isAttribute(attribute_name):
 
-                    if attribute_name == 'urdb_json' and attribute_value is not None:
+                    if attribute_name == 'urdb_response' and attribute_value is not None:
                         try:
                             rate_checker = URDB_RateValidator(**attribute_value)
                             if rate_checker.errors:
