@@ -108,7 +108,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
                 response = self.get_response(data)
                 text = "Could not convert " + attribute
-                print response.content
+                print attribute
                 self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
                 self.assertTrue("(A)" in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 

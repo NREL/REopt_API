@@ -190,7 +190,7 @@
                     "max_kw": 50,
                     "installed_cost_us_dollars_per_kw": 500,
                     "om_cost_us_dollars_per_kw": 20,
-                    "degradation_rate": 0.1,
+                    "degradation_pct": 0.1,
 
                     "PVWatt": {
                         "azimuth": 180,
