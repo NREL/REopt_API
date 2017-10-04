@@ -108,6 +108,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
                 response = self.get_response(data)
                 text = "Could not convert " + attribute
+                print response.content
                 self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
                 self.assertTrue("(A)" in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
@@ -120,7 +121,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             object_name = location[-1][0]
             if object_name[-1] == 's':
                 object_name = object_name[:-1]
-                
+
             data_defintion = self.data_definitions[object_name][attribute]
             text = ''
 

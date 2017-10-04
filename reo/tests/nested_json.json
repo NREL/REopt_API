@@ -241,16 +241,8 @@
                     "replace_period_kwh_year": 10,
                     "macrs_option_years": 5,
                     "macrs_bonus_pct": 0.1,
-                    "federal_itc_pct": 0.3,
-                    "state_ibi_pct": 0.1,
-                    "state_ibi_max_us_dollars": 1000,
-                    "utility_ibi_pct": 0.1,
-                    "utility_ibi_max_us_dollars":1000,
-                    "federal_rebate_us_dollars_per_kw": 1,
-                    "state_rebate_us_dollars_per_kw": 1,
-                    "state_rebate_max_us_dollars": 1000,
-                    "utility_rebate_us_dollars_per_kw": 1,
-                    "utility_rebate_max_us_dollars_per_kw": 1000
+                    "total_itc_pct": 0.3,
+                    "total_rebate_us_dollars_per_kw": 1000
                 }
             }
         }
