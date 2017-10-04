@@ -204,7 +204,7 @@
                         "tilt": 36
                     },
 
-                     "macrs_option_years": 5,
+                    "macrs_option_years": 5,
                     "macrs_bonus_pct": 0.1,
                     "federal_itc_pct": 0.3,
                     "state_ibi_pct": 0.1,
@@ -219,10 +219,8 @@
                     "pbi_us_dollars_per_kwh": 0.4,
                     "pbi_max_us_dollars": 1000,
                     "pbi_years": 5,
-                    "pbi_system_max_kw": 20,
-
+                    "pbi_system_max_kw": 20
                 },
-
                 "Storage": {
                     "min_kw": 0,
                     "max_kw": 5,
@@ -255,7 +253,7 @@
                     "pbi_us_dollars_per_kwh": 0.4,
                     "pbi_max_us_dollars": 1000,
                     "pbi_years": 5,
-                    "pbi_system_max_kw": 20,
+                    "pbi_system_max_kw": 20
                 }
             }
         }

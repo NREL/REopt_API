@@ -219,7 +219,7 @@
                     "pbi_us_dollars_per_kwh": 0.4,
                     "pbi_max_us_dollars": 1000,
                     "pbi_years": 5,
-                    "pbi_system_max_kw": 20,
+                    "pbi_system_max_kw": 20
                 },
 
                 "Storage": {
@@ -254,7 +254,7 @@
                     "pbi_us_dollars_per_kwh": 0.4,
                     "pbi_max_us_dollars": 1000,
                     "pbi_years": 5,
-                    "pbi_system_max_kw": 20,
+                    "pbi_system_max_kw": 20
                 }
             }
         }
