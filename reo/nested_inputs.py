@@ -145,7 +145,7 @@ nested_inputs = {
                                 "replace_cost_us_dollars_per_kwh": { 'type': float,'min': 0, 'max': 1e4 },
                                 "inverter_replacement_year": { 'type': float, 'min': 0, 'max': max_years  },
                                 "battery_replacement_year": { 'type': float, 'min': 0, 'max': max_years  },
-                                "macrs_option_years":{ 'type': int, 'restrict_to': macrs_schedules},
+                                "macrs_option_years":{ 'type': int, 'restrict_to': macrs_schedules },
                                 "macrs_bonus_pct":{ 'type': float, 'min': 0, 'max': 1 },
                                 "macrs_itc_reduction_pct":{ 'type': float, 'min': 0, 'max': 1 },
                                 "total_itc_pct": { 'type': float,'min': 0, 'max': 1 },
