@@ -76,16 +76,17 @@ class DatFileManager:
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-    command_line_args = list()
-    command_line_args_bau = list()
-    
+
     def __init__(self, run_id, paths, n_timesteps=8760):
         self.run_id = run_id
         self.paths = paths
         self.n_timesteps = n_timesteps
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
-        
+
+        self.command_line_args = list()
+        self.command_line_args_bau = list()
+
         self.file_constant = os.path.join(paths.inputs, 'constant_' + file_tail)
         self.file_constant_bau = os.path.join(paths.inputs, 'constant_' + file_tail_bau)
         self.file_economics = os.path.join(paths.inputs, 'economics_' + file_tail)
@@ -135,8 +136,8 @@ class DatFileManager:
         self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
-        DatFileManager.command_line_args.append("ScenarioNum=" + str(run_id))
-        DatFileManager.command_line_args_bau.append("ScenarioNum=" + str(run_id))
+        self.command_line_args.append("ScenarioNum=" + str(run_id))
+        self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
     def _check_complete(self):
         if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
@@ -707,9 +708,9 @@ class DatFileManager:
             = self._get_REopt_production_incentives(self.bau_techs)
         
         cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments = self._get_REopt_cost_curve(self.available_techs)
-        DatFileManager.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
+        self.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        DatFileManager.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
+        self.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,  # use full cost as basis
@@ -823,15 +824,15 @@ class DatFileManager:
 
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
 
-        DatFileManager.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
-        DatFileManager.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
-        DatFileManager.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
-        DatFileManager.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
+        self.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        self.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        self.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        self.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
-        DatFileManager.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
-        DatFileManager.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
-        DatFileManager.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
-        DatFileManager.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
+        self.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
+        self.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
+        self.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
+        self.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
