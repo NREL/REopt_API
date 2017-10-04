@@ -55,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for ElectricTariff in Scenario/Site"
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
-        load_profile_cases = [['doe_reference_name','annual_kwh','monthly_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
+        load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
