@@ -69,8 +69,8 @@ class RunInputResource(ModelResource):
         else:  # nested input
             nested_input = ValidateNestedInput(bundle.data, nested=True)
 
-        if not nested_input.isValid:
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, nested_input.error_response))
+            if not nested_input.isValid:
+                raise ImmediateHttpResponse(response=self.error_response(bundle.request, nested_input.error_response))
 
         from IPython import embed
         embed()
