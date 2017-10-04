@@ -213,9 +213,9 @@
                     "utility_ibi_max_us_dollars":1000,
                     "federal_rebate_us_dollars_per_kw": 1,
                     "state_rebate_us_dollars_per_kw": 1,
-                    "state_rebate_max_us_dollars_per_kw": 1000,
+                    "state_rebate_max_us_dollars": 1000,
                     "utility_rebate_us_dollars_per_kw": 1,
-                    "utility_rebate_max_us_dollars_per_kw": 1000,
+                    "utility_rebate_max_us_dollars": 1000,
                     "pbi_us_dollars_per_kwh": 0.4,
                     "pbi_max_us_dollars": 1000,
                     "pbi_years": 5,
@@ -247,9 +247,9 @@
                     "utility_ibi_max_us_dollars":1000,
                     "federal_rebate_us_dollars_per_kw": 1,
                     "state_rebate_us_dollars_per_kw": 1,
-                    "state_rebate_max_us_dollars_per_kw": 1000,
+                    "state_rebate_max_us_dollars": 1000,
                     "utility_rebate_us_dollars_per_kw": 1,
-                    "utility_rebate_max_us_dollars_per_kw": 1000
+                    "utility_rebate_max_us_dollars": 1000
                     }
             }
         }
