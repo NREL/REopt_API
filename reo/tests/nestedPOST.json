@@ -226,7 +226,7 @@
                     "max_kw": 5,
                     "min_kwh": 0,
                     "max_kwh": 10,
-                    "efficiency_pct": 0.97,
+                    "internal_efficiency_pct": 0.97,
                     "inverter_efficiency_pct": 0.97,
                     "rectifier_efficiency_pct": 0.97,
                     "soc_min_pct": 0.2,
