@@ -250,11 +250,7 @@
                     "state_rebate_us_dollars_per_kw": 1,
                     "state_rebate_max_us_dollars_per_kw": 1000,
                     "utility_rebate_us_dollars_per_kw": 1,
-                    "utility_rebate_max_us_dollars_per_kw": 1000,
-                    "pbi_us_dollars_per_kwh": 0.4,
-                    "pbi_max_us_dollars": 1000,
-                    "pbi_years": 5,
-                    "pbi_system_max_kw": 20
+                    "utility_rebate_max_us_dollars_per_kw": 1000
                 }
             }
         }
