@@ -72,9 +72,6 @@ class RunInputResource(ModelResource):
             if not nested_input.isValid:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, nested_input.error_response))
 
-        from IPython import embed
-        embed()
-
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
         model_inputs['api_version'] = get_current_api()       

@@ -120,7 +120,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             object_name = location[-1][0]
             if object_name[-1] == 's':
                 object_name = object_name[:-1]
-            print object_name
+                
             data_defintion = self.data_definitions[object_name][attribute]
             text = ''
 
