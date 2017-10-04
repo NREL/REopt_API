@@ -632,14 +632,9 @@ class ValidateNestedInput():
 
                                 "PV":{
                                     "PVWatt":{},
-                                    "ProductionIncentives":[{}],
-                                    "CapacityIncentives":[{}],
-                                    "InvestmentIncentives":[{}]
                                     },
 
                                 "Storage":{
-                                    "CapacityIncentives":[{}],
-                                    "InvestmentIncentives":[{}]
                                     }
                                 }
                             }
