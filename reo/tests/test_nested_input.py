@@ -46,7 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
 
-        electric_tarrif_cases = [['urdb_json','blended_monthly_rate_list_us_dollar_per_kwh','monthly_demand_charge_list_us_dollar_per_kw'],['urdb_json','monthly_demand_charge_list_us_dollar_per_kw'],['urdb_json','blended_monthly_rate_list_us_dollar_per_kwh']]
+        electric_tarrif_cases = [['urdb_response','blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -55,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for ElectricTariff in Scenario/Site"
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
-        load_profile_cases = [['name','annual_kwh','monthly_kwh','load_list_kwh'],['load_list_kwh','monthly_kwh','annual_kwh'],  ['load_list_kwh','name','annual_kwh']]
+        load_profile_cases = [['doe_reference_name','annual_kwh','monthly_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -147,11 +147,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         data =  self.complete_valid_nestedpost
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_json'] =self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] =self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_json']=self.missing_schedule_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response']=self.missing_schedule_urdb
 
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
