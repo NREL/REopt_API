@@ -76,8 +76,7 @@ def invalid_urdb(request):
         
     except Exception as e:
         return JsonResponse(API_Error(e).response)
- 
-  
+
 
 def annual_kwh(request):
 
