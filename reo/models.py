@@ -140,7 +140,6 @@ class RunInput(models.Model):
     wind_om = models.FloatField(null=True, blank=True)
     wind_kw_max = models.FloatField(null=True, blank=True)
     wind_kw_min = models.FloatField(null=True, blank=True)
-    wind_degradation_rate = models.FloatField(null=True, blank=True)
 
     # Wind Capital Cost Based Incentives
     wind_itc_federal = models.FloatField(null=True, blank=True)
@@ -269,7 +268,6 @@ class RunOutput(models.Model):
     wind_om = models.FloatField(null=True, blank=True)
     wind_kw_max = models.FloatField(null=True, blank=True)
     wind_kw_min = models.FloatField(null=True, blank=True)
-    wind_degradation_rate = models.FloatField(null=True, blank=True)
 
     # Wind Capital Cost Based Incentives
     wind_itc_federal = models.FloatField(null=True, blank=True)
