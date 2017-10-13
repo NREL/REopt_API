@@ -655,6 +655,7 @@ class ValidateNestedInput():
         dictionary[attribute] = value
 
     def delete_attribute(self, object_name_path, key):
+
         dictionary = self.input
 
         for name in object_name_path:
@@ -671,7 +672,6 @@ class ValidateNestedInput():
             for name, value in real_values.items():
                 if self.isAttribute(name):
                     if value is None:
-                        object_name_path.append(name)
                         self.delete_attribute(object_name_path, name)
                         self.input_as_none.append([name,object_name_path[-1]])
 
@@ -680,7 +680,6 @@ class ValidateNestedInput():
             for name,value in real_values.items():
                 if self.isAttribute(name):
                     if name not in template_values.keys():
-                        object_name_path.append(name)
                         self.delete_attribute(object_name_path, name)
                         self.input_not_allowed.append([name,object_name_path[-1]])
 
