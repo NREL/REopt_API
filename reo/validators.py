@@ -3,7 +3,7 @@ import numpy as np
 from api_definitions import inputs
 from log_levels import log
 from urdb_logger import log_urdb_errors
-from nested_inputs import nested_inputs
+from nested_inputs import nested_input_definitions
 import copy
 
 class URDB_RateValidator:
@@ -488,8 +488,7 @@ class ValidateNestedInput():
         # User can assume null or unspecified attributes will be converted to defaults
         # User needs to manually overwrite defaults (with zero's) to negate their effect (pass in a federal itc of 0% to model without federal itc)
 
-        # PV and Battery are only created if they are defined in the _tech_set attribute
-
+        # PV and Battery and Wind are always created - Wind turned off by default, PV and Battery On
 
         # LOGIC
         #   To easily map dictionaries into objects and maintain relationships between objects:
@@ -504,8 +503,6 @@ class ValidateNestedInput():
         #               if an attribute is not required and not defined in the dictionary or defined as null, default values will be used later in the code for these values
         #               if an attribtue is required and not defined or defined as null, the entire input is invalid
 
-        #           all keys in the value dictionary that start in upper case recursivley follow this logic
-
         #       if the key does not end in "s" and the value is null:
         #           the object will be created with default values (barring required attributes)
 
@@ -516,18 +513,11 @@ class ValidateNestedInput():
         #   if a key starts with a lowercase letter:
         #       it is an attribute of an object
         #       it's name ends in the units of that attibute
-        #       if it is a list - _list is in the name
-        #       if it is a json to be parsed into a dictionary - _json is in the name
         #       if it is a boolean - name is camelCase starting with can
-        #       if it ends in _pct or _rate - values must be between -1 and 1 inclusive
+        #       if it ends in _pct - values must be between -1 and 1 inclusive
         #       abbreviations in the name are avoided (exceptions include common units/terms like pct, soc...)
         #       if it is a required attribute and the value is null or the key value pair does not exist, the entire input is invalid
         #       if it is not a required attribute and the value is null or the key does not exist, default values will be used
-
-        #   if a key starts with an underscore:
-        #       it it a placeholder, does not create a object and is not an attribute
-        #
-        #       if it ends in 's' it maps to a list of dictionaries, each only having keys that are objects to create, otherwise it maps to single dictionary with all keys being objects to create
 
 
         # EXAMPLE 1 - BASIC POST
@@ -539,7 +529,7 @@ class ValidateNestedInput():
         #             "latitude": 40, "longitude": -123, "LoadProfile": {"building_type": "hospital", "load_size": 10000},
         #             "Utility": {"urdb_rate_json": {}}
         #             }
-        #         }, "_tech_set": {}
+        #         },
         #     }
         #
         # # EXAMPLE 2 - BASIC POST - PV ONLY
@@ -547,25 +537,24 @@ class ValidateNestedInput():
         #     "Scenario": {
         #         "Site": {
         #             "latitude": 40, "longitude": -123, "LoadProfile": {"building_type": "hospital", "load_size": 10000},
-        #             "Utility": {"urdb_rate_json": {}}, "_tech_set": {"PV": {}}
+        #             "Utility": {"urdb_rate_json": {}}, "Storage":{'max_kw':0}
         #             }
         #         }
         #     }
         #
-        # # EXAMPLE 3 - BASIC POST - NO FED ITC FOR PV
+        # # EXAMPLE 3 - BASIC POST - NO FED ITC FOR PV, run battery and pv, no wind
         # {
         #     "Scenario": {
         #         "Site": {
         #             "latitude": 40, "longitude": -123, "LoadProfile": {"building_type": "hospital", "load_size": 10000},
-        #             "Utility": {"urdb_rate_json": {}},
-        #             "_tech_set": {"PV": {"InvestmentIncentive": {"value_max_us_dollar_per_kw": 0}}, "Battery": {}}
+        #             "Utility": {"urdb_rate_json": {}}, "PV": {"itc_federal_us_dollars_per_kw": 0}}
         #             }
         #         }
         #     }
 
 
     def __init__(self, input, nested=False):
-        self.web_inputs = nested_inputs
+        self.nested_input_definitions = nested_input_definitions
         self.input = input
 
         if not nested:
@@ -576,17 +565,18 @@ class ValidateNestedInput():
         self.input_as_none = []
         self.input_not_allowed = []
 
-        self.recursively_check_objectnames_and_values(self.input, self.input, self.remove_invalid_keys)
-        self.recursively_check_objectnames_and_values(self.input, self.input, self.remove_nones)
-        self.recursively_check_objectnames_and_values(self.input, self.input, self.convert_data_types)
-        self.recursively_check_objectnames_and_values(self.template, self.input, self.fillin_default_objects)
+        self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_invalid_keys)
+        self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_nones)
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
 
     @property
     def isValid(self):
 
-        self.recursively_check_objectnames_and_values(self.template, self.input, self.check_special_data_types)
-        self.recursively_check_objectnames_and_values(self.template, self.input, self.check_min_max_restrictions)
-        self.recursively_check_objectnames_and_values(self.template, self.input, self.check_required_attributes)
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+
         if self.input_data_errors or self.urdb_errors:
             return False
 
@@ -621,208 +611,251 @@ class ValidateNestedInput():
     def warnings(self):
         return { "Defaults will be used for": self.warning_message(self.input_as_none), 'Following Inputs Are Not Allowed':self.warning_message(self.input_not_allowed) }
 
-    @property
-    def template(self):
-        return {"Scenario":
-                    {"Site":{
-                            "ElectricTariff":{},
-                            "LoadProfile":{},
-                            "Financial":{},
-                            "_tech_set":{
-
-                                "PV":{
-                                    "PVWatt":{},
-                                    },
-
-                                "Storage":{
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-    def isPlaceholderKey(self,k):
-        if k[0]=='_':
-            return True
-        return False
-
     def isSingularKey(self,k):
-        if self.isPlaceholderKey(k):
-            return False
         return k[0] == k[0].upper() and k[-1]!='s'
 
     def isPluralKey(self,k):
-        if self.isPlaceholderKey(k):
-            return False
         return k[0] == k[0].upper() and k[-1]=='s'
 
     def isAttribute(self,k):
-        if self.isPlaceholderKey(k):
-            return False
         return k[0] == k[0].lower()
 
-    def recursively_check_objectnames_and_values(self, object_name_source_dict, values_source_dict, key_value_function, location=[]):
+    def recursively_check_input_by_objectnames_and_values(self, nested_template, comparison_function, nested_dictionary_to_check = None, object_name_path=[]):
+        #nested template is the nested dictionary that is read to get the order in which objects are nested in each other
+        #nested_dictionary_to_check contains the values for those objects,
+        # think of it as scrolling through the template to get the name of the object and values you're looking for and
+        # then checking the corresponding value in the nested_dictionary_to_check
+        # the key_value_function tells the algorithm what to do when you have the object name (PV) and the user supplied values ('max_kw':0)
+        # nested_dictionary_to_check can be updated based on the key value function
 
-        try:
-            for template_k, template_values in object_name_source_dict.items():
+        # location is
 
-                real_values = values_source_dict.get(template_k)
+        if nested_dictionary_to_check is None:
+            nested_dictionary_to_check = self.input
 
-                if self.isPluralKey(template_k):
-                    singular_k = template_k[:-1]
-                    for i, item in enumerate(real_values):
-                        new_location = copy.copy(location)
-                        new_location.append([template_k,i])
-                        key_value_function(singular_k, item, location = new_location)
-                        self.recursively_check_objectnames_and_values(object_name_source_dict[template_k][0], item, key_value_function,  location = new_location )
+        #try:
+        for template_k, template_values in nested_template.items():
 
-                elif self.isSingularKey(template_k):
-                    new_location = copy.copy(location)
-                    new_location.append([template_k,None])
-                    key_value_function(template_k, real_values,  location = new_location )
-                    self.recursively_check_objectnames_and_values(object_name_source_dict[template_k], real_values or {}, key_value_function, location = new_location)
+            real_values = nested_dictionary_to_check.get(template_k)
 
-                elif self.isPlaceholderKey(template_k):
-                    new_location = copy.copy(location)
-                    new_location.append([template_k,None])
-                    self.recursively_check_objectnames_and_values(object_name_source_dict[template_k], real_values or {}, key_value_function, location = new_location)
-        except:
-            self.input_data_errors.append('Input JSON does not match template %s' % (self.template))
+            if self.isSingularKey(template_k):
+                comparison_function(object_name_path = object_name_path + [template_k], template_values = template_values, real_values = real_values)
+                self.recursively_check_input_by_objectnames_and_values(nested_template[template_k], comparison_function, real_values or {}, object_name_path = object_name_path + [template_k] )
 
-    def update_attribute_value(self, location, attribute, value):
+        #except Exception as e:
+        #    self.input_data_errors.append('Invalid JSON format %s' % (self.nested_input_definitions))
+
+    def update_attribute_value(self, object_name_path, attribute, value):
 
         dictionary = self.input
 
-        for key_num_pair in location:
-            dictionary = dictionary[key_num_pair[0]]
-            if key_num_pair[1] is not None:
-                dictionary = dictionary[key_num_pair[1]]
+        for name in object_name_path:
+            dictionary = dictionary[name]
 
         dictionary[attribute] = value
 
-    def delete_attribute(self, location, parent_key, key):
+    def delete_attribute(self, object_name_path, key):
         dictionary = self.input
 
-        for key_num_pair in location:
-            dictionary = dictionary[key_num_pair[0]]
-
-            if key_num_pair[1] is not None:
-                dictionary=dictionary[key_num_pair[1]]
+        for name in object_name_path:
+            dictionary = dictionary[name]
 
         if key in dictionary.keys():
             del dictionary[key]
 
-    def location_string(self,location):
-        return "/".join([i[0] if i[1] is None else "%s(%s)"%(i[0],i[1]) for i in location])
+    def object_name_string(self,object_name_path):
+        return '>'.join(object_name_path)
 
-    def remove_nones(self, object_name, object_dictionary, location = []):
-        if object_dictionary is not None:
-            for attribute_name,attribute_value in object_dictionary.items():
-                if self.isAttribute(attribute_name):
-                    if attribute_value is None:
-                        self.delete_attribute(location, object_name, attribute_name)
-                        self.input_not_allowed.append([attribute_name,self.location_string(location)])
+    def remove_nones(self,object_name_path, template_values = None, real_values = None):
+        if real_values is not None:
+            for name, value in real_values.items():
+                if self.isAttribute(name):
+                    if value is None:
+                        object_name_path.append(name)
+                        self.delete_attribute(object_name_path, name)
+                        self.input_as_none.append([name,object_name_path[-1]])
+
+    def remove_invalid_keys(self, object_name_path, template_values = None, real_values = None):
+        if real_values is not None:
+            for name,value in real_values.items():
+                if self.isAttribute(name):
+                    if name not in template_values.keys():
+                        object_name_path.append(name)
+                        self.delete_attribute(object_name_path, name)
+                        self.input_not_allowed.append([name,object_name_path[-1]])
+
+    def test_data(self,defintion_attribute):
+
+        self.test_data_list = []
+
+        if defintion_attribute=='min':
+            def swap_logic(object_name_path, name, definition, current_value):
+                attribute_min = definition.get('min')
+                if attribute_min is not None:
+                    new_value = attribute_min -1
+                    self.update_attribute_value(object_name_path, name, new_value)
+                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.update_attribute_value(object_name_path, name, current_value)
+
+        if defintion_attribute=='max':
+            def swap_logic(object_name_path, name, definition, current_value):
+                attribute_max = definition.get('max')
+                if attribute_max is not None:
+                    new_value = attribute_max + 1
+                    self.update_attribute_value(object_name_path, name, new_value)
+                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.update_attribute_value(object_name_path, name, current_value)
+
+        if defintion_attribute=='restrict_to':
+            def swap_logic(object_name_path, name, definition, current_value):
+                attribute = definition.get('restrict_to')
+                if attribute is not None:
+                    new_value = "OOPS"
+                    self.update_attribute_value(object_name_path, name, new_value)
+                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.update_attribute_value(object_name_path, name, current_value)
+
+        if defintion_attribute=='type':
+            def swap_logic(object_name_path, name, definition, current_value):
+                attribute_type = definition['type']
+                value = attribute_type(current_value)
+                if isinstance(value,float) or isinstance(value,int) or isinstance(value,dict) or isinstance(value,bool):
+                    new_value = "OOPS"
+                    self.update_attribute_value(object_name_path, name, new_value)
+                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.update_attribute_value(object_name_path, name, value)
+
+        def add_invalid_data(object_name_path, template_values = None, real_values = None):
+            if real_values is not None:
+                for name,value in template_values.items():
+                    if self.isAttribute(name):
+                        swap_logic(object_name_path,name,value,real_values.get(name))
+
+        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
 
 
-    def remove_invalid_keys(self, object_name, object_dictionary, location = []):
-        if object_dictionary is not None:
-            for attribute_name,attribute_value in object_dictionary.items():
-                if self.isAttribute(attribute_name):
-                    if attribute_name not in self.web_inputs[object_name].keys():
-                        self.delete_attribute(location,object_name, attribute_name)
-                        self.input_as_none.append([attribute_name,self.location_string(location)])
+        return self.test_data_list
 
-    def check_min_max_restrictions(self, object_name, object_dictionary, location = []):
-        if object_dictionary is not None:
-            for attribute_name,attribute_value in object_dictionary.items():
-                if self.isAttribute(attribute_name):
+
+    def check_min_max_restrictions(self, object_name_path, template_values = None, real_values = None):
+        if real_values is not None:
+            for name, value in real_values.items():
+                if self.isAttribute(name):
+
+                    data_validators = template_values[name]
+
                     try:
-                        data_validators = self.web_inputs[object_name][attribute_name]
+                        value == data_validators['type'](value)
 
                         if data_validators.get('min') is not None:
-                            if attribute_value < data_validators['min']:
-                                self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (attribute_name, attribute_value, self.location_string(location), data_validators['min']))
+                            if value < data_validators['min']:
+                                self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (name, value, self.object_name_string(object_name_path), data_validators['min']))
 
                         if data_validators.get('max') is not None:
-                            if attribute_value > data_validators['max']:
-                                self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (attribute_name, attribute_value, self.location_string(location), data_validators['max']))
-
-                        if data_validators.get('restrict_to') is not None:
-                            if attribute_value not in data_validators['restrict_to']:
-                                self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (attribute_name, attribute_value, self.location_string(location), data_validators['restrict_to']))
+                            if value > data_validators['max']:
+                                self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (name, value, self.object_name_string(object_name_path), data_validators['max']))
 
                     except:
-                         self.input_data_errors.append('Could not check min/max/restrictions on %s (%s) in %s' % (attribute_name,attribute_value, self.location_string(location)))
-
-    def check_special_data_types(self, object_name, object_dictionary, location = []):
-        if object_dictionary is not None:
-            for attribute_name,attribute_value in object_dictionary.items():
-                if self.isAttribute(attribute_name):
-
-                    if attribute_name == 'urdb_response' and attribute_value is not None:
-                        try:
-                            rate_checker = URDB_RateValidator(**attribute_value)
-                            if rate_checker.errors:
-                                self.urdb_errors.append(rate_checker.errors)
-                        except:
-                            self.urdb_errors.append('Error parsing urdb rate in %s ' % (self.location_string(location)))
+                        self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (name, value, self.object_name_string(object_name_path)))
 
 
-    def convert_data_types(self, object_name, object_dictionary, location = []):
-        if object_dictionary is not None:
-            for attribute_name,attribute_value in object_dictionary.items():
-                if self.isAttribute(attribute_name):
+                    if data_validators.get('restrict_to') is not None:
+                        if value not in data_validators['restrict_to']:
+                            self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
+
+
+    def check_special_data_types(self,object_name_path, template_values = None, real_values = None):
+        if real_values is not None:
+            urdb_response = real_values.get('urdb_response')
+            if urdb_response is not None:
+                try:
+                    rate_checker = URDB_RateValidator(**urdb_response)
+                    if rate_checker.errors:
+                        self.urdb_errors.append(rate_checker.errors)
+                except:
+                    self.urdb_errors.append('Error parsing urdb rate in %s ' % (object_name_path))
+
+
+    def convert_data_types(self, object_name_path, template_values = None, real_values = None):
+        if real_values is not None:
+            for name,value in real_values.items():
+                if self.isAttribute(name):
                     try:
-                        data_validators = self.web_inputs[object_name][attribute_name]
+                        data_validators = template_values[name]
                         attribute_type = data_validators['type']
-                        new_value = attribute_type(attribute_value)
-                        self.update_attribute_value(location,attribute_name, new_value)
+                        new_value = attribute_type(value)
+                        if not isinstance(new_value, bool):
+                            self.update_attribute_value(object_name_path, name, new_value)
+                        else:
+                            if value not in [True,False,1,0]:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value, self.object_name_string(object_name_path),str(attribute_type).split(' ')[1]))
 
                     except:
-                        self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (attribute_name,attribute_value, self.location_string(location),str(attribute_type).split(' ')[1]))
+                        self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
-    def fillin_default_objects(self, object_name, object_dictionary, location = []):
+    def fillin_defaults(self,object_name_path, template_values = None, real_values = None):
+        for template_key, template_value in template_values.items():
+            if self.isAttribute(template_key):
+                default = template_value.get('default')
+                if default is not None and real_values.get(template_key) is None:
+                    self.update_attribute_value(object_name_path, template_key, default)
 
-        if object_name in ['Scenario','Site','LoadProfile','ElectricTariff','Financial', 'PVWatt']:
-            if object_dictionary is None:
-                self.update_attribute_value(location[:-1], object_name, {})
+            if self.isSingularKey(template_key):
+                if template_key not in real_values.keys():
+                    self.update_attribute_value(object_name_path, template_key, {})
 
+    def check_required_attributes(self, object_name_path, template_values=None, real_values = None):
 
-    def check_required_attributes(self, object_name, object_dictionary, location = []):
+            final_message = ''
 
-            def check_options(options, keys):
-                missing = [[]]
-                input_set = [list(set(o) - set(keys)) for o in options]
-                if [] not in input_set:
-                    missing = []
-                    for i, pair in enumerate(input_set):
-                        if pair not in missing:
-                            missing.append(pair)
-                return missing
+            #conditional check for complex cases where key match at least one valid set
+            def check_satisfies_one_input_set(valid_input_sets, keys):
 
-            object_dictionary = object_dictionary or {}
-            keys = object_dictionary.keys()
+                set_check_results = []
+                for valid_set in valid_input_sets:
+                    set_check_results.append(list(set(valid_set) - set(keys)))
 
-            missing = [[]]
+                if [] not in set_check_results:
+                    needed_keys = []
+                    for check_result in set_check_results:
+                        needed_keys.append(' and '.join(check_result))
 
-            if object_name == "Scenario":
-                missing = [list(set(('Site',)) - set(keys))]
+                    message = ' OR '.join(needed_keys)
+                    return message
 
-            if object_name == "Site":
-                missing = [list(set(('latitude' , 'longitude' , "LoadProfile" , "ElectricTariff","_tech_set")) - set(keys))]
-
-            if object_name ==  "LoadProfile":
-                options =  [['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh'],['loads_kw']]
-                missing = check_options(options,keys)
-
-            if object_name == "ElectricTariff":
-                options = [["blended_monthly_rates_us_dollars_per_kwh", "monthly_demand_charges_us_dollars_per_kw"], ["urdb_response"]]
-                missing = check_options(options, keys)
+                return ''
 
 
-            if missing != [[]]:
-                message = ' OR '.join([' and '.join(m) for m in missing if m])
-                self.input_data_errors.append('Missing Required for %s%s: %s' % (object_name, ' in ' + self.location_string(location) if len(location)>1 else '', message) )
+            keys = real_values.keys()
+
+            if object_name_path[-1] ==  "LoadProfile":
+                must_match_one_of_these_valid_sets =  [['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh'],['loads_kw']]
+                final_message = check_satisfies_one_input_set(must_match_one_of_these_valid_sets, keys)
+
+            if object_name_path[-1] == "ElectricTariff":
+                must_match_one_of_these_valid_sets = [["blended_monthly_rates_us_dollars_per_kwh", "monthly_demand_charges_us_dollars_per_kw"], ["urdb_response"]]
+                final_message = check_satisfies_one_input_set(must_match_one_of_these_valid_sets, keys)
+
+            #check simple required attributes
+
+            missing = []
+            for template_key,template_value in template_values.items():
+                if self.isAttribute(template_key):
+                    if template_value.get('required')==True:
+                        if real_values.get(template_key) is None:
+                            missing.append(template_key)
+
+            if len(missing) > 0:
+                message = ' and '.join(missing)
+                if final_message != '':
+                    final_message += ' and ' + message
+                else:
+                    final_message = message
+
+            if final_message != '':
+                self.input_data_errors.append('Missing Required for %s: %s' % (self.object_name_string(object_name_path),final_message))
+
+
 
     def to_nested_format(self):
         i = self.input
@@ -875,96 +908,89 @@ class ValidateNestedInput():
                             "interconnection_limit_kw": i.get("interconnection_limit"),
                         },
 
-                    "_tech_set": {
-                            "PV":
-                                {
-                                    "min_kw": i.get("pv_kw_min"),
-                                    "max_kw": i.get("pv_kw_max"),
-                                    "installed_cost_us_dollars_per_kw": i.get("pv_cost"),
-                                    "om_cost_us_dollars_per_kw": i.get("pv_om"),
-                                    "degradation_pct": i.get("pv_degradation_rate"),
 
-                                    "PVWatt":{
-                                        "azimuth": i.get("azimuth"),
-                                        "losses": i.get("losses"),
-                                        "array_type": i.get("array_type"),
-                                        "module_type": i.get("module_type"),
-                                        "gcr": i.get("gcr"),
-                                        "dc_ac_ratio": i.get("dc_ac_ratio"),
-                                        "inv_eff": i.get("inv_eff"),
-                                        "radius": i.get("radius"),
-                                        "tilt": i.get("tilt"),
-                                    },
+                    "PV":
+                        {
+                            "min_kw": i.get("pv_kw_min"),
+                            "max_kw": i.get("pv_kw_max"),
+                            "installed_cost_us_dollars_per_kw": i.get("pv_cost"),
+                            "om_cost_us_dollars_per_kw": i.get("pv_om"),
+                            "degradation_pct": i.get("pv_degradation_rate"),
+                            "azimuth": i.get("azimuth"),
+                            "losses": i.get("losses"),
+                            "array_type": i.get("array_type"),
+                            "module_type": i.get("module_type"),
+                            "gcr": i.get("gcr"),
+                            "dc_ac_ratio": i.get("dc_ac_ratio"),
+                            "inv_eff": i.get("inv_eff"),
+                            "radius": i.get("radius"),
+                            "tilt": i.get("tilt"),
+                            "macrs_option_years": i.get("pv_macrs_schedule"),
+                            "macrs_bonus_pct": i.get("pv_macrs_bonus_fraction"),
+                            "federal_itc_pct":i.get("pv_itc_federal"),
+                            "state_ibi_pct": i.get("pv_itc_state"),
+                            "state_ibi_max_us_dollars": i.get("pv_ibi_state_max"),
+                            "utility_ibi_pct": i.get("pv_ibi_utility"),
+                            "utility_ibi_max_us_dollars": i.get("pv_ibi_utility_max"),
+                            "federal_rebate_us_dollars_per_kw": i.get("pv_rebate_federal"),
+                            "state_rebate_us_dollars_per_kw": i.get("pv_rebate_state"),
+                            "state_rebate_max_us_dollars": i.get("pv_rebate_state_max"),
+                            "utility_rebate_us_dollars_per_kw": i.get("pv_rebate_utility"),
+                            "utility_rebate_max_us_dollars":i.get("pv_rebate_utility_max"),
+                            "pbi_us_dollars_per_kwh": i.get("pv_pbi"),
+                            "pbi_max_us_dollars": i.get("pv_pbi_max"),
+                            "pbi_years": i.get("pv_pbi_years"),
+                            "pbi_system_max_kw": i.get("pv_pbi_system_max"),
+                        },
 
-                                    "macrs_option_years": i.get("pv_macrs_schedule"),
-                                    "macrs_bonus_pct": i.get("pv_macrs_bonus_fraction"),
-                                    "federal_itc_pct":i.get("pv_itc_federal"),
-                                    "state_ibi_pct": i.get("pv_itc_state"),
-                                    "state_ibi_max_us_dollars": i.get("pv_ibi_state_max"),
-                                    "utility_ibi_pct": i.get("pv_ibi_utility"),
-                                    "utility_ibi_max_us_dollars": i.get("pv_ibi_utility_max"),
-                                    "federal_rebate_us_dollars_per_kw": i.get("pv_rebate_federal"),
-                                    "state_rebate_us_dollars_per_kw": i.get("pv_rebate_state"),
-                                    "state_rebate_max_us_dollars": i.get("pv_rebate_state_max"),
-                                    "utility_rebate_us_dollars_per_kw": i.get("pv_rebate_utility"),
-                                    "utility_rebate_max_us_dollars":i.get("pv_rebate_utility_max"),
-                                    "pbi_us_dollars_per_kwh": i.get("pv_pbi"),
-                                    "pbi_max_us_dollars": i.get("pv_pbi_max"),
-                                    "pbi_years": i.get("pv_pbi_years"),
-                                    "pbi_system_max_kw": i.get("pv_pbi_system_max"),
+                    "Wind":
+                        {
+                            "min_kw": i.get("wind_kw_min"),
+                            "max_kw": i.get("wind_kw_max"),
+                            "installed_cost_us_dollars_per_kw": i.get("wind_cost"),
+                            "om_cost_us_dollars_per_kw": i.get("wind_om"),
+                            "degradation_pct": i.get("wind_degradation_rate"),
+                            "macrs_option_years": i.get("wind_macrs_schedule"),
+                            "macrs_bonus_pct": i.get("wind_macrs_bonus_fraction"),
+                            "federal_itc_pct": i.get("wind_itc_federal"),
+                            "state_ibi_pct": i.get("wind_ibi_state"),
+                            "state_ibi_max_us_dollars": i.get("wind_ibi_state_max"),
+                            "utility_ibi_pct": i.get("wind_ibi_utility"),
+                            "utility_ibi_max_us_dollars": i.get("wind_ibi_utility_max"),
+                            "federal_rebate_us_dollars_per_kw": i.get("wind_rebate_federal"),
+                            "state_rebate_us_dollars_per_kw": i.get("wind_rebate_state"),
+                            "state_rebate_max_us_dollars": i.get("wind_rebate_state_max"),
+                            "utility_rebate_us_dollars_per_kw": i.get("wind_rebate_utility"),
+                            "utility_rebate_max_us_dollars": i.get("wind_rebate_utility_max"),
+                            "pbi_us_dollars_per_kwh": i.get("wind_pbi"),
+                            "pbi_max_us_dollars": i.get("wind_pbi_max"),
+                            "pbi_years": i.get("wind_pbi_years"),
+                            "pbi_system_max_kw": i.get("wind_pbi_system_max"),
+                        },
 
-                                },
-
-                            "Wind":
-                                {
-                                    "min_kw": i.get("wind_kw_min"),
-                                    "max_kw": i.get("wind_kw_max"),
-                                    "installed_cost_us_dollars_per_kw": i.get("wind_cost"),
-                                    "om_cost_us_dollars_per_kw": i.get("wind_om"),
-                                    "degradation_pct": i.get("wind_degradation_rate"),
-                                    "macrs_option_years": i.get("wind_macrs_schedule"),
-                                    "macrs_bonus_pct": i.get("wind_macrs_bonus_fraction"),
-                                    "federal_itc_pct": i.get("wind_itc_federal"),
-                                    "state_ibi_pct": i.get("wind_ibi_state"),
-                                    "state_ibi_max_us_dollars": i.get("wind_ibi_state_max"),
-                                    "utility_ibi_pct": i.get("wind_ibi_utility"),
-                                    "utility_ibi_max_us_dollars": i.get("wind_ibi_utility_max"),
-                                    "federal_rebate_us_dollars_per_kw": i.get("wind_rebate_federal"),
-                                    "state_rebate_us_dollars_per_kw": i.get("wind_rebate_state"),
-                                    "state_rebate_max_us_dollars": i.get("wind_rebate_state_max"),
-                                    "utility_rebate_us_dollars_per_kw": i.get("wind_rebate_utility"),
-                                    "utility_rebate_max_us_dollars": i.get("wind_rebate_utility_max"),
-                                    "pbi_us_dollars_per_kwh": i.get("wind_pbi"),
-                                    "pbi_max_us_dollars": i.get("wind_pbi_max"),
-                                    "pbi_years": i.get("wind_pbi_years"),
-                                    "pbi_system_max_kw": i.get("wind_pbi_system_max"),
-
-                            "Storage":
-                                {
-                                    "min_kw": i.get("batt_kw_min"),
-                                    "max_kw": i.get("batt_kw_max"),
-                                    "min_kwh": i.get("batt_kwh_min"),
-                                    "max_kwh": i.get("batt_kwh_max"),
-                                    "internal_efficiency_pct": i.get("batt_efficiency"),
-                                    "inverter_efficiency_pct": i.get("batt_inverter_efficiency"),
-                                    "rectifier_efficiency_pct": i.get("batt_rectifier_efficiency"),
-                                    "soc_min_pct": i.get("batt_soc_min"),
-                                    "soc_init_pct": i.get("batt_soc_init"),
-                                    "canGridCharge": i.get("batt_can_gridcharge"),
-                                    "installed_cost_us_dollars_per_kw": i.get("batt_cost_kw"),
-                                    "installed_cost_us_dollars_per_kwh": i.get("batt_cost_kwh"),
-                                    "replace_cost_us_dollars_per_kw": i.get("batt_replacement_cost_kw"),
-                                    "replace_cost_us_dollars_per_kwh": i.get("batt_replacement_cost_kwh"),
-                                    "inverter_replacement_year": i.get("batt_replacement_year_kw"),
-                                    "battery_replacement_year": i.get("batt_replacement_year_kwh"),
-                                    "macrs_option_years": i.get("batt_macrs_schedule"),
-                                    "macrs_bonus_pct": i.get("batt_macrs_bonus_fraction"),
-                                    "total_itc_pct":  i.get("batt_itc_total"),
-                                    "total_rebate_us_dollars_per_kw": i.get("batt_rebate_total"),
-
-                                }
-                            }
+                    "Storage":
+                        {
+                            "min_kw": i.get("batt_kw_min"),
+                            "max_kw": i.get("batt_kw_max"),
+                            "min_kwh": i.get("batt_kwh_min"),
+                            "max_kwh": i.get("batt_kwh_max"),
+                            "internal_efficiency_pct": i.get("batt_efficiency"),
+                            "inverter_efficiency_pct": i.get("batt_inverter_efficiency"),
+                            "rectifier_efficiency_pct": i.get("batt_rectifier_efficiency"),
+                            "soc_min_pct": i.get("batt_soc_min"),
+                            "soc_init_pct": i.get("batt_soc_init"),
+                            "canGridCharge": i.get("batt_can_gridcharge"),
+                            "installed_cost_us_dollars_per_kw": i.get("batt_cost_kw"),
+                            "installed_cost_us_dollars_per_kwh": i.get("batt_cost_kwh"),
+                            "replace_cost_us_dollars_per_kw": i.get("batt_replacement_cost_kw"),
+                            "replace_cost_us_dollars_per_kwh": i.get("batt_replacement_cost_kwh"),
+                            "inverter_replacement_year": i.get("batt_replacement_year_kw"),
+                            "battery_replacement_year": i.get("batt_replacement_year_kwh"),
+                            "macrs_option_years": i.get("batt_macrs_schedule"),
+                            "macrs_bonus_pct": i.get("batt_macrs_bonus_fraction"),
+                            "total_itc_pct":  i.get("batt_itc_total"),
+                            "total_rebate_us_dollars_per_kw": i.get("batt_rebate_total"),
+                        }
                     },
                 }
             }
-        }

@@ -4,7 +4,8 @@ import pickle
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.validators import ValidateNestedInput
-
+from reo.nested_inputs import nested_input_definitions
+from reo.validators import ValidateNestedInput
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
@@ -13,7 +14,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def setUp(self):
         super(EntryResourceTest, self).setUp()
 
-        self.data_definitions = ValidateNestedInput({}).web_inputs
+        self.data_definitions = nested_input_definitions
 
         self.reopt_base = '/api/v1/reopt/'
 
@@ -42,7 +43,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             test_case = self.complete_valid_nestedpost
             del test_case['Scenario']['Site'][r]
             response = self.get_response(test_case)
-            text = "Missing Required for Site in Scenario"
+            text = "Missing Required for Scenario>Site: " + r
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
 
@@ -52,7 +53,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for r in c:
                 del test_case['Scenario']['Site']['ElectricTariff'][r]
             response = self.get_response(test_case)
-            text = "Missing Required for ElectricTariff in Scenario/Site"
+            text = "Missing Required for Scenario>Site>ElectricTariff"
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
         load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
@@ -61,88 +62,42 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for r in c:
                 del test_case['Scenario']['Site']['LoadProfile'][r]
             response = self.get_response(test_case)
-            text = "Missing Required for LoadProfile in Scenario/Site"
+            text = "Missing Required for Scenario>Site>LoadProfile"
             self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
 
-    def swap_attr(dictionary, location, attr, value):
-        base_dictionary = json.load(open('reo/tests/nested_json.json'))
-
-        i = 0
-        for key,num in location:
-            if i==0:
-                dictionary = base_dictionary[key]
-                i+=1
-            else:
-                dictionary = dictionary[key]
-
-                if num is not None:
-                    dictionary = dictionary[num]
-
-            dictionary[attr] = value
-
-        return base_dictionary
-
-    def recursive_attribute_read(self, function, dictionary, location = []):
-
-        for attribute,value in dictionary.items():
-            if attribute[0] == attribute[0].lower() and attribute[0] not in ['_']:
-                function(attribute, value, location = location)
-
-            if attribute[0] == attribute[0].upper():
-                if attribute[-1] == 's':
-                    for i, item in enumerate(value):
-                        new_loc = copy.copy(location)
-                        new_loc.append([attribute, i])
-                        self.recursive_attribute_read(function,item, new_loc)
-                else:
-                    new_loc = copy.copy(location)
-                    new_loc.append([attribute, None])
-                    self.recursive_attribute_read(function, value, new_loc)
-
     def test_valid_data_types(self):
 
-        def function(attribute,value,location = []):
-            if type(value) in [float, int, list, dict]:
-                data = self.swap_attr(location, attribute,"A")
+        input = ValidateNestedInput(self.complete_valid_nestedpost,nested=True)
 
-                response = self.get_response(data)
-                text = "Could not convert " + attribute
+        for attribute, test_data in input.test_data('type'):
 
-                self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
-                self.assertTrue("(A)" in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+            response = self.get_response(test_data)
+            text = "Could not convert " + attribute
 
-        self.recursive_attribute_read(function, self.complete_valid_nestedpost)
+            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+            self.assertTrue("(OOPS)" in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+
 
     def test_valid_data_ranges(self):
 
-        def function(attribute,value,location=[]):
+        input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
 
-            object_name = location[-1][0]
-            if object_name[-1] == 's':
-                object_name = object_name[:-1]
+        for attribute, test_data in input.test_data('min'):
+            text = "exceeds allowable min"
+            response = self.get_response(test_data)
+            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
-            data_defintion = self.data_definitions[object_name][attribute]
-            text = ''
-
-            if data_defintion.get('min') is not None:
-                value = -1e20
-                text = "exceeds allowable min"
-
-            if data_defintion.get('max') is not None:
-                value = 1e20
-                text = "exceeds allowable max"
-
-            if bool(data_defintion.get('restrict_to')):
-                value = "12312321"
-                text = "not in allowable inputs"
-
-            if text:
-                data = self.swap_attr(location, attribute, value)
-                response = self.get_response(data)
+        for attribute, test_data in input.test_data('max'):
+                text =  "exceeds allowable max"
+                response = self.get_response(test_data)
                 self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
 
-        self.recursive_attribute_read(function, self.complete_valid_nestedpost)
+        for attribute, test_data in input.test_data('restrict_to'):
+            text = "not in allowable inputs"
+            response = self.get_response(test_data)
+            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+
 
     def test_urdb_rate(self):
 
