@@ -38,30 +38,11 @@ def write_to_dat(path, var, dat_var, mode='w'):
             _write_var(f, var, dat_var)
 
 
-# class Singleton(type):
-#     """
-#     metaclass for DatFileManager
-#     """
-#     _instances = {}
-#
-#     def __call__(cls, *args, **kwargs):
-#         if cls not in cls._instances:
-#             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-#         else:
-#             # if passing a new run_id, replace old DFM with new one
-#             # probably only used when running tests, but could have application for parallel runs
-#             if 'run_id' in kwargs:
-#                     if kwargs['run_id'] != cls._instances.values()[0].run_id:
-#                         cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-#         return cls._instances[cls]
-
-
 class DatFileManager:
     """
     writes dat files and creates command line strings for dat file paths
     """
 
-    # __metaclass__ = Singleton
     DAT = [None] * 20
     DAT_bau = [None] * 20
     pv = None
