@@ -199,7 +199,7 @@ def inputs(filter='', full_list=False, just_required=False):
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
         'load_year': {'req': False, 'type': float, 'null': True,
-                      'pct': False, 'min': 2017,'max': 2017 + max_years,
+                      'pct': False, 'min': 1900,'max': 2017 + max_years,
                       "needed_for": ['economics'], 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
