@@ -3,7 +3,7 @@ import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator import simulate_outage
-
+from unittest import skip
 
 class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
 

@@ -6,7 +6,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.validators import ValidateNestedInput
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
-
+from unittest import skip
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2

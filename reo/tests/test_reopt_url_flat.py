@@ -25,6 +25,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
         self.url_base = '/api/v1/reopt/'
+        self.invalid_urdb_url = '/reopt/invalid_urdb/'
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -90,6 +91,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data['urdb_rate'] =self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
+        
         invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
         self.assertTrue(data['urdb_rate']['label'] in invalid_list)
 

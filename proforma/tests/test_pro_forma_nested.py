@@ -8,7 +8,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.models import RunOutput
 from django.test import Client
 from proforma.models import ProForma
-
+from unittest import skip
 
 def now():
     return tzlocal.get_localzone().localize(datetime.datetime.now())

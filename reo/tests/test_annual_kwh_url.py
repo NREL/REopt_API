@@ -2,6 +2,7 @@ from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.src.load_profile import BuiltInProfile
 import random
+import json
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
