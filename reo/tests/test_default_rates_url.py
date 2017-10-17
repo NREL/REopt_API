@@ -1,3 +1,5 @@
+from django.test import TestCase
+from tastypie.test import ResourceTestCaseMixin
 from reo.api_definitions import inputs
 
 class DefaultsURLTest(ResourceTestCaseMixin, TestCase):

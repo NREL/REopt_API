@@ -1,3 +1,6 @@
+from django.test import TestCase
+from tastypie.test import ResourceTestCaseMixin
+
 class InvalidURDBURLTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):

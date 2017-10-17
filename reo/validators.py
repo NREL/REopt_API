@@ -6,8 +6,6 @@ from urdb_logger import log_urdb_errors
 from nested_inputs import nested_input_definitions,flat_to_nested
 import copy
 
-from nested_converter import to_nested_format
-
 class URDB_RateValidator:
 
     error_folder = 'urdb_rate_errors'
