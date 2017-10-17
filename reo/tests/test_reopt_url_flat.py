@@ -14,7 +14,7 @@ def u2s(d):
     return {'reopt':{'Error':{str(k):[str(i) for i in v]  for k,v in sub_d.items()}}}
 
 
-class ReoptFlatTest(ResourceTestCaseMixin, TestCase):
+class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
 

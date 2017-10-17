@@ -8,7 +8,7 @@ from resilience_stats.outage_simulator import simulate_outage
 class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
-        super(TestResilStats, self).setUp()
+        super(TestResilStatsNested, self).setUp()
         test_path = os.path.join('resilience_stats', 'tests')
         pv_kw_ac_hourly = list()
         
@@ -157,6 +157,8 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         data = {'run_uuid': reopt_resp['uuid']}
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
+
+        resp_dict = json.loads(resp.content)
         
         self.assertEqual(resp_dict["probs_of_surviving"], [0.0114, 0.0027])
         self.assertEqual(resp_dict["resilience_hours_avg"], 0.01)

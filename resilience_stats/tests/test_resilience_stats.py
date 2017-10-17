@@ -155,7 +155,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
 
-        resp_dict = json.load(resp.content)
+        resp_dict = json.loads(resp.content)
 
         self.assertEqual(resp_dict["probs_of_surviving"], [0.0114, 0.0027])
         self.assertEqual(resp_dict["resilience_hours_avg"], 0.01)

@@ -7,7 +7,7 @@ from reo.validators import ValidateNestedInput
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 
-class ReoptNestedTest(ResourceTestCaseMixin, TestCase):
+class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
 

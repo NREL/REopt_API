@@ -3,9 +3,10 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.src.load_profile import BuiltInProfile
 import random
 
-class AnnualKWHTest(ResourceTestCaseMixin, TestCase):
+class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
+        super(EntryResourceTest, self).setUp()
         self.annual_kwh_url = "/reopt/annual_kwh/"
 
     def test_annual_kwh_random_choice(self):

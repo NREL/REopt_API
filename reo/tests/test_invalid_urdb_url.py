@@ -1,9 +1,10 @@
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
-class InvalidURDBURLTest(ResourceTestCaseMixin, TestCase):
+class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
+    	super(EntryResourceTest, self).setUp()
     	self.invalid_urdb_url = '/reopt/invalid_urdb/'
 
 	def test_problems(self):

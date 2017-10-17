@@ -14,7 +14,7 @@ def now():
     return tzlocal.get_localzone().localize(datetime.datetime.now())
 
 
-class ProFormaNestedTest(ResourceTestCaseMixin, TestCase):
+class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 5e-5
 
