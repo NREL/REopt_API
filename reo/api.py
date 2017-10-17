@@ -65,15 +65,16 @@ class RunInputResource(ModelResource):
             if bundle.errors:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
-            nested_input = ValidateNestedInput(bundle.data, nested=False)
+            incoming_data = ValidateNestedInput(bundle.data, nested=False)
+            valid_input_with_defaults = incoming_data.input
+
         else:  # nested input
-            nested_input = ValidateNestedInput(bundle.data, nested=True)
+            incoming_data = ValidateNestedInput(bundle.data, nested=True)
 
-        if not nested_input.isValid:
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, nested_input.error_response))
+            if not incoming_data.isValid:
+                raise ImmediateHttpResponse(response=self.error_response(bundle.request, incoming_data.error_response))
 
-        from IPython import embed
-        embed()
+            valid_input_with_defaults = incoming_data.input
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
