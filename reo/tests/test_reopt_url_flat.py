@@ -2,8 +2,6 @@ import copy
 import json
 import numpy as np
 import pickle
-import random
-from reo.src.load_profile import BuiltInProfile
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.validators import REoptResourceValidation
@@ -16,7 +14,7 @@ def u2s(d):
     return {'reopt':{'Error':{str(k):[str(i) for i in v]  for k,v in sub_d.items()}}}
 
 
-class EntryResourceTest(ResourceTestCaseMixin, TestCase):
+class ReoptFlatTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
 
@@ -27,9 +25,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.base_case_fields = ['latitude','longitude','urdb_rate','load_profile_name','load_size']
         self.optional = [["urdb_rate"],["blended_utility_rate",'demand_charge']]
         self.url_base = '/api/v1/reopt/'
-        self.default_value_url = '/reopt/default_api_inputs/'
-        self.annual_kwh_url = "/reopt/annual_kwh/"
-        self.invalid_urdb_url = '/reopt/invalid_urdb/'
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -77,19 +72,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def check_data_error_response(self, data, text):	
         response = self.get_response(data)
         self.assertTrue(text in response.content)
-
-    def test_default_api(self):
-      
-        response = self.api_client.get(self.default_value_url)
-        expected_inputs = inputs(full_list=True)
-        for k,v in json.loads(response.content).items():
-            self.assertTrue(expected_inputs[k].get('default')==v)
-
-    def test_problems(self):
-        invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
-        hard_problems = [i[0] for i in csv.reader(open('reo/hard_problems.csv','rb'))]
-        for hp in hard_problems:
-            self.assertTrue(hp in invalid_list)
 
     def test_urdb_rate(self):
         data = self.get_defaults_from_list(self.base_case_fields)
@@ -333,44 +315,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                      completed_checks = set(list(completed_checks) + ['restrict'])
 
         completed_checks = set(checks)
-
-    def test_annual_kwh_random_choice(self):
-        """
-        check a random building's expected annual_kwh
-        """
-        bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
-        city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-        response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg,
-            'latitude': city.lat,
-            'longitude': city.lng,
-        })
-       
-        annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
-        assert annual_kwh_from_api == BuiltInProfile.annual_loads[city.name][bldg]
-   
-
-    def test_annual_kwh_bad_latitude(self):
-        bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
-        city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-       
-        response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg,
-            'latitude': 'bad latitude',
-            'longitude': city.lng,
-        })
-        assert "could not convert string to float" in response.content
-
-    def test_annual_kwh_bad_building_name(self):
-        bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
-        city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-
-        response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg[:-1],
-            'latitude': city.lat,
-            'longitude': city.lng,
-        })
-        assert "Invalid load_profile_name. Select from the following" in response.content
 
     def test_wind(self):
         """
