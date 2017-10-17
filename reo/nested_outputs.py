@@ -1,4 +1,4 @@
-from nested_inputs import nested_inputs, list_of_float
+from nested_inputs import nested_input_definitions, list_of_float
 from datetime import datetime
 
 def list_of_string(input):
@@ -6,7 +6,7 @@ def list_of_string(input):
 
 nested_outputs = {
 
-    "Input": {nested_inputs},
+    "Input": {nested_input_definitions},
 
     "Output": {
 
