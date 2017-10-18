@@ -199,7 +199,7 @@ def inputs(filter='', full_list=False, just_required=False):
                          "tool_tip": 'If the Upload Custom Load Profile box is selected, the user can upload one year (January through December) of hourly load data, in kW, by clicking the browse button and selecting a file.  A sample custom load profile is available here: XX. The file should be formatted as a single column of 8760 rows, beginning in cell A1.  The file should be saved as a .csv. There should be no text in any other column besides column A.  If the file is not the correct number of rows (8,760), or there are rows with 0 entries, the user will receive an error message. Units: kW. This value is not required.'},
 
         'load_year': {'req': False, 'type': float, 'null': True,
-                      'pct': False, 'min': 2017,'max': 2017 + max_years,
+                      'pct': False, 'min': 1900,'max': 2017 + max_years,
                       "needed_for": ['economics'], 'default': 2018,
                       "description": "Year of input load profile", "units": '',
                       "tool_tip": 'Enter the calendar year the load profile represents. This information is needed to correctly apply tariffs that vary by days of the week. Units: calendar year. This value is not required.'},
@@ -476,7 +476,7 @@ def inputs(filter='', full_list=False, just_required=False):
                   "tool_tip": 'Estimated annual PV operation and maintenance (O&M) costs per installed kilowatt. O&M includes asset cleaning, administration costs, and replacing broken components. It also includes the cost of inverter replacement. This value is not required.'},
 
         'wind_kw_max': {'req': False, 'type': float, 'null': False, 'pct': False, "needed_for": ['economics'], 'min': 0,
-                      'max': 1e9, 'default': 1e9,
+                      'max': 1e9, 'default': 0,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The maximum size limits the PV system to no greater than the specified maximum. To remove a technology from consideration in the analysis, set the maximum size to 0.  This value is not required.'},
 
@@ -484,11 +484,6 @@ def inputs(filter='', full_list=False, just_required=False):
                       'max': 1e9, 'default': 0,
                       "description": "Nominal Battery Cost", "units": 'dollars per kilowatt-hour',
                       "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum system size forces a system of at least this size to appear at the site. If there is not enough land available, or if the interconnection limit will not accommodate the system size, the problem will be infeasible. The default value is 0 (no minimum size). This value is not required.'},
-
-        'wind_degradation_rate': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                                'min': 0, 'max': 1, 'default': 0.005,
-                                "description": "Annual Degradation for Solar PV Panels", "units": 'decimal percent',
-                                "tool_tip": 'The percent at which the PV performance is expected to degrage annually.'},
 
         'wind_itc_federal': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
