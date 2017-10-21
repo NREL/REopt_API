@@ -7,6 +7,8 @@ from reo.validators import ValidateNestedInput
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from unittest import skip
+
+
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
@@ -23,7 +25,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     @property
     def complete_valid_nestedpost(self):
-        return  json.load(open('reo/tests/nestedPOST.json'))
+        return json.load(open('reo/tests/nestedPOST.json'))
 
     def make_url(self,string):
         return self.reopt_base + string
@@ -44,8 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             del test_case['Scenario']['Site'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
-
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
         electric_tarrif_cases = [['urdb_response','blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
@@ -54,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['ElectricTariff'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>ElectricTariff"
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
         load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
@@ -63,21 +64,19 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['LoadProfile'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>LoadProfile"
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
-
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
     def test_valid_data_types(self):
 
-        input = ValidateNestedInput(self.complete_valid_nestedpost,nested=True)
+        input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
 
         for attribute, test_data in input.test_data('type'):
 
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
 
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
-            self.assertTrue("(OOPS)" in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
-
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
     def test_valid_data_ranges(self):
 
@@ -86,17 +85,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for attribute, test_data in input.test_data('min'):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+            t = json.loads(response.content)
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
         for attribute, test_data in input.test_data('max'):
-                text =  "exceeds allowable max"
+                text = "exceeds allowable max"
                 response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+                self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['Input Errors']['Data Validation Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
     
     def test_urdb_rate(self):
 

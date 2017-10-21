@@ -71,9 +71,6 @@ class RunInputResource(ModelResource):
         else:  # nested input
             incoming_data = ValidateNestedInput(bundle.data, nested=True)
 
-            if not incoming_data.isValid:
-                raise ImmediateHttpResponse(response=self.error_response(bundle.request, incoming_data.error_response))
-
             valid_input_with_defaults = incoming_data.input_dict
 
         # Format  and  Save Inputs
@@ -82,29 +79,46 @@ class RunInputResource(ModelResource):
 
         run = RunInput(**model_inputs)
         run.save()
-        try:
-            # Return  Results
-            output_model = self.create_output(model_inputs, bundle.data)
 
-            bundle.obj = output_model
-            bundle.data = {k:v for k,v in output_model.__dict__.items() if not k.startswith('_')}
+        # Return  Results
+        output_model = self.create_output(model_inputs, bundle.data, incoming_data)
 
-            return self.full_hydrate(bundle)
+        bundle.obj = output_model
+        bundle.data = {k: v for k, v in output_model.__dict__.items() if not k.startswith('_')}
 
-        except Exception as e:
-            raise ImmediateHttpResponse(response=self.error_response(bundle.request, API_Error(e).response))
+        return self.full_hydrate(bundle)
 
-    def create_output(self, inputs_dict, json_POST):
+    def create_output(self, inputs_dict, json_POST, input_validator):
 
         run_uuid = uuid.uuid4()
 
-        run_set = DatLibrary(run_uuid=run_uuid, inputs_dict=inputs_dict)
+        if not input_validator.isValid:
+            output_dictionary = {
+                "messages": {
+                    "errors": input_validator.errors,
+                    "warnings": input_validator.warnings
+                },
+                "inputs": json_POST,
+            }
 
-        # Log POST request
-        run_set.log_post(json_POST)
+        else:
+            try: # should return output structure to match new nested_outputs, even with exception
+                run_set = DatLibrary(run_uuid=run_uuid, inputs_dict=inputs_dict)
 
-        # Run Optimization
-        output_dictionary = run_set.run()
+                # Log POST request
+                run_set.log_post(json_POST)
+
+                # Run Optimization
+                output_dictionary = run_set.run()
+
+            except Exception as e:
+                output_dictionary = {
+                    # "Input": inputs_dict,
+                    "messages": {
+                        "error": e,
+                        "warnings": input_validator.warnings,
+                    }
+                }
 
         # API level outputs
         output_dictionary['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?

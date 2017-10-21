@@ -168,11 +168,18 @@ class RunInput(models.Model):
     wind_macrs_schedule = models.IntegerField(null=True, blank=True)
     wind_macrs_bonus_fraction = models.FloatField(null=True, blank=True)
     wind_macrs_itc_reduction = models.FloatField(null=True, blank=True)
-            
-    
+
+
+# class Messages(models.Model):
+#     warnings = ArrayField(models.TextField(blank=True), null=True, blank=True)
+#     error = models.TextField(blank=True)
+
+
 class RunOutput(models.Model):
 
-    user = models.ForeignKey(User, null=True) 
+    user = models.ForeignKey(User, null=True)
+    messages = PickledObjectField(null=True)
+    inputs = PickledObjectField(null=True)
 
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     run_input_id = models.IntegerField(null=False)
@@ -798,4 +805,3 @@ class RunOutput(models.Model):
         self.npv = np.npv(self.owner_discount_rate, after_tax_cash_flow)
         self.lcc = -np.npv(self.owner_discount_rate, net_annual_costs_with_system)
         self.lcc_bau = -np.npv(self.owner_discount_rate, net_annual_costs_without_system)
-
