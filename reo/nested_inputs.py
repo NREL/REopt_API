@@ -1,25 +1,27 @@
 max_big_number = 1e8
 max_incentive = 1e10
 max_years = 75
-macrs_schedules = [0,5,7]
+macrs_schedules = [0, 5, 7]
 analysis_period = 20
-providers = ['federal','state','utility']
-default_buildings =  [  'FastFoodRest',
-                    'FullServiceRest',
-                    'Hospital',
-                    'LargeHotel',
-                    'LargeOffice',
-                    'MediumOffice',
-                    'MidriseApartment',
-                    'Outpatient',
-                    'PrimarySchool',
-                    'RetailStore',
-                    'SecondarySchool',
-                    'SmallHotel',
-                    'SmallOffice',
-                    'StripMall',
-                    'Supermarket',
-                    'Warehouse']
+providers = ['federal', 'state', 'utility']
+default_buildings = ['FastFoodRest',
+                     'FullServiceRest',
+                     'Hospital',
+                     'LargeHotel',
+                     'LargeOffice',
+                     'MediumOffice',
+                     'MidriseApartment',
+                     'Outpatient',
+                     'PrimarySchool',
+                     'RetailStore',
+                     'SecondarySchool',
+                     'SmallHotel',
+                     'SmallOffice',
+                     'StripMall',
+                     'Supermarket',
+                     'Warehouse',
+                     ]
+
 
 def list_of_float(input):
     return [float(i) for i in input]
@@ -29,7 +31,7 @@ nested_input_definitions = {
     "Scenario": {
                 "timeout_seconds":      { 'type': float,'min': 1, 'max': 295, 'default': 295},
                 "user_id":              { 'type': str },
-                "time_steps_per_hour":  { 'type': float, 'min': 1, 'max': 1, 'default': 1}, #aspirational - we only handle 1 timetep per hour really, this touches all of the code really
+                "time_steps_per_hour":  { 'type': float, 'min': 1, 'max': 1, 'default': 1}, # aspirational - we only handle 1 timestep per hour
 
 
                 "Site": {
@@ -41,8 +43,8 @@ nested_input_definitions = {
                              "outage_end_hour":     { 'type': int , 'min': 0, 'max': 8759 },
                              "critical_load_pct":   { 'type': float, 'min': 0, 'max': 1, 'default': 0.5 },
 
-                             "Financial":
-                                    {   "om_cost_growth_pct":   { 'type': float, 'min': -1, 'max': 1, 'default': 0.025 },
+                             "Financial": {
+                                        "om_cost_growth_pct":   { 'type': float, 'min': -1, 'max': 1, 'default': 0.025 },
                                         "escalation_pct":       { 'type': float,'min': -1, 'max': 1, 'default': 0.026  },
                                         "owner_tax_pct":        { 'type': float,'min': -1, 'max': 1 },
                                         "offtaker_tax_pct":     { 'type': float,'min': -1, 'max': 1, 'default': 0.4  },
@@ -51,7 +53,7 @@ nested_input_definitions = {
                                         "analysis_years":       { 'type': int,'min': 0, 'max': max_years, 'default': analysis_period }
                                         },
 
-                            "LoadProfile":{
+                            "LoadProfile": {
                                             "doe_reference_name":   { 'type': str, 'restrict_to':default_buildings },
                                             "annual_kwh":           { 'type': float, 'min': 0, 'max': 1e12 },
                                             "year":                 { 'type': int, 'min': 2017, 'max': 2017+max_years, 'default': 2018 },
@@ -71,7 +73,7 @@ nested_input_definitions = {
                                                 "urdb_label":                               { 'type': str }
                                         },
 
-                            "Wind":{
+                            "Wind": {
                                                 "min_kw":                               {  'type': float, 'min': 0, 'max': 1e9, 'default': 0  },
                                                 "max_kw":                               { 'type': float, 'min': 0, 'max': 1e9, 'default': 0  },
                                                 "installed_cost_us_dollars_per_kw":     { 'type': float, 'min': 0, 'max': 1e5, 'default': 2000 },
@@ -94,7 +96,7 @@ nested_input_definitions = {
                                                 "pbi_system_max_kw":                    { 'type': float,'min': 0, 'max': 1e9, 'default': 1e9},
                                                 },
 
-                            "PV":{
+                            "PV": {
                                                 "min_kw":                               { 'type': float, 'min': 0, 'max': 1e9, 'default': 0  },
                                                 "max_kw":                               { 'type': float, 'min': 0, 'max': 1e9, 'default': 1e9  },
                                                 "installed_cost_us_dollars_per_kw":     { 'type': float, 'min': 0, 'max': 1e5, 'default': 2000 },
@@ -128,7 +130,7 @@ nested_input_definitions = {
                                                 },
 
 
-                            "Storage":{         "min_kw":                               { 'type': float,'min': 0, 'max': 1e9, 'default': 0 },
+                            "Storage": {        "min_kw":                               { 'type': float,'min': 0, 'max': 1e9, 'default': 0 },
                                                 "max_kw":                               { 'type': float,'min': 0, 'max': 1e9, 'default': 1000000 },
                                                 "min_kwh":                              { 'type': float,'min': 0, 'default': 0 },
                                                 "max_kwh":                              { 'type': float,'min': 0, 'default': 1000000 },

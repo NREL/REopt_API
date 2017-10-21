@@ -66,7 +66,7 @@ class RunInputResource(ModelResource):
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
             incoming_data = ValidateNestedInput(bundle.data, nested=False)
-            valid_input_with_defaults = incoming_data.input
+            valid_input_with_defaults = incoming_data.input_dict
 
         else:  # nested input
             incoming_data = ValidateNestedInput(bundle.data, nested=True)
@@ -74,7 +74,7 @@ class RunInputResource(ModelResource):
             if not incoming_data.isValid:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, incoming_data.error_response))
 
-            valid_input_with_defaults = incoming_data.input
+            valid_input_with_defaults = incoming_data.input_dict
 
         # Format  and  Save Inputs
         model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })

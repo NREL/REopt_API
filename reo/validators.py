@@ -3,7 +3,7 @@ import numpy as np
 from api_definitions import inputs
 from log_levels import log
 from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions,flat_to_nested
+from nested_inputs import nested_input_definitions, flat_to_nested
 import copy
 
 class URDB_RateValidator:
@@ -325,7 +325,7 @@ class REoptResourceValidation(Validation):
 
         return errors
 
-    def check_input_format(self,key,value,field_definition):
+    def check_input_format(self, key, value, field_definition):
 
         invalid_msg = 'Invalid format: Expected %s, got %s'\
                       % (field_definition['type'].__name__, type(value).__name__)
@@ -385,19 +385,19 @@ class REoptResourceValidation(Validation):
             errors['Error']  =  {key: value}
         return errors
 
-    def get_missing_required_message(self, input):
+    def get_missing_required_message(self, input_arg):
         definition_values = inputs(full_list=True)
-        depends = definition_values[input].get('depends_on')
+        depends = definition_values[input_arg].get('depends_on')
  
         if depends is not None:
-            fields = sorted([input] + depends)
-            input = fields[0]
+            fields = sorted([input_arg] + depends)
+            input_arg = fields[0]
             depends = fields[1:]
 
-        swap = definition_values[input].get('swap_for')
-        alt_field = definition_values[input].get('alt_field')
+        swap = definition_values[input_arg].get('swap_for')
+        alt_field = definition_values[input_arg].get('alt_field')
 
-        message = "(" + input
+        message = "(" + input_arg
        
         if alt_field is not None:
             message += " (or %s)" % (alt_field)
@@ -410,16 +410,16 @@ class REoptResourceValidation(Validation):
                 	
         return message
 
-    def get_missing_dependency_message(self, input):
-        definition_values = inputs(full_list=True)[input]
+    def get_missing_dependency_message(self, input_arg):
+        definition_values = inputs(full_list=True)[input_arg]
 
         dependency_of = []
         for k, v in inputs(full_list=True).items():
             value = v.get('depends_on')
             if value is not None:
-                if input in value:
+                if input_arg in value:
                     dependency_of.append(k)
-        return "%s (%s depend(s) on this input.)" % (input, "  and ".join(dependency_of))
+        return "%s (%s depend(s) on this input.)" % (input_arg, "  and ".join(dependency_of))
 
     def missing_dependencies(self, key_list, exclude=[]):
         # Check if field depends on non-required fields
@@ -440,7 +440,7 @@ class REoptResourceValidation(Validation):
             swap_exists = True
         return swap_exists
 
-    def missing_required(self,key_list):
+    def missing_required(self, key_list):
         required = inputs(just_required=True)
         used_swaps = []
         output = []
@@ -480,7 +480,7 @@ class REoptResourceValidation(Validation):
         return []
 
 
-class ValidateNestedInput():
+class ValidateNestedInput:
         # ASSUMPTIONS:
         # User only has to specify each attribute once
         # User at minimum only needs to pass in required information, failing to input in a required attribute renders the whole input invalid
@@ -488,7 +488,7 @@ class ValidateNestedInput():
         # User can assume null or unspecified attributes will be converted to defaults
         # User needs to manually overwrite defaults (with zero's) to negate their effect (pass in a federal itc of 0% to model without federal itc)
 
-        # PV and Battery and Wind are always created - Wind turned off by default, PV and Battery On
+        # Wind turned off by default, PV and Battery created by default
 
         # LOGIC
         #   To easily map dictionaries into objects and maintain relationships between objects:
@@ -552,30 +552,65 @@ class ValidateNestedInput():
         #         }
         #     }
 
-
-    def __init__(self, input, nested=False):
+    def __init__(self, input_dict, nested=False):
         self.nested_input_definitions = nested_input_definitions
-        self.input = input
+        self.input_dict = input_dict
 
         if not nested:
-            self.input = flat_to_nested(input)
+            self.input_dict = flat_to_nested(input_dict)
 
         self.input_data_errors = []
         self.urdb_errors = []
         self.input_as_none = []
-        self.input_not_allowed = []
+        self.invalid_inputs = []
 
-        self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_invalid_keys)
-        self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_nones)
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
+        self.recursively_check_input(nested_template=self.input_dict,
+                                     comparison_function=self.remove_invalid_keys)
+
+        self.recursively_check_input(nested_template=self.input_dict,
+                                     comparison_function=self.remove_nones)
+
+        self.recursively_check_input(nested_template=self.nested_input_definitions,
+                                     comparison_function=self.convert_data_types)
+
+        self.recursively_check_input(nested_template=self.nested_input_definitions,
+                                     comparison_function=self.fillin_defaults)
+
+    def recursively_check_input(self, nested_template, comparison_function, nested_dictionary_to_check=None,
+                                object_name_path=[]):
+        """
+
+        :param nested_template: nested dictionary that is read to get the order in which objects are nested in each
+            other.
+        :param comparison_function: tells the algorithm what to do when you have the object name (PV) and the user
+            supplied values ('max_kw':0).
+        :param nested_dictionary_to_check: input dictionary values
+        :param object_name_path: list of str, keys that access the values that are being validated
+        :return:
+        """
+
+        if nested_dictionary_to_check is None:
+            nested_dictionary_to_check = self.input_dict
+
+        for template_key, template_values in nested_template.items():
+
+            input_values = nested_dictionary_to_check.get(template_key)
+
+            if self.isSingularKey(template_key):
+                comparison_function(object_name_path=object_name_path + [template_key],
+                                    template_values=template_values, input_values=input_values)
+
+                self.recursively_check_input(nested_template[template_key], comparison_function,
+                                             nested_dictionary_to_check=input_values or {},
+                                             object_name_path=object_name_path + [template_key]
+                                             )
 
     @property
     def isValid(self):
 
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+        self.recursively_check_input(self.nested_input_definitions, self.check_special_data_types)
+        self.recursively_check_input(self.nested_input_definitions, self.check_min_max_restrictions)
+        self.recursively_check_input(self.nested_input_definitions, self.check_required_attributes)
 
         if self.input_data_errors or self.urdb_errors:
             return False
@@ -584,15 +619,22 @@ class ValidateNestedInput():
 
     @property
     def error_response(self):
-        return {"Input Errors":self.errors, "Warnings":self.warnings}
+        return {"Input Errors":self.errors, "Warnings": self.warnings}
 
-    def warning_message(self, warnings):
+    @staticmethod
+    def warning_message(warnings):
+        """
+        Convert a list of lists into a dictionary
+        :param warnings: list of lists, where each interior list contains two values: the first value is the name of a
+            argument, the second value is the path to that argument in the nested input
+        :return: dictionary with keys for the nested paths and values for the arguments contained at those paths
+        """
         output = {}
-        for a,b in warnings:
-            if b not in output:
-                output[b] = [a]
+        for arg, path in warnings:
+            if path not in output:
+                output[path] = [arg]
             else:
-                output[b].append(a)
+                output[path].append(arg)
         return output
 
     @property
@@ -609,45 +651,37 @@ class ValidateNestedInput():
 
     @property
     def warnings(self):
-        return { "Defaults will be used for": self.warning_message(self.input_as_none), 'Following Inputs Are Not Allowed':self.warning_message(self.input_not_allowed) }
+        return {"Defaults will be used for": self.warning_message(self.input_as_none),
+                'Following Inputs Are Not Allowed': self.warning_message(self.invalid_inputs)
+                }
 
-    def isSingularKey(self,k):
-        return k[0] == k[0].upper() and k[-1]!='s'
+    def isSingularKey(self, k):
+        """
+        test if string k is capitalized and the last char is not 's'
+        :param k: string to test
+        :return: True/False
+        """
+        return k[0] == k[0].upper() and k[-1] != 's'
 
-    def isPluralKey(self,k):
-        return k[0] == k[0].upper() and k[-1]=='s'
+    def isPluralKey(self, k):
+        """
+        test if string k is capitalized and the last char is 's'
+        :param k: string to test
+        :return: True/False
+        """
+        return k[0] == k[0].upper() and k[-1] == 's'
 
-    def isAttribute(self,k):
+    def isAttribute(self, k):
+        """
+        tests if string k is lower case
+        :param k: string to test
+        :return: True/False
+        """
         return k[0] == k[0].lower()
-
-    def recursively_check_input_by_objectnames_and_values(self, nested_template, comparison_function, nested_dictionary_to_check = None, object_name_path=[]):
-        #nested template is the nested dictionary that is read to get the order in which objects are nested in each other
-        #nested_dictionary_to_check contains the values for those objects,
-        # think of it as scrolling through the template to get the name of the object and values you're looking for and
-        # then checking the corresponding value in the nested_dictionary_to_check
-        # the key_value_function tells the algorithm what to do when you have the object name (PV) and the user supplied values ('max_kw':0)
-        # nested_dictionary_to_check can be updated based on the key value function
-
-        # location is
-
-        if nested_dictionary_to_check is None:
-            nested_dictionary_to_check = self.input
-
-        #try:
-        for template_k, template_values in nested_template.items():
-
-            real_values = nested_dictionary_to_check.get(template_k)
-
-            if self.isSingularKey(template_k):
-                comparison_function(object_name_path = object_name_path + [template_k], template_values = template_values, real_values = real_values)
-                self.recursively_check_input_by_objectnames_and_values(nested_template[template_k], comparison_function, real_values or {}, object_name_path = object_name_path + [template_k] )
-
-        #except Exception as e:
-        #    self.input_data_errors.append('Invalid JSON format %s' % (self.nested_input_definitions))
 
     def update_attribute_value(self, object_name_path, attribute, value):
 
-        dictionary = self.input
+        dictionary = self.input_dict
 
         for name in object_name_path:
             dictionary = dictionary[name]
@@ -655,8 +689,14 @@ class ValidateNestedInput():
         dictionary[attribute] = value
 
     def delete_attribute(self, object_name_path, key):
+        """
+        Delete key in self.input_dict
+        :param object_name_path: list of strings, which are the ordered keys to access the value in self.input_dict
+        :param key: str, key to delete in self.input_dict
+        :return: None
+        """
 
-        dictionary = self.input
+        dictionary = self.input_dict
 
         for name in object_name_path:
             dictionary = dictionary[name]
@@ -664,26 +704,26 @@ class ValidateNestedInput():
         if key in dictionary.keys():
             del dictionary[key]
 
-    def object_name_string(self,object_name_path):
+    def object_name_string(self, object_name_path):
         return '>'.join(object_name_path)
 
-    def remove_nones(self,object_name_path, template_values = None, real_values = None):
-        if real_values is not None:
-            for name, value in real_values.items():
+    def remove_nones(self, object_name_path, template_values=None, input_values=None):
+        if input_values is not None:
+            for name, value in input_values.items():
                 if self.isAttribute(name):
                     if value is None:
                         self.delete_attribute(object_name_path, name)
-                        self.input_as_none.append([name,object_name_path[-1]])
+                        self.input_as_none.append([name, object_name_path[-1]])
 
-    def remove_invalid_keys(self, object_name_path, template_values = None, real_values = None):
-        if real_values is not None:
-            for name,value in real_values.items():
+    def remove_invalid_keys(self, object_name_path, template_values=None, input_values=None):
+        if input_values is not None:
+            for name, value in input_values.items():
                 if self.isAttribute(name):
                     if name not in template_values.keys():
                         self.delete_attribute(object_name_path, name)
-                        self.input_not_allowed.append([name,object_name_path[-1]])
+                        self.invalid_inputs.append([name, object_name_path[-1]])
 
-    def test_data(self,defintion_attribute):
+    def test_data(self, defintion_attribute):
 
         self.test_data_list = []
 
@@ -693,7 +733,7 @@ class ValidateNestedInput():
                 if attribute_min is not None:
                     new_value = attribute_min -1
                     self.update_attribute_value(object_name_path, name, new_value)
-                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, name, current_value)
 
         if defintion_attribute=='max':
@@ -702,7 +742,7 @@ class ValidateNestedInput():
                 if attribute_max is not None:
                     new_value = attribute_max + 1
                     self.update_attribute_value(object_name_path, name, new_value)
-                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, name, current_value)
 
         if defintion_attribute=='restrict_to':
@@ -711,7 +751,7 @@ class ValidateNestedInput():
                 if attribute is not None:
                     new_value = "OOPS"
                     self.update_attribute_value(object_name_path, name, new_value)
-                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, name, current_value)
 
         if defintion_attribute=='type':
@@ -721,24 +761,23 @@ class ValidateNestedInput():
                 if isinstance(value,float) or isinstance(value,int) or isinstance(value,dict) or isinstance(value,bool):
                     new_value = "OOPS"
                     self.update_attribute_value(object_name_path, name, new_value)
-                    self.test_data_list.append([name, copy.deepcopy(self.input)])
+                    self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
                     self.update_attribute_value(object_name_path, name, value)
 
-        def add_invalid_data(object_name_path, template_values = None, real_values = None):
-            if real_values is not None:
+        def add_invalid_data(object_name_path, template_values=None, input_values=None):
+            if input_values is not None:
                 for name,value in template_values.items():
                     if self.isAttribute(name):
-                        swap_logic(object_name_path,name,value,real_values.get(name))
+                        swap_logic(object_name_path,name,value,input_values.get(name))
 
-        self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
+        self.recursively_check_input(self.nested_input_definitions, add_invalid_data)
 
 
         return self.test_data_list
 
-
-    def check_min_max_restrictions(self, object_name_path, template_values = None, real_values = None):
-        if real_values is not None:
-            for name, value in real_values.items():
+    def check_min_max_restrictions(self, object_name_path, template_values=None, input_values=None):
+        if input_values is not None:
+            for name, value in input_values.items():
                 if self.isAttribute(name):
 
                     data_validators = template_values[name]
@@ -762,10 +801,9 @@ class ValidateNestedInput():
                         if value not in data_validators['restrict_to']:
                             self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
 
-
-    def check_special_data_types(self,object_name_path, template_values = None, real_values = None):
-        if real_values is not None:
-            urdb_response = real_values.get('urdb_response')
+    def check_special_data_types(self, object_name_path, template_values=None, input_values=None):
+        if input_values is not None:
+            urdb_response = input_values.get('urdb_response')
             if urdb_response is not None:
                 try:
                     rate_checker = URDB_RateValidator(**urdb_response)
@@ -774,10 +812,9 @@ class ValidateNestedInput():
                 except:
                     self.urdb_errors.append('Error parsing urdb rate in %s ' % (object_name_path))
 
-
-    def convert_data_types(self, object_name_path, template_values = None, real_values = None):
-        if real_values is not None:
-            for name,value in real_values.items():
+    def convert_data_types(self, object_name_path, template_values=None, input_values=None):
+        if input_values is not None:
+            for name,value in input_values.items():
                 if self.isAttribute(name):
                     try:
                         data_validators = template_values[name]
@@ -792,18 +829,18 @@ class ValidateNestedInput():
                     except:
                         self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
-    def fillin_defaults(self,object_name_path, template_values = None, real_values = None):
+    def fillin_defaults(self, object_name_path, template_values=None, input_values=None):
         for template_key, template_value in template_values.items():
             if self.isAttribute(template_key):
                 default = template_value.get('default')
-                if default is not None and real_values.get(template_key) is None:
+                if default is not None and input_values.get(template_key) is None:
                     self.update_attribute_value(object_name_path, template_key, default)
 
             if self.isSingularKey(template_key):
-                if template_key not in real_values.keys():
+                if template_key not in input_values.keys():
                     self.update_attribute_value(object_name_path, template_key, {})
 
-    def check_required_attributes(self, object_name_path, template_values=None, real_values = None):
+    def check_required_attributes(self, object_name_path, template_values=None, input_values=None):
 
             final_message = ''
 
@@ -825,7 +862,7 @@ class ValidateNestedInput():
                 return ''
 
 
-            keys = real_values.keys()
+            keys = input_values.keys()
 
             if object_name_path[-1] ==  "LoadProfile":
                 must_match_one_of_these_valid_sets =  [['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh'],['loads_kw']]
@@ -841,7 +878,7 @@ class ValidateNestedInput():
             for template_key,template_value in template_values.items():
                 if self.isAttribute(template_key):
                     if template_value.get('required')==True:
-                        if real_values.get(template_key) is None:
+                        if input_values.get(template_key) is None:
                             missing.append(template_key)
 
             if len(missing) > 0:
