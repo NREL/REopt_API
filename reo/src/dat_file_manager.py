@@ -198,18 +198,18 @@ class DatFileManager:
             
     def _get_REopt_pwfs(self, techs):
 
-        sf = self.site.financials
-        pwf_owner = annuity(sf.analysis_period, 0, sf.owner_discount_rate) # not used in REopt
-        pwf_offtaker = annuity(sf.analysis_period, 0, sf.offtaker_discount_rate)  # not used in REopt
-        pwf_om = annuity(sf.analysis_period, sf.om_cost_growth_rate, sf.owner_discount_rate)
-        pwf_e = annuity(sf.analysis_period, sf.rate_escalation, sf.offtaker_discount_rate)
-        # pwf_op = annuity(sf.analysis_period, sf.rate_escalation, sf.owner_discount_rate)
+        sf = self.site.financial
+        pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
+        pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
+        pwf_om = annuity(sf.analysis_years, sf.om_cost_growth_pct, sf.owner_discount_pct)
+        pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
-        if pwf_owner == 0 or sf.owner_tax_rate == 0:
+        if pwf_owner == 0 or sf.owner_tax_pct == 0:
             two_party_factor = 0
         else:
-            two_party_factor = (pwf_offtaker * sf.offtaker_tax_rate) \
-                                / (pwf_owner * sf.owner_tax_rate)
+            two_party_factor = (pwf_offtaker * sf.offtaker_tax_pct) \
+                                / (pwf_owner * sf.owner_tax_pct)
 
         levelization_factor = list()
         production_incentive_levelization_factor = list()
@@ -225,7 +225,7 @@ class DatFileManager:
                     # does not escalate in out years.
                     ################
                     degradation_rate = eval('self.' + tech + '.degradation_rate')
-                    levelization_factor.append(round(degradation_factor(sf.analysis_period, degradation_rate), 5))
+                    levelization_factor.append(round(degradation_factor(sf.analysis_years, degradation_rate), 5))
                     production_incentive_levelization_factor.append(
                         round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
                                                  degradation_rate), 5))
@@ -239,7 +239,7 @@ class DatFileManager:
 
     def _get_REopt_production_incentives(self, techs):
 
-        sf = self.site.financials
+        sf = self.site.financial
         pwf_prod_incent = list()
         prod_incent_rate = list()
         max_prod_incent = list()
@@ -254,7 +254,7 @@ class DatFileManager:
                     # prod incentives don't need escalation
                     pwf_prod_incent.append(
                         annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                0, sf.offtaker_discount_rate)
+                                0, sf.offtaker_discount_pct)
                     )
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
@@ -480,12 +480,12 @@ class DatFileManager:
                         rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
-                    sf = self.site.financials
+                    sf = self.site.financial
                     updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
                                                                  0,
-                                                                 sf.analysis_period,
-                                                                 sf.owner_discount_rate,
-                                                                 sf.owner_tax_rate,
+                                                                 sf.analysis_years,
+                                                                 sf.owner_discount_pct,
+                                                                 sf.owner_tax_pct,
                                                                  itc,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
@@ -698,12 +698,12 @@ class DatFileManager:
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
-        sf = self.site.financials
+        sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
                                                         self.storage.replace_cost_us_dollars_per_kw,
                                                         self.storage.inverter_replacement_year,
-                                                        sf.owner_discount_rate,
-                                                        sf.owner_tax_rate,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
                                                         self.storage.incentives.itc_pct,
                                                         self.storage.incentives.macrs_schedule,
                                                         self.storage.incentives.macrs_bonus_pct,
@@ -712,8 +712,8 @@ class DatFileManager:
         StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
                                                          self.storage.replace_cost_us_dollars_per_kwh,
                                                          self.storage.battery_replacement_year,
-                                                         sf.owner_discount_rate,
-                                                         sf.owner_tax_rate,
+                                                         sf.owner_discount_pct,
+                                                         sf.owner_tax_pct,
                                                          self.storage.incentives.itc_pct,
                                                          self.storage.incentives.macrs_schedule,
                                                          self.storage.incentives.macrs_bonus_pct,
@@ -776,12 +776,12 @@ class DatFileManager:
         write_to_dat(self.file_economics, cap_cost_slope, 'CapCostSlope', mode='a')
         write_to_dat(self.file_economics, cap_cost_x, 'CapCostX', mode='a')
         write_to_dat(self.file_economics, cap_cost_yint, 'CapCostYInt', mode='a')
-        write_to_dat(self.file_economics, sf.owner_tax_rate, 'r_tax_owner', mode='a')
-        write_to_dat(self.file_economics, sf.offtaker_tax_rate, 'r_tax_offtaker', mode='a')
+        write_to_dat(self.file_economics, sf.owner_tax_pct, 'r_tax_owner', mode='a')
+        write_to_dat(self.file_economics, sf.offtaker_tax_pct, 'r_tax_offtaker', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
-        write_to_dat(self.file_economics, sf.analysis_period, 'analysis_period', mode='a')
+        write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
         write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau, 'LevelizationFactorProdIncent', mode='a')
@@ -795,12 +795,12 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, cap_cost_slope_bau, 'CapCostSlope', mode='a')
         write_to_dat(self.file_economics_bau, cap_cost_x_bau, 'CapCostX', mode='a')
         write_to_dat(self.file_economics_bau, cap_cost_yint_bau, 'CapCostYInt', mode='a')
-        write_to_dat(self.file_economics_bau, sf.owner_tax_rate, 'r_tax_owner', mode='a')
-        write_to_dat(self.file_economics_bau, sf.offtaker_tax_rate, 'r_tax_offtaker', mode='a')
+        write_to_dat(self.file_economics_bau, sf.owner_tax_pct, 'r_tax_owner', mode='a')
+        write_to_dat(self.file_economics_bau, sf.offtaker_tax_pct, 'r_tax_offtaker', mode='a')
         write_to_dat(self.file_economics_bau, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
-        write_to_dat(self.file_economics_bau, sf.analysis_period, 'analysis_period', mode='a')
+        write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
 
         # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,

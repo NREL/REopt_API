@@ -108,14 +108,13 @@ class RunInputResource(ModelResource):
                 output_dictionary = run_set.run()
 
             except Exception as e:
-                import pdb;
-                pdb.set_trace()
                 output_dictionary = {
                     # "Input": inputs_dict,
                     "messages": {
                         "error": e,
                         "warnings": input_validator.warnings,
-                    }
+                    },
+                    "inputs": json_POST,
                 }
 
         # API level outputs

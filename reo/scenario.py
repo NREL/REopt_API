@@ -122,12 +122,12 @@ class Scenario:
             # storage is always made, even if max size is zero (due to REopt expected inputs)
             storage = Storage(dfm=self.dfm, **self.inputs_dict["Site"]["Storage"])
 
-            site = Site(dfm=self.dfm, **self.inputs_dict)
+            site = Site(dfm=self.dfm, **self.inputs_dict["Site"])
             # following 2 lines are necessary for returning *some* of the assigned values.
             # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
             # and then we assign them to the off_taker values to represent single party model)
-            for k in site.financials.__dict__.keys():
-                setattr(self, k, getattr(site.financials, k))
+            for k in site.financial.__dict__.keys():
+                setattr(self, k, getattr(site.financial, k))
 
             self.create_loads()
             self.create_elec_tariff()
@@ -194,7 +194,7 @@ class Scenario:
         :return: None
         """
 
-        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict.get('load_8760_kw'), **self.inputs_dict)
+        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'), **self.inputs_dict['Site']['LoadProfile'])
         self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
         log("INFO", "Creating loads.  "
