@@ -185,11 +185,11 @@ class DatFileManager:
         write_to_dat(self.file_storage, batt_level_coef, 'BattLevelCoef')
         write_to_dat(self.file_storage_bau, batt_level_coef, 'BattLevelCoef')
 
-        write_to_dat(self.file_storage, storage.soc_min, 'StorageMinChargePcent', mode='a')
-        write_to_dat(self.file_storage_bau, storage.soc_min, 'StorageMinChargePcent', mode='a')
+        write_to_dat(self.file_storage, storage.soc_min_pct, 'StorageMinChargePcent', mode='a')
+        write_to_dat(self.file_storage_bau, storage.soc_min_pct, 'StorageMinChargePcent', mode='a')
 
-        write_to_dat(self.file_storage, storage.soc_init, 'InitSOC', mode='a')
-        write_to_dat(self.file_storage_bau, storage.soc_init, 'InitSOC', mode='a')
+        write_to_dat(self.file_storage, storage.soc_init_pct, 'InitSOC', mode='a')
+        write_to_dat(self.file_storage_bau, storage.soc_init_pct, 'InitSOC', mode='a')
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
@@ -557,7 +557,7 @@ class DatFileManager:
         derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
-        om_dollars_per_kw = list()
+        om_cost_us_dollars_per_kw = list()
 
         for tech in techs:
 
@@ -565,7 +565,7 @@ class DatFileManager:
 
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
-                om_dollars_per_kw.append(eval('self.' + tech + '.om_dollars_per_kw'))
+                om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
                 for load in self.available_loads:
                     
@@ -590,11 +590,11 @@ class DatFileManager:
                     # By default, util can serve storage load.
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
-                        tech_to_load[-1] = int(self.storage.can_grid_charge)
+                        tech_to_load[-1] = int(self.storage.canGridCharge)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_dollars_per_kw
+        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -674,7 +674,7 @@ class DatFileManager:
         tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
         tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
 
-        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_dollars_per_kw = \
+        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw = \
             self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau = \
@@ -699,24 +699,24 @@ class DatFileManager:
         self.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
 
         sf = self.site.financials
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.us_dollar_per_kw,  # use full cost as basis
-                                                        self.storage.replace_us_dollar_per_kw,
-                                                        self.storage.replace_kw_years,
+        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+                                                        self.storage.replace_cost_us_dollars_per_kw,
+                                                        self.storage.inverter_replacement_year,
                                                         sf.owner_discount_rate,
                                                         sf.owner_tax_rate,
-                                                        self.storage.incentives.total.itc,
+                                                        self.storage.incentives.itc_pct,
                                                         self.storage.incentives.macrs_schedule,
-                                                        self.storage.incentives.macrs_bonus_fraction,
+                                                        self.storage.incentives.macrs_bonus_pct,
                                                         self.storage.incentives.macrs_itc_reduction)
-        StorageCostPerKW -= self.storage.incentives.total.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.us_dollar_per_kwh,  # there are no cash incentives for kwh
-                                                         self.storage.replace_us_dollar_per_kwh,
-                                                         self.storage.replace_kwh_years,
+        StorageCostPerKW -= self.storage.incentives.rebate
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                                                         self.storage.replace_cost_us_dollars_per_kwh,
+                                                         self.storage.battery_replacement_year,
                                                          sf.owner_discount_rate,
                                                          sf.owner_tax_rate,
-                                                         self.storage.incentives.total.itc,
+                                                         self.storage.incentives.itc_pct,
                                                          self.storage.incentives.macrs_schedule,
-                                                         self.storage.incentives.macrs_bonus_fraction,
+                                                         self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
 
         # DAT1 = constant.dat, contains parameters that others depend on for initialization
@@ -780,7 +780,7 @@ class DatFileManager:
         write_to_dat(self.file_economics, sf.offtaker_tax_rate, 'r_tax_offtaker', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
-        write_to_dat(self.file_economics, om_dollars_per_kw, 'OMperUnitSize', mode='a')
+        write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics, sf.analysis_period, 'analysis_period', mode='a')
 
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')

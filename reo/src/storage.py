@@ -1,20 +1,42 @@
-from reo.src.incentives import Incentives
-big_number = 100000  # should this be the 1e10 in DFM? typically use smaller battery max?
+from reo.src.dat_file_manager import big_number
+from reo.api_definitions import macrs_five_year, macrs_seven_year
 
+
+class StorageIncentives(object):
+        
+    def __init__(self, macrs_option_years, macrs_bonus_pct, total_itc_pct, total_rebate_us_dollars_per_kw):
+        
+        self.itc_pct = total_itc_pct
+        self.itc_max = big_number
+        
+        self.rebate = total_rebate_us_dollars_per_kw
+        self.rebate_max = big_number
+        self.macrs_bonus_pct = macrs_bonus_pct
+
+        if macrs_option_years == 5:
+            self.macrs_schedule = macrs_five_year
+        elif macrs_option_years == 7:
+            self.macrs_schedule = macrs_seven_year
+        elif macrs_option_years == 0:
+            self.macrs_bonus_pct = 0
+            self.macrs_itc_reduction = 0
+            self.macrs_schedule = [0]
+        else:
+            raise ValueError("macrs_option_years must be 0, 5 or 7.")
+    
 
 class Storage(object):
     """
-    REopt class for energy storage
+    REopt class for energy storage.
+    All default values in kwargs set by validator using nested_input_definitions.
     """
 
-    def __init__(self, dfm, min_kw=0, max_kw=big_number, min_kwh=0, max_kwh=big_number,
-                 efficiency=0.90, inverter_efficiency=0.96, rectifier_efficiency=0.96,
-                 soc_min=0.2, soc_init=0.5,
-                 can_grid_charge=False,
-                 level_count=1, level_coefs=(-1, 0),
-                 us_dollar_per_kw=1000, us_dollar_per_kwh=500,
-                 replace_us_dollar_per_kw=200, replace_us_dollar_per_kwh=200,
-                 replace_kw_years=10, replace_kwh_years=10,
+    def __init__(self, dfm, min_kw, max_kw, min_kwh, max_kwh,
+                 internal_efficiency_pct, inverter_efficiency_pct, rectifier_efficiency_pct,
+                 soc_min_pct, soc_init_pct, canGridCharge,
+                 installed_cost_us_dollars_per_kw, installed_cost_us_dollars_per_kwh,
+                 replace_cost_us_dollars_per_kw, replace_cost_us_dollars_per_kwh,
+                 inverter_replacement_year, battery_replacement_year,
                  **kwargs):
 
         self.min_kw = min_kw
@@ -22,27 +44,24 @@ class Storage(object):
         self.min_kwh = min_kwh
         self.max_kwh = max_kwh
 
-        self.efficiency = efficiency
-        self.inverter_efficiency = inverter_efficiency
-        self.rectifier_efficiency = rectifier_efficiency
-        self.roundtrip_efficiency = efficiency * inverter_efficiency * rectifier_efficiency
+        self.internal_efficiency_pct = internal_efficiency_pct
+        self.inverter_efficiency_pct = inverter_efficiency_pct
+        self.rectifier_efficiency_pct = rectifier_efficiency_pct
+        self.roundtrip_efficiency = internal_efficiency_pct * inverter_efficiency_pct * rectifier_efficiency_pct
 
-        self.soc_min = soc_min
-        self.soc_init = soc_init
+        self.soc_min_pct = soc_min_pct
+        self.soc_init_pct = soc_init_pct
+        self.canGridCharge = canGridCharge
 
-        self.can_grid_charge = can_grid_charge
+        self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
+        self.installed_cost_us_dollars_per_kwh = installed_cost_us_dollars_per_kwh
+        self.replace_cost_us_dollars_per_kw = replace_cost_us_dollars_per_kw
+        self.replace_cost_us_dollars_per_kwh = replace_cost_us_dollars_per_kwh
+        self.inverter_replacement_year = inverter_replacement_year
+        self.battery_replacement_year = battery_replacement_year
 
-        self.level_count = level_count
-        self.level_coefs = level_coefs
+        self.incentives = StorageIncentives(**kwargs)
 
-        self.us_dollar_per_kw = us_dollar_per_kw
-        self.us_dollar_per_kwh = us_dollar_per_kwh
-        self.replace_us_dollar_per_kw = replace_us_dollar_per_kw
-        self.replace_us_dollar_per_kwh = replace_us_dollar_per_kwh
-        self.replace_kw_years = replace_kw_years
-        self.replace_kwh_years = replace_kwh_years
-
-        self.incentives = Incentives(kwargs, tech='batt', macrs_years=kwargs.get('batt_macrs_schedule'),
-                                     macrs_bonus_fraction=kwargs.get('batt_macrs_bonus_fraction', 0.5),
-                                     macrs_itc_reduction=kwargs.get('batt_macrs_itc_reduction', 0.5))
+        self.level_count = 1
+        self.level_coefs = (-1, 0)
         dfm.add_storage(self)

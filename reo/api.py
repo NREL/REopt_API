@@ -11,12 +11,11 @@ from validators import REoptResourceValidation, ValidateNestedInput
 from api_definitions import inputs
 from log_levels import log
 from utilities import API_Error
-from library import DatLibrary
+from scenario import Scenario
 from reo.models import RunOutput
 
 
-def get_current_api():
-    return "version 1.0.0"
+api_version = "version 1.0.0"
 
 
 def setup_logging():
@@ -65,30 +64,27 @@ class RunInputResource(ModelResource):
             if bundle.errors:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
-            incoming_data = ValidateNestedInput(bundle.data, nested=False)
-            valid_input_with_defaults = incoming_data.input_dict
+            input_validator = ValidateNestedInput(bundle.data, nested=False)
 
         else:  # nested input
-            incoming_data = ValidateNestedInput(bundle.data, nested=True)
-
-            valid_input_with_defaults = incoming_data.input_dict
+            input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         # Format  and  Save Inputs
-        model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
-        model_inputs['api_version'] = get_current_api()       
+        # model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
+        # model_inputs['api_version'] = api_version     
 
-        run = RunInput(**model_inputs)
-        run.save()
+        # run = RunInput(**model_inputs)
+        # run.save()
 
         # Return  Results
-        output_model = self.create_output(model_inputs, bundle.data, incoming_data)
+        output_model = self.create_output(bundle.data, input_validator)
 
         bundle.obj = output_model
         bundle.data = {k: v for k, v in output_model.__dict__.items() if not k.startswith('_')}
 
         return self.full_hydrate(bundle)
 
-    def create_output(self, inputs_dict, json_POST, input_validator):
+    def create_output(self, json_POST, input_validator):
 
         run_uuid = uuid.uuid4()
 
@@ -103,7 +99,7 @@ class RunInputResource(ModelResource):
 
         else:
             try: # should return output structure to match new nested_outputs, even with exception
-                run_set = DatLibrary(run_uuid=run_uuid, inputs_dict=inputs_dict)
+                run_set = Scenario(run_uuid=run_uuid, inputs_dict=input_validator.input_dict['Scenario'])
 
                 # Log POST request
                 run_set.log_post(json_POST)
@@ -112,6 +108,8 @@ class RunInputResource(ModelResource):
                 output_dictionary = run_set.run()
 
             except Exception as e:
+                import pdb;
+                pdb.set_trace()
                 output_dictionary = {
                     # "Input": inputs_dict,
                     "messages": {
@@ -123,7 +121,8 @@ class RunInputResource(ModelResource):
         # API level outputs
         output_dictionary['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
         output_dictionary['run_input_id'] = 0  # hack for now, this field can be removed from database
-
+        output_dictionary['api_version'] = api_version
+        
         result = RunOutput(**output_dictionary)
         result.save()
 

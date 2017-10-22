@@ -41,12 +41,11 @@ class Paths(object):
             check_directory_created(f)
 
 
-class DatLibrary:
+class Scenario:
     """
     Instantiated in models.py within RunInput.create_output,
     which in turn is called by RunInputResource.obj_create in api.py
     """
-
     # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
     debug = True
     time_steps_per_hour = 1
@@ -54,7 +53,7 @@ class DatLibrary:
     def __init__(self, run_uuid, inputs_dict):
         """
 
-        All error handling is done in validators.py before data is passed to library.py
+        All error handling is done in validators.py before data is passed to scenario.py
         :param run_uuid:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
@@ -67,28 +66,16 @@ class DatLibrary:
         self.net_metering = False
 
         self.run_uuid = run_uuid
-        self.api_version = inputs_dict['api_version']
 
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
         for k, v in inputs(full_list=True).items():
-            # see api_definitions.py for attributes set here
-            if k == 'load_profile_name' and inputs_dict.get(k) is not None:
-                setattr(self, k, inputs_dict.get(k).replace(" ", ""))
+            setattr(self, k, inputs_dict.get(k))
 
-            elif inputs_dict.get(k) is None:
-                setattr(self, k, inputs()[k].get('default'))
-
-            else:
-                setattr(self, k, inputs_dict.get(k))
-
-        if self.tilt is None:
+        if self.tilt is None:  # is this done in validator?
             self.tilt = self.latitude
 
-        self.update_types()
-
-        for k, v in inputs(full_list=True).iteritems():
-            inputs_dict.setdefault(k, v['default'])
+        self.update_types()  # is this done in validator?
         self.inputs_dict = inputs_dict
 
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
@@ -132,26 +119,8 @@ class DatLibrary:
 
     def run(self):
         try:
-            storage = Storage(
-                dfm=self.dfm,
-                min_kw=self.batt_kw_min,
-                max_kw=self.batt_kw_max,
-                min_kwh=self.batt_kwh_min,
-                max_kwh=self.batt_kwh_max,
-                efficiency=self.batt_efficiency,
-                inverter_efficiency=self.batt_inverter_efficiency,
-                rectifier_efficiency=self.batt_rectifier_efficiency,
-                soc_min=self.batt_soc_min,
-                soc_init=self.batt_soc_init,
-                can_grid_charge=self.batt_can_gridcharge,
-                us_dollar_per_kw=self.batt_cost_kw,
-                us_dollar_per_kwh=self.batt_cost_kwh,
-                replace_us_dollar_per_kw=self.batt_replacement_cost_kw,
-                replace_us_dollar_per_kwh=self.batt_replacement_cost_kwh,
-                replace_kw_years=self.batt_replacement_year_kw,
-                replace_kwh_years=self.batt_replacement_year_kwh,
-                **self.inputs_dict
-            )
+            # storage is always made, even if max size is zero (due to REopt expected inputs)
+            storage = Storage(dfm=self.dfm, **self.inputs_dict["Site"]["Storage"])
 
             site = Site(dfm=self.dfm, **self.inputs_dict)
             # following 2 lines are necessary for returning *some* of the assigned values.

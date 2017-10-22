@@ -1,6 +1,6 @@
 import unittest
 
-from reo.library import DatLibrary
+from reo.scenario import Scenario
 from enum import Enum
 
 import json
@@ -94,7 +94,7 @@ class RunLibraryTests(unittest.TestCase):
     def run_scenario(self, scenario_num):
 
         json_data = self.setUpScenario(scenario_num)
-        run_set = DatLibrary(self.run_uuid, scenario_num, json_data)
+        run_set = Scenario(self.run_uuid, scenario_num, json_data)
         run_set.run()
         print "Test Inputs"
         self.compare_directory_contents(self.path_valid_input, run_set.paths.inputs)
