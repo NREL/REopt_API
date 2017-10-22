@@ -4,31 +4,31 @@ from reo.log_levels import log
 
 class ElecTariff(object):
 
-    def __init__(self, dfm, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
-                 load_year, wholesale_rate, time_steps_per_hour,
-                 **kwargs):
+    def __init__(self, dfm, run_id, blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw,
+                 net_metering_limit_kw, load_year, wholesale_rate_us_dollars_per_kwh, time_steps_per_hour,
+                 urdb_response=None, **kwargs):
 
         self.run_id = run_id
-        self.wholesale_rate = wholesale_rate
+        self.wholesale_rate = wholesale_rate_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
 
         self.net_metering = False
-        if net_metering_limit > 0:
+        if net_metering_limit_kw > 0:
             self.net_metering = True
 
-        if urdb_rate is not None:
+        if urdb_response is not None:
             log("INFO", "Parsing URDB rate")
         
-        elif None not in [blended_utility_rate, demand_charge]:
+        elif None not in [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw]:
                 log("INFO", "Making URDB rate from blended data")
-                urdb_rate = self.make_urdb_rate(blended_utility_rate, demand_charge)
+                urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw)
         else:
-            raise ValueError('elec_tariff', "urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
+            raise ValueError('ElectricTariff', "urdb_response or [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw] are required inputs")
 
-        self.utility_name = re.sub(r'\W+', '', str(urdb_rate.get('utility')))
-        self.rate_name = re.sub(r'\W+', '', str(urdb_rate.get('name')))
-        self.urdb_rate = urdb_rate
+        self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
+        self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
+        self.urdb_response = urdb_response
 
         dfm.add_elec_tariff(self)
 

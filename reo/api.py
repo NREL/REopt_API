@@ -111,7 +111,7 @@ class RunInputResource(ModelResource):
                 output_dictionary = {
                     # "Input": inputs_dict,
                     "messages": {
-                        "error": e,
+                        "error": API_Error(e).response,
                         "warnings": input_validator.warnings,
                     },
                     "inputs": json_POST,

@@ -2,7 +2,7 @@ max_big_number = 1e8
 max_incentive = 1e10
 max_years = 75
 macrs_schedules = [0, 5, 7]
-analysis_period = 20
+analysis_years = 20
 providers = ['federal', 'state', 'utility']
 default_buildings = ['FastFoodRest',
                      'FullServiceRest',
@@ -46,7 +46,7 @@ nested_input_definitions = {
                     "offtaker_tax_pct":     {'type': float,'min': -1, 'max': 1, 'default': 0.4},
                     "owner_discount_pct":   {'type': float,'min': -1, 'max': 1},
                     "offtaker_discount_pct":{'type': float,'min': -1, 'max': 1, 'default': 0.081},
-                    "analysis_years":       {'type': int,'min': 0, 'max': max_years, 'default': analysis_period}
+                    "analysis_years":       {'type': int,'min': 0, 'max': max_years, 'default': analysis_years}
          },
 
             "LoadProfile": {
@@ -79,6 +79,7 @@ nested_input_definitions = {
                                 "om_cost_us_dollars_per_kw":            {'type': float, 'min': 0, 'max': 1e3, 'default': 35},
                                 "macrs_option_years":                   {'type': int, 'restrict_to': macrs_schedules, 'default': 5},
                                 "macrs_bonus_pct":                      {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
+                                "macrs_itc_reduction":                  {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
                                 "federal_itc_pct":                      {'type': float,'min': 0, 'max': 1, 'default': 0.3},
                                 "state_ibi_pct":                        {'type': float,'min': 0, 'max': 1, 'default': 0},
                                 "state_ibi_max_us_dollars":             {'type': float,'min': 0, 'max': 1e10, 'default': max_incentive},
@@ -91,7 +92,7 @@ nested_input_definitions = {
                                 "utility_rebate_max_us_dollars":        {'type': float,'min': 0, 'max': 1e10, 'default': max_incentive},
                                 "pbi_us_dollars_per_kwh":               {'type': float,'min': 0, 'max': 1e9, 'default': 0},
                                 "pbi_max_us_dollars":                   {'type': float,'min': 0, 'max': 1e9, 'default': 1e9},
-                                "pbi_years":                            {'type': float,'min': 0, 'max': 1e9, 'default': analysis_period},
+                                "pbi_years":                            {'type': float,'min': 0, 'max': 1e9, 'default': analysis_years},
                                 "pbi_system_max_kw":                    {'type': float,'min': 0, 'max': 1e9, 'default': 1e9},
                              },
 
@@ -103,6 +104,7 @@ nested_input_definitions = {
                                 "degradation_pct":                      {'type': float, 'min': 0, 'max': 1, 'default': 0.005},
                                 "macrs_option_years":                   {'type': int, 'restrict_to': macrs_schedules, 'default': 5},
                                 "macrs_bonus_pct":                      {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
+                                "macrs_itc_reduction":                  {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
                                 "federal_itc_pct":                      {'type': float,'min': 0, 'max': 1, 'default': 0.3},
                                 "state_ibi_pct":                        {'type': float,'min': 0, 'max': 1, 'default': 0},
                                 "state_ibi_max_us_dollars":             {'type': float,'min': 0, 'max': 1e10, 'default': max_incentive},
@@ -115,7 +117,7 @@ nested_input_definitions = {
                                 "utility_rebate_max_us_dollars":        {'type': float,'min': 0, 'max': 1e10, 'default': max_incentive},
                                 "pbi_us_dollars_per_kwh":               {'type': float,'min': 0, 'max': 1e9, 'default': 0},
                                 "pbi_max_us_dollars":                   {'type': float,'min': 0, 'max': 1e9, 'default': 1e9},
-                                "pbi_years":                            {'type': float,'min': 0 , 'max': 1e9, 'default': analysis_period},
+                                "pbi_years":                            {'type': float,'min': 0 , 'max': 1e9, 'default': analysis_years},
                                 "pbi_system_max_kw":                    {'type': float,'min': 0, 'max': 1e9, 'default': 1e9},
                                 "azimuth":                              {'type': float, 'min': 0, 'max': 360, 'default': 180},
                                 "losses":                               {'type': float,'min': 0, 'max': 0.99, 'default': 0.14},
@@ -147,6 +149,7 @@ nested_input_definitions = {
                             "battery_replacement_year":             {'type': float, 'min': 0, 'max': max_years, 'default': 10},
                             "macrs_option_years":                   {'type': int, 'restrict_to': macrs_schedules, 'default': 5},
                             "macrs_bonus_pct":                      {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
+                            "macrs_itc_reduction":                  {'type': float, 'min': 0, 'max': 1, 'default': 0.5},
                             "total_itc_pct":                        {'type': float,'min': 0, 'max': 1, 'default': 0.3},
                             "total_rebate_us_dollars_per_kw":       {'type': float,'min': 0, 'max': 1e9, 'default': 0},
      },
@@ -176,7 +179,7 @@ def flat_to_nested(i):
                                 "offtaker_tax_pct": i.get("offtaker_tax_rate"),
                                 "owner_discount_pct": i.get("owner_discount_rate"),
                                 "offtaker_discount_pct": i.get("offtaker_discount_rate"),
-                                "analysis_period_years": i.get("analysis_period"),
+                                "analysis_years": i.get("analysis_period"),
              },
 
                 "LoadProfile":
@@ -221,7 +224,8 @@ def flat_to_nested(i):
                         "tilt": i.get("tilt"),
                         "macrs_option_years": i.get("pv_macrs_schedule"),
                         "macrs_bonus_pct": i.get("pv_macrs_bonus_fraction"),
-                        "federal_itc_pct":i.get("pv_itc_federal"),
+                        "macrs_itc_reduction": i.get("pv_macrs_itc_reduction"),
+                        "federal_itc_pct": i.get("pv_itc_federal"),
                         "state_ibi_pct": i.get("pv_itc_state"),
                         "state_ibi_max_us_dollars": i.get("pv_ibi_state_max"),
                         "utility_ibi_pct": i.get("pv_ibi_utility"),
@@ -246,6 +250,7 @@ def flat_to_nested(i):
                         "degradation_pct": i.get("wind_degradation_rate"),
                         "macrs_option_years": i.get("wind_macrs_schedule"),
                         "macrs_bonus_pct": i.get("wind_macrs_bonus_fraction"),
+                        "macrs_itc_reduction": i.get("wind_macrs_itc_reduction"),
                         "federal_itc_pct": i.get("wind_itc_federal"),
                         "state_ibi_pct": i.get("wind_ibi_state"),
                         "state_ibi_max_us_dollars": i.get("wind_ibi_state_max"),
@@ -282,6 +287,7 @@ def flat_to_nested(i):
                     "battery_replacement_year": i.get("batt_replacement_year_kwh"),
                     "macrs_option_years": i.get("batt_macrs_schedule"),
                     "macrs_bonus_pct": i.get("batt_macrs_bonus_fraction"),
+                    "macrs_itc_reduction": i.get("batt_macrs_itc_reduction"),
                     "total_itc_pct":  i.get("batt_itc_total"),
                     "total_rebate_us_dollars_per_kw": i.get("batt_rebate_total"),
              },

@@ -4,7 +4,8 @@ from reo.api_definitions import macrs_five_year, macrs_seven_year
 
 class StorageIncentives(object):
         
-    def __init__(self, macrs_option_years, macrs_bonus_pct, total_itc_pct, total_rebate_us_dollars_per_kw):
+    def __init__(self, macrs_option_years, macrs_bonus_pct, total_itc_pct, total_rebate_us_dollars_per_kw,
+                 macrs_itc_reduction=0.5):  # should we expose macrs_itc_reduction to users?
         
         self.itc_pct = total_itc_pct
         self.itc_max = big_number
@@ -12,6 +13,7 @@ class StorageIncentives(object):
         self.rebate = total_rebate_us_dollars_per_kw
         self.rebate_max = big_number
         self.macrs_bonus_pct = macrs_bonus_pct
+        self.macrs_itc_reduction = macrs_itc_reduction
 
         if macrs_option_years == 5:
             self.macrs_schedule = macrs_five_year

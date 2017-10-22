@@ -291,7 +291,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None and tech != 'util':
 
-                tech_cost = eval('self.' + tech + '.cost_dollars_per_kw')
+                tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
                 tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
                 tech_incentives = dict()
                 

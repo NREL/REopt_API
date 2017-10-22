@@ -161,7 +161,7 @@ declarations
   binBattLevel: array(BattLevel) of mpvar
   BattLevelCoef: array(BattLevel,1..2) of real
 
-  analysis_period: integer
+  analysis_years: integer
 
   pwf_e: real
   pwf_om: real
@@ -231,7 +231,7 @@ initializations from DAT2 ! economics
 	MaxProdIncent
 	MaxSizeForProdIncent
 	two_party_factor
-	analysis_period
+	analysis_years
 end-initializations
 
 initializations from DAT3

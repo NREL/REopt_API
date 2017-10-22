@@ -133,7 +133,7 @@ class Scenario:
             self.create_elec_tariff()
 
             if self.pv_kw_max > 0:
-                pv = PV(dfm=self.dfm, **self.inputs_dict)
+                pv = PV(dfm=self.dfm, **self.inputs_dict["Site"]["PV"])
                 # following 2 lines are necessary for returning the assigned values
                 self.pv_degradation_rate = pv.degradation_rate
                 self.pv_kw_ac_hourly = pv.prod_factor
@@ -141,15 +141,14 @@ class Scenario:
             if self.wind_kw_max > 0:
                 wind = Wind(dfm=self.dfm, **self.inputs_dict)
 
-            util = Util(dfm=self.dfm, **self.inputs_dict)
-
-            net_metering_limit = self.inputs_dict.get("net_metering_limit")
-            if net_metering_limit > 0:
-                self.net_metering = True  # used in urdb_parse
+            util = Util(dfm=self.dfm,
+                        outage_start_hour=self.inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                        outage_end_hour=self.inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                        )
 
             self.dfm.add_net_metering(
-                net_metering_limit=net_metering_limit,
-                interconnection_limit=self.inputs_dict.get("interconnection_limit")
+                net_metering_limit=self.inputs_dict['Site']['ElectricTariff'].get("net_metering_limit_kw"),
+                interconnection_limit=self.inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
             )
             self.dfm.finalize()
             self.pv_macrs_itc_reduction = 0.5
@@ -194,7 +193,10 @@ class Scenario:
         :return: None
         """
 
-        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'), **self.inputs_dict['Site']['LoadProfile'])
+        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                         latitude=self.inputs_dict['Site'].get('latitude'),
+                         longitude=self.inputs_dict['Site'].get('longitude'),
+                         **self.inputs_dict['Site']['LoadProfile'])
         self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
         log("INFO", "Creating loads.  "
@@ -205,6 +207,8 @@ class Scenario:
 
     def create_elec_tariff(self):
 
-        elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid, paths=self.paths, **self.inputs_dict) # <-- move to Util? need to take care of code below
+        elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid, load_year=self.inputs_dict['Site']['LoadProfile']['year'],
+                                 time_steps_per_hour=self.inputs_dict.get('time_steps_per_hour'),
+                                 **self.inputs_dict['Site']['ElectricTariff']) # <-- move to Util? need to take care of code below
         self.utility_name = elec_tariff.utility_name
         self.rate_name = elec_tariff.rate_name
