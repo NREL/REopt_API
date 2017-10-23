@@ -32,7 +32,7 @@ nested_outputs = {
             "average_annual_energy_exported": {'type': float, "description": "Average annual energy exported by the PV system", "units": 'kWh'},
             'year_one_energy_produced': {'type': float, "description": "PV energy produced in year 1", "units": 'kWh'},
             'kw_ac_hourly': {'type': list_of_float, "description": "Hourly Solar Resource", "units": 'kW'},
-            'degradation_rate': {'type': float, "description": "PV annual degradation rate", "units": '%/year'},
+            'degradation_pct': {'type': float, "description": "PV annual degradation rate", "units": '%/year'},
             'macrs_itc_reduction': {'type': float, "description": "Amount that the MACRS depreciable base is reduced if the ITC is also taken."},
 
         },

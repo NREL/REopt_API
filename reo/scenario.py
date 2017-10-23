@@ -58,24 +58,18 @@ class Scenario:
         :param inputs_dict: dictionary of API key, value pairs. Any value that is in api_definitions' inputs
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
-        for k in outputs():
-            setattr(self, k, None)
 
         self.paths = Paths(run_uuid)
-        self.timed_out = False  # is this used?
-        self.net_metering = False
-
         self.run_uuid = run_uuid
-
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
-        for k, v in inputs(full_list=True).items():
-            setattr(self, k, inputs_dict.get(k))
-
-        if self.tilt is None:  # is this done in validator?
-            self.tilt = self.latitude
-
-        self.update_types()  # is this done in validator?
+        # for k, v in inputs(full_list=True).items():
+        #     setattr(self, k, inputs_dict.get(k))
+        #
+        # if self.tilt is None:  # is this done in validator?
+        #     self.tilt = self.latitude
+        #
+        # self.update_types()  # is this done in validator?
         self.inputs_dict = inputs_dict
 
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
@@ -126,19 +120,19 @@ class Scenario:
             # following 2 lines are necessary for returning *some* of the assigned values.
             # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
             # and then we assign them to the off_taker values to represent single party model)
-            for k in site.financial.__dict__.keys():
-                setattr(self, k, getattr(site.financial, k))
+            # for k in site.financial.__dict__.keys():
+            #     setattr(self, k, getattr(site.financial, k))
 
             self.create_loads()
             self.create_elec_tariff()
 
-            if self.pv_kw_max > 0:
+            if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
                 pv = PV(dfm=self.dfm, **self.inputs_dict["Site"]["PV"])
                 # following 2 lines are necessary for returning the assigned values
-                self.pv_degradation_rate = pv.degradation_rate
-                self.pv_kw_ac_hourly = pv.prod_factor
+                # self.pv_degradation_rate = pv.degradation_pct
+                # self.pv_kw_ac_hourly = pv.prod_factor
 
-            if self.wind_kw_max > 0:
+            if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
                 wind = Wind(dfm=self.dfm, **self.inputs_dict)
 
             util = Util(dfm=self.dfm,
@@ -151,21 +145,22 @@ class Scenario:
                 interconnection_limit=self.inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
             )
             self.dfm.finalize()
-            self.pv_macrs_itc_reduction = 0.5
-            self.batt_macrs_itc_reduction = 0.5
+            # self.pv_macrs_itc_reduction = 0.5
+            # self.batt_macrs_itc_reduction = 0.5
 
-            r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict.get('load_year'))
+            r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict['Site']['LoadProfile']['year'])
             
-            output_dict = r.run(timeout=self.inputs_dict.get('timeout'))
+            output_dict = r.run(timeout=self.inputs_dict['timeout_seconds'])
 
-            for k, v in self.__dict__.items():
-                if output_dict.get(k) is None and k in outputs():
-                    output_dict[k] = v
+            # for k, v in self.__dict__.items():
+            #     if output_dict.get(k) is None and k in outputs():
+            #         output_dict[k] = v
             
             self.cleanup()
             
-            ins_and_outs_dict = self._add_inputs(output_dict)
-            return ins_and_outs_dict
+            # ins_and_outs_dict = self._add_inputs(output_dict)
+            # return ins_and_outs_dict
+            return output_dict
 
         except Exception as e:
             self.cleanup()
@@ -199,11 +194,11 @@ class Scenario:
                          **self.inputs_dict['Site']['LoadProfile'])
         self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
 
-        log("INFO", "Creating loads.  "
-                     "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
-            ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
-            ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
-            ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
+        # log("INFO", "Creating loads.  "
+        #              "LoadSize: " + ("None" if self.load_size is None else str(self.load_size)) +
+        #     ", LoadProfile: " + ("None" if self.load_profile_name is None else self.load_profile_name) +
+        #     ", Load 8760 Specified: " + ("No" if self.load_8760_kw is None else "Yes") +
+        #     ", Load Monthly Specified: " + ("No" if self.load_monthly_kwh is None else "Yes"))
 
     def create_elec_tariff(self):
 

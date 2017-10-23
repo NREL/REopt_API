@@ -12,7 +12,7 @@ from api_definitions import inputs
 from log_levels import log
 from utilities import API_Error
 from scenario import Scenario
-from reo.models import RunOutput
+from reo.models import RunOutput, REoptResponse
 
 
 api_version = "version 1.0.0"
@@ -34,7 +34,7 @@ class RunInputResource(ModelResource):
         queryset = RunInput.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['post']
-        detail_allowed_methods= []
+        detail_allowed_methods = []
         object_class = RunInput
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
@@ -105,7 +105,8 @@ class RunInputResource(ModelResource):
                 run_set.log_post(json_POST)
 
                 # Run Optimization
-                output_dictionary = run_set.run()
+                output_dictionary = dict()
+                output_dictionary['outputs'] = run_set.run()
 
             except Exception as e:
                 output_dictionary = {
@@ -116,13 +117,11 @@ class RunInputResource(ModelResource):
                     },
                     "inputs": json_POST,
                 }
-
         # API level outputs
-        output_dictionary['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
-        output_dictionary['run_input_id'] = 0  # hack for now, this field can be removed from database
-        output_dictionary['api_version'] = api_version
-        
-        result = RunOutput(**output_dictionary)
-        result.save()
+        # output_dictionary['outputs']['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
+        # output_dictionary['outputs']['api_version'] = api_version
+        import pdb; pdb.set_trace()
+        result = REoptResponse(**output_dictionary)
+        # result.save()
 
         return result

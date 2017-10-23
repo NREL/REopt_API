@@ -59,8 +59,6 @@ class REopt(object):
 
     def run(self, timeout):
 
-        output_dict = dict()
-
         log("INFO", "Running Command")
         self.command.run(timeout)
 

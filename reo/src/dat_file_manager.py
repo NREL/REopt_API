@@ -224,11 +224,11 @@ class DatFileManager:
                     # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
                     # does not escalate in out years.
                     ################
-                    degradation_rate = eval('self.' + tech + '.degradation_rate')
-                    levelization_factor.append(round(degradation_factor(sf.analysis_years, degradation_rate), 5))
+                    degradation_pct = eval('self.' + tech + '.degradation_pct')
+                    levelization_factor.append(round(degradation_factor(sf.analysis_years, degradation_pct), 5))
                     production_incentive_levelization_factor.append(
                         round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
-                                                 degradation_rate), 5))
+                                                 degradation_pct), 5))
                     ################
                 else:
 
@@ -488,7 +488,7 @@ class DatFileManager:
                                                                  sf.owner_tax_pct,
                                                                  itc,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
-                                                                 eval('self.' + tech + '.incentives.macrs_bonus_fraction'),
+                                                                 eval('self.' + tech + '.incentives.macrs_bonus_pct'),
                                                                  eval('self.' + tech + '.incentives.macrs_itc_reduction'))
 
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis

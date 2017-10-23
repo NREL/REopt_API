@@ -5,11 +5,13 @@ import uuid
 from picklefield.fields import PickledObjectField
 import numpy as np
 
+
 class URDBError(models.Model):
 
     label = models.TextField(blank=True, default='', null=False)
     type = models.TextField(blank=True, default='', null=False)
     message = models.TextField(blank=True, default='', null=False)
+
 
 class RunInput(models.Model):
 
@@ -182,7 +184,6 @@ class RunOutput(models.Model):
     inputs = PickledObjectField(null=True)
 
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
-    run_input_id = models.IntegerField(null=False)
     api_version = models.TextField(blank=True, default='', null=False)
     timeout = models.IntegerField(blank=True, default=295, null=True)
 
@@ -805,3 +806,10 @@ class RunOutput(models.Model):
         self.npv = np.npv(self.owner_discount_rate, after_tax_cash_flow)
         self.lcc = -np.npv(self.owner_discount_rate, net_annual_costs_with_system)
         self.lcc_bau = -np.npv(self.owner_discount_rate, net_annual_costs_without_system)
+
+
+class REoptResponse(models.Model):
+
+    inputs = PickledObjectField(null=True)
+    outputs = PickledObjectField(null=True)
+    messages = PickledObjectField(null=True)

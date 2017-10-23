@@ -51,9 +51,9 @@ class Incentives(object):
 
     def __init__(self, macrs_option_years, macrs_bonus_pct, macrs_itc_reduction, **kwargs):
 
-        self.federal = IncentiveProvider('federal', kwargs)
-        self.state = IncentiveProvider('state', kwargs)
-        self.utility = IncentiveProvider('utility', kwargs)
+        self.federal = IncentiveProvider('federal', **kwargs)
+        self.state = IncentiveProvider('state', **kwargs)
+        self.utility = IncentiveProvider('utility', **kwargs)
 
         self.macrs_bonus_pct = macrs_bonus_pct
         self.macrs_itc_reduction = macrs_itc_reduction

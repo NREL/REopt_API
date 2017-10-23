@@ -3,6 +3,7 @@ import json
 from api_definitions import outputs
 from dispatch import ProcessOutputs
 
+
 class Results:
 
     # file names
