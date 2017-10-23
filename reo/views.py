@@ -9,10 +9,15 @@ from models import URDBError
 import csv
 import os
 from utilities import API_Error
+from nested_inputs import nested_input_definitions
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+
+
+def help(request):
+    return render(request, 'help.html', {'nested_input_definitions' : json.dumps(nested_input_definitions)})
 
 
 def index(request):

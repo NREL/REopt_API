@@ -1,0 +1,515 @@
+{% load static %}
+
+
+<script type="text/javascript" src="{% static 'js/jquery-1.7.1.min.js' %}"></script>
+<link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}" />
+<script type="text/javascript" src="{% static 'js/help.js' %}"></script>
+
+<script type="text/javascript">
+   var nested_input_definitions = {{nested_input_definitions|safe}};
+
+   $('.list-group-item').on('click', function(event) {
+    var target = $(this.getAttribute('href'));
+    if( target.length ) {
+        event.preventDefault();
+        $('html, body').stop().animate({
+            scrollTop: target.offset().top
+        });
+    }
+    });
+
+</script>
+
+
+<div class="container">
+<div class="row">
+<h2>REopt API</h2>
+<div class="col col-0.5"></div>
+<div class="col col-10">
+<p>
+The REopt API provides access to a web version of a techno-economic decision support model used to optimize energy systems for buildings, campuses, communities, and microgrids. REopt recommends an optimal mix of renewable energy, conventional generation, and energy storage technologies to meet cost savings and energy performance goals.
+</p>
+<p>
+The REopt API uses utility rates from the <a href='https://openei.org/wiki/Utility_Rate_Database' target="blank">Utility Rate Database</a> and coordinates with <a href='http://pvwatts.nrel.gov/' target="blank">PV Watts</a> for solar resource information. It is capable of accepting custom rate profiles, but is also equipped with Department of Energy <a href='https://energy.gov/eere/buildings/commercial-reference-buildings' target="blank">Commercial Reference Buildings</a>. 
+</p>
+</div>
+</div>
+
+<div class="row">
+<div class='col col-12'><h4>Table of Contents</h4></div>
+<div class="list-group col-xs-3">
+	<a type="button" href='#URLsection' class="list-group-item list-group-item-action">URL</a>
+	<a type="button" href='#InputFormatsection' class="list-group-item list-group-item-action">Input Format</a>
+	<a type="button" href='#InputDefinitionssection' class="list-group-item list-group-item-action">Input Definitions</a>
+	<a type="button" href='#Examplesection' class="list-group-item list-group-item-action">Example</button>
+	<a type="button" href='#Errorssection'class="list-group-item list-group-item-action">Errors</a>
+</div>
+</div>
+
+
+
+
+<div class="row">
+<div class='col col-12' id='URLsection'><h4>URL</h4></div>
+<div class="col col-1"></div>
+<div class="col col-10">
+	<pre><code>POST <em> http://reopt.nrel.gov/api/v1/reopt/</em>&nbsp&nbsp&nbsp&nbsp{"Scenario":{"Site":{...}}}</code></pre>
+</div>
+</div>
+
+<div class="row">
+<div class='col col-12' id='InputFormatsection'><h4>Input Format</h4></div>
+
+<p>
+The REopt API accepts a JSON post in a nested directory format. At each level in the directory, capitalized directory names are associated with sets of lower case attribute names and values (as well as possible subdirectories). Only required attributes names and values need to be initially provided as missing attribute values will be filled in with default values as described in the tables below. 
+</p>
+
+<p>
+<b>Note:</b> Optimizations include PV and Storage capabilities by default. To disable either, set its 'min_kw' attribute to 0. 
+</p>
+
+<p>
+Below is an example of a a simple valid post that disbales storage in the optimization: 
+</p>
+<div class="col col-1"></div>
+<div class="col col-10" id=''>
+	<pre><code>{"Scenario":{
+		"Site":{  
+			"latitude": 39.5,
+			"longitude": -105.0,  
+			"Financial":{},  
+			"LoadProfile":{  
+				"annual_kwh": 20000,  
+				"doe_reference_name": 'RetailStore'   
+			},  
+			"ElectricTariff":{
+				"blended_monthly_rates_us_dollars_per_kwh": [0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12,0.12]  
+				"monthly_demand_charges_us_dollars_per_kw": [8,8,8,8,8,8,8,8,8,8,8,8]
+			},  
+			"PV":{},  
+			"Storage":{  
+				'min_kw': 0  
+			}  
+			}  
+	    }  
+}</code></pre>
+</div>
+
+
+</div>
+
+
+
+<div class="row">
+
+<div class='col col-12' id='InputDefinitionssection'><h4>Input Definitions</h4></div>
+<div class="col col-2"></div>
+<div class="col col-11" id='definition_table'></div>
+</div>
+
+<div class="row">
+<div class='col col-12' id='Examplesection'><h4>Example</h4></div>
+
+<div class="col col-1"></div>
+Input
+<div class="col col-11 pre-scrollable">
+	<pre>{"Scenario": {
+
+        "timeout_seconds": 300,
+
+        "Site": {
+	        "latitude": 37,
+	        "longitude": -100.0,
+	        "land_acres": 5,
+	        "roof_squarefeet": 500,
+	        "outage_start_hour": 10,
+	        "outage_end_hour": 500,
+	        "critical_load_pct": 0.5,
+
+	        "Financial":{
+	            "om_cost_growth_pct":   0.03,
+	            "analysis_years":       25
+	        },
+
+	        "LoadProfile": {
+	            "doe_reference_name": "RetailStore",
+	            "annual_kwh": 120000,
+	            "year": 2020
+	              
+	        },
+
+	        "ElectricTariff": {
+	            "urdb_response": {
+	                "sector": "Commercial",
+	                "peakkwcapacitymax": 200,
+	                "energyweekdayschedule": [
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+	                ],
+	                "demandattrs": [{
+	                    "Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"
+	                }, {
+	                    "Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"
+	                }, {
+	                    "Facilties Voltage Discount >220 kV": "$-9.96/KW"
+	                }, {
+	                    "Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"
+	                }, {
+	                    "Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"
+	                }, {
+	                    "Time Voltage Discount >220 kV": "$-1.95/KW"
+	                }],
+	                "energyratestructure": [
+	                    [{
+	                        "rate": 0.0712,
+	                        "unit": "kWh"
+	                    }],
+	                    [{
+	                        "rate": 0.09368,
+	                        "unit": "kWh"
+	                    }],
+	                    [{
+	                        "rate": 0.066,
+	                        "unit": "kWh"
+	                    }],
+	                    [{
+	                        "rate": 0.08888,
+	                        "unit": "kWh"
+	                    }],
+	                    [{
+	                        "rate": 0.1355,
+	                        "unit": "kWh"
+	                    }]
+	                ],
+	                "energyweekendschedule": [
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+	                    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	                ],
+	                "demandweekendschedule": [
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	                ],
+	                "utility": "Southern California Edison Co",
+	                "flatdemandstructure": [
+	                    [{
+	                        "rate": 13.2
+	                    }]
+	                ],
+	                "startdate": 1433116800,
+	                "phasewiring": "Single Phase",
+	                "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf",
+	                "label": "55fc81d7682bea28da64f9ae",
+	                "flatdemandunit": "kW",
+	                "eiaid": 17609,
+	                "voltagecategory": "Primary",
+	                "demandweekdayschedule": [
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+	                ],
+	                "voltageminimum": 2000,
+	                "energyattrs": [{
+	                    "Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"
+	                }, {
+	                    "Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"
+	                }, {
+	                    "Voltage Discount at 220 KV": "$-0.0024/Kwh"
+	                }, {
+	                    "California Climate credit": "$-0.00669/kwh"
+	                }],
+	                "demandrateunit": "kW",
+	                "flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+	                "approved": true,
+	                "fixedmonthlycharge": 259.2,
+	                "enddate": 1451520000,
+	                "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase",
+	                "country": "USA",
+	                "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae",
+	                "voltagemaximum": 50000,
+	                "peakkwcapacitymin": 20,
+	                "peakkwcapacityhistory": 12,
+	                "demandratestructure": [
+	                    [{
+	                        "rate": 0
+	                    }],
+	                    [{
+	                        "rate": 5.3
+	                    }],
+	                    [{
+	                        "rate": 18.11
+	                    }]
+	                ]
+	            },
+	            "net_metering_limit_kw": 20,
+	            "wholesale_rate_us_dollars_per_kwh": 0.05,
+	            "interconnection_limit_kw": 20
+	        },
+
+	        "PV": {
+	            "min_kw": 20,
+	            "max_kw": 100,
+	            
+	        },
+
+	        "Storage": {
+	            "max_kw": 0,
+	        }
+
+    }
+}
+}</pre>
+</div>
+<div class="col col-1"></div>
+Response
+<div class="col col-10">
+	<pre>{"Outputs":{},"Inputs":{},"Warnings"}}</pre>
+</div>
+</div>
+
+
+<div class="row">
+<div class='col col-12' id='Errorssection'><h4>Errors</h4></div>
+<div class="col col-1"></div>
+
+<h5>Missing Inputs</h5>
+Input
+<div class="col col-11">
+	<pre>{"Scenario": {"Site":{"latitude":39.0}}}</pre>
+</div>
+
+Response
+<div class="col col-1"></div>
+<div class="col col-10">
+	<pre>{"Input Errors":  
+	 {"Data Validation Errors":  [
+	  	"Missing Required for Scenario>Site: longitude",  
+	  	"Missing Required for Scenario>Site>LoadProfile: annual_kwh and doe_reference_name OR   
+	  	doe_reference_name and monthly_totals_kwh OR loads_kw",  
+	  	"Missing Required for Scenario>Site>ElectricTariff:  
+	  	monthly_demand_charges_us_dollars_per_kw and blended_monthly_rates_us_dollars_per_kwh OR urdb_response"]  
+	}
+}</pre>
+</div>
+
+<h5>Invalid Data Type</h5>
+Input
+<div class="col col-11 pre-scrollable">
+	<pre>{"Scenario": {
+
+	"timeout_seconds": "ONE",
+
+	"Site": {
+		"latitude": 37,
+		"longitude": -100.0,
+
+		"LoadProfile": {
+			"doe_reference_name": "RetailStore",
+			"annual_kwh": 120000,
+			"year": 2020
+
+		},
+
+		"ElectricTariff": {
+			"urdb_response": {
+				"sector": "Commercial",
+				"peakkwcapacitymax": 200,
+				"energyweekdayschedule": [
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]
+				],
+				"demandattrs": [{
+					"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"
+				}, {
+					"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"
+				}, {
+					"Facilties Voltage Discount >220 kV": "$-9.96/KW"
+				}, {
+					"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"
+				}, {
+					"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"
+				}, {
+					"Time Voltage Discount >220 kV": "$-1.95/KW"
+				}],
+				"energyratestructure": [
+					[{
+						"rate": 0.0712,
+						"unit": "kWh"
+					}],
+					[{
+						"rate": 0.09368,
+						"unit": "kWh"
+					}],
+					[{
+						"rate": 0.066,
+						"unit": "kWh"
+					}],
+					[{
+						"rate": 0.08888,
+						"unit": "kWh"
+					}],
+					[{
+						"rate": 0.1355,
+						"unit": "kWh"
+					}]
+				],
+				"energyweekendschedule": [
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+					[2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+				],
+				"demandweekendschedule": [
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+				],
+				"utility": "Southern California Edison Co",
+				"flatdemandstructure": [
+					[{
+						"rate": 13.2
+					}]
+				],
+				"startdate": 1433116800,
+				"phasewiring": "Single Phase",
+				"source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf",
+				"label": "55fc81d7682bea28da64f9ae",
+				"flatdemandunit": "kW",
+				"eiaid": 17609,
+				"voltagecategory": "Primary",
+				"demandweekdayschedule": [
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+					[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+				],
+				"voltageminimum": 2000,
+				"energyattrs": [{
+					"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"
+				}, {
+					"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"
+				}, {
+					"Voltage Discount at 220 KV": "$-0.0024/Kwh"
+				}, {
+					"California Climate credit": "$-0.00669/kwh"
+				}],
+				"demandrateunit": "kW",
+				"flatdemandmonths": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+				"approved": true,
+				"fixedmonthlycharge": 259.2,
+				"enddate": 1451520000,
+				"name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase",
+				"country": "USA",
+				"uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae",
+				"voltagemaximum": 50000,
+				"peakkwcapacitymin": 20,
+				"peakkwcapacityhistory": 12,
+				"demandratestructure": [
+					[{
+						"rate": 0
+					}],
+					[{
+						"rate": 5.3
+					}],
+					[{
+						"rate": 18.11
+					}]
+				]
+			},
+			"net_metering_limit_kw": 20,
+			"wholesale_rate_us_dollars_per_kwh": 0.05,
+			"interconnection_limit_kw": 20
+		}
+	}
+  }
+}</pre>
+</div>
+<div class="col col-1"></div>
+Response
+<div class="col col-10">
+	<pre>{"Input Errors":  
+	 {"Data Validation Errors": [  
+	 	"Could not convert timeout_seconds (ONE) in Scenario to 'float'>",  
+	 	"Could not check min/max on timeout_seconds (ONE) in Scenario"  ]  
+	 }
+}</pre>
+</div>
+</div>
+
+
+
+
+</div>

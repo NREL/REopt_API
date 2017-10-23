@@ -716,7 +716,7 @@ class ValidateNestedInput():
 
         if defintion_attribute=='type':
             def swap_logic(object_name_path, name, definition, current_value):
-                attribute_type = definition['type']
+                attribute_type = eval(definition['type'])
                 value = attribute_type(current_value)
                 if isinstance(value,float) or isinstance(value,int) or isinstance(value,dict) or isinstance(value,bool):
                     new_value = "OOPS"
@@ -744,7 +744,7 @@ class ValidateNestedInput():
                     data_validators = template_values[name]
 
                     try:
-                        value == data_validators['type'](value)
+                        value == eval(data_validators['type'])(value)
 
                         if data_validators.get('min') is not None:
                             if value < data_validators['min']:
@@ -781,7 +781,7 @@ class ValidateNestedInput():
                 if self.isAttribute(name):
                     try:
                         data_validators = template_values[name]
-                        attribute_type = data_validators['type']
+                        attribute_type = eval(data_validators['type'])
                         new_value = attribute_type(value)
                         if not isinstance(new_value, bool):
                             self.update_attribute_value(object_name_path, name, new_value)
