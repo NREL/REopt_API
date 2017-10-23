@@ -9,13 +9,13 @@ class Tech(object):
     base class for REopt energy generation technology
     """
 
-    def __init__(self, min_kw=0, max_kw=big_number, cost_dollars_per_kw=big_number, om_dollars_per_kw=0,
-                 *args, **kwargs):
+    def __init__(self, min_kw=0, max_kw=big_number, installed_cost_us_dollars_per_kw=big_number,
+                 om_cost_us_dollars_per_kw=0, *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
-        self.cost_dollars_per_kw = cost_dollars_per_kw
-        self.om_dollars_per_kw = om_dollars_per_kw
+        self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
+        self.om_cost_us_dollars_per_kw = om_cost_us_dollars_per_kw
 
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
@@ -25,13 +25,7 @@ class Tech(object):
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
 
-        # self._check_inputs()
         self.kwargs = kwargs
-
-    def _check_inputs(self):
-
-        assert self.max_kw >= self.min_kw,\
-                "max_kw must be greater than or equal to min_kw."
 
     @property
     def prod_factor(self):
@@ -49,11 +43,11 @@ class Tech(object):
 
 class Util(Tech):
 
-    def __init__(self, dfm, outage_start=None, outage_end=None, **kwargs):
-        super(Util, self).__init__(max_kw=12000000, **kwargs)
+    def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
+        super(Util, self).__init__(max_kw=12000000)
 
-        self.outage_start = outage_start
-        self.outage_end = outage_end
+        self.outage_start_hour = outage_start_hour
+        self.outage_end_hour = outage_end_hour
         self.loads_served = ['retail', 'storage']
         self.is_grid = True
         self.derate = 0
@@ -65,29 +59,23 @@ class Util(Tech):
 
         grid_prod_factor = [1.0 for _ in range(8760)]
 
-        if self.outage_start and self.outage_end:  # "turn off" grid resource
-            grid_prod_factor[self.outage_start:self.outage_end] = [0]*(self.outage_end - self.outage_start)
+        if self.outage_start_hour and self.outage_end_hour:  # "turn off" grid resource
+            grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
         return grid_prod_factor
 
 
 class PV(Tech):
 
-    def __init__(self, dfm, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
-        super(PV, self).__init__(min_kw=kwargs.get('pv_kw_min'),
-                                 max_kw=kwargs.get('pv_kw_max'),
-                                 om_dollars_per_kw=kwargs.get('pv_om'),
-                                 cost_dollars_per_kw=kwargs.get('pv_cost'),
-                                 **kwargs)
-        self.degradation_rate = kwargs.get('pv_degradation_rate')
+    def __init__(self, dfm, degradation_pct, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
+        super(PV, self).__init__(**kwargs)
+
+        self.degradation_pct = degradation_pct
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
-        self.incentives = Incentives(kwargs, macrs_years=kwargs.get('pv_macrs_schedule'),
-                                     macrs_bonus_fraction=kwargs.get('pv_macrs_bonus_fraction'),
-                                     macrs_itc_reduction=kwargs.get('pv_macrs_itc_reduction', 0.5),
-                                     include_production_based=True
-)
+        self.incentives = Incentives(**kwargs)
+
         self.pvwatts = None
         dfm.add_pv(self)
 
@@ -101,18 +89,13 @@ class PV(Tech):
 class Wind(Tech):
 
     def __init__(self, dfm, acres_per_kw=.03, **kwargs):
-        super(Wind, self).__init__(min_kw=kwargs.get('wind_kw_min'),
-                                   max_kw=kwargs.get('wind_kw_max'),
-                                   om_dollars_per_kw=kwargs.get('wind_om'),
-                                   cost_dollars_per_kw=kwargs.get('wind_cost'),
-                                   **kwargs)
+        super(Wind, self).__init__(**kwargs)
+
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
-        self.incentives = Incentives(kwargs, macrs_years=kwargs.get('wind_macrs_schedule'),
-                                     macrs_bonus_fraction=kwargs.get('wind_macrs_bonus_fraction'),
-                                     macrs_itc_reduction=kwargs.get('wind_macrs_itc_reduction') or 0.5,
-                                     include_production_based=True)
+        self.incentives = Incentives(**kwargs)
+
         self.ventyx = None
         dfm.add_wind(self)
 
