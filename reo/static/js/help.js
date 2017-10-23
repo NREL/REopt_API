@@ -60,9 +60,6 @@ var tableDescriptionCell = function(def) {
   return $("<td>").append($("<span>").html(text))
 }
 
-var objectNameCell = function (name){
-  return $('<div class="row">').html('<div class="col col-xs-0.5"></div><div class="col col-xs-12 bg-primary text-white"><h4>'+name+'</h4></div>')
-}
 
 var buildAttributeTableRow = function(name, def,tableColumns){
   var row = $("<tr>")
@@ -132,7 +129,7 @@ var sortAttributeTableRows = function (def){
       other_keys.push(all_keys[i])
     }
   }
-  return req_keys.sort().concat(dep_keys.sort()).concat(other_keys.sort())
+  return req_keys.sort().concat(other_keys.sort()).concat(other_keys.sort())
 }
 
 var buildAttributeTable = function(definition_dictionary) {
@@ -161,32 +158,46 @@ var subDirectoriesCell = function (definition_dictionary){
   var subdirectories = []
   for (var i=0;i<def_keys.length;i++){
     if (def_keys[i][0]===def_keys[i][0].toUpperCase()){
-      subdirectories.push("<b><span class='text-secondary'>"+def_keys[i]+'</span></b>')
+      subdirectories.push($('<button type="button" data-target="#'+def_keys[i]+'_panel" class="btn btn-primary btn-sml scroll_button">').html(def_keys[i]).prop('outerHTML'))
     }
   }
   if (subdirectories.length>0){
-    return subdirectories.join(', ')
+     return subdirectories.join(' ')
+       
   } else {
     return 'None'
   }
 }
 
-var buildObjectRow = function(name, definition_dictionary) {
+var objectHeaderRow = function(name){
+  var output = $('<div class="panel-heading" role="tab">')
+  output.append($('<h5 class="panel-title">').html(
+    $('<a data-toggle="collapse" data-parent="'+name+'Row" href="#'+name+'_collapsecontainer" aria-expanded="true" aria-controls="'+name+'_collapsecontainer">').html(name))
+  )
+  return output
+}
+
+
+var buildObjectRow = function(name, definition_dictionary, indent) {
+  output = $('<div class="row">')
+  output_col = $('<div class="col col-xs-offset-'+indent.toString()+' col-xs-'+(12-indent).toString()+'">')
   
-  var object_row = $('<div class="row">')
+  var object_panel = $('<div class="panel panel-default" role="tablist" id="'+name+'_panel">')
 
-  var objectTableNameRow = objectNameCell(name) 
-  object_row.append(objectTableNameRow)
+  var objectTableNameRow = objectHeaderRow(name)
+  object_panel.append(objectTableNameRow)
 
+  var collapse_container = $('<div id="'+name+'_collapsecontainer" class="panel-collapse collapse in panel-body" role="tabpanel" aria-labelledby="'+name+'_collapsebutton">')
   
   var objectSubTableAttributeRow = $('<div class="row">')
   var attributeRowName = $('<div class="col col-xs-2">').html('<b><span class="text-secondary">Attributes</span></b>')
   objectSubTableAttributeRow.append(attributeRowName)
+  collapse_container.append(objectSubTableAttributeRow)
   
   var attributeTable = buildAttributeTable(definition_dictionary)
   var attributeRowContent = $('<div class="col col-xs-10">').html(attributeTable)
   objectSubTableAttributeRow.append(attributeRowContent)
-  object_row.append(objectSubTableAttributeRow)
+  collapse_container.append(objectSubTableAttributeRow)
 
 
   var objectSubTableSubdirectoryRow = $('<div class="row">')
@@ -195,27 +206,37 @@ var buildObjectRow = function(name, definition_dictionary) {
   
   var subdirectoryRowContent= $('<div class="col col-xs-10">').html(subDirectoriesCell(definition_dictionary))
   objectSubTableSubdirectoryRow.append(subdirectoryRowContent)
-  object_row.append(objectSubTableSubdirectoryRow)
+  collapse_container.append(objectSubTableSubdirectoryRow)
 
-  object_row.append($('<div class="row">').html("<br>"))
+  object_panel.append(collapse_container)
   
-  return object_row
+  object_panel.append($('<div class="row">').html("<br>"))
+
+  output.append(output_col.html(object_panel))
+  return output
 }
 
 
-var recursiveBuildReadTable = function(input_definitions){
+var recursiveBuildReadTable = function(input_definitions, indent){
   
   var defKeys = Object.keys(input_definitions)
-  
+  var subdirectories = []
+    
   for (var i=0;i<defKeys.length;i++){
 
     var key_name = defKeys[i]
     
-    if (key_name[0]===key_name[0].toUpperCase()){
+    if (key_name[0]===key_name[0].toUpperCase() && key_name!= 'Wind' ){
+      subdirectories.push(key_name)
+    }
+  }
+  subdirectories = subdirectories.sort()
+
+  for (var i=0;i<subdirectories.length;i++){
+      var key_name = subdirectories[i]
       var next_object_defintion = input_definitions[key_name]
-      defTable.append(buildObjectRow(key_name, next_object_defintion))
-      recursiveBuildReadTable(next_object_defintion)
-    }  
+      defTable.append(buildObjectRow(key_name, next_object_defintion, indent))
+      recursiveBuildReadTable(next_object_defintion,indent+1)   
   }
 }
 
@@ -223,6 +244,16 @@ var defTable = $('<div class="container">')
 
 $(document).ready(function() {
 	
-    recursiveBuildReadTable(nested_input_definitions)
+    recursiveBuildReadTable(nested_input_definitions,1)
     $('#definition_table').html(defTable.prop('outerHTML'))
+
+     $('.scroll_button').on('click', function(event) {
+    var target = $(this.getAttribute('data-target'));
+    if( target.length ) {
+        event.preventDefault();
+        $('html, body').stop().animate({
+            scrollTop: target.offset().top
+        },1000);
+    }
+    });
   })

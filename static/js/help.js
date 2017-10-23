@@ -60,9 +60,6 @@ var tableDescriptionCell = function(def) {
   return $("<td>").append($("<span>").html(text))
 }
 
-var objectNameCell = function (name){
-  return $('<div class="row">').html('<div class="col col-xs-0.5"></div><div class="col col-xs-12 bg-primary text-white"><h4>'+name+'</h4></div>')
-}
 
 var buildAttributeTableRow = function(name, def,tableColumns){
   var row = $("<tr>")
@@ -110,6 +107,7 @@ var buildAttributeTableHeader = function(head, columns){
 var sortAttributeTableRows = function (def){
   var all_keys = Object.keys(def) 
   var req_keys = []
+  var dep_keys = []
   var other_keys = []
 
   for (var i=0;i<all_keys.length;i++){
@@ -123,7 +121,7 @@ var sortAttributeTableRows = function (def){
     }
 
     if ( def[all_keys[i]].hasOwnProperty("depends_on") || def[all_keys[i]].hasOwnProperty("replacements") ) {
-        req_keys.push(all_keys[i])
+        dep_keys.push(all_keys[i])
         req = true      
     }
     
@@ -131,7 +129,7 @@ var sortAttributeTableRows = function (def){
       other_keys.push(all_keys[i])
     }
   }
-  return req_keys.sort().concat(other_keys.sort())
+  return req_keys.sort().concat(other_keys.sort()).concat(other_keys.sort())
 }
 
 var buildAttributeTable = function(definition_dictionary) {
@@ -170,22 +168,34 @@ var subDirectoriesCell = function (definition_dictionary){
   }
 }
 
-var buildObjectRow = function(name, definition_dictionary) {
+var objectHeaderRow = function(name){
+  var output = $('<div class="panel-heading" role="tab">')
+  output.append($('<h5 class="panel-title">').html(
+    $('<a data-toggle="collapse" data-parent="'+name+'Row" href="#'+name+'_collapsecontainer" aria-expanded="true" aria-controls="'+name+'_collapsecontainer">').html(name))
+  )
+  return output
+}
+
+
+var buildObjectRow = function(name, definition_dictionary, indent) {
+  output = $('<div class="row justify-content-end col-xs-'+(12-indent).toString()+'">').html(" ")
   
-  var object_row = $('<div class="row">')
+  var object_panel = $('<div class="col panel panel-default" role="tablist">')
 
-  var objectTableNameRow = objectNameCell(name) 
-  object_row.append(objectTableNameRow)
+  var objectTableNameRow = objectHeaderRow(name)
+  object_panel.append(objectTableNameRow)
 
+  var collapse_container = $('<div id="'+name+'_collapsecontainer" class="panel-collapse collapse in panel-body" role="tabpanel" aria-labelledby="'+name+'_collapsebutton">')
   
   var objectSubTableAttributeRow = $('<div class="row">')
   var attributeRowName = $('<div class="col col-xs-2">').html('<b><span class="text-secondary">Attributes</span></b>')
   objectSubTableAttributeRow.append(attributeRowName)
+  collapse_container.append(objectSubTableAttributeRow)
   
   var attributeTable = buildAttributeTable(definition_dictionary)
   var attributeRowContent = $('<div class="col col-xs-10">').html(attributeTable)
   objectSubTableAttributeRow.append(attributeRowContent)
-  object_row.append(objectSubTableAttributeRow)
+  collapse_container.append(objectSubTableAttributeRow)
 
 
   var objectSubTableSubdirectoryRow = $('<div class="row">')
@@ -194,15 +204,18 @@ var buildObjectRow = function(name, definition_dictionary) {
   
   var subdirectoryRowContent= $('<div class="col col-xs-10">').html(subDirectoriesCell(definition_dictionary))
   objectSubTableSubdirectoryRow.append(subdirectoryRowContent)
-  object_row.append(objectSubTableSubdirectoryRow)
+  collapse_container.append(objectSubTableSubdirectoryRow)
 
-  object_row.append($('<div class="row">').html("<br>"))
+  object_panel.append(collapse_container)
   
-  return object_row
+  object_panel.append($('<div class="row">').html("<br>"))
+
+  output.append(object_panel)
+  return output
 }
 
 
-var recursiveBuildReadTable = function(input_definitions){
+var recursiveBuildReadTable = function(input_definitions, indent){
   
   var defKeys = Object.keys(input_definitions)
   
@@ -212,8 +225,8 @@ var recursiveBuildReadTable = function(input_definitions){
     
     if (key_name[0]===key_name[0].toUpperCase()){
       var next_object_defintion = input_definitions[key_name]
-      defTable.append(buildObjectRow(key_name, next_object_defintion))
-      recursiveBuildReadTable(next_object_defintion)
+      defTable.append(buildObjectRow(key_name, next_object_defintion, indent))
+      recursiveBuildReadTable(next_object_defintion,indent+1)
     }  
   }
 }
@@ -222,6 +235,6 @@ var defTable = $('<div class="container">')
 
 $(document).ready(function() {
 	
-    recursiveBuildReadTable(nested_input_definitions)
+    recursiveBuildReadTable(nested_input_definitions,0)
     $('#definition_table').html(defTable.prop('outerHTML'))
   })
