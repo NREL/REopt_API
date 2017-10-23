@@ -3,7 +3,6 @@ import shutil
 import os
 import traceback
 from reo.log_levels import log
-from api_definitions import inputs, outputs
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
@@ -63,13 +62,9 @@ class Scenario:
         self.run_uuid = run_uuid
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
-        # for k, v in inputs(full_list=True).items():
-        #     setattr(self, k, inputs_dict.get(k))
-        #
         # if self.tilt is None:  # is this done in validator?
         #     self.tilt = self.latitude
-        #
-        # self.update_types()  # is this done in validator?
+
         self.inputs_dict = inputs_dict
 
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
@@ -79,58 +74,18 @@ class Scenario:
         with open(self.file_post_input, 'w') as file_post:
             json.dump(json_POST, file_post)
 
-    def update_types(self):
-        for group in [inputs(full_list=True), outputs()]:
-            for k, v in group.items():
-                value = getattr(self, k)
-
-                if value is not None:
-                    if v['type'] == float:
-                        if v['pct']:
-                            if value > 1.0:
-                                setattr(self, k, float(value) * 0.01)
-
-                    elif v['type'] == list:
-                        if 'listtype' in v:
-                            if v['listtype'] != str:
-                                value = [float(i) for i in getattr(self, k)]
-                                setattr(self, k, value)
-                    else:
-                        setattr(self, k, v['type'](value))
-
-    def get_subtask_inputs(self, name):
-        output = {}
-        defaults = inputs(filter=name)
-
-        for k in defaults.keys():
-            output[k] = getattr(self, k)
-            if output[k] is None:
-                default = defaults[k].get('default')
-                if default is not None:
-                    output[k] = default
-
-        return output
-
     def run(self):
         try:
             # storage is always made, even if max size is zero (due to REopt expected inputs)
             storage = Storage(dfm=self.dfm, **self.inputs_dict["Site"]["Storage"])
 
             site = Site(dfm=self.dfm, **self.inputs_dict["Site"])
-            # following 2 lines are necessary for returning *some* of the assigned values.
-            # at least owner_tax_rate and owner_discount_rate are necessary for proforma (because they come in as Nones
-            # and then we assign them to the off_taker values to represent single party model)
-            # for k in site.financial.__dict__.keys():
-            #     setattr(self, k, getattr(site.financial, k))
 
             self.create_loads()
             self.create_elec_tariff()
 
             if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
                 pv = PV(dfm=self.dfm, **self.inputs_dict["Site"]["PV"])
-                # following 2 lines are necessary for returning the assigned values
-                # self.pv_degradation_rate = pv.degradation_pct
-                # self.pv_kw_ac_hourly = pv.prod_factor
 
             if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
                 wind = Wind(dfm=self.dfm, **self.inputs_dict)
@@ -157,21 +112,12 @@ class Scenario:
             #         output_dict[k] = v
             
             self.cleanup()
-            
-            # ins_and_outs_dict = self._add_inputs(output_dict)
-            # return ins_and_outs_dict
             return output_dict
 
         except Exception as e:
             self.cleanup()
             setattr(e, "traceback", traceback.format_exc())
             raise e
- 
-    def _add_inputs(self, od):
-        for k in inputs(full_list=True).keys():
-            if hasattr(self, k):
-                od[k] = getattr(self, k)
-        return od
 
     def cleanup(self):
         # do not call until alternate means of accessing data is developed!
