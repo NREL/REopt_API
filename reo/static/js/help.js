@@ -129,7 +129,7 @@ var sortAttributeTableRows = function (def){
       other_keys.push(all_keys[i])
     }
   }
-  return req_keys.sort().concat(other_keys.sort()).concat(other_keys.sort())
+  return req_keys.sort().concat(dep_keys.sort()).concat(other_keys.sort())
 }
 
 var buildAttributeTable = function(definition_dictionary) {
@@ -223,13 +223,12 @@ var recursiveBuildReadTable = function(input_definitions, indent){
   var subdirectories = []
     
   for (var i=0;i<defKeys.length;i++){
-
     var key_name = defKeys[i]
-    
     if (key_name[0]===key_name[0].toUpperCase() && key_name!= 'Wind' ){
       subdirectories.push(key_name)
     }
   }
+  
   subdirectories = subdirectories.sort()
 
   for (var i=0;i<subdirectories.length;i++){

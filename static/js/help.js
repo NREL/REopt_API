@@ -158,11 +158,12 @@ var subDirectoriesCell = function (definition_dictionary){
   var subdirectories = []
   for (var i=0;i<def_keys.length;i++){
     if (def_keys[i][0]===def_keys[i][0].toUpperCase()){
-      subdirectories.push("<b><span class='text-secondary'>"+def_keys[i]+'</span></b>')
+      subdirectories.push($('<button type="button" data-target="#'+def_keys[i]+'_panel" class="btn btn-primary btn-sml scroll_button">').html(def_keys[i]).prop('outerHTML'))
     }
   }
   if (subdirectories.length>0){
-    return subdirectories.join(', ')
+     return subdirectories.join(' ')
+       
   } else {
     return 'None'
   }
@@ -178,9 +179,10 @@ var objectHeaderRow = function(name){
 
 
 var buildObjectRow = function(name, definition_dictionary, indent) {
-  output = $('<div class="row justify-content-end col-xs-'+(12-indent).toString()+'">').html(" ")
+  output = $('<div class="row">')
+  output_col = $('<div class="col col-xs-offset-'+indent.toString()+' col-xs-'+(12-indent).toString()+'">')
   
-  var object_panel = $('<div class="col panel panel-default" role="tablist">')
+  var object_panel = $('<div class="panel panel-default" role="tablist" id="'+name+'_panel">')
 
   var objectTableNameRow = objectHeaderRow(name)
   object_panel.append(objectTableNameRow)
@@ -210,7 +212,7 @@ var buildObjectRow = function(name, definition_dictionary, indent) {
   
   object_panel.append($('<div class="row">').html("<br>"))
 
-  output.append(object_panel)
+  output.append(output_col.html(object_panel))
   return output
 }
 
@@ -218,16 +220,23 @@ var buildObjectRow = function(name, definition_dictionary, indent) {
 var recursiveBuildReadTable = function(input_definitions, indent){
   
   var defKeys = Object.keys(input_definitions)
-  
+  var subdirectories = []
+    
   for (var i=0;i<defKeys.length;i++){
 
     var key_name = defKeys[i]
     
-    if (key_name[0]===key_name[0].toUpperCase()){
+    if (key_name[0]===key_name[0].toUpperCase() && key_name!= 'Wind' ){
+      subdirectories.push(key_name)
+    }
+  }
+  subdirectories = subdirectories.sort()
+
+  for (var i=0;i<subdirectories.length;i++){
+      var key_name = subdirectories[i]
       var next_object_defintion = input_definitions[key_name]
       defTable.append(buildObjectRow(key_name, next_object_defintion, indent))
-      recursiveBuildReadTable(next_object_defintion,indent+1)
-    }  
+      recursiveBuildReadTable(next_object_defintion,indent+1)   
   }
 }
 
@@ -235,6 +244,16 @@ var defTable = $('<div class="container">')
 
 $(document).ready(function() {
 	
-    recursiveBuildReadTable(nested_input_definitions,0)
+    recursiveBuildReadTable(nested_input_definitions,1)
     $('#definition_table').html(defTable.prop('outerHTML'))
+
+     $('.scroll_button').on('click', function(event) {
+    var target = $(this.getAttribute('data-target'));
+    if( target.length ) {
+        event.preventDefault();
+        $('html, body').stop().animate({
+            scrollTop: target.offset().top
+        },1000);
+    }
+    });
   })
