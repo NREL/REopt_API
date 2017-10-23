@@ -31,7 +31,7 @@ nested_input_definitions = {
     "Scenario": {
                 "timeout_seconds":      {'type': float,'min': 1, 'max': 295, 'default': 295},
                 "user_id":              {'type': str},
-                "time_steps_per_hour":  {'type': float, 'min': 1, 'max': 1, 'default': 1}, # aspirational - we only handle 1 timestep per hour
+                "time_steps_per_hour":  {'type': int, 'min': 1, 'max': 1, 'default': 1}, # aspirational - we only handle 1 timestep per hour
 
         "Site": {
                      "latitude":            {'type': float, 'min':-180, 'max':180, 'required': True},

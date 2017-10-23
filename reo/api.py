@@ -51,7 +51,7 @@ class RunInputResource(ModelResource):
 
         return kwargs
 
-    def get_object_list(self, request): 
+    def get_object_list(self, request):
         return [request]
 
     def obj_get_list(self, bundle, **kwargs):
@@ -71,16 +71,16 @@ class RunInputResource(ModelResource):
 
         # Format  and  Save Inputs
         # model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
-        # model_inputs['api_version'] = api_version     
+        # model_inputs['api_version'] = api_version
 
         # run = RunInput(**model_inputs)
         # run.save()
 
         # Return  Results
         output_model = self.create_output(bundle.data, input_validator)
-
         bundle.obj = output_model
         bundle.data = {k: v for k, v in output_model.__dict__.items() if not k.startswith('_')}
+        bundle.data['id'] = 1  # get error without this line?
 
         return self.full_hydrate(bundle)
 
@@ -95,6 +95,7 @@ class RunInputResource(ModelResource):
                     "warnings": input_validator.warnings
                 },
                 "inputs": json_POST,
+                "outputs": {},
             }
 
         else:
@@ -116,12 +117,15 @@ class RunInputResource(ModelResource):
                         "warnings": input_validator.warnings,
                     },
                     "inputs": json_POST,
+                    "outputs": {},
                 }
         # API level outputs
-        # output_dictionary['outputs']['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
-        # output_dictionary['outputs']['api_version'] = api_version
-        import pdb; pdb.set_trace()
-        result = REoptResponse(**output_dictionary)
+        output_dictionary['outputs']['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
+        output_dictionary['outputs']['api_version'] = api_version
+        result = REoptResponse(messages={"warnings": input_validator.warnings},
+                               inputs=json_POST,
+                               **output_dictionary)
         # result.save()
+        # import pdb; pdb.set_trace()
 
         return result
