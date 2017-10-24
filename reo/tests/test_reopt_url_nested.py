@@ -46,7 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             del test_case['Scenario']['Site'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         electric_tarrif_cases = [['urdb_response','blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
@@ -55,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['ElectricTariff'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>ElectricTariff"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
@@ -64,7 +64,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['LoadProfile'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>LoadProfile"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
     def test_valid_data_types(self):
 
@@ -75,8 +75,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
 
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
-            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
 
     def test_valid_data_ranges(self):
 
@@ -86,17 +86,17 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
             t = json.loads(response.content)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         for attribute, test_data in input.test_data('max'):
                 text = "exceeds allowable max"
                 response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+                self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['Input Errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
     
     def test_urdb_rate(self):
 

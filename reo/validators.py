@@ -778,10 +778,10 @@ class ValidateNestedInput:
         output = {}
 
         if self.urdb_errors:
-            output["URDB Errors"] = self.urdb_errors
+            output["URDB_rrrors"] = self.urdb_errors
 
         if self.input_data_errors:
-            output["Input Errors"] = self.input_data_errors
+            output["input_errors"] = self.input_data_errors
 
         return output
 
