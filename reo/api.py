@@ -87,17 +87,14 @@ class RunInputResource(ModelResource):
     def create_output(self, json_POST, input_validator):
 
         run_uuid = uuid.uuid4()
-
         if not input_validator.isValid:
             output_dictionary = {
                 "messages": {
                     "errors": input_validator.errors,
                     "warnings": input_validator.warnings
                 },
-                "inputs": json_POST,
-                "outputs": {},
+                "outputs": {}
             }
-
         else:
             try: # should return output structure to match new nested_outputs, even with exception
                 run_set = Scenario(run_uuid=run_uuid, inputs_dict=input_validator.input_dict['Scenario'])
@@ -111,20 +108,21 @@ class RunInputResource(ModelResource):
 
             except Exception as e:
                 output_dictionary = {
-                    # "Input": inputs_dict,
                     "messages": {
                         "error": API_Error(e).response,
                         "warnings": input_validator.warnings,
                     },
-                    "inputs": json_POST,
-                    "outputs": {},
+                "outputs": {}
+
                 }
+
         # API level outputs
-        output_dictionary['outputs']['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
-        output_dictionary['outputs']['api_version'] = api_version
-        result = REoptResponse(messages={"warnings": input_validator.warnings},
-                               inputs=json_POST,
-                               **output_dictionary)
+        import pdb; pdb.set_trace()
+        output_dictionary["inputs"] = json_POST
+        output_dictionary["outputs"]["uuid"] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
+        output_dictionary["outputs"]["api_version"] = api_version
+        output_dictionary["messages"]["warnings"] = input_validator.warnings
+        result = REoptResponse(**output_dictionary)
         # result.save()
         # import pdb; pdb.set_trace()
 

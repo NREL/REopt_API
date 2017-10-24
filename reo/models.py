@@ -182,6 +182,7 @@ class RunOutput(models.Model):
     user = models.ForeignKey(User, null=True)
     messages = PickledObjectField(null=True)
     inputs = PickledObjectField(null=True)
+    outputs = PickledObjectField(null=True)
 
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     api_version = models.TextField(blank=True, default='', null=False)
