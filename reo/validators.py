@@ -579,7 +579,6 @@ class ValidateNestedInput:
     def recursively_check_input(self, nested_template, comparison_function, nested_dictionary_to_check=None,
                                 object_name_path=[]):
         """
-
         :param nested_template: nested dictionary that is read to get the order in which objects are nested in each
             other.
         :param comparison_function: tells the algorithm what to do when you have the object name (PV) and the user
