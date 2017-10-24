@@ -17,12 +17,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         bldg = BuiltInProfile.default_buildings[random.choice(range(len(BuiltInProfile.default_buildings)))]
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
         response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg,
+            'doe_reference_name': bldg,
             'latitude': city.lat,
             'longitude': city.lng,
         })
        
         annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
+        print annual_kwh_from_api, response.content
         assert annual_kwh_from_api == BuiltInProfile.annual_loads[city.name][bldg]
    
 
@@ -31,7 +32,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
        
         response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg,
+            'doe_reference_name': bldg,
             'latitude': 'bad latitude',
             'longitude': city.lng,
         })
@@ -43,7 +44,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
 
         response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg[:-1],
+            'doe_reference_name': bldg[:-1],
             'latitude': city.lat,
             'longitude': city.lng,
         })
