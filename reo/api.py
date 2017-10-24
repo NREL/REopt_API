@@ -117,7 +117,6 @@ class RunInputResource(ModelResource):
                 }
 
         # API level outputs
-        import pdb; pdb.set_trace()
         output_dictionary["inputs"] = json_POST
         output_dictionary["outputs"]["uuid"] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
         output_dictionary["outputs"]["api_version"] = api_version
