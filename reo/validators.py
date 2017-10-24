@@ -562,7 +562,9 @@ class ValidateNestedInput:
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
-            self.input_not_allowed = []
+            self.invalid_inputs = []
+
+            self.defaults_inserted = []
 
             self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_invalid_keys)
             self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_nones)
@@ -587,15 +589,22 @@ class ValidateNestedInput:
 
         @property
         def error_response(self):
-            return {"input_errors": self.errors, "warnings": self.warnings}
+            return {"errors": self.errors, "warnings": self.warnings}
 
         def warning_message(self, warnings):
+            """
+                   Convert a list of lists into a dictionary
+                   :param warnings: list - item 1 argument, item 2 location
+                   :return: message - 'Scenario>Site: latitude and longitude'
+            """
             output = {}
-            for a, b in warnings:
-                if b not in output:
-                    output[b] = [a]
+            for arg, path in warnings:
+                path = ">".join(path)
+                if path not in output:
+                    output[path] = arg
                 else:
-                    output[b].append(a)
+                    output[path] += ' AND ' + arg
+
             return output
 
         @property
@@ -606,16 +615,21 @@ class ValidateNestedInput:
                 output["URDB_errors"] = self.urdb_errors
 
             if self.input_data_errors:
-                output["Data Validation Errors"] = self.input_data_errors
+                output["input_errors"] = self.input_data_errors
 
             return output
 
         @property
         def warnings(self):
-            return {
-                "Defaults will be used for": self.warning_message(self.input_as_none),
-                'Following Inputs Are Not Allowed': self.warning_message(self.input_not_allowed)
-                }
+            output = {}
+
+            if bool(self.defaults_inserted):
+                output["Default values used for the following:"] = self.warning_message(self.defaults_inserted)
+
+            if bool(self.invalid_inputs):
+                output["Following inputs are invalid:"] = self.warning_message(self.invalid_inputs)
+
+            return output
 
         def isSingularKey(self, k):
             return k[0] == k[0].upper() and k[-1] != 's'
@@ -634,8 +648,6 @@ class ValidateNestedInput:
             # then checking the corresponding value in the nested_dictionary_to_check
             # the key_value_function tells the algorithm what to do when you have the object name (PV) and the user supplied values ('max_kw':0)
             # nested_dictionary_to_check can be updated based on the key value function
-
-            # location is
 
             if nested_dictionary_to_check is None:
                 nested_dictionary_to_check = self.input
@@ -692,7 +704,7 @@ class ValidateNestedInput:
                     if self.isAttribute(name):
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
-                            self.input_not_allowed.append([name, object_name_path[-1]])
+                            self.invalid_inputs.append([name, object_name_path])
 
         def test_data(self, defintion_attribute):
 
@@ -812,10 +824,12 @@ class ValidateNestedInput:
                     default = template_value.get('default')
                     if default is not None and real_values.get(template_key) is None:
                         self.update_attribute_value(object_name_path, template_key, default)
+                        self.defaults_inserted.append([template_key, object_name_path])
 
                 if self.isSingularKey(template_key):
                     if template_key not in real_values.keys():
                         self.update_attribute_value(object_name_path, template_key, {})
+                        self.defaults_inserted.append([template_key, object_name_path])
 
         def check_required_attributes(self, object_name_path, template_values=None, real_values=None):
 
