@@ -563,6 +563,7 @@ class ValidateNestedInput:
         self.urdb_errors = []
         self.input_as_none = []
         self.invalid_inputs = []
+        self.defaults_inserted = []
 
         self.recursively_check_input(nested_template=self.nested_input_definitions,
                                      comparison_function=self.remove_invalid_keys)
@@ -626,7 +627,7 @@ class ValidateNestedInput:
             if self.isAttribute(name):
                 if name not in template_values.keys():
                     self.delete_attribute(object_name_path, name)
-                    self.invalid_inputs.append([name, object_name_path[-1]])
+                    self.invalid_inputs.append([name, object_name_path])
 
     def remove_nones(self, object_name_path, template_values, input_values):
 
@@ -660,10 +661,12 @@ class ValidateNestedInput:
                 default = template_value.get('default')
                 if default is not None and input_values.get(template_key) is None:
                     self.update_attribute_value(object_name_path, template_key, default)
+                    self.defaults_inserted.append([template_key, object_name_path])
 
             if self.isSingularKey(template_key):
                 if template_key not in input_values.keys():
                     self.update_attribute_value(object_name_path, template_key, {})
+                    self.defaults_inserted.append([template_key, object_name_path])
 
     def check_special_data_types(self, object_name_path, template_values=None, input_values=None):
         if input_values is not None:
@@ -767,10 +770,12 @@ class ValidateNestedInput:
         """
         output = {}
         for arg, path in warnings:
+            path = ">".join(path)
             if path not in output:
-                output[path] = [arg]
+                output[path] = arg
             else:
-                output[path].append(arg)
+                output[path] += ' AND ' + arg
+
         return output
 
     @property
@@ -787,9 +792,15 @@ class ValidateNestedInput:
 
     @property
     def warnings(self):
-        return {"Default values used for the following 'null' inputs": self.warning_message(self.input_as_none),
-                'Following inputs are invalid': self.warning_message(self.invalid_inputs)
-                }
+        output = {}
+
+        if bool(self.defaults_inserted):
+            output["Default values used for the following:"] = self.warning_message(self.defaults_inserted)
+
+        if bool(self.invalid_inputs):
+            output["Following inputs are invalid:"] = self.warning_message(self.invalid_inputs)
+
+        return output
 
     def isSingularKey(self, k):
         """

@@ -68,6 +68,8 @@ class RunInputResource(ModelResource):
 
         else:  # nested input
             input_validator = ValidateNestedInput(bundle.data, nested=True)
+            if not input_validator.isValid:
+                raise ImmediateHttpResponse(response=self.error_response(bundle.request, input_validator.error_response))
 
         # Format  and  Save Inputs
         # model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
