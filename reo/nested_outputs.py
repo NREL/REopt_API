@@ -4,9 +4,9 @@ from nested_inputs import nested_input_definitions, list_of_float
 def list_of_string(input):
     return [str(i) for i in input]
 
-nested_outputs = {
+nested_output_definitions = {
 
-    "Input": {nested_input_definitions},
+    "Input": nested_input_definitions,
 
     "Output": {
 

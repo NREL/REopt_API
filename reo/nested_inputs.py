@@ -126,7 +126,7 @@ nested_input_definitions = {
                                 "gcr":                                  {'type': float, 'min': 0.01, 'max': 0.99, 'default': 0.4},
                                 "dc_ac_ratio":                          {'type': float, 'min': 0, 'max': 2, 'default': 1.1},
                                 "inv_eff":                              {'type': float ,'min': 0.9, 'max': 0.995, 'default': 0.96},
-                                "radius":                               {'type': float , 'min': 0, 'default': 0},
+                                "radius":                               {'type': int , 'min': 0, 'default': 0},
                                 "tilt":                                 {'type': float, 'min': 0, 'max': 90}
                              },
 

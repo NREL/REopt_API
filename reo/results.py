@@ -1,6 +1,7 @@
 import os
 import json
 from api_definitions import outputs
+from nested_outputs import nested_output_definitions
 from dispatch import ProcessOutputs
 
 
@@ -81,6 +82,22 @@ class Results:
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.year = year
 
+        self.setup_nested()
+
+    def setup_nested(self):
+        # Add nested outputs (preserve original format for now to support backwards compatibility)
+        nested_dict = dict()
+
+        import pdb
+        pdb.set_trace()
+
+        for k in nested_output_definitions().iterkeys():
+            nested_dict.setdefault(k, None)
+
+
+
+
+
     def get_output(self):
         output_dict = dict()
         for k in outputs().iterkeys():
@@ -92,3 +109,4 @@ class Results:
         if self.results_dict['pv_kw'] > 0 or self.results_dict['batt_kw'] > 0:
             system = True
         return system
+

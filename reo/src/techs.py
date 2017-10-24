@@ -40,7 +40,6 @@ class Tech(object):
             return True
         return False
 
-
 class Util(Tech):
 
     def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
@@ -79,8 +78,10 @@ class PV(Tech):
         self.pvwatts = None
         dfm.add_pv(self)
 
+
     @property
     def prod_factor(self):
+
         if self.pvwatts is None:
             self.pvwatts = PVWatts(**self.kwargs)
         return self.pvwatts.pv_prod_factor

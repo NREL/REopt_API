@@ -1,5 +1,6 @@
 from datetime import datetime
 from nested_inputs import nested_input_definitions
+from nested_outputs import nested_output_definitions
 max_big_number = 1e8
 max_incentive = 1e10
 max_years = int(40)
@@ -802,8 +803,9 @@ def outputs():
             },
 
             "inputs": nested_input_definitions,
-
-        }
+            "outputs": nested_output_definitions["Output"],
+            "messages": nested_output_definitions["Messages"],
+    }
 
 
 # default load profiles

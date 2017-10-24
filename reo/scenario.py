@@ -84,8 +84,12 @@ class Scenario:
             self.create_loads()
             self.create_elec_tariff()
 
+            pv_kwargs = self.inputs_dict["Site"]["PV"]
+            pv_kwargs['latitude'] = self.inputs_dict["Site"]["latitude"]
+            pv_kwargs['longitude'] = self.inputs_dict["Site"]["longitude"]
+
             if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
-                pv = PV(dfm=self.dfm, **self.inputs_dict["Site"]["PV"])
+                pv = PV(dfm=self.dfm, **pv_kwargs)
 
             if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
                 wind = Wind(dfm=self.dfm, **self.inputs_dict)
