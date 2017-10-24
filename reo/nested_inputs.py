@@ -24,7 +24,7 @@ default_buildings = ['FastFoodRest',
 
 
 def list_of_float(input):
-    return ['float'(i) for i in input]
+    return [float(i) for i in input]
 
 nested_input_definitions = {
 
