@@ -48,4 +48,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'longitude': city.lng,
         })
 
-        assert "Invalid load_profile_name. Select from the following" in response.content
+        assert "Invalid doe_reference_name. Select from the following" in response.content
