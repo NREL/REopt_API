@@ -90,10 +90,7 @@ class RunInputResource(ModelResource):
 
         if not input_validator.isValid:
             output_dictionary = {
-                "messages": {
-                    "errors": input_validator.errors,
-                    "warnings": input_validator.warnings
-                },
+                "messages": {input_validator.error_response},
                 "inputs": json_POST,
                 "outputs": {},
             }
@@ -108,6 +105,8 @@ class RunInputResource(ModelResource):
                 # Run Optimization
                 output_dictionary = dict()
                 output_dictionary['outputs'] = run_set.run()
+                output_dictionary['inputs'] = json_POST
+                output_dictionary['messages'] = input_validator.warnings
 
             except Exception as e:
                 output_dictionary = {
@@ -122,9 +121,7 @@ class RunInputResource(ModelResource):
         # API level outputs
         output_dictionary['outputs']['uuid'] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
         output_dictionary['outputs']['api_version'] = api_version
-        result = REoptResponse(messages={"warnings": input_validator.warnings},
-                               inputs=json_POST,
-                               **output_dictionary)
+        result = REoptResponse(**output_dictionary)
         # result.save()
         # import pdb; pdb.set_trace()
 
