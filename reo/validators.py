@@ -755,7 +755,7 @@ class ValidateNestedInput:
 
     @property
     def error_response(self):
-        return {"Input Errors": self.errors, "Warnings": self.warnings}
+        return {"input_errors": self.errors, "warnings": self.warnings}
 
     @staticmethod
     def warning_message(warnings):
