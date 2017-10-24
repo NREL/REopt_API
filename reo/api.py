@@ -90,7 +90,7 @@ class RunInputResource(ModelResource):
 
         if not input_validator.isValid:
             output_dictionary = {
-                "messages": {input_validator.error_response},
+                "messages": input_validator.error_response,
                 "inputs": json_POST,
                 "outputs": {},
             }
