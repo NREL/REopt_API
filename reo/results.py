@@ -121,6 +121,8 @@ class Results:
 
         self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
+        """
+
         # Loop through all sub-site dicts and init
         for name, d in nested_output_definitions["Output"]["Scenario"]["Site"].items():
             # limit to financial, dispatch, and electric tariff outputs
@@ -134,9 +136,6 @@ class Results:
                         self.nested_outputs["Scenario"]["Site"][name][k] = self.results_dict[k]
                     elif k in self.results_dict_bau[k]:
                         self.nested_outputs["Scenario"]["Site"][name][k] = self.results_bau_dict[k]
-
-                import pdb;
-                pdb.set_trace()
 
             elif name == "PV":
                 self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["pv_kw"]
@@ -155,6 +154,8 @@ class Results:
                 self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict["batt_kwh"]
             elif name == "Grid":
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_utility_kwh"]
+
+        """
 
     def compute_total_power(self, tech):
         tech = tech.lower()
