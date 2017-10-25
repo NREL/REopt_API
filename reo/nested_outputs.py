@@ -18,79 +18,73 @@ nested_output_definitions = {
             "Site":
             {
 
+                "LoadProfile": {
+                    "year_one_electric_load_series_kw": {'type': list_of_float, "description": "Year 1 electric load time series", "units": 'kW'},
+                },
+
                 "Financial": {
-                    "lcc": {'type': float,  "description": "Lifecycle Cost", "units": 'dollars'},
-                    "lcc_bau": {'type': float, "description": "Lifecycle Cost", "units": 'dollars'},
-                    "npv": {'type': float, "description": "Net Present  Value of System", "units": 'dollars'},
-                    "net_capital_costs_plus_om": {'type': float, "description": "Capital Cost plus Operations and Maintenance over Project Lifetime", "units": '$'},
+                    "lcc_us_dollars": {'type': float,  "description": "Lifecycle Cost", "units": 'dollars'},
+                    "lcc_bau_us_dollars": {'type': float, "description": "Lifecycle Cost", "units": 'dollars'},
+                    "npv_us_dollars": {'type': float, "description": "Net Present  Value of System", "units": 'dollars'},
+                    "net_capital_costs_plus_om_us_dollars": {'type': float, "description": "Capital Cost plus Operations and Maintenance over Project Lifetime", "units": '$'},
                 },
 
                 "PV": {
                     "size_kw": {'type': float, "description": "Recommended PV System Size", "units": 'kW'},
-                    "average_yearly_energy_produced": {'type': float, "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
-                    "average_yearly_energy_exported": {'type': float, "description": "Average annual energy exported by the PV system", "units": 'kWh'},
-                    'year_one_energy_produced': {'type': float, "description": "PV energy produced in year 1", "units": 'kWh'},
-                    'year_one_power_production_series': {'type': list_of_float, "description": "Hourly Solar Resource", "units": 'kW'},
+                    "average_yearly_energy_produced_kwh": {'type': float, "description": "Average energy produced by the PV system over one year", "units": 'kWh'},
+                    "average_yearly_energy_exported_kwh": {'type': float, "description": "Average annual energy exported by the PV system", "units": 'kWh'},
+                    'year_one_energy_produced_kwh': {'type': float, "description": "PV energy produced in year 1", "units": 'kWh'},
+                    'year_one_power_production_series_kw': {'type': list_of_float, "description": "Hourly Solar Resource", "units": 'kW'},
+                    "year_one_to_battery_series_kw": {'type': list_of_float, "description": "Year 1 PV to battery time series", "units": 'kW'},
+                    "year_one_to_load_series_kw": {'type': list_of_float, "description": "Year 1 PV to load time series", "units": 'kW'},
+                    "year_one_to_grid_series_kw": {'type': list_of_float, "description": "Year 1 PV to grid time series", "units": 'kW'},
                 },
 
                 "Wind": {
                     "size_kw": {'type': float, "description": "Recommended Wind System Size", "units": 'kW'},
-                    "average_yearly_energy_produced": {'type': float, "description": "Average energy produced by the wind system over one year", "units": 'kWh'},
-                    "average_yearly_energy_exported": {'type': float, "description": "Average annual energy exported by the Wind system", "units": 'kWh'},
-                    'year_one_energy_produced': {'type': float, "description": "Wind energy produced in year 1","units": 'kWh'},
-                    'year_one_power_production_series': {'type': list_of_float, "description": "Hourly Wind Resource", "units": 'kW'},
+                    "average_yearly_energy_produced_kwh": {'type': float, "description": "Average energy produced by the wind system over one year", "units": 'kWh'},
+                    "average_yearly_energy_exported_kwh": {'type': float, "description": "Average annual energy exported by the Wind system", "units": 'kWh'},
+                    'year_one_energy_produced_kwh': {'type': float, "description": "Wind energy produced in year 1","units": 'kWh'},
+                    'year_one_power_production_series_kwh': {'type': list_of_float, "description": "Hourly Wind Resource", "units": 'kW'},
+                    "year_one_to_battery_series_kw": {'type': list_of_float, "description": "Year 1 wind to battery time series", "units": 'kW'},
+                    "year_one_to_load_series_kw": {'type': list_of_float, "description": "Year 1 wind to load time series", "units": 'kW'},
+                    "year_one_to_grid_series_kw": {'type': list_of_float, "description": "Year 1 wind to grid time series", "units": 'kW'},
                 },
 
                 "Storage": {
                     "size_kw": {'type': float, "description": "Recommended Battery Inverter Size", "units": 'kW'},
                     "size_kwh": {'type': float, "description": "Recommended Battery Size", "units": 'kWh'},
-                },
-
-                "Grid": {
-                    "year_one_energy_produced": {'type': float, "description": "Energy Supplied from the Grid", "units": 'kWh'},
+                    "year_one_to_load_series_kw": {'type': list_of_float, "description": "Year 1 battery to load time series", "units": 'kW'},
+                    "year_one_to_grid_series_kw": {'type': list_of_float, "description": "Year 1 battery to grid time series", "units": 'kW'},
+                    "year_one_soc_series_pct": {'type': list_of_float, "description": "Year 1 battery state of charge", "units": '%'},
                 },
 
                 "ElectricTariff": {
-                    "year_one_energy_cost": {'type': float, "description": "Year 1 Utility Energy Cost", "units": '$'},
-                    "year_one_demand_cost": {'type': float, "description": "Year 1 Utility Demand Cost", "units": '$'},
-                    "year_one_fixed_cost": {'type': float, "description": "Year 1 Utility Fixed Cost", "units": '$'},
-                    "year_one_min_charge_adder": {'type': float, "description": "Year 1 Utility Minimum Charge Adder", "units": '$'},
-                    "year_one_energy_cost_bau": {'type': float, "description": "Business as Usual Year 1 Utility Energy Cost", "units": '$'},
-                    "year_one_demand_cost_bau": {'type': float, "description": "Business as Usual Year 1 Utility Demand Cost", "units": '$'},
-                    "year_one_fixed_cost_bau": {'type': float, "description": "Business as Usual Year 1 Utility Fixed Cost", "units": '$'},
-                    "year_one_min_charge_adder_bau": {'type': float, "description": "Business as Usual Year 1 Utility Minimum Charge Adder", "units": '$'},
-                    "total_energy_cost": {'type': float, "description": "Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_demand_cost": {'type': float, "description": "Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_fixed_cost" : {'type': float, "description": "Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_min_charge_adder": {'type': float, "description": "Total Utility Minimum Charge Adder", "units": '$'},
-                    "total_energy_cost_bau": {'type': float, "description": "Business as Usual Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_demand_cost_bau": {'type': float, "description": "Business as Usual Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_fixed_cost_bau" : {'type': float, "description": "Business as Usual Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_min_charge_adder_bau": {'type': float, "description": "Business as Usual Total Utility Minimum Charge Adder", "units": '$'},
-                    'year_one_bill': {'type': float, "description": "Result - year one bill", "units": 'hours'},
-                    'year_one_bill_bau': {'type': float, "description": "Result - year one bill bau", "units": 'hours'},
-                    'year_one_export_benefit': {'type': float, "description": "Result - total export benefit", "units": 'hours'},
-
-                    # "year_one_payments_to_third_party_owner": {'type': float, "description": "Revenue to Battery Owner", "units": '$'}, # currently unused
-                    # "total_payments_to_third_party_owner": {'type': float, "description": "Revenue to Battery Owner", "units": '$'},    # currently unused
+                    "year_one_energy_cost_us_dollars": {'type': float, "description": "Year 1 Utility Energy Cost", "units": '$'},
+                    "year_one_demand_cost_us_dollars": {'type': float, "description": "Year 1 Utility Demand Cost", "units": '$'},
+                    "year_one_fixed_cost_us_dollars": {'type': float, "description": "Year 1 Utility Fixed Cost", "units": '$'},
+                    "year_one_min_charge_adder_us_dollars": {'type': float, "description": "Year 1 Utility Minimum Charge Adder", "units": '$'},
+                    "year_one_energy_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Year 1 Utility Energy Cost", "units": '$'},
+                    "year_one_demand_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Year 1 Utility Demand Cost", "units": '$'},
+                    "year_one_fixed_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Year 1 Utility Fixed Cost", "units": '$'},
+                    "year_one_min_charge_adder_bau_us_dollars": {'type': float, "description": "Business as Usual Year 1 Utility Minimum Charge Adder", "units": '$'},
+                    "total_energy_cost_us_dollars": {'type': float, "description": "Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_demand_cost_us_dollars": {'type': float, "description": "Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_fixed_cost_us_dollars" : {'type': float, "description": "Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_min_charge_adder_us_dollars": {'type': float, "description": "Total Utility Minimum Charge Adder", "units": '$'},
+                    "total_energy_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_demand_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_fixed_cost_bau_us_dollars" : {'type': float, "description": "Business as Usual Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
+                    "total_min_charge_adder_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Minimum Charge Adder", "units": '$'},
+                    'year_one_bill_us_dollars': {'type': float, "description": "Result - year one bill", "units": '$'},
+                    'year_one_bill_bau_us_dollars': {'type': float, "description": "Result - year one bill bau", "units": '$'},
+                    'year_one_export_benefit_us_dollars': {'type': float, "description": "Result - total export benefit", "units": '$'},
+                    "year_one_energy_cost_series_us_dollars_per_kwh": {'type': list_of_float, "description": "Year 1 energy cost time series", "units": '$/kWh'},
+                    "year_one_demand_cost_series_us_dollars_per_kw": {'type': list_of_float, "description": "Year 1 demand cost time series", "units": '$/kW'},
+                    "year_one_to_load_series_kw": {'type': list_of_float, "description": "Year 1 grid to load time series", "units": 'kW'},
+                    "year_one_to_battery_series_kw": {'type': list_of_float, "description": "Year 1 grid to battery time series", "units": 'kW'},
+                    "year_one_energy_supplied_kwh": {'type': float, "description": "Energy Supplied from the Grid", "units": 'kWh'},
                 },
-
-                "Dispatch": {
-                    "year_one_electric_load_series": {'type': list_of_float,  "description": "Year 1 electric load time series", "units": 'kW'},
-                    "year_one_pv_to_battery_series": {'type': list_of_float, "description": "Year 1 PV to battery time series", "units": 'kW'},
-                    "year_one_pv_to_load_series": {'type': list_of_float, "description": "Year 1 PV to load time series", "units": 'kW'},
-                    "year_one_pv_to_grid_series": {'type': list_of_float, "description": "Year 1 PV to grid time series", "units": 'kW'},
-                    "year_one_wind_to_battery_series": {'type': list_of_float, "description": "Year 1 wind to battery time series", "units": 'kW'},
-                    "year_one_wind_to_load_series": {'type': list_of_float, "description": "Year 1 wind to load time series", "units": 'kW'},
-                    "year_one_wind_to_grid_series": {'type': list_of_float, "description": "Year 1 wind to grid time series", "units": 'kW'},
-                    "year_one_grid_to_load_series": {'type': list_of_float, "description": "Year 1 grid to load time series", "units": 'kW'},
-                    "year_one_grid_to_battery_series": {'type': list_of_float, "description": "Year 1 grid to battery time series", "units": 'kW'},
-                    "year_one_battery_to_load_series": {'type': list_of_float, "description": "Year 1 battery to load time series", "units": 'kW'},
-                    "year_one_battery_to_grid_series": {'type': list_of_float, "description": "Year 1 battery to grid time series", "units": 'kW'},
-                    "year_one_battery_soc_series": {'type': list_of_float, "description": "Year 1 battery state of charge", "units": '%'},
-                    "year_one_energy_cost_series": {'type': list_of_float, "description": "Year 1 energy cost time series", "units": '$/kWh'},
-                    "year_one_demand_cost_series": {'type': list_of_float, "description": "Year 1 demand cost time series", "units": '$/kW'},
-                }
             }
         }
 
