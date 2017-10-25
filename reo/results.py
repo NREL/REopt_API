@@ -125,30 +125,56 @@ class Results:
         for name, d in nested_output_definitions["Output"]["Scenario"]["Site"].items():
             # limit to financial, dispatch, and electric tariff outputs
             if "size_kw" not in d:
+                if name == "ElectricTariff":
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill"] = self.year_one_bill()
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau"] = self.year_one_bill_bau()
+
                 for k in d.iterkeys():
                     if k in self.results_dict:
                         self.nested_outputs["Scenario"]["Site"][name][k] = self.results_dict[k]
                     elif k in self.results_dict_bau[k]:
                         self.nested_outputs["Scenario"]["Site"][name][k] = self.results_bau_dict[k]
+
+                import pdb;
+                pdb.set_trace()
+
             elif name == "PV":
                 self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["pv_kw"]
                 self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced"] = self.results_dict["average_yearly_pv_energy_produced"]
                 self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported"] = self.results_dict["average_annual_energy_exported"]
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_energy_produced"]
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = [0] * 8760
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = self.compute_total_power(name)
             elif name == "Wind":
                 self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["wind_kw"]
                 self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced"] = self.results_dict["average_wind_energy_produced"]
                 self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported"] = self.results_dict["average_annual_energy_exported_wind"]
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = 0
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = [0] * 8760
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_wind_energy_produced"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = self.compute_total_power(name)
             elif name == "Storage":
                 self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["batt_kw"]
                 self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict["batt_kwh"]
             elif name == "Grid":
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_utility_kwh"]
 
+    def compute_total_power(self, tech):
+        tech = tech.lower()
+        power_lists = list()
 
+        if self.results_dict["year_one_" + tech + "_to_load_series"] is not None:
+            power_lists.append(self.results_dict["year_one_" + tech + "_to_load_series"])
+        if self.results_dict["year_one_" + tech + "_to_battery_series"] is not None:
+            power_lists.append(self.results_dict["year_one_" + tech + "_to_battery_series"])
+        if self.results_dict["year_one_" + tech + "_to_grid_series"] is not None:
+            power_lists.append(self.results_dict["year_one_" + tech + "_to_grid_series"])
+        power = [sum(x) for x in zip(*power_lists)]
+        return power
 
+    def year_one_bill(self):
+        return self.results_dict["year_one_demand_cost"] + self.results_dict["year_one_energy_cost"] + \
+               self.results_dict["year_one_fixed_cost"] + self.results_dict["year_one_min_charge_adder"]
+
+    def year_one_bill_bau(self):
+        return self.results_dict["year_one_demand_cost_bau"] + self.results_dict["year_one_energy_cost_bau"] + \
+               self.results_dict["year_one_fixed_cost_bau"] + self.results_dict["year_one_min_charge_adder_bau"]
 
 

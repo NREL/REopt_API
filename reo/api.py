@@ -91,7 +91,7 @@ class RunInputResource(ModelResource):
             output_dictionary = {
                 "messages": input_validator.error_response,
                 "inputs": json_POST,
-                "outputs": {},
+                "outputs": {"Scenario":{}}
             }
         else:
             try: # should return output structure to match new nested_outputs, even with exception
@@ -112,15 +112,20 @@ class RunInputResource(ModelResource):
                         "error": API_Error(e).response,
                         "warnings": input_validator.warnings,
                     },
-                "outputs": {}
+                "outputs": {"Scenario":{}}
 
                 }
 
         # API level outputs
-        output_dictionary["inputs"] = json_POST
-        output_dictionary["outputs"]["uuid"] = run_uuid  # we do a lot of mapping of uuid to run_uuid, can we use just one name?
+        output_dictionary["outputs"]["uuid"] = run_uuid
         output_dictionary["outputs"]["api_version"] = api_version
+
+        # Nested outputs
+        output_dictionary["inputs"] = json_POST
+        output_dictionary["outputs"]["Scenario"]["uuid"] = run_uuid
+        output_dictionary["outputs"]["Scenario"]["api_version"] = api_version
         output_dictionary["messages"]["warnings"] = input_validator.warnings
+
 
         result = REoptResponse(**output_dictionary)
         # result.save()
