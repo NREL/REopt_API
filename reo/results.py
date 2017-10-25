@@ -82,31 +82,73 @@ class Results:
         self.path_proforma = os.path.join(path_output, self.file_proforma)
         self.year = year
 
-        self.setup_nested()
-
-    def setup_nested(self):
-        # Add nested outputs (preserve original format for now to support backwards compatibility)
-        nested_dict = dict()
-
-        import pdb
-        pdb.set_trace()
-
-        for k in nested_output_definitions().iterkeys():
-            nested_dict.setdefault(k, None)
-
-
-
-
+        self.nested_outputs = self.setup_nested()
 
     def get_output(self):
         output_dict = dict()
         for k in outputs().iterkeys():
             output_dict[k] = self.results_dict[k]
-        return output_dict
+
+        self.get_nested()
+        merged_dict = output_dict.copy()
+        merged_dict.update(self.nested_outputs)
+
+        return merged_dict
 
     def is_system(self):
         system = False
         if self.results_dict['pv_kw'] > 0 or self.results_dict['batt_kw'] > 0:
             system = True
         return system
+
+    @staticmethod
+    def setup_nested():
+
+        # Add nested outputs (preserve original format for now to support backwards compatibility)
+        nested_outputs = dict()
+        nested_outputs["Scenario"] = dict()
+        nested_outputs["Scenario"]["Site"] = dict()
+
+        # Loop through all sub-site dicts and init
+        for name, d in nested_output_definitions["Output"]["Scenario"]["Site"].items():
+            nested_outputs["Scenario"]["Site"][name] = dict()
+            for k in d.iterkeys():
+                nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
+
+        return nested_outputs
+
+    def get_nested(self):
+
+        self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
+
+        # Loop through all sub-site dicts and init
+        for name, d in nested_output_definitions["Output"]["Scenario"]["Site"].items():
+            # limit to financial, dispatch, and electric tariff outputs
+            if "size_kw" not in d:
+                for k in d.iterkeys():
+                    if k in self.results_dict:
+                        self.nested_outputs["Scenario"]["Site"][name][k] = self.results_dict[k]
+                    elif k in self.results_dict_bau[k]:
+                        self.nested_outputs["Scenario"]["Site"][name][k] = self.results_bau_dict[k]
+            elif name == "PV":
+                self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["pv_kw"]
+                self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced"] = self.results_dict["average_yearly_pv_energy_produced"]
+                self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported"] = self.results_dict["average_annual_energy_exported"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_energy_produced"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = [0] * 8760
+            elif name == "Wind":
+                self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["wind_kw"]
+                self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced"] = self.results_dict["average_wind_energy_produced"]
+                self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported"] = self.results_dict["average_annual_energy_exported_wind"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = 0
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series"] = [0] * 8760
+            elif name == "Storage":
+                self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["batt_kw"]
+                self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict["batt_kwh"]
+            elif name == "Grid":
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced"] = self.results_dict["year_one_utility_kwh"]
+
+
+
+
 
