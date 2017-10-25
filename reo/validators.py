@@ -847,7 +847,7 @@ class ValidateNestedInput:
                 depends_on = value.get('depends_on') or []
                 
                 option = [key] + depends_on
-                print option, real_values.keys(), replacements
+            
                 if list(set(option)-set(real_values.keys())) != []:
                     
                     if replacements is not None:
@@ -862,7 +862,7 @@ class ValidateNestedInput:
                                     missing_attribute_sets.append(replace)
 
             if len(missing_attribute_sets) > 0:
-                print missing_attribute_sets
+            
                 final_message =  ' OR '.join([' and '.join(missing_set) for missing_set in missing_attribute_sets])
 
             # check simple required attributes
