@@ -71,15 +71,15 @@ nested_input_definitions = {
                                         },
 
                             "LoadProfile":{
-                                            "doe_reference_name":   { 'type': 'str', 'restrict_to':default_buildings,'depends_on':['annual_kwh or monthly_totals_kwh'],
+                                            "doe_reference_name":   { 'type': 'str', 'restrict_to':default_buildings,'replacement_sets':[['loads_kw'],['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh']], 'depends_on': ['annual_kwh or monthly_totals_kwh'],
                                                                     "description": "Generic Load Profile Type from DOE <a href='https://energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>. Must be accompanied with annual_kwh or monthly_totals_kwh." },
-                                            "annual_kwh":           { 'type': 'float', 'min': 0, 'max': 1e12,'replacements':[['loads_kw'],['doe_reference_name','monthly_totals_kwh']],'depends_on':['doe_reference_name'],
+                                            "annual_kwh":           { 'type': 'float', 'min': 0, 'max': 1e12,'replacement_sets':[['loads_kw'],['doe_reference_name','monthly_totals_kwh'],['annual_kwh','doe_reference_name']],'depends_on':['doe_reference_name'],
                                                                     "description": "Annual Load Size" },
                                             "year":                 { 'type': 'int', 'min': 2017, 'max': 2017+max_years, 'default': 2018,
                                                                     "description":"Year of Custom Load Profile" },
-                                            "monthly_totals_kwh":   { 'type': 'list_of_float','replacement_sets':[['loads_kw'],['doe_reference_name','annual_kwh']],'depends_on':['doe_reference_name'],
+                                            "monthly_totals_kwh":   { 'type': 'list_of_float','replacement_sets':[['loads_kw'],['doe_reference_name','monthly_totals_kwh'],['annual_kwh','doe_reference_name']],'depends_on':['doe_reference_name'],
                                                                     "description":"12 item array of aggregate monthly energy usage" },
-                                            "loads_kw":             { 'type': 'list_of_float','replacement_sets':[['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh']],
+                                            "loads_kw":             { 'type': 'list_of_float','replacement_sets':[['loads_kw'],['doe_reference_name','monthly_totals_kwh'],['annual_kwh','doe_reference_name']],
                                                                     "description":"Hourly energy use over all hours in one year" }
                                         },
 
@@ -88,9 +88,9 @@ nested_input_definitions = {
                                                                                             "description":"Name of Utility from  <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>" },
                                                 "urdb_rate_name":                           { 'type': 'str',
                                                                                             "description":"Name of Utility Rate from  <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>" },
-                                                "blended_monthly_rates_us_dollars_per_kwh": { 'type': 'list_of_float','replacement_sets':[['urdb_response']], 'depends_on':['monthly_demand_charges_us_dollars_per_kw'],
+                                                "blended_monthly_rates_us_dollars_per_kwh": { 'type': 'list_of_float','replacement_sets':[['urdb_response'],['monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']], 'depends_on':['monthly_demand_charges_us_dollars_per_kw'],
                                                                                             "description": "12 item array of average monthly utility rates per kWh" },
-                                                "monthly_demand_charges_us_dollars_per_kw": { 'type': 'list_of_float','replacement_sets':[['urdb_response']], 'depends_on':['blended_monthly_rates_us_dollars_per_kwh'],
+                                                "monthly_demand_charges_us_dollars_per_kw": { 'type': 'list_of_float','replacement_sets':[['urdb_response'],['monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']], 'depends_on':['blended_monthly_rates_us_dollars_per_kwh'],
                                                                                             "description": "12 item array of average monthly utility demand charges per kW"},
                                                 "net_metering_limit_kw":                    { 'type': 'float','min': 0, 'max': 1e9, 'default':0,
                                                                                             "description": "System size above which net metering is not allowed"},
@@ -98,7 +98,7 @@ nested_input_definitions = {
                                                                                             "description": "Limit on power flowing from system to the Grid" },
                                                 "wholesale_rate_us_dollars_per_kwh":        { 'type': 'float', 'min': 0, 'default': 0,
                                                                                             "description": "Assumed price of electricity on the wholesale market" },
-                                                "urdb_response":                            { 'type': 'dict', 'replacements':[['blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw']],
+                                                "urdb_response":                            { 'type': 'dict', 'replacement_sets':[['urdb_response'],['monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']],
                                                                                             "description": "Utility Rate Structure from <a href='https://openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>" },
                                                 "urdb_label":                               { 'type': 'str',
                                                                                             "description": "Label attribute of Utility Rate Structure from <a href='https://openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>" }

@@ -552,12 +552,12 @@ class ValidateNestedInput:
         #         }
         #     }
 
-        def __init__(self, input, nested=False):
+        def __init__(self, input_dict, nested=False):
             self.nested_input_definitions = nested_input_definitions
-            self.input = input
+            self.input_dict = input_dict
 
             if not nested:
-                self.input = flat_to_nested(input)
+                self.input_dict = flat_to_nested(input_dict)
 
             self.input_data_errors = []
             self.urdb_errors = []
@@ -566,21 +566,16 @@ class ValidateNestedInput:
 
             self.defaults_inserted = []
 
-            self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_invalid_keys)
-            self.recursively_check_input_by_objectnames_and_values(self.input, self.remove_nones)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions,
-                                                                   self.convert_data_types)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
+            self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
 
         @property
         def isValid(self):
-
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions,
-                                                                   self.check_special_data_types)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions,
-                                                                   self.check_min_max_restrictions)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions,
-                                                                   self.check_required_attributes)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
             if self.input_data_errors or self.urdb_errors:
                 return False
@@ -650,15 +645,17 @@ class ValidateNestedInput:
             # nested_dictionary_to_check can be updated based on the key value function
 
             if nested_dictionary_to_check is None:
-                nested_dictionary_to_check = self.input
+                nested_dictionary_to_check = self.input_dict
 
             for template_k, template_values in nested_template.items():
 
                 real_values = nested_dictionary_to_check.get(template_k)
 
                 if self.isSingularKey(template_k):
+
                     comparison_function(object_name_path=object_name_path + [template_k],
                                         template_values=template_values, real_values=real_values)
+                    
                     self.recursively_check_input_by_objectnames_and_values(nested_template[template_k],
                                                                            comparison_function, real_values or {},
                                                                            object_name_path=object_name_path + [
@@ -666,7 +663,7 @@ class ValidateNestedInput:
 
         def update_attribute_value(self, object_name_path, attribute, value):
 
-            dictionary = self.input
+            dictionary = self.input_dict
 
             for name in object_name_path:
                 dictionary = dictionary[name]
@@ -675,7 +672,7 @@ class ValidateNestedInput:
 
         def delete_attribute(self, object_name_path, key):
 
-            dictionary = self.input
+            dictionary = self.input_dict
 
             for name in object_name_path:
                 dictionary = dictionary[name]
@@ -686,21 +683,6 @@ class ValidateNestedInput:
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
-        def remove_nones(self, object_name_path, template_values=None, real_values=None):
-            if real_values is not None:
-                for name, value in real_values.items():
-                    if self.isAttribute(name):
-                        if value is None:
-                            self.delete_attribute(object_name_path, name)
-                            self.input_as_none.append([name, object_name_path[-1]])
-
-        def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None):
-            if real_values is not None:
-                for name, value in real_values.items():
-                    if self.isAttribute(name):
-                        if name not in template_values.keys():
-                            self.delete_attribute(object_name_path, name)
-                            self.invalid_inputs.append([name, object_name_path])
 
         def test_data(self, defintion_attribute):
 
@@ -761,7 +743,21 @@ class ValidateNestedInput:
 #    real_values are the values from the input to check and/or modify  like {'latitude':39.345678,...}
 
 
+        def remove_nones(self, object_name_path, template_values=None, real_values=None):
+            if real_values is not None:
+                for name, value in real_values.items():
+                    if self.isAttribute(name):
+                        if value is None:
+                            self.delete_attribute(object_name_path, name)
+                            self.input_as_none.append([name, object_name_path[-1]])
 
+        def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None):
+            if real_values is not None:
+                for name, value in real_values.items():
+                    if self.isAttribute(name):
+                        if name not in template_values.keys():
+                            self.delete_attribute(object_name_path, name)
+                            self.invalid_inputs.append([name, object_name_path])
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
                 for name, value in real_values.items():
@@ -840,30 +836,50 @@ class ValidateNestedInput:
             final_message = ''
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
-            missing_attribute_sets = []
+            all_missing_attribute_sets = []
+            
             for key,value in template_values.items():
-
-                replacements = value.get('replacement_sets')
-                depends_on = value.get('depends_on') or []
                 
-                option = [key] + depends_on
-            
-                if list(set(option)-set(real_values.keys())) != []:
-                    
+                if self.isAttribute(key):
+
+                    missing_attribute_sets = []
+                    replacements = value.get('replacement_sets')
+                    depends_on = value.get('depends_on') or []
+
                     if replacements is not None:
-                        for replace in replacements:
-                            if list(set(replace)-set(real_values.keys())) != []:
-                                option = sorted(option)
-                                if option not in missing_attribute_sets:
-                                    missing_attribute_sets.append(option) 
+                        current_set = [key] + depends_on
+                        
+                        if list(set(current_set)-set(real_values.keys())) != []:
+                            for replace in replacements:
+                                missing = list(set(replace)-set(real_values.keys()))
+                                
+                                if missing == []:
+                                    missing_attribute_sets = []
+                                    break
+                                
+                                else:
+                                    replace = sorted(replace)
+                                    if replace not in missing_attribute_sets:
+                                        missing_attribute_sets.append(replace)
+                        
+                    else:
+                        if real_values.get(key) is not None:
+                            missing = []
+                            for dependent_key in depends_on:
+                                if real_values.get(dependent_key) is None:
+                                    missing.append(dependent_key)
+                            
+                            if missing !=[]:
+                                missing_attribute_sets.append(missing)
 
-                                replace = sorted(replace)
-                                if replace not in missing_attribute_sets:
-                                    missing_attribute_sets.append(replace)
+                    if len(missing_attribute_sets) > 0:
+                        missing_attribute_sets = sorted(missing_attribute_sets)
+                        message =  '(' + ' OR '.join([' and '.join(missing_set) for missing_set in missing_attribute_sets]) + ')'
+                        if message not in all_missing_attribute_sets:
+                            all_missing_attribute_sets.append(message)
 
-            if len(missing_attribute_sets) > 0:
-            
-                final_message =  ' OR '.join([' and '.join(missing_set) for missing_set in missing_attribute_sets])
+            if len(all_missing_attribute_sets) > 0:
+                final_message = " AND ".join(all_missing_attribute_sets)
 
             # check simple required attributes
             missing = []

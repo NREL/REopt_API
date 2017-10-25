@@ -1,0 +1,68 @@
+def nested_to_flat(nested_output):
+    
+    return {
+
+        'uuid': nested_output['Scenario']['uuid'],
+        'api_version': nested_output['Scenario']['api_version'],
+        'status': nested_output['Scenario']['status'],
+
+        'year_one_electric_load_series': nested_output['Scenario']['LoadProfile']['year_one_electric_load_series_kw'],
+        
+        'lcc': nested_output['Scenario']['Financial']['lcc_us_dollars'],
+        'lcc_bau': nested_output['Scenario']['Financial']['lcc_bau_us_dollars'],
+        'npv': nested_output['Scenario']['Financial']['npv_us_dollars'],
+        'irr': nested_output['Scenario']['Financial']['irr_pct'],
+        'net_capital_costs_plus_om': nested_output['Scenario']['Financial']['net_capital_costs_plus_om_us_dollars'],
+        
+        'pv_kw': nested_output['Scenario']['PV']['size_kw'],
+        'year_one_energy_produced': nested_output['Scenario']['PV']['year_one_energy_produced_kwh'],
+        'pv_kw_ac_hourly': nested_output['Scenario']['PV']['year_one_power_production_series_kwh'],
+        'average_yearly_pv_energy_produced': nested_output['Scenario']['PV']['average_yearly_energy_produced_kwh'],
+        'average_annual_energy_exported': nested_output['Scenario']['PV']['average_yearly_energy_exported_kwh'],
+        'year_one_pv_to_battery_series': nested_output['Scenario']['PV']['year_one_to_battery_series_kw'],
+        'year_one_pv_to_load_series': nested_output['Scenario']['PV']['year_one_to_load_series_kw'],
+        'year_one_pv_to_grid_series': nested_output['Scenario']['PV']['year_one_to_grid_series_kw'],
+        
+        'wind_kw':nested_output['Scenario']['Wind']['size_kw'],
+        'average_wind_energy_produced':nested_output['Scenario']['Wind']['average_yearly_energy_produced_kwh'],
+        'average_annual_energy_exported_wind': nested_output['Scenario']['Wind']['average_yearly_energy_exported_kwh'],
+        'year_one_wind_to_battery_series': nested_output['Scenario']['Wind']['year_one_to_battery_series_kw'],
+        'year_one_wind_to_load_series': nested_output['Scenario']['Wind']['year_one_to_load_series_kw'],
+        'year_one_wind_to_grid_series': nested_output['Scenario']['Wind']['year_one_to_grid_series_kw'],
+        
+        'batt_kw':nested_output['Scenario']['Storage']['size_kw'],
+        'batt_kwh': nested_output['Scenario']['Storage']['size_kwh'],
+        'year_one_battery_to_load_series': nested_output['Scenario']['Storage']['year_one_to_load_series_kwyear_one_to_load_series_kw'],
+        'year_one_battery_to_grid_series': nested_output['Scenario']['Storage']['year_one_to_grid_series_kw'],
+        'year_one_battery_soc_series': nested_output['Scenario']['Storage']['year_one_soc_series_pct'],
+
+        'year_one_energy_cost': nested_output['Scenario']['ElectricTariff']['year_one_energy_cost_us_dollars'],
+        'year_one_demand_cost': nested_output['Scenario']['ElectricTariff']['year_one_demand_cost_us_dollars'],
+        'year_one_fixed_cost': nested_output['Scenario']['ElectricTariff']['year_one_fixed_cost_us_dollars'],
+        'year_one_min_charge_adder': nested_output['Scenario']['ElectricTariff']['year_one_min_charge_adder_us_dollars'],
+        'year_one_energy_cost_bau': nested_output['Scenario']['ElectricTariff']['year_one_energy_cost_bau_us_dollars'],
+        'year_one_demand_cost_bau': nested_output['Scenario']['ElectricTariff']['year_one_demand_cost_bau_us_dollars'],
+        'year_one_fixed_cost_bau': nested_output['Scenario']['ElectricTariff']['year_one_fixed_cost_bau_us_dollars'],
+        'year_one_min_charge_adder_bau': nested_output['Scenario']['ElectricTariff']['year_one_min_charge_adder_bau_us_dollars'],
+        'total_energy_cost': nested_output['Scenario']['ElectricTariff']['total_energy_cost_us_dollars'],
+        'total_demand_cost': nested_output['Scenario']['ElectricTariff']['total_demand_cost_us_dollars'],
+        'total_fixed_cost': nested_output['Scenario']['ElectricTariff']['total_fixed_cost_us_dollars'],
+        'total_min_charge_adder': nested_output['Scenario']['ElectricTariff']['total_min_charge_adder_us_dollars'],
+        'total_energy_cost_bau': nested_output['Scenario']['ElectricTariff']['total_energy_cost_bau_us_dollars'],
+        'total_demand_cost_bau': nested_output['Scenario']['ElectricTariff']['total_demand_cost_bau_us_dollars'],
+        'total_fixed_cost_bau': nested_output['Scenario']['ElectricTariff']['total_fixed_cost_bau_us_dollars'],
+        'total_min_charge_adder_bau': nested_output['Scenario']['ElectricTariff']['total_min_charge_adder_bau_us_dollars'],
+        'year_one_bill': nested_output['Scenario']['ElectricTariff']['year_one_bill_us_dollars'],
+        'year_one_bill_bau': nested_output['Scenario']['ElectricTariff']['year_one_bill_bau_us_dollars'],
+        'year_one_export_benefit': nested_output['Scenario']['ElectricTariff']['year_one_export_benefit_us_dollars'],
+        'year_one_grid_to_load_series': nested_output['Scenario']['ElectricTariff']['year_one_to_load_series_kw'],
+        'year_one_grid_to_battery_series': nested_output['Scenario']['ElectricTariff']['year_one_to_battery_series_kw'],
+        'year_one_energy_cost_series': nested_output['Scenario']['ElectricTariff']['year_one_energy_cost_series_us_dollars_per_kwh'],
+        'year_one_demand_cost_series': nested_output['Scenario']['ElectricTariff']['year_one_demand_cost_series_us_dollars_per_kw'],
+        'year_one_utility_kwh' = nested_output['Scenario']['ElectricTariff']['year_one_energy_supplied_kwh'],
+        'year_one_payments_to_third_party_owner': None,
+        'total_payments_to_third_party_owner': None,
+    }
+
+
+

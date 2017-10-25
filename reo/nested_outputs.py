@@ -75,7 +75,7 @@ nested_output_definitions = {
                     "total_energy_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Energy Cost over the Project Lifetime, after-tax", "units": '$'},
                     "total_demand_cost_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Demand Cost over the Project Lifetime, after-tax", "units": '$'},
                     "total_fixed_cost_bau_us_dollars" : {'type': float, "description": "Business as Usual Total Utility Fixed Cost over the Project Lifetime, after-tax", "units": '$'},
-                    "total_min_charge_adder_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Minimum Charge Adder", "units": '$'},
+                    "total_min_charge_adder_bau_us_dollarstotal_min_charge_adder_bau_us_dollars": {'type': float, "description": "Business as Usual Total Utility Minimum Charge Adder", "units": '$'},
                     'year_one_bill_us_dollars': {'type': float, "description": "Result - year one bill", "units": '$'},
                     'year_one_bill_bau_us_dollars': {'type': float, "description": "Result - year one bill bau", "units": '$'},
                     'year_one_export_benefit_us_dollars': {'type': float, "description": "Result - total export benefit", "units": '$'},
