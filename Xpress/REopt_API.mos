@@ -672,6 +672,10 @@ end-if
 MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 MinChargeAdder >= 0
 
+! Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+!       it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
+!       0.001*MinChargeAdder is added back into LCC when writing to results JSON.
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!! OBJECTIVE FUNCTION VALUE
 
@@ -685,7 +689,7 @@ TotalTechCapCosts + TotalStorageCapCosts +
 TotalOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
-(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + MinChargeAdder) * r_tax_fraction_offtaker -
+(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
 
 ! Subtract Incentives, which are taxable
 TotalProductionIncentive * r_tax_fraction_owner
@@ -863,7 +867,7 @@ fclose(F_OUTPUT)
     Root:=addnode(out_json, 0, XML_ELT, "jsv")
 
     Node:=addnode(out_json, Root, "status", status)
-    Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts), 10, 0))
+    Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts) + 0.001*getsol(MinChargeAdder), 10, 0))
 
     forall  (b in BattLevel)  do
         Node:=addnode(out_json, Root, "batt_kwh", getsol (dvStorageSizeKWH(b)))
