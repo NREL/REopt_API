@@ -77,9 +77,9 @@ nested_input_definitions = {
                                                                     "description": "Annual Load Size" },
                                             "year":                 { 'type': 'int', 'min': 2017, 'max': 2017+max_years, 'default': 2018,
                                                                     "description":"Year of Custom Load Profile" },
-                                            "monthly_totals_kwh":   { 'type': 'list_of_float','replacements':[['loads_kw'],['doe_reference_name','annual_kwh']],'depends_on':['doe_reference_name'],
+                                            "monthly_totals_kwh":   { 'type': 'list_of_float','replacement_sets':[['loads_kw'],['doe_reference_name','annual_kwh']],'depends_on':['doe_reference_name'],
                                                                     "description":"12 item array of aggregate monthly energy usage" },
-                                            "loads_kw":             { 'type': 'list_of_float','replacements':[['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh']],
+                                            "loads_kw":             { 'type': 'list_of_float','replacement_sets':[['doe_reference_name','annual_kwh'],['doe_reference_name','monthly_totals_kwh']],
                                                                     "description":"Hourly energy use over all hours in one year" }
                                         },
 
@@ -88,9 +88,9 @@ nested_input_definitions = {
                                                                                             "description":"Name of Utility from  <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>" },
                                                 "urdb_rate_name":                           { 'type': 'str',
                                                                                             "description":"Name of Utility Rate from  <a href='https://openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>" },
-                                                "blended_monthly_rates_us_dollars_per_kwh": { 'type': 'list_of_float','replacements':['urdb_response'],
+                                                "blended_monthly_rates_us_dollars_per_kwh": { 'type': 'list_of_float','replacement_sets':[['urdb_response']], 'depends_on':['monthly_demand_charges_us_dollars_per_kw'],
                                                                                             "description": "12 item array of average monthly utility rates per kWh" },
-                                                "monthly_demand_charges_us_dollars_per_kw": { 'type': 'list_of_float','replacements':['urdb_response'],
+                                                "monthly_demand_charges_us_dollars_per_kw": { 'type': 'list_of_float','replacement_sets':[['urdb_response']], 'depends_on':['blended_monthly_rates_us_dollars_per_kwh'],
                                                                                             "description": "12 item array of average monthly utility demand charges per kW"},
                                                 "net_metering_limit_kw":                    { 'type': 'float','min': 0, 'max': 1e9, 'default':0,
                                                                                             "description": "System size above which net metering is not allowed"},

@@ -652,7 +652,6 @@ class ValidateNestedInput:
             if nested_dictionary_to_check is None:
                 nested_dictionary_to_check = self.input
 
-            # try:
             for template_k, template_values in nested_template.items():
 
                 real_values = nested_dictionary_to_check.get(template_k)
@@ -664,9 +663,6 @@ class ValidateNestedInput:
                                                                            comparison_function, real_values or {},
                                                                            object_name_path=object_name_path + [
                                                                                template_k])
-
-                    # except Exception as e:
-                    #    self.input_data_errors.append('Invalid JSON format %s' % (self.nested_input_definitions))
 
         def update_attribute_value(self, object_name_path, attribute, value):
 
@@ -758,6 +754,14 @@ class ValidateNestedInput:
 
             return self.test_data_list
 
+
+#Following functions go into recursively_check_input_by_objectnames_and_values on instantiation and validation to check an object name and set of values
+#    object_name_path is the location of the object name as in ["Scenario", "Site"]
+#    template_values is the reference dictionary for checking as in {'latitude':{'type':'float',...}...} from the nested dictionary
+#    real_values are the values from the input to check and/or modify  like {'latitude':39.345678,...}
+
+
+
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
                 for name, value in real_values.items():
@@ -835,38 +839,33 @@ class ValidateNestedInput:
 
             final_message = ''
 
-            # conditional check for complex cases where key match at least one valid set
-            def check_satisfies_one_input_set(valid_input_sets, keys):
+            # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
+            missing_attribute_sets = []
+            for key,value in template_values.items():
 
-                set_check_results = []
-                for valid_set in valid_input_sets:
-                    set_check_results.append(list(set(valid_set) - set(keys)))
+                replacements = value.get('replacement_sets')
+                depends_on = value.get('depends_on') or []
+                
+                option = [key] + depends_on
+                print option, real_values.keys(), replacements
+                if list(set(option)-set(real_values.keys())) != []:
+                    
+                    if replacements is not None:
+                        for replace in replacements:
+                            if list(set(replace)-set(real_values.keys())) != []:
+                                option = sorted(option)
+                                if option not in missing_attribute_sets:
+                                    missing_attribute_sets.append(option) 
 
-                if [] not in set_check_results:
-                    needed_keys = []
-                    for check_result in set_check_results:
-                        needed_keys.append(' and '.join(check_result))
+                                replace = sorted(replace)
+                                if replace not in missing_attribute_sets:
+                                    missing_attribute_sets.append(replace)
 
-                    message = ' OR '.join(needed_keys)
-                    return message
-
-                return ''
-
-            keys = real_values.keys()
-
-            if object_name_path[-1] == "LoadProfile":
-                must_match_one_of_these_valid_sets = [['doe_reference_name', 'annual_kwh'],
-                                                      ['doe_reference_name', 'monthly_totals_kwh'], ['loads_kw']]
-                final_message = check_satisfies_one_input_set(must_match_one_of_these_valid_sets, keys)
-
-            if object_name_path[-1] == "ElectricTariff":
-                must_match_one_of_these_valid_sets = [
-                    ["blended_monthly_rates_us_dollars_per_kwh", "monthly_demand_charges_us_dollars_per_kw"],
-                    ["urdb_response"]]
-                final_message = check_satisfies_one_input_set(must_match_one_of_these_valid_sets, keys)
+            if len(missing_attribute_sets) > 0:
+                print missing_attribute_sets
+                final_message =  ' OR '.join([' and '.join(missing_set) for missing_set in missing_attribute_sets])
 
             # check simple required attributes
-
             missing = []
             for template_key, template_value in template_values.items():
                 if self.isAttribute(template_key):

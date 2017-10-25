@@ -10,7 +10,7 @@ var tableRequiredCell = function(def) {
       text="Yes"
     }
 
-  } else if (def.hasOwnProperty("depends_on") || def.hasOwnProperty("replacements")) {
+  } else if (def.hasOwnProperty("depends_on") || def.hasOwnProperty("replacement_sets")) {
       text="Depends"
   } else {
       text = "No"
@@ -120,7 +120,7 @@ var sortAttributeTableRows = function (def){
       }
     }
 
-    if ( def[all_keys[i]].hasOwnProperty("depends_on") || def[all_keys[i]].hasOwnProperty("replacements") ) {
+    if ( def[all_keys[i]].hasOwnProperty("depends_on") || def[all_keys[i]].hasOwnProperty("replacement_sets") ) {
         dep_keys.push(all_keys[i])
         req = true      
     }
