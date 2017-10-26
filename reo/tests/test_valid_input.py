@@ -161,8 +161,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             if key == 'npv':
                 tolerance = 2 * self.REopt_tol
 
-            if key in c:
-                self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
+            if key in c and key in e:
+                if e[key] == 0:
+                    self.assertEqual(c[key], e[key])
+                else:
+                    self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
 
         # Total LCC BAU is sum of utility costs
         self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
@@ -214,12 +217,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_calculated = json.loads(resp.content)
 
                 d_expected = dict()
-                d_expected['npv'] = 347.0
-                d_expected['lcc'] = 2914
-                d_expected['pv_kw'] = 0.931874
-                d_expected['batt_kw'] = 0.0526852
-                d_expected['batt_kwh'] = 0.0658565
-                d_expected['year_one_utility_kwh'] = 1876.4764
+                d_expected['npv'] = 335.0
+                d_expected['lcc'] = 2926
+                d_expected['pv_kw'] = 0.925313
+                d_expected['batt_kw'] = 0
+                d_expected['batt_kwh'] = 0
+                d_expected['year_one_utility_kwh'] = 1904.7135
 
                 try:
                     self.check_common_outputs(d_calculated, d_expected)
