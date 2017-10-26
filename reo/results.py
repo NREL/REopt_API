@@ -127,10 +127,10 @@ class Results:
             if name == "LoadProfile":
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
             elif name == "Financial":
-                self.nested_ouputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict["lcc"]
-                self.nested_ouputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict["lcc_bau"]
-                self.nested_ouputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict["npv"]
-                self.nested_ouputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict["net_capital_costs_plus_om"]
+                self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict["lcc"]
+                self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict["lcc_bau"]
+                self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict["npv"]
+                self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict["net_capital_costs_plus_om"]
             elif name == "PV":
                 self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["pv_kw"]
                 self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict["average_yearly_pv_energy_produced"]
@@ -178,8 +178,8 @@ class Results:
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_export_benefit_us_dollars"] = self.results_dict["year_one_export_benefit"]
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_series_us_dollars_per_kwh"] = self.po.get_energy_cost()
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_series_us_dollars_per_kw"] = self.po.get_demand_cost()
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.results_dict["year_one_to_load_series"]
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.results_dict["year_one_to_battery_series"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict["year_one_utility_kwh"]
 
         """
