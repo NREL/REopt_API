@@ -150,7 +150,7 @@ nested_input_definitions = {
                             "PV":{
                                                 "min_kw":                               {  'type': 'float', 'min': 0, 'max': 1e9, 'default': 0,
                                                                                             "description":"Minimum PV size constraint for optimization."  },
-                                                "max_kw":                               { 'type': 'float', 'min': 0, 'max': 1e9, 'default': 0,
+                                                "max_kw":                               { 'type': 'float', 'min': 0, 'max': 1e9, 'default': 1e9,
                                                                                             "description":"Maximum PV size constraint for optimization. Set to zero to disable PV."  },
                                                 "installed_cost_us_dollars_per_kw":     { 'type': 'float', 'min': 0, 'max': 1e5, 'default': 2000,
                                                                                             "description":"Total upfront installed costs." },
@@ -212,7 +212,7 @@ nested_input_definitions = {
 
                             "Storage":{         "min_kw":                               {  'type': 'float', 'min': 0, 'max': 1e9, 'default': 0,
                                                                                             "description":"Minimum Battery power size constraint for optimization."  },
-                                                "max_kw":                               { 'type': 'float', 'min': 0, 'max': 1e9, 'default': 0,
+                                                "max_kw":                               { 'type': 'float', 'min': 0, 'max': 1e9, 'default': 1e9,
                                                                                             "description":"Maximum Battery power size constraint for optimization. Set to zero to disable Storage."  },
                                                 "min_kwh":                              { 'type': 'float','min': 0, 'default': 0,
                                                                                             "description":"Minimum Battery energy storage capacity constraint for optimization." },
