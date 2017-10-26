@@ -95,8 +95,6 @@ class RunInputResource(ModelResource):
             }
         else:
             try: # should return output structure to match new nested_outputs, even with exception
-                from IPython import embed
-                embed()
                 run_set = Scenario(run_uuid=run_uuid, inputs_dict=input_validator.input_dict['Scenario'])
 
                 # Log POST request
