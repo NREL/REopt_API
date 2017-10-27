@@ -7,6 +7,7 @@ from reo.validators import ValidateNestedInput
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from unittest import skip
+from reo.nested_to_flat_output import nested_to_flat
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -175,19 +176,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
         d_calculated = json.loads(resp.content)
-
-        c = dict()
-        c['lcc'] = d_calculated['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
-        c['npv'] = d_calculated['outputs']['Scenario']['Site']['Financial']['npv_us_dollars']
-        c['wind_kw'] = d_calculated['outputs']['Scenario']['Site']['Wind']['size_kw']
-        c['average_annual_energy_exported_wind'] = d_calculated['outputs']['Scenario']['Site']['Wind']['average_yearly_energy_exported']
-        c['net_capital_costs_plus_om'] = d_calculated['outputs']['Scenario']['Site']['Financial']['net_capital_costs_plus_om_us_dollars']
-        c['lcc_bau'] = d_calculated['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
-        c['total_energy_cost_bau'] = d_calculated['outputs']['Scenario']['Site']['ElectricTariff']['total_energy_cost_bau_us_dollars']
-        c['total_min_charge_adder'] = d_calculated['outputs']['Scenario']['Site']['ElectricTariff']['total_min_charge_adder_us_dollars']
-        c['total_demand_cost_bau'] = d_calculated['outputs']['Scenario']['Site']['ElectricTariff']['total_demand_cost_bau_us_dollars']
-        c['total_fixed_cost_bau'] = d_calculated['outputs']['Scenario']['Site']['ElectricTariff']['total_fixed_cost_bau_us_dollars']
-
+        c = nested_to_flat(d_calculated['outputs'])
         self.check_common_outputs(c, d_expected)
         
     @skip("Will Fail Until Workflow Complete")
