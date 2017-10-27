@@ -2,6 +2,7 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
+import uuid
 
 
 class Migration(migrations.Migration):
@@ -12,8 +13,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='runoutput',
-            name='average_annual_energy_exported',
-            field=models.FloatField(null=True, blank=True),
+            model_name='workingresponse',
+            name='uuid',
+            field=models.UUIDField(default=uuid.uuid4),
         ),
     ]

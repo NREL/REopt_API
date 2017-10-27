@@ -23,7 +23,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         })
        
         annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
-        print annual_kwh_from_api, response.content
         assert annual_kwh_from_api == BuiltInProfile.annual_loads[city.name][bldg]
    
 
