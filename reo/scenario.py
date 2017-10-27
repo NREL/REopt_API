@@ -92,7 +92,7 @@ class Scenario:
                 pv = PV(dfm=self.dfm, **pv_kwargs)
 
             if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-                wind = Wind(dfm=self.dfm, **self.inputs_dict)
+                wind = Wind(dfm=self.dfm, **self.inputs_dict["Site"]["Wind"])
 
             util = Util(dfm=self.dfm,
                         outage_start_hour=self.inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),

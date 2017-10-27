@@ -345,6 +345,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.post(self.url_base, format='json', data=wind_post)
         self.assertHttpCreated(resp)
-        d_calculated = json.loads(resp.content)
+        d_calculated = json.loads(resp.content).get('outputs')
 
         self.check_common_outputs(d_calculated, d_expected)
