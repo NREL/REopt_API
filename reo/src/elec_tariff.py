@@ -4,8 +4,9 @@ from reo.log_levels import log
 
 class ElecTariff(object):
 
-    def __init__(self, dfm, run_id, blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw,
-                 net_metering_limit_kw, load_year, wholesale_rate_us_dollars_per_kwh, time_steps_per_hour,
+    def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
+                 time_steps_per_hour,
+                 blended_monthly_rates_us_dollars_per_kwh=None, monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, **kwargs):
 
         self.run_id = run_id
