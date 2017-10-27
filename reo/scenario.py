@@ -84,12 +84,9 @@ class Scenario:
             self.create_loads()
             self.create_elec_tariff()
 
-            pv_kwargs = self.inputs_dict["Site"]["PV"]
-            pv_kwargs['latitude'] = self.inputs_dict["Site"]["latitude"]
-            pv_kwargs['longitude'] = self.inputs_dict["Site"]["longitude"]
-
             if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
-                pv = PV(dfm=self.dfm, **pv_kwargs)
+                pv = PV(dfm=self.dfm, latitude=self.inputs_dict['Site'].get('latitude'),
+                        longitude=self.inputs_dict['Site'].get('longitude'), **self.inputs_dict["Site"]["PV"])
 
             if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
                 wind = Wind(dfm=self.dfm, **self.inputs_dict["Site"]["Wind"])
@@ -104,16 +101,10 @@ class Scenario:
                 interconnection_limit=self.inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
             )
             self.dfm.finalize()
-            # self.pv_macrs_itc_reduction = 0.5
-            # self.batt_macrs_itc_reduction = 0.5
 
             r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict['Site']['LoadProfile']['year'])
             
             output_dict = r.run(timeout=self.inputs_dict['timeout_seconds'])
-
-            # for k, v in self.__dict__.items():
-            #     if output_dict.get(k) is None and k in outputs():
-            #         output_dict[k] = v
             
             self.cleanup()
             return output_dict
