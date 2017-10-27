@@ -3,13 +3,13 @@ import uuid
 import os
 import datetime, tzlocal
 from openpyxl import load_workbook
-from reo.models import RunOutput
+from reo.models import REoptResponse
 from reo.src.dat_file_manager import big_number
 
 
 class ProForma(models.Model):
 
-    run_output = models.ForeignKey(RunOutput) 
+    run_output = models.ForeignKey(REoptResponse)
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     spreadsheet_created = models.DateTimeField(null=True)
     created = models.DateTimeField(auto_now_add=True)

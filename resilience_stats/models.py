@@ -1,13 +1,13 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
-from reo.models import RunOutput
+from reo.models import REoptResponse
 from outage_simulator import simulate_outage
 from validators import validate_RunOutput_for_outage_simulator
 
 
 class ResilienceModel(models.Model):
 
-    run_output = models.ForeignKey(RunOutput)
+    run_output = models.ForeignKey(REoptResponse)
 
     resilience_by_timestep = ArrayField(models.FloatField(null=True), null=True)
     resilience_hours_min = models.FloatField(null=True)

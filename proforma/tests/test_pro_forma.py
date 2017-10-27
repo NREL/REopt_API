@@ -5,7 +5,7 @@ import datetime
 import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.models import RunOutput
+from reo.models import REoptResponse
 from django.test import Client
 from proforma.models import ProForma
 
@@ -30,7 +30,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_creation(self):
         run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
-        uuid = run_output['uuid']
+        uuid = run_output['outputs']['Scenario']['uuid']
         id = run_output['id']
 
         start_time = now()
@@ -45,7 +45,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
         ws = wb.get_sheet_by_name(pf.sheet_io)
         
-        ro = RunOutput.objects.get(pk=id)
+        ro = REoptResponse.objects.get(pk=id)
         mapping = [[ws['B3'],ro.pv_kw],
         [ws['B4'],ro.pv_degradation_rate * 100],
         [ws['B5'],ro.batt_kw],

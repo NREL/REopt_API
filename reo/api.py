@@ -6,13 +6,14 @@ from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse
 from tastypie.resources import ModelResource
-from models import RunInput
 from validators import REoptResourceValidation, ValidateNestedInput
-from api_definitions import inputs
 from log_levels import log
 from utilities import API_Error
 from scenario import Scenario
-from reo.models import RunOutput, REoptResponse
+from reo.models import REoptPost, REoptResponse, MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
+    PVModel, WindModel, StorageModel, SiteModel, ScenarioModel, OutputModel, ScenarioOutputModel, SiteOutputModel, \
+    PVOutputModel, WindOutputModel, StorageOutputModel, FinancialOutputModel, ElectricTariffOutputModel, \
+    LoadProfileOutputModel, WorkingResponse
 
 
 api_version = "version 1.0.0"
@@ -31,11 +32,11 @@ class RunInputResource(ModelResource):
 
     class Meta:
         setup_logging()
-        queryset = RunInput.objects.all()
+        queryset = REoptPost.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['post']
         detail_allowed_methods = []
-        object_class = RunInput
+        object_class = REoptPost
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
@@ -69,13 +70,6 @@ class RunInputResource(ModelResource):
         else:  # nested input
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
-        # Format  and  Save Inputs
-        # model_inputs = dict({k: bundle.data.get(k) for k in inputs(full_list=True).keys() if k in bundle.data.keys() and bundle.data.get(k) is not None })
-        # model_inputs['api_version'] = api_version
-
-        # run = RunInput(**model_inputs)
-        # run.save()
-
         # Return  Results
         output_model = self.create_output(bundle.data, input_validator)
         bundle.obj = output_model
@@ -95,14 +89,14 @@ class RunInputResource(ModelResource):
             }
         else:
             try: # should return output structure to match new nested_outputs, even with exception
-                run_set = Scenario(run_uuid=run_uuid, inputs_dict=input_validator.input_dict['Scenario'])
+                s = Scenario(run_uuid=run_uuid, inputs_dict=input_validator.input_dict['Scenario'])
 
                 # Log POST request
-                run_set.log_post(json_POST)
+                s.log_post(json_POST)
 
                 # Run Optimization
                 output_dictionary = dict()
-                output_dictionary['outputs'] = run_set.run()
+                output_dictionary['outputs'] = s.run()
                 output_dictionary['inputs'] = json_POST
                 output_dictionary['messages'] = input_validator.warnings
 
@@ -113,22 +107,105 @@ class RunInputResource(ModelResource):
                         "warnings": input_validator.warnings,
                     },
                 "outputs": {"Scenario":{}}
-
                 }
 
-        # API level outputs
-        output_dictionary["outputs"]["uuid"] = run_uuid
-        output_dictionary["outputs"]["api_version"] = api_version
+        # output_dictionary['messages'] = MessagesModel()
+        # messages.save()
 
-        # Nested outputs
+        # output_dictionary['inputs'] = self.create_input_models(input_validator.input_dict)
+        # output_dictionary['outputs'] = self.create_output_models(reopt_outputs)
         output_dictionary["inputs"] = json_POST
         output_dictionary["outputs"]["Scenario"]["uuid"] = run_uuid
         output_dictionary["outputs"]["Scenario"]["api_version"] = api_version
-        output_dictionary["messages"]["warnings"] = input_validator.warnings
 
-
-        result = REoptResponse(**output_dictionary)
+        # result = REoptResponse(**output_dictionary)
+        result = WorkingResponse(**output_dictionary)
         # result.save()
-        # import pdb; pdb.set_trace()
 
         return result
+
+    @staticmethod
+    def create_input_models(d):
+        """
+        sub-dictionaries must be saved before passing to higher level keys in the nested format (django db protections)
+        :param d: validated input dictionary
+        :return: REoptPost instance, which becomes the 'inputs' in the REoptResponse
+        """
+        Financial = FinancialModel(**d['Scenario']['Site']['Financial'])
+        Financial.save()
+        LoadProfile = LoadProfileModel(**d['Scenario']['Site']['LoadProfile'])
+        LoadProfile.save()
+        ElectricTariff = ElectricTariffModel(**d['Scenario']['Site']['ElectricTariff'])
+        ElectricTariff.save()
+        PV = PVModel(**d['Scenario']['Site']['PV'])
+        PV.save()
+        Wind = WindModel(**d['Scenario']['Site']['Wind'])
+        Wind.save()
+        Storage = StorageModel(**d['Scenario']['Site']['Storage'])
+        Storage.save()
+
+        """
+        Cannot pass redundant keys to django models, so the next two `for` loops remove all of the upper case keys,
+        such that only the lower case "attributes" of the model are unpacked in the Model instantiation
+        """
+        site_vals = dict()
+        for k, v in d['Scenario']['Site'].items():
+            if k.islower():
+                site_vals.update({k:v})
+        Site = SiteModel(Financial=Financial, LoadProfile=LoadProfile, ElectricTariff=ElectricTariff, PV=PV, Wind=Wind,
+                         Storage=Storage, **site_vals)
+        Site.save()
+
+        scenario_vals = dict()
+        for k, v in d['Scenario'].items():
+            if k.islower():
+                scenario_vals.update({k:v})
+        Scenario = ScenarioModel(Site=Site, **scenario_vals)
+        Scenario.save()
+
+        post = REoptPost(Scenario=Scenario)
+        post.save()
+        return post
+    
+    @staticmethod
+    def create_output_models(r):
+        """
+
+        :param r: Scenario.run response
+        :return: OutputModel to be saved in REoptResponse as 'outputs'
+        """
+        Financial = FinancialOutputModel(**r['Scenario']['Site']['Financial'])
+        Financial.save()
+        LoadProfile = LoadProfileOutputModel(**r['Scenario']['Site']['LoadProfile'])
+        LoadProfile.save()
+        ElectricTariff = ElectricTariffOutputModel(**r['Scenario']['Site']['ElectricTariff'])
+        ElectricTariff.save()
+        PV = PVOutputModel(**r['Scenario']['Site']['PV'])
+        PV.save()
+        Wind = WindOutputModel(**r['Scenario']['Site']['Wind'])
+        Wind.save()
+        Storage = StorageOutputModel(**r['Scenario']['Site']['Storage'])
+        Storage.save()
+
+        """
+        Cannot pass redundant keys to django models, so the next two `for` loops remove all of the upper case keys,
+        such that only the lower case "attributes" of the model are unpacked in the Model instantiation
+        """
+        site_vals = dict()
+        for k, v in r['Scenario']['Site'].items():
+            if k.islower():
+                site_vals.update({k: v})
+        Site = SiteOutputModel(Financial=Financial, LoadProfile=LoadProfile, ElectricTariff=ElectricTariff, PV=PV,
+                               Wind=Wind, Storage=Storage, **site_vals)
+        Site.save()
+
+        scenario_vals = dict()
+        for k, v in r['Scenario'].items():
+            if k.islower():
+                scenario_vals.update({k: v})
+        Scenario = ScenarioOutputModel(Site=Site, **scenario_vals)
+        Scenario.save()
+
+        output = OutputModel(Scenario=Scenario)
+        output.save()
+        return output

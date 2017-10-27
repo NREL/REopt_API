@@ -1,5 +1,5 @@
 from django.http import JsonResponse
-from reo.models import RunOutput
+from reo.models import REoptResponse
 from models import ResilienceModel
 from reo.utilities import API_Error
 
@@ -7,7 +7,7 @@ def resilience_stats(request):
     uuid = request.GET.get('run_uuid')
 
     try:
-        run_output = RunOutput.objects.get(uuid=uuid)
+        run_output = REoptResponse.objects.get(uuid=uuid)
     except Exception as e:
         return API_Error(e).response
 

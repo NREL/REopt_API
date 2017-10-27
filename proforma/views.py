@@ -1,6 +1,6 @@
 from tastypie.http import HttpResponse, HttpBadRequest
 from tastypie.exceptions import ImmediateHttpResponse
-from models import ProForma, RunOutput
+from models import ProForma, REoptResponse
 import os
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
@@ -10,7 +10,7 @@ def proforma(request):
     uuid = request.GET.get('run_uuid')
 
     try:
-        run_output = RunOutput.objects.get(uuid=uuid)
+        run_output = REoptResponse.objects.get(uuid=uuid)
 
         try:
             pf = ProForma.objects.get(run_output=run_output)
