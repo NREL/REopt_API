@@ -46,7 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             del test_case['Scenario']['Site'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
         electric_tarrif_cases = [['urdb_response','blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
@@ -55,7 +55,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['ElectricTariff'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>ElectricTariff"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
         load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
@@ -64,7 +64,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['LoadProfile'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>LoadProfile"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
     def test_valid_data_types(self):
 
@@ -75,8 +75,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
 
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
-            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
     def test_valid_data_ranges(self):
 
@@ -86,17 +86,17 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
             t = json.loads(response.content)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
         for attribute, test_data in input.test_data('max'):
                 text = "exceeds allowable max"
                 response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+                self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
     
     def test_urdb_rate(self):
 
@@ -179,7 +179,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         self.check_common_outputs(d_calculated, d_expected)
         
-    @skip("Will Fail Until Workflow Complete")    
+    @skip("Will Fail Until Workflow Complete")
     def test_valid_nested_posts(self):
 
     #Can't test until we work through new workflow
@@ -197,7 +197,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 data['blended_utility_rate'] = [i*2 for i in [0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066, 0.05066]]
                 data['demand_charge'] = [10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00, 10.00]
 
-                data = ValidateNestedInput(data, nested=False).input
+                data = ValidateNestedInput(data, nested=False).input_dict
                 resp = self.api_client.post(self.reopt_base, format='json', data=data)
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
@@ -217,7 +217,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 self.assertTrue((float(d['year_one_utility_kwh']) - yr_one) / yr_one < self.REopt_tol)
 
             else:
-                data = ValidateNestedInput(data, nested=False).input
+                data = ValidateNestedInput(data, nested=False).input_dict
                 resp = self.api_client.post(self.reopt_base, format='json', data=data)
                 self.assertHttpCreated(resp)
                 d = json.loads(resp.content)
