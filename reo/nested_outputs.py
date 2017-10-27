@@ -45,7 +45,7 @@ nested_output_definitions = {
                     "average_yearly_energy_produced_kwh": {'type': float, "description": "Average energy produced by the wind system over one year", "units": 'kWh'},
                     "average_yearly_energy_exported_kwh": {'type': float, "description": "Average annual energy exported by the Wind system", "units": 'kWh'},
                     'year_one_energy_produced_kwh': {'type': float, "description": "Wind energy produced in year 1","units": 'kWh'},
-                    'year_one_power_production_series_kwh': {'type': list_of_float, "description": "Hourly Wind Resource", "units": 'kW'},
+                    'year_one_power_production_series_kw': {'type': list_of_float, "description": "Hourly Wind Resource", "units": 'kW'},
                     "year_one_to_battery_series_kw": {'type': list_of_float, "description": "Year 1 wind to battery time series", "units": 'kW'},
                     "year_one_to_load_series_kw": {'type': list_of_float, "description": "Year 1 wind to load time series", "units": 'kW'},
                     "year_one_to_grid_series_kw": {'type': list_of_float, "description": "Year 1 wind to grid time series", "units": 'kW'},
