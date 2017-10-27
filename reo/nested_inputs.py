@@ -210,7 +210,7 @@ nested_input_definitions = {
                                                                                              "description":"PV Watts inverter efficiency"},
                                                 "radius":                               { 'type': 'float' , 'min': 0, 'default': 0,
                                                                                              "description":"PV Watts radius to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance." },
-                                                "tilt":                                 { 'type': 'float', 'min': 0, 'max': 90,
+                                                "tilt":                                 { 'type': 'float', 'min': 0, 'max': 90, 'default': 'Site latitude',
                                                                                             "description":"PV Watts system tilt." } 
                                             },
 

@@ -823,6 +823,11 @@ class ValidateNestedInput:
                 if self.isAttribute(template_key):
                     default = template_value.get('default')
                     if default is not None and real_values.get(template_key) is None:
+                        if isinstance(default, str):
+                            d = self.input_dict['Scenario']
+                            for key in default.split(' '):
+                                d = d.get(key)
+                            default = d
                         self.update_attribute_value(object_name_path, template_key, default)
                         self.defaults_inserted.append([template_key, object_name_path])
 
