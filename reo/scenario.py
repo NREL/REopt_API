@@ -68,7 +68,7 @@ class Scenario:
         self.inputs_dict = inputs_dict
 
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
-                                  n_timesteps=inputs_dict['time_steps_per_hour'] * 8760)
+                                  n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:

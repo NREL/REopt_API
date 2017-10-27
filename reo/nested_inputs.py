@@ -33,7 +33,7 @@ nested_input_definitions = {
                                            'description':'The number of seconds allowed before the optimization times out' },
                 "user_id":              { 'type': 'str',
                                             'description':'Not currently used.' },
-                "time_steps_per_hour":  { 'type': 'float', 'min': 1, 'max': 1, 'default': 1,
+                "time_steps_per_hour":  { 'type': 'int', 'min': 1, 'max': 1, 'default': 1,
                                         "description": 'The number of time steps per hour in the REopt simulation'}, #aspirational - we only handle 1 timetep per hour really, this touches all of the code really
 
 
