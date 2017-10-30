@@ -153,7 +153,7 @@ declarations
 
   binDemandTier: array ( Ratchets, DemandBin) of mpvar
   binDemandMonthsTier: array (Month, DemandMonthsBin) of mpvar
-  binUsageTier: array ( FuelBin) of mpvar
+  binUsageTier: array (Month, FuelBin) of mpvar
 
   DemandLookbackPercent:  real
   dvPeakDemandELookback: mpvar
@@ -532,17 +532,29 @@ forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
 	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 end-do
 
+!forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
+!	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb,dbm) ! validate
+!   	dvPeakDemandEMonth(m, dbm) >= 0
+!end-do
+
+
 ! Compute tiered energy rates
-forall ( fb in FuelBin) do
-	binUsageTier(fb) is_binary
-	UsageInTier(fb) := sum(LD in Load, db in DemandBin,ts in TimeStep, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
-	UsageInTier(fb) <= binUsageTier(fb) * MaxUsageInTier(fb)
+forall ( fb in FuelBin, m in Month)  do
+	UsageInTier(m, fb) :=  sum(LD in Load, db in DemandBin, dbm in DemandMonthsBin, ts in TimeStepRatchetsMonth(m)) dvGrid(LD,ts,db,fb,dbm) ! validate
+   	UsageInTier(m, fb) >= 0
 end-do
 
-forall ( fb in FuelBin | fb >= 2) do
-	binUsageTier(fb) - binUsageTier(fb-1) <= 0
-	binUsageTier(fb)*MaxUsageInTier(fb-1) - UsageInTier(fb-1) <= 0
+forall ( fb in FuelBin, m in Month) do
+	binUsageTier(m, fb) is_binary
+	UsageInTier(m, fb) <= binUsageTier(m, fb) * MaxUsageInTier(fb)
 end-do
+
+forall ( fb in FuelBin | fb >= 2, m in Month) do
+	binUsageTier(m, fb) - binUsageTier(m, fb-1) <= 0
+	binUsageTier(m, fb)*MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
+end-do
+
+
 
 ! Compute tiered demand rates
 forall (db in DemandBin, r in Ratchets) do
