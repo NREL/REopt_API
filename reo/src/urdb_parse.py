@@ -230,6 +230,10 @@ class UrdbParse:
             if 'max' in energy_tier:
                 energy_tier_max = energy_tier['max']
 
+            if 'rate' in energy_tier or 'adj' in energy_tier:
+                self.reopt_args.energy_max_in_tiers.append(energy_tier_max)
+
+            # deal with complex units (can't model exactly, must make average)
             if 'unit' in energy_tier:
                 energy_tier_unit = str(energy_tier['unit'])
                 # average the prices if we have exotic max usage units
@@ -237,8 +241,12 @@ class UrdbParse:
                     average_rates = True
 
             if 'rate' in energy_tier:
-                rates.append(energy_tier['rate']) # only used for kWh/kw pricing
-                self.reopt_args.energy_max_in_tiers.append(energy_tier_max) # should be under if 'max'?
+                rates.append(energy_tier['rate'])
+                if 'adj' in energy_tier:
+                    rates[-1] += energy_tier['adj']
+            # people put adj but no rate in some rates
+            elif 'adj' in energy_tier:
+                rates.append(energy_tier['adj'])
 
         if average_rates:
             rate_average = float(sum(rates)) / max(len(rates), 1)
@@ -247,7 +255,7 @@ class UrdbParse:
             self.reopt_args.energy_max_in_tiers.append(self.big_number)
             log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
-        for tier in range(0, self.reopt_args.energy_tiers_num): # for each tier
+        for tier in range(0, self.reopt_args.energy_tiers_num):
             hour_of_year = 1
             for month in range(0, 12):
                 for day in range(0, self.days_in_month[month]):
