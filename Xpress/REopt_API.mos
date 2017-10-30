@@ -532,12 +532,6 @@ forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
 	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 end-do
 
-!forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
-!	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb,dbm) ! validate
-!   	dvPeakDemandEMonth(m, dbm) >= 0
-!end-do
-
-
 ! Compute tiered energy rates
 forall ( fb in FuelBin, m in Month)  do
 	UsageInTier(m, fb) :=  sum(LD in Load, db in DemandBin, dbm in DemandMonthsBin, ts in TimeStepRatchetsMonth(m)) dvGrid(LD,ts,db,fb,dbm) ! validate
@@ -553,7 +547,6 @@ forall ( fb in FuelBin | fb >= 2, m in Month) do
 	binUsageTier(m, fb) - binUsageTier(m, fb-1) <= 0
 	binUsageTier(m, fb)*MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
 end-do
-
 
 
 ! Compute tiered demand rates
