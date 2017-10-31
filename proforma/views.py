@@ -1,22 +1,25 @@
 from tastypie.http import HttpResponse, HttpBadRequest
 from tastypie.exceptions import ImmediateHttpResponse
-from models import ProForma, REoptResponse
+from models import ProForma, ScenarioModel
 import os
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
+from reo.utilities import API_Error
+
 
 
 def proforma(request):
     uuid = request.GET.get('run_uuid')
 
     try:
-        run_output = REoptResponse.objects.get(uuid=uuid)
+        scenario = ScenarioModel.objects.get(uuid=uuid)
 
         try:
-            pf = ProForma.objects.get(run_output=run_output)
+            pf = ProForma.objects.get(scenario_model=scenario)
         except:
-            pf = ProForma.create(run_output=run_output)
+            pf = ProForma.create(scenario_model=scenario)
 
+        pf.generate_spreadsheet()
         pf.save()
 
         wrapper = FileWrapper(file(pf.output_file))
@@ -25,5 +28,5 @@ def proforma(request):
         response['Content-Disposition'] = 'attachment; filename=%s' % (pf.output_file_name)
         return response
 
-    except:
-        raise ImmediateHttpResponse(HttpBadRequest("Invalid UUID"))
+    except Exception as e:
+        return API_Error(e).response

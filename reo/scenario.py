@@ -10,7 +10,10 @@ from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
 from reo.src.reopt import REopt
-from utilities import check_directory_created
+from utilities import check_directory_created, attribute_inputs
+from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
+    PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
+
 
 
 class Paths(object):
@@ -66,9 +69,10 @@ class Scenario:
         #     self.tilt = self.latitude
 
         self.inputs_dict = inputs_dict
-
+       
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
                                   n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+
 
     def log_post(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
@@ -119,6 +123,7 @@ class Scenario:
         if not self.debug:
             log("INFO", "Cleaning up folders from: " + self.paths.run)
             shutil.rmtree(self.paths.run)
+
 
     # DAT3 & DAT4 LoadSize, LoadProfile
     def create_loads(self):

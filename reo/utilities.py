@@ -2,6 +2,10 @@ import os
 from log_levels import log
 from numpy import npv
 
+
+def attribute_inputs(inputs):
+    return {k:v for k,v in inputs.items() if k[0]==k[0].lower()}
+
 class API_Error:
     def __init__(self, e):
         # e is a caught Exception

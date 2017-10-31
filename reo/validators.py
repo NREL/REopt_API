@@ -583,9 +583,18 @@ class ValidateNestedInput:
             return True
 
         @property
-        def error_response(self):
-            return {"errors": self.errors, "warnings": self.warnings}
+        def messages(self):
+            output = {}
 
+            if bool(self.errors):
+                output['errors'] = self.errors
+
+            if bool(self.warnings):
+                output['warnings'] = self.warnings
+
+            return output
+
+            
         def warning_message(self, warnings):
             """
                    Convert a list of lists into a dictionary
