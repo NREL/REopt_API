@@ -108,7 +108,7 @@ class RunInputResource(ModelResource):
 
                 optimization_results['flat'].update(meta)
                 optimization_results['nested']['Scenario'].update(meta)
-                output_dictionary['outputs'].update(optimization_results[output_format])
+                output_dictionary['outputs'] = optimization_results[output_format]
                
                 if save_to_db:
                     self.save_scenario_outputs(optimization_results['nested']['Scenario'])
