@@ -8,8 +8,14 @@ from resilience_stats.outage_simulator import simulate_outage
 class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
+        """
+        Create some self attributes for running tests.
+            self.inputs is a dict to POST to resilience_stats endpoint
+        :return: None
+        """
         super(TestResilStats, self).setUp()
         test_path = os.path.join('resilience_stats', 'tests')
+
         pv_kw_ac_hourly = list()
         with open(os.path.join(test_path, 'offline_pv_prod_factor.txt'), 'r') as f:
             for line in f:
@@ -43,6 +49,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.url = '/resilience_stats/'
 
     def test_outage_sim(self):
+        """
+        Use self.inputs to test the outage simulator for expected outputs.
+        :return: None
+        """
         expected = {
             'resilience_hours_min': 0,
             'resilience_hours_max': 78,
@@ -137,6 +147,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
     def test_no_resilience(self):
+        """
+        modify self.inputs to have no pv nor battery and test for expected zeros/Nones
+        :return:
+        """
         self.inputs.update(pv_kw=0, batt_kw=0)
 
         resp = simulate_outage(**self.inputs)
@@ -148,18 +162,13 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['probs_of_surviving'])
 
     def test_resil_endpoint(self):
-        post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
+        """
+        Verify status_code of 200 from resilience_stats endpoint
+        :return:
+        """
+        post = json.load(open(os.path.join('tests', 'POST_nested.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         data = {'run_uuid': reopt_resp['outputs']['Scenario']['run_uuid']}
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
-
-        resp_dict = json.loads(resp.content)
-
-        self.assertEqual(resp_dict["probs_of_surviving"], [0.0114, 0.0027])
-        self.assertEqual(resp_dict["resilience_hours_avg"], 0.01)
-        self.assertEqual(resp_dict["outage_durations"], [1,2])
-        self.assertEqual(resp_dict["resilience_hours_min"], 0)
-        self.assertEqual(resp_dict["resilience_hours_max"], 2)
-
