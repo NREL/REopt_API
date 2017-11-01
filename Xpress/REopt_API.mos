@@ -129,7 +129,7 @@ declarations
   binBattDischarge: array( TimeStep) of mpvar
 
   EtaStorIn: array(Tech,Load) of real !round trip storage efficiency
-  EtaStorOut: array(Tech,Load) of real !round trip storage efficiency
+  EtaStorOut: array(Load) of real !round trip storage efficiency
   MaxStorageSizeKWH: real !the max size of storage
   MinStorageSizeKWH: real !the min size of storage
   MaxStorageSizeKW:  real !the max size of the charge / discharge per time step, basically the inverter
@@ -344,7 +344,7 @@ forall ( ts in TimeStep) do
 	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out
 	dvStoredEnergy(ts) =   dvStoredEnergy(ts-1) +  dvElecToStor( ts) - dvElecFromStor(ts)
 	! energy coming out of the storage system cannot be greater than the current state of charge
-	dvElecFromStor( ts) <=  dvStoredEnergy(ts-1 ) !* sum(t in Tech) EtaStorOut(t,"1S")
+	dvElecFromStor(ts) / EtaStorOut("1S") <=  dvStoredEnergy(ts-1)
 	! the state of charge always has to be greater than 0
 	dvStoredEnergy(ts) >=  StorageMinChargePcent * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling  ! / TimeStepScaling
 	dvElecFromStor( ts) >= 0
