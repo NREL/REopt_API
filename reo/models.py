@@ -399,7 +399,7 @@ class MessagesModel(models.Model):
 
             else:
                 message_group_type_model = MessagesGroupTypeModel.create(text="Other")
-                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,messages_group_type_model=message_group_type_model,description=vv)
+                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,messages_group_type_model=message_group_type_model,description=v)
                 obj.save()
 
 
