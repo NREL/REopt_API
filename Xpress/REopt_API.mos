@@ -540,9 +540,15 @@ end-do
 
 forall ( fb in FuelBin, m in Month) do
 	binUsageTier(m, fb) is_binary
-	UsageInTier(m, fb) <= binUsageTier(m, fb) * MaxUsageInTier(fb)
 end-do
 
+forall (m in Month, fb in FuelBin | fb < FuelBinCount) do
+    UsageInTier(m, fb) <= binUsageTier(m, fb) * MaxUsageInTier(fb)
+end-do
+forall (m in Month) do
+	indicator(-1, binUsageTier(m, FuelBinCount), UsageInTier(m, FuelBinCount) <= 0)
+end-do
+	
 forall ( fb in FuelBin | fb >= 2, m in Month) do
 	binUsageTier(m, fb) - binUsageTier(m, fb-1) <= 0
 	binUsageTier(m, fb)*MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
@@ -554,8 +560,11 @@ forall (db in DemandBin, r in Ratchets) do
 	binDemandTier(r, db) is_binary
 end-do
 
-forall ( db in DemandBin, r in Ratchets) do
+forall (db in DemandBin, r in Ratchets | db < DemandBinCount) do
 	dvPeakDemandE(r, db) <= binDemandTier(r,db) * MaxDemandInTier(db)
+end-do
+forall (r in Ratchets) do
+	indicator(-1, binDemandTier(r, DemandBinCount), dvPeakDemandE(r, DemandBinCount) <= 0)
 end-do
 
 forall ( db in DemandBin | db >= 2, r in Ratchets) do
@@ -574,8 +583,11 @@ forall (dbm in DemandMonthsBin, m in Month) do
 	binDemandMonthsTier(m, dbm) is_binary
 end-do
 
-forall ( dbm in DemandMonthsBin, m in Month) do
+forall ( dbm in DemandMonthsBin, m in Month | dbm < DemandMonthsBinCount) do
 	dvPeakDemandEMonth(m, dbm) <= binDemandMonthsTier(m,dbm) * MaxDemandMonthsInTier(dbm)
+end-do
+forall (m in Month) do
+	indicator(-1, binDemandMonthsTier(m, DemandMonthsBinCount), dvPeakDemandEMonth(m, DemandMonthsBinCount) <= 0)
 end-do
 
 forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
