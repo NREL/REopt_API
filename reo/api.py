@@ -86,30 +86,32 @@ class RunInputResource(ModelResource):
         meta = {'run_uuid':str(run_uuid), 'api_version':api_version}
       
         output_dictionary = {}
-        output_dictionary["inputs"] = input_validator.input_dict
+        output_dictionary["inputs"] = input_validator.input_for_response
         output_dictionary['outputs'] = {"Scenario":meta}
         output_dictionary["messages"] = input_validator.messages
 
         if input_validator.isValid:
             try: # should return output structure to match new nested_outputs, even with exception
                
-                scenario_inputs = copy.deepcopy(input_validator.input_dict['Scenario'])
-                scenario_inputs.update(meta)
+                scenario_inputs = input_validator.input_dict['Scenario']
                 
                 if save_to_db:
                     self.save_scenario_inputs(scenario_inputs)
 
-                s = Scenario(inputs_dict=scenario_inputs)
+                s = Scenario(run_uuid=run_uuid,inputs_dict=scenario_inputs)
 
                 # Log POST request
                 s.log_post(input_validator.input_dict)
 
                 # Run Optimization
                 optimization_results = s.run()
+
+                optimization_results['flat'].update(meta)
+                optimization_results['nested']['Scenario'].update(meta)
                 output_dictionary['outputs'].update(optimization_results[output_format])
-                
+               
                 if save_to_db:
-                    self.save_scenario_outputs(optimization_results['nested']['outputs']['Scenario'])
+                    self.save_scenario_outputs(optimization_results['nested']['Scenario'])
                 
             except Exception as e:
                 

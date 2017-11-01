@@ -9,12 +9,11 @@ from reo.utilities import API_Error
 
 
 def proforma(request):
-    uuid = request.GET.get('run_uuid')
-
     try:
+        uuid = request.GET.get('run_uuid') 
         from IPython import embed
         embed()
-        scenario = ScenarioModel.objects.get(uuid=uuid)
+        scenario = ScenarioModel.objects.get(run_uuid=uuid)
 
         try:
             pf = ProForma.objects.get(scenario_model=scenario)

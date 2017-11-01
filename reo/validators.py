@@ -554,7 +554,9 @@ class ValidateNestedInput:
 
         def __init__(self, input_dict, nested=False):
             self.nested_input_definitions = nested_input_definitions
+            self.nested = nested
             self.input_dict = input_dict
+            self.original_input = input_dict
 
             if not nested:
                 self.input_dict = flat_to_nested(input_dict)
@@ -570,6 +572,13 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
+
+        @property
+        def input_for_response(self):
+            if self.nested:
+                return self.input_dict
+            else:
+                return self.original_input
 
         @property
         def isValid(self):

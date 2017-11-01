@@ -51,8 +51,8 @@ class ProForma(models.Model):
           
     def generate_spreadsheet(self):
 
-        scenario = self.scenario
-        site = scenario.sitemodel_set().first()
+        scenario = self.scenario_model
+        site = scenario.sitemodel_set.first()
         batt = site.storagemodel_set.first()
         pv = site.pvmodel_set.first()
         load_profile = site.loadprofilemodel_set.first()
@@ -67,7 +67,7 @@ class ProForma(models.Model):
 
         # System Design
         ws['B3'] = pv.size_kw
-        ws['B4'] = pv.degradation_rate_pct * 100
+        ws['B4'] = pv.degradation_pct * 100
         ws['B5'] = batt.size_kw
         ws['B6'] = batt.size_kwh 
 

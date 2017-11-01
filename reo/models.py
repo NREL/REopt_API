@@ -19,7 +19,8 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)  # not used
     run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     api_version = models.TextField(null=True, blank=True, default='')
-
+ 
+    status = models.TextField(null=True,blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
     created = models.DateTimeField(auto_now_add=True)

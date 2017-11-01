@@ -2,20 +2,21 @@ from django.http import JsonResponse
 from reo.models import ScenarioModel
 from models import ResilienceModel
 from reo.utilities import API_Error
+from outage_simulator import simulate_outage
 
 def resilience_stats(request):
    
     uuid = request.GET.get('run_uuid')
-
+ 
     try:
-        scenario = ScenarioModel.objects.filter(run_uuid=uuid).first()
+        scenario = ScenarioModel.objects.get(run_uuid=uuid)
     
     except Exception as e:
         return API_Error(e).response
 
     rm = ResilienceModel.create(scenario_model=scenario)
 
-    site = scenario.sitemodel_set().first()
+    site = scenario.sitemodel_set.first()
     batt = site.storagemodel_set.first()
     pv = site.pvmodel_set.first()
     load_profile = site.loadprofilemodel_set.first()
@@ -36,7 +37,7 @@ def resilience_stats(request):
     )
     
 
-    ResilienceModel.objects.filter(id=rm.id).update(results)
+    ResilienceModel.objects.filter(id=rm.id).update(**results)
     
     response = JsonResponse(results)
     return response
