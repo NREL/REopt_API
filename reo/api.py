@@ -109,7 +109,7 @@ class RunInputResource(ModelResource):
                 output_dictionary['outputs'].update(optimization_results[output_format])
                 
                 if save_to_db:
-                    self.save_scenario_outputs(output_dictionary['outputs']['Scenario'])
+                    self.save_scenario_outputs(optimization_results['nested']['outputs']['Scenario'])
                 
             except Exception as e:
                 

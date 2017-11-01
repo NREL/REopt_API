@@ -4,6 +4,7 @@ from models import ResilienceModel
 from reo.utilities import API_Error
 
 def resilience_stats(request):
+   
     uuid = request.GET.get('run_uuid')
 
     try:
@@ -17,7 +18,7 @@ def resilience_stats(request):
     site = scenario.sitemodel_set().first()
     batt = site.storagemodel_set.first()
     pv = site.pvmodel_set.first()
-    load_profile = site.loadprofile_set.first()
+    load_profile = site.loadprofilemodel_set.first()
 
     batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                 * batt.inverter_efficiency_pct\
@@ -35,8 +36,7 @@ def resilience_stats(request):
     )
     
 
-    rm.update(results)
-    rm.save()
+    ResilienceModel.objects.filter(id=rm.id).update(results)
     
     response = JsonResponse(results)
     return response

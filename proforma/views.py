@@ -12,12 +12,14 @@ def proforma(request):
     uuid = request.GET.get('run_uuid')
 
     try:
+        from IPython import embed
+        embed()
         scenario = ScenarioModel.objects.get(uuid=uuid)
 
         try:
             pf = ProForma.objects.get(scenario_model=scenario)
         except:
-            pf = ProForma.create(scenario_model=scenario)
+            pf = ProForma.create(scenario_uuid=scenario)
 
         pf.generate_spreadsheet()
         pf.save()
