@@ -83,17 +83,16 @@ class Results:
         self.year = year
 
         self.nested_outputs = self.setup_nested()
+      
 
     def get_output(self):
-        output_dict = dict()
+        output_dict = {'flat':{}}
         for k in outputs().iterkeys():
-            output_dict[k] = self.results_dict[k]
-
+            output_dict['flat'][k] = self.results_dict[k]
         self.get_nested()
-        merged_dict = output_dict.copy()
-        merged_dict.update(self.nested_outputs)
+        output_dict['nested'] = self.nested_outputs
 
-        return merged_dict
+        return output_dict
 
     def is_system(self):
         system = False

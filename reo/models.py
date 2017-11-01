@@ -103,7 +103,7 @@ class LoadProfileModel(models.Model):
     critical_load_pct = models.FloatField()
 
     #Outputs
-    year_one_electric_load_series_kw = ArrayField(models.FloatField(blank=True), default=[])
+    year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True,blank=True), default=[])
 
     @classmethod
     def create(cls,site_model=None, **kwargs):

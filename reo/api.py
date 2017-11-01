@@ -1,5 +1,7 @@
 import logging
-import os, json
+import os
+import json
+import copy
 import uuid
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
@@ -9,10 +11,10 @@ from tastypie.http import HttpCreated
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import log
-from utilities import API_Error
+from utilities import API_Error, attribute_inputs
 from scenario import Scenario
-from reo.models import ScenarioModel, MessagesModel
-
+from reo.models import ScenarioModel, MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
+    PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
 
 
 api_version = "version 1.0.0"
@@ -61,6 +63,7 @@ class RunInputResource(ModelResource):
         
         if 'Scenario' not in bundle.data.keys():
             self.is_valid(bundle)  # runs REoptResourceValidation
+            output_format = 'flat'
 
             if bundle.errors:
                 raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.error_response))
@@ -68,15 +71,16 @@ class RunInputResource(ModelResource):
             input_validator = ValidateNestedInput(bundle.data, nested=False)
 
         else:  # nested input
+            output_format = 'nested'
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         # Return  Results
-        output_model = self.create_output(input_validator)
+        output_model = self.create_output(input_validator, output_format)
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=200))
     
 
-    def create_output(self, input_validator):
+    def create_output(self, input_validator, output_format):
 
         run_uuid = uuid.uuid4()
         meta = {'run_uuid':str(run_uuid), 'api_version':api_version}
@@ -88,24 +92,24 @@ class RunInputResource(ModelResource):
 
         if input_validator.isValid:
             try: # should return output structure to match new nested_outputs, even with exception
-                
-                scenario_inputs = input_validator.input_dict['Scenario']
-                scenario_inputs['Scenario'].update(meta)
+               
+                scenario_inputs = copy.deepcopy(input_validator.input_dict['Scenario'])
+                scenario_inputs.update(meta)
                 
                 if save_to_db:
                     self.save_scenario_inputs(scenario_inputs)
 
-                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
+                s = Scenario(inputs_dict=scenario_inputs)
 
                 # Log POST request
                 s.log_post(input_validator.input_dict)
 
                 # Run Optimization
                 optimization_results = s.run()
-                output_dictionary['outputs'].update(optimization_results['Scenario'])
+                output_dictionary['outputs'].update(optimization_results[output_format])
                 
                 if save_to_db:
-                    self.save_scenario_outputs(optimization_results)
+                    self.save_scenario_outputs(output_dictionary['outputs']['Scenario'])
                 
             except Exception as e:
                 
@@ -145,10 +149,11 @@ class RunInputResource(ModelResource):
         :param r: Scenario.run response
         :return: OutputModel to be saved in REoptResponse as 'outputs'
         """        
-        self.siteM.update(**attribute_inputs(d['Scenario']['Site']))
-        self.financialM.update(**attribute_inputs(d['Scenario']['Site']['Financial']))
-        self.load_profileM.update(**attribute_inputs(d['Scenario']['Site']['LoadProfile']))
-        self.electric_tariffM.update(**attribute_inputs(d['Scenario']['Site']['ElectricTariff']))
-        self.pvM.update(**attribute_inputs(d['Scenario']['Site']['PV']))
-        self.windM.update(**attribute_inputs(d['Scenario']['Site']['Wind']))    
-        self.storageM.update(**attribute_inputs(d['Scenario']['Site']['Storage']))
+        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))   
+        SiteModel.objects.filter(id=self.siteM.id).update(**attribute_inputs(d['Site']))
+        FinancialModel.objects.filter(id=self.financialM.id).update(**attribute_inputs(d['Site']['Financial']))
+        LoadProfileModel.objects.filter(id=self.load_profileM.id).update(**attribute_inputs(d['Site']['LoadProfile']))
+        ElectricTariffModel.objects.filter(id=self.electric_tariffM.id).update(**attribute_inputs(d['Site']['ElectricTariff']))
+        PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
+        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))    
+        StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))

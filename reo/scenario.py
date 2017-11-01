@@ -52,7 +52,7 @@ class Scenario:
     debug = True
     time_steps_per_hour = 1
 
-    def __init__(self, run_uuid, inputs_dict):
+    def __init__(self, inputs_dict):
         """
 
         All error handling is done in validators.py before data is passed to scenario.py
@@ -61,8 +61,8 @@ class Scenario:
         that is not included in the inputs_dict is added to the inputs_dict with the default api_definitions value.
         """
 
-        self.paths = Paths(run_uuid)
-        self.run_uuid = run_uuid
+        self.paths = Paths(inputs_dict['run_uuid'])
+        self.run_uuid = inputs_dict['run_uuid']
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
 
         # if self.tilt is None:  # is this done in validator?
