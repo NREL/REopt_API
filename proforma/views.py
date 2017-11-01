@@ -7,12 +7,9 @@ from wsgiref.util import FileWrapper
 from reo.utilities import API_Error
 
 
-
 def proforma(request):
     try:
         uuid = request.GET.get('run_uuid') 
-        from IPython import embed
-        embed()
         scenario = ScenarioModel.objects.get(run_uuid=uuid)
 
         try:

@@ -20,6 +20,7 @@ from reo.models import ScenarioModel, MessagesModel, FinancialModel, LoadProfile
 api_version = "version 1.0.0"
 save_to_db = True
 
+
 def setup_logging():
     file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
     logging.basicConfig(filename=file_logfile,
@@ -78,16 +79,15 @@ class RunInputResource(ModelResource):
         output_model = self.create_output(input_validator, output_format)
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
-    
 
     def create_output(self, input_validator, output_format):
 
         run_uuid = uuid.uuid4()
-        meta = {'run_uuid':str(run_uuid), 'api_version':api_version}
+        meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
       
-        output_dictionary = {}
+        output_dictionary = dict()
         output_dictionary["inputs"] = input_validator.input_for_response
-        output_dictionary['outputs'] = {"Scenario":meta}
+        output_dictionary['outputs'] = {"Scenario": meta}
         output_dictionary["messages"] = input_validator.messages
 
         if input_validator.isValid:
@@ -125,27 +125,26 @@ class RunInputResource(ModelResource):
                 ScenarioModel.create(**meta)
 
             #Do we want to save messages for invalid posts?
-            messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid = run_uuid)    
+            messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
 
         return output_dictionary
 
-    def save_scenario_inputs(self,d):
+    def save_scenario_inputs(self, d):
         """
         saves input json to db tables
         :param d: validated input dictionary
         :return: None
         """
         self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
-        self.siteM = SiteModel.create(scenario_model = self.scenarioM, **attribute_inputs(d['Site']))
-        self.financialM = FinancialModel.create(site_model = self.siteM, **attribute_inputs(d['Site']['Financial']))
-        self.load_profileM = LoadProfileModel.create(site_model = self.siteM,**attribute_inputs(d['Site']['LoadProfile']))
-        self.electric_tariffM = ElectricTariffModel.create(site_model = self.siteM,**attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(site_model = self.siteM,**attribute_inputs(d['Site']['PV']))
-        self.windM = WindModel.create(site_model = self.siteM,**attribute_inputs(d['Site']['Wind']))    
-        self.storageM = StorageModel.create(site_model =self.siteM,**attribute_inputs(d['Site']['Storage']))
+        self.siteM = SiteModel.create(scenario_model=self.scenarioM, **attribute_inputs(d['Site']))
+        self.financialM = FinancialModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Financial']))
+        self.load_profileM = LoadProfileModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['LoadProfile']))
+        self.electric_tariffM = ElectricTariffModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['ElectricTariff']))
+        self.pvM = PVModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['PV']))
+        self.windM = WindModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Wind']))
+        self.storageM = StorageModel.create(site_model =self.siteM, **attribute_inputs(d['Site']['Storage']))
 
-    
-    def save_scenario_outputs(self,d):
+    def save_scenario_outputs(self, d):
         """
 
         :param r: Scenario.run response
