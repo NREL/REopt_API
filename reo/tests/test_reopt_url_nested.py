@@ -168,7 +168,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('run_uuid')))
             raise
 
     def test_wind(self):
@@ -195,7 +195,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
             raise
         
     def test_valid_nested_posts(self):
@@ -219,7 +219,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
             raise
 
         # another test with custom rate and monthly kwh
@@ -246,5 +246,5 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
             raise

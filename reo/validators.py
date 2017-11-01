@@ -572,6 +572,10 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
+            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+
 
         @property
         def input_for_response(self):
@@ -582,10 +586,6 @@ class ValidateNestedInput:
 
         @property
         def isValid(self):
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
-
             if self.input_data_errors or self.urdb_errors:
                 return False
 
@@ -594,11 +594,11 @@ class ValidateNestedInput:
         @property
         def messages(self):
             output = {}
-
-            if bool(self.errors):
+           
+            if self.errors != {}:
                 output['errors'] = self.errors
 
-            if bool(self.warnings):
+            if self.warnings != {}:
                 output['warnings'] = self.warnings
 
             return output
@@ -855,7 +855,7 @@ class ValidateNestedInput:
                         self.defaults_inserted.append([template_key, object_name_path])
 
         def check_required_attributes(self, object_name_path, template_values=None, real_values=None):
-
+           
             final_message = ''
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)

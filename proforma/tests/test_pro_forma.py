@@ -5,7 +5,6 @@ import datetime
 import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.models import REoptResponse
 from django.test import Client
 from proforma.models import ProForma
 
@@ -30,14 +29,14 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_creation(self):
         run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
-        uuid = run_output['outputs']['Scenario']['uuid']
-        id = run_output['id']
+        uuid = run_output['outputs']['Scenario']['run_uuid']
+       
 
         start_time = now()
         response = Client().get('/proforma/?run_uuid='+uuid)
         self.assertEqual(response.status_code,200)
 
-        pf = ProForma.objects.get(run_output_id=id)
+        pf = ProForma.objects.get(scenario_model=uuid)
 
         self.assertTrue(os.path.exists(pf.output_file))
         self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)

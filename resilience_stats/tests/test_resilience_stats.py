@@ -151,7 +151,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
-        data = {'run_uuid': reopt_resp['outputs']['Scenario']['uuid']}
+        data = {'run_uuid': reopt_resp['outputs']['Scenario']['run_uuid']}
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
 

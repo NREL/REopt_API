@@ -66,7 +66,7 @@ class RunInputResource(ModelResource):
             output_format = 'flat'
 
             if bundle.errors:
-                raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.error_response))
+                raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
 
             input_validator = ValidateNestedInput(bundle.data, nested=False)
 
@@ -77,7 +77,7 @@ class RunInputResource(ModelResource):
         # Return  Results
         output_model = self.create_output(input_validator, output_format)
 
-        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=200))
+        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
     
 
     def create_output(self, input_validator, output_format):

@@ -5,7 +5,6 @@ import datetime
 import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.models import REoptResponse
 from django.test import Client
 from proforma.models import ProForma
 from unittest import skip
