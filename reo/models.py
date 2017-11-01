@@ -15,21 +15,22 @@ class URDBError(models.Model):
 
 class ScenarioModel(models.Model):
 
-    #Inputs
-    # user = models.ForeignKey(User, null=True, blank=True)  # not used
+    # Inputs
+    # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     api_version = models.TextField(null=True, blank=True, default='')
  
-    status = models.TextField(null=True,blank=True)
+    status = models.TextField(null=True, blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
     created = models.DateTimeField(auto_now_add=True)
 
     @classmethod
-    def create(cls,**kwargs):
+    def create(cls, **kwargs):
         obj = cls(**kwargs)
         obj.save()
         return obj
+
 
 class SiteModel(models.Model):
 
@@ -41,17 +42,18 @@ class SiteModel(models.Model):
     )
 
     #Inputs
-    latitude = models.FloatField()  # required
-    longitude = models.FloatField()  # required
+    latitude = models.FloatField()
+    longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
     
     @classmethod
-    def create(cls,scenario_model=None,**kwargs):
-        obj = cls(scenario_model=scenario_model,**kwargs)
+    def create(cls, scenario_model=None, **kwargs):
+        obj = cls(scenario_model=scenario_model, **kwargs)
         obj.save()
 
         return obj
+
 
 class FinancialModel(models.Model):
     #Relationships
@@ -64,7 +66,6 @@ class FinancialModel(models.Model):
     #Input
     analysis_years = models.IntegerField()
     escalation_pct = models.FloatField()
-    owner_tax_pct = models.FloatField()
     om_cost_growth_pct = models.FloatField()
     offtaker_discount_pct = models.FloatField()
     offtaker_tax_pct = models.FloatField()
@@ -79,11 +80,12 @@ class FinancialModel(models.Model):
     
 
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
+
 
 class LoadProfileModel(models.Model):
     #Relationships
@@ -104,11 +106,11 @@ class LoadProfileModel(models.Model):
     critical_load_pct = models.FloatField()
 
     #Outputs
-    year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True,blank=True), default=[])
+    year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
 
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
@@ -161,8 +163,8 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
@@ -198,7 +200,7 @@ class PVModel(models.Model):
     pbi_max_us_dollars = models.FloatField()
     pbi_years = models.FloatField()
     pbi_system_max_kw = models.FloatField()
-    degradation_pct = models.FloatField(null=True,blank=True)
+    degradation_pct = models.FloatField(null=True, blank=True)
     azimuth = models.FloatField()
     losses = models.FloatField()
     array_type = models.IntegerField()
@@ -221,8 +223,8 @@ class PVModel(models.Model):
     
 
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
@@ -270,11 +272,12 @@ class WindModel(models.Model):
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
+
 
 class StorageModel(models.Model):
     #Relationships
@@ -315,8 +318,8 @@ class StorageModel(models.Model):
     year_one_soc_series_pct = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     
     @classmethod
-    def create(cls,site_model=None, **kwargs):
-        obj = cls(site_model=site_model,**kwargs)
+    def create(cls, site_model=None, **kwargs):
+        obj = cls(site_model=site_model, **kwargs)
         obj.save()
 
         return obj
@@ -338,6 +341,7 @@ class MessagesTypeModel(models.Model):
 
         return obj
 
+
 class MessagesGroupTypeModel(models.Model):
 
     description = models.TextField(blank=True, default='')
@@ -353,6 +357,7 @@ class MessagesGroupTypeModel(models.Model):
             obj.save()
 
         return obj
+
 
 class MessagesModel(models.Model):
     #Relationships
@@ -380,8 +385,9 @@ class MessagesModel(models.Model):
     description = models.TextField(blank=True, default='')
 
     @classmethod
-    def create(cls,scenario_model_id=None, messages_type_model=None,messages_group_type_model=None,**kwargs):
-        obj = cls(scenario_model_id=scenario_model_id, messages_type_model=messages_type_model,messages_group_type_model=messages_group_type_model,**kwargs)
+    def create(cls, scenario_model_id=None, messages_type_model=None,messages_group_type_model=None, **kwargs):
+        obj = cls(scenario_model_id=scenario_model_id, messages_type_model=messages_type_model,
+                  messages_group_type_model=messages_group_type_model, **kwargs)
         obj.save()
 
         return obj
@@ -389,17 +395,19 @@ class MessagesModel(models.Model):
     @classmethod
     def save_set(cls,message_dictionary, scenario_uuid=None):
         
-        for k,v in message_dictionary.items():
+        for k, v in message_dictionary.items():
             messages_type_model = MessagesTypeModel.create(text=k)
-            if isinstance(v,dict):
-                for kk,vv in v.items():
+            if isinstance(v, dict):
+                for kk, vv in v.items():
                     message_group_type_model = MessagesGroupTypeModel.create(text=kk)
-                    obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,messages_group_type_model=message_group_type_model,description=vv)
+                    obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
+                                     messages_group_type_model=message_group_type_model, description=vv)
                     obj.save()
 
             else:
                 message_group_type_model = MessagesGroupTypeModel.create(text="Other")
-                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,messages_group_type_model=message_group_type_model,description=v)
+                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
+                                 messages_group_type_model=message_group_type_model, description=v)
                 obj.save()
 
 
