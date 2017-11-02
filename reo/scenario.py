@@ -70,8 +70,15 @@ class Scenario:
 
             site = Site(dfm=self.dfm, **self.inputs_dict["Site"])
 
-            self.create_loads()
-            self.create_elec_tariff()
+            lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                             latitude=self.inputs_dict['Site'].get('latitude'),
+                             longitude=self.inputs_dict['Site'].get('longitude'),
+                             **self.inputs_dict['Site']['LoadProfile'])
+
+            elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid,
+                                     load_year=self.inputs_dict['Site']['LoadProfile']['year'],
+                                     time_steps_per_hour=self.inputs_dict.get('time_steps_per_hour'),
+                                     **self.inputs_dict['Site']['ElectricTariff'])
 
             if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
                 pv = PV(dfm=self.dfm, latitude=self.inputs_dict['Site'].get('latitude'),
@@ -94,6 +101,9 @@ class Scenario:
             r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict['Site']['LoadProfile']['year'])
             
             output_dict = r.run(timeout=self.inputs_dict['timeout_seconds'])
+
+            output_dict['nested']["Scenario"]["Site"]["LoadProfile"]["year_one_electric_load_series_kw"] = \
+                lp.unmodified_load_list  # if outage is defined, this is necessary to return the full load profile
             
             self.cleanup()
             return output_dict
@@ -108,25 +118,3 @@ class Scenario:
         if not self.debug:
             log("INFO", "Cleaning up folders from: " + self.paths.run)
             shutil.rmtree(self.paths.run)
-
-    def create_loads(self):
-        """
-        api_definitions.py requires either load_profile_name & load_size
-        or load_8760_kw (and load_year, not used here).
-        load_profile is modified if user provides crit_load_factor, outage_start, & outage_end.
-        :return: None
-        """
-
-        lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                         latitude=self.inputs_dict['Site'].get('latitude'),
-                         longitude=self.inputs_dict['Site'].get('longitude'),
-                         **self.inputs_dict['Site']['LoadProfile'])
-        self.load_8760_kw = lp.unmodified_load_list  # this step is needed to preserve load profile that is unmodified for outage
-
-    def create_elec_tariff(self):
-
-        elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid, load_year=self.inputs_dict['Site']['LoadProfile']['year'],
-                                 time_steps_per_hour=self.inputs_dict.get('time_steps_per_hour'),
-                                 **self.inputs_dict['Site']['ElectricTariff']) # <-- move to Util? need to take care of code below
-        self.utility_name = elec_tariff.utility_name
-        self.rate_name = elec_tariff.rate_name

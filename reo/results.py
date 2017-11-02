@@ -83,7 +83,6 @@ class Results:
         self.year = year
 
         self.nested_outputs = self.setup_nested()
-      
 
     def get_output(self):
         output_dict = {'flat':{}}
