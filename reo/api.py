@@ -135,8 +135,6 @@ class RunInputResource(ModelResource):
         if save_to_db:
             if not input_validator.isValid:
                 ScenarioModel.create(**meta)
-
-            #Do we want to save messages for invalid posts?
             messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
 
         return output_dictionary

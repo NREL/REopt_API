@@ -3,8 +3,9 @@ import numpy as np
 from api_definitions import inputs
 from log_levels import log
 from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, flat_to_nested, list_of_float
+from nested_inputs import nested_input_definitions, flat_to_nested
 import copy
+
 
 class URDB_RateValidator:
 
