@@ -20,15 +20,15 @@ class Command(object):
         except sp.CalledProcessError as e:
             msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
             log("ERROR", msg)
-            raise RuntimeError('reopt', msg)
+            raise RuntimeError('REopt', msg)
 
         except sp.TimeoutExpired:
-            raise RuntimeError('reopt', "REopt optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
+            raise RuntimeError('REopt', "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
                                          for support".format(timeout))
         log("INFO", "REopt run successfully. Status {}".format(status))
 
         if status.strip() != 'optimal':
-            raise RuntimeError('reopt', "REopt could not find an optimal solution for these inputs.")
+            raise RuntimeError('REopt', "Could not find an optimal solution for these inputs.")
 
 
 class REopt(object):
@@ -107,7 +107,7 @@ class REopt(object):
             return process_results.get_output()
 
         else:
-            msg = "REopt failed to run. Output file does not exist: " + self.output_file 
+            msg = "Optimization failed to run. Output file does not exist: " + self.output_file
             log("DEBUG", "Current directory: " + os.getcwd())
             log("WARNING", msg)
-            raise RuntimeError('reopt', msg)
+            raise RuntimeError('REopt', msg)
