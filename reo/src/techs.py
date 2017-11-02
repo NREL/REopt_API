@@ -58,7 +58,7 @@ class Util(Tech):
 
         grid_prod_factor = [1.0 for _ in range(8760)]
 
-        if self.outage_start_hour and self.outage_end_hour:  # "turn off" grid resource
+        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
             grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
         return grid_prod_factor
 
