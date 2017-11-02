@@ -254,11 +254,14 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     "latitude": 39.91065, "longitude": -105.2348,
                     "LoadProfile" :{
                         "doe_reference_name": "MediumOffice", "annual_kwh": 10000000,
-                        "outage_start_hour": 1, "outage_end_hour": 20, "critical_load_pct": 0
+                        "outage_start_hour": 0, "outage_end_hour": 20
                     },
-                    "ElectricTariff" :{
+                    "ElectricTariff": {
                         "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
                         "monthly_demand_charges_us_dollars_per_kw": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+                    },
+                    "Storage": {
+                        "max_kw": 0
                     }
                 }
             }
