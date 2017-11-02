@@ -91,14 +91,14 @@ class RunInputResource(ModelResource):
         output_dictionary["messages"] = input_validator.messages
 
         if input_validator.isValid:
-            try: # should return output structure to match new nested_outputs, even with exception
+            try:
                
                 scenario_inputs = input_validator.input_dict['Scenario']
                 
                 if save_to_db:
                     self.save_scenario_inputs(scenario_inputs)
 
-                s = Scenario(run_uuid=run_uuid,inputs_dict=scenario_inputs)
+                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
 
                 # Log POST request
                 s.log_post(input_validator.input_dict)
@@ -119,7 +119,19 @@ class RunInputResource(ModelResource):
                         "error": API_Error(e).response,
                         "warnings": input_validator.warnings,
                     }
-        
+
+                if save_to_db:
+                    outputs = {'Site': {
+                                'Financial': {},
+                                'LoadProfile': {},
+                                'ElectricTariff': {},
+                                'PV': {},
+                                'Wind': {},
+                                'Storage': {},
+                              }}
+                    outputs.update(meta)
+                    self.save_scenario_outputs(outputs)
+
         if save_to_db:
             if not input_validator.isValid:
                 ScenarioModel.create(**meta)

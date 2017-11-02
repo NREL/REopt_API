@@ -1,9 +1,7 @@
 import json
-import copy
 import pickle
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from reo.validators import ValidateNestedInput
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from unittest import skip
@@ -248,3 +246,23 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
             raise
+
+    def test_not_optimal_solution(self):
+        data = {
+            "Scenario" :{
+                "Site" :{
+                    "latitude": 39.91065, "longitude": -105.2348,
+                    "LoadProfile" :{
+                        "doe_reference_name": "MediumOffice", "annual_kwh": 10000000,
+                        "outage_start_hour": 1, "outage_end_hour": 20, "critical_load_pct": 0
+                    },
+                    "ElectricTariff" :{
+                        "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+                        "monthly_demand_charges_us_dollars_per_kw": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+                    }
+                }
+            }
+        }
+        response = self.get_response(data=data)
+        resp_dict = json.loads(response.content)
+        self.assertTrue('Could not find an optimal solution for these inputs.' in resp_dict['messages']['error']['REopt'])
