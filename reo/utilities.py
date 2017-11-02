@@ -6,6 +6,7 @@ from numpy import npv
 def attribute_inputs(inputs):
     return {k:v for k,v in inputs.items() if k[0]==k[0].lower() and v is not None}
 
+
 class API_Error:
     def __init__(self, e):
         # e is a caught Exception
@@ -24,12 +25,14 @@ class API_Error:
 
     @property
     def response(self):
-        return {"REopt": {"Error":self.errors}}
+        return self.errors
+
 
 def check_directory_created(path):
     if not os.path.exists(path):
         log('ERROR', "Directory: " + path + " failed to create")
         raise RuntimeError('utilties', "Directory failed to create: " + path)
+
 
 def slope(x1, y1, x2, y2):
     return (y2 - y1) / (x2 - x1)
