@@ -569,9 +569,8 @@ class DatFileManager:
 
                 for load in self.available_loads:
                     
-                    eta_storage_in.append(self.storage.roundtrip_efficiency if load == 'storage' else 1)
-                    eta_storage_out.append(self.storage.roundtrip_efficiency if load == 'storage' else 1)
-                    # only eta_storage_in is used in REopt currently
+                    eta_storage_in.append(self.storage.rectifier_efficiency * self.storage.efficiency**0.5
+                                          if load == 'storage' else 1)
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
 
@@ -591,6 +590,11 @@ class DatFileManager:
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
                         tech_to_load[-1] = int(self.storage.can_grid_charge)
+
+        for load in self.available_loads:
+            # eta_storage_out is array(Load) of real
+            eta_storage_out.append(self.storage.inverter_efficiency * self.storage.efficiency**0.5
+                                   if load == 'storage' else 1)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 

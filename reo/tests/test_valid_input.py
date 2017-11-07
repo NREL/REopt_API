@@ -165,11 +165,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 if e[key] == 0:
                     self.assertEqual(c[key], e[key])
                 else:
-                    self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
+                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
 
         # Total LCC BAU is sum of utility costs
-        self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                         - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']) < self.REopt_tol)
+        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                        < self.REopt_tol)
 
     def test_complex_incentives(self):
         #  Tests scenario where: PV has ITC, federal, state, local rebate with maxes, MACRS, bonus, Battery has ITC, rebate, MACRS, bonus.
@@ -183,12 +184,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_calculated = json.loads(resp.content)
 
         d_expected = dict()
-        d_expected['lcc'] = 10950029
+        d_expected['lcc'] = 10984555
         d_expected['npv'] = 11276785 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 106.055
-        d_expected['batt_kwh'] = 307.971
-        d_expected['year_one_utility_kwh'] = 9621290
+        d_expected['batt_kw'] = 35.1549
+        d_expected['batt_kwh'] = 66.6194
+        d_expected['year_one_utility_kwh'] = 9614813.643
 
         try:
             self.check_common_outputs(d_calculated, d_expected)
@@ -235,12 +236,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_calculated = json.loads(resp.content)
 
                 d_expected = dict()
-                d_expected['lcc'] = 12703930
-                d_expected['npv'] = 332951
+                d_expected['lcc'] = 11040985
+                d_expected['npv'] = 235800
                 d_expected['pv_kw'] = 216.667
-                d_expected['batt_kw'] = 105.995
-                d_expected['batt_kwh'] = 307.14
-                d_expected['year_one_utility_kwh'] = 9626472.7392
+                d_expected['batt_kw'] = 23.8775
+                d_expected['batt_kwh'] = 38.9943
+                d_expected['year_one_utility_kwh'] = 9614502.2675
 
                 try:
                     self.check_common_outputs(d_calculated, d_expected)
