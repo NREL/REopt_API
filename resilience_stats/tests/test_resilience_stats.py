@@ -148,7 +148,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['probs_of_surviving'])
 
     def test_resil_endpoint(self):
-        post = json.load(open(os.path.join('POST.json'), 'r'))
+        post = json.load(open(os.path.join('resilience_stats', 'tests', 'POST.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         data = {'run_uuid': reopt_resp['uuid']}
