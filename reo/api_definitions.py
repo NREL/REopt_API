@@ -808,24 +808,24 @@ def default_building():
 
 # default locations
 def default_cities():
-    return ['Miami', 'Houston', 'Phoenix', 'Atlanta', 'LosAngeles', 'SanFrancisco', 'LasVegas', 'Baltimore',
+    return ['Miami', 'Houston', 'Phoenix', 'Atlanta', 'LosAngeles', 'SanFrancisco', 'Baltimore',
             'Albuquerque', 'Seattle', 'Chicago', 'Boulder', 'Minneapolis', 'Helena', 'Duluth', 'Fairbanks']
 
 # default tmy ids for each location (for ASHRAE)
 def default_tmyid():
-    return ['722020', '722430', '722780', '722190', '722950', '724940', '723860', '724060',
+    return ['722020', '722430', '722780', '722190', '722950', '724940', '724060',
             '723650', '727930', '725300', '724699', '726580', '727720', '727450', '702610']
 
 
 # default latitudes
 def default_latitudes():
-    return [25.761680, 29.760427, 33.448377, 33.748995, 34.052234, 37.774929, 36.114707, 39.290385,
+    return [25.761680, 29.760427, 33.448377, 33.748995, 34.052234, 37.774929, 39.290385,
             35.085334, 47.606209, 41.878114, 40.014986, 44.977753, 46.588371, 46.786672, 64.837778]
 
 
 # default longitudes
 def default_longitudes():
-    return [-80.191790, -95.369803, -112.074037, -84.387982, -118.243685, -122.419416, -115.172850,
+    return [-80.191790, -95.369803, -112.074037, -84.387982, -118.243685, -122.419416,
             -76.612189, -106.605553, -122.332071, -87.629798, -105.270546, -93.265011, -112.024505,
             -92.100485, -147.716389]
 
