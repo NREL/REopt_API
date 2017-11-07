@@ -808,6 +808,11 @@ def default_cities():
     return ['Miami', 'Houston', 'Phoenix', 'Atlanta', 'LosAngeles', 'SanFrancisco', 'LasVegas', 'Baltimore',
             'Albuquerque', 'Seattle', 'Chicago', 'Boulder', 'Minneapolis', 'Helena', 'Duluth', 'Fairbanks']
 
+# default tmy ids for each location (for ASHRAE)
+def default_tmyid():
+    return ['722020', '722430', '722780', '722190', '722950', '724940', '723860', '724060',
+            '723650', '727930', '725300', '724699', '726580', '727720', '727450', '702610']
+
 
 # default latitudes
 def default_latitudes():
