@@ -369,14 +369,11 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        import pdb
-        pdb.set_trace()
         if self.latitude and self.longitude:
             if hasattr(self, 'nearest_city'):
                 return self.nearest_city
             else:
                 search_radius = str(25)
-                ashrae_tmy = default_tmyid()[0]
                 ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key=653bcca1955c8acf748bcf5ce9a953f7b2e23629&lat=" \
                              + str(self.latitude) + "&lon=" + str(self.longitude) + "&distance=" + search_radius + "&output_fields=ashrae_tmy"
                 r = requests.get(ashrae_url)
