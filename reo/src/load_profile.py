@@ -3,31 +3,33 @@ import os
 import copy
 from collections import namedtuple
 from datetime import datetime, timedelta
+from reo.api_definitions import default_cities, default_tmyid
+import requests
 
 
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
     
-    Default_city = namedtuple("Default_city", "name lat lng")
+    Default_city = namedtuple("Default_city", "name lat lng tmyid")
     
     default_cities = [
-        Default_city('Miami', 25.761680, -80.191790),
-        Default_city('Houston', 29.760427, -95.369803),
-        Default_city('Phoenix', 33.448377, -112.074037),
-        Default_city('Atlanta', 33.748995, -84.387982),
-        Default_city('LosAngeles', 34.052234, -118.243685),
-        Default_city('SanFrancisco', 37.774929, -122.419416),
-        Default_city('LasVegas', 36.114707, -115.172850),
-        Default_city('Baltimore', 39.290385, -76.612189),
-        Default_city('Albuquerque', 35.085334, -106.605553),
-        Default_city('Seattle', 47.606209, -122.332071),
-        Default_city('Chicago', 41.878114, -87.629798),
-        Default_city('Boulder', 40.014986, -105.270546),
-        Default_city('Minneapolis', 44.977753, -93.265011),
-        Default_city('Helena', 46.588371, -112.024505),
-        Default_city('Duluth', 46.786672, -92.100485),
-        Default_city('Fairbanks', 64.837778, -147.716389),
+        Default_city('Miami', 25.761680, -80.191790, 722020),
+        Default_city('Houston', 29.760427, -95.369803, 722430),
+        Default_city('Phoenix', 33.448377, -112.074037, 722780),
+        Default_city('Atlanta', 33.748995, -84.387982, 722190),
+        Default_city('LosAngeles', 34.052234, -118.243685, 722950),
+        Default_city('SanFrancisco', 37.774929, -122.419416, 724940),
+        Default_city('LasVegas', 36.114707, -115.172850, 723860),
+        Default_city('Baltimore', 39.290385, -76.612189, 724060),
+        Default_city('Albuquerque', 35.085334, -106.605553, 723650),
+        Default_city('Seattle', 47.606209, -122.332071, 727930),
+        Default_city('Chicago', 41.878114, -87.629798, 725300),
+        Default_city('Boulder', 40.014986, -105.270546, 724699),
+        Default_city('Minneapolis', 44.977753, -93.265011, 726580),
+        Default_city('Helena', 46.588371, -112.024505, 727720),
+        Default_city('Duluth', 46.786672, -92.100485, 727450),
+        Default_city('Fairbanks', 64.837778, -147.716389, 702610),
     ]
 
     annual_loads = {
@@ -368,20 +370,27 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        if self.latitude is not None and self.longitude is not None:
+        if self.latitude and self.longitude:
             if hasattr(self,'nearest_city'):
                 return self.nearest_city
             else:
-                min_distance = None
-                for i,c in enumerate(self.default_cities):
-                    distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
-                    if i==0:
-                        min_distance = distance
-                        self.nearest_city = c.name
-                    elif distance < min_distance:
-                        min_distance = distance
-                        self.nearest_city = c.name
-                return self.nearest_city
+                search_radius = str(25)
+                ashrae_tmy = default_tmyid()[0]
+                ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key=653bcca1955c8acf748bcf5ce9a953f7b2e23629&lat=" \
+                             + str(self.latitude) + "&lon=" + str(self.longitude) + "&distance=" + search_radius + "&output_fields=ashrae_tmy"
+                r = requests.get(ashrae_url)
+
+                if r.status_code == 200 and "ashrae_tmy" in r.json()["outputs"] and "tmy_id" in r.json()["outputs"]["ashrae_tmy"]:
+                    ashrae_tmy_id = r.json()["outputs"]["ashrae_tmy"]["tmy_id"]
+
+                    if ashrae_tmy_id in default_tmyid():
+                        self.nearest_city = default_cities()[default_tmyid().index(ashrae_tmy_id)]
+                    else:
+                        raise AttributeError('load_profile', 'Unexpected climate zone returned by remote database')
+
+                    return self.nearest_city
+                else:
+                    raise AttributeError('load_profile', 'Failed to return climate zone from database')
 
         else:
             raise AttributeError('load_profile', 'Cannot determine nearest city - missing city or latitude and longitude inputs')
