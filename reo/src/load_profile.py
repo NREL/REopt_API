@@ -50,6 +50,7 @@ class BuiltInProfile(object):
             'stripmall': 497132,
             'supermarket': 1947654,
             'warehouse': 228939,
+            'flatload': 500000
         },
         'Atlanta': {
             'fastfoodrest': 197467,
@@ -68,6 +69,7 @@ class BuiltInProfile(object):
             'stripmall': 529719,
             'supermarket': 2092966,
             'warehouse': 223009,
+            'flatload': 500000
         },
         'Baltimore': {
             'fastfoodrest': 192831,
@@ -86,6 +88,7 @@ class BuiltInProfile(object):
             'stripmall': 504715,
             'supermarket': 2018760,
             'warehouse': 229712,
+            'flatload': 500000
         },
         'Boulder': {
             'fastfoodrest': 189092,
@@ -104,6 +107,7 @@ class BuiltInProfile(object):
             'stripmall': 495018,
             'supermarket': 1956244,
             'warehouse': 243615,
+            'flatload': 500000
         },
         'Chicago': {
             'fastfoodrest': 189558,
@@ -122,6 +126,7 @@ class BuiltInProfile(object):
             'stripmall': 506886,
             'supermarket': 2025507,
             'warehouse': 245750,
+            'flatload': 500000
         },
         'Duluth': {
             'fastfoodrest': 183713,
@@ -140,6 +145,7 @@ class BuiltInProfile(object):
             'stripmall': 500979,
             'supermarket': 1980986,
             'warehouse': 256575,
+            'flatload': 500000
         },
         'Fairbanks': {
             'fastfoodrest': 182495,
@@ -158,6 +164,7 @@ class BuiltInProfile(object):
             'stripmall': 545421,
             'supermarket': 2033295,
             'warehouse': 285064,
+            'flatload': 500000
         },
         'Helena': {
             'fastfoodrest': 185877,
@@ -176,6 +183,7 @@ class BuiltInProfile(object):
             'stripmall': 503504,
             'supermarket': 1969137,
             'warehouse': 252245,
+            'flatload': 500000
         },
         'Houston': {
             'fastfoodrest': 210283,
@@ -194,6 +202,7 @@ class BuiltInProfile(object):
             'stripmall': 577987,
             'supermarket': 2225265,
             'warehouse': 221593,
+            'flatload': 500000
         },
         'LasVegas': {
             'fastfoodrest': 208062,
@@ -230,6 +239,7 @@ class BuiltInProfile(object):
             'stripmall': 491972,
             'supermarket': 1935886,
             'warehouse': 182085,
+            'flatload': 500000
         },
         'Miami': {
             'fastfoodrest': 224494,
@@ -248,6 +258,7 @@ class BuiltInProfile(object):
             'stripmall': 675793,
             'supermarket': 2260929,
             'warehouse': 202082,
+            'flatload': 500000
         },
         'Minneapolis': {
             'fastfoodrest': 188368,
@@ -266,6 +277,7 @@ class BuiltInProfile(object):
             'stripmall': 511567,
             'supermarket': 2034650,
             'warehouse': 249332,
+            'flatload': 500000
         },
         'Phoenix': {
             'fastfoodrest': 216088,
@@ -284,6 +296,7 @@ class BuiltInProfile(object):
             'stripmall': 590954,
             'supermarket': 2056195,
             'warehouse': 241585,
+            'flatload': 500000
         },
         'SanFrancisco': {
             'fastfoodrest': 183953,
@@ -302,6 +315,7 @@ class BuiltInProfile(object):
             'stripmall': 455802,
             'supermarket': 1841655,
             'warehouse': 185889,
+            'flatload': 500000
         },
         'Seattle': {
             'fastfoodrest': 184142,
@@ -320,6 +334,7 @@ class BuiltInProfile(object):
             'stripmall': 460449,
             'supermarket': 1868973,
             'warehouse': 210300,
+            'flatload': 500000
         },
     }
 
