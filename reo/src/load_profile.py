@@ -1,4 +1,3 @@
-import math
 import os
 import copy
 from collections import namedtuple
@@ -365,7 +364,7 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        if self.latitude and self.longitude:
+        if self.latitude is not None and self.longitude is not None:
             if hasattr(self, 'nearest_city'):
                 return self.nearest_city
             else:
