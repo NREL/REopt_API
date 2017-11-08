@@ -7,7 +7,7 @@ class LoadsTestCase(TestCase):
 
     # mimic user passing in info
     def setUp(self):
-        print "Nothing to do"
+        pass
 
     def test_ashrae_zones(self):
 
