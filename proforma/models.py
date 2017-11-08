@@ -75,12 +75,20 @@ class ProForma(models.Model):
         ws['B9'] = electric_tariff.year_one_bill_bau_us_dollars
         ws['B10'] = electric_tariff.year_one_bill_us_dollars
         ws['B11'] = electric_tariff.year_one_export_benefit_us_dollars
-        ws['B12'] = pv.year_one_energy_produced_kwh 
+        pv_energy = pv.year_one_energy_produced_kwh or 0
+        ws['B12'] = pv_energy
+        
         # System Costs
         ws['B15'] = financial.net_capital_costs_plus_om_us_dollars
-        ws['B16'] = pv.installed_cost_us_dollars_per_kw * pv.size_kw
-        ws['B17'] = batt.installed_cost_us_dollars_per_kw * batt.size_kw + batt.installed_cost_us_dollars_per_kwh * batt.size_kwh
-        ws['B19'] = pv.om_cost_us_dollars_per_kw
+        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw or 0
+        pv_size_kw = pv.size_kw or 0
+        ws['B16'] = pv_installed_cost_us_dollars_per_kw * pv_size_kw
+        batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
+        batt_size_kw = batt.size_kw or 0
+        batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
+        batt_size_kwh = batt.size_kwh or 0
+        ws['B17'] = batt_installed_cost_us_dollars_per_kw * batt_size_kw + batt_installed_cost_us_dollars_per_kwh * batt_size_kwh
+        ws['B19'] = pv.om_cost_us_dollars_per_k
         ws['B20'] = batt.replace_cost_us_dollars_per_kw
         ws['B21'] = batt.inverter_replacement_year
         ws['B22'] = batt.replace_cost_us_dollars_per_kwh
@@ -128,7 +136,7 @@ class ProForma(models.Model):
         ws['C69'] = big_number  # max utility rebate
 
         # Depreciation
-        if ro.pv_macrs_schedule > 0:
+        if pv.macrs_option_years > 0:
             ws['B72'] = pv.macrs_option_years
             ws['B73'] = pb.macrs_bonus_pct
         
@@ -140,7 +148,7 @@ class ProForma(models.Model):
             ws['C72'] = batt.macrs_option_years
             ws['C73'] = batt.macrs_bonus_pct
         
-        if batt.macrs_option_years == 0:
+        elif batt.macrs_option_years == 0:
             ws['C72'] = "None"
             ws['C73'] = 0
 
