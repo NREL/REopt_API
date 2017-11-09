@@ -77,7 +77,7 @@ class RunInputResource(ModelResource):
         # Return  Results
         output_model = self.create_output(input_validator, output_format)
 
-        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=200))
+        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
     
 
     def create_output(self, input_validator, output_format):
@@ -108,7 +108,7 @@ class RunInputResource(ModelResource):
 
                 optimization_results['flat'].update(meta)
                 optimization_results['nested']['Scenario'].update(meta)
-                output_dictionary['outputs'].update(optimization_results[output_format])
+                output_dictionary['outputs']  = optimization_results[output_format]
                
                 if save_to_db:
                     self.save_scenario_outputs(optimization_results['nested']['Scenario'])
@@ -125,7 +125,7 @@ class RunInputResource(ModelResource):
                 ScenarioModel.create(**meta)
 
             #Do we want to save messages for invalid posts?
-            messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid = run_uuid)    
+       #     messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid = run_uuid)    
 
         return output_dictionary
 

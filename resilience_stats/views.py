@@ -14,7 +14,7 @@ def resilience_stats(request):
     except Exception as e:
         return API_Error(e).response
 
-    rm = ResilienceModel.create(scenario_model=scenario)
+    rm = ResilienceModel.create(scenariomodel=scenario)
 
     site = scenario.sitemodel_set.first()
     batt = site.storagemodel_set.first()

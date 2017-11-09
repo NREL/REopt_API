@@ -151,15 +151,15 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
-        data = {'run_uuid': reopt_resp['outputs']['Scenario']['uuid']}
+        data = {'run_uuid': reopt_resp['outputs']['run_uuid']}
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
 
         resp_dict = json.loads(resp.content)
 
-        self.assertEqual(resp_dict["probs_of_surviving"], [0.0114, 0.0027])
-        self.assertEqual(resp_dict["resilience_hours_avg"], 0.01)
-        self.assertEqual(resp_dict["outage_durations"], [1,2])
+        self.assertEqual(resp_dict["probs_of_surviving"],[0.4761,0.4347,0.393,0.3514,0.3097,0.268,0.2264,0.1847,0.143,0.1015,0.0628,0.0336,0.0138,0.0018])
+        self.assertEqual(resp_dict["resilience_hours_avg"], 3.0)
+        self.assertEqual(resp_dict["outage_durations"], [1,2,3,4,5,6,7,8,9,10,11,12,13,14])
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
-        self.assertEqual(resp_dict["resilience_hours_max"], 2)
+        self.assertEqual(resp_dict["resilience_hours_max"], 14)
 

@@ -9,13 +9,13 @@ from reo.src.dat_file_manager import big_number
 
 class ProForma(models.Model):
 
-    scenario_model = models.ForeignKey(
+    scenariomodel = models.OneToOneField(
         ScenarioModel,
-        to_field = 'run_uuid',
         on_delete=models.CASCADE,
-        default=None,
-        null=True,
-        blank=True
+        default=0,
+        to_field='id',
+        blank=True,
+        primary_key=True
     )
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     spreadsheet_created = models.DateTimeField(null=True)
@@ -23,14 +23,14 @@ class ProForma(models.Model):
     updated = models.DateTimeField(auto_now=True)
     
     @classmethod
-    def create(cls, scenario_uuid, **kwargs ):
-        pf = cls(scenario_model = scenario_uuid, **kwargs)
+    def create(cls, scenariomodel, **kwargs ):
+        pf = cls(scenariomodel = scenariomodel, **kwargs)
 
         file_dir = os.path.dirname(pf.output_file)
         
         if not os.path.exists(file_dir):
             os.mkdir(file_dir)
-        
+        pf.save()        
         return pf
     
     @property
@@ -51,7 +51,7 @@ class ProForma(models.Model):
           
     def generate_spreadsheet(self):
 
-        scenario = self.scenario_model
+        scenario = self.scenariomodel
         site = scenario.sitemodel_set.first()
         batt = site.storagemodel_set.first()
         pv = site.pvmodel_set.first()
@@ -66,21 +66,21 @@ class ProForma(models.Model):
         ws = wb.get_sheet_by_name(self.sheet_io)
 
         # System Design
-        ws['B3'] = pv.size_kw
+        ws['B3'] = pv.size_kw or 0
         ws['B4'] = pv.degradation_pct * 100
-        ws['B5'] = batt.size_kw
-        ws['B6'] = batt.size_kwh 
+        ws['B5'] = batt.size_kw or 0
+        ws['B6'] = batt.size_kwh or 0
 
         # Year 1 Results
-        ws['B9'] = electric_tariff.year_one_bill_bau_us_dollars
-        ws['B10'] = electric_tariff.year_one_bill_us_dollars
-        ws['B11'] = electric_tariff.year_one_export_benefit_us_dollars
+        ws['B9'] = electric_tariff.year_one_bill_bau_us_dollars or 0
+        ws['B10'] = electric_tariff.year_one_bill_us_dollars or 0
+        ws['B11'] = electric_tariff.year_one_export_benefit_us_dollars or 0
         pv_energy = pv.year_one_energy_produced_kwh or 0
         ws['B12'] = pv_energy
         
         # System Costs
-        ws['B15'] = financial.net_capital_costs_plus_om_us_dollars
-        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw or 0
+        ws['B15'] = financial.net_capital_costs_plus_om_us_dollars 
+        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw 
         pv_size_kw = pv.size_kw or 0
         ws['B16'] = pv_installed_cost_us_dollars_per_kw * pv_size_kw
         batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
@@ -88,20 +88,20 @@ class ProForma(models.Model):
         batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
         batt_size_kwh = batt.size_kwh or 0
         ws['B17'] = batt_installed_cost_us_dollars_per_kw * batt_size_kw + batt_installed_cost_us_dollars_per_kwh * batt_size_kwh
-        ws['B19'] = pv.om_cost_us_dollars_per_k
-        ws['B20'] = batt.replace_cost_us_dollars_per_kw
-        ws['B21'] = batt.inverter_replacement_year
-        ws['B22'] = batt.replace_cost_us_dollars_per_kwh
-        ws['B23'] = batt.battery_replacement_year
+        ws['B19'] = pv.om_cost_us_dollars_per_kw 
+        ws['B20'] = batt.replace_cost_us_dollars_per_kw 
+        ws['B21'] = batt.inverter_replacement_year 
+        ws['B22'] = batt.replace_cost_us_dollars_per_kwh 
+        ws['B23'] = batt.battery_replacement_year 
 
         # Analysis Parameters
         ws['B31'] = financial.analysis_years
         ws['B32'] = financial.om_cost_growth_pct * 100
         ws['B33'] = financial.escalation_pct * 100
-        ws['B34'] = financial.owner_discount_pct * 100
+        ws['B34'] = financial.owner_discount_pct or 0 * 100
 
         # Tax rates
-        ws['B37'] = financial.owner_tax_pct * 100
+        ws['B37'] = financial.owner_tax_pct or 0  * 100
 
         # PV Tax Credits and Incentives
         ws['B42'] = pv.federal_itc_pct * 100
@@ -138,7 +138,7 @@ class ProForma(models.Model):
         # Depreciation
         if pv.macrs_option_years > 0:
             ws['B72'] = pv.macrs_option_years
-            ws['B73'] = pb.macrs_bonus_pct
+            ws['B73'] = pv.macrs_bonus_pct
         
         elif pv.macrs_option_years == 0:
             ws['B72'] = "None"

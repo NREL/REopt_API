@@ -7,9 +7,9 @@ from validators import validate_RunOutput_for_outage_simulator
 
 class ResilienceModel(models.Model):
 
-    scenario_model = models.ForeignKey(
+    scenariomodel = models.OneToOneField(
         ScenarioModel,
-        to_field = 'run_uuid',
+        to_field='id',
         on_delete=models.CASCADE,
         default=None,
         null=True,
@@ -24,8 +24,8 @@ class ResilienceModel(models.Model):
     probs_of_surviving = ArrayField(models.FloatField(null=True), null=True)
 
     @classmethod
-    def create(cls, scenario_model, **kwargs):
+    def create(cls, scenariomodel, **kwargs):
         
-        rm = cls(scenario_model=scenario_model, **kwargs)
+        rm = cls(scenariomodel=scenariomodel, **kwargs)
         rm.save()
         return rm
