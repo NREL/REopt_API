@@ -29,15 +29,14 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_creation(self):
         run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
-        uuid = run_output['outputs']['run_uuid']
-
+        uuid = run_output['outputs']['Scenario']['run_uuid']
+       
         start_time = now()
         response = Client().get('/proforma/?run_uuid='+uuid)
         self.assertEqual(response.status_code,200)
 
         scenario = ScenarioModel.objects.get(run_uuid=uuid)
         pf = ProForma.objects.get(scenariomodel=scenario)
-
         self.assertTrue(os.path.exists(pf.output_file))
         self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
 

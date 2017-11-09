@@ -46,7 +46,7 @@ class Results:
         for k in Results.bau_attributes:
             results_dict[k+'_bau'] = results_dict_bau[k]
 
-        # set missing outputs to None
+        # set missing flat outputs to None
         for k in outputs().iterkeys():
             results_dict.setdefault(k, None)
 
@@ -83,7 +83,6 @@ class Results:
         self.year = year
 
         self.nested_outputs = self.setup_nested()
-      
 
     def get_output(self):
         output_dict = {'flat':{}}

@@ -1,6 +1,4 @@
 from datetime import datetime
-from nested_inputs import nested_input_definitions
-from nested_outputs import nested_output_definitions
 max_big_number = 1e8
 max_incentive = 1e10
 max_years = int(40)
@@ -8,6 +6,7 @@ analysis_period = int(20)
 
 macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
 macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
+
 
 def list_of_string(input):
     return [str(i) for i in input]

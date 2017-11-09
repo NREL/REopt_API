@@ -460,7 +460,7 @@ class LoadProfile(BuiltInProfile):
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)
 
-        if critical_load_pct and outage_start_hour and outage_end_hour:
+        if None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
             # modify load
             self.load_list = self.load_list[0:outage_start_hour] \
                            + [ld * critical_load_pct for ld in self.load_list[outage_start_hour:outage_end_hour]] \

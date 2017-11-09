@@ -2,7 +2,7 @@ def nested_to_flat(nested_output):
     
     return {
 
-        'uuid': nested_output['Scenario']['uuid'],
+        'run_uuid': nested_output['Scenario']['run_uuid'],
         'api_version': nested_output['Scenario']['api_version'],
         'status': nested_output['Scenario']['status'],
 

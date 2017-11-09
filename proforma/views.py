@@ -8,7 +8,6 @@ from reo.utilities import API_Error
 import json
 
 
-
 def proforma(request):
     try:
         uuid = request.GET.get('run_uuid') 

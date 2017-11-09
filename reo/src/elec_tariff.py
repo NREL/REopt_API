@@ -1,11 +1,11 @@
 import re
 from reo.log_levels import log
-
+from reo.src.urdb_rate import Rate
 
 class ElecTariff(object):
 
     def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
-                 time_steps_per_hour,
+                 time_steps_per_hour, urdb_label=None, urdb_utilty_name=None, urdb_rate_name=None,
                  blended_monthly_rates_us_dollars_per_kwh=None, monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, **kwargs):
 
@@ -24,8 +24,22 @@ class ElecTariff(object):
         elif None not in [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw]:
                 log("INFO", "Making URDB rate from blended data")
                 urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw)
+
+        elif urdb_label is not None:
+            rate = Rate(rate=urdb_label)
+            urdb_response = rate.urdb_dict
+
+        elif None not in [urdb_utilty_name, urdb_rate_name]:
+            rate = Rate(util=urdb_utilty_name, rate=urdb_rate_name)
+            urdb_response = rate.urdb_dict
+
         else:
-            raise ValueError('ElectricTariff', "urdb_response or [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw] are required inputs")
+            raise ValueError('ElectricTariff',
+                             "User must provide urdb_response or \
+                              urdb_label or \
+                              [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw] or \
+                              [urdb_utilty_name, urdb_rate_name]."
+                             )
 
         self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
         self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
