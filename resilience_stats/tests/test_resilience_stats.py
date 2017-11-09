@@ -166,7 +166,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         Verify status_code of 200 from resilience_stats endpoint
         :return:
         """
-        post = json.load(open(os.path.join('tests', 'POST_nested.json'), 'r'))
+        post = json.load(open(os.path.join('tests', 'POST.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         data = {'run_uuid': reopt_resp['outputs']['run_uuid']}

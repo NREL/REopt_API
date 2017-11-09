@@ -3,7 +3,8 @@ import numpy as np
 from api_definitions import inputs
 from log_levels import log
 from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, flat_to_nested
+from nested_inputs import nested_input_definitions, flat_to_nested, list_of_float
+#Note: list_of_float is actually needed
 import copy
 
 
@@ -834,6 +835,7 @@ class ValidateNestedInput:
                                     str(attribute_type).split(' ')[1]))
 
                         except:
+                            
                             self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
                             name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 

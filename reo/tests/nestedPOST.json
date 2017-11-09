@@ -32,7 +32,7 @@
             },
 
             "ElectricTariff": {
-                "urdb_utilty_name": "Public Service Co of Colorado",
+                "urdb_utility_name": "Public Service Co of Colorado",
                 "urdb_rate_name": "Transmission Time Of Use (Schedule TTOU)",
                 "urdb_response": {
                     "sector": "Commercial",

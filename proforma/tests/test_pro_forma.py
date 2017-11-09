@@ -29,7 +29,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_creation(self):
         run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
-        uuid = run_output['outputs']['Scenario']['run_uuid']
+        uuid = run_output['outputs']['run_uuid']
        
         start_time = now()
         response = Client().get('/proforma/?run_uuid='+uuid)

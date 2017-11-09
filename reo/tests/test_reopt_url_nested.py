@@ -47,7 +47,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site: " + r
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
-        electric_tarrif_cases = [['urdb_response','blended_monthly_rates_us_dollars_per_kwh','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','monthly_demand_charges_us_dollars_per_kw'],['urdb_response','blended_monthly_rates_us_dollars_per_kwh']]
+        electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
         for c in electric_tarrif_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
