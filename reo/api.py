@@ -18,7 +18,7 @@ from reo.models import ScenarioModel, MessagesModel, FinancialModel, LoadProfile
 
 
 api_version = "version 1.0.0"
-save_to_db = True
+saveToDb = True
 
 
 def setup_logging():
@@ -94,8 +94,10 @@ class RunInputResource(ModelResource):
             try:
                
                 scenario_inputs = input_validator.input_dict['Scenario']
+
+                windEnabled = scenario_inputs['Site']['Wind']['max_kw'] > 0
                 
-                if save_to_db:
+                if saveToDb:
                     self.save_scenario_inputs(scenario_inputs)
 
                 s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
@@ -106,12 +108,14 @@ class RunInputResource(ModelResource):
                 # Run Optimization
                 optimization_results = s.run()
 
-                optimization_results['flat'].update(meta)
-                optimization_results['nested']['Scenario'].update(meta)
+                self.add_metadata(optimization_results)
 
+                if not windEnabled:
+                    self.remove_wind(optimization_results)
+                    
                 output_dictionary['outputs']  = optimization_results[output_format]               
 
-                if save_to_db:
+                if saveToDb:
                     self.save_scenario_outputs(optimization_results['nested']['Scenario'])
                 
             except Exception as e:
@@ -121,13 +125,27 @@ class RunInputResource(ModelResource):
                         "warnings": input_validator.warnings,
                     }
 
-        if save_to_db:
-            if len(ScenarioModel.objects.filter(run_uuid=run_uuid)) ==0:
+        if saveToDb:
+            if len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0:
                 ScenarioModel.create(**meta)
 
             messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
 
         return output_dictionary
+
+    def add_metadata(self,optimization_results):
+        optimization_results['flat'].update(meta)
+        optimization_results['nested']['Scenario'].update(meta)
+        return optimization_results
+
+    def remove_wind(self, optimization_results):
+        del optimization_results['nested']['Scenario']['Site']["Wind"]
+        
+        for key in ['wind_cost','wind_om','wind_kw_max','wind_kw_min','wind_itc_federal','wind_ibi_state','wind_ibi_utility','wind_itc_federal_max','wind_ibi_state_max','wind_ibi_utility_max','wind_rebate_federal','wind_rebate_state','wind_rebate_utility','wind_rebate_federal_max','wind_rebate_state_max','wind_rebate_utility_max','wind_pbi','wind_pbi_max','wind_pbi_years','wind_pbi_system_max','wind_macrs_schedule','wind_macrs_bonus_fraction']:
+            del optimization_results['flat'][key]
+
+        return optimization_results
+
 
     def save_scenario_inputs(self, d):
         """

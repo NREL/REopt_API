@@ -555,13 +555,11 @@ class ValidateNestedInput:
         #     }
 
         def __init__(self, input_dict, nested=False):
+            from IPython import embed
+
             self.nested_input_definitions = nested_input_definitions
             self.nested = nested
-            self.input_dict = input_dict
             self.original_input = input_dict
-
-            if not nested:
-                self.input_dict = flat_to_nested(input_dict)
 
             self.input_data_errors = []
             self.urdb_errors = []
@@ -570,6 +568,17 @@ class ValidateNestedInput:
 
             self.defaults_inserted = []
 
+            if not nested:
+                self.input_dict = flat_to_nested(input_dict)
+
+            if nested:
+                self.input_dict  ={}
+                self.input_dict['Scenario'] = input_dict.get('Scenario') or {} 
+                
+                for k,v in input_dict.items():
+                    if k!='Scenario':
+                        self.invalid_inputs.append([k,["Top Level"]])
+
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
@@ -577,8 +586,7 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
-
-
+            
         @property
         def input_for_response(self):
             if self.nested:
@@ -778,6 +786,7 @@ class ValidateNestedInput:
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
                             self.invalid_inputs.append([name, object_name_path])
+        
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
                 for name, value in real_values.items():
@@ -840,6 +849,11 @@ class ValidateNestedInput:
                             name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
         def fillin_defaults(self, object_name_path, template_values=None, real_values=None):
+            
+            if real_values is None:
+                real_values = {}
+                self.update_attribute_value(object_name_path[:-1], object_name_path[-1], real_values)
+
             for template_key, template_value in template_values.items():
                 if self.isAttribute(template_key):
                     default = template_value.get('default')
