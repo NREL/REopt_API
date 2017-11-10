@@ -112,12 +112,13 @@ class RunInputResource(ModelResource):
                 optimization_results['nested']['Scenario'].update(meta)
                 output_dictionary['outputs']  = optimization_results[output_format]
 
+                if saveToDb:
+                    self.save_scenario_outputs(optimization_results['nested']['Scenario'])
+               
                 if not windEnabled:
                     output_dictionary = self.remove_wind(output_dictionary, output_format)               
 
-                if saveToDb:
-                    self.save_scenario_outputs(optimization_results['nested']['Scenario'])
-                
+               
             except Exception as e:
                 
                 output_dictionary["messages"] = {
@@ -133,7 +134,7 @@ class RunInputResource(ModelResource):
 
         return output_dictionary
 
-    def remove_wind(self, optimization_results, output_format):
+    def remove_wind(self, output_dictionary, output_format):
         if output_format =='nested':
             del output_dictionary['inputs']['Scenario']['Site']["Wind"]
             del output_dictionary['outputs']['Scenario']['Site']["Wind"]
@@ -169,11 +170,12 @@ class RunInputResource(ModelResource):
         :param r: Scenario.run response
         :return: OutputModel to be saved in REoptResponse as 'outputs'
         """        
+        
         ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))   
         SiteModel.objects.filter(id=self.siteM.id).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(id=self.financialM.id).update(**attribute_inputs(d['Site']['Financial']))
         LoadProfileModel.objects.filter(id=self.load_profileM.id).update(**attribute_inputs(d['Site']['LoadProfile']))
         ElectricTariffModel.objects.filter(id=self.electric_tariffM.id).update(**attribute_inputs(d['Site']['ElectricTariff']))
         PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
-        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))    
+        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))

@@ -16,7 +16,6 @@ def resilience_stats(request):
         return API_Error(e).response
 
     rm = ResilienceModel.create(scenariomodel=scenario)
-
     site = scenario.sitemodel_set.first()
     batt = site.storagemodel_set.first()
     pv = site.pvmodel_set.first()
@@ -25,11 +24,10 @@ def resilience_stats(request):
     batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                 * batt.inverter_efficiency_pct \
                                 * batt.rectifier_efficiency_pct
-    
     results = simulate_outage(
-        pv_kw=pv.size_kw,
-        batt_kwh=batt.size_kwh,
-        batt_kw=batt.size_kw,
+        pv_kw=pv.size_kw or 0,
+        batt_kwh=batt.size_kwh or 0,
+        batt_kw=batt.size_kw or 0,
         load=load_profile.year_one_electric_load_series_kw,
         pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
         init_soc=batt.year_one_soc_series_pct,

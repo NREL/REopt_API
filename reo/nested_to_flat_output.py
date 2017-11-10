@@ -1,6 +1,6 @@
 def nested_to_flat(nested_output):
     
-    return {
+    base = {
 
         'run_uuid': nested_output['Scenario']['run_uuid'],
         'api_version': nested_output['Scenario']['api_version'],
@@ -22,13 +22,6 @@ def nested_to_flat(nested_output):
         'year_one_pv_to_battery_series': nested_output['Scenario']['Site']['PV']['year_one_to_battery_series_kw'],
         'year_one_pv_to_load_series': nested_output['Scenario']['Site']['PV']['year_one_to_load_series_kw'],
         'year_one_pv_to_grid_series': nested_output['Scenario']['Site']['PV']['year_one_to_grid_series_kw'],
-        
-        'wind_kw':nested_output['Scenario']['Site']['Wind']['size_kw'],
-        'average_yearly_wind_energy_produced':nested_output['Scenario']['Site']['Wind']['average_yearly_energy_produced_kwh'],
-        'average_annual_energy_exported_wind': nested_output['Scenario']['Site']['Wind']['average_yearly_energy_exported_kwh'],
-        'year_one_wind_to_battery_series': nested_output['Scenario']['Site']['Wind']['year_one_to_battery_series_kw'],
-        'year_one_wind_to_load_series': nested_output['Scenario']['Site']['Wind']['year_one_to_load_series_kw'],
-        'year_one_wind_to_grid_series': nested_output['Scenario']['Site']['Wind']['year_one_to_grid_series_kw'],
         
         'batt_kw':nested_output['Scenario']['Site']['Storage']['size_kw'],
         'batt_kwh': nested_output['Scenario']['Site']['Storage']['size_kwh'],
@@ -63,6 +56,14 @@ def nested_to_flat(nested_output):
         'year_one_payments_to_third_party_owner': None,
         'total_payments_to_third_party_owner': None,
     }
-
-
+    if nested_output['Scenario']['Site'].get('Wind') is not None:
+        base.update({
+            'wind_kw':nested_output['Scenario']['Site']['Wind']['size_kw'],
+            'average_yearly_wind_energy_produced':nested_output['Scenario']['Site']['Wind']['average_yearly_energy_produced_kwh'],
+            'average_annual_energy_exported_wind': nested_output['Scenario']['Site']['Wind']['average_yearly_energy_exported_kwh'],
+            'year_one_wind_to_battery_series': nested_output['Scenario']['Site']['Wind']['year_one_to_battery_series_kw'],
+            'year_one_wind_to_load_series': nested_output['Scenario']['Site']['Wind']['year_one_to_load_series_kw'],
+            'year_one_wind_to_grid_series': nested_output['Scenario']['Site']['Wind']['year_one_to_grid_series_kw']
+       })
+    return base
 

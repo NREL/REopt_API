@@ -14,7 +14,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         """
         check a random building's expected annual_kwh
         """
-        bldg = [b for b in BuiltInProfile.default_buildings if b!='flatload'][random.choice(range(len(BuiltInProfile.default_buildings)))]
+        bldgs = [b for b in BuiltInProfile.default_buildings if b!='flatload']
+        bldg = bldgs[random.choice(range(len(bldgs)))]
 
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
         response = self.api_client.get(self.annual_kwh_url, data={
@@ -28,7 +29,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
    
 
     def test_annual_kwh_bad_latitude(self):
-        bldg = [b for b in BuiltInProfile.default_buildings if b!='flatload'][random.choice(range(len(BuiltInProfile.default_buildings)))]
+        bldgs = [b for b in BuiltInProfile.default_buildings if b!='flatload']
+        bldg = bldgs[random.choice(range(len(bldgs)))]
+
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
        
         response = self.api_client.get(self.annual_kwh_url, data={
@@ -40,7 +43,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         assert "could not convert string to float" in response.content
 
     def test_annual_kwh_bad_building_name(self):
-        bldg = [b for b in BuiltInProfile.default_buildings if b!='flatload'][random.choice(range(len(BuiltInProfile.default_buildings)))]
+        bldgs = [b for b in BuiltInProfile.default_buildings if b!='flatload']
+        bldg = bldgs[random.choice(range(len(bldgs)))]
+
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
 
         response = self.api_client.get(self.annual_kwh_url, data={
