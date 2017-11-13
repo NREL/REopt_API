@@ -203,7 +203,38 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         :return:
         """
 
-        wind_post = {'Scenario': {'user_id': None, 'time_steps_per_hour': None, 'timeout_seconds': None, 'Site': {'LoadProfile': {'annual_kwh': 10000000, 'loads_kw': None, 'doe_reference_name': 'MediumOffice', 'monthly_totals_kwh': None, 'year': None}, 'critical_load_pct': None, 'Storage': {'total_rebate_us_dollars_per_kw': None, 'max_kwh': 0, 'rectifier_efficiency_pct': None, 'total_itc_pct': None, 'min_kw': None, 'max_kw': 0, 'replace_cost_us_dollars_per_kw': None, 'replace_cost_us_dollars_per_kwh': None, 'min_kwh': None, 'installed_cost_us_dollars_per_kw': None, 'battery_replacement_year': None, 'installed_cost_us_dollars_per_kwh': None, 'inverter_efficiency_pct': None, 'canGridCharge': None, 'macrs_bonus_pct': None, 'inverter_replacement_year': None, 'macrs_option_years': None, 'internal_efficiency_pct': None, 'soc_min_pct': None, 'soc_init_pct': None}, 'land_acres': None, 'latitude': 39.91065, 'outage_end_hour': None, 'roof_squarefeet': None, 'PV': {'pbi_years': None, 'macrs_bonus_pct': None, 'max_kw': 0, 'pbi_max_us_dollars': None, 'radius': None, 'state_ibi_pct': None, 'utility_rebate_max_us_dollars': None, 'installed_cost_us_dollars_per_kw': None, 'utility_ibi_max_us_dollars': None, 'tilt': None, 'gcr': None, 'pbi_system_max_kw': None, 'utility_ibi_pct': None, 'state_ibi_max_us_dollars': None, 'state_rebate_us_dollars_per_kw': None, 'macrs_option_years': None, 'state_rebate_max_us_dollars': None, 'dc_ac_ratio': None, 'federal_itc_pct': None, 'degradation_pct': None, 'module_type': None, 'array_type': None, 'pbi_us_dollars_per_kwh': None, 'om_cost_us_dollars_per_kw': None, 'utility_rebate_us_dollars_per_kw': None, 'min_kw': None, 'losses': None, 'federal_rebate_us_dollars_per_kw': None, 'inv_eff': None, 'azimuth': None}, 'Wind': {'pbi_us_dollars_per_kwh': None, 'installed_cost_us_dollars_per_kw': None, 'macrs_bonus_pct': 0.0, 'om_cost_us_dollars_per_kw': None, 'utility_rebate_us_dollars_per_kw': None, 'min_kw': None, 'pbi_years': None, 'max_kw': 10000, 'state_rebate_max_us_dollars': None, 'state_rebate_us_dollars_per_kw': None, 'federal_itc_pct': 0, 'federal_rebate_us_dollars_per_kw': None, 'pbi_max_us_dollars': None, 'degradation_pct': None, 'pbi_system_max_kw': None, 'macrs_option_years': 0, 'state_ibi_pct': None, 'utility_rebate_max_us_dollars': None, 'utility_ibi_pct': None, 'state_ibi_max_us_dollars': None, 'utility_ibi_max_us_dollars': None}, 'Financial': {'om_cost_growth_pct': 0.001, 'escalation_pct': 0.006, 'offtaker_discount_pct': 0.07, 'owner_tax_pct': None, 'analysis_period_years': 25, 'offtaker_tax_pct': 0.0, 'owner_discount_pct': None}, 'longitude': -105.2348, 'ElectricTariff': {'monthly_demand_charges_us_dollars_per_kw': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 'urdb_response': None, 'net_metering_limit_kw': 1000000.0, 'blended_monthly_rates_us_dollars_per_kwh': [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2], 'interconnection_limit_kw': None, 'urdb_rate_name': None, 'wholesale_rate_us_dollars_per_kwh': None, 'urdb_utilty_name': None}, 'outage_start_hour': None}}}
+        wind_post = {'Scenario': {'Site': {
+                                        'LoadProfile': {
+                                           'annual_kwh': 10000000,
+                                            'doe_reference_name': 'MediumOffice',
+                                        },
+                                        'Storage': {
+                                            'max_kwh': 0,
+                                            'max_kw': 0,
+                                        },
+                                        'latitude': 39.91065, 'longitude': -105.2348,
+                                        'PV': {
+                                            'max_kw': 0,
+                                        },
+                                        'Wind': {
+                                            'macrs_bonus_pct': 0.0,
+                                            'max_kw': 10000,
+                                            'federal_itc_pct': 0,
+                                            'macrs_option_years': 0,
+                                        },
+                                        'Financial': {
+                                            'om_cost_growth_pct': 0.001,
+                                            'escalation_pct': 0.006,
+                                            'offtaker_discount_pct': 0.07,
+                                            'analysis_years': 25,
+                                            'offtaker_tax_pct': 0.0,
+                                        },
+                                        'ElectricTariff': {
+                                            'monthly_demand_charges_us_dollars_per_kw': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                            'net_metering_limit_kw': 1e6,
+                                            'blended_monthly_rates_us_dollars_per_kwh': [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+                                        },
+        }}}
 
         d_expected = dict()
         d_expected['lcc'] = 9849424

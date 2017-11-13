@@ -408,7 +408,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('uuid')))
                     raise
 
-
     def test_valid_data_types(self):
 
         for k,v in inputs(full_list=True).items():
