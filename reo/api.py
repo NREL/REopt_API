@@ -109,6 +109,7 @@ class RunInputResource(ModelResource):
                 optimization_results = s.run()
 
                 optimization_results['flat'].update(meta)
+                optimization_results['flat']['uuid'] = meta['run_uuid']
                 optimization_results['nested']['Scenario'].update(meta)
                 output_dictionary['outputs']  = optimization_results[output_format]
 
