@@ -156,6 +156,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                       'PV': {'utility_ibi_max_us_dollars': 10000,
                                              'pbi_system_max_kw': 10,
                                              'utility_ibi_pct': 0.1,
+                                             'state_ibi_pct': 0.2,
                                              'state_ibi_max_us_dollars': 10000,
                                              'macrs_option_years': 5,
                                              'federal_itc_pct': 0.3,
