@@ -569,7 +569,7 @@ class DatFileManager:
 
                 for load in self.available_loads:
                     
-                    eta_storage_in.append(self.storage.rectifier_efficiency * self.storage.efficiency**0.5
+                    eta_storage_in.append(self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
                                           if load == 'storage' else 1)
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
@@ -593,7 +593,7 @@ class DatFileManager:
 
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
-            eta_storage_out.append(self.storage.inverter_efficiency * self.storage.efficiency**0.5
+            eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
                                    if load == 'storage' else 1)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
