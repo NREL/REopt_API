@@ -555,7 +555,6 @@ class ValidateNestedInput:
         #     }
 
         def __init__(self, input_dict, nested=False):
-            from IPython import embed
 
             self.nested_input_definitions = nested_input_definitions
             self.nested = nested
