@@ -97,7 +97,7 @@ def inputs(filter='', full_list=False, just_required=False):
                          "tool_tip": 'REopt identifies the system size that minimizes the lifecycle cost of energy at the site. The minimum energy capacity size forces a battery energy capacity of at least this size to appear at a site. The default value is 0 (no minimum size). This value is not required.'},
 
         'batt_can_gridcharge': {'req': False, 'type': bool, 'null': False, 'pct': False,
-                                "needed_for": ['economics'], 'default': False,
+                                "needed_for": ['economics'], 'default': True,
                                 "description": "Is battery allowed to charge from grid", "units": '0/1',
                                 "tool_tip": "Is battery allowed to charge from the grid?"},
 
@@ -345,7 +345,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_itc_total': {'req': False, 'type': float, 'null': True, 'pct': True, "needed_for": ['economics'],
                            'min': 0,
-                           'max': 1, 'default': 0.30,
+                           'max': 1, 'default': 0.0,
                            "description": "Investment Tax Credit rate applied to battery", "units": 'decimal percent',
                            "tool_tip": 'The percent of battery system costs that are subsidized by the current Investment Tax Credit.'},
 
@@ -390,7 +390,7 @@ def inputs(filter='', full_list=False, just_required=False):
                            "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
 
         'batt_macrs_schedule': {'req': False, 'type': int, 'null': False, 'pct': False, "needed_for": ['economics'],
-                              'default': 5,
+                              'default': 7,
                               'restrict_to': [0, 5, 7],
                               "description": "MACRS depreciation timeline for battery storage", "units": 'years',
                               "tool_tip": 'MACRS Schedule: The Modified Accelerated Cost Recovery System (MACRS) is the current tax depreciation system in the United States. Under this system, the capitalized cost (basis) of tangible property is recovered over a specified life by annual deductions for depreciation.  The user may specify the duration over which accelerated depreciation will occur (0, 5, or 7 years).  Additional information is available here: http://programs.dsireusa.org/system/program/detail/676. When claiming the ITC, the MACRS depreciation basis is reduced by half of the value of the ITC.'},
