@@ -124,12 +124,16 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             if key == 'npv':
                 tolerance = 2 * self.REopt_tol
 
-            if key in c:
-                self.assertTrue((float(c[key]) - e[key]) / e[key] < tolerance)
+            if key in c and key in e:
+                if e[key] == 0:
+                    self.assertEqual(c[key], e[key])
+                else:
+                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
 
         # Total LCC BAU is sum of utility costs
-        self.assertTrue((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                         - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']) < self.REopt_tol)
+        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                        < self.REopt_tol)
 
     def test_complex_incentives(self):
         """
@@ -152,21 +156,24 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 }
         resp = self.get_response(data=data)
         self.assertHttpCreated(resp)
-        d_calculated = json.loads(resp.content)
-        c = nested_to_flat(d_calculated['outputs'])
+        d = json.loads(resp.content)
+        c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 10950029
+        d_expected['lcc'] = 10984555
         d_expected['npv'] = 11276785 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 106.055
-        d_expected['batt_kwh'] = 307.971
-        d_expected['year_one_utility_kwh'] = 9621290
+        d_expected['batt_kw'] = 35.1549
+        d_expected['batt_kwh'] = 66.6194
+        d_expected['year_one_utility_kwh'] = 9614813.643
 
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d_calculated.get('run_uuid')))
+            import pdb; pdb.set_trace()
+            print("Run {} expected outputs may have changed. Check the Outputs folder."
+                  .format(d['outputs']['Scenario'].get('run_uuid')))
+            print("Error message: {}".format(d['messages'].get('error')))
             raise
 
     def test_wind(self):
@@ -187,13 +194,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
-        d_calculated = json.loads(resp.content)
-        c = nested_to_flat(d_calculated['outputs'])
+        d = json.loads(resp.content)
+        c = nested_to_flat(d['outputs'])
 
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder."
+                  .format(d['outputs']['Scenario'].get('run_uuid')))
+            print("Error message: {}".format(d['messages'].get('error')))
             raise
         
     def test_valid_nested_posts(self):
@@ -207,17 +216,19 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 12703930
-        d_expected['npv'] = 332951
+        d_expected['lcc'] = 11040985
+        d_expected['npv'] = 235800
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 105.995
-        d_expected['batt_kwh'] = 307.14
-        d_expected['year_one_utility_kwh'] = 9626472.7392
+        d_expected['batt_kw'] = 23.8775
+        d_expected['batt_kwh'] = 38.9943
+        d_expected['year_one_utility_kwh'] = 9614502.2675
 
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder."
+                  .format(d['outputs']['Scenario'].get('run_uuid')))
+            print("Error message: {}".format(c['messages'].get('error')))
             raise
 
         # another test with custom rate and monthly kwh
@@ -234,17 +245,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['npv'] = 347.0
-        d_expected['lcc'] = 2914
-        d_expected['pv_kw'] = 0.931874
-        d_expected['batt_kw'] = 0.0526852
-        d_expected['batt_kwh'] = 0.0658565
-        d_expected['year_one_utility_kwh'] = 1876.4764
+        d_expected['npv'] = 335.0
+        d_expected['lcc'] = 2926
+        d_expected['pv_kw'] = 0.925313
+        d_expected['batt_kw'] = 0
+        d_expected['batt_kwh'] = 0
+        d_expected['year_one_utility_kwh'] = 1904.7135
 
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(c.get('run_uuid')))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d['outputs']['Scenario'].get('uuid')))
+            print("Error message: {}".format(c['messages'].get('error')))
             raise
 
     def test_not_optimal_solution(self):
