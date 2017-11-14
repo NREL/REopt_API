@@ -108,7 +108,7 @@ class Results:
         nested_outputs["Scenario"]["Site"] = dict()
 
         # Loop through all sub-site dicts and init
-        for name, d in nested_output_definitions["outputs]["Scenario"]["Site"].items():
+        for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
             nested_outputs["Scenario"]["Site"][name] = dict()
             for k in d.iterkeys():
                 nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
@@ -120,7 +120,7 @@ class Results:
         self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
         # format assumes that the flat format is still the primary default
-        for name, d in nested_output_definitions["outputs]["Scenario"]["Site"].items():
+        for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
 
             if name == "LoadProfile":
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
