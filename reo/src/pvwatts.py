@@ -107,7 +107,7 @@ class PVWatts:
         else:
             prod_factor = list()
             import os
-            with open(os.path.join('tests', 'offline_pv_prod_factor.txt'), 'r') as f:
+            with open(os.path.join('reo', 'tests', 'offline_pv_prod_factor.txt'), 'r') as f:
                 for line in f:
                     prod_factor.append(float(line.strip('\n')))
 
