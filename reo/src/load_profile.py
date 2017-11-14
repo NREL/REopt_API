@@ -1,33 +1,33 @@
-import math
 import os
 import copy
 from collections import namedtuple
 from datetime import datetime, timedelta
+from reo.api_definitions import default_cities, default_tmyid
+import requests
 
 
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
     
-    Default_city = namedtuple("Default_city", "name lat lng")
+    Default_city = namedtuple("Default_city", "name lat lng tmyid")
     
     default_cities = [
-        Default_city('Miami', 25.761680, -80.191790),
-        Default_city('Houston', 29.760427, -95.369803),
-        Default_city('Phoenix', 33.448377, -112.074037),
-        Default_city('Atlanta', 33.748995, -84.387982),
-        Default_city('LosAngeles', 34.052234, -118.243685),
-        Default_city('SanFrancisco', 37.774929, -122.419416),
-        Default_city('LasVegas', 36.114707, -115.172850),
-        Default_city('Baltimore', 39.290385, -76.612189),
-        Default_city('Albuquerque', 35.085334, -106.605553),
-        Default_city('Seattle', 47.606209, -122.332071),
-        Default_city('Chicago', 41.878114, -87.629798),
-        Default_city('Boulder', 40.014986, -105.270546),
-        Default_city('Minneapolis', 44.977753, -93.265011),
-        Default_city('Helena', 46.588371, -112.024505),
-        Default_city('Duluth', 46.786672, -92.100485),
-        Default_city('Fairbanks', 64.837778, -147.716389),
+        Default_city('Miami', 25.761680, -80.191790, 722020),
+        Default_city('Houston', 29.760427, -95.369803, 722430),
+        Default_city('Phoenix', 33.448377, -112.074037, 722780),
+        Default_city('Atlanta', 33.748995, -84.387982, 722190),
+        Default_city('LosAngeles', 34.052234, -118.243685, 722950),
+        Default_city('SanFrancisco', 37.774929, -122.419416, 724940),
+        Default_city('Baltimore', 39.290385, -76.612189, 724060),
+        Default_city('Albuquerque', 35.085334, -106.605553, 723650),
+        Default_city('Seattle', 47.606209, -122.332071, 727930),
+        Default_city('Chicago', 41.878114, -87.629798, 725300),
+        Default_city('Boulder', 40.014986, -105.270546, 724699),
+        Default_city('Minneapolis', 44.977753, -93.265011, 726580),
+        Default_city('Helena', 46.588371, -112.024505, 727720),
+        Default_city('Duluth', 46.786672, -92.100485, 727450),
+        Default_city('Fairbanks', 64.837778, -147.716389, 702610),
     ]
 
     annual_loads = {
@@ -48,6 +48,7 @@ class BuiltInProfile(object):
             'stripmall': 497132,
             'supermarket': 1947654,
             'warehouse': 228939,
+            'flatload': 500000
         },
         'Atlanta': {
             'fastfoodrest': 197467,
@@ -66,6 +67,7 @@ class BuiltInProfile(object):
             'stripmall': 529719,
             'supermarket': 2092966,
             'warehouse': 223009,
+            'flatload': 500000
         },
         'Baltimore': {
             'fastfoodrest': 192831,
@@ -84,6 +86,7 @@ class BuiltInProfile(object):
             'stripmall': 504715,
             'supermarket': 2018760,
             'warehouse': 229712,
+            'flatload': 500000
         },
         'Boulder': {
             'fastfoodrest': 189092,
@@ -102,6 +105,7 @@ class BuiltInProfile(object):
             'stripmall': 495018,
             'supermarket': 1956244,
             'warehouse': 243615,
+            'flatload': 500000
         },
         'Chicago': {
             'fastfoodrest': 189558,
@@ -120,6 +124,7 @@ class BuiltInProfile(object):
             'stripmall': 506886,
             'supermarket': 2025507,
             'warehouse': 245750,
+            'flatload': 500000
         },
         'Duluth': {
             'fastfoodrest': 183713,
@@ -138,6 +143,7 @@ class BuiltInProfile(object):
             'stripmall': 500979,
             'supermarket': 1980986,
             'warehouse': 256575,
+            'flatload': 500000
         },
         'Fairbanks': {
             'fastfoodrest': 182495,
@@ -156,6 +162,7 @@ class BuiltInProfile(object):
             'stripmall': 545421,
             'supermarket': 2033295,
             'warehouse': 285064,
+            'flatload': 500000
         },
         'Helena': {
             'fastfoodrest': 185877,
@@ -174,6 +181,7 @@ class BuiltInProfile(object):
             'stripmall': 503504,
             'supermarket': 1969137,
             'warehouse': 252245,
+            'flatload': 500000
         },
         'Houston': {
             'fastfoodrest': 210283,
@@ -192,24 +200,7 @@ class BuiltInProfile(object):
             'stripmall': 577987,
             'supermarket': 2225265,
             'warehouse': 221593,
-        },
-        'LasVegas': {
-            'fastfoodrest': 208062,
-            'fullservicerest': 372350,
-            'hospital': 9011047,
-            'largehotel': 2758835,
-            'largeoffice': 6776744,
-            'mediumoffice': 964533,
-            'midriseapartment': 332446,
-            'outpatient': 1810988,
-            'primaryschool': 1197325,
-            'retailstore': 546177,
-            'secondaryschool': 3120809,
-            'smallhotel': 818012,
-            'smalloffice': 96263,
-            'stripmall': 546026,
-            'supermarket': 2001224,
-            'warehouse': 236853,
+            'flatload': 500000
         },
         'LosAngeles': {
             'fastfoodrest': 188857,
@@ -228,6 +219,7 @@ class BuiltInProfile(object):
             'stripmall': 491972,
             'supermarket': 1935886,
             'warehouse': 182085,
+            'flatload': 500000
         },
         'Miami': {
             'fastfoodrest': 224494,
@@ -246,6 +238,7 @@ class BuiltInProfile(object):
             'stripmall': 675793,
             'supermarket': 2260929,
             'warehouse': 202082,
+            'flatload': 500000
         },
         'Minneapolis': {
             'fastfoodrest': 188368,
@@ -264,6 +257,7 @@ class BuiltInProfile(object):
             'stripmall': 511567,
             'supermarket': 2034650,
             'warehouse': 249332,
+            'flatload': 500000
         },
         'Phoenix': {
             'fastfoodrest': 216088,
@@ -282,6 +276,7 @@ class BuiltInProfile(object):
             'stripmall': 590954,
             'supermarket': 2056195,
             'warehouse': 241585,
+            'flatload': 500000
         },
         'SanFrancisco': {
             'fastfoodrest': 183953,
@@ -300,6 +295,7 @@ class BuiltInProfile(object):
             'stripmall': 455802,
             'supermarket': 1841655,
             'warehouse': 185889,
+            'flatload': 500000
         },
         'Seattle': {
             'fastfoodrest': 184142,
@@ -318,6 +314,7 @@ class BuiltInProfile(object):
             'stripmall': 460449,
             'supermarket': 1868973,
             'warehouse': 210300,
+            'flatload': 500000
         },
     }
 
@@ -367,23 +364,27 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        if self.latitude and self.longitude:
-            if hasattr(self,'nearest_city'):
+        if self.latitude is not None and self.longitude is not None:
+            if hasattr(self, 'nearest_city'):
                 return self.nearest_city
             else:
-                min_distance = None
-                for i,c in enumerate(self.default_cities):
-                    distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
-                    if i==0:
-                        min_distance = distance
-                        self.nearest_city = c.name
-                    elif distance < min_distance:
-                        min_distance = distance
-                        self.nearest_city = c.name
-                return self.nearest_city
+                search_radius = str(25)
+                ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key=653bcca1955c8acf748bcf5ce9a953f7b2e23629&lat=" \
+                             + str(self.latitude) + "&lon=" + str(self.longitude) + "&distance=" + search_radius + "&output_fields=ashrae_tmy"
+                r = requests.get(ashrae_url)
 
-        else:
-            raise AttributeError('load_profile', 'Cannot determine nearest city - missing city or latitude and longitude inputs')
+                if r.status_code == 200 and "ashrae_tmy" in r.json()["outputs"] and "tmy_id" in r.json()["outputs"]["ashrae_tmy"]:
+                    ashrae_tmy_id = r.json()["outputs"]["ashrae_tmy"]["tmy_id"]
+
+                    if ashrae_tmy_id in default_tmyid():
+                        self.nearest_city = default_cities()[default_tmyid().index(ashrae_tmy_id)]
+                    else:
+                        raise AttributeError('load_profile', 'Unexpected climate zone returned by remote database')
+
+                    return self.nearest_city
+                else:
+                    raise AttributeError('load_profile', 'Failed to return climate zone from database')
+
 
     @property
     def default_annual_kwh(self):
