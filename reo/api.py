@@ -1,20 +1,19 @@
 import logging
 import os
 import json
-import copy
 import uuid
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
-from tastypie.http import HttpCreated
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import log
 from utilities import API_Error, attribute_inputs
 from scenario import Scenario
-from reo.models import ScenarioModel, MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
+from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
     PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
+from api_definitions import inputs as flat_inputs
 
 
 api_version = "version 1.0.0"
@@ -111,7 +110,7 @@ class RunInputResource(ModelResource):
                 optimization_results['flat'].update(meta)
                 optimization_results['flat']['uuid'] = meta['run_uuid']
                 optimization_results['nested']['Scenario'].update(meta)
-                output_dictionary['outputs']  = optimization_results[output_format]
+                output_dictionary['outputs'] = optimization_results[output_format]
 
                 if saveToDb:
                     self.save_scenario_outputs(optimization_results['nested']['Scenario'])
@@ -132,6 +131,10 @@ class RunInputResource(ModelResource):
                 ScenarioModel.create(**meta)
 
             messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
+
+        if output_format == 'flat':
+            for arg, defs in flat_inputs(full_list=True).iteritems():
+                output_dictionary['outputs'][arg] = output_dictionary["inputs"].get(arg) or defs.get("default")
 
         return output_dictionary
 
