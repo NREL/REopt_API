@@ -175,8 +175,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         resp_dict = json.loads(resp.content)
 
-        self.assertEqual(resp_dict["probs_of_surviving"],[0.4761,0.4347,0.393,0.3514,0.3097,0.268,0.2264,0.1847,0.143,0.1015,0.0628,0.0336,0.0138,0.0018])
-        self.assertEqual(resp_dict["resilience_hours_avg"], 3.0)
-        self.assertEqual(resp_dict["outage_durations"], [1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+        self.assertEqual(resp_dict["probs_of_surviving"],
+                         [0.4734, 0.432, 0.3903, 0.3486, 0.307, 0.2653, 0.2236, 0.182, 0.1403, 0.0987, 0.0602, 0.0311,
+                          0.0115, 0.0006])
+        self.assertEqual(resp_dict["resilience_hours_avg"], 2.96)
+        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 14)
