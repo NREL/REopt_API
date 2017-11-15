@@ -29,6 +29,24 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_creation(self):
         run_output = json.loads(self.get_response(self.example_reopt_request_data).content)
+
+        class ClassAttributes:
+            def __init__(self, dictionary):
+                for k, v in dictionary.items():
+                    setattr(self, k, v)
+
+        scenario_in = ClassAttributes(run_output['inputs']['Scenario'])
+        pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
+        batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
+        tariff_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['ElectricTariff'])
+        finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
+
+        scenario_out = ClassAttributes(run_output['outputs']['Scenario'])
+        pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
+        batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
+        tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
+        finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
+
         uuid = run_output['outputs']['Scenario']['run_uuid']
 
         start_time = now()
@@ -44,49 +62,56 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
         ws = wb.get_sheet_by_name(pf.sheet_io)
 
-        mapping = [[ws['B3'],0.889873],
-        [ws['B4'],0.5],
-        [ws['B5'],0],
-        [ws['B6'],0],
-        [ws['B9'],11649.69],
-        [ws['B10'],11527.08],
-        [ws['B11'],0],
-        [ws['B12'],1642],
-        [ws['B15'],863],
-        [ws['B16'],1779.746],
-        [ws['B17'],0],
-        [ws['B19'],16],
-        [ws['B20'],460],
-        [ws['B21'],10],
-        [ws['B22'],230],
-        [ws['B23'],10],
-        [ws['B31'],20],
-        [ws['B32'],2.5],
-        [ws['B33'],2.6],
-        [ws['B34'],0],
-        [ws['B37'],0],
-        [ws['B42'],30],
-       # [ws['C42'],''],
-        [ws['B47'],0],
-        [ws['C47'],10000000000],
-        [ws['B48'],0],
-        [ws['C48'],10000000000],
-        [ws['B50'],0],
-       # [ws['C50'],''],
-        [ws['B51'],0],
-        [ws['C51'],10000000000],
-        [ws['B52'],0],
-        [ws['C52'],10000000000],
-        [ws['B54'],0],
-        [ws['C54'],1000000000],
-        [ws['E54'],1],
-        [ws['F54'],1000000000],
-        [ws['B59'],0],
-        [ws['B67'],0],
-        [ws['B72'],5],
-        [ws['B73'],0.5],
-        [ws['C72'],5],
-        [ws['C73'],0.5]]
+        mapping = [
+        [ws['B3'], pv_out.size_kw],
+        [ws['B4'], pv_in.degradation_pct * 100],
+        [ws['B5'], batt_out.size_kw],
+        [ws['B6'], batt_out.size_kwh],
+        [ws['B9'], tariff_out.year_one_bill_bau_us_dollars],
+        [ws['B10'], tariff_out.year_one_bill_us_dollars],
+        [ws['B11'], tariff_out.year_one_export_benefit_us_dollars],
+        [ws['B12'], pv_out.year_one_energy_produced_kwh],
+        [ws['B15'], finance_out.net_capital_costs_plus_om_us_dollars],
+        [ws['B16'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw +
+                    batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
+                    batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
+        [ws['B17'], batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
+                    batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
+        [ws['B19'], pv_in.om_cost_us_dollars_per_kw],
+        [ws['B20'], batt_in.replace_cost_us_dollars_per_kw],
+        [ws['B21'], batt_in.inverter_replacement_year],
+        [ws['B22'], batt_in.replace_cost_us_dollars_per_kwh],
+        [ws['B23'], batt_in.battery_replacement_year],
+        [ws['B31'], finance_in.analysis_years],
+        [ws['B32'], finance_in.om_cost_growth_pct * 100],
+        [ws['B33'], finance_in.escalation_pct * 100],
+        [ws['B34'], finance_in.offtaker_discount_pct],
+        [ws['B37'], finance_in.offtaker_tax_pct],
+        [ws['B42'], pv_in.federal_itc_pct * 100],
+        [ws['B47'], pv_in.state_ibi_pct * 100],
+        [ws['C47'], pv_in.state_ibi_max_us_dollars],
+        [ws['B48'], pv_in.utility_ibi_pct * 100],
+        [ws['C48'], pv_in.utility_ibi_max_us_dollars],
+        [ws['B50'], pv_in.federal_rebate_us_dollars_per_kw * 0.001],
+        [ws['B51'], pv_in.state_rebate_us_dollars_per_kw * 0.001],
+        [ws['C51'], pv_in.state_rebate_max_us_dollars],
+        [ws['B52'], pv_in.utility_rebate_us_dollars_per_kw * 0.001],
+        [ws['C52'], pv_in.utility_rebate_max_us_dollars],
+        [ws['B54'], pv_in.pbi_us_dollars_per_kwh],
+        [ws['C54'], pv_in.pbi_max_us_dollars],
+        [ws['E54'], pv_in.pbi_years],
+        [ws['F54'], pv_in.pbi_system_max_kw],
+        [ws['B59'], batt_in.total_itc_pct * 100],
+        [ws['B67'], batt_in.total_rebate_us_dollars_per_kw * 0.001],
+        [ws['B72'], pv_in.macrs_option_years],
+        [ws['B73'], pv_in.macrs_bonus_pct],
+        [ws['C72'], batt_in.macrs_option_years],
+        [ws['C73'], batt_in.macrs_bonus_pct]
+        ]
 
-        [self.assertAlmostEqual(float(a.value), b, places=2) for a,b in mapping]
+        idx = 0
+        for a, b in mapping:
+            msg = "Failed at idx: " + str(idx) + " Value: " + str(a.value) + "!= " + str(b)
+            self.assertAlmostEqual(float(a.value), b, places=2, msg=msg)
+            idx += 1
 
