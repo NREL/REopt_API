@@ -20,10 +20,11 @@ class Results:
         "year_one_demand_cost",
         "year_one_fixed_cost",
         "year_one_min_charge_adder",
+        "year_one_bill",
         "total_energy_cost",
         "total_demand_cost",
         "total_fixed_cost",
-        "total_min_charge_adder",
+        "total_min_charge_adder"
     ]
 
     def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
@@ -171,8 +172,8 @@ class Results:
                 self.nested_outputs["Scenario"]["Site"][name]["total_demand_cost_bau_us_dollars"] = self.results_dict["total_demand_cost_bau"]
                 self.nested_outputs["Scenario"]["Site"][name]["total_fixed_cost_bau_us_dollars"] = self.results_dict["total_fixed_cost_bau"]
                 self.nested_outputs["Scenario"]["Site"][name]["total_min_charge_adder_bau_us_dollars"] = self.results_dict["total_min_charge_adder_bau"]
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.year_one_bill()
-                self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau_us_dollars"] = self.year_one_bill_bau()
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict["year_one_bill"]
+                self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau_us_dollars"] = self.results_dict["year_one_bill_bau"]
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_export_benefit_us_dollars"] = self.results_dict["year_one_export_benefit"]
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_series_us_dollars_per_kwh"] = self.po.get_energy_cost()
                 self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_series_us_dollars_per_kw"] = self.po.get_demand_cost()
@@ -228,13 +229,5 @@ class Results:
             power_lists.append(self.results_dict["year_one_" + tech + "_to_grid_series"])
         power = [sum(x) for x in zip(*power_lists)]
         return power
-
-    def year_one_bill(self):
-        return self.results_dict["year_one_demand_cost"] + self.results_dict["year_one_energy_cost"] + \
-               self.results_dict["year_one_fixed_cost"] + self.results_dict["year_one_min_charge_adder"]
-
-    def year_one_bill_bau(self):
-        return self.results_dict["year_one_demand_cost_bau"] + self.results_dict["year_one_energy_cost_bau"] + \
-               self.results_dict["year_one_fixed_cost_bau"] + self.results_dict["year_one_min_charge_adder_bau"]
 
 

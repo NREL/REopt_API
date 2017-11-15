@@ -98,10 +98,10 @@ class ProForma(models.Model):
         ws['B31'] = financial.analysis_years
         ws['B32'] = financial.om_cost_growth_pct * 100
         ws['B33'] = financial.escalation_pct * 100
-        ws['B34'] = financial.owner_discount_pct or 0 * 100
+        ws['B34'] = financial.offtaker_discount_pct or 0 * 100
 
         # Tax rates
-        ws['B37'] = financial.owner_tax_pct or 0  * 100
+        ws['B37'] = financial.offtaker_tax_pct or 0  * 100
 
         # PV Tax Credits and Incentives
         ws['B42'] = pv.federal_itc_pct * 100
