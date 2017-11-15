@@ -15,7 +15,6 @@ def nested_to_flat(nested_output):
         'net_capital_costs_plus_om': nested_output['Scenario']['Site']['Financial']['net_capital_costs_plus_om_us_dollars'],
         
         'pv_kw': nested_output['Scenario']['Site']['PV']['size_kw'],
-        'pv_degradation_rate': nested_output['Scenario']['Site']['PV']['degradation_pct'],
         'year_one_energy_produced': nested_output['Scenario']['Site']['PV']['year_one_energy_produced_kwh'],
         'pv_kw_ac_hourly': nested_output['Scenario']['Site']['PV']['year_one_power_production_series_kw'],
         'average_yearly_pv_energy_produced': nested_output['Scenario']['Site']['PV']['average_yearly_energy_produced_kwh'],
