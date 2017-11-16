@@ -14,20 +14,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         """
         check a random building's expected annual_kwh
         """
-        bldgs = BuiltInProfile.default_buildings
-        bldg = "fastfoodrest"
-        for city in BuiltInProfile.default_cities:
-            # city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
-            response = self.api_client.get(self.annual_kwh_url, data={
-                'doe_reference_name': bldg,
-                'latitude': city.lat,
-                'longitude': city.lng,
-            })
+        for bldg in BuiltInProfile.default_buildings:
+            for city in BuiltInProfile.default_cities:
+                # city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
+                response = self.api_client.get(self.annual_kwh_url, data={
+                    'doe_reference_name': bldg,
+                    'latitude': city.lat,
+                    'longitude': city.lng,
+                })
 
-            annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
-            print bldg, city.name
-            print json.loads(response.content).get('city')
-            assert annual_kwh_from_api == BuiltInProfile.annual_loads[city.name][bldg]
+                annual_kwh_from_api = json.loads(response.content).get('annual_kwh')
+                msg = "Loads not equal for: " + str(bldg) + " city 1: " + str(city.name) + " city 2: " + str(json.loads(response.content).get('city'))
+                self.assertEqual(annual_kwh_from_api, BuiltInProfile.annual_loads[city.name][bldg], msg=msg)
    
 
     def test_annual_kwh_bad_latitude(self):
