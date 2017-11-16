@@ -43,6 +43,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         }
         
         self.url = '/resilience_stats/'
+        self.test_path = test_path
 
     def test_outage_sim(self):
         """
@@ -154,7 +155,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['probs_of_surviving'])
 
     def test_resil_endpoint_nested(self):
-        post = json.load(open(os.path.join('tests', 'POST_nested.json'), 'r'))
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
         r = self.api_client.post('/api/v1/reopt/', format='json', data=post)
         reopt_resp = json.loads(r.content)
         data = {'run_uuid': reopt_resp['outputs']['Scenario']['run_uuid']}
