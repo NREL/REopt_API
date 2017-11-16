@@ -69,7 +69,7 @@ nested_input_definitions = {
                                                                     "description": "Generic Load Profile Type from DOE <a href='https://energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>. Must be accompanied with annual_kwh or monthly_totals_kwh." },
                                             "annual_kwh":           {'type': 'float', 'min': 0, 'max': 1e12, 'replacement_sets':[['loads_kw'],['doe_reference_name', 'monthly_totals_kwh'],['annual_kwh', 'doe_reference_name']], 'depends_on': ['doe_reference_name'],
                                                                     "description": "Annual Load Size" },
-                                            "year":                 {'type': 'int', 'min': 1900, 'max': 2017+max_years, 'default': 2018,
+                                            "year":                 {'type': 'int', 'min': 1, 'max': 9999, 'default': 2018,
                                                                     "description":"Year of Custom Load Profile" },
                                             "monthly_totals_kwh":   {'type': 'list_of_float', 'replacement_sets':[['loads_kw'],['doe_reference_name', 'monthly_totals_kwh'],['annual_kwh', 'doe_reference_name']], 'depends_on': ['doe_reference_name'],
                                                                     "description":"12 item array of aggregate monthly energy usage" },
