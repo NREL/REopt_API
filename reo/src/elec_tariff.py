@@ -1,34 +1,49 @@
 import re
 from reo.log_levels import log
-
+from reo.src.urdb_rate import Rate
 
 class ElecTariff(object):
 
-    def __init__(self, dfm, run_id, paths, urdb_rate, blended_utility_rate, demand_charge, net_metering_limit,
-                 load_year, wholesale_rate, time_steps_per_hour,
-                 **kwargs):
+    def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
+                 time_steps_per_hour, urdb_label=None, urdb_utilty_name=None, urdb_rate_name=None,
+                 blended_monthly_rates_us_dollars_per_kwh=None, monthly_demand_charges_us_dollars_per_kw=None,
+                 urdb_response=None, **kwargs):
 
         self.run_id = run_id
-        self.wholesale_rate = wholesale_rate
+        self.wholesale_rate = wholesale_rate_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
 
         self.net_metering = False
-        if net_metering_limit > 0:
+        if net_metering_limit_kw > 0:
             self.net_metering = True
 
-        if urdb_rate is not None:
+        if urdb_response is not None:
             log("INFO", "Parsing URDB rate")
         
-        elif None not in [blended_utility_rate, demand_charge]:
+        elif None not in [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw]:
                 log("INFO", "Making URDB rate from blended data")
-                urdb_rate = self.make_urdb_rate(blended_utility_rate, demand_charge)
-        else:
-            raise ValueError('elec_tariff', "urdb_rate or [blended_utility_rate, demand_charge] are required inputs")
+                urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw)
 
-        self.utility_name = re.sub(r'\W+', '', str(urdb_rate.get('utility')))
-        self.rate_name = re.sub(r'\W+', '', str(urdb_rate.get('name')))
-        self.urdb_rate = urdb_rate
+        elif urdb_label is not None:
+            rate = Rate(rate=urdb_label)
+            urdb_response = rate.urdb_dict
+
+        elif None not in [urdb_utilty_name, urdb_rate_name]:
+            rate = Rate(util=urdb_utilty_name, rate=urdb_rate_name)
+            urdb_response = rate.urdb_dict
+
+        else:
+            raise ValueError('ElectricTariff',
+                             "User must provide urdb_response or \
+                              urdb_label or \
+                              [blended_monthly_rates_us_dollars_per_kwh, monthly_demand_charges_us_dollars_per_kw] or \
+                              [urdb_utilty_name, urdb_rate_name]."
+                             )
+
+        self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
+        self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
+        self.urdb_response = urdb_response
 
         dfm.add_elec_tariff(self)
 

@@ -3,29 +3,34 @@ import uuid
 import os
 import datetime, tzlocal
 from openpyxl import load_workbook
-from reo.models import RunOutput
+from reo.models import ScenarioModel
 from reo.src.dat_file_manager import big_number
 
 
 class ProForma(models.Model):
 
-    run_output = models.ForeignKey(RunOutput) 
+    scenariomodel = models.OneToOneField(
+        ScenarioModel,
+        on_delete=models.CASCADE,
+        default=0,
+        to_field='id',
+        blank=True,
+        primary_key=True
+    )
     uuid = models.UUIDField(default=uuid.uuid4, null=False)
     spreadsheet_created = models.DateTimeField(null=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
     
     @classmethod
-    def create(cls, **kwargs):
-        pf = cls(**kwargs)
+    def create(cls, scenariomodel, **kwargs ):
+        pf = cls(scenariomodel = scenariomodel, **kwargs)
 
         file_dir = os.path.dirname(pf.output_file)
         
         if not os.path.exists(file_dir):
             os.mkdir(file_dir)
-
-        pf.generate_spreadsheet()
-        
+        pf.save()        
         return pf
     
     @property
@@ -46,7 +51,13 @@ class ProForma(models.Model):
           
     def generate_spreadsheet(self):
 
-        ro = self.run_output
+        scenario = self.scenariomodel
+        site = scenario.sitemodel_set.first()
+        batt = site.storagemodel_set.first()
+        pv = site.pvmodel_set.first()
+        load_profile = site.loadprofilemodel_set.first()
+        electric_tariff = site.electrictariffmodel_set.first()
+        financial = site.financialmodel_set.first()
 
         # Open file for reading
         wb = load_workbook(self.file_template, read_only=False, keep_vba=True)
@@ -55,62 +66,69 @@ class ProForma(models.Model):
         ws = wb.get_sheet_by_name(self.sheet_io)
 
         # System Design
-        ws['B3'] = ro.pv_kw
-        ws['B4'] = ro.pv_degradation_rate * 100
-        ws['B5'] = ro.batt_kw
-        ws['B6'] = ro.batt_kwh
+        ws['B3'] = pv.size_kw or 0
+        ws['B4'] = pv.degradation_pct * 100
+        ws['B5'] = batt.size_kw or 0
+        ws['B6'] = batt.size_kwh or 0
 
         # Year 1 Results
-        ws['B9'] = ro.year_one_bill_bau
-        ws['B10'] = ro.year_one_bill
-        ws['B11'] = ro.year_one_export_benefit
-        ws['B12'] = ro.year_one_energy_produced
-
+        ws['B9'] = electric_tariff.year_one_bill_bau_us_dollars or 0
+        ws['B10'] = electric_tariff.year_one_bill_us_dollars or 0
+        ws['B11'] = electric_tariff.year_one_export_benefit_us_dollars or 0
+        pv_energy = pv.year_one_energy_produced_kwh or 0
+        ws['B12'] = pv_energy
+        
         # System Costs
-        ws['B15'] = ro.total_capital_costs
-        ws['B16'] = ro.pv_installed_cost
-        ws['B17'] = ro.battery_installed_cost
-        ws['B19'] = ro.pv_om
-        ws['B20'] = ro.batt_replacement_cost_kw
-        ws['B21'] = ro.batt_replacement_year_kw
-        ws['B22'] = ro.batt_replacement_cost_kwh
-        ws['B23'] = ro.batt_replacement_year_kwh
+        ws['B15'] = financial.net_capital_costs_plus_om_us_dollars 
+        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw 
+        pv_size_kw = pv.size_kw or 0
+        ws['B16'] = pv_installed_cost_us_dollars_per_kw * pv_size_kw
+        batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
+        batt_size_kw = batt.size_kw or 0
+        batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
+        batt_size_kwh = batt.size_kwh or 0
+        ws['B17'] = batt_installed_cost_us_dollars_per_kw * batt_size_kw + batt_installed_cost_us_dollars_per_kwh * batt_size_kwh
+        ws['B19'] = pv.om_cost_us_dollars_per_kw 
+        ws['B20'] = batt.replace_cost_us_dollars_per_kw 
+        ws['B21'] = batt.inverter_replacement_year 
+        ws['B22'] = batt.replace_cost_us_dollars_per_kwh 
+        ws['B23'] = batt.battery_replacement_year 
 
         # Analysis Parameters
-        ws['B31'] = ro.analysis_period
-        ws['B32'] = ro.om_cost_growth_rate * 100
-        ws['B33'] = ro.rate_escalation * 100
-        ws['B34'] = ro.owner_discount_rate * 100
+        ws['B31'] = financial.analysis_years
+        ws['B32'] = financial.om_cost_growth_pct * 100
+        ws['B33'] = financial.escalation_pct * 100
+        ws['B34'] = financial.offtaker_discount_pct or 0 * 100
 
         # Tax rates
-        ws['B37'] = ro.owner_tax_rate * 100
+        ws['B37'] = financial.offtaker_tax_pct or 0  * 100
 
         # PV Tax Credits and Incentives
-        ws['B42'] = ro.pv_itc_federal * 100
-        ws['C42'] = ro.pv_itc_federal_max
-        ws['B47'] = ro.pv_ibi_state * 100
-        ws['C47'] = ro.pv_ibi_state_max
-        ws['B48'] = ro.pv_ibi_utility * 100
-        ws['C48'] = ro.pv_ibi_utility_max
-        ws['B50'] = ro.pv_rebate_federal * 0.001
-        ws['C50'] = ro.pv_rebate_federal_max
-        ws['B51'] = ro.pv_rebate_state * 0.001
-        ws['C51'] = ro.pv_rebate_state_max
-        ws['B52'] = ro.pv_rebate_utility * 0.001
-        ws['C52'] = ro.pv_rebate_utility_max
-        ws['B54'] = ro.pv_pbi
-        ws['C54'] = ro.pv_pbi_max
-        ws['E54'] = ro.pv_pbi_years
-        ws['F54'] = ro.pv_pbi_system_max
+        ws['B42'] = pv.federal_itc_pct * 100
+        ws['C42'] = ''
+        ws['B47'] = pv.state_ibi_pct * 100
+        ws['C47'] = pv.state_ibi_max_us_dollars
+        ws['B48'] = pv.utility_ibi_pct * 100
+        ws['C48'] = pv.utility_ibi_max_us_dollars
+        ws['B50'] = pv.federal_rebate_us_dollars_per_kw * 0.001
+        ws['C50'] = ''
+        ws['B51'] = pv.state_rebate_us_dollars_per_kw * 0.001
+        ws['C51'] = pv.state_rebate_max_us_dollars
+        ws['B52'] = pv.utility_rebate_us_dollars_per_kw * 0.001
+        ws['C52'] = pv.utility_rebate_max_us_dollars
+        ws['B54'] = pv.pbi_us_dollars_per_kwh
+        ws['C54'] = pv.pbi_max_us_dollars
+        ws['E54'] = pv.pbi_years
+        ws['F54'] = pv.pbi_system_max_kw
 
         # Battery Tax Credits and Incentives
-        ws['B59'] = ro.batt_itc_total * 100
+        ws['B59'] = batt.total_itc_pct * 100
         ws['C59'] = big_number  # max itc
         ws['B64'] = 0  # state ITC
         ws['C64'] = big_number  # state ITC max
         ws['B65'] = 0  # utility ITC
         ws['C65'] = big_number  # utility ITC max
-        ws['B67'] = ro.batt_rebate_total * 0.001
+        ws['B67'] = batt.total_rebate_us_dollars_per_kw * 0.001
         ws['C67'] = big_number  # max rebate
         ws['B68'] = 0  # state rebate
         ws['C68'] = big_number  # max state rebate
@@ -118,17 +136,19 @@ class ProForma(models.Model):
         ws['C69'] = big_number  # max utility rebate
 
         # Depreciation
-        if ro.pv_macrs_schedule > 0:
-            ws['B72'] = ro.pv_macrs_schedule
-            ws['B73'] = ro.pv_macrs_bonus_fraction
-        elif ro.pv_macrs_schedule == 0:
+        if pv.macrs_option_years > 0:
+            ws['B72'] = pv.macrs_option_years
+            ws['B73'] = pv.macrs_bonus_pct
+        
+        elif pv.macrs_option_years == 0:
             ws['B72'] = "None"
             ws['B73'] = 0
 
-        if ro.batt_macrs_schedule > 0:
-            ws['C72'] = ro.batt_macrs_schedule
-            ws['C73'] = ro.batt_macrs_bonus_fraction
-        if ro.batt_macrs_schedule == 0:
+        if batt.macrs_option_years > 0:
+            ws['C72'] = batt.macrs_option_years
+            ws['C73'] = batt.macrs_bonus_pct
+        
+        elif batt.macrs_option_years == 0:
             ws['C72'] = "None"
             ws['C73'] = 0
 

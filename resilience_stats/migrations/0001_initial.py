@@ -8,7 +8,7 @@ import django.contrib.postgres.fields
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0007_auto_20170718_2322'),
+        ('reo', '0001_initial'),
     ]
 
     operations = [
@@ -20,7 +20,9 @@ class Migration(migrations.Migration):
                 ('resilience_hours_min', models.FloatField(null=True)),
                 ('resilience_hours_max', models.FloatField(null=True)),
                 ('resilience_hours_avg', models.FloatField(null=True)),
-                ('run_output', models.ForeignKey(to='reo.RunOutput')),
+                ('outage_durations', django.contrib.postgres.fields.ArrayField(null=True, base_field=models.FloatField(null=True), size=None)),
+                ('probs_of_surviving', django.contrib.postgres.fields.ArrayField(null=True, base_field=models.FloatField(null=True), size=None)),
+                ('scenario_model', models.ForeignKey(default=None, to_field=b'run_uuid', blank=True, to='reo.ScenarioModel', null=True)),
             ],
         ),
     ]

@@ -105,7 +105,7 @@ class UrdbParse:
 
     def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0):
 
-        self.urdb_rate = elec_tariff.urdb_rate
+        self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
         self.net_metering = elec_tariff.net_metering
