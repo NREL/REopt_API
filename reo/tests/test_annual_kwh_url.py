@@ -18,7 +18,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for city in BuiltInProfile.default_cities:
                 # city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
                 response = self.api_client.get(self.annual_kwh_url, data={
-                    'doe_reference_name': bldg,
+                    'load_profile_name': bldg,
                     'latitude': city.lat,
                     'longitude': city.lng,
                 })
@@ -34,7 +34,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
        
         response = self.api_client.get(self.annual_kwh_url, data={
-            'doe_reference_name': bldg,
+            'load_profile_name': bldg,
             'latitude': 'bad latitude',
             'longitude': city.lng,
         })
@@ -48,9 +48,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
 
         response = self.api_client.get(self.annual_kwh_url, data={
-            'doe_reference_name': bldg[:-1],
+            'load_profile_name': bldg[:-1],
             'latitude': city.lat,
             'longitude': city.lng,
         })
 
-        assert "Invalid doe_reference_name. Select from the following" in response.content
+        assert "Invalid load_profile_name. Select from the following" in response.content
