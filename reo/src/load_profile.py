@@ -18,7 +18,7 @@ class BuiltInProfile(object):
         Default_city('Phoenix', 33.448377, -112.074037, 722780),
         Default_city('Atlanta', 33.748995, -84.387982, 722190),
         Default_city('LosAngeles', 34.052234, -118.243685, 722950),
-        Default_city('SanFrancisco', 37.774929, -122.419416, 724940),
+        Default_city('SanFrancisco', 37.3382, -121.8863, 724940),
         Default_city('Baltimore', 39.290385, -76.612189, 724060),
         Default_city('Albuquerque', 35.085334, -106.605553, 723650),
         Default_city('Seattle', 47.606209, -122.332071, 727930),
@@ -27,7 +27,7 @@ class BuiltInProfile(object):
         Default_city('Minneapolis', 44.977753, -93.265011, 726580),
         Default_city('Helena', 46.588371, -112.024505, 727720),
         Default_city('Duluth', 46.786672, -92.100485, 727450),
-        Default_city('Fairbanks', 64.837778, -147.716389, 702610),
+        Default_city('Fairbanks', 59.0397, -158.4575, 702610),
     ]
 
     annual_loads = {
