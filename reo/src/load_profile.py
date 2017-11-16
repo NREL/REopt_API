@@ -366,8 +366,8 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        if self.latitude and self.longitude:
-            if hasattr(self,'nearest_city'):
+        if self.latitude is not None and self.longitude is not None:
+            if hasattr(self, 'nearest_city'):
                 return self.nearest_city
             else:
                 search_radius = str(25)
