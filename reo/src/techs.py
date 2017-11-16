@@ -25,13 +25,7 @@ class Tech(object):
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
 
-        # self._check_inputs()
         self.kwargs = kwargs
-
-    def _check_inputs(self):
-
-        assert self.max_kw >= self.min_kw,\
-                "max_kw must be greater than or equal to min_kw."
 
     @property
     def prod_factor(self):
