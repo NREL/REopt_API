@@ -1,5 +1,5 @@
 from reo.src.dat_file_manager import big_number
-from reo.api_definitions import macrs_five_year, macrs_seven_year
+from reo.nested_inputs import macrs_five_year, macrs_seven_year
 
 
 class StorageIncentives(object):

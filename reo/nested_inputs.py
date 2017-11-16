@@ -22,6 +22,9 @@ default_buildings = ['FastFoodRest',
                      'Warehouse',
                      ]
 
+macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
+macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
+
 
 def list_of_float(input):
     return [float(i) for i in input]
