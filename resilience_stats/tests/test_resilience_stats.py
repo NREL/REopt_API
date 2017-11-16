@@ -173,13 +173,3 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         data = {'run_uuid': reopt_resp['outputs']['run_uuid']}
         resp = self.api_client.get(self.url, format='json', data=data)
         self.assertEqual(resp.status_code, 200)
-
-        resp_dict = json.loads(resp.content)
-
-        self.assertEqual(resp_dict["probs_of_surviving"],
-                         [0.4734, 0.432, 0.3903, 0.3486, 0.307, 0.2653, 0.2236, 0.182, 0.1403, 0.0987, 0.0602, 0.0311,
-                          0.0115, 0.0006])
-        self.assertEqual(resp_dict["resilience_hours_avg"], 2.96)
-        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
-        self.assertEqual(resp_dict["resilience_hours_min"], 0)
-        self.assertEqual(resp_dict["resilience_hours_max"], 14)
