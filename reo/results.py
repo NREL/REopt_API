@@ -11,9 +11,6 @@ class Results:
     file_proforma = 'ProForma.xlsm'
     file_dispatch = 'Dispatch.csv'
 
-    # time outputs (scalar)
-    time_steps_per_hour = 1
-
     bau_attributes = [
         "lcc",
         "year_one_energy_cost",
@@ -65,7 +62,6 @@ class Results:
         results_dict['year_one_pv_to_battery_series'] = self.po.get_pv_to_batt()
         results_dict['year_one_pv_to_grid_series'] = self.po.get_pv_to_grid()
         results_dict['year_one_battery_soc_series'] = self.po.get_soc(results_dict['batt_kwh'])
-        results_dict['time_steps_per_hour'] = len(results_dict['year_one_grid_to_load_series'])
         results_dict['year_one_energy_cost_series'] = self.po.get_energy_cost()
         results_dict['year_one_demand_cost_series'] = self.po.get_demand_cost()
         results_dict['year_one_electric_load_series'] = self.po.get_load_profile()
