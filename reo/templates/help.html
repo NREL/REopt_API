@@ -76,7 +76,7 @@ The REopt API uses utility rates from the <a href='https://openei.org/wiki/Utili
 			},
 		"ElectricTariff": {
 			"blended_monthly_rates_us_dollars_per_kwh": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-			"monthly_demand_charges_us_dollars_per_kw": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
+			"blended_monthly_demand_charges_us_dollars_per_kw": [8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]
 			},
 		"PV": {},
 		"Storage": {
@@ -114,7 +114,7 @@ The REopt API uses utility rates from the <a href='https://openei.org/wiki/Utili
 	        "critical_load_pct": 0.5,
 
 	        "Financial":{
-	            "om_cost_growth_pct":   0.03,
+	            "om_cost_escalation_pct":   0.03,
 	            "analysis_years":       25
 	        },
 
@@ -315,14 +315,14 @@ The REopt API uses utility rates from the <a href='https://openei.org/wiki/Utili
 			"input_errors": [
 				"Missing Required for Scenario>Site: longitude",
 				"Missing Required for Scenario>Site>LoadProfile: annual_kwh and doe_reference_name OR doe_reference_name and monthly_totals_kwh OR loads_kw",
-				"Missing Required for Scenario>Site>ElectricTariff: monthly_demand_charges_us_dollars_per_kw and blended_monthly_rates_us_dollars_per_kwh OR urdb_response"
+				"Missing Required for Scenario>Site>ElectricTariff: blended_monthly_demand_charges_us_dollars_per_kw and blended_monthly_rates_us_dollars_per_kwh OR urdb_response"
 				]},
 		"warnings": {
 			"Default values used for the following:": {
 				"Scenario": "time_steps_per_hour AND timeout_seconds",
 				"Scenario>Site": "LoadProfile AND critical_load_pct AND Storage AND PV AND Wind AND Financial AND ElectricTariff",
 				"Scenario>Site>ElectricTariff": "wholesale_rate_us_dollars_per_kwh AND net_metering_limit_kw AND interconnection_limit_kw",
-				"Scenario>Site>Financial": "om_cost_growth_pct AND escalation_pct AND offtaker_discount_pct AND analysis_years AND offtaker_tax_pct",
+				"Scenario>Site>Financial": "om_cost_escalation_pct AND escalation_pct AND offtaker_discount_pct AND analysis_years AND offtaker_tax_pct",
 				"Scenario>Site>LoadProfile": "year", "Scenario>Site>PV": "pbi_years AND macrs_bonus_pct AND max_kw AND pbi_max_us_dollars AND radius AND state_ibi_pct AND utility_rebate_max_us_dollars AND installed_cost_us_dollars_per_kw AND utility_ibi_max_us_dollars AND gcr AND pbi_system_max_kw AND utility_ibi_pct AND state_ibi_max_us_dollars AND state_rebate_us_dollars_per_kw AND macrs_option_years AND state_rebate_max_us_dollars AND dc_ac_ratio AND federal_itc_pct AND degradation_pct AND module_type AND array_type AND pbi_us_dollars_per_kwh AND om_cost_us_dollars_per_kw AND utility_rebate_us_dollars_per_kw AND min_kw AND losses AND federal_rebate_us_dollars_per_kw AND inv_eff AND azimuth",
 				"Scenario>Site>Storage": "total_rebate_us_dollars_per_kw AND max_kwh AND rectifier_efficiency_pct AND total_itc_pct AND min_kw AND max_kw AND replace_cost_us_dollars_per_kw AND replace_cost_us_dollars_per_kwh AND min_kwh AND installed_cost_us_dollars_per_kw AND battery_replacement_year AND installed_cost_us_dollars_per_kwh AND inverter_efficiency_pct AND canGridCharge AND macrs_bonus_pct AND inverter_replacement_year AND macrs_option_years AND internal_efficiency_pct AND soc_min_pct AND soc_init_pct",
 				"Scenario>Site>Wind": "pbi_us_dollars_per_kwh AND installed_cost_us_dollars_per_kw AND macrs_bonus_pct AND om_cost_us_dollars_per_kw AND utility_rebate_us_dollars_per_kw AND min_kw AND pbi_years AND max_kw AND state_rebate_max_us_dollars AND state_rebate_us_dollars_per_kw AND federal_itc_pct AND pbi_max_us_dollars AND federal_rebate_us_dollars_per_kw AND pbi_system_max_kw AND macrs_option_years AND state_ibi_pct AND utility_rebate_max_us_dollars AND utility_ibi_pct AND state_ibi_max_us_dollars AND utility_ibi_max_us_dollars"}}
@@ -518,7 +518,7 @@ The REopt API uses utility rates from the <a href='https://openei.org/wiki/Utili
 				]},
 			"warnings": {"Default values used for the following:": {
 				"Scenario": "time_steps_per_hour", "Scenario>Site": "critical_load_pct AND Storage AND PV AND Wind AND Financial",
-				"Scenario>Site>Financial": "om_cost_growth_pct AND escalation_pct AND offtaker_discount_pct AND analysis_years AND offtaker_tax_pct",
+				"Scenario>Site>Financial": "om_cost_escalation_pct AND escalation_pct AND offtaker_discount_pct AND analysis_years AND offtaker_tax_pct",
 				"Scenario>Site>PV": "pbi_years AND macrs_bonus_pct AND max_kw AND pbi_max_us_dollars AND radius AND state_ibi_pct AND utility_rebate_max_us_dollars AND installed_cost_us_dollars_per_kw AND utility_ibi_max_us_dollars AND gcr AND pbi_system_max_kw AND utility_ibi_pct AND state_ibi_max_us_dollars AND state_rebate_us_dollars_per_kw AND macrs_option_years AND state_rebate_max_us_dollars AND dc_ac_ratio AND federal_itc_pct AND degradation_pct AND module_type AND array_type AND pbi_us_dollars_per_kwh AND om_cost_us_dollars_per_kw AND utility_rebate_us_dollars_per_kw AND min_kw AND losses AND federal_rebate_us_dollars_per_kw AND inv_eff AND azimuth",
 				"Scenario>Site>Storage": "total_rebate_us_dollars_per_kw AND max_kwh AND rectifier_efficiency_pct AND total_itc_pct AND min_kw AND max_kw AND replace_cost_us_dollars_per_kw AND replace_cost_us_dollars_per_kwh AND min_kwh AND installed_cost_us_dollars_per_kw AND battery_replacement_year AND installed_cost_us_dollars_per_kwh AND inverter_efficiency_pct AND canGridCharge AND macrs_bonus_pct AND inverter_replacement_year AND macrs_option_years AND internal_efficiency_pct AND soc_min_pct AND soc_init_pct",
 				"Scenario>Site>Wind": "pbi_us_dollars_per_kwh AND installed_cost_us_dollars_per_kw AND macrs_bonus_pct AND om_cost_us_dollars_per_kw AND utility_rebate_us_dollars_per_kw AND min_kw AND pbi_years AND max_kw AND state_rebate_max_us_dollars AND state_rebate_us_dollars_per_kw AND federal_itc_pct AND pbi_max_us_dollars AND federal_rebate_us_dollars_per_kw AND pbi_system_max_kw AND macrs_option_years AND state_ibi_pct AND utility_rebate_max_us_dollars AND utility_ibi_pct AND state_ibi_max_us_dollars AND utility_ibi_max_us_dollars"

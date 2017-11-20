@@ -201,7 +201,7 @@ class DatFileManager:
         sf = self.site.financial
         pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
-        pwf_om = annuity(sf.analysis_years, sf.om_cost_growth_pct, sf.owner_discount_pct)
+        pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 

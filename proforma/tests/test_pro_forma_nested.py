@@ -82,7 +82,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B22'], batt_in.replace_cost_us_dollars_per_kwh],
         [ws['B23'], batt_in.battery_replacement_year],
         [ws['B31'], finance_in.analysis_years],
-        [ws['B32'], finance_in.om_cost_growth_pct * 100],
+        [ws['B32'], finance_in.om_cost_escalation_pct * 100],
         [ws['B33'], finance_in.escalation_pct * 100],
         [ws['B34'], finance_in.offtaker_discount_pct],
         [ws['B37'], finance_in.offtaker_tax_pct],

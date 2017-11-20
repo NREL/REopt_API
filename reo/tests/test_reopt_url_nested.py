@@ -47,7 +47,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site: " + r
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
-        electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
+        electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
         for c in electric_tarrif_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -223,14 +223,14 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                             'macrs_option_years': 0,
                                         },
                                         'Financial': {
-                                            'om_cost_growth_pct': 0.001,
+                                            'om_cost_escalation_pct': 0.001,
                                             'escalation_pct': 0.006,
                                             'offtaker_discount_pct': 0.07,
                                             'analysis_years': 25,
                                             'offtaker_tax_pct': 0.0,
                                         },
                                         'ElectricTariff': {
-                                            'monthly_demand_charges_us_dollars_per_kw': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                                            'blended_monthly_demand_charges_us_dollars_per_kw': [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                                             'net_metering_limit_kw': 1e6,
                                             'blended_monthly_rates_us_dollars_per_kwh': [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
                                         },
@@ -321,7 +321,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     },
                     "ElectricTariff": {
                         "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
-                        "monthly_demand_charges_us_dollars_per_kw": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+                        "blended_monthly_demand_charges_us_dollars_per_kw": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
                     },
                     "Storage": {
                         "max_kw": 0

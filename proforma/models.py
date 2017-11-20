@@ -96,7 +96,7 @@ class ProForma(models.Model):
 
         # Analysis Parameters
         ws['B31'] = financial.analysis_years
-        ws['B32'] = financial.om_cost_growth_pct * 100
+        ws['B32'] = financial.om_cost_escalation_pct * 100
         ws['B33'] = financial.escalation_pct * 100
         ws['B34'] = financial.offtaker_discount_pct or 0 * 100
 

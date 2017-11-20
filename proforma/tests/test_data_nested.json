@@ -94,7 +94,7 @@
         "utility_ibi_max_us_dollars": null
       },
       "Financial": {
-        "om_cost_growth_pct": null,
+        "om_cost_escalation_pct": null,
         "escalation_pct": null,
         "offtaker_discount_pct": null,
         "owner_tax_pct": null,
@@ -104,7 +104,7 @@
       },
       "longitude": -118,
       "ElectricTariff": {
-        "monthly_demand_charges_us_dollars_per_kw": null,
+        "blended_monthly_demand_charges_us_dollars_per_kw": null,
         "urdb_response": {
           "sector": "Commercial",
           "coincidentrateunit": "kW",
