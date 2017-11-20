@@ -279,7 +279,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(c['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('error')))
             raise
 
         # another test with custom rate and monthly kwh
