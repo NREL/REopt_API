@@ -7,10 +7,6 @@ import uuid
 
 class Migration(migrations.Migration):
 
-    dependencies = [
-        ('reo', '0002_scenariomodel_status'),
-    ]
-
     operations = [
         migrations.CreateModel(
             name='ProForma',

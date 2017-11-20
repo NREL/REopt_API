@@ -7,7 +7,6 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0002_scenariomodel_status'),
         ('resilience_stats', '0001_initial'),
     ]
 
