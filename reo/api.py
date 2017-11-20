@@ -116,8 +116,7 @@ class RunInputResource(ModelResource):
                     self.save_scenario_outputs(optimization_results['nested']['Scenario'])
                
                 if not windEnabled:
-                    output_dictionary = self.remove_wind(output_dictionary, output_format)               
-
+                    output_dictionary = self.remove_wind(output_dictionary, output_format)
                
             except Exception as e:
                 
@@ -133,12 +132,18 @@ class RunInputResource(ModelResource):
             messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
 
         if output_format == 'flat':
+            # fill in outputs with inputs
             for arg, defs in flat_inputs(full_list=True).iteritems():
                 output_dictionary['outputs'][arg] = output_dictionary["inputs"].get(arg) or defs.get("default")
+            # backwards compatibility for webtool, copy all "outputs" to top level of response dict
+            output_dictionary.update(output_dictionary['outputs'])
+
+
 
         return output_dictionary
 
-    def remove_wind(self, output_dictionary, output_format):
+    @staticmethod
+    def remove_wind(output_dictionary, output_format):
         if output_format =='nested':
             del output_dictionary['inputs']['Scenario']['Site']["Wind"]
             del output_dictionary['outputs']['Scenario']['Site']["Wind"]
@@ -151,7 +156,6 @@ class RunInputResource(ModelResource):
                     del output_dictionary['outputs'][key]
 
         return output_dictionary
-
 
     def save_scenario_inputs(self, d):
         """
