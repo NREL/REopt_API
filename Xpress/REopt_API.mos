@@ -454,7 +454,6 @@ end-do
 
 !CONSTRAINT 24
 ! Number 3: If system size is bigger than MaxSizeForProdIncent, binProdIncent is 0, meaning you don't get the Prod Incent.
-!TS 31513 Replaced BigNumberSystemSize with MaxSize
 forall (t in Tech, LD in Load,ts in TimeStep  ) do
     sum (s in Seg) dvSystemSize (t,s) <= MaxSizeForProdIncent (t) + MaxSize(t) * (1 - binProdIncent (t))
 end-do
@@ -519,10 +518,12 @@ sum (n in NMILRegime) binNMLorIL(n) = 1
 
 ! The sum of the electricity output of all techs must be less than the limit for the regime
 !CONSTRAINT 44
-forall (n in NMILRegime) do
+forall (n in NMILRegime | n <> "AboveIL") do
       sum (t in Tech, s in Seg)
       		TechToNMILMapping (t,n)*TurbineDerate(t)*dvSystemSize(t, s) <= NMILLimits(n) * binNMLorIL(n)
 end-do
+
+indicator(-1, binNMLorIL("AboveIL"), sum(t in Tech, s in Seg) TechToNMILMapping(t,"AboveIL") * TurbineDerate(t) * dvSystemSize(t, s) <= 0)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!  Demand Rate Module
@@ -618,10 +619,9 @@ end-do
 
 ! Added 8912, modified 81012 by TS
 ! Can only have one tech from each tech class
-!31513 TS Replaced BigNumber with MaxSize
 !CONSTRAINT 46
 forall (t in Tech,  b in TechClass) do
-   sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <= binSingleBasicTech (t,b) * MaxSize(t)
+   indicator(-1, binSingleBasicTech (t,b), sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <=  0)
 end-do
 
 !Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.
