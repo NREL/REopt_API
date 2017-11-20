@@ -160,6 +160,8 @@ class Migration(migrations.Migration):
                 ('timeout_seconds', models.IntegerField(default=295)),
                 ('time_steps_per_hour', models.IntegerField(default=8760)),
                 ('created', models.DateTimeField(auto_now_add=True)),
+                ('status', models.TextField(null=True, blank=True)),
+                ('user_id', models.TextField(null=True, blank=True))
             ],
         ),
         migrations.CreateModel(
