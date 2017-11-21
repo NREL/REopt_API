@@ -44,7 +44,8 @@ INSTALLED_APPS = (
     'reo',
     'tastypie',
     'proforma',
-    'resilience_stats'
+    'resilience_stats',
+    'django_celery_results'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -83,8 +84,8 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-if 'test' in sys.argv:
-    DATABASES = {
+#'test' in sys.argv:
+DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'reopt',
@@ -92,8 +93,9 @@ if 'test' in sys.argv:
         'PASSWORD': 'reopt',
         'HOST': 'localhost',
         'PORT': '',
-        }
+    }
 }
+"""
 else:
     DATABASES = {
          'default': {
@@ -107,7 +109,7 @@ else:
              'PASSWORD': dev_user_password,
          }
      }
-
+"""
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
@@ -120,6 +122,9 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# Results backend
+CELERY_RESULT_BACKEND = 'django-db'
 
 
 
