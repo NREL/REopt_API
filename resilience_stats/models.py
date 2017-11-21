@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from reo.models import ScenarioModel
-from outage_simulator import simulate_outage
-from validators import validate_RunOutput_for_outage_simulator
 
 
 class ResilienceModel(models.Model):
