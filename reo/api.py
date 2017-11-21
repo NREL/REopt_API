@@ -144,15 +144,19 @@ class RunInputResource(ModelResource):
 
     @staticmethod
     def remove_wind(output_dictionary, output_format):
-        if output_format =='nested':
+        if output_format == 'nested':
             del output_dictionary['inputs']['Scenario']['Site']["Wind"]
             del output_dictionary['outputs']['Scenario']['Site']["Wind"]
         
         if output_format=='flat':
-            for key in ['wind_cost','wind_om','wind_kw_max','wind_kw_min','wind_itc_federal','wind_ibi_state','wind_ibi_utility','wind_itc_federal_max','wind_ibi_state_max','wind_ibi_utility_max','wind_rebate_federal','wind_rebate_state','wind_rebate_utility','wind_rebate_federal_max','wind_rebate_state_max','wind_rebate_utility_max','wind_pbi','wind_pbi_max','wind_pbi_years','wind_pbi_system_max','wind_macrs_schedule','wind_macrs_bonus_fraction']:
-                if key in  output_dictionary['inputs'].keys():
+            for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
+                        'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
+                        'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
+                        'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
+                        'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
+                if key in output_dictionary['inputs'].keys():
                     del output_dictionary['inputs'][key]
-                if key in  output_dictionary['outputs'].keys():
+                if key in output_dictionary['outputs'].keys():
                     del output_dictionary['outputs'][key]
 
         return output_dictionary

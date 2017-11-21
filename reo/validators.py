@@ -612,7 +612,6 @@ class ValidateNestedInput:
 
             return output
 
-            
         def warning_message(self, warnings):
             """
                    Convert a list of lists into a dictionary
@@ -710,7 +709,6 @@ class ValidateNestedInput:
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
-
         def test_data(self, defintion_attribute):
 
             self.test_data_list = []
@@ -768,7 +766,6 @@ class ValidateNestedInput:
 #    object_name_path is the location of the object name as in ["Scenario", "Site"]
 #    template_values is the reference dictionary for checking as in {'latitude':{'type':'float',...}...} from the nested dictionary
 #    real_values are the values from the input to check and/or modify  like {'latitude':39.345678,...}
-
 
         def remove_nones(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
