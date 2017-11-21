@@ -267,12 +267,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 11040985
-        d_expected['npv'] = 235800
+        d_expected['lcc'] = 11040988
+        d_expected['npv'] = 235797
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 23.8775
-        d_expected['batt_kwh'] = 38.9943
-        d_expected['year_one_utility_kwh'] = 9614502.2675
+        d_expected['batt_kw'] = 24.4715
+        d_expected['batt_kwh'] = 41.2215
+        d_expected['year_one_utility_kwh'] = 9614527.2568
 
         try:
             self.check_common_outputs(c, d_expected)
