@@ -67,7 +67,7 @@ class FinancialModel(models.Model):
     #Input
     analysis_years = models.IntegerField()
     escalation_pct = models.FloatField()
-    om_cost_growth_pct = models.FloatField()
+    om_cost_escalation_pct = models.FloatField()
     offtaker_discount_pct = models.FloatField()
     offtaker_tax_pct = models.FloatField()
     owner_discount_pct = models.FloatField(null=True)
@@ -131,7 +131,7 @@ class ElectricTariffModel(models.Model):
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
     blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=[])
-    monthly_demand_charges_us_dollars_per_kw = ArrayField(models.FloatField(blank=True), default=[])
+    blended_monthly_demand_charges_us_dollars_per_kw = ArrayField(models.FloatField(blank=True), default=[])
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
     wholesale_rate_us_dollars_per_kwh = models.FloatField()
@@ -729,7 +729,7 @@ class MessagesModel(models.Model):
 
 #         # year 1 initializations
 #         nominal_escalation_modifier = 1 + self.rate_escalation
-#         inflation_modifier = 1 + self.om_cost_growth_pct
+#         inflation_modifier = 1 + self.om_cost_escalation_pct
 #         annual_energy[1] = self.year_one_energy_produced
 #         federal_taxable_income_before_deductions[1] = sum([self.federal_taxable_income_before_deductions(tech) for tech in self.techs])
 

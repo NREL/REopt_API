@@ -70,10 +70,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B10'], tariff_out.year_one_bill_us_dollars],
         [ws['B11'], tariff_out.year_one_export_benefit_us_dollars],
         [ws['B12'], pv_out.year_one_energy_produced_kwh],
-        [ws['B15'], finance_out.net_capital_costs_plus_om_us_dollars],
-        [ws['B16'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw +
+        [ws['B15'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
+        [ws['B16'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw],
         [ws['B17'], batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
         [ws['B19'], pv_in.om_cost_us_dollars_per_kw],
@@ -82,10 +82,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B22'], batt_in.replace_cost_us_dollars_per_kwh],
         [ws['B23'], batt_in.battery_replacement_year],
         [ws['B31'], finance_in.analysis_years],
-        [ws['B32'], finance_in.om_cost_growth_pct * 100],
+        [ws['B32'], finance_in.om_cost_escalation_pct * 100],
         [ws['B33'], finance_in.escalation_pct * 100],
-        [ws['B34'], finance_in.offtaker_discount_pct],
-        [ws['B37'], finance_in.offtaker_tax_pct],
+        [ws['B34'], finance_in.offtaker_discount_pct * 100],
+        [ws['B37'], finance_in.offtaker_tax_pct * 100],
         [ws['B42'], pv_in.federal_itc_pct * 100],
         [ws['B47'], pv_in.state_ibi_pct * 100],
         [ws['C47'], pv_in.state_ibi_max_us_dollars],

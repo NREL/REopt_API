@@ -65,6 +65,20 @@ class ProForma(models.Model):
         # Open Inputs Sheet
         ws = wb.get_sheet_by_name(self.sheet_io)
 
+        # handle None's
+        pv_size_kw = pv.size_kw or 0
+        batt_size_kw = batt.size_kw or 0
+        batt_size_kwh = batt.size_kwh or 0
+
+        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw or 0
+        batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
+        batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
+        pv_energy = pv.year_one_energy_produced_kwh or 0
+
+        pv_cost = pv_size_kw * pv_installed_cost_us_dollars_per_kw
+        batt_cost = batt_size_kw * batt_installed_cost_us_dollars_per_kw \
+                    + batt_size_kwh * batt_installed_cost_us_dollars_per_kwh
+
         # System Design
         ws['B3'] = pv.size_kw or 0
         ws['B4'] = pv.degradation_pct * 100
@@ -75,19 +89,12 @@ class ProForma(models.Model):
         ws['B9'] = electric_tariff.year_one_bill_bau_us_dollars or 0
         ws['B10'] = electric_tariff.year_one_bill_us_dollars or 0
         ws['B11'] = electric_tariff.year_one_export_benefit_us_dollars or 0
-        pv_energy = pv.year_one_energy_produced_kwh or 0
         ws['B12'] = pv_energy
         
         # System Costs
-        ws['B15'] = financial.net_capital_costs_plus_om_us_dollars 
-        pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw 
-        pv_size_kw = pv.size_kw or 0
-        ws['B16'] = pv_installed_cost_us_dollars_per_kw * pv_size_kw
-        batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
-        batt_size_kw = batt.size_kw or 0
-        batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
-        batt_size_kwh = batt.size_kwh or 0
-        ws['B17'] = batt_installed_cost_us_dollars_per_kw * batt_size_kw + batt_installed_cost_us_dollars_per_kwh * batt_size_kwh
+        ws['B15'] = pv_cost + batt_cost
+        ws['B16'] = pv_cost
+        ws['B17'] = batt_cost
         ws['B19'] = pv.om_cost_us_dollars_per_kw 
         ws['B20'] = batt.replace_cost_us_dollars_per_kw 
         ws['B21'] = batt.inverter_replacement_year 
@@ -96,12 +103,12 @@ class ProForma(models.Model):
 
         # Analysis Parameters
         ws['B31'] = financial.analysis_years
-        ws['B32'] = financial.om_cost_growth_pct * 100
+        ws['B32'] = financial.om_cost_escalation_pct * 100
         ws['B33'] = financial.escalation_pct * 100
-        ws['B34'] = financial.offtaker_discount_pct or 0 * 100
+        ws['B34'] = financial.offtaker_discount_pct * 100 or 0
 
         # Tax rates
-        ws['B37'] = financial.offtaker_tax_pct or 0  * 100
+        ws['B37'] = financial.offtaker_tax_pct * 100 or 0
 
         # PV Tax Credits and Incentives
         ws['B42'] = pv.federal_itc_pct * 100

@@ -6,7 +6,7 @@ class Financial(object):
     """
 
     def __init__(self,
-                 om_cost_growth_pct,
+                 om_cost_escalation_pct,
                  escalation_pct,
                  offtaker_tax_pct,
                  offtaker_discount_pct,
@@ -15,7 +15,7 @@ class Financial(object):
                  owner_discount_pct=None,
                  **kwargs
                  ):
-        self.om_cost_growth_pct = om_cost_growth_pct
+        self.om_cost_escalation_pct = om_cost_escalation_pct
         self.escalation_pct = escalation_pct
         self.owner_tax_pct = owner_tax_pct
         self.offtaker_tax_pct = offtaker_tax_pct

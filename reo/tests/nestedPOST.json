@@ -11,7 +11,7 @@
             "roof_squarefeet": 500,
 
             "Financial": {
-                "om_cost_growth_pct": 0.025,
+                "om_cost_escalation_pct": 0.025,
                 "escalation_pct": 0.026,
                 "owner_tax_pct": 0.02,
                 "offtaker_tax_pct": 0.4,
@@ -177,7 +177,7 @@
                     ]
                 },
                 "blended_monthly_rates_us_dollars_per_kwh": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-                "monthly_demand_charges_us_dollars_per_kw": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
+                "blended_monthly_demand_charges_us_dollars_per_kw": [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10],
                 "net_metering_limit_kw": 20,
                 "wholesale_rate_us_dollars_per_kwh": 0.05,
                 "interconnection_limit_kw": 20

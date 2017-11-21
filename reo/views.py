@@ -92,9 +92,8 @@ def annual_kwh(request):
         
         response = JsonResponse(
             {'annual_kwh': b.annual_kwh,
-              'city': b.city},
+             'city': b.city},
         )
         return response
     except Exception as e:
         return JsonResponse(API_Error(e).response)
-   

@@ -82,7 +82,7 @@ class Results:
         self.nested_outputs = self.setup_nested()
 
     def get_output(self):
-        output_dict = {'flat':{}}
+        output_dict = {'flat': {}}
         for k in outputs().iterkeys():
             output_dict['flat'][k] = self.results_dict[k]
         self.get_nested()
