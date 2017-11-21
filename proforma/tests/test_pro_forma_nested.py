@@ -70,10 +70,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B10'], tariff_out.year_one_bill_us_dollars],
         [ws['B11'], tariff_out.year_one_export_benefit_us_dollars],
         [ws['B12'], pv_out.year_one_energy_produced_kwh],
-        [ws['B15'], finance_out.net_capital_costs_plus_om_us_dollars],
-        [ws['B16'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw +
+        [ws['B15'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
+        [ws['B16'], pv_out.size_kw * pv_in.installed_cost_us_dollars_per_kw],
         [ws['B17'], batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
                     batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
         [ws['B19'], pv_in.om_cost_us_dollars_per_kw],

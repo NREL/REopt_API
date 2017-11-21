@@ -61,7 +61,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B10'], ro.year_one_bill],
         [ws['B11'], ro.year_one_export_benefit],
         [ws['B12'], ro.year_one_energy_produced],
-        [ws['B15'], ro.net_capital_costs_plus_om],
+        [ws['B15'], ro.pv_kw * ro.pv_cost + ro.batt_kw * ro.batt_cost_kw + ro.batt_kwh * ro.batt_cost_kwh],
         [ws['B16'], ro.pv_kw * ro.pv_cost],
         [ws['B17'], ro.batt_kw * ro.batt_cost_kw + ro.batt_kwh * ro.batt_cost_kwh],
         [ws['B19'], ro.pv_om],
