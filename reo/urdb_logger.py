@@ -17,7 +17,7 @@ def log_urdb_errors(label, errors, warnings):
             pass  
 
     	for e in errors:
-    	    e = URDBError(label = label, type="Error", message= e)
+            e = URDBError(label = label, type="Error", message= e)
             e.save()
     
     for w in warnings:
