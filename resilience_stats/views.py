@@ -1,25 +1,41 @@
 from django.http import JsonResponse
-from reo.models import RunOutput
+from reo.models import ScenarioModel
 from models import ResilienceModel
 from reo.utilities import API_Error
+from outage_simulator import simulate_outage
+
 
 def resilience_stats(request):
+   
     uuid = request.GET.get('run_uuid')
-
+ 
     try:
-        run_output = RunOutput.objects.get(uuid=uuid)
+        scenario = ScenarioModel.objects.get(run_uuid=uuid)
+    
     except Exception as e:
         return API_Error(e).response
 
-    rm = ResilienceModel.create(run_output=run_output)
+    rm = ResilienceModel.create(scenariomodel=scenario)
+    site = scenario.sitemodel_set.first()
+    batt = site.storagemodel_set.first()
+    pv = site.pvmodel_set.first()
+    load_profile = site.loadprofilemodel_set.first()
 
-    response = JsonResponse(
-        {'resilience_by_timestep': rm.resilience_by_timestep,
-         'resilience_hours_min': rm.resilience_hours_min,
-         'resilience_hours_max': rm.resilience_hours_max,
-         'resilience_hours_avg': rm.resilience_hours_avg,
-         'outage_durations': rm.outage_durations,
-         'probs_of_surviving': rm.probs_of_surviving,
-        }
+    batt_roundtrip_efficiency = batt.internal_efficiency_pct \
+                                * batt.inverter_efficiency_pct \
+                                * batt.rectifier_efficiency_pct
+    results = simulate_outage(
+        pv_kw=pv.size_kw or 0,
+        batt_kwh=batt.size_kwh or 0,
+        batt_kw=batt.size_kw or 0,
+        load=load_profile.year_one_electric_load_series_kw,
+        pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
+        init_soc=batt.year_one_soc_series_pct,
+        crit_load_factor=load_profile.critical_load_pct,
+        batt_roundtrip_efficiency=batt_roundtrip_efficiency,
     )
+
+    ResilienceModel.objects.filter(id=rm.id).update(**results)
+    
+    response = JsonResponse(results)
     return response

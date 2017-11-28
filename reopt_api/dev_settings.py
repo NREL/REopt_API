@@ -17,6 +17,8 @@ import os
 import django
 #import reopt_api
 
+
+URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails_test
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
@@ -44,7 +46,7 @@ INSTALLED_APPS = (
     'reo',
     'tastypie',
     'proforma',
-    'resilience_stats',
+    'resilience_stats'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -93,20 +95,20 @@ if 'test' in sys.argv:
         'HOST': 'localhost',
         'PORT': '',
         }
-    }
+}
 else:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'HOST': 'reopt-dev-db1.nrel.gov',
-            'NAME': 'reopt_development',
-            'OPTIONS': {
-                'options': '-c search_path=reopt_api'
-            },
-            'USER': dev_user,
-            'PASSWORD': dev_user_password,
-        }
-    }
+         'default': {
+             'ENGINE': 'django.db.backends.postgresql_psycopg2',
+             'HOST': 'reopt-dev-db1.nrel.gov',
+             'NAME': 'reopt_development',
+             'OPTIONS': {
+                 'options': '-c search_path=reopt_api'
+             },
+             'USER': dev_user,
+             'PASSWORD': dev_user_password,
+         }
+     }
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

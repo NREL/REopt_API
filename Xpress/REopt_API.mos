@@ -161,7 +161,7 @@ declarations
   binBattLevel: array(BattLevel) of mpvar
   BattLevelCoef: array(BattLevel,1..2) of real
 
-  analysis_period: integer
+  analysis_years: integer
 
   pwf_e: real
   pwf_om: real
@@ -231,7 +231,7 @@ initializations from DAT2 ! economics
 	MaxProdIncent
 	MaxSizeForProdIncent
 	two_party_factor
-	analysis_period
+	analysis_years
 end-initializations
 
 initializations from DAT3
@@ -454,7 +454,6 @@ end-do
 
 !CONSTRAINT 24
 ! Number 3: If system size is bigger than MaxSizeForProdIncent, binProdIncent is 0, meaning you don't get the Prod Incent.
-!TS 31513 Replaced BigNumberSystemSize with MaxSize
 forall (t in Tech, LD in Load,ts in TimeStep  ) do
     sum (s in Seg) dvSystemSize (t,s) <= MaxSizeForProdIncent (t) + MaxSize(t) * (1 - binProdIncent (t))
 end-do
@@ -519,10 +518,12 @@ sum (n in NMILRegime) binNMLorIL(n) = 1
 
 ! The sum of the electricity output of all techs must be less than the limit for the regime
 !CONSTRAINT 44
-forall (n in NMILRegime) do
+forall (n in NMILRegime | n <> "AboveIL") do
       sum (t in Tech, s in Seg)
       		TechToNMILMapping (t,n)*TurbineDerate(t)*dvSystemSize(t, s) <= NMILLimits(n) * binNMLorIL(n)
 end-do
+
+indicator(-1, binNMLorIL("AboveIL"), sum(t in Tech, s in Seg) TechToNMILMapping(t,"AboveIL") * TurbineDerate(t) * dvSystemSize(t, s) <= 0)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!  Demand Rate Module
@@ -618,10 +619,9 @@ end-do
 
 ! Added 8912, modified 81012 by TS
 ! Can only have one tech from each tech class
-!31513 TS Replaced BigNumber with MaxSize
 !CONSTRAINT 46
 forall (t in Tech,  b in TechClass) do
-   sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <= binSingleBasicTech (t,b) * MaxSize(t)
+   indicator(-1, binSingleBasicTech (t,b), sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <=  0)
 end-do
 
 !Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.
@@ -637,6 +637,8 @@ Year1ElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in 
                  dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
 AverageElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S")))
                    dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling  * LevelizationFactor(t)
+Year1WindProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "WIND") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S")))
+                 dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
 AverageWindProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "WIND") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S")))
                    dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling  * LevelizationFactor(t)
 
@@ -726,8 +728,6 @@ writeln(status)
 !!!  Output Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Define some output params
-
 ExportedElecPV := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1W" or LD = "1X" )))
                 dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
@@ -743,6 +743,7 @@ Year1DemandTOUCost := DemandTOUCharges / pwf_e
 Year1DemandFlatCost := DemandFlatCharges / pwf_e
 Year1FixedCharges := TotalFixedCharges / pwf_e
 Year1MinCharges := MinChargeAdder / pwf_e
+Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
 
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
@@ -893,6 +894,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
     Node:=addnode(out_json, Root, "year_one_fixed_cost", strfmt(getsol(Year1FixedCharges), 10, 0))
     Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
+    Node:=addnode(out_json, Root, "year_one_bill", strfmt(getsol(Year1Bill), 10, 2))
     !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
     Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
@@ -903,6 +905,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
+    Node:=addnode(out_json, Root, "year_one_wind_energy_produced", strfmt(getsol(Year1WindProd), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElecPV), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
 

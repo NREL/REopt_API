@@ -4,6 +4,7 @@ from reo.src.load_profile import BuiltInProfile
 import random
 import json
 
+
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
@@ -18,7 +19,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             for city in BuiltInProfile.default_cities:
                 # city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
                 response = self.api_client.get(self.annual_kwh_url, data={
-                    'load_profile_name': bldg,
+                    'doe_reference_name': bldg,
                     'latitude': city.lat,
                     'longitude': city.lng,
                 })
@@ -34,7 +35,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
        
         response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg,
+            'doe_reference_name': bldg,
             'latitude': 'bad latitude',
             'longitude': city.lng,
         })
@@ -48,9 +49,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         city = BuiltInProfile.default_cities[random.choice(range(len(BuiltInProfile.default_cities)))]
 
         response = self.api_client.get(self.annual_kwh_url, data={
-            'load_profile_name': bldg[:-1],
+            'doe_reference_name': bldg[:-1],
             'latitude': city.lat,
             'longitude': city.lng,
         })
 
-        assert "Invalid load_profile_name. Select from the following" in response.content
+        assert "Invalid doe_reference_name. Select from the following" in response.content

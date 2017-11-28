@@ -337,23 +337,24 @@ class BuiltInProfile(object):
                          'flatload',
                          ]
 
-    def __init__(self, latitude=None, longitude=None, load_profile_name='', load_size=None, load_year=None, load_monthly_kwh=None, **kwargs):
+    def __init__(self, latitude=None, longitude=None, doe_reference_name='', annual_kwh=None, year=None,
+                 monthly_totals_kwh=None, **kwargs):
         """
         :param latitude: float
         :param longitude: float
         :param annual_kwh: float or int
         :param monthly_kwh: list of 12 floats for monthly energy sums
-        :param load_profile_name: building type chosen by user
-        :param load_year: year of load profile, needed for monthly scaling
+        :param doe_reference_name: building type chosen by user
+        :param year: year of load profile, needed for monthly scaling
         :param kwargs:
         """
 
         self.latitude = float(latitude) if latitude else None
         self.longitude = float(longitude) if longitude else None
-        self.monthly_kwh = load_monthly_kwh
-        self.load_profile_name = load_profile_name
-        self.annual_kwh = load_size if load_size else ( sum(load_monthly_kwh) if load_monthly_kwh else self.default_annual_kwh)
-        self.year = load_year
+        self.monthly_kwh = monthly_totals_kwh
+        self.doe_reference_name = doe_reference_name
+        self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
+        self.year = year
 
     @property
     def built_in_profile(self):
@@ -394,9 +395,9 @@ class BuiltInProfile(object):
 
     @property
     def building_type(self):
-        name = self.load_profile_name.replace(' ','')
+        name = self.doe_reference_name.replace(' ','')
         if name.lower() not in self.default_buildings:
-            raise AttributeError('load_profile', "Invalid load_profile_name. Select from the following:\n{}".format(self.default_buildings))
+            raise AttributeError('load_profile', "Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
         return name
 
     @property
@@ -448,26 +449,26 @@ class BuiltInProfile(object):
 
 class LoadProfile(BuiltInProfile):
 
-    def __init__(self, dfm, user_profile=None, crit_load_factor=None, outage_start=None, outage_end=None, **kwargs):
+    def __init__(self, dfm, user_profile=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
 
-        else:  # building type and (load_size OR load_monthly_kwh) defined by user
+        else:  # building type and (annual_kwh OR monthly_totals_kwh) defined by user
             super(LoadProfile, self).__init__(**kwargs)
             self.load_list = self.built_in_profile
 
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)
 
-        if None not in [crit_load_factor, outage_start, outage_end]:
+        if None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
             # modify load
-            self.load_list = self.load_list[0:outage_start] \
-                           + [ld * crit_load_factor for ld in self.load_list[outage_start:outage_end]] \
-                           + self.load_list[outage_end:]
-            self.bau_load_list = self.load_list[0:outage_start] \
-                                + [0 for _ in self.load_list[outage_start:outage_end]] \
-                                + self.load_list[outage_end:]
+            self.load_list = self.load_list[0:outage_start_hour] \
+                           + [ld * critical_load_pct for ld in self.load_list[outage_start_hour:outage_end_hour]] \
+                           + self.load_list[outage_end_hour:]
+            self.bau_load_list = self.load_list[0:outage_start_hour] \
+                                + [0 for _ in self.load_list[outage_start_hour:outage_end_hour]] \
+                                + self.load_list[outage_end_hour:]
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)

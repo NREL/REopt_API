@@ -9,10 +9,15 @@ from models import URDBError
 import csv
 import os
 from utilities import API_Error
+from nested_inputs import nested_input_definitions
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+
+
+def help(request):
+    return render(request, 'help.html', {'nested_input_definitions' : json.dumps(nested_input_definitions)})
 
 
 def index(request):
@@ -81,14 +86,14 @@ def invalid_urdb(request):
 def annual_kwh(request):
 
     try:
-        kwargs = {k: v for k, v in request.GET.dict().items() if k in ['latitude', 'longitude', 'load_profile_name']}
+        kwargs = {k: v for k, v in request.GET.dict().items() if k in ['latitude', 'longitude', 'doe_reference_name']}
 
         b = BuiltInProfile(**kwargs)
         
         response = JsonResponse(
-            {'annual_kwh': b.annual_kwh},
+            {'annual_kwh': b.annual_kwh,
+             'city': b.city},
         )
         return response
     except Exception as e:
         return JsonResponse(API_Error(e).response)
-   

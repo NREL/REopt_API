@@ -1,9 +1,12 @@
 from datetime import datetime
-
 max_big_number = 1e8
 max_incentive = 1e10
 max_years = int(40)
 analysis_period = int(20)
+
+
+def list_of_string(input):
+    return [str(i) for i in input]
 
 
 def inputs(filter='', full_list=False, just_required=False):
@@ -789,7 +792,7 @@ def outputs():
             'wind_kw': {'type': float, 'null': True, 'pct': False,
                       "description": "Recommended Wind System Size", "units": 'kW'},
 
-            }
+    }
 
 
 # default load profiles

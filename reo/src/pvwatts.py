@@ -59,7 +59,7 @@ class PVWatts:
               "&system_capacity=" + str(self.system_capacity) + "&losses=" + str(self.losses*100) + \
               "&array_type=" + str(self.array_type) + "&module_type=" + str(self.module_type) + \
               "&timeframe=" + self.timeframe +"&gcr=" + str(self.gcr) +  "&dc_ac_ratio=" + str(self.dc_ac_ratio) + \
-              "&inv_eff=" + str(self.inv_eff*100) + "&radius=" + str(self.radius) + "&dataset=" + self.dataset + \
+              "&inv_eff=" + str(self.inv_eff*100) + "&radius=" + str(int(self.radius)) + "&dataset=" + self.dataset + \
               "&lat=" + str(self.latitude) + "&lon=" + str(self.longitude) + "&tilt=" + str(self.tilt)
         return url
 
