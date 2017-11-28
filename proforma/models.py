@@ -108,7 +108,7 @@ class ProForma(models.Model):
         ws['B34'] = financial.offtaker_discount_pct * 100
 
         # Tax rates
-        ws['B37'] = financial.offtaker_tax_pct * 100 
+        ws['B37'] = financial.offtaker_tax_pct * 100
 
         # PV Tax Credits and Incentives
         ws['B42'] = pv.federal_itc_pct * 100
