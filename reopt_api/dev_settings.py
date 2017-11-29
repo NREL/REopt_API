@@ -17,6 +17,8 @@ import os
 import django
 #import reopt_api
 
+
+URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails_test
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
