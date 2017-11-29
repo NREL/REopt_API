@@ -6,7 +6,7 @@ from django.conf import settings
 def log_urdb_errors(label, errors, warnings):
     #dictionary of id: warning
 
-    if not bool(URDBError.objects.filter(label = label, type="Error")):
+    if not bool(URDBError.objects.filter(label = label, type="Error")) and errors != []:
         try:
     	    subject = 'REopt flagged International URDB Rate - {}'.format(label)
     	    message = 'Hello,\n\n This is an automated message from REopt. The following issue(s) came up recently with international URDB rate {}: \n\n{}\n\nThanks for looking into this,\n\nThe REopt Team\nREopt@nrel.gov'.format(label, errors)
