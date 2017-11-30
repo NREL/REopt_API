@@ -15,7 +15,7 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import django
-#import reopt_api
+
 URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -45,6 +45,7 @@ INSTALLED_APPS = (
     'tastypie',
     'proforma',
     'resilience_stats',
+    'django_celery_results',
    
 )
 
@@ -108,6 +109,14 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
+
+# Results backend
+CELERY_RESULT_BACKEND = 'django-db'
+
+# celery task registration
+CELERY_IMPORTS = (
+    'reo.src.reopt',
+)
 
 
 # Static files (CSS, JavaScript, Images)

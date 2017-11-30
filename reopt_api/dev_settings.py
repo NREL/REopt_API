@@ -15,7 +15,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import django
-#import reopt_api
 
 
 URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails_test
@@ -85,7 +84,6 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-
 #'test' in sys.argv:
 DATABASES = {
     'default': {
@@ -128,7 +126,10 @@ USE_TZ = True
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
 
-
+# celery task registration
+CELERY_IMPORTS = (
+    'reo.src.reopt',
+)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
