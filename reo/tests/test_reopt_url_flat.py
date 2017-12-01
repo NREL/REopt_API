@@ -252,7 +252,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.post(self.url_base, format='json', data=data)
         self.assertHttpCreated(resp)
-        d_calculated = json.loads(resp.content).get('outputs')
+        d_calculated = json.loads(resp.content)
 
         d_expected = dict()
         d_expected['lcc'] = 10984555
@@ -373,7 +373,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
-                d_calculated = json.loads(resp.content).get('outputs')
+                d_calculated = json.loads(resp.content)
 
                 d_expected = dict()
                 d_expected['npv'] = 335.0
@@ -392,7 +392,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             else:
                 resp = self.api_client.post(self.url_base, format='json', data=data)
                 self.assertHttpCreated(resp)
-                d_calculated = json.loads(resp.content).get('outputs')
+                d_calculated = json.loads(resp.content)
 
                 d_expected = dict()
                 d_expected['lcc'] = 11040988
@@ -523,6 +523,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.post(self.url_base, format='json', data=wind_post)
         self.assertHttpCreated(resp)
-        d_calculated = json.loads(resp.content).get('outputs')
+        d_calculated = json.loads(resp.content)
 
         self.check_common_outputs(d_calculated, d_expected)

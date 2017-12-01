@@ -480,3 +480,13 @@ class ModelManager(object):
         WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))
         self.messagesM.save_set(data['messages'], scenario_uuid=data["outputs"]["Scenario"]["run_uuid"])
+
+    def update_errors_status(self, data):
+        """
+        save Scenario results in database
+        :param data: dict, constructed in api.py, mirrors reopt api response structure
+        :return: None
+        """
+        d = data["outputs"]["Scenario"]
+        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))
+        self.messagesM.save_set(data['messages'], scenario_uuid=data["outputs"]["Scenario"]["run_uuid"])

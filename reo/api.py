@@ -96,31 +96,30 @@ class RunInputResource(ModelResource):
                                                      status=400))
 
         model_manager = ModelManager()
+        if saveToDb:
+            model_manager.create_and_save(data)
 
         # Return  Results
-        output_model = self.create_output(input_validator, output_format, model_manager, data)
+        output_model = self.create_output(input_validator, output_format, model_manager, data, bundle)
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
 
-    def create_output(self, input_validator, output_format, model_manager, data):
+    def create_output(self, input_validator, output_format, model_manager, data, bundle):
 
         run_uuid = uuid.uuid4()
         paths = Paths(run_uuid=run_uuid)
         meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
-      
-        output_dictionary = dict()
-        output_dictionary["inputs"] = input_validator.input_for_response
-        output_dictionary['outputs'] = {"Scenario": meta}
-        output_dictionary["messages"] = input_validator.messages
-        scenario_inputs = input_validator.input_dict['Scenario']
+
+        scenario_inputs = data['inputs']['Scenario']
         model_solved = False
+        error = None
 
         try:
 
             s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=vars(paths))
 
             # Log POST request
-            s.log_post(input_validator.input_dict)
+            s.log_post(input_validator.input_for_response)
 
             # Run Optimization
             optimization_results = s.run()
@@ -129,30 +128,36 @@ class RunInputResource(ModelResource):
             optimization_results['flat'].update(meta)
             optimization_results['flat']['uuid'] = meta['run_uuid']
             optimization_results['nested']['Scenario'].update(meta)
-            output_dictionary['outputs'] = optimization_results[output_format]
             data['outputs'].update(optimization_results['nested'])
 
         except Exception as e:
 
-            output_dictionary["messages"] = {
-                    "errors": API_Error(e).response,
-                    "warnings": input_validator.warnings,
-                }
+            error = API_Error(e).response
+
+        if error is not None:
+            data["messages"]["errors"] = error
+            data["outputs"]["Scenario"]["status"] = \
+                "Error. See messages. Email reopt@nrel.gov with questions and please reference your run_uuid."
 
         if saveToDb:
-            model_manager.create_and_save(data)
+            if model_solved:
+                model_manager.update(data)
+            else:
+                model_manager.update_errors_status(data)
 
         if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
-            output_dictionary = self.remove_wind(output_dictionary, output_format, model_solved)
+            data = self.remove_wind(data, output_format, model_solved)
 
         if output_format == 'flat':
             # fill in outputs with inputs
             for arg, defs in flat_inputs(full_list=True).iteritems():
-                output_dictionary['outputs'][arg] = output_dictionary["inputs"].get(arg) or defs.get("default")
+                data[arg] = bundle.data.get(arg) or defs.get("default")
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
-            output_dictionary.update(output_dictionary['outputs'])
+            if model_solved:
+                data.update(optimization_results['flat'])
+            data.update(meta)
 
-        return output_dictionary
+        return data
 
     @staticmethod
     def remove_wind(output_dictionary, output_format, model_solved):
