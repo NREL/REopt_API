@@ -42,9 +42,6 @@ class DatFileManager:
     """
     writes dat files and creates command line strings for dat file paths
     """
-
-    DAT = [None] * 20
-    DAT_bau = [None] * 20
     pv = None
     pvnm = None
     wind = None
@@ -69,6 +66,9 @@ class DatFileManager:
 
         self.command_line_args = list()
         self.command_line_args_bau = list()
+
+        self.DAT = [None] * 20
+        self.DAT_bau = [None] * 20
 
         self.file_constant = os.path.join(paths['inputs'], 'constant_' + file_tail)
         self.file_constant_bau = os.path.join(paths['inputs'], 'constant_' + file_tail_bau)
@@ -121,11 +121,6 @@ class DatFileManager:
 
         self.command_line_args.append("ScenarioNum=" + str(run_id))
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
-
-    def _check_complete(self):
-        if any(d is None for d in self.DAT) or any(d is None for d in self.DAT_bau):
-            return False
-        return True
 
     def add_load(self, load): 
         #  fill in W, X, S bins

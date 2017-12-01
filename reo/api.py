@@ -10,10 +10,11 @@ from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import log
 from utilities import API_Error
-from scenario import Scenario
+from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
+from reo.src.reopt import REopt
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -74,12 +75,12 @@ class RunInputResource(ModelResource):
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         run_uuid = uuid.uuid4()
-        scenario = {'run_uuid': str(run_uuid), 'api_version': api_version}
+        meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
 
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": scenario}
+        data["outputs"] = {"Scenario": meta}
         """
         for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
         """
@@ -99,16 +100,7 @@ class RunInputResource(ModelResource):
         if saveToDb:
             model_manager.create_and_save(data)
 
-        # Return  Results
-        output_model = self.create_output(input_validator, output_format, model_manager, data, bundle)
-
-        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
-
-    def create_output(self, input_validator, output_format, model_manager, data, bundle):
-
-        run_uuid = uuid.uuid4()
-        paths = Paths(run_uuid=run_uuid)
-        meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
+        paths = vars(Paths(run_uuid=run_uuid))
 
         scenario_inputs = data['inputs']['Scenario']
         model_solved = False
@@ -116,13 +108,12 @@ class RunInputResource(ModelResource):
 
         try:
 
-            s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=vars(paths))
+            dfm = setup_scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
+                                 json_post=input_validator.input_for_response)
+            # import pdb; pdb.set_trace()
+            reopt = REopt(dfm=dfm, paths=paths, year=data['inputs']['Scenario']['Site']['LoadProfile']['year'])
 
-            # Log POST request
-            s.log_post(input_validator.input_for_response)
-
-            # Run Optimization
-            optimization_results = s.run()
+            optimization_results = reopt.run(timeout=data['inputs']['Scenario']['timeout_seconds'])
             model_solved = True
 
             optimization_results['flat'].update(meta)
@@ -156,8 +147,9 @@ class RunInputResource(ModelResource):
             if model_solved:
                 data.update(optimization_results['flat'])
             data.update(meta)
+        # import pdb; pdb.set_trace()
 
-        return data
+        raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=201))
 
     @staticmethod
     def remove_wind(output_dictionary, output_format, model_solved):

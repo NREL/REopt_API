@@ -8,13 +8,13 @@ from celery import shared_task, chord
 
 
 @shared_task
-def parse_run_outputs(year, outputs, outputs_bau, templates, static_outputs):
+def parse_run_outputs(year, paths):
 
-    output_file = os.path.join(outputs, "REopt_results.json")
+    output_file = os.path.join(paths['outputs'], "REopt_results.json")
 
     if os.path.exists(output_file):
-        process_results = Results(templates, outputs, outputs_bau,
-                                  static_outputs, year)
+        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
+                                  paths['static_outputs'], year)
         return process_results.get_output()
 
     else:
@@ -25,7 +25,7 @@ def parse_run_outputs(year, outputs, outputs_bau, templates, static_outputs):
     
     
 @shared_task
-def call_xpress(cmd, timeout):
+def call_xpress(cmd, timeout):   # --> reopt, with flag for bau? No, keep as is and change REopt class to shared_task
 
     try:
         status = sp.check_output(split(cmd), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
@@ -53,15 +53,14 @@ class REopt(object):
         self.paths = paths
         self.year = year
 
-        self.dfm = dfm
         file_cmd = os.path.join(paths['inputs'], "cmd.log")
         file_cmd_bau = os.path.join(paths['inputs'], "cmd_bau.log")
 
-        self.run_command = self.create_run_command(paths['outputs'], REopt.xpress_model, self.dfm.DAT,
-                                                   self.dfm.command_line_args, bau_string='', cmd_file=file_cmd)
+        self.run_command = self.create_run_command(paths['outputs'], REopt.xpress_model, dfm['DAT'],
+                                                   dfm['command_line_args'], bau_string='', cmd_file=file_cmd)
 
-        self.run_command_bau = self.create_run_command(paths['outputs_bau'], REopt.xpress_model, self.dfm.DAT_bau,
-                                                       self.dfm.command_line_args_bau, bau_string='Base',
+        self.run_command_bau = self.create_run_command(paths['outputs_bau'], REopt.xpress_model, dfm['DAT_bau'],
+                                                       dfm['command_line_args_bau'], bau_string='Base',
                                                        cmd_file=file_cmd_bau)
 
         # log("INFO", "Initializing Command")
@@ -87,8 +86,7 @@ class REopt(object):
             call_xpress.s(self.run_command_bau, timeout)
         )
 
-        res = chord(jobs, parse_run_outputs.si(self.year, self.paths['outputs'], self.paths['outputs_bau'],
-                                               self.paths['templates'], self.paths['static_outputs']))()  # .si for immutable signature, no outputs passed
+        res = chord(jobs, parse_run_outputs.si(self.year, self.paths))()  # .si for immutable signature, no outputs passed
         # can't pass objects? self.paths is not serializable
         return res.get()
 
