@@ -4,7 +4,6 @@ from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
-from unittest import skip
 from reo.nested_to_flat_output import nested_to_flat
 
 
@@ -193,7 +192,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             import pdb; pdb.set_trace()
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
 
     def test_wind(self):
@@ -253,7 +252,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
         
     def test_valid_nested_posts(self):
@@ -279,7 +278,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
 
         # another test with custom rate and monthly kwh
@@ -307,7 +306,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d['outputs']['Scenario'].get('uuid')))
-            print("Error message: {}".format(c['messages'].get('error')))
+            print("Error message: {}".format(c['messages'].get('errors')))
             raise
 
     def test_not_optimal_solution(self):
@@ -331,4 +330,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         }
         response = self.get_response(data=data)
         resp_dict = json.loads(response.content)
-        self.assertTrue('Could not find an optimal solution for these inputs.' in resp_dict['messages']['error']['REopt'])
+        self.assertTrue('Could not find an optimal solution for these inputs.' in resp_dict['messages']['errors']['REopt'])

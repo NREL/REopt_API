@@ -9,10 +9,9 @@ from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import log
-from utilities import API_Error, attribute_inputs
+from utilities import API_Error
 from scenario import Scenario
-from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
-    PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
+from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
 
@@ -33,11 +32,11 @@ class RunInputResource(ModelResource):
 
     class Meta:
         setup_logging()
-        queryset = ScenarioModel.objects.all()
+        # queryset = ScenarioModel.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['post']
         detail_allowed_methods = []
-        object_class = ScenarioModel
+        # object_class = ScenarioModel
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
@@ -74,12 +73,36 @@ class RunInputResource(ModelResource):
             output_format = 'nested'
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
+        run_uuid = uuid.uuid4()
+        scenario = {'run_uuid': str(run_uuid), 'api_version': api_version}
+
+        data = dict()
+        data["inputs"] = input_validator.input_dict
+        data["messages"] = input_validator.messages
+        data["outputs"] = {"Scenario": scenario}
+        """
+        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
+        """
+
+        if not input_validator.isValid:  # 400 Bad Request
+
+            data["outputs"]["Scenario"]["status"] = "Invald inputs. See messages."
+
+            if saveToDb:
+                bad_post = BadPost(run_uuid=run_uuid, post=bundle.data, errors=data['messages']['errors']).create()
+
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                     content_type='application/json',
+                                                     status=400))
+
+        model_manager = ModelManager()
+
         # Return  Results
-        output_model = self.create_output(input_validator, output_format)
+        output_model = self.create_output(input_validator, output_format, model_manager, data)
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
 
-    def create_output(self, input_validator, output_format):
+    def create_output(self, input_validator, output_format, model_manager, data):
 
         run_uuid = uuid.uuid4()
         paths = Paths(run_uuid=run_uuid)
@@ -89,48 +112,38 @@ class RunInputResource(ModelResource):
         output_dictionary["inputs"] = input_validator.input_for_response
         output_dictionary['outputs'] = {"Scenario": meta}
         output_dictionary["messages"] = input_validator.messages
+        scenario_inputs = input_validator.input_dict['Scenario']
+        model_solved = False
 
-        if input_validator.isValid:
-            try:
-               
-                scenario_inputs = input_validator.input_dict['Scenario']
+        try:
 
-                windEnabled = scenario_inputs['Site']['Wind']['max_kw'] > 0
-                
-                if saveToDb:
-                    self.save_scenario_inputs(scenario_inputs)
+            s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=vars(paths))
 
-                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=vars(paths))
+            # Log POST request
+            s.log_post(input_validator.input_dict)
 
-                # Log POST request
-                s.log_post(input_validator.input_dict)
+            # Run Optimization
+            optimization_results = s.run()
+            model_solved = True
 
-                # Run Optimization
-                optimization_results = s.run()
+            optimization_results['flat'].update(meta)
+            optimization_results['flat']['uuid'] = meta['run_uuid']
+            optimization_results['nested']['Scenario'].update(meta)
+            output_dictionary['outputs'] = optimization_results[output_format]
+            data['outputs'].update(optimization_results['nested'])
 
-                optimization_results['flat'].update(meta)
-                optimization_results['flat']['uuid'] = meta['run_uuid']
-                optimization_results['nested']['Scenario'].update(meta)
-                output_dictionary['outputs'] = optimization_results[output_format]
+        except Exception as e:
 
-                if saveToDb:
-                    self.save_scenario_outputs(optimization_results['nested']['Scenario'])
-               
-                if not windEnabled:
-                    output_dictionary = self.remove_wind(output_dictionary, output_format)
-               
-            except Exception as e:
-                
-                output_dictionary["messages"] = {
-                        "error": API_Error(e).response,
-                        "warnings": input_validator.warnings,
-                    }
+            output_dictionary["messages"] = {
+                    "errors": API_Error(e).response,
+                    "warnings": input_validator.warnings,
+                }
 
         if saveToDb:
-            if len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0:
-                ScenarioModel.create(**meta)
+            model_manager.create_and_save(data)
 
-            messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
+        if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
+            output_dictionary = self.remove_wind(output_dictionary, output_format, model_solved)
 
         if output_format == 'flat':
             # fill in outputs with inputs
@@ -139,17 +152,16 @@ class RunInputResource(ModelResource):
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
             output_dictionary.update(output_dictionary['outputs'])
 
-
-
         return output_dictionary
 
     @staticmethod
-    def remove_wind(output_dictionary, output_format):
+    def remove_wind(output_dictionary, output_format, model_solved):
         if output_format == 'nested':
             del output_dictionary['inputs']['Scenario']['Site']["Wind"]
-            del output_dictionary['outputs']['Scenario']['Site']["Wind"]
+            if model_solved:
+                del output_dictionary['outputs']['Scenario']['Site']["Wind"]
         
-        if output_format=='flat':
+        if output_format == 'flat':
             for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
                         'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
                         'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
@@ -157,38 +169,8 @@ class RunInputResource(ModelResource):
                         'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
                 if key in output_dictionary['inputs'].keys():
                     del output_dictionary['inputs'][key]
-                if key in output_dictionary['outputs'].keys():
-                    del output_dictionary['outputs'][key]
+                if model_solved:
+                    if key in output_dictionary['outputs'].keys():
+                        del output_dictionary['outputs'][key]
 
         return output_dictionary
-
-    def save_scenario_inputs(self, d):
-        """
-        saves input json to db tables
-        :param d: validated input dictionary
-        :return: None
-        """
-        self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
-        self.siteM = SiteModel.create(scenario_model=self.scenarioM, **attribute_inputs(d['Site']))
-        self.financialM = FinancialModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Financial']))
-        self.load_profileM = LoadProfileModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['LoadProfile']))
-        self.electric_tariffM = ElectricTariffModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['PV']))
-        self.windM = WindModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Wind']))
-        self.storageM = StorageModel.create(site_model =self.siteM, **attribute_inputs(d['Site']['Storage']))
-
-    def save_scenario_outputs(self, d):
-        """
-
-        :param r: Scenario.run response
-        :return: OutputModel to be saved in REoptResponse as 'outputs'
-        """        
-        
-        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))   
-        SiteModel.objects.filter(id=self.siteM.id).update(**attribute_inputs(d['Site']))
-        FinancialModel.objects.filter(id=self.financialM.id).update(**attribute_inputs(d['Site']['Financial']))
-        LoadProfileModel.objects.filter(id=self.load_profileM.id).update(**attribute_inputs(d['Site']['LoadProfile']))
-        ElectricTariffModel.objects.filter(id=self.electric_tariffM.id).update(**attribute_inputs(d['Site']['ElectricTariff']))
-        PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
-        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
-        StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))
