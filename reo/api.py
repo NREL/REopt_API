@@ -14,7 +14,7 @@ from scenario import Scenario
 from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
     PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
 from api_definitions import inputs as flat_inputs
-
+from reo.src.paths import Paths
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -82,6 +82,7 @@ class RunInputResource(ModelResource):
     def create_output(self, input_validator, output_format):
 
         run_uuid = uuid.uuid4()
+        paths = Paths(run_uuid=run_uuid)
         meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
       
         output_dictionary = dict()
@@ -99,7 +100,7 @@ class RunInputResource(ModelResource):
                 if saveToDb:
                     self.save_scenario_inputs(scenario_inputs)
 
-                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
+                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=vars(paths))
 
                 # Log POST request
                 s.log_post(input_validator.input_dict)

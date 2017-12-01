@@ -54,13 +54,13 @@ class REopt(object):
         self.year = year
 
         self.dfm = dfm
-        file_cmd = os.path.join(paths.inputs, "cmd.log")
-        file_cmd_bau = os.path.join(paths.inputs, "cmd_bau.log")
+        file_cmd = os.path.join(paths['inputs'], "cmd.log")
+        file_cmd_bau = os.path.join(paths['inputs'], "cmd_bau.log")
 
-        self.run_command = self.create_run_command(paths.outputs, REopt.xpress_model, self.dfm.DAT,
+        self.run_command = self.create_run_command(paths['outputs'], REopt.xpress_model, self.dfm.DAT,
                                                    self.dfm.command_line_args, bau_string='', cmd_file=file_cmd)
 
-        self.run_command_bau = self.create_run_command(paths.outputs_bau, REopt.xpress_model, self.dfm.DAT_bau,
+        self.run_command_bau = self.create_run_command(paths['outputs_bau'], REopt.xpress_model, self.dfm.DAT_bau,
                                                        self.dfm.command_line_args_bau, bau_string='Base',
                                                        cmd_file=file_cmd_bau)
 
@@ -87,8 +87,8 @@ class REopt(object):
             call_xpress.s(self.run_command_bau, timeout)
         )
 
-        res = chord(jobs, parse_run_outputs.si(self.year, self.paths.outputs, self.paths.outputs_bau,
-                                               self.paths.templates, self.paths.static_outputs))()  # .si for immutable signature, no outputs passed
+        res = chord(jobs, parse_run_outputs.si(self.year, self.paths['outputs'], self.paths['outputs_bau'],
+                                               self.paths['templates'], self.paths['static_outputs']))()  # .si for immutable signature, no outputs passed
         # can't pass objects? self.paths is not serializable
         return res.get()
 
@@ -98,7 +98,7 @@ class REopt(object):
 
         # RE case
         header = 'exec '
-        xpress_model_path = os.path.join(self.paths.xpress, xpress_model)
+        xpress_model_path = os.path.join(self.paths['xpress'], xpress_model)
 
         # Command line constants and Dat file overrides
         outline = ''
@@ -113,7 +113,7 @@ class REopt(object):
         outline.replace('\n', '')
 
         cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
-                 % (header, xpress_model_path, outline, path_output, self.paths.inputs, bau_string)
+                 % (header, xpress_model_path, outline, path_output, self.paths['inputs'], bau_string)
 
         log("DEBUG", "Returning Process Command " + cmd)
 
