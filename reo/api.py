@@ -15,7 +15,7 @@ from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
 from reo.src.reopt import reopt, parse_run_outputs
-from celery import shared_task, chord, group
+from celery import shared_task, group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -121,16 +121,15 @@ class RunInputResource(ModelResource):
 
         try:
 
-            dfm = setup_scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
-                                 json_post=input_validator.input_for_response)
-
-            reopt_jobs = (
-                reopt.si(dfm=dfm, paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False),
-                reopt.si(dfm=dfm, paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True),
+            setup = setup_scenario.s(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
+                                     json_post=input_validator.input_for_response)
+            reopt_jobs = group(
+                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False),
+                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True),
             )
             call_back = parse_run_outputs.si(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
                                              paths=paths)
-            process = chord(reopt_jobs, call_back).apply_async()  # , link_error=error_handler.s()
+            process = chain(setup | reopt_jobs, call_back)()  # , link_error=error_handler.s()
             # .si for immutable signature, no outputs passed
             optimization_results = process.get()
             model_solved = True

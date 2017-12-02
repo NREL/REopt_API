@@ -130,6 +130,7 @@ CELERY_RESULT_BACKEND = 'django-db'
 CELERY_IMPORTS = (
     'reo.src.reopt',
     'reo.api',
+    'reo.scenario',
 )
 
 if 'test' in sys.argv:

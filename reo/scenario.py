@@ -7,8 +7,10 @@ from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
+from celery import shared_task
 
 
+@shared_task
 def setup_scenario(run_uuid, inputs_dict, paths, json_post):
         """
 
