@@ -4,7 +4,19 @@ import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
 from reo.results import Results
-from celery import shared_task, chord
+from celery import shared_task, chord, chain, group
+
+
+@shared_task
+def error_handler(request, exc, traceback):
+    """
+    Function to raise exceptions from celery tasks.
+    :param request:
+    :param exc:
+    :param traceback:
+    :return:
+    """
+    raise exc
 
 
 @shared_task
@@ -81,14 +93,14 @@ class REopt(object):
         """
         log("INFO", "Running REopt")
 
-        jobs = (
+        jobs = group(
             call_xpress.s(self.run_command, timeout),
             call_xpress.s(self.run_command_bau, timeout)
         )
 
-        res = chord(jobs, parse_run_outputs.si(self.year, self.paths))()  # .si for immutable signature, no outputs passed
+        chain(jobs, link_error=error_handler.s())()  # .si for immutable signature, no outputs passed
         # can't pass objects? self.paths is not serializable
-        return res.get()
+        return None
 
     def create_run_command(self, path_output, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 

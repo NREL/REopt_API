@@ -14,7 +14,7 @@ from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
-from reo.src.reopt import REopt
+from reo.src.reopt import REopt, parse_run_outputs
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -110,10 +110,11 @@ class RunInputResource(ModelResource):
 
             dfm = setup_scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
                                  json_post=input_validator.input_for_response)
-            # import pdb; pdb.set_trace()
             reopt = REopt(dfm=dfm, paths=paths, year=data['inputs']['Scenario']['Site']['LoadProfile']['year'])
-
-            optimization_results = reopt.run(timeout=data['inputs']['Scenario']['timeout_seconds'])
+            reopt.run(timeout=data['inputs']['Scenario']['timeout_seconds'])
+            optimization_results = parse_run_outputs.delay(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
+                                                           paths=paths)
+            optimization_results = optimization_results.get()
             model_solved = True
 
             optimization_results['flat'].update(meta)
@@ -147,7 +148,6 @@ class RunInputResource(ModelResource):
             if model_solved:
                 data.update(optimization_results['flat'])
             data.update(meta)
-        # import pdb; pdb.set_trace()
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=201))
 
