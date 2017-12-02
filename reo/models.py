@@ -363,7 +363,7 @@ class MessagesModel(models.Model):
     #Relationships
     scenario_model = models.ForeignKey(
         ScenarioModel,
-        to_field = 'run_uuid',
+        # to_field = 'run_uuid',
         on_delete=models.CASCADE,
         default=None,
         null=True,
@@ -385,28 +385,28 @@ class MessagesModel(models.Model):
     description = models.TextField(blank=True, default='')
 
     @classmethod
-    def create(cls, scenario_model_id=None, messages_type_model=None,messages_group_type_model=None, **kwargs):
-        obj = cls(scenario_model_id=scenario_model_id, messages_type_model=messages_type_model,
+    def create(cls, scenario_model=None, messages_type_model=None,messages_group_type_model=None, **kwargs):
+        obj = cls(scenario_model=scenario_model, messages_type_model=messages_type_model,
                   messages_group_type_model=messages_group_type_model, **kwargs)
         obj.save()
 
         return obj
 
     @classmethod
-    def save_set(cls, message_dictionary, scenario_uuid=None):
+    def save_set(cls, message_dictionary, scenario_model=None):
         
         for k, v in message_dictionary.items():
             messages_type_model = MessagesTypeModel.create(text=k)
             if isinstance(v, dict):
                 for kk, vv in v.items():
                     message_group_type_model = MessagesGroupTypeModel.create(text=kk)
-                    obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
+                    obj = cls.create(scenario_model=scenario_model, messages_type_model=messages_type_model,
                                      messages_group_type_model=message_group_type_model, description=vv)
                     obj.save()
 
             else:
                 message_group_type_model = MessagesGroupTypeModel.create(text="Other")
-                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
+                obj = cls.create(scenario_model=scenario_model, messages_type_model=messages_type_model,
                                  messages_group_type_model=message_group_type_model, description=v)
                 obj.save()
 
@@ -460,7 +460,7 @@ class ModelManager(object):
         self.windM = WindModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Storage']))
         self.messagesM = MessagesModel
-        self.messagesM.save_set(data['messages'], scenario_uuid=data["outputs"]["Scenario"]["run_uuid"])
+        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
 
     def update(self, data):
         """
@@ -479,7 +479,8 @@ class ModelManager(object):
         PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
         WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))
-        self.messagesM.save_set(data['messages'], scenario_uuid=data["outputs"]["Scenario"]["run_uuid"])
+        # the next line will create redundant 'messages' if any values were also passed in the create_and_save call
+        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
 
     def update_errors_status(self, data):
         """
@@ -489,4 +490,4 @@ class ModelManager(object):
         """
         d = data["outputs"]["Scenario"]
         ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))
-        self.messagesM.save_set(data['messages'], scenario_uuid=data["outputs"]["Scenario"]["run_uuid"])
+        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
