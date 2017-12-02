@@ -7,10 +7,8 @@ from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
-from celery import shared_task
 
 
-@shared_task
 def setup_scenario(run_uuid, inputs_dict, paths, json_post):
         """
 
@@ -60,7 +58,10 @@ def setup_scenario(run_uuid, inputs_dict, paths, json_post):
             interconnection_limit=inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
         )
         dfm.finalize()
-
+        dfm_dict = vars(dfm)  # serialize for celery
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm']:
+            if dfm_dict.get(k) is not None:
+                del dfm_dict[k]
         return vars(dfm)  # --> REopt runs (BAU and with tech)
 
 

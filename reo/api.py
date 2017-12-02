@@ -14,10 +14,23 @@ from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
-from reo.src.reopt import REopt, parse_run_outputs
+from reo.src.reopt import reopt, parse_run_outputs
+from celery import shared_task, chord, group
 
 api_version = "version 1.0.0"
 saveToDb = True
+
+
+@shared_task
+def error_handler(request, exc, traceback):
+    """
+    Function to raise exceptions from celery tasks.
+    :param request:
+    :param exc:
+    :param traceback:
+    :return:
+    """
+    raise exc
 
 
 def setup_logging():
@@ -110,11 +123,16 @@ class RunInputResource(ModelResource):
 
             dfm = setup_scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
                                  json_post=input_validator.input_for_response)
-            reopt = REopt(dfm=dfm, paths=paths, year=data['inputs']['Scenario']['Site']['LoadProfile']['year'])
-            reopt.run(timeout=data['inputs']['Scenario']['timeout_seconds'])
-            optimization_results = parse_run_outputs.delay(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
-                                                           paths=paths)
-            optimization_results = optimization_results.get()
+
+            reopt_jobs = (
+                reopt.si(dfm=dfm, paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False),
+                reopt.si(dfm=dfm, paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True),
+            )
+            call_back = parse_run_outputs.si(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
+                                             paths=paths)
+            process = chord(reopt_jobs, call_back).apply_async()  # , link_error=error_handler.s()
+            # .si for immutable signature, no outputs passed
+            optimization_results = process.get()
             model_solved = True
 
             optimization_results['flat'].update(meta)
