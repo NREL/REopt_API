@@ -140,6 +140,7 @@ class RunInputResource(ModelResource):
             optimization_results = process.get()
             model_solved = True
 
+            del scenario_outputs['status']
             optimization_results['flat'].update(scenario_outputs)
             optimization_results['flat']['uuid'] = scenario_outputs['run_uuid']
             optimization_results['nested']['Scenario'].update(scenario_outputs)

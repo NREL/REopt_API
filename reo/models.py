@@ -349,9 +349,10 @@ class ModelManager(object):
         :param data: dict, constructed in api.py, mirrors reopt api response structure
         """
         d = data["inputs"]['Scenario']
-        scenario_outputs = data["outputs"]['Scenario']
-        d.update(scenario_outputs)
-        self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
+        scenario_dict = data["outputs"]['Scenario'].copy()
+        scenario_dict.update(d)
+
+        self.scenarioM = ScenarioModel.create(**attribute_inputs(scenario_dict))
         self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
         self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
                                                 **attribute_inputs(d['Site']['Financial']))
@@ -374,9 +375,6 @@ class ModelManager(object):
         :return: None
         """
         d = data["outputs"]["Scenario"]
-        """
-        better to use run_uuid? was getting integrity error with id, now not? will eliminate need for if/else
-        """
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
@@ -409,16 +407,3 @@ class ModelManager(object):
             else:
                 MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
-    def get_ids(self):
-        """
-
-        :return: dict of each model's id
-        """
-        d = {}
-
-        import pdb;
-        pdb.set_trace()
-        for a in self.__dict__.iterkeys():
-            if a != "messagesM":
-                d[a] = eval('self.' + a + '.id')
-        return d
