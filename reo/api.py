@@ -150,12 +150,13 @@ class RunInputResource(ModelResource):
 
         if saveToDb:
             if model_solved:
-                model_manager.update(data)
+                model_manager.update(data, run_uuid=run_uuid)
             else:
-                model_manager.update_errors_status(data)
+                model_manager.update_scenario_and_messages(data, run_uuid=run_uuid)
 
         if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
             data = self.remove_wind(data, output_format, model_solved)
+            # need to delete wind messages, but intertwined with other messages from validator
 
         if output_format == 'flat':
             # fill in outputs with inputs

@@ -34,36 +34,25 @@ class ScenarioModel(models.Model):
 
 class SiteModel(models.Model):
 
-    #Relationships
-    scenario_model = models.ForeignKey(
-        ScenarioModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
-    
+
     @classmethod
-    def create(cls, scenario_model=None, **kwargs):
-        obj = cls(scenario_model=scenario_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class FinancialModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Input
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     analysis_years = models.IntegerField()
     escalation_pct = models.FloatField()
     om_cost_escalation_pct = models.FloatField()
@@ -80,22 +69,17 @@ class FinancialModel(models.Model):
     
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class LoadProfileModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
     
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     doe_reference_name = models.TextField(null=True, blank=True, default='')
     annual_kwh = models.FloatField(null=True, blank=True)
     year = models.IntegerField(default=2018)
@@ -109,8 +93,8 @@ class LoadProfileModel(models.Model):
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
@@ -118,14 +102,8 @@ class LoadProfileModel(models.Model):
 
 class ElectricTariffModel(models.Model):
     
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-    
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     urdb_utilty_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
@@ -163,22 +141,17 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class PVModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -223,22 +196,17 @@ class PVModel(models.Model):
     
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
     
 
 class WindModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -272,22 +240,17 @@ class WindModel(models.Model):
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class StorageModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     min_kwh = models.FloatField()
@@ -318,97 +281,34 @@ class StorageModel(models.Model):
     year_one_soc_series_pct = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
-class MessagesTypeModel(models.Model): 
+class MessageModel(models.Model):
+    """
+    For Example:
+    {"messages":{
+                "warnings": "This is a warning message.",
+                "errors": "REopt had an error."
+                }
+    }
+    """
+    message_type = models.TextField(blank=True, default='')
+    message = models.TextField(blank=True, default='')
+    run_uuid = models.UUIDField(unique=False, default=uuid.uuid4)
 
     description = models.TextField(blank=True, default='')
 
     @classmethod
-    def create(cls, text):
-        objs = cls.objects.filter(description=text)
-        if len(objs) > 0:
-            return objs[0]
-        else:
-
-            obj = cls(description=text)
-            obj.save()
-
-        return obj
-
-
-class MessagesGroupTypeModel(models.Model):
-
-    description = models.TextField(blank=True, default='')
-
-    @classmethod
-    def create(cls, text):
-        objs = cls.objects.filter(description=text)
-        if len(objs) > 0:
-            return objs[0]
-        else:
-
-            obj = cls(description=text)
-            obj.save()
-
-        return obj
-
-
-class MessagesModel(models.Model):
-    #Relationships
-    scenario_model = models.ForeignKey(
-        ScenarioModel,
-        # to_field = 'run_uuid',
-        on_delete=models.CASCADE,
-        default=None,
-        null=True,
-        blank=True
-    )
-
-    messages_type_model = models.ForeignKey(
-        MessagesTypeModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
-    messages_group_type_model = models.ForeignKey(
-        MessagesGroupTypeModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
-    description = models.TextField(blank=True, default='')
-
-    @classmethod
-    def create(cls, scenario_model=None, messages_type_model=None,messages_group_type_model=None, **kwargs):
-        obj = cls(scenario_model=scenario_model, messages_type_model=messages_type_model,
-                  messages_group_type_model=messages_group_type_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
-
-    @classmethod
-    def save_set(cls, message_dictionary, scenario_model=None):
-        
-        for k, v in message_dictionary.items():
-            messages_type_model = MessagesTypeModel.create(text=k)
-            if isinstance(v, dict):
-                for kk, vv in v.items():
-                    message_group_type_model = MessagesGroupTypeModel.create(text=kk)
-                    obj = cls.create(scenario_model=scenario_model, messages_type_model=messages_type_model,
-                                     messages_group_type_model=message_group_type_model, description=vv)
-                    obj.save()
-
-            else:
-                message_group_type_model = MessagesGroupTypeModel.create(text="Other")
-                obj = cls.create(scenario_model=scenario_model, messages_type_model=messages_type_model,
-                                 messages_group_type_model=message_group_type_model, description=v)
-                obj.save()
 
 
 class BadPost(models.Model):
@@ -449,45 +349,73 @@ class ModelManager(object):
         """
         d = data["inputs"]['Scenario']
         self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
-        self.siteM = SiteModel.create(scenario_model=self.scenarioM, **attribute_inputs(d['Site']))
-        self.financialM = FinancialModel.create(site_model=self.siteM,
+        self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
+        self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
                                                 **attribute_inputs(d['Site']['Financial']))
-        self.load_profileM = LoadProfileModel.create(site_model=self.siteM,
+        self.load_profileM = LoadProfileModel.create(run_uuid=self.scenarioM.run_uuid,
                                                      **attribute_inputs(d['Site']['LoadProfile']))
-        self.electric_tariffM = ElectricTariffModel.create(site_model=self.siteM,
+        self.electric_tariffM = ElectricTariffModel.create(run_uuid=self.scenarioM.run_uuid,
                                                            **attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['PV']))
-        self.windM = WindModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Wind']))
-        self.storageM = StorageModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Storage']))
-        self.messagesM = MessagesModel
-        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
+        self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
+        self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
+        self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
+        for message_type, message in data['messages'].iteritems():
+            MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
-    def update(self, data):
+    @staticmethod
+    def update(data, run_uuid):
+        """
+        save Scenario results in database
+        :param data: dict, constructed in api.py, mirrors reopt api response structure
+        :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
+        :return: None
+        """
+        d = data["outputs"]["Scenario"]
+        """
+        better to use run_uuid? was getting integrity error with id, now not? will eliminate need for if/else
+        """
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
+        FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
+        LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
+        ElectricTariffModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricTariff']))
+        PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
+        StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
+
+        for message_type, message in data['messages'].iteritems():
+            if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
+                # message already saved
+                pass
+            else:
+                MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
+
+    @staticmethod
+    def update_scenario_and_messages(data, run_uuid):
         """
         save Scenario results in database
         :param data: dict, constructed in api.py, mirrors reopt api response structure
         :return: None
         """
         d = data["outputs"]["Scenario"]
-        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))
-        SiteModel.objects.filter(id=self.siteM.id).update(**attribute_inputs(d['Site']))
-        FinancialModel.objects.filter(id=self.financialM.id).update(**attribute_inputs(d['Site']['Financial']))
-        LoadProfileModel.objects.filter(id=self.load_profileM.id).update(
-            **attribute_inputs(d['Site']['LoadProfile']))
-        ElectricTariffModel.objects.filter(id=self.electric_tariffM.id).update(
-            **attribute_inputs(d['Site']['ElectricTariff']))
-        PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
-        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
-        StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))
-        # the next line will create redundant 'messages' if any values were also passed in the create_and_save call
-        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))
+        for message_type, message in data['messages'].iteritems():
+            if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
+                # message already saved
+                pass
+            else:
+                MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
-    def update_errors_status(self, data):
+    def get_ids(self):
         """
-        save Scenario results in database
-        :param data: dict, constructed in api.py, mirrors reopt api response structure
-        :return: None
+
+        :return: dict of each model's id
         """
-        d = data["outputs"]["Scenario"]
-        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))
-        self.messagesM.save_set(data['messages'], scenario_model=self.scenarioM)
+        d = {}
+
+        import pdb;
+        pdb.set_trace()
+        for a in self.__dict__.iterkeys():
+            if a != "messagesM":
+                d[a] = eval('self.' + a + '.id')
+        return d
