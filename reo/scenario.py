@@ -65,18 +65,3 @@ def setup_scenario(run_uuid, inputs_dict, paths, json_post):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
         return vars(dfm)  # --> REopt runs (BAU and with tech)
-
-
-
-            ######################################################################################################
-            # everything above this line becomes def build_scenario
-
-            # r = REopt(dfm=dfm, paths=paths, year=inputs_dict['Site']['LoadProfile']['year'])
-            #
-            # output_dict = r.run(timeout=inputs_dict['timeout_seconds'])
-            #
-            # output_dict['nested']["Scenario"]["Site"]["LoadProfile"]["year_one_electric_load_series_kw"] = \
-            #     lp.unmodified_load_list  # if outage is defined, this is necessary to return the full load profile
-            #
-            # return output_dict
-

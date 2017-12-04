@@ -3,25 +3,7 @@ import os
 import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
-from reo.results import Results
 from celery import shared_task
-
-
-@shared_task(max_retries=5, interval=1)
-def parse_run_outputs(year, paths):
-
-    output_file = os.path.join(paths['outputs'], "REopt_results.json")
-
-    if os.path.exists(output_file):
-        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
-                                  paths['static_outputs'], year)
-        return process_results.get_output()
-
-    else:
-        msg = "Optimization failed to run. Output file does not exist: " + output_file
-        log("DEBUG", "Current directory: " + os.getcwd())
-        log("WARNING", msg)
-        raise RuntimeError('REopt', msg)
     
     
 def call_xpress(cmd, timeout):   # --> reopt, with flag for bau? No, keep as is and change REopt class to shared_task

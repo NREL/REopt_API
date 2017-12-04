@@ -1,8 +1,11 @@
+from __future__ import absolute_import, unicode_literals
 import os
 import json
-from api_definitions import outputs
-from nested_outputs import nested_output_definitions
-from dispatch import ProcessOutputs
+from reo.api_definitions import outputs
+from reo.nested_outputs import nested_output_definitions
+from reo.dispatch import ProcessOutputs
+from reo.log_levels import log
+from celery import shared_task
 
 
 class Results:
@@ -226,4 +229,20 @@ class Results:
         power = [sum(x) for x in zip(*power_lists)]
         return power
 
+
+@shared_task(max_retries=5, interval=1)
+def parse_run_outputs(year, paths):
+
+    output_file = os.path.join(paths['outputs'], "REopt_results.json")
+
+    if os.path.exists(output_file):
+        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
+                                  paths['static_outputs'], year)
+        return process_results.get_output()
+
+    else:
+        msg = "Optimization failed to run. Output file does not exist: " + output_file
+        log("DEBUG", "Current directory: " + os.getcwd())
+        log("WARNING", msg)
+        raise RuntimeError('REopt', msg)
 

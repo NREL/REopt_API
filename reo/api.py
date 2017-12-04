@@ -14,7 +14,8 @@ from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
-from reo.src.reopt import reopt, parse_run_outputs
+from reo.src.reopt import reopt
+from reo.results import parse_run_outputs
 from celery import shared_task, group, chain
 
 api_version = "version 1.0.0"

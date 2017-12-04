@@ -131,6 +131,7 @@ CELERY_IMPORTS = (
     'reo.src.reopt',
     'reo.api',
     'reo.scenario',
+    'reo.results',
 )
 
 if 'test' in sys.argv:
