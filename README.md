@@ -51,7 +51,7 @@ Instructions will assume a Windows based install where you have administrator pr
       
    `mkdir src`  
    `cd src`  
-   `git clone https://github.nrel.gov/ndiorio/reopt_api`  
+   `git clone https://github.nrel.gov/REopt/reopt_api.git`  
    
 8. Run server (in local mode, which requires command prompt to remain open)
    
