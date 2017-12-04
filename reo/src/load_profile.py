@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from reo.api_definitions import default_cities, default_tmyid
 import requests
 
+from keys import developer_nrel_gov_key
+
 
 class BuiltInProfile(object):
 
@@ -370,7 +372,7 @@ class BuiltInProfile(object):
                 return self.nearest_city
             else:
                 search_radius = str(25)
-                ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key=653bcca1955c8acf748bcf5ce9a953f7b2e23629&lat=" \
+                ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key="+developer_nrel_gov_key+"&lat=" \
                              + str(self.latitude) + "&lon=" + str(self.longitude) + "&distance=" + search_radius + "&output_fields=ashrae_tmy"
                 r = requests.get(ashrae_url)
 

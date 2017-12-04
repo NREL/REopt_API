@@ -12,7 +12,7 @@ class PVWatts:
 
     def __init__(self,
                  url_base="https://developer.nrel.gov/api/pvwatts/v5.json",
-                 key=keys.pvwatts_api_key,
+                 key=keys.developer_nrel_gov_key,
                  azimuth=180,
                  system_capacity=1,
                  losses=0.14,
