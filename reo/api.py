@@ -89,12 +89,12 @@ class RunInputResource(ModelResource):
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         run_uuid = uuid.uuid4()
-        meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
+        scenario_outputs = {'run_uuid': str(run_uuid), 'api_version': api_version, 'status': 'running'}
 
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": meta}
+        data["outputs"] = {"Scenario": scenario_outputs}
         """
         for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
         """
@@ -140,9 +140,9 @@ class RunInputResource(ModelResource):
             optimization_results = process.get()
             model_solved = True
 
-            optimization_results['flat'].update(meta)
-            optimization_results['flat']['uuid'] = meta['run_uuid']
-            optimization_results['nested']['Scenario'].update(meta)
+            optimization_results['flat'].update(scenario_outputs)
+            optimization_results['flat']['uuid'] = scenario_outputs['run_uuid']
+            optimization_results['nested']['Scenario'].update(scenario_outputs)
             data['outputs'].update(optimization_results['nested'])
 
         except Exception as e:
@@ -171,7 +171,7 @@ class RunInputResource(ModelResource):
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
             if model_solved:
                 data.update(optimization_results['flat'])
-            data.update(meta)
+            data.update(scenario_outputs)
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps(data), content_type='application/json', status=201))
 

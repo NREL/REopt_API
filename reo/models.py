@@ -1,6 +1,7 @@
 # from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import *
+from django.forms.models import model_to_dict
 import uuid
 from picklefield.fields import PickledObjectField
 
@@ -16,7 +17,7 @@ class ScenarioModel(models.Model):
 
     # Inputs
     # user = models.ForeignKey(User, null=True, blank=True)
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
     user_id = models.TextField(null=True, blank=True)
     
@@ -35,7 +36,7 @@ class ScenarioModel(models.Model):
 class SiteModel(models.Model):
 
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
@@ -52,7 +53,7 @@ class SiteModel(models.Model):
 class FinancialModel(models.Model):
 
     #Input
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     analysis_years = models.IntegerField()
     escalation_pct = models.FloatField()
     om_cost_escalation_pct = models.FloatField()
@@ -79,7 +80,7 @@ class FinancialModel(models.Model):
 class LoadProfileModel(models.Model):
     
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     doe_reference_name = models.TextField(null=True, blank=True, default='')
     annual_kwh = models.FloatField(null=True, blank=True)
     year = models.IntegerField(default=2018)
@@ -103,7 +104,7 @@ class LoadProfileModel(models.Model):
 class ElectricTariffModel(models.Model):
     
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     urdb_utilty_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
@@ -151,7 +152,7 @@ class ElectricTariffModel(models.Model):
 class PVModel(models.Model):
 
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -206,7 +207,7 @@ class PVModel(models.Model):
 class WindModel(models.Model):
 
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -250,7 +251,7 @@ class WindModel(models.Model):
 class StorageModel(models.Model):
 
     #Inputs
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     min_kwh = models.FloatField()
@@ -299,7 +300,7 @@ class MessageModel(models.Model):
     """
     message_type = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
-    run_uuid = models.UUIDField(unique=False, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=False)
 
     description = models.TextField(blank=True, default='')
 
@@ -312,7 +313,7 @@ class MessageModel(models.Model):
 
 
 class BadPost(models.Model):
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     post = PickledObjectField()
     errors = models.TextField()
 
@@ -348,6 +349,8 @@ class ModelManager(object):
         :param data: dict, constructed in api.py, mirrors reopt api response structure
         """
         d = data["inputs"]['Scenario']
+        scenario_outputs = data["outputs"]['Scenario']
+        d.update(scenario_outputs)
         self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
         self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
         self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
