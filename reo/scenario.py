@@ -10,7 +10,7 @@ from reo.src.techs import PV, Util, Wind
 from celery import shared_task
 
 
-@shared_task
+@shared_task(max_retries=5, interval=1)  # could fail to connect to other API's
 def setup_scenario(run_uuid, inputs_dict, paths, json_post):
         """
 

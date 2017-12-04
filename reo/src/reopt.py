@@ -7,7 +7,7 @@ from reo.results import Results
 from celery import shared_task
 
 
-@shared_task
+@shared_task(max_retries=5, interval=1)
 def parse_run_outputs(year, paths):
 
     output_file = os.path.join(paths['outputs'], "REopt_results.json")
@@ -75,7 +75,7 @@ def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, ba
     return cmd
 
 
-@shared_task
+@shared_task(max_retries=5, interval=1)
 def reopt(dfm, paths, timeout, bau=False):
 
     xpress_model = "REopt_API.mos"

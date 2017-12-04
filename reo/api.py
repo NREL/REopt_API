@@ -122,15 +122,20 @@ class RunInputResource(ModelResource):
         try:
 
             setup = setup_scenario.s(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
-                                     json_post=input_validator.input_for_response).set(link_error=error_handler.s())
+                                     json_post=input_validator.input_for_response) \
+                                  .on_error(error_handler.s())
             reopt_jobs = group(
-                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False).set(link_error=error_handler.s()),
-                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True).set(link_error=error_handler.s()),
+                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False)
+                     .on_error(error_handler.s()),
+                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True)
+                     .on_error(error_handler.s()),
             )
             call_back = parse_run_outputs.si(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
-                                             paths=paths).set(link_error=error_handler.s())
-            process = chain(setup | reopt_jobs, call_back)()  # ,
+                                             paths=paths) \
+                                         .on_error(error_handler.s())
             # .si for immutable signature, no outputs passed
+            process = chain(setup | reopt_jobs, call_back)()
+            # do not set max_retries on chain, interferes with Exception handling?
             optimization_results = process.get()
             model_solved = True
 

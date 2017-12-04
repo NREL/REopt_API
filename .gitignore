@@ -9,7 +9,7 @@ Xpress/
 !Xpress/REopt_API.mos
 .DS_Store
 urdb_rate_errors/
-
+outage_sizing/
 
 # C extensions
 *.so
