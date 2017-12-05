@@ -10,6 +10,8 @@ import csv
 import os
 from utilities import API_Error
 from nested_inputs import nested_input_definitions
+from reo.models import ModelManager
+import sys, traceback
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -97,3 +99,22 @@ def annual_kwh(request):
         return response
     except Exception as e:
         return JsonResponse(API_Error(e).response)
+
+
+def results(request):
+
+    try:
+        run_uuid = request.GET.get('run_uuid')
+
+        d = ModelManager.make_response(run_uuid)
+        # import pdb; pdb.set_trace()
+
+        response = JsonResponse(
+            d,
+        )
+        print d
+        return response
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        return JsonResponse({str(exc_type): repr(traceback.format_tb(exc_traceback)),
+                             'message': e.message})

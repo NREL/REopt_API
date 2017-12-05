@@ -2,8 +2,9 @@
 from django.db import models
 from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
-import uuid
 from picklefield.fields import PickledObjectField
+from reo.nested_inputs import nested_input_definitions
+from reo.nested_outputs import nested_output_definitions
 
 
 class URDBError(models.Model):
@@ -407,3 +408,70 @@ class ModelManager(object):
             else:
                 MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
+    @staticmethod
+    def make_response(run_uuid):
+        """
+        Reconstruct response dictionary from postgres tables (django models).
+        NOTE: postgres column type UUID is not JSON serializable. Work-around is removing those columns and then
+              adding back into outputs->Scenario as string.
+        :param run_uuid:
+        :return:
+        """
+
+        def remove_ids(d):
+            del d['run_uuid']
+            del d['id']
+            return d
+        
+        def move_outs_to_ins(site_key, resp):
+
+            resp['inputs']['Scenario']['Site'][site_key] = dict()
+
+            for k in nested_input_definitions['Scenario']['Site'][site_key].iterkeys():
+
+                try:
+                    resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    del resp['outputs']['Scenario']['Site'][site_key][k]
+                except KeyError:  # known exception for k = urdb_response (user provided blended rates)
+                    resp['inputs']['Scenario']['Site'][site_key][k] = None
+        
+        # add try/except for get fail / bad run_uuid
+        
+        resp = dict()
+        resp['outputs'] = dict()
+        resp['inputs'] = dict()
+        resp['inputs']['Scenario'] = dict()
+        resp['inputs']['Scenario']['Site'] = dict()
+        resp['messages'] = dict()
+        
+        resp['outputs']['Scenario'] = remove_ids(model_to_dict(ScenarioModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
+        resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['LoadProfile'] = remove_ids(model_to_dict(LoadProfileModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
+        # resp['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
+
+        for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
+
+            resp['messages'][m['message_type']] = m['message']
+            
+        for scenario_key in nested_input_definitions['Scenario'].iterkeys():
+
+            if scenario_key.islower():
+                resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
+                del resp['outputs']['Scenario'][scenario_key]
+
+        for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
+
+            if site_key.islower():
+                resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
+                del resp['outputs']['Scenario']['Site'][site_key]
+
+            elif site_key in ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff']:   # 'Wind'
+
+                move_outs_to_ins(site_key, resp=resp)
+
+        return resp
