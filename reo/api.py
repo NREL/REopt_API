@@ -22,18 +22,6 @@ api_version = "version 1.0.0"
 saveToDb = True
 
 
-@shared_task
-def error_handler(request, exc, traceback):
-    """
-    Function to raise exceptions from celery tasks.
-    :param request:
-    :param exc:
-    :param traceback:
-    :return:
-    """
-    raise exc
-
-
 def setup_logging():
     file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
     logging.basicConfig(filename=file_logfile,
@@ -128,8 +116,7 @@ class RunInputResource(ModelResource):
                 reopt.s(paths=paths, data=data, bau=False),
                 reopt.s(paths=paths, data=data, bau=True),
             )
-            call_back = parse_run_outputs.si(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
-                                             paths=paths)
+            call_back = parse_run_outputs.si(data=data, paths=paths)
             # .si for immutable signature, no outputs passed
             process = chain(setup | reopt_jobs, call_back)()
             # do not set max_retries on chain, interferes with Exception handling?

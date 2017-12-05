@@ -5,7 +5,33 @@ from reo.api_definitions import outputs
 from reo.nested_outputs import nested_output_definitions
 from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
-from celery import shared_task
+from celery import shared_task, Task
+from reo.models import ModelManager
+
+
+class Callback(Task):
+
+    name = 'callback'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+
+        :return: None, The return value of this handler is ignored.
+        """
+        data = kwargs['data']
+        data["messages"]["errors"] = einfo
+        data["outputs"]["Scenario"]["status"] = \
+            "Error caught in parse_run_outputs: {}".format(exc)
+        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
 
 class Results:
@@ -230,19 +256,21 @@ class Results:
         return power
 
 
-@shared_task(max_retries=5, interval=1)
-def parse_run_outputs(year, paths):
+@shared_task(bind=True, base=Callback)
+def parse_run_outputs(self, data, paths):
+
+    self.data = data
+    year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
 
     output_file = os.path.join(paths['outputs'], "REopt_results.json")
 
     if os.path.exists(output_file):
         process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
                                   paths['static_outputs'], year)
-        return process_results.get_output()
+        return process_results.get_output()  # --> "optimization_results" in api.py
 
     else:
         msg = "Optimization failed to run. Output file does not exist: " + output_file
         log("DEBUG", "Current directory: " + os.getcwd())
         log("WARNING", msg)
         raise RuntimeError('REopt', msg)
-
