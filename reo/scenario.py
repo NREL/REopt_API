@@ -43,7 +43,7 @@ class Scenario(Task):
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
 
-@shared_task(bind=True, base=Scenario)  # could fail to connect to other API's
+@shared_task(bind=True, base=Scenario)
 def setup_scenario(self, run_uuid, paths, json_post, data):
         """
 

@@ -125,14 +125,11 @@ class RunInputResource(ModelResource):
             setup = setup_scenario.s(run_uuid=run_uuid, paths=paths,
                                      json_post=input_validator.input_for_response, data=data)
             reopt_jobs = group(
-                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False)
-                     .on_error(error_handler.s()),
-                reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=True)
-                     .on_error(error_handler.s()),
+                reopt.s(paths=paths, data=data, bau=False),
+                reopt.s(paths=paths, data=data, bau=True),
             )
             call_back = parse_run_outputs.si(year=data['inputs']['Scenario']['Site']['LoadProfile']['year'],
-                                             paths=paths) \
-                                         .on_error(error_handler.s())
+                                             paths=paths)
             # .si for immutable signature, no outputs passed
             process = chain(setup | reopt_jobs, call_back)()
             # do not set max_retries on chain, interferes with Exception handling?
@@ -157,8 +154,8 @@ class RunInputResource(ModelResource):
         if saveToDb:
             if model_solved:
                 model_manager.update(data, run_uuid=run_uuid)
-            else:
-                model_manager.update_scenario_and_messages(data, run_uuid=run_uuid)
+            # else:
+            #     model_manager.update_scenario_and_messages(data, run_uuid=run_uuid)
 
         if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
             data = self.remove_wind(data, output_format, model_solved)

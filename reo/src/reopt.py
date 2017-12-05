@@ -3,27 +3,34 @@ import os
 import subprocess32 as sp
 from shlex import split
 from reo.log_levels import log
-from celery import shared_task
+from celery import shared_task, Task
+from reo.models import ModelManager
+
+
+class REopt(Task):
+
+    name = 'reopt'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+
+        :return: None, The return value of this handler is ignored.
+        """
+        data = kwargs['data']
+        data["messages"]["errors"] = einfo
+        data["outputs"]["Scenario"]["status"] = \
+            "Error caught in REopt: {}".format(exc)
+        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
     
-    
-def call_xpress(cmd, timeout):   # --> reopt, with flag for bau? No, keep as is and change REopt class to shared_task
-
-    try:
-        status = sp.check_output(split(cmd), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
-
-    except sp.CalledProcessError as e:
-        msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
-        log("ERROR", msg)
-        raise RuntimeError('REopt', msg)
-
-    except sp.TimeoutExpired:
-        raise RuntimeError('REopt', "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
-                                     for support".format(timeout))
-    log("INFO", "REopt run successfully. Status {}".format(status))
-
-    if status.strip() != 'optimal':
-        raise RuntimeError('REopt', "Could not find an optimal solution for these inputs.")
-
 
 def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
@@ -57,9 +64,12 @@ def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, ba
     return cmd
 
 
-@shared_task(max_retries=5, interval=1)
-def reopt(dfm, paths, timeout, bau=False):
+@shared_task(bind=True, base=REopt)
+def reopt(self, dfm, paths, data, bau=False):
 
+    self.data = data
+
+    timeout = data['inputs']['Scenario']['timeout_seconds']
     xpress_model = "REopt_API.mos"
 
     file_cmd = os.path.join(paths['inputs'], "cmd.log")
@@ -77,4 +87,18 @@ def reopt(dfm, paths, timeout, bau=False):
 
     log("INFO", "Running REopt")
 
-    call_xpress(run_command, timeout)
+    try:
+        status = sp.check_output(split(run_command), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
+
+    except sp.CalledProcessError as e:
+        msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+        log("ERROR", msg)
+        raise RuntimeError('REopt', msg)
+
+    except sp.TimeoutExpired:
+        raise RuntimeError('REopt', "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
+                                     for support".format(timeout))
+    log("INFO", "REopt run successfully. Status {}".format(status))
+
+    if status.strip() != 'optimal':
+        raise RuntimeError('REopt', "Could not find an optimal solution for these inputs.")
