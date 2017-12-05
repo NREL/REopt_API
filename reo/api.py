@@ -122,9 +122,8 @@ class RunInputResource(ModelResource):
 
         try:
 
-            setup = setup_scenario.s(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths,
-                                     json_post=input_validator.input_for_response) \
-                                  .on_error(error_handler.s())
+            setup = setup_scenario.s(run_uuid=run_uuid, paths=paths,
+                                     json_post=input_validator.input_for_response, data=data)
             reopt_jobs = group(
                 reopt.s(paths=paths, timeout=data['inputs']['Scenario']['timeout_seconds'], bau=False)
                      .on_error(error_handler.s()),
