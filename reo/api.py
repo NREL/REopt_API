@@ -16,7 +16,7 @@ from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
-from celery import shared_task, group, chain
+from celery import group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -77,7 +77,6 @@ class RunInputResource(ModelResource):
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         run_uuid = uuid.uuid4()
-        scenario_meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
         
         def set_status(d, status):
             d["outputs"]["Scenario"]["status"] = status
@@ -85,7 +84,7 @@ class RunInputResource(ModelResource):
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": scenario_meta}
+        data["outputs"] = {"Scenario": {'run_uuid': str(run_uuid), 'api_version': api_version}}
         """
         for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
         """
@@ -115,7 +114,8 @@ class RunInputResource(ModelResource):
             reopt.s(paths=paths, data=data, bau=True),
         )
         call_back = parse_run_outputs.si(data=data, paths=paths, meta={'run_uuid': run_uuid, 'api_version': api_version})
-        # .si for immutable signature, no outputs passed
+        # .si for immutable signature, no outputs passed from reopt_jobs
         chain(setup | reopt_jobs, call_back)()
 
-        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': str(run_uuid)}), content_type='application/json', status=201))
+        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': str(run_uuid)}),
+                                                 content_type='application/json', status=201))

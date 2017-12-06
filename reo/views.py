@@ -109,12 +109,11 @@ def results(request):
         d = ModelManager.make_response(run_uuid)
         # import pdb; pdb.set_trace()
 
-        response = JsonResponse(
-            d,
-        )
-        print d
+        response = JsonResponse(d)
         return response
+
     except Exception as e:
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         return JsonResponse({str(exc_type): repr(traceback.format_tb(exc_traceback)),
                              'message': e.message})

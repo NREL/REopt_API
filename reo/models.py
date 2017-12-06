@@ -4,7 +4,6 @@ from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from reo.nested_inputs import nested_input_definitions
-from reo.nested_outputs import nested_output_definitions
 
 
 class URDBError(models.Model):
@@ -477,7 +476,7 @@ class ModelManager(object):
         return resp
 
         # if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
-        #     data = self.remove_wind(data, output_format, model_solved)
+        #     data = remove_wind(data, output_format, model_solved)
         #     # need to delete wind messages, but intertwined with other messages from validator
         #
         # if output_format == 'flat':
@@ -488,3 +487,22 @@ class ModelManager(object):
         #     if model_solved:
         #         data.update(optimization_results['flat'])
         #     data.update(scenario_outputs)
+
+
+# def remove_wind(output_dictionary, output_format='nested'):
+#     if output_format == 'nested':
+#         del output_dictionary['inputs']['Scenario']['Site']["Wind"]
+#         del output_dictionary['outputs']['Scenario']['Site']["Wind"]
+#
+#     if output_format == 'flat':
+#         for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
+#                     'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
+#                     'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
+#                     'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
+#                     'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
+#             if key in output_dictionary['inputs'].keys():
+#                 del output_dictionary['inputs'][key]
+#             if key in output_dictionary['outputs'].keys():
+#                 del output_dictionary['outputs'][key]
+#
+#     return output_dictionary
