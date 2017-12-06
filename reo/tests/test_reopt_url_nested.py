@@ -1,10 +1,11 @@
 import json
 import pickle
-from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
+from unittest import skip, TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from reo.models import ModelManager
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -100,11 +101,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         data = self.complete_valid_nestedpost
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response'] =self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response']=self.missing_schedule_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_schedule_urdb
 
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
@@ -175,7 +176,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 }
         resp = self.get_response(data=data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -244,7 +248,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        import pdb; pdb.set_trace()
         c = nested_to_flat(d['outputs'])
 
         try:
@@ -262,7 +269,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -291,7 +300,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
