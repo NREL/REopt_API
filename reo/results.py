@@ -31,7 +31,6 @@ class Callback(Task):
         data["messages"]["errors"] = einfo
         data["outputs"]["Scenario"]["status"] = \
             "Error caught in parse_run_outputs: {}".format(exc)
-        raise Exception('Scenario keys: {}\n einfo: {}'.format(data['outputs']['Scenario'].keys(), einfo))
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
 
@@ -276,7 +275,6 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
     results = process_results.get_output()  # --> "optimization_results" in api.py
 
     data['outputs'].update(results['nested'])
-    log('WARNING', str(meta))
     data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
     if saveToDB:
