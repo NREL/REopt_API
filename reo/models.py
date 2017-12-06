@@ -435,6 +435,7 @@ class ModelManager(object):
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
         
         # add try/except for get fail / bad run_uuid
+        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff']
         
         resp = dict()
         resp['outputs'] = dict()
@@ -451,7 +452,12 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
-        # resp['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
+
+        wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
+
+        if wind_dict['max_kw'] > 0:
+            resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
+            site_keys.append('Wind')
 
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
 
@@ -469,7 +475,7 @@ class ModelManager(object):
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]
 
-            elif site_key in ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff']:   # 'Wind'
+            elif site_key in site_keys:
 
                 move_outs_to_ins(site_key, resp=resp)
 
