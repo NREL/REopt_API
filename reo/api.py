@@ -76,7 +76,7 @@ class RunInputResource(ModelResource):
             output_format = 'nested'
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
-        run_uuid = uuid.uuid4()
+        run_uuid = str(uuid.uuid4())
         
         def set_status(d, status):
             d["outputs"]["Scenario"]["status"] = status
@@ -84,7 +84,7 @@ class RunInputResource(ModelResource):
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": {'run_uuid': str(run_uuid), 'api_version': api_version}}
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
         """
         for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
         """
@@ -117,5 +117,5 @@ class RunInputResource(ModelResource):
         # .si for immutable signature, no outputs passed from reopt_jobs
         chain(setup | reopt_jobs, call_back)()
 
-        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': str(run_uuid)}),
+        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
