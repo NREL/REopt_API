@@ -31,6 +31,7 @@ class Callback(Task):
         data["messages"]["errors"] = einfo
         data["outputs"]["Scenario"]["status"] = \
             "Error caught in parse_run_outputs: {}".format(exc)
+        raise Exception('Scenario keys: {}\n einfo: {}'.format(data['outputs']['Scenario'].keys(), einfo))
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
 
@@ -256,21 +257,47 @@ class Results:
         return power
 
 
+def remove_wind(output_dictionary, output_format='nested'):
+    if output_format == 'nested':
+        del output_dictionary['inputs']['Scenario']['Site']["Wind"]
+        del output_dictionary['outputs']['Scenario']['Site']["Wind"]
+
+    if output_format == 'flat':
+        for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
+                    'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
+                    'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
+                    'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
+                    'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
+            if key in output_dictionary['inputs'].keys():
+                del output_dictionary['inputs'][key]
+            if key in output_dictionary['outputs'].keys():
+                del output_dictionary['outputs'][key]
+
+    return output_dictionary
+
+
 @shared_task(bind=True, base=Callback)
-def parse_run_outputs(self, data, paths):
+def parse_run_outputs(self, data, paths, meta, saveToDB=True):
 
     self.data = data
     year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
 
     output_file = os.path.join(paths['outputs'], "REopt_results.json")
 
-    if os.path.exists(output_file):
-        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
-                                  paths['static_outputs'], year)
-        return process_results.get_output()  # --> "optimization_results" in api.py
-
-    else:
+    if not os.path.exists(output_file):
         msg = "Optimization failed to run. Output file does not exist: " + output_file
         log("DEBUG", "Current directory: " + os.getcwd())
         log("WARNING", msg)
         raise RuntimeError('REopt', msg)
+
+    process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
+                              paths['static_outputs'], year)
+    results = process_results.get_output()  # --> "optimization_results" in api.py
+
+    data['outputs'].update(results['nested'])
+    log('WARNING', str(meta))
+    data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+
+    if saveToDB:
+        run_uuid = data['outputs']['Scenario']['run_uuid']
+        ModelManager.update(data, run_uuid=run_uuid)

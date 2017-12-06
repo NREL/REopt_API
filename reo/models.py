@@ -475,3 +475,16 @@ class ModelManager(object):
                 move_outs_to_ins(site_key, resp=resp)
 
         return resp
+
+        # if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
+        #     data = self.remove_wind(data, output_format, model_solved)
+        #     # need to delete wind messages, but intertwined with other messages from validator
+        #
+        # if output_format == 'flat':
+        #     # fill in outputs with inputs
+        #     for arg, defs in flat_inputs(full_list=True).iteritems():
+        #         data[arg] = bundle.data.get(arg) or defs.get("default")
+        #     # backwards compatibility for webtool, copy all "outputs" to top level of response dict
+        #     if model_solved:
+        #         data.update(optimization_results['flat'])
+        #     data.update(scenario_outputs)
