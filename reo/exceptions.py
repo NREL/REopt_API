@@ -27,12 +27,17 @@ class REoptError(Exception):
         :param traceback: sys.exc_info()[2]
         """
         msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
-        ErrorModel.create(task=task, name=name, run_uuid=run_uuid, message=message, traceback=traceback)
         self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
         self.task = task
         self.run_uuid = run_uuid
         self.traceback = traceback
+        self.name = name
 
+    def save_to_db(self):
+
+        em = ErrorModel(task=self.task, name=self.name, run_uuid=self.run_uuid, message=self.message,
+                        traceback=self.traceback)
+        em.save()
 
 class SubprocessTimeout(REoptError):
     """

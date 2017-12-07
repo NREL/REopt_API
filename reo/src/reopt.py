@@ -28,6 +28,7 @@ class REopt(Task):
 
         :return: None, The return value of this handler is ignored.
         """
+        exc.save_to_db()
         data = kwargs['data']
         data["messages"]["errors"] = exc.message
         data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
