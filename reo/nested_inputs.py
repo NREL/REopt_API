@@ -20,6 +20,7 @@ default_buildings = ['FastFoodRest',
                      'StripMall',
                      'Supermarket',
                      'Warehouse',
+                     'FlatLoad'
                      ]
 
 macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
