@@ -6,8 +6,42 @@ from reo.api_definitions import outputs
 from reo.nested_outputs import nested_output_definitions
 from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
-from celery import shared_task
-from reo.exceptions import *
+from celery import shared_task, Task
+from reo.exceptions import REoptError, UnexpectedError
+from reo.models import ModelManager
+
+
+class ResultsTask(Task):
+    """
+    Used to define custom Error handling for celery task
+    """
+
+    name = 'callback'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+
+        :return: None, The return value of this handler is ignored.
+        """
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
+        data = kwargs['data']
+        data["messages"]["errors"] = exc.message
+        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
+
+        # self.request.chain = None  # stop the chain?
+        # self.request.callback = None
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
 class Results:
@@ -232,11 +266,10 @@ class Results:
         return power
 
 
-@shared_task(bind=True, base=TaskExceptionHandler)
+@shared_task(bind=True, base=ResultsTask)
 def parse_run_outputs(self, data, paths, meta, saveToDB=True):
 
     self.data = data
-    self.name = 'parse_run_outputs'
 
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']

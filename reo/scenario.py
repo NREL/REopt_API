@@ -9,10 +9,43 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import *
+from reo.exceptions import REoptError
 
 
-@shared_task(bind=True, base=TaskExceptionHandler)
+class ScenarioTask(Task):
+    """
+    Used to define custom Error handling for celery task
+    """
+
+    name = 'scenario'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+
+        :return: None, The return value of this handler is ignored.
+        """
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
+        data = kwargs['data']
+        data["messages"]["errors"] = exc.message
+        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
+
+        # self.request.chain = None  # stop the chain?
+        # self.request.callback = None
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
+
+
+@shared_task(bind=True, base=ScenarioTask)
 def setup_scenario(self, run_uuid, paths, json_post, data):
         """
 
@@ -21,7 +54,6 @@ def setup_scenario(self, run_uuid, paths, json_post, data):
         :param inputs_dict: validated POST of input parameters
         """
         self.data = data
-        self.name = 'setup_scenario'
         paths = paths
         run_uuid = run_uuid
         file_post_input = os.path.join(paths['inputs'], "POST.json")

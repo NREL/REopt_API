@@ -1,7 +1,5 @@
 import traceback as tb
 from reo.models import ErrorModel
-from reo.models import ModelManager
-from celery import Task
 
 
 class REoptError(Exception):
@@ -108,32 +106,3 @@ class UnexpectedError(REoptError):
         message = "Unexpected Error."
         super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, message=message, 
                                               traceback=debug_msg)
-
-
-class TaskExceptionHandler(Task):
-
-    max_retries = 0
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """
-        log a bunch of stuff for debugging
-        save message: error and outputs: Scenario: status
-        need to stop rest of chain!?
-        :param exc: The exception raised by the task.
-        :param task_id: Unique id of the failed task. (not the run_uuid)
-        :param args: Original arguments for the task that failed.
-        :param kwargs: Original keyword arguments for the task that failed.
-        :param einfo: ExceptionInfo instance, containing the traceback.
-
-        :return: None, The return value of this handler is ignored.
-        """
-        if isinstance(exc, REoptError):
-            exc.save_to_db()
-        data = kwargs['data']
-        data["messages"]["errors"] = exc.message
-        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
-        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
-
-        # self.request.chain = None  # stop the chain?
-        # self.request.callback = None
-        self.request.chord = None  # this seems to stop the infinite chord_unlock call
