@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import json
 import os
+import sys
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
@@ -9,7 +10,8 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError
+from reo.exceptions import REoptError, UnexpectedError
+from reo.log_levels import log
 
 
 class ScenarioTask(Task):
@@ -35,10 +37,10 @@ class ScenarioTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        data = kwargs['data']
-        data["messages"]["errors"] = exc.message
-        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
-        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
+
+        self.data["messages"]["errors"] = exc.message
+        self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
         # self.request.chain = None  # stop the chain?
         # self.request.callback = None
@@ -47,15 +49,15 @@ class ScenarioTask(Task):
 
 @shared_task(bind=True, base=ScenarioTask)
 def setup_scenario(self, run_uuid, paths, json_post, data):
-        """
+    """
 
-        All error handling is done in validators.py before data is passed to scenario.py
-        :param run_uuid:
-        :param inputs_dict: validated POST of input parameters
-        """
-        self.data = data
-        paths = paths
-        run_uuid = run_uuid
+    All error handling is done in validators.py before data is passed to scenario.py
+    :param run_uuid:
+    :param inputs_dict: validated POST of input parameters
+    """
+    self.run_uuid = run_uuid
+    self.data = data
+    try:
         file_post_input = os.path.join(paths['inputs'], "POST.json")
         inputs_dict = data['inputs']['Scenario']
         dfm = DatFileManager(run_id=run_uuid, paths=paths,
@@ -101,3 +103,8 @@ def setup_scenario(self, run_uuid, paths, json_post, data):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
         return vars(dfm)  # --> REopt runs (BAU and with tech)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log("UnexpectedError", "{} occured in reo.results.parse_run_outputs.".format(exc_type))
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
