@@ -36,6 +36,28 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
 
+    def check_common_outputs(self, d_calculated, d_expected):
+
+        c = d_calculated
+        e = d_expected
+
+        # check all calculated keys against the expected
+        for key, value in e.iteritems():
+            tolerance = self.REopt_tol
+            if key == 'npv':
+                tolerance = 2 * self.REopt_tol
+
+            if key in c and key in e:
+                if e[key] == 0:
+                    self.assertEqual(c[key], e[key])
+                else:
+                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+
+        # Total LCC BAU is sum of utility costs
+        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                        < self.REopt_tol)
+
     @skip('')
     def test_required(self):
 
@@ -323,4 +345,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        self.assertTrue('Could not find an optimal solution for these inputs.' in d['messages']['errors']['REopt'])
+        self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['errors'])

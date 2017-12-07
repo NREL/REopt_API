@@ -1,10 +1,13 @@
 from __future__ import absolute_import, unicode_literals
 import os
 import subprocess32 as sp
+import sys
+import traceback
 from shlex import split
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.models import ModelManager
+from reo.exceptions import *
 
 
 class REopt(Task):
@@ -26,11 +29,15 @@ class REopt(Task):
         :return: None, The return value of this handler is ignored.
         """
         data = kwargs['data']
-        data["messages"]["errors"] = einfo
-        data["outputs"]["Scenario"]["status"] = \
-            "Error caught in REopt: {}".format(exc)
+        data["messages"]["errors"] = exc.message
+        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
-    
+        # stop all celery tasks
+        # self.request.chain = None  # stop the chain?
+        # self.request.callback = None
+
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
+
 
 def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
@@ -96,9 +103,27 @@ def reopt(self, dfm, paths, data, bau=False):
         raise RuntimeError('REopt', msg)
 
     except sp.TimeoutExpired:
-        raise RuntimeError('REopt', "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
-                                     for support".format(timeout))
-    log("INFO", "REopt run successfully. Status {}".format(status))
+        msg = "Optimization exceeded timeout: {} seconds.".format(timeout)
+        log("ERROR", msg)
+        exc_traceback = sys.exc_info()[2]
+        task = 'reopt' if not bau else 'reopt-bau'
+        raise SubprocessTimeout(task=task, message=msg, run_uuid=data['outputs']['Scenario']['run_uuid'],
+                                traceback=traceback.format_tb(exc_traceback, limit=1))
 
-    if status.strip() != 'optimal':
-        raise RuntimeError('REopt', "Could not find an optimal solution for these inputs.")
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        # raise UnexpectedException(exc_type, exc_value, exc_traceback)
+
+    else:
+        log("INFO", "REopt run successfully. Status {}".format(status))
+
+        if status.strip() != 'optimal':
+            log("ERROR", "REopt status not optimal. Raising NotOptimal Exception.")
+            exc_traceback = sys.exc_info()[2]
+            task = 'reopt' if not bau else 'reopt-bau'
+            raise NotOptimal(task=task, run_uuid=data['outputs']['Scenario']['run_uuid'],
+                             traceback=traceback.format_tb(exc_traceback, limit=1), status=status.strip())
+
+"""
+NOTE: Python 3 introduced Exception chaining using `from` statements, but we are using Python 2 :(
+"""
