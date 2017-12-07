@@ -44,8 +44,9 @@ def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, ba
 @shared_task(bind=True, base=TaskExceptionHandler)
 def reopt(self, dfm, paths, data, bau=False):
 
-    self.name = 'reopt'
+    self.name = 'reopt' if not bau else 'reopt-bau'
     self.data = data
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
 
     timeout = data['inputs']['Scenario']['timeout_seconds']
     xpress_model = "REopt_API.mos"
@@ -69,21 +70,21 @@ def reopt(self, dfm, paths, data, bau=False):
         status = sp.check_output(split(run_command), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
 
     except sp.CalledProcessError as e:
-        msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
-        log("ERROR", msg)
-        raise RuntimeError('REopt', msg)
+        msg = "REopt failed to start."
+        debug_msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+        log("ERROR", debug_msg)
+        raise REoptFailedToStartError(task=self.name, run_uuid=self.run_uuid, message=msg, traceback=debug_msg)
 
     except sp.TimeoutExpired:
         msg = "Optimization exceeded timeout: {} seconds.".format(timeout)
         log("ERROR", msg)
         exc_traceback = sys.exc_info()[2]
-        task = 'reopt' if not bau else 'reopt-bau'
-        raise SubprocessTimeout(task=task, message=msg, run_uuid=data['outputs']['Scenario']['run_uuid'],
+        raise SubprocessTimeout(task=self.name, message=msg, run_uuid=self.run_uuid,
                                 traceback=traceback.format_tb(exc_traceback, limit=1))
 
-    except Exception as e:
+    except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        # raise UnexpectedException(exc_type, exc_value, exc_traceback)
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
 
     else:
         log("INFO", "REopt run successfully. Status {}".format(status))
@@ -92,8 +93,7 @@ def reopt(self, dfm, paths, data, bau=False):
             log("ERROR", "REopt status not optimal. Raising NotOptimal Exception.")
             exc_traceback = sys.exc_info()[2]
             task = 'reopt' if not bau else 'reopt-bau'
-            raise NotOptimal(task=task, run_uuid=data['outputs']['Scenario']['run_uuid'],
-                             traceback=traceback.format_tb(exc_traceback, limit=1), status=status.strip())
+            raise NotOptimal(task=self.name, run_uuid=self.run_uuid, status=status.strip())
 
 """
 NOTE: Python 3 introduced Exception chaining using `from` statements, but we are using Python 2 :(

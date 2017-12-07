@@ -1,3 +1,4 @@
+import traceback as tb
 from reo.models import ErrorModel
 from reo.log_levels import log
 from reo.models import ModelManager
@@ -66,14 +67,8 @@ class NotOptimal(REoptError):
     """
     __name__ = 'NotOptimal'
 
-    def __init__(self, task='reopt', run_uuid='', traceback='', status=''):
-        """
+    def __init__(self, task='reopt', run_uuid='', status=''):
 
-        :param task: task where error occurred
-        :param run_uuid:
-        :param traceback: saved to database for debugging
-        """
-        log("INFO", "WHAT?!?!?!")
         msg = "REopt could not find an optimal solution for these inputs."
         if status == 'infeasible':
             msg += " The problem is likely due to constraints that make a solution infeasible, " \
@@ -81,7 +76,25 @@ class NotOptimal(REoptError):
         super(NotOptimal, self).__init__(task, self.__name__, run_uuid, message=msg, traceback="status: " + status)
 
 
-class UnexpectedException(REoptError):
+class REoptFailedToStartError(REoptError):
+    """
+    Exception raised when REopt fails to start (subprocess.CalledProcessError)
+
+    """
+    __name__ = 'REoptFailedToStartError'
+
+    def __init__(self, task='reopt', run_uuid='', message='', traceback=''):
+        """
+
+        :param task: task where error occurred
+        :param run_uuid:
+        :param message: message that is sent back to user in messages: errors
+        :param traceback: saved to database for debugging
+        """
+        super(REoptFailedToStartError, self).__init__(task, self.__name__, run_uuid, message, traceback)
+
+
+class UnexpectedError(REoptError):
     """
     REopt catch-all exception class
 
@@ -89,11 +102,13 @@ class UnexpectedException(REoptError):
         message - explanation of the error
     """
 
-    def __init__(self, exc_type, exc_value, exc_traceback):
+    __name__ = 'UnexpectedError'
 
-        self.exc_type = exc_type
-        self.exc_value = exc_value
-        self.exc_traceback = exc_traceback
+    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid=''):
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
+        message = "Unexpected Error."
+        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, message=message, 
+                                              traceback=debug_msg)
 
 
 class TaskExceptionHandler(Task):
@@ -113,7 +128,8 @@ class TaskExceptionHandler(Task):
 
         :return: None, The return value of this handler is ignored.
         """
-        exc.save_to_db()
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
         data = kwargs['data']
         data["messages"]["errors"] = exc.message
         data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
