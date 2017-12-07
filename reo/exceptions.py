@@ -1,6 +1,5 @@
 import traceback as tb
 from reo.models import ErrorModel
-from reo.log_levels import log
 from reo.models import ModelManager
 from celery import Task
 

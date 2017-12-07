@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import os
 import json
+import sys
 from reo.api_definitions import outputs
 from reo.nested_outputs import nested_output_definitions
 from reo.dispatch import ProcessOutputs
@@ -236,23 +237,29 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
 
     self.data = data
     self.name = 'parse_run_outputs'
-    year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
 
-    output_file = os.path.join(paths['outputs'], "REopt_results.json")
+    try:
+        year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
+        output_file = os.path.join(paths['outputs'], "REopt_results.json")
 
-    if not os.path.exists(output_file):
-        msg = "Optimization failed to run. Output file does not exist: " + output_file
-        log("DEBUG", "Current directory: " + os.getcwd())
-        log("WARNING", msg)
-        raise RuntimeError('REopt', msg)
+        if not os.path.exists(output_file):
+            msg = "Optimization failed to run. Output file does not exist: " + output_file
+            log("DEBUG", "Current directory: " + os.getcwd())
+            log("WARNING", msg)
+            raise RuntimeError('REopt', msg)
 
-    process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
-                              paths['static_outputs'], year)
-    results = process_results.get_output()  # --> "optimization_results" in api.py
+        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
+                                  paths['static_outputs'], year)
+        results = process_results.get_output()
 
-    data['outputs'].update(results['nested'])
-    data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+        data['outputs'].update(results['nested'])
+        data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
-    if saveToDB:
-        run_uuid = data['outputs']['Scenario']['run_uuid']
-        ModelManager.update(data, run_uuid=run_uuid)
+        if saveToDB:
+            run_uuid = data['outputs']['Scenario']['run_uuid']
+            ModelManager.update(data, run_uuid=run_uuid)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log("UnexpectedError", "{} occured in reo.results.parse_run_outputs.".format(exc_type))
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
