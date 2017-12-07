@@ -9,41 +9,10 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
 from celery import shared_task, Task
 from reo.models import ModelManager
+from reo.exceptions import *
 
 
-class Scenario(Task):
-
-    name = 'scenario'
-    max_retries = 0
-
-    # def run(self, *args, **kwargs):
-    #     self.data = kwargs['data']
-    #   nlaws: not sure about implementing run method. documentation says that you have to, but clearly don't.
-    #          really only need to assign self attributes to get the data to on_failure method.
-    #          I have tried doing it here and via __init__. But the only technique that has worked is assigning it
-    #          in the shared_task (below).
-
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """
-        log a bunch of stuff for debugging
-        save message: error and outputs: Scenario: status
-        need to stop rest of chain!?
-        :param exc: The exception raised by the task.
-        :param task_id: Unique id of the failed task. (not the run_uuid)
-        :param args: Original arguments for the task that failed.
-        :param kwargs: Original keyword arguments for the task that failed.
-        :param einfo: ExceptionInfo instance, containing the traceback.
-
-        :return: None, The return value of this handler is ignored.
-        """
-        data = kwargs['data']
-        data["messages"]["errors"] = einfo
-        data["outputs"]["Scenario"]["status"] = \
-            "Error caught in scenario_setup: {}".format(exc)
-        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
-
-
-@shared_task(bind=True, base=Scenario)
+@shared_task(bind=True, base=TaskExceptionHandler)
 def setup_scenario(self, run_uuid, paths, json_post, data):
         """
 
@@ -52,6 +21,7 @@ def setup_scenario(self, run_uuid, paths, json_post, data):
         :param inputs_dict: validated POST of input parameters
         """
         self.data = data
+        self.name = 'setup_scenario'
         paths = paths
         run_uuid = run_uuid
         file_post_input = os.path.join(paths['inputs'], "POST.json")
