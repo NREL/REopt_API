@@ -314,15 +314,8 @@ class MessageModel(models.Model):
 
 class BadPost(models.Model):
     run_uuid = models.UUIDField(unique=True)
-    post = PickledObjectField()
+    post = models.TextField()
     errors = models.TextField()
-
-    @classmethod
-    def create(cls, **kwargs):
-        obj = cls(**kwargs)
-        obj.save()
-
-        return obj
 
 
 def attribute_inputs(inputs):

@@ -253,7 +253,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        import pdb; pdb.set_trace()
         c = nested_to_flat(d['outputs'])
 
         try:

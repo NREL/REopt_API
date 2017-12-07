@@ -86,7 +86,9 @@ class RunInputResource(ModelResource):
         data["messages"] = input_validator.messages
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
         """
-        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs
+        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs,
+        this should be done in ModelManager.get_response if we are going to maintain backwards compatibility
+        with the worker_queue.
         """
 
         if not input_validator.isValid:  # 400 Bad Request
@@ -94,7 +96,8 @@ class RunInputResource(ModelResource):
             set_status(data, "Invald inputs. See messages.")
 
             if saveToDb:
-                bad_post = BadPost(run_uuid=run_uuid, post=bundle.data, errors=data['messages']['errors']).create()
+                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
+                badpost.save()
 
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
