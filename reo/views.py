@@ -112,6 +112,10 @@ def results(request):
         response = JsonResponse(d)
         return response
 
+    except ValueError as e:
+        if e.message == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Bad Request": e.message}, status=400)
+
     except Exception as e:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
