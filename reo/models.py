@@ -329,6 +329,30 @@ def attribute_inputs(inputs):
     return {k:v for k,v in inputs.items() if k[0]==k[0].lower() and v is not None}
 
 
+class ErrorModel(models.Model):
+
+    task = models.TextField(blank=True, default='')
+    name = models.TextField(blank=True, default='')
+    run_uuid = models.TextField(blank=True, default='')
+    message = models.TextField(blank=True, default='')
+    traceback = models.TextField(blank=True, default='')
+    created = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def create(cls, **kwargs):
+        # not sure why, (or how to stop it), celery re-raises an exception a couple times and thus multiple
+        # ErrorModel's are being saved to the database, so...
+        if len(cls.objects.filter(run_uuid=kwargs['run_uuid'])) == 0:
+            obj = cls(**kwargs)
+            obj.save()
+        # and if you include the following `else` statement, then celery raises PicklingError on the Exception object
+
+        # else:
+        #     obj = cls.objects.get(run_uuid=kwargs['run_uuid'])
+
+        return None
+
+
 class ModelManager(object):
 
     def __init__(self):
