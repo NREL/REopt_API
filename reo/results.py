@@ -292,5 +292,5 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occured in reo.results.parse_run_outputs.".format(exc_type))
+        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
