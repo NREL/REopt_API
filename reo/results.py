@@ -34,10 +34,9 @@ class ResultsTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        data = kwargs['data']
-        data["messages"]["errors"] = exc.message
-        data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
-        ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
+        self.data["messages"]["errors"] = exc.message
+        self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
         # self.request.chain = None  # stop the chain?
         # self.request.callback = None
@@ -270,7 +269,7 @@ class Results:
 def parse_run_outputs(self, data, paths, meta, saveToDB=True):
 
     self.data = data
-
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
@@ -289,8 +288,7 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         if saveToDB:
-            run_uuid = data['outputs']['Scenario']['run_uuid']
-            ModelManager.update(data, run_uuid=run_uuid)
+            ModelManager.update(data, run_uuid=self.run_uuid)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
