@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import uuid
+import sys
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -16,6 +17,7 @@ from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
+from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
 
 api_version = "version 1.0.0"
@@ -120,8 +122,22 @@ class RunInputResource(ModelResource):
         # .si for immutable signature, no outputs passed from reopt_jobs
         try:
             chain(setup | reopt_jobs, call_back)()
-        except:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
-            pass
+        except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
+            if isinstance(e, REoptError):
+                pass
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                log("UnexpectedError", "{} occurred in reo.api.".format(exc_type))
+                import pdb; pdb.set_trace()
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
+                err.save_to_db()
+
+                set_status(data, 'Internal Server Error. See messages for more.')
+                data['messages']['errors'] = err.message
+
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
