@@ -55,12 +55,17 @@ class Scenario:
         self.paths = Paths(run_uuid)
         self.run_uuid = run_uuid
         self.file_post_input = os.path.join(self.paths.inputs, "POST.json")
+        self.file_post_output = os.path.join(self.paths.outputs, "POST.json")
         self.inputs_dict = inputs_dict
         self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
                                   n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
-    def log_post(self, json_POST):
+    def log_post_in(self, json_POST):
         with open(self.file_post_input, 'w') as file_post:
+            json.dump(json_POST, file_post)
+
+    def log_post_out(self, json_POST):
+        with open(self.file_post_output, 'w') as file_post:
             json.dump(json_POST, file_post)
 
     def run(self):

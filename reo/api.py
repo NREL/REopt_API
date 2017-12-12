@@ -1,5 +1,3 @@
-import logging
-import os
 import json
 import uuid
 from tastypie.authorization import ReadOnlyAuthorization
@@ -8,7 +6,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
-from log_levels import log
+from log_levels import setup_logging
 from utilities import API_Error, attribute_inputs
 from scenario import Scenario
 from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
@@ -19,14 +17,6 @@ from api_definitions import inputs as flat_inputs
 api_version = "version 1.0.0"
 saveToDb = True
 
-
-def setup_logging():
-    file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-    logging.basicConfig(filename=file_logfile,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M%S %p',
-                        level=logging.INFO)
-    log("INFO", "Logging setup")
 
 
 class RunInputResource(ModelResource):
@@ -102,7 +92,7 @@ class RunInputResource(ModelResource):
                 s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
 
                 # Log POST request
-                s.log_post(input_validator.input_dict)
+                s.log_post_in(input_validator.input_dict)
 
                 # Run Optimization
                 optimization_results = s.run()
@@ -125,6 +115,7 @@ class RunInputResource(ModelResource):
                         "warnings": input_validator.warnings,
                     }
 
+
         if saveToDb:
             if len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0:
                 ScenarioModel.create(**meta)
@@ -138,8 +129,7 @@ class RunInputResource(ModelResource):
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
             output_dictionary.update(output_dictionary['outputs'])
 
-
-
+        s.log_post_out(output_dictionary)
         return output_dictionary
 
     @staticmethod
