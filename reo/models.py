@@ -308,7 +308,7 @@ class StorageModel(models.Model):
     macrs_option_years = models.IntegerField()
     macrs_bonus_pct = models.FloatField()
     macrs_itc_reduction = models.FloatField()
-    total_itc_pct = models.IntegerField()
+    total_itc_pct = models.FloatField()
     total_rebate_us_dollars_per_kw = models.IntegerField()
 
     #Outputs
