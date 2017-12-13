@@ -1,4 +1,3 @@
-import logging
 import os
 import json
 import uuid
@@ -8,7 +7,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
-from log_levels import log
+from log_levels import setup_logging
 from utilities import API_Error, attribute_inputs
 from scenario import Scenario
 from reo.src.paths import Paths
@@ -19,15 +18,6 @@ from api_definitions import inputs as flat_inputs
 
 api_version = "version 1.0.0"
 saveToDb = True
-
-
-def setup_logging():
-    file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-    logging.basicConfig(filename=file_logfile,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M%S %p',
-                        level=logging.INFO)
-    log("INFO", "Logging setup")
 
 
 class RunInputResource(ModelResource):
@@ -89,6 +79,7 @@ class RunInputResource(ModelResource):
         output_dictionary["inputs"] = input_validator.input_for_response
         output_dictionary['outputs'] = {"Scenario": meta}
         output_dictionary["messages"] = input_validator.messages
+        paths = Paths(run_uuid)
 
         if input_validator.isValid:
             try:
@@ -100,11 +91,12 @@ class RunInputResource(ModelResource):
                 if saveToDb:
                     self.save_scenario_inputs(scenario_inputs)
 
-                paths = Paths(run_uuid)
                 s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths)
 
                 # Log POST request
-                s.log_post(input_validator.input_dict)
+                file_post_input = os.path.join(paths.inputs, "POST.json")
+                with open(file_post_input, 'w') as file_post:
+                    json.dump(scenario_inputs, file_post)
 
                 # Run Optimization
                 optimization_results = s.run()
@@ -140,8 +132,10 @@ class RunInputResource(ModelResource):
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
             output_dictionary.update(output_dictionary['outputs'])
 
-
-
+        # Log response
+        file_post_output = os.path.join(paths.outputs, "POST.json")
+        with open(file_post_output, 'w') as file_post:
+            json.dump(output_dictionary, file_post)
         return output_dictionary
 
     @staticmethod
