@@ -16,9 +16,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.data_definitions = nested_input_definitions
-
         self.reopt_base = '/api/v1/reopt/'
-
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -58,7 +56,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                         - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
                         < self.REopt_tol)
 
-    @skip('')
+    
     def test_required(self):
 
         required = ['latitude','longitude']
@@ -88,7 +86,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site>LoadProfile"
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
-    @skip('')
+    
     def test_valid_data_types(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
@@ -100,7 +98,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
             self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['input_errors']))
-    @skip('')
+    
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
@@ -121,7 +119,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
-    @skip('')
+    
     def test_urdb_rate(self):
 
         data = self.complete_valid_nestedpost

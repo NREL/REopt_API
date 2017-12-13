@@ -123,6 +123,7 @@ class RunInputResource(ModelResource):
         try:
             chain(setup | reopt_jobs, call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
+
             if isinstance(e, REoptError):
                 pass
             else:
