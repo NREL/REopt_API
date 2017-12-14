@@ -9,6 +9,7 @@ from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import setup_logging
 from utilities import API_Error, attribute_inputs
 from scenario import Scenario
+from reo.src.paths import Paths
 from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
     PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
 from api_definitions import inputs as flat_inputs
@@ -16,8 +17,6 @@ from api_definitions import inputs as flat_inputs
 
 api_version = "version 1.0.0"
 saveToDb = True
-
-
 
 class RunInputResource(ModelResource):
 
@@ -78,6 +77,7 @@ class RunInputResource(ModelResource):
         output_dictionary["inputs"] = input_validator.input_for_response
         output_dictionary['outputs'] = {"Scenario": meta}
         output_dictionary["messages"] = input_validator.messages
+        paths = Paths(run_uuid)
 
         if input_validator.isValid:
             try:
@@ -89,7 +89,7 @@ class RunInputResource(ModelResource):
                 if saveToDb:
                     self.save_scenario_inputs(scenario_inputs)
 
-                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs)
+                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths)
 
                 # Log POST request
                 s.log_post_in(input_validator.input_dict)
