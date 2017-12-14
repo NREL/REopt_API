@@ -23,12 +23,16 @@ class Command(object):
             raise RuntimeError('REopt', msg)
 
         except sp.TimeoutExpired:
-            raise RuntimeError('REopt', "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov \
-                                         for support".format(timeout))
+            msg = "Optimization exceeded timeout: {} seconds, please email reopt@nrel.gov for support".format(timeout)
+            log("ERROR", msg)
+            raise RuntimeError('REopt', msg)
+
         log("INFO", "REopt run successfully. Status {}".format(status))
 
         if status.strip() != 'optimal':
-            raise RuntimeError('REopt', "Could not find an optimal solution for these inputs.")
+            msg = "Could not find an optimal solution for these inputs."
+            log("ERROR", msg)
+            raise RuntimeError('REopt', msg)
 
 
 class REopt(object):
