@@ -3,7 +3,7 @@ import uuid
 import os
 import datetime, tzlocal
 from openpyxl import load_workbook
-from reo.models import ScenarioModel
+from reo.models import ScenarioModel, SiteModel, PVModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
 from reo.src.dat_file_manager import big_number
 
 
@@ -52,12 +52,12 @@ class ProForma(models.Model):
     def generate_spreadsheet(self):
 
         scenario = self.scenariomodel
-        site = scenario.sitemodel_set.first()
-        batt = site.storagemodel_set.first()
-        pv = site.pvmodel_set.first()
-        load_profile = site.loadprofilemodel_set.first()
-        electric_tariff = site.electrictariffmodel_set.first()
-        financial = site.financialmodel_set.first()
+        site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
         # Open file for reading
         wb = load_workbook(self.file_template, read_only=False, keep_vba=True)

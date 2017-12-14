@@ -95,7 +95,7 @@ class RunInputResource(ModelResource):
 
         if not input_validator.isValid:  # 400 Bad Request
 
-            set_status(data, "Invald inputs. See messages.")
+            set_status(data, "Invalid inputs. See messages.")
 
             if saveToDb:
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
@@ -123,6 +123,7 @@ class RunInputResource(ModelResource):
         try:
             chain(setup | reopt_jobs, call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
+
             if isinstance(e, REoptError):
                 pass
             else:
