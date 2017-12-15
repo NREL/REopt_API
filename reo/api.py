@@ -1,3 +1,4 @@
+import os
 import json
 import uuid
 from tastypie.authorization import ReadOnlyAuthorization
@@ -17,6 +18,7 @@ from api_definitions import inputs as flat_inputs
 
 api_version = "version 1.0.0"
 saveToDb = True
+
 
 class RunInputResource(ModelResource):
 
@@ -92,7 +94,9 @@ class RunInputResource(ModelResource):
                 s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths)
 
                 # Log POST request
-                s.log_post_in(input_validator.input_dict)
+                file_post_input = os.path.join(paths.inputs, "POST.json")
+                with open(file_post_input, 'w') as file_post:
+                    json.dump(scenario_inputs, file_post)
 
                 # Run Optimization
                 optimization_results = s.run()
@@ -115,7 +119,6 @@ class RunInputResource(ModelResource):
                         "warnings": input_validator.warnings,
                     }
 
-
         if saveToDb:
             if len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0:
                 ScenarioModel.create(**meta)
@@ -129,7 +132,10 @@ class RunInputResource(ModelResource):
             # backwards compatibility for webtool, copy all "outputs" to top level of response dict
             output_dictionary.update(output_dictionary['outputs'])
 
-        s.log_post_out(output_dictionary)
+        # Log response
+        file_post_output = os.path.join(paths.outputs, "POST.json")
+        with open(file_post_output, 'w') as file_post:
+            json.dump(output_dictionary, file_post)
         return output_dictionary
 
     @staticmethod
