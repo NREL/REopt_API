@@ -25,7 +25,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.results_url = '/reopt/results/?run_uuid='
 
     def get_response(self, data):
-        initial_post =  self.api_client.post(self.submit_url, format='json', data=data)
+        initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
 
         response = json.loads(self.api_client.get(self.results_url + uuid).content)

@@ -4,7 +4,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import skip, TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 
 

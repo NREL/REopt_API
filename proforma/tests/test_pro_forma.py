@@ -3,13 +3,12 @@ import tzlocal
 import json
 import datetime
 import os
-import time
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from django.test import Client
 from proforma.models import ProForma
 from reo.models import ScenarioModel
-from reo.nested_to_flat_output import nested_to_flat
+from unittest import skip
 
 
 def now():
@@ -37,6 +36,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         return response
 
+    @skip('')
     def test_creation(self):
 
         run_output = self.get_response(self.example_reopt_request_data)
