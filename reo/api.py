@@ -10,10 +10,8 @@ from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
 from log_levels import log
-from utilities import API_Error
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
-from api_definitions import inputs as flat_inputs
 from reo.src.paths import Paths
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
@@ -37,11 +35,9 @@ class RunInputResource(ModelResource):
 
     class Meta:
         setup_logging()
-        # queryset = ScenarioModel.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['post']
         detail_allowed_methods = []
-        # object_class = ScenarioModel
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
