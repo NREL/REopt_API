@@ -2,7 +2,7 @@
 lock "3.9.1"
 
 set :application, "reopt_api"
-set :repo_url, "git@github.nrel.gov:ndiorio/reopt_api.git"
+set :repo_url, "git@github.nrel.gov:REopt/reopt_api.git"
 
 # Set the base deployment directory.
 set :deploy_to_base, "/srv/data/apps"
