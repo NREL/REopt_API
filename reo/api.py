@@ -125,11 +125,10 @@ class RunInputResource(ModelResource):
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
 
             if isinstance(e, REoptError):
-                pass
+                pass  # handled in each task
             else:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 log("UnexpectedError", "{} occurred in reo.api.".format(exc_type))
-                import pdb; pdb.set_trace()
                 err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
 
