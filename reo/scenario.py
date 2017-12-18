@@ -48,7 +48,7 @@ class ScenarioTask(Task):
 
 
 @shared_task(bind=True, base=ScenarioTask)
-def setup_scenario(self, run_uuid, paths, json_post, data):
+def setup_scenario(self, run_uuid, paths, data):
     """
 
     All error handling is done in validators.py before data is passed to scenario.py
@@ -58,13 +58,9 @@ def setup_scenario(self, run_uuid, paths, json_post, data):
     self.run_uuid = run_uuid
     self.data = data
     try:
-        file_post_input = os.path.join(paths['inputs'], "POST.json")
         inputs_dict = data['inputs']['Scenario']
         dfm = DatFileManager(run_id=run_uuid, paths=paths,
                              n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
-
-        with open(file_post_input, 'w') as file_post:
-            json.dump(json_post, file_post)
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])

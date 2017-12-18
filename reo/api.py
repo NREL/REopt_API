@@ -9,7 +9,7 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
-from log_levels import log
+from log_levels import log, setup_logging
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from reo.src.paths import Paths
@@ -20,15 +20,6 @@ from celery import group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
-
-
-def setup_logging():
-    file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-    logging.basicConfig(filename=file_logfile,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M%S %p',
-                        level=logging.INFO)
-    log("INFO", "Logging setup")
 
 
 class RunInputResource(ModelResource):
@@ -108,8 +99,13 @@ class RunInputResource(ModelResource):
 
         paths = vars(Paths(run_uuid=run_uuid))
 
-        setup = setup_scenario.s(run_uuid=run_uuid, paths=paths,
-                                 json_post=input_validator.input_for_response, data=data)
+        # Log POST request
+        file_post_input = os.path.join(paths['inputs'], "POST.json")
+        with open(file_post_input, 'w') as file_post:
+            json.dump(input_validator.input_for_response, file_post)
+
+        setup = setup_scenario.s(run_uuid=run_uuid, paths=paths, data=data)
+
         reopt_jobs = group(
             reopt.s(paths=paths, data=data, bau=False),
             reopt.s(paths=paths, data=data, bau=True),
