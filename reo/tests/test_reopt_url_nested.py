@@ -1,11 +1,11 @@
 import json
 import pickle
-from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
-from unittest import skip
 from reo.nested_to_flat_output import nested_to_flat
+from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from reo.models import ModelManager
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -16,9 +16,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.data_definitions = nested_input_definitions
-
         self.reopt_base = '/api/v1/reopt/'
-
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -36,6 +34,29 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
 
+    def check_common_outputs(self, d_calculated, d_expected):
+
+        c = d_calculated
+        e = d_expected
+
+        # check all calculated keys against the expected
+        for key, value in e.iteritems():
+            tolerance = self.REopt_tol
+            if key == 'npv':
+                tolerance = 2 * self.REopt_tol
+
+            if key in c and key in e:
+                if e[key] == 0:
+                    self.assertEqual(c[key], e[key])
+                else:
+                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+
+        # Total LCC BAU is sum of utility costs
+        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                        < self.REopt_tol)
+
+    
     def test_required(self):
 
         required = ['latitude','longitude']
@@ -65,6 +86,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site>LoadProfile"
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
 
+    
     def test_valid_data_types(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
@@ -76,7 +98,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
             self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['input_errors']))
-
+    
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
@@ -96,44 +118,23 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+
     
     def test_urdb_rate(self):
 
         data = self.complete_valid_nestedpost
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response'] =self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response']=self.missing_schedule_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_schedule_urdb
 
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
 
         text = 'energyweekendschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
-
-    def check_common_outputs(self, d_calculated, d_expected):
-
-        c = d_calculated
-        e = d_expected
-
-        # check all calculated keys against the expected
-        for key, value in e.iteritems():
-            tolerance = self.REopt_tol
-            if key == 'npv':
-                tolerance = 2 * self.REopt_tol
-
-            if key in c and key in e:
-                if e[key] == 0:
-                    self.assertEqual(c[key], e[key])
-                else:
-                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
-
-        # Total LCC BAU is sum of utility costs
-        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
-                        < self.REopt_tol)
 
     def test_complex_incentives(self):
         """
@@ -176,7 +177,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 }
         resp = self.get_response(data=data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -190,10 +194,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             self.check_common_outputs(c, d_expected)
         except:
-            import pdb; pdb.set_trace()
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
 
     def test_wind(self):
@@ -245,7 +248,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         try:
@@ -253,7 +258,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
         
     def test_valid_nested_posts(self):
@@ -263,7 +268,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -279,7 +286,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder."
                   .format(d['outputs']['Scenario'].get('run_uuid')))
-            print("Error message: {}".format(d['messages'].get('error')))
+            print("Error message: {}".format(d['messages'].get('errors')))
             raise
 
         # another test with custom rate and monthly kwh
@@ -292,7 +299,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -307,7 +316,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(d['outputs']['Scenario'].get('uuid')))
-            print("Error message: {}".format(c['messages'].get('error')))
+            print("Error message: {}".format(c['messages'].get('errors')))
             raise
 
     def test_not_optimal_solution(self):
@@ -330,5 +339,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             }
         }
         response = self.get_response(data=data)
-        resp_dict = json.loads(response.content)
-        self.assertTrue('Could not find an optimal solution for these inputs.' in resp_dict['messages']['error']['REopt'])
+        r = json.loads(response.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['errors'])

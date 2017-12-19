@@ -1,6 +1,6 @@
 from django.http import JsonResponse
-from reo.models import ScenarioModel
-from models import ResilienceModel
+from reo.models import ScenarioModel, SiteModel, PVModel, StorageModel, LoadProfileModel
+from models import ResilienceModel 
 from reo.utilities import API_Error
 from outage_simulator import simulate_outage
 
@@ -16,10 +16,10 @@ def resilience_stats(request):
         return API_Error(e).response
 
     rm = ResilienceModel.create(scenariomodel=scenario)
-    site = scenario.sitemodel_set.first()
-    batt = site.storagemodel_set.first()
-    pv = site.pvmodel_set.first()
-    load_profile = site.loadprofilemodel_set.first()
+    site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                 * batt.inverter_efficiency_pct \

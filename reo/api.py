@@ -1,20 +1,21 @@
 import os
 import json
 import uuid
+import sys
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from validators import REoptResourceValidation, ValidateNestedInput
-from log_levels import setup_logging
-from utilities import API_Error, attribute_inputs
-from scenario import Scenario
+from log_levels import log, setup_logging
+from scenario import setup_scenario
+from reo.models import ModelManager, BadPost
 from reo.src.paths import Paths
-from reo.models import MessagesModel, FinancialModel, LoadProfileModel, ElectricTariffModel, \
-    PVModel, WindModel, StorageModel, SiteModel, ScenarioModel
-from api_definitions import inputs as flat_inputs
-
+from reo.src.reopt import reopt
+from reo.results import parse_run_outputs
+from reo.exceptions import REoptError, UnexpectedError
+from celery import group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -24,11 +25,9 @@ class RunInputResource(ModelResource):
 
     class Meta:
         setup_logging()
-        queryset = ScenarioModel.objects.all()
         resource_name = 'reopt'
         allowed_methods = ['post']
         detail_allowed_methods = []
-        object_class = ScenarioModel
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
@@ -65,125 +64,87 @@ class RunInputResource(ModelResource):
             output_format = 'nested'
             input_validator = ValidateNestedInput(bundle.data, nested=True)
 
-        # Return  Results
-        output_model = self.create_output(input_validator, output_format)
+        run_uuid = str(uuid.uuid4())
+        
+        def set_status(d, status):
+            d["outputs"]["Scenario"]["status"] = status
 
-        raise ImmediateHttpResponse(HttpResponse(json.dumps(output_model), content_type='application/json', status=201))
+        data = dict()
+        data["inputs"] = input_validator.input_dict
+        data["messages"] = input_validator.messages
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
+        """
+        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs,
+        this should be done in ModelManager.get_response if we are going to maintain backwards compatibility
+        with the worker_queue.
+        """
 
-    def create_output(self, input_validator, output_format):
+        if not input_validator.isValid:  # 400 Bad Request
 
-        run_uuid = uuid.uuid4()
-        meta = {'run_uuid': str(run_uuid), 'api_version': api_version}
-      
-        output_dictionary = dict()
-        output_dictionary["inputs"] = input_validator.input_for_response
-        output_dictionary['outputs'] = {"Scenario": meta}
-        output_dictionary["messages"] = input_validator.messages
-        paths = Paths(run_uuid)
+            set_status(data, "Invalid inputs. See messages.")
 
-        if input_validator.isValid:
-            try:
-               
-                scenario_inputs = input_validator.input_dict['Scenario']
+            if saveToDb:
+                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
+                badpost.save()
 
-                windEnabled = scenario_inputs['Site']['Wind']['max_kw'] > 0
-                
-                if saveToDb:
-                    self.save_scenario_inputs(scenario_inputs)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                     content_type='application/json',
+                                                     status=400))
 
-                s = Scenario(run_uuid=run_uuid, inputs_dict=scenario_inputs, paths=paths)
-
-                # Log POST request
-                file_post_input = os.path.join(paths.inputs, "POST.json")
-                with open(file_post_input, 'w') as file_post:
-                    json.dump(scenario_inputs, file_post)
-
-                # Run Optimization
-                optimization_results = s.run()
-
-                optimization_results['flat'].update(meta)
-                optimization_results['flat']['uuid'] = meta['run_uuid']
-                optimization_results['nested']['Scenario'].update(meta)
-                output_dictionary['outputs'] = optimization_results[output_format]
-
-                if saveToDb:
-                    self.save_scenario_outputs(optimization_results['nested']['Scenario'])
-               
-                if not windEnabled:
-                    output_dictionary = self.remove_wind(output_dictionary, output_format)
-               
-            except Exception as e:
-                
-                output_dictionary["messages"] = {
-                        "error": API_Error(e).response,
-                        "warnings": input_validator.warnings,
-                    }
-
+        model_manager = ModelManager()
         if saveToDb:
-            if len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0:
-                ScenarioModel.create(**meta)
+            set_status(data, 'Optimizing...')
+            model_manager.create_and_save(data)
 
-            messages = MessagesModel.save_set(output_dictionary['messages'], scenario_uuid=run_uuid)
+        paths = vars(Paths(run_uuid=run_uuid))
 
-        if output_format == 'flat':
-            # fill in outputs with inputs
-            for arg, defs in flat_inputs(full_list=True).iteritems():
-                output_dictionary['outputs'][arg] = output_dictionary["inputs"].get(arg) or defs.get("default")
-            # backwards compatibility for webtool, copy all "outputs" to top level of response dict
-            output_dictionary.update(output_dictionary['outputs'])
+        # Log POST request
+        file_post_input = os.path.join(paths['inputs'], "POST.json")
+        with open(file_post_input, 'w') as file_post:
+            json.dump(input_validator.input_for_response, file_post)
 
-        # Log response
-        file_post_output = os.path.join(paths.outputs, "POST.json")
-        with open(file_post_output, 'w') as file_post:
-            json.dump(output_dictionary, file_post)
-        return output_dictionary
+        setup = setup_scenario.s(run_uuid=run_uuid, paths=paths, data=data)
 
-    @staticmethod
-    def remove_wind(output_dictionary, output_format):
-        if output_format == 'nested':
-            del output_dictionary['inputs']['Scenario']['Site']["Wind"]
-            del output_dictionary['outputs']['Scenario']['Site']["Wind"]
-        
-        if output_format=='flat':
-            for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
-                        'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
-                        'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
-                        'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
-                        'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
-                if key in output_dictionary['inputs'].keys():
-                    del output_dictionary['inputs'][key]
-                if key in output_dictionary['outputs'].keys():
-                    del output_dictionary['outputs'][key]
+        reopt_jobs = group(
+            reopt.s(paths=paths, data=data, bau=False),
+            reopt.s(paths=paths, data=data, bau=True),
+        )
+        call_back = parse_run_outputs.si(data=data, paths=paths, meta={'run_uuid': run_uuid, 'api_version': api_version})
+        # .si for immutable signature, no outputs passed from reopt_jobs
+        try:
+            chain(setup | reopt_jobs, call_back)()
+        except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
 
-        return output_dictionary
+            if isinstance(e, REoptError):
+                pass  # handled in each task
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                log("UnexpectedError", "{} occurred in reo.api.".format(exc_type))
+                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
+                err.save_to_db()
 
-    def save_scenario_inputs(self, d):
-        """
-        saves input json to db tables
-        :param d: validated input dictionary
-        :return: None
-        """
-        self.scenarioM = ScenarioModel.create(**attribute_inputs(d))
-        self.siteM = SiteModel.create(scenario_model=self.scenarioM, **attribute_inputs(d['Site']))
-        self.financialM = FinancialModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Financial']))
-        self.load_profileM = LoadProfileModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['LoadProfile']))
-        self.electric_tariffM = ElectricTariffModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['PV']))
-        self.windM = WindModel.create(site_model=self.siteM, **attribute_inputs(d['Site']['Wind']))
-        self.storageM = StorageModel.create(site_model =self.siteM, **attribute_inputs(d['Site']['Storage']))
+                set_status(data, 'Internal Server Error. See messages for more.')
+                data['messages']['errors'] = err.message
 
-    def save_scenario_outputs(self, d):
-        """
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
-        :param r: Scenario.run response
-        :return: OutputModel to be saved in REoptResponse as 'outputs'
-        """        
-        
-        ScenarioModel.objects.filter(id=self.scenarioM.id).update(**attribute_inputs(d))   
-        SiteModel.objects.filter(id=self.siteM.id).update(**attribute_inputs(d['Site']))
-        FinancialModel.objects.filter(id=self.financialM.id).update(**attribute_inputs(d['Site']['Financial']))
-        LoadProfileModel.objects.filter(id=self.load_profileM.id).update(**attribute_inputs(d['Site']['LoadProfile']))
-        ElectricTariffModel.objects.filter(id=self.electric_tariffM.id).update(**attribute_inputs(d['Site']['ElectricTariff']))
-        PVModel.objects.filter(id=self.pvM.id).update(**attribute_inputs(d['Site']['PV']))
-        WindModel.objects.filter(id=self.windM.id).update(**attribute_inputs(d['Site']['Wind']))
-        StorageModel.objects.filter(id=self.storageM.id).update(**attribute_inputs(d['Site']['Storage']))
+        raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
+                                                 content_type='application/json', status=201))
+
+"""
+NOTES
+
+1. celery tasks raise exceptions through the .get() method. So, even though we handle exceptions with the
+Task.on_failure method, they get raised again! (And again it seems. There are at least two re-raises occurring in
+celery.Task).  So for tests, that call the chain synchronously, the intentional Exception that is re-raised through
+the chain call causes a test failure.
+
+Another way to solve this problem is to remove FAILURE from PROPAGATE_STATES in line 149 of:
+    <where/you/keep/python/packages>/lib/python2.7/site-packages/celery/states.py
+But, this may have unintended consequences.
+
+All in all, celery exception handling is very obscure.
+
+"""

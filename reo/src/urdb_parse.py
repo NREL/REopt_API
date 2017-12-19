@@ -120,11 +120,11 @@ class UrdbParse:
 
         log("INFO", "URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
-        self.file_summary = os.path.join(paths.utility, 'Summary.csv')
-        self.file_energy_summary = os.path.join(paths.outputs, "energy_cost.txt")
-        self.file_demand_summary = os.path.join(paths.outputs, "demand_cost.txt")
-        self.file_energy_summary_bau = os.path.join(paths.outputs_bau, "energy_cost.txt")
-        self.file_demand_summary_bau = os.path.join(paths.outputs_bau, "demand_cost.txt")
+        self.file_summary = os.path.join(paths['utility'], 'Summary.csv')
+        self.file_energy_summary = os.path.join(paths['outputs'], "energy_cost.txt")
+        self.file_demand_summary = os.path.join(paths['outputs'], "demand_cost.txt")
+        self.file_energy_summary_bau = os.path.join(paths['outputs_bau'], "energy_cost.txt")
+        self.file_demand_summary_bau = os.path.join(paths['outputs_bau'], "demand_cost.txt")
         
         self.energy_rates_summary = []
         self.demand_rates_summary = []

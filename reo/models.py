@@ -1,9 +1,9 @@
 # from django.contrib.auth.models import User
 from django.db import models
 from django.contrib.postgres.fields import *
-import uuid
+from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
-import numpy as np
+from reo.nested_inputs import nested_input_definitions
 
 
 class URDBError(models.Model):
@@ -17,7 +17,7 @@ class ScenarioModel(models.Model):
 
     # Inputs
     # user = models.ForeignKey(User, null=True, blank=True)
-    run_uuid = models.UUIDField(unique=True, default=uuid.uuid4)
+    run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
     user_id = models.TextField(null=True, blank=True)
     
@@ -35,36 +35,25 @@ class ScenarioModel(models.Model):
 
 class SiteModel(models.Model):
 
-    #Relationships
-    scenario_model = models.ForeignKey(
-        ScenarioModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
-    
+
     @classmethod
-    def create(cls, scenario_model=None, **kwargs):
-        obj = cls(scenario_model=scenario_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class FinancialModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Input
+    run_uuid = models.UUIDField(unique=True)
     analysis_years = models.IntegerField()
     escalation_pct = models.FloatField()
     om_cost_escalation_pct = models.FloatField()
@@ -81,22 +70,17 @@ class FinancialModel(models.Model):
     
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class LoadProfileModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
     
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     doe_reference_name = models.TextField(null=True, blank=True, default='')
     annual_kwh = models.FloatField(null=True, blank=True)
     year = models.IntegerField(default=2018)
@@ -110,8 +94,8 @@ class LoadProfileModel(models.Model):
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
@@ -119,14 +103,8 @@ class LoadProfileModel(models.Model):
 
 class ElectricTariffModel(models.Model):
     
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-    
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     urdb_utilty_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
@@ -164,22 +142,17 @@ class ElectricTariffModel(models.Model):
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class PVModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -224,22 +197,17 @@ class PVModel(models.Model):
     
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
     
 
 class WindModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
@@ -273,22 +241,17 @@ class WindModel(models.Model):
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
 class StorageModel(models.Model):
-    #Relationships
-    site_model = models.ForeignKey(
-        SiteModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
 
     #Inputs
+    run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     min_kwh = models.FloatField()
@@ -319,521 +282,235 @@ class StorageModel(models.Model):
     year_one_soc_series_pct = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     
     @classmethod
-    def create(cls, site_model=None, **kwargs):
-        obj = cls(site_model=site_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
 
-class MessagesTypeModel(models.Model): 
-
+class MessageModel(models.Model):
+    """
+    For Example:
+    {"messages":{
+                "warnings": "This is a warning message.",
+                "errors": "REopt had an error."
+                }
+    }
+    """
+    message_type = models.TextField(blank=True, default='')
+    message = models.TextField(blank=True, default='')
+    run_uuid = models.UUIDField(unique=False)
     description = models.TextField(blank=True, default='')
 
     @classmethod
-    def create(cls, text):
-        objs = cls.objects.filter(description=text)
-        if len(objs) > 0:
-            return objs[0]
-        else:
-
-            obj = cls(description=text)
-            obj.save()
-
-        return obj
-
-
-class MessagesGroupTypeModel(models.Model):
-
-    description = models.TextField(blank=True, default='')
-
-    @classmethod
-    def create(cls, text):
-        objs = cls.objects.filter(description=text)
-        if len(objs) > 0:
-            return objs[0]
-        else:
-
-            obj = cls(description=text)
-            obj.save()
-
-        return obj
-
-
-class MessagesModel(models.Model):
-    #Relationships
-    scenario_model = models.ForeignKey(
-        ScenarioModel,
-        to_field = 'run_uuid',
-        on_delete=models.CASCADE,
-        default=None,
-        null=True,
-        blank=True
-    )
-
-    messages_type_model = models.ForeignKey(
-        MessagesTypeModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
-    messages_group_type_model = models.ForeignKey(
-        MessagesGroupTypeModel,
-        on_delete=models.CASCADE,
-        default=None
-    )
-
-    description = models.TextField(blank=True, default='')
-
-    @classmethod
-    def create(cls, scenario_model_id=None, messages_type_model=None,messages_group_type_model=None, **kwargs):
-        obj = cls(scenario_model_id=scenario_model_id, messages_type_model=messages_type_model,
-                  messages_group_type_model=messages_group_type_model, **kwargs)
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
         obj.save()
 
         return obj
 
-    @classmethod
-    def save_set(cls,message_dictionary, scenario_uuid=None):
-        
-        for k, v in message_dictionary.items():
-            messages_type_model = MessagesTypeModel.create(text=k)
-            if isinstance(v, dict):
-                for kk, vv in v.items():
-                    message_group_type_model = MessagesGroupTypeModel.create(text=kk)
-                    obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
-                                     messages_group_type_model=message_group_type_model, description=vv)
-                    obj.save()
 
+class BadPost(models.Model):
+    run_uuid = models.UUIDField(unique=True)
+    post = models.TextField()
+    errors = models.TextField()
+
+
+def attribute_inputs(inputs):
+    return {k:v for k,v in inputs.items() if k[0]==k[0].lower() and v is not None}
+
+
+class ErrorModel(models.Model):
+
+    task = models.TextField(blank=True, default='')
+    name = models.TextField(blank=True, default='')
+    run_uuid = models.TextField(blank=True, default='')
+    message = models.TextField(blank=True, default='')
+    traceback = models.TextField(blank=True, default='')
+    created = models.DateTimeField(auto_now_add=True)
+
+
+class ModelManager(object):
+
+    def __init__(self):
+        self.scenarioM = None
+        self.siteM = None
+        self.financialM = None
+        self.load_profileM = None
+        self.electric_tariffM = None
+        self.pvM = None
+        self.windM = None
+        self.storageM = None
+        self.messagesM = None
+
+    def create_and_save(self, data):
+        """
+        create and save models
+        saves input json to db tables
+        :param data: dict, constructed in api.py, mirrors reopt api response structure
+        """
+        d = data["inputs"]['Scenario']
+        scenario_dict = data["outputs"]['Scenario'].copy()
+        scenario_dict.update(d)
+
+        self.scenarioM = ScenarioModel.create(**attribute_inputs(scenario_dict))
+        self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
+        self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
+                                                **attribute_inputs(d['Site']['Financial']))
+        self.load_profileM = LoadProfileModel.create(run_uuid=self.scenarioM.run_uuid,
+                                                     **attribute_inputs(d['Site']['LoadProfile']))
+        self.electric_tariffM = ElectricTariffModel.create(run_uuid=self.scenarioM.run_uuid,
+                                                           **attribute_inputs(d['Site']['ElectricTariff']))
+        self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
+        self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
+        self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
+        for message_type, message in data['messages'].iteritems():
+            MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
+
+    @staticmethod
+    def update(data, run_uuid):
+        """
+        save Scenario results in database
+        :param data: dict, constructed in api.py, mirrors reopt api response structure
+        :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
+        :return: None
+        """
+        d = data["outputs"]["Scenario"]
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
+        FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
+        LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
+        ElectricTariffModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricTariff']))
+        PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
+        StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
+
+        for message_type, message in data['messages'].iteritems():
+            if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
+                # message already saved
+                pass
             else:
-                message_group_type_model = MessagesGroupTypeModel.create(text="Other")
-                obj = cls.create(scenario_model_id=scenario_uuid, messages_type_model=messages_type_model,
-                                 messages_group_type_model=message_group_type_model, description=v)
-                obj.save()
+                MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
+    @staticmethod
+    def update_scenario_and_messages(data, run_uuid):
+        """
+        save Scenario results in database
+        :param data: dict, constructed in api.py, mirrors reopt api response structure
+        :return: None
+        """
+        d = data["outputs"]["Scenario"]
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))
+        for message_type, message in data['messages'].iteritems():
+            if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
+                # message already saved
+                pass
+            else:
+                MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
-    
-# class REoptResponse(models.Model):
+    @staticmethod
+    def make_response(run_uuid):
+        """
+        Reconstruct response dictionary from postgres tables (django models).
+        NOTE: postgres column type UUID is not JSON serializable. Work-around is removing those columns and then
+              adding back into outputs->Scenario as string.
+        :param run_uuid:
+        :return:
+        """
 
-#     id = models.UUIDField(primary_key=True, unique=True)
-#     api_version = models.TextField(blank=True, default='')
-#     created = models.DateTimeField(auto_now_add=True)
+        def remove_ids(d):
+            del d['run_uuid']
+            del d['id']
+            return d
         
-#     @property
-#     def pv_installed_cost(self):
-#         return self.pv_kw * self.pv_cost
+        def move_outs_to_ins(site_key, resp):
 
-#     @property
-#     def battery_installed_cost(self):
-#         return self.batt_kw * self.batt_cost_kw + self.batt_kwh * self.batt_cost_kwh
-    
-#     @property    
-#     def total_capital_costs(self):
-#         return self.pv_installed_cost + self.battery_installed_cost
+            resp['inputs']['Scenario']['Site'][site_key] = dict()
 
-#     @property
-#     def year_one_bill(self):
-#         return self.year_one_demand_cost + self.year_one_energy_cost + \
-#                self.year_one_fixed_cost + self.year_one_min_charge_adder
+            for k in nested_input_definitions['Scenario']['Site'][site_key].iterkeys():
 
-#     @property
-#     def year_one_bill_bau(self):
-#         return self.year_one_demand_cost_bau + self.year_one_energy_cost_bau + \
-#                self.year_one_fixed_cost_bau + self.year_one_min_charge_adder_bau
-#     @property
-#     def year_one_savings(self):
-#         return self.year_one_bill_bau - self.year_one_bill
-
-#     @property
-#     def macrs_five_year(self):
-#         return [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
-#     @property
-#     def macrs_seven_year(self):
-#         return [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
-    
-#     @property
-#     def techs(self):
-#         return ['PV', 'BATT']
-
-#     def load_incentives(self):
-
-#         self.incentives = dict()
+                try:
+                    resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    del resp['outputs']['Scenario']['Site'][site_key][k]
+                except KeyError:  # known exception for k = urdb_response (user provided blended rates)
+                    resp['inputs']['Scenario']['Site'][site_key][k] = None
         
-#         for t in self.techs:
+        # add try/except for get fail / bad run_uuid
+        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff']
+        
+        resp = dict()
+        resp['outputs'] = dict()
+        resp['inputs'] = dict()
+        resp['inputs']['Scenario'] = dict()
+        resp['inputs']['Scenario']['Site'] = dict()
+        resp['messages'] = dict()
+        
+        resp['outputs']['Scenario'] = remove_ids(model_to_dict(ScenarioModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
+        resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['LoadProfile'] = remove_ids(model_to_dict(LoadProfileModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
 
-#             self.incentives[t] = {}
+        wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
+
+        if wind_dict['max_kw'] > 0:
+            resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
+            site_keys.append('Wind')
+
+        for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
+
+            resp['messages'][m['message_type']] = m['message']
             
-#             if t == 'PV':
-
-#                 self.incentives[t]['tech_cost'] = self.pv_installed_cost
-#                 self.incentives[t]['tech_size'] = self.pv_kw
-
-#                 # MACRS
-#                 self.incentives[t]['macrs_schedule'] = self.pv_macrs_schedule
-#                 self.incentives[t]['bonus_fraction'] = self.pv_macrs_bonus_fraction
-#                 self.incentives[t]['macrs_itc_reduction'] = self.pv_macrs_itc_reduction
-
-#                 # tax credits
-#                 self.incentives[t]['itc_fed_percent'] = self.pv_itc_federal
-#                 self.incentives[t]['itc_fed_percent_maxvalue'] = self.pv_itc_federal_max
-
-#                 # cash incentives
-#                 self.incentives[t]['ibi_sta_percent'] = self.pv_ibi_state
-#                 self.incentives[t]['ibi_sta_percent_maxvalue'] = self.pv_ibi_state_max
-#                 self.incentives[t]['ibi_uti_percent'] = self.pv_ibi_utility
-#                 self.incentives[t]['ibi_uti_percent_maxvalue'] = self.pv_ibi_utility_max
-
-#                 # capacity based incentives
-#                 self.incentives[t]['cbi_fed_amount'] = self.pv_rebate_federal
-#                 self.incentives[t]['cbi_fed_maxvalue'] = self.pv_rebate_federal_max
-#                 self.incentives[t]['cbi_sta_amount'] = self.pv_rebate_state
-#                 self.incentives[t]['cbi_sta_maxvalue'] = self.pv_rebate_state_max
-#                 self.incentives[t]['cbi_uti_amount'] = self.pv_rebate_utility
-#                 self.incentives[t]['cbi_uti_maxvalue'] = self.pv_rebate_utility_max
-
-#                 # production based incentives
-#                 self.incentives[t]['pbi_combined_amount'] = self.pv_pbi
-#                 self.incentives[t]['pbi_combined_maxvalue'] = self.pv_pbi_max
-#                 self.incentives[t]['pbi_combined_term'] = self.pv_pbi_years
-
-#             elif t == 'BATT':
-
-#                 self.incentives[t]['tech_cost'] = self.battery_installed_cost
-#                 self.incentives[t]['tech_size'] = self.batt_kw
-
-#                 # MACRS
-#                 self.incentives[t]['macrs_schedule'] = self.batt_macrs_schedule
-#                 self.incentives[t]['bonus_fraction'] = self.batt_macrs_bonus_fraction
-#                 self.incentives[t]['macrs_itc_reduction'] = self.batt_macrs_itc_reduction
-
-#                 # tax credits
-#                 self.incentives[t]['itc_fed_percent'] = self.batt_itc_total
-
-#                 # capacity based incentives
-#                 self.incentives[t]['cbi_fed_amount'] = self.batt_rebate_total
-
-#                 # production based incentives
-#                 self.incentives[t]['pbi_combined_amount'] = 0
-#                 self.incentives[t]['pbi_combined_maxvalue'] = 0
-#                 self.incentives[t]['pbi_combined_term'] = 0
-
-#         # tax credits reduce depreciation and ITC basis
-#             self.incentives[t]['itc_fed_percent_deprbas_fed'] = True
-
-#             # cash incentive is taxable
-#             self.incentives[t]['ibi_sta_percent_tax_fed'] = True
-#             self.incentives[t]['ibi_uti_percent_tax_fed'] = True
-
-#             self.incentives[t]['cbi_fed_tax_fed'] = True
-#             self.incentives[t]['cbi_sta_tax_fed'] = True
-#             self.incentives[t]['cbi_uti_tax_fed'] = True
-
-#             self.incentives[t]['pbi_combined_tax_fed'] = True
-
-#             # incentive reduces depreciation and ITC basis
-#             self.incentives[t]['ibi_sta_percent_deprbas_fed'] = False
-#             self.incentives[t]['ibi_uti_percent_deprbas_fed'] = False
-
-#             self.incentives[t]['cbi_fed_deprbas_fed'] = False
-#             self.incentives[t]['cbi_sta_deprbas_fed'] = False
-#             self.incentives[t]['cbi_uti_deprbas_fed'] = False
-
-#             # Assume state MACRS the same as fed
-#             self.incentives[t]['state_depreciation_equals_federal'] = True
-
-#              # calculated values
-#             self.incentives[t]['federal_itc_basis'] = self.federal_itc_basis(t)
-#             self.incentives[t]['federal_depreciation_basis'] = self.federal_depreciation_basis(t)
-
-#     def pbi_calculate(self, tech, year, annual_energy):
-
-#         pbi_amount = 0
-#         if year <= self.incentives[tech]['pbi_combined_term']:
-#             pbi_amount = min(self.incentives[tech]['pbi_combined_amount'] * annual_energy, self.incentives[tech]['pbi_combined_maxvalue'])
-#         return pbi_amount
-
-#     def federal_taxable_income_before_deductions(self, tech):
-
-#         taxable_income = 0
-#         tech_cost = self.incentives[tech]['tech_cost']
-#         tech_kw = self.incentives[tech]['tech_size']
-
-#         state_ibi = min(self.incentives[tech]['ibi_sta_percent'] * tech_cost,
-#                         self.incentives[tech]['ibi_sta_percent_maxvalue'])
-#         utility_ibi = min(self.incentives[tech]['ibi_uti_percent'] * tech_cost,
-#                           self.incentives[tech]['ibi_uti_percent_maxvalue'])
-#         federal_cbi = min(self.incentives[tech]['cbi_fed_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_fed_maxvalue'])
-#         state_cbi = min(self.incentives[tech]['cbi_sta_amount'] * tech_kw,
-#                         self.incentives[tech]['cbi_sta_maxvalue'])
-#         utility_cbi = min(self.incentives[tech]['cbi_uti_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_uti_maxvalue'])
-
-#         if self.incentives[tech]['ibi_sta_percent_tax_fed']:
-#             taxable_income += state_ibi
-#         if self.incentives[tech]['ibi_uti_percent_tax_fed']:
-#             taxable_income += utility_ibi
-#         if self.incentives[tech]['cbi_fed_tax_fed']:
-#             taxable_income += federal_cbi
-#         if self.incentives[tech]['cbi_sta_tax_fed']:
-#             taxable_income += state_cbi
-#         if self.incentives[tech]['cbi_uti_tax_fed']:
-#             taxable_income += utility_cbi
-
-#         return taxable_income
-
-#     def federal_depreciation_basis(self, tech):
-
-#         tech_cost = self.incentives[tech]['tech_cost']
-
-#         federal_itc = min(self.incentives[tech]['itc_fed_percent'] * tech_cost,
-#                           self.incentives[tech]['itc_fed_percent_maxvalue'])
-#         itc_federal = 0
-
-#         if self.incentives[tech]['itc_fed_percent_deprbas_fed']:
-#             itc_federal = self.incentives[tech]['macrs_itc_reduction'] * federal_itc
-
-#         federal_itc_basis = self.federal_itc_basis(tech)
-#         basis = federal_itc_basis - itc_federal
-
-#         return basis
-
-#     def federal_depreciation_amount_total(self, year):
-
-#         depreciation_amount = 0
-#         for tech in self.techs:
-#             bonus_fraction = 0
-#             macrs_schedule = self.incentives[tech]['macrs_schedule']
-
-#             macrs_schedule_array = []
-#             if macrs_schedule == 5:
-#                 macrs_schedule_array = self.macrs_five_year
-#             elif macrs_schedule == 7:
-#                 macrs_schedule_array = self.macrs_seven_year
-
-#             depreciation_basis = self.incentives[tech]['federal_depreciation_basis']
-#             if year == 1:
-#                 bonus_fraction = self.incentives[tech]['bonus_fraction']
-#             if year <= len(macrs_schedule_array) and macrs_schedule > 0:
-#                 depreciation_amount += depreciation_basis * (macrs_schedule_array[year - 1] + bonus_fraction)
-
-#         return depreciation_amount
-
-#     def federal_itc_basis(self, tech):
-
-#         # reduce the itc basis
-#         ibi_state = 0
-#         ibi_util = 0
-#         cbi_fed = 0
-#         cbi_state = 0
-#         cbi_util = 0
-
-#         tech_cost = self.incentives[tech]['tech_cost']
-#         tech_kw = self.incentives[tech]['tech_size']
-
-#         state_ibi = min(self.incentives[tech]['ibi_sta_percent'] * tech_cost,
-#                         self.incentives[tech]['ibi_sta_percent_maxvalue'])
-#         utility_ibi = min(self.incentives[tech]['ibi_uti_percent'] * tech_cost,
-#                           self.incentives[tech]['ibi_uti_percent_maxvalue'])
-#         federal_cbi = min(self.incentives[tech]['cbi_fed_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_fed_maxvalue'])
-#         state_cbi = min(self.incentives[tech]['cbi_sta_amount'] * tech_kw,
-#                         self.incentives[tech]['cbi_sta_maxvalue'])
-#         utility_cbi = min(self.incentives[tech]['cbi_uti_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_uti_maxvalue'])
-
-#         if self.incentives[tech]['ibi_sta_percent_deprbas_fed']:
-#             ibi_state = state_ibi
-#         if self.incentives[tech]['ibi_uti_percent_deprbas_fed']:
-#             ibi_util = utility_ibi
-#         if self.incentives[tech]['cbi_fed_deprbas_fed']:
-#             cbi_fed = federal_cbi
-#         if self.incentives[tech]['cbi_sta_deprbas_fed']:
-#             cbi_state = state_cbi
-#         if self.incentives[tech]['cbi_uti_deprbas_fed']:
-#             cbi_util = utility_cbi
-
-#         return tech_cost - ibi_state - ibi_util - cbi_fed - cbi_state - cbi_util
-
-#     def federal_itc_total(self):
-
-#         federal_itc = 0
-#         for tech in self.techs:
-#             tech_cost = self.incentives[tech]['tech_cost']
-#             federal_itc += min(self.incentives[tech]['itc_fed_percent'] * tech_cost,
-#                                self.incentives[tech]['itc_fed_percent_maxvalue'])
-#         return federal_itc
-
-#     def total_cash_incentives(self, tech):
-
-#         tech_cost = self.incentives[tech]['tech_cost']
-#         tech_kw = self.incentives[tech]['tech_size']
-
-#         state_ibi = float(min(self.incentives[tech]['ibi_sta_percent'] * tech_cost,
-#                         self.incentives[tech]['ibi_sta_percent_maxvalue']))
-#         utility_ibi = float(min(self.incentives[tech]['ibi_uti_percent'] * tech_cost,
-#                           self.incentives[tech]['ibi_uti_percent_maxvalue']))
-#         federal_cbi = float(min(self.incentives[tech]['cbi_fed_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_fed_maxvalue']))
-#         state_cbi = float(min(self.incentives[tech]['cbi_sta_amount'] * tech_kw,
-#                         self.incentives[tech]['cbi_sta_maxvalue']))
-#         utility_cbi = float(min(self.incentives[tech]['cbi_uti_amount'] * tech_kw,
-#                           self.incentives[tech]['cbi_uti_maxvalue']))
-
-#         return state_ibi + utility_ibi + federal_cbi + state_cbi + utility_cbi
-
-#     def compute_cashflow(self):
-#         self.load_incentives()
-
-#         n_cols = self.analysis_period + 1
-
-#         # row_vectors to match template spreadsheet
-#         zero_list = [0] * n_cols
-#         annual_energy = list(zero_list)
-#         bill_without_system = list(zero_list)
-#         bill_with_system = list(zero_list)
-#         exports_with_system = list(zero_list)
-#         value_of_savings = list(zero_list)
-#         o_and_m_capacity_cost = list(zero_list)
-#         batt_kw_replacement_cost = list(zero_list)
-#         batt_kwh_replacement_cost = list(zero_list)
-#         total_operating_expenses = list(zero_list)
-#         tech_operating_expenses = dict()
-#         total_deductible_expenses = list(zero_list)
-#         debt_amount = list(zero_list)
-#         pre_tax_cash_flow = list(zero_list)
-#         total_cash_incentives = list(zero_list)
-#         total_production_based_incentives = list(zero_list)
-#         federal_taxable_income_before_deductions = list(zero_list)
-#         federal_depreciation_amount = list(zero_list)
-#         federal_total_deductions = list(zero_list)
-#         federal_income_tax = list(zero_list)
-#         federal_tax_liability = list(zero_list)
-#         after_tax_annual_costs = list(zero_list)
-#         after_tax_value_of_energy = list(zero_list)
-#         after_tax_cash_flow = list(zero_list)
-#         net_annual_costs_with_system = list(zero_list)
-#         net_annual_costs_without_system = list(zero_list)
-
-#         # incentives, tax credits, depreciation
-#         federal_itc = self.federal_itc_total()
-
-#         # year 0 initializations
-#         total_cash_incentives[0] = sum([self.total_cash_incentives(tech) for tech in self.techs])
-#         debt_amount[0] = self.total_capital_costs - total_cash_incentives[0]
-#         pre_tax_cash_flow[0] = -debt_amount[0]
-#         after_tax_annual_costs[0] = total_cash_incentives[0] - self.total_capital_costs
-#         after_tax_cash_flow[0] = after_tax_annual_costs[0]
-#         net_annual_costs_with_system[0] = after_tax_annual_costs[0]
-#         net_annual_costs_without_system[0] = 0
-
-#         # year 1 initializations
-#         nominal_escalation_modifier = 1 + self.rate_escalation
-#         inflation_modifier = 1 + self.om_cost_escalation_pct
-#         annual_energy[1] = self.year_one_energy_produced
-#         federal_taxable_income_before_deductions[1] = sum([self.federal_taxable_income_before_deductions(tech) for tech in self.techs])
-
-#         for year in range(1, n_cols):
-
-#             inflation_modifier_n = inflation_modifier ** year
-#             nominal_escalation_modifier_n = nominal_escalation_modifier ** year
-#             degradation_modifier = 1 - self.pv_degradation_pct
-
-#             if year > 1:
-#                 annual_energy[year] = annual_energy[year - 1] * (1 - self.pv_degradation_pct)
-
-#             # Bill savings
-#             bill_without_system[year] = self.year_one_bill_bau * nominal_escalation_modifier_n
-#             bill_with_system[year] = self.year_one_bill * nominal_escalation_modifier_n
-#             exports_with_system[year] = self.year_one_export_benefit * nominal_escalation_modifier_n * degradation_modifier
-#             value_of_savings[year] = bill_without_system[year] - (bill_with_system[year] + exports_with_system[year])
-
-#             # Operating Expenses
-#             o_and_m_capacity_cost[year] = self.pv_om * self.pv_kw * inflation_modifier_n
-
-#             if self.batt_replacement_year_kw == year:
-#                 batt_kw_replacement_cost[year] = self.batt_replacement_cost_kw * self.batt_kw
-
-#             if self.batt_replacement_year_kwh == year:
-#                 batt_kwh_replacement_cost[year] = self.batt_replacement_cost_kwh * self.batt_kwh
-
-#             tech_operating_expenses['PV'] = o_and_m_capacity_cost[year]
-#             tech_operating_expenses['BATT'] = batt_kw_replacement_cost[year] + batt_kwh_replacement_cost[year]
-#             total_operating_expenses[year] = sum(tech_operating_expenses.values())
-
-#             # Tax deductible operating expenses
-#             for tech in self.techs:
-#                 total_deductible_expenses[year] += tech_operating_expenses[tech]
-
-#             # Pre-tax cash flow
-#             pre_tax_cash_flow[year] = -(total_operating_expenses[year])
-
-#             # Direct cash incentives
-#             total_production_based_incentives[year] = self.pbi_calculate('PV', year, annual_energy[year])
-#             total_cash_incentives[year] += total_production_based_incentives[year]
-
-#             # Federal income tax
-#             if self.incentives['PV']['pbi_combined_tax_fed']:
-#                 federal_taxable_income_before_deductions[year] += total_cash_incentives[year]
-
-#             federal_itc_to_apply = 0
-#             if year == 1:
-#                 federal_itc_to_apply = federal_itc
-
-#             federal_depreciation_amount[year] = self.federal_depreciation_amount_total(year)
-#             federal_total_deductions[year] = total_deductible_expenses[year] + federal_depreciation_amount[year]
-#             federal_income_tax[year] = (federal_taxable_income_before_deductions[year]-federal_total_deductions[year]) * self.owner_tax_pct
-#             federal_tax_liability[year] = -federal_income_tax[year] + federal_itc_to_apply
-
-#             # After tax calculation
-#             after_tax_annual_costs[year] = pre_tax_cash_flow[year] + \
-#                                            total_cash_incentives[year] + \
-#                                            federal_tax_liability[year]
-
-#             after_tax_value_of_energy[year] = value_of_savings[year] * (1 - self.owner_tax_pct)
-#             after_tax_cash_flow[year] = after_tax_annual_costs[year] + after_tax_value_of_energy[year]
-
-#             net_annual_costs_without_system[year] = -bill_without_system[year] * (1 - self.owner_tax_pct)
-#             net_annual_costs_with_system[year] = after_tax_annual_costs[year] - (bill_with_system[year] + exports_with_system[year]) * (1 - self.owner_tax_pct)
-
-#         # Additional Unit test outputs
-#         self.fed_pv_depr_basis_calc = self.incentives['PV']['federal_depreciation_basis']
-#         self.fed_pv_itc_basis_calc = self.incentives['PV']['federal_itc_basis']
-#         self.fed_batt_depr_basis_calc = self.incentives['BATT']['federal_depreciation_basis']
-#         self.fed_batt_itc_basis_calc = self.incentives['BATT']['federal_itc_basis']
-#         self.pre_tax_cash_flow = pre_tax_cash_flow
-#         self.direct_cash_incentives = total_cash_incentives
-#         self.federal_tax_liability = federal_tax_liability
-#         self.bill_with_sys = bill_with_system
-#         self.exports_with_sys = exports_with_system
-#         self.bill_bau = bill_without_system
-#         self.total_operating_expenses = total_operating_expenses
-#         self.after_tax_annual_costs = after_tax_annual_costs
-#         self.after_tax_value = after_tax_value_of_energy
-#         self.after_tax_cash_flow = after_tax_cash_flow
-#         self.net_annual_cost_without_sys = net_annual_costs_without_system
-#         self.net_annual_cost_with_sys = net_annual_costs_with_system
-
-#         # compute outputs
-#         try:
-#             self.irr = np.irr(after_tax_cash_flow)
-#         except ValueError:
-#             self.irr = 0
-#             log("ERROR", "IRR calculation failed to compute a real number")
-
-#         if math.isnan(self.irr):
-#             self.irr = 0
-
-#         self.npv = np.npv(self.owner_discount_pct, after_tax_cash_flow)
-#         self.lcc = -np.npv(self.owner_discount_pct, net_annual_costs_with_system)
-#         self.lcc_bau = -np.npv(self.owner_discount_pct, net_annual_costs_without_system)
-
-
-# class WorkingResponse(models.Model):
-
-#     uuid = models.UUIDField(default=uuid.uuid4, null=False)
-#     api_version = models.TextField(blank=True, default='')
-#     created = models.DateTimeField(auto_now_add=True)
-#     inputs = PickledObjectField(null=True)
-#     outputs = PickledObjectField(null=True)
-#     messages = PickledObjectField(null=True)
+        for scenario_key in nested_input_definitions['Scenario'].iterkeys():
+
+            if scenario_key.islower():
+                resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
+                del resp['outputs']['Scenario'][scenario_key]
+
+        for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
+
+            if site_key.islower():
+                resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
+                del resp['outputs']['Scenario']['Site'][site_key]
+
+            elif site_key in site_keys:
+
+                move_outs_to_ins(site_key, resp=resp)
+
+        return resp
+
+        # if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
+        #     data = remove_wind(data, output_format, model_solved)
+        #     # need to delete wind messages, but intertwined with other messages from validator
+        #
+        # if output_format == 'flat':
+        #     # fill in outputs with inputs
+        #     for arg, defs in flat_inputs(full_list=True).iteritems():
+        #         data[arg] = bundle.data.get(arg) or defs.get("default")
+        #     # backwards compatibility for webtool, copy all "outputs" to top level of response dict
+        #     if model_solved:
+        #         data.update(optimization_results['flat'])
+        #     data.update(scenario_outputs)
+
+
+# def remove_wind(output_dictionary, output_format='nested'):
+#     if output_format == 'nested':
+#         del output_dictionary['inputs']['Scenario']['Site']["Wind"]
+#         del output_dictionary['outputs']['Scenario']['Site']["Wind"]
+#
+#     if output_format == 'flat':
+#         for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
+#                     'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
+#                     'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
+#                     'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
+#                     'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
+#             if key in output_dictionary['inputs'].keys():
+#                 del output_dictionary['inputs'][key]
+#             if key in output_dictionary['outputs'].keys():
+#                 del output_dictionary['outputs'][key]
+#
+#     return output_dictionary

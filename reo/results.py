@@ -1,8 +1,46 @@
+from __future__ import absolute_import, unicode_literals
 import os
 import json
-from api_definitions import outputs
-from nested_outputs import nested_output_definitions
-from dispatch import ProcessOutputs
+import sys
+from reo.api_definitions import outputs
+from reo.nested_outputs import nested_output_definitions
+from reo.dispatch import ProcessOutputs
+from reo.log_levels import log
+from celery import shared_task, Task
+from reo.exceptions import REoptError, UnexpectedError
+from reo.models import ModelManager
+
+
+class ResultsTask(Task):
+    """
+    Used to define custom Error handling for celery task
+    """
+
+    name = 'callback'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+
+        :return: None, The return value of this handler is ignored.
+        """
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
+        self.data["messages"]["errors"] = exc.message
+        self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
+
+        # self.request.chain = None  # stop the chain?
+        # self.request.callback = None
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
 class Results:
@@ -227,3 +265,32 @@ class Results:
         return power
 
 
+@shared_task(bind=True, base=ResultsTask)
+def parse_run_outputs(self, data, paths, meta, saveToDB=True):
+
+    self.data = data
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
+    try:
+        year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
+        output_file = os.path.join(paths['outputs'], "REopt_results.json")
+
+        if not os.path.exists(output_file):
+            msg = "Optimization failed to run. Output file does not exist: " + output_file
+            log("DEBUG", "Current directory: " + os.getcwd())
+            log("WARNING", msg)
+            raise RuntimeError('REopt', msg)
+
+        process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
+                                  paths['static_outputs'], year)
+        results = process_results.get_output()
+
+        data['outputs'].update(results['nested'])
+        data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+
+        if saveToDB:
+            ModelManager.update(data, run_uuid=self.run_uuid)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)

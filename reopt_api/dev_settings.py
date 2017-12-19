@@ -15,7 +15,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import django
-#import reopt_api
 
 
 URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails_test
@@ -46,7 +45,8 @@ INSTALLED_APPS = (
     'reo',
     'tastypie',
     'proforma',
-    'resilience_stats'
+    'resilience_stats',
+    'django_celery_results'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -84,18 +84,17 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-
 if 'test' in sys.argv:
     DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'reopt',
-        'USER': 'reopt',
-        'PASSWORD': 'reopt',
-        'HOST': 'localhost',
-        'PORT': '',
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'reopt',
+            'USER': 'reopt',
+            'PASSWORD': 'reopt',
+            'HOST': 'localhost',
+            'PORT': '',
         }
-}
+    }
 else:
     DATABASES = {
          'default': {
@@ -123,7 +122,20 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Results backend
+CELERY_RESULT_BACKEND = 'django-db'
 
+# celery task registration
+CELERY_IMPORTS = (
+    'reo.src.reopt',
+    'reo.api',
+    'reo.scenario',
+    'reo.results',
+)
+
+if 'test' in sys.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

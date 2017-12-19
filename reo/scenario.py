@@ -1,87 +1,106 @@
+from __future__ import absolute_import, unicode_literals
 import json
-import shutil
 import os
-import traceback
-from reo.log_levels import log
+import sys
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind
-from reo.src.reopt import REopt
+from celery import shared_task, Task
+from reo.models import ModelManager
+from reo.exceptions import REoptError, UnexpectedError
+from reo.log_levels import log
 
 
-class Scenario:
+class ScenarioTask(Task):
+    """
+    Used to define custom Error handling for celery task
+    """
 
-    # if need to debug, change to True, outputs OUT files, GO files, debugging to cmdline
-    debug = True
+    name = 'scenario'
+    max_retries = 0
 
-    def __init__(self, run_uuid, inputs_dict, paths):
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
         """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        need to stop rest of chain!?
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
 
-        All error handling is done in validators.py before data is passed to scenario.py
-        :param run_uuid:
-        :param inputs_dict: validated POST of input parameters
+        :return: None, The return value of this handler is ignored.
         """
-        self.paths = paths
-        self.run_uuid = run_uuid
-        self.inputs_dict = inputs_dict
-        self.dfm = DatFileManager(run_id=self.run_uuid, paths=self.paths,
-                                  n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
 
-    def run(self):
-        try:
-            # storage is always made, even if max size is zero (due to REopt's expected inputs)
-            storage = Storage(dfm=self.dfm, **self.inputs_dict["Site"]["Storage"])
+        self.data["messages"]["errors"] = exc.message
+        self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
-            site = Site(dfm=self.dfm, **self.inputs_dict["Site"])
+        # self.request.chain = None  # stop the chain?
+        # self.request.callback = None
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-            lp = LoadProfile(dfm=self.dfm, user_profile=self.inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                             latitude=self.inputs_dict['Site'].get('latitude'),
-                             longitude=self.inputs_dict['Site'].get('longitude'),
-                             **self.inputs_dict['Site']['LoadProfile'])
 
-            elec_tariff = ElecTariff(dfm=self.dfm, run_id=self.run_uuid,
-                                     load_year=self.inputs_dict['Site']['LoadProfile']['year'],
-                                     time_steps_per_hour=self.inputs_dict.get('time_steps_per_hour'),
-                                     **self.inputs_dict['Site']['ElectricTariff'])
+@shared_task(bind=True, base=ScenarioTask)
+def setup_scenario(self, run_uuid, paths, data):
+    """
 
-            if self.inputs_dict["Site"]["PV"]["max_kw"] > 0:
-                pv = PV(dfm=self.dfm, latitude=self.inputs_dict['Site'].get('latitude'),
-                        longitude=self.inputs_dict['Site'].get('longitude'), **self.inputs_dict["Site"]["PV"])
+    All error handling is done in validators.py before data is passed to scenario.py
+    :param run_uuid:
+    :param inputs_dict: validated POST of input parameters
+    """
+    self.run_uuid = run_uuid
+    self.data = data
+    try:
+        inputs_dict = data['inputs']['Scenario']
+        dfm = DatFileManager(run_id=run_uuid, paths=paths,
+                             n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
-            if self.inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-                wind = Wind(dfm=self.dfm, **self.inputs_dict["Site"]["Wind"])
+        # storage is always made, even if max size is zero (due to REopt's expected inputs)
+        storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])
 
-            util = Util(dfm=self.dfm,
-                        outage_start_hour=self.inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                        outage_end_hour=self.inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
-                        )
+        site = Site(dfm=dfm, **inputs_dict["Site"])
 
-            self.dfm.add_net_metering(
-                net_metering_limit=self.inputs_dict['Site']['ElectricTariff'].get("net_metering_limit_kw"),
-                interconnection_limit=self.inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
-            )
-            self.dfm.finalize()
+        lp = LoadProfile(dfm=dfm, user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                         latitude=inputs_dict['Site'].get('latitude'),
+                         longitude=inputs_dict['Site'].get('longitude'),
+                         **inputs_dict['Site']['LoadProfile'])
 
-            r = REopt(dfm=self.dfm, paths=self.paths, year=self.inputs_dict['Site']['LoadProfile']['year'])
-            
-            output_dict = r.run(timeout=self.inputs_dict['timeout_seconds'])
+        elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
+                                 load_year=inputs_dict['Site']['LoadProfile']['year'],
+                                 time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                                 **inputs_dict['Site']['ElectricTariff'])
 
-            output_dict['nested']["Scenario"]["Site"]["LoadProfile"]["year_one_electric_load_series_kw"] = \
-                lp.unmodified_load_list  # if outage is defined, this is necessary to return the full load profile
-            
-            self.cleanup()
-            return output_dict
+        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
+            pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
 
-        except Exception as e:
-            self.cleanup()
-            setattr(e, "traceback", traceback.format_exc())
-            raise e
+        if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
+            wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
 
-    def cleanup(self):
-        # do not call until alternate means of accessing data is developed!
-        if not self.debug:
-            log("INFO", "Cleaning up folders from: " + self.paths.run)
-            shutil.rmtree(self.paths.run)
+        util = Util(dfm=dfm,
+                    outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                    outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                    )
+
+        dfm.add_net_metering(
+            net_metering_limit=inputs_dict['Site']['ElectricTariff'].get("net_metering_limit_kw"),
+            interconnection_limit=inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
+        )
+        dfm.finalize()
+        dfm_dict = vars(dfm)  # serialize for celery
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm']:
+            if dfm_dict.get(k) is not None:
+                del dfm_dict[k]
+        return vars(dfm)  # --> REopt runs (BAU and with tech)
+
+    except Exception:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
