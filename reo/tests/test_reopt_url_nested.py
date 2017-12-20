@@ -125,6 +125,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data = self.complete_valid_nestedpost
 
         data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response']['label'] = '539f6b63ec4f024411ec9c69'
+        text = "URDB Rate (label=539f6b63ec4f024411ec9c69) is currently restricted due to performance limitations"
+        self.check_data_error_response(data,text)
+
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
