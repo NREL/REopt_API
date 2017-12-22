@@ -423,12 +423,6 @@ forall (t in Tech,s in Seg) do
    dvSystemSize (t,s) >= CapCostX (t,s-1) * binSegChosen (t,s)
 end-do
 
-!forall (l in Loc,b in BattLevel) do
-!   dvStorageSizeKWH(l,b) <= MaxStorageSizeKWH(l)* binBattLevel(b)
-!   dvStorageSizeKW(l,b) <= MaxStorageSizeKW(l)* binBattLevel(b)
-!end-do
-
-! sum(b in BattLevel) binBattLevel(b) = 1
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! End CapCost constraints
