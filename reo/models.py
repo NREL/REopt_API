@@ -59,8 +59,8 @@ class FinancialModel(models.Model):
     om_cost_escalation_pct = models.FloatField()
     offtaker_discount_pct = models.FloatField()
     offtaker_tax_pct = models.FloatField()
-    owner_discount_pct = models.FloatField(null=True)
-    owner_tax_pct = models.FloatField(null=True)
+    # owner_discount_pct = models.FloatField(null=True)
+    # owner_tax_pct = models.FloatField(null=True)
 
     #Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
