@@ -116,6 +116,9 @@ CELERY_RESULT_BACKEND = 'django-db'
 # celery task registration
 CELERY_IMPORTS = (
     'reo.src.reopt',
+    'reo.api',
+    'reo.scenario',
+    'reo.results',
 )
 
 
