@@ -168,6 +168,11 @@ within dev_settings.py.
 To run scenarios without having to start the redis and celery servers, simply remove the `if` statement and de-dent `CELERY_TASK_ALWAYS_EAGER = True`, such that all scenarios are runin "eager" mode.
 
 
+### Monitoring and Management
+
+Celery offers a web-based task monitor (under development). To start the "flower" (pronounced like water flow) server:
+`celery -A reopt_api flower --port=5555`
+
 ## If running locally from the REopt default server iac-129986
 * Navigate to `C:\Nick\Projects\api\env\`
 ```
