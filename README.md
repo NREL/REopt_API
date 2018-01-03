@@ -157,7 +157,7 @@ DATABASES = {
 
 NOTE: You can use any values for the `DATABASES` settings that you want as long as you set up the same values in your Postgres server.  For example, you could create a database with the name of `MY-PROJECT` and use your own log-in information.
 
-### Removing redis/celery dependency
+## Removing redis/celery dependency
 When running tests, the celery tasks are run in "eager" mode, which means that they are run synchronously and thus the reopt endpoint will not responde with the run_uuid until the model has solved.  This setting is achieved with:
 ```
 if 'test' in sys.argv:
@@ -165,13 +165,52 @@ if 'test' in sys.argv:
 ```
 within dev_settings.py.
 
-To run scenarios without having to start the redis and celery servers, simply remove the `if` statement and de-dent `CELERY_TASK_ALWAYS_EAGER = True`, such that all scenarios are runin "eager" mode.
+To run scenarios without having to start the redis and celery servers, simply remove the `if` statement and de-dent `CELERY_TASK_ALWAYS_EAGER = True`, such that all scenarios are run in "eager" mode.
 
 
-### Monitoring and Management
+## Monitoring and Management
 
 Celery offers a web-based task monitor (under development). To start the "flower" (pronounced like water flow) server:
 `celery -A reopt_api flower --port=5555`
+which will allow you to view tasks in your brower at [http://localhost:5555](http://localhost:5555).
+
+
+## Alternative Method for running API server locally (Mac/Linux only?)
+The actual API servers (develop, staging, and production) use Chef to set up each node (including daemonizing Redis).
+The Gunicorn instance (which is a [Python WSGI HTTP server for Unix](http://gunicorn.org/)), the Celery workers, and the Flower task monitor
+are all started via the `Procfile` by [Foreman](http://ddollar.github.io/foreman/).
+
+[Honcho](https://honcho.readthedocs.io/en/latest/index.html) is a Python port of the Ruby based Foreman and can be easily installed with
+`pip install honcho`
+Honcho uses a `.env` file in the project root directory to define environment variables, which should define the following:
+```
+DEPLOY_CURRENT_PATH="/Users/nlaws/projects/reopt/webtool/reopt_api"
+APP_ENV="development"
+TEST="true"
+```
+The first line of the `Procfile`:
+```
+web: $DEPLOY_CURRENT_PATH/bin/server
+```
+requires that `DEPLOY_CURRENT_PATH` point to your root directory for the API (MY-API-FOLDER). It will run the bash file located in
+MY-API-FOLDER/bin. You can expect these lines to fail (gracefully):
+```
+. /opt/xpressmp/bin/xpvars.sh
+export XPRESS=/opt/xpressmp/bin
+```
+which define the Mosel environment variables on the linux servers.
+
+Finally, `exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi` will start the Gunicorn server.
+With `TEST="true"` the server will listen at `127.0.0.1:8000`, which is defined in MY-API-FOLDER/config/gunicorn.conf.py.
+The gunicorn.conf.py file also uses `APP_ENV="development"` to select the Django configuration file.
+
+Once you have honcho installed, your .env variables defined, and a `redis-server` running, you can:
+```
+honcho start
+```
+which will start the API and Flower servers, as well as the Celery workers.
+
+
 
 ## If running locally from the REopt default server iac-129986
 * Navigate to `C:\Nick\Projects\api\env\`
