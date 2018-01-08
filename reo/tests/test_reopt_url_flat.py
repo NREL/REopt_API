@@ -376,12 +376,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 d_calculated = json.loads(resp.content).get('outputs')
 
                 d_expected = dict()
-                d_expected['npv'] = 335.0
-                d_expected['lcc'] = 2926
-                d_expected['pv_kw'] = 0.925313
+                d_expected['npv'] = 328.0
+                d_expected['lcc'] = 2933
+                d_expected['pv_kw'] = 0.915545
                 d_expected['batt_kw'] = 0
                 d_expected['batt_kwh'] = 0
-                d_expected['year_one_utility_kwh'] = 1904.7135
+                d_expected['year_one_utility_kwh'] = 1916.4787
 
 
                 try:
