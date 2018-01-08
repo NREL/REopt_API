@@ -315,7 +315,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.5,
+          "default": 0.4,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
@@ -464,7 +464,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.5,
+          "default": 0.4,
           "description": "Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
         },
         "macrs_itc_reduction": {
@@ -642,48 +642,90 @@ nested_input_definitions = {
       },
 
       "Storage":{
-          "min_kw":                               {  "type": "float", "min": 0, "max": 1e9, "default": 0,
-                                                      "description":"Minimum battery power capacity size constraint for optimization"  },
-          "max_kw":                               {"type": "float", "min": 0, "max": 1e9, "default": 1000000,
-                                                      "description":"Maximum battery power capacity size constraint for optimization. Set to zero to disable storage"  },
-          "min_kwh":                              {"type": "float", "min": 0, "default": 0,
-                                                      "description":"Minimum battery energy storage capacity constraint for optimization" },
-          "max_kwh":                              {"type": "float", "min": 0, "default": 1000000,
-                                                      "description":"Maximum battery energy storage capacity constraint for optimization. Set to zero to disable Storage" },
-          "internal_efficiency_pct":              {"type": "float", "min": 0, "max": 1, "default": 0.975,
-                                                      "description":"Battery inherent efficiency independent of inverter and rectifier" },
-          "inverter_efficiency_pct":              {"type": "float", "min": 0, "max": 1, "default": 0.96,
-                                                      "description":"Battery inverter efficiency" },
-          "rectifier_efficiency_pct":             {"type": "float", "min": 0, "max": 1, "default": 0.96,
-                                                      "description":"Battery rectifier efficiency" },
-          "soc_min_pct":                          {"type": "float", "min": 0, "max": 1, "default": 0.2,
-                                                      "description":"Minimum allowable battery state of charge" },
-          "soc_init_pct":                         {"type": "float", "min": 0, "max": 1, "default": 0.5,
-                                                      "description":"Battery state of charge at first hour of optimization" },
-          "canGridCharge":                        {"type": "bool", "default": True,
-                                                      "description":"Flag to set whether the battery can be charged from the grid, or just onsite generation" },
-          "installed_cost_us_dollars_per_kw":     {"type": "float", "min": 0, "max": 1e4, "default": 1000,
-                                                      "description":"Total upfront battery power capacity costs (e.g. inverter and balance of power systems)" },
-          "installed_cost_us_dollars_per_kwh":    {"type": "float", "min": 0, "max": 1e4, "default": 500,
-                                                      "description":"Total upfront battery costs" },
-          "replace_cost_us_dollars_per_kw":       {"type": "float", "min": 0, "max": 1e4, "default": 460,
-                                                      "description":"Battery power capacity replacement cost at time of replacement year" },
-          "replace_cost_us_dollars_per_kwh":      {"type": "float", "min": 0, "max": 1e4, "default": 230,
-                                                      "description":"Battery energy capacity replacement cost at time of replacement year" },
-          "inverter_replacement_year":            {"type": "float", "min": 0, "max": max_years, "default": 10,
-                                                       "description":"Number of years from start of analysis period to replace inverter"  },
-          "battery_replacement_year":             {"type": "float", "min": 0, "max": max_years, "default": 10,
-                                                      "description":"Number of years from start of analysis period to replace battery"  },
-          "macrs_option_years":                   {"type": "int", "restrict_to": macrs_schedules, "default": 7,
-                                                      "description":"Duration over which accelerated depreciation will occur. Set to zero by default"},
-          "macrs_bonus_pct":                      {"type": "float", "min": 0, "max": 1, "default": 0.5,
-                                                      "description":"Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation" },
-          "macrs_itc_reduction":                  {"type": "float", "min": 0, "max": 1, "default": 0.5,
-                                                      "description":"Percent of the ITC value by which depreciable basis is reduced" },
-          "total_itc_pct":                        {"type": "float", "min": 0, "max": 1, "default": 0.0,
-                                                      "description":"Total investment tax credit in percent applied toward capital costs" },
-          "total_rebate_us_dollars_per_kw":       {"type": "float", "min": 0, "max": 1e9, "default": 0,
-                                                      "description":"Rebate based on installed power capacity" }
+          "min_kw": {
+            "type": "float", "min": 0, "max": 1e9, "default": 0,
+            "description": "Minimum battery power capacity size constraint for optimization"
+          },
+          "max_kw": {
+            "type": "float", "min": 0, "max": 1e9, "default": 1000000,
+            "description": "Maximum battery power capacity size constraint for optimization. Set to zero to disable storage"
+          },
+          "min_kwh": {
+            "type": "float", "min": 0, "default": 0,
+            "description": "Minimum battery energy storage capacity constraint for optimization"
+          },
+          "max_kwh": {
+            "type": "float", "min": 0, "default": 1000000,
+            "description": "Maximum battery energy storage capacity constraint for optimization. Set to zero to disable Storage"
+          },
+          "internal_efficiency_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.975,
+            "description": "Battery inherent efficiency independent of inverter and rectifier"
+          },
+          "inverter_efficiency_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.96,
+            "description": "Battery inverter efficiency"
+          },
+          "rectifier_efficiency_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.96,
+            "description": "Battery rectifier efficiency"
+          },
+          "soc_min_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.2,
+            "description": "Minimum allowable battery state of charge"
+          },
+          "soc_init_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.5,
+            "description": "Battery state of charge at first hour of optimization"
+          },
+          "canGridCharge": {
+            "type": "bool", "default": True,
+            "description": "Flag to set whether the battery can be charged from the grid, or just onsite generation"
+          },
+          "installed_cost_us_dollars_per_kw": {
+            "type": "float", "min": 0, "max": 1e4, "default": 1000,
+            "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
+          },
+          "installed_cost_us_dollars_per_kwh": {
+            "type": "float", "min": 0, "max": 1e4, "default": 500,
+            "description": "Total upfront battery costs"
+          },
+          "replace_cost_us_dollars_per_kw": {
+            "type": "float", "min": 0, "max": 1e4, "default": 460,
+            "description": "Battery power capacity replacement cost at time of replacement year"
+          },
+          "replace_cost_us_dollars_per_kwh": {
+            "type": "float", "min": 0, "max": 1e4, "default": 230,
+            "description": "Battery energy capacity replacement cost at time of replacement year"
+          },
+          "inverter_replacement_year": {
+            "type": "float", "min": 0, "max": max_years, "default": 10,
+            "description": "Number of years from start of analysis period to replace inverter"
+          },
+          "battery_replacement_year": {
+            "type": "float", "min": 0, "max": max_years, "default": 10,
+            "description": "Number of years from start of analysis period to replace battery"
+          },
+          "macrs_option_years": {
+            "type": "int", "restrict_to": macrs_schedules, "default": 7,
+            "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
+          },
+          "macrs_bonus_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.4,
+            "description": "Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation"
+          },
+          "macrs_itc_reduction": {
+            "type": "float", "min": 0, "max": 1, "default": 0.5,
+            "description": "Percent of the ITC value by which depreciable basis is reduced"
+          },
+          "total_itc_pct": {
+            "type": "float", "min": 0, "max": 1, "default": 0.0,
+            "description": "Total investment tax credit in percent applied toward capital costs"
+          },
+          "total_rebate_us_dollars_per_kw": {
+            "type": "float", "min": 0, "max": 1e9, "default": 0,
+            "description": "Rebate based on installed power capacity"
+          }
         }
       }
 

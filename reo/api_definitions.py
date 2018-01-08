@@ -381,7 +381,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
 
         'pv_macrs_bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True, "needed_for": ['economics'],
-                           'default': 0.5, 'min': 0, 'max': 1,
+                           'default': 0.4, 'min': 0, 'max': 1,
                            "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
                            "units": 'decimal percent',
                            "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
@@ -394,7 +394,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'batt_macrs_bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True,
                                     "needed_for": ['economics'],
-                                    'default': 0.5, 'min': 0, 'max': 1,
+                                    'default': 0.4, 'min': 0, 'max': 1,
                                     "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
                                     "units": 'decimal percent',
                                     "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
@@ -593,7 +593,7 @@ def inputs(filter='', full_list=False, just_required=False):
 
         'wind_macrs_bonus_fraction': {'req': False, 'type': float, 'null': False, 'pct': True,
                                     "needed_for": ['economics'],
-                                    'default': 0.5, 'min': 0, 'max': 1,
+                                    'default': 0.4, 'min': 0, 'max': 1,
                                     "description": "This fraction of the depreciable value is taken in year 1 in addition to MACRS",
                                     "units": 'decimal percent',
                                     "tool_tip": "This fraction of the depreciable value is taken in year 1 in addition to MACRS"},
