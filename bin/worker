@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+. /opt/xpressmp/bin/xpvars.sh
+export XPRESS=/opt/xpressmp/bin
+
+exec ./env/bin/celery -A reopt_api worker --loglevel=info
