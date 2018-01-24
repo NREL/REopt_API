@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 
-. /opt/xpressmp/bin/xpvars.sh
-export XPRESS=/opt/xpressmp/bin
+if [ "$APP_ENV" == "local" ]
+then
+    XPRESSDIR="/usr/local/opt/xpress"
+    PATH="${XPRESSDIR}/bin:${PATH}"
+    DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${DYLD_LIBRARY_PATH}"
+    CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
+
+    export XPRESS="$XPRESSDIR/bin"
+    export PATH
+    export DYLD_LIBRARY_PATH
+    export CLASSPATH
+else
+    . /opt/xpressmp/bin/xpvars.sh
+    export XPRESS=/opt/xpressmp/bin
+fi
 
 exec ./env/bin/celery -A reopt_api worker --loglevel=info

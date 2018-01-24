@@ -39,4 +39,4 @@ elif env == 'staging':
 elif env == 'production':
     raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.production_settings']
 else:
-    raise TypeError('Unknown APP_ENV')
+    raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.dev_settings']

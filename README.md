@@ -185,7 +185,7 @@ are all started via the `Procfile` by [Foreman](http://ddollar.github.io/foreman
 Honcho uses a `.env` file in the project root directory to define environment variables, which should define the following:
 ```
 DEPLOY_CURRENT_PATH="/Users/nlaws/projects/reopt/webtool/reopt_api"
-APP_ENV="development"
+APP_ENV="local"
 TEST="true"
 ```
 The first line of the `Procfile`:
@@ -202,7 +202,7 @@ which define the Mosel environment variables on the linux servers.
 
 Finally, `exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi` will start the Gunicorn server.
 With `TEST="true"` the server will listen at `127.0.0.1:8000`, which is defined in MY-API-FOLDER/config/gunicorn.conf.py.
-The gunicorn.conf.py file also uses `APP_ENV="development"` to select the Django configuration file.
+The gunicorn.conf.py file also uses `APP_ENV="local"` to select the Django configuration file.
 
 Once you have honcho installed, your .env variables defined, and a `redis-server` running, you can:
 ```

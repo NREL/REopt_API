@@ -84,7 +84,8 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-if 'test' in sys.argv:
+
+if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
