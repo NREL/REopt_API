@@ -7,7 +7,8 @@ from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
-from validators import REoptResourceValidation, ValidateNestedInput
+from tastypie.validation import Validation
+from validators import ValidateNestedInput
 from log_levels import log, setup_logging
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
@@ -31,7 +32,7 @@ class RunInputResource(ModelResource):
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
-        validation = REoptResourceValidation()
+        validation = Validation()
         
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -51,18 +52,7 @@ class RunInputResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         
-        if 'Scenario' not in bundle.data.keys():
-            self.is_valid(bundle)  # runs REoptResourceValidation
-            output_format = 'flat'
-
-            if bundle.errors:
-                raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
-
-            input_validator = ValidateNestedInput(bundle.data, nested=False)
-
-        else:  # nested input
-            output_format = 'nested'
-            input_validator = ValidateNestedInput(bundle.data, nested=True)
+        input_validator = ValidateNestedInput(bundle.data, nested=True)
 
         run_uuid = str(uuid.uuid4())
         
