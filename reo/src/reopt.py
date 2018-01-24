@@ -38,45 +38,44 @@ class REoptTask(Task):
         data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
-        # self.request.chain = None  # stop the chain?
-        # self.request.callback = None
+        self.request.chain = None  # stop the chain?
+        self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
-
-
-def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
-
-    log("DEBUG", "Current Directory: " + os.getcwd())
-
-    # RE case
-    header = 'exec '
-    xpress_model_path = os.path.join(paths['xpress'], xpress_model)
-
-    # Command line constants and Dat file overrides
-    outline = ''
-
-    for constant in cmd_line_args:
-        outline = ' '.join([outline, constant.strip('\n')])
-
-    for dat_file in DATs:
-        if dat_file is not None:
-            outline = ' '.join([outline, dat_file.strip('\n')])
-
-    outline.replace('\n', '')
-
-    cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
-             % (header, xpress_model_path, outline, output_path, paths['inputs'], bau_string)
-
-    log("DEBUG", "Returning Process Command " + cmd)
-
-    # write a cmd file for easy debugging
-    with open(cmd_file, 'w') as f:
-        f.write(cmd)
-
-    return cmd
 
 
 @shared_task(bind=True, base=REoptTask)
 def reopt(self, dfm, paths, data, bau=False):
+
+    def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
+
+        log("DEBUG", "Current Directory: " + os.getcwd())
+
+        # RE case
+        header = 'exec '
+        xpress_model_path = os.path.join(paths['xpress'], xpress_model)
+
+        # Command line constants and Dat file overrides
+        outline = ''
+
+        for constant in cmd_line_args:
+            outline = ' '.join([outline, constant.strip('\n')])
+
+        for dat_file in DATs:
+            if dat_file is not None:
+                outline = ' '.join([outline, dat_file.strip('\n')])
+
+        outline.replace('\n', '')
+
+        cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
+              % (header, xpress_model_path, outline, output_path, paths['inputs'], bau_string)
+
+        log("DEBUG", "Returning Process Command " + cmd)
+
+        # write a cmd file for easy debugging
+        with open(cmd_file, 'w') as f:
+            f.write(cmd)
+
+        return cmd
 
     name = 'reopt' if not bau else 'reopt-bau'
     self.data = data
