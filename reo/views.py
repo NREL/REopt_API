@@ -106,6 +106,14 @@ def annual_kwh(request):
 
 def results(request):
 
+    def make_error_resp(msg):
+        resp = dict()
+        resp['messages'] = {'error': msg}
+        resp['outputs'] = dict()
+        resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['status'] = 'error'
+        return resp
+
     try:
         run_uuid = request.GET['run_uuid']
 
@@ -124,13 +132,15 @@ def results(request):
         msg = "run_uuid parameter not provided."
         err = ResultsRequestError(message=msg, traceback="REQUEST: {}".format(request.GET))
         err.save_to_db()
-        return JsonResponse({"messages": {"error": msg}}, status=400)
+        resp = make_error_resp(msg)
+        return JsonResponse(resp, status=400)
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
             err = ResultsRequestError(message=e.message, traceback="REQUEST: {}".format(request.GET))
             err.save_to_db()
-            return JsonResponse({"messages": {"error": e.message}}, status=400)
+            resp = make_error_resp(e.message)
+            return JsonResponse(resp, status=400)
 
     except Exception:
 
@@ -141,4 +151,6 @@ def results(request):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid, )
         err.save_to_db()
 
-        return JsonResponse({'messages': {"error": err.message}})
+        resp = make_error_resp(err.message)
+
+        return JsonResponse(resp)

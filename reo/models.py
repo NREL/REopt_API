@@ -441,6 +441,7 @@ class ModelManager(object):
         
         resp = dict()
         resp['outputs'] = dict()
+        resp['outputs']['Scenario'] = dict()
         resp['inputs'] = dict()
         resp['inputs']['Scenario'] = dict()
         resp['inputs']['Scenario']['Site'] = dict()
@@ -453,6 +454,7 @@ class ModelManager(object):
                 resp['messages']['error'] = "run_uuid {} not in database. "\
                                             "You may have hit the results endpoint too quickly after POST'ing scenario, "\
                                             "or you may have a typo in your run_uuid.".format(run_uuid)
+                resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
                 raise Exception

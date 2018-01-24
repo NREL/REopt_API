@@ -124,7 +124,7 @@ class RunInputResource(ModelResource):
                 err.save_to_db()
 
                 set_status(data, 'Internal Server Error. See messages for more.')
-                data['messages']['errors'] = err.message
+                data['messages']['error'] = err.message
 
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
