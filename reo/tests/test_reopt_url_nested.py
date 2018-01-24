@@ -1,11 +1,11 @@
 import json
 import pickle
-from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
-from unittest import skip
 from reo.nested_to_flat_output import nested_to_flat
+from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from reo.models import ModelManager
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -16,9 +16,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.data_definitions = nested_input_definitions
-
         self.reopt_base = '/api/v1/reopt/'
-
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
@@ -98,7 +96,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
             self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['input_errors']))
-
+    
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost, nested=True)
@@ -123,11 +121,16 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         data = self.complete_valid_nestedpost
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response'] =self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response']['label'] = '539f6b63ec4f024411ec9c69'
+        text = "URDB Rate (label=539f6b63ec4f024411ec9c69) is currently restricted due to performance limitations"
+        self.check_data_error_response(data,text)
+
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
         text = "Missing rate/sell/adj attributes for tier 0 in rate 0 energyratestructure"
         self.check_data_error_response(data,text)
 
-        data['Scenario']['Site']['ElectricTariff']['urdb_response']=self.missing_schedule_urdb
+        data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_schedule_urdb
 
         text = 'energyweekdayschedule contains value 1 which has no associated rate in energyratestructure'
         self.check_data_error_response(data,text)
@@ -176,7 +179,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 }
         resp = self.get_response(data=data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -243,7 +249,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         try:
@@ -261,7 +269,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -289,7 +299,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         nested_data = ValidateNestedInput(flat_data, nested=False).input_dict
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
-        d = json.loads(resp.content)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -327,5 +339,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             }
         }
         response = self.get_response(data=data)
-        resp_dict = json.loads(response.content)
-        self.assertTrue('Could not find an optimal solution for these inputs.' in resp_dict['messages']['error']['REopt'])
+        r = json.loads(response.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['errors'])

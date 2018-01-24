@@ -1,15 +1,20 @@
+import json
+import csv
+import os
+import sys
+import traceback
+import uuid
 from api_definitions import inputs, outputs
 from django.shortcuts import render
-import json
 from django.http import HttpResponse
 from validators import REoptResourceValidation
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
-import csv
-import os
 from utilities import API_Error
 from nested_inputs import nested_input_definitions
+from reo.models import ModelManager
+from reo.exceptions import UnexpectedError, ResultsRequestError
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -97,3 +102,55 @@ def annual_kwh(request):
         return response
     except Exception as e:
         return JsonResponse(API_Error(e).response)
+
+
+def results(request):
+
+    def make_error_resp(msg):
+        resp = dict()
+        resp['messages'] = {'error': msg}
+        resp['outputs'] = dict()
+        resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['status'] = 'error'
+        return resp
+
+    try:
+        run_uuid = request.GET['run_uuid']
+
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+
+        d = ModelManager.make_response(run_uuid)
+
+        if 'error' in d.get('messages'):
+            err = ResultsRequestError(message=d['messages']['error'], traceback="REQUEST: {}".format(request.GET))
+            err.save_to_db()
+
+        response = JsonResponse(d)
+        return response
+
+    except KeyError:
+        msg = "run_uuid parameter not provided."
+        err = ResultsRequestError(message=msg, traceback="REQUEST: {}".format(request.GET))
+        err.save_to_db()
+        resp = make_error_resp(msg)
+        return JsonResponse(resp, status=400)
+
+    except ValueError as e:
+        if e.message == "badly formed hexadecimal UUID string":
+            err = ResultsRequestError(message=e.message, traceback="REQUEST: {}".format(request.GET))
+            err.save_to_db()
+            resp = make_error_resp(e.message)
+            return JsonResponse(resp, status=400)
+
+    except Exception:
+
+        if 'run_uuid' not in locals():
+            run_uuid = "unable to get run_uuid from request"
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid, )
+        err.save_to_db()
+
+        resp = make_error_resp(err.message)
+
+        return JsonResponse(resp)

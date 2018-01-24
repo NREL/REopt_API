@@ -6,7 +6,11 @@ from urdb_logger import log_urdb_errors
 from nested_inputs import nested_input_definitions, flat_to_nested, list_of_float
 #Note: list_of_float is actually needed
 import copy
+import os
+import csv
 
+hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
 class URDB_RateValidator:
 
@@ -75,6 +79,11 @@ class URDB_RateValidator:
             log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
+         
+        # Check if in known hard problems
+        if self.label in hard_problem_labels:
+            self.errors.append("URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
+
          # Validate each attribute with custom valdidate function
         for key in dir(self):                      
             v = 'validate_' + key
@@ -620,11 +629,13 @@ class ValidateNestedInput:
             """
             output = {}
             for arg, path in warnings:
-                path = ">".join(path)
-                if path not in output:
-                    output[path] = arg
-                else:
-                    output[path] += ' AND ' + arg
+                if 'wind' not in arg.lower():
+                    if 'wind' not in [p.lower() for p in path]:
+                        path = ">".join(path)
+                        if path not in output:
+                            output[path] = arg
+                        else:
+                            output[path] += ' AND ' + arg
 
             return output
 

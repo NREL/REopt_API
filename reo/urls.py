@@ -1,4 +1,4 @@
-from django.conf.urls import url, include
+from django.conf.urls import url
 from . import views
 
 urlpatterns = [
@@ -8,4 +8,5 @@ urlpatterns = [
     url(r'^default_api_inputs/', views.default_api_inputs, name='default_api_inputs'),
     url(r'^help/', views.help, name='help'),
     url(r'^check_inputs/',views.check_inputs, name='check_inputs'),
+    url(r'^results/', views.results, name='results'),
 ]

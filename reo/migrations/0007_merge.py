@@ -7,13 +7,9 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0001_initial'),
+        ('reo', '0005_auto_20171207_2121'),
+        ('reo', '0006_storagemodel_bug_fix'),
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='storagemodel',
-            name='total_itc_pct',
-            field=models.FloatField(),
-        ),
     ]
