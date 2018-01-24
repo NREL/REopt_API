@@ -5,8 +5,6 @@ from reo.models import ErrorModel
 class REoptError(Exception):
     """
     Base class for exceptions in reo app.
-    call to super().__init__ will save ErrorModel to database.
-
     """
 
     def __init__(self, task='', name='', run_uuid='', message='', traceback=''):
@@ -89,6 +87,23 @@ class REoptFailedToStartError(REoptError):
         :param traceback: saved to database for debugging
         """
         super(REoptFailedToStartError, self).__init__(task, self.__name__, run_uuid, message, traceback)
+
+
+class ResultsRequestError(REoptError):
+    """
+    Exception class for reo.views.results
+    """
+    __name__ = "ResultsRequestError"
+
+    def __init__(self, task='reo.views.results', run_uuid='', message='', traceback=''):
+        """
+
+        :param task: task where error occurred
+        :param run_uuid:
+        :param message: message that is sent back to user in messages: errors
+        :param traceback: saved to database for debugging
+        """
+        super(ResultsRequestError, self).__init__(task, self.__name__, run_uuid, message, traceback)
 
 
 class UnexpectedError(REoptError):

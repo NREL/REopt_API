@@ -445,8 +445,19 @@ class ModelManager(object):
         resp['inputs']['Scenario'] = dict()
         resp['inputs']['Scenario']['Site'] = dict()
         resp['messages'] = dict()
-        
-        resp['outputs']['Scenario'] = remove_ids(model_to_dict(ScenarioModel.objects.get(run_uuid=run_uuid)))
+
+        try:
+            scenario_model = ScenarioModel.objects.get(run_uuid=run_uuid)
+        except Exception as e:
+            if isinstance(e, models.ObjectDoesNotExist):
+                resp['messages']['error'] = "run_uuid {} not in database. "\
+                                            "You may have hit the results endpoint too quickly after POST'ing scenario, "\
+                                            "or you may have a typo in your run_uuid.".format(run_uuid)
+                return resp
+            else:
+                raise Exception
+
+        resp['outputs']['Scenario'] = remove_ids(model_to_dict(scenario_model))
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))
