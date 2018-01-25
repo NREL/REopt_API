@@ -29,7 +29,7 @@ SECRET_KEY = secret_key_
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [".reopt-stage-api1.nrel.gov"]
 
 
 # Application definition
