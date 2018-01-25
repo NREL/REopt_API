@@ -52,7 +52,7 @@ class RunInputResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         
-        input_validator = ValidateNestedInput(bundle.data, nested=True)
+        input_validator = ValidateNestedInput(bundle.data)
 
         run_uuid = str(uuid.uuid4())
         
@@ -63,11 +63,6 @@ class RunInputResource(ModelResource):
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
-        """
-        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs,
-        this should be done in ModelManager.get_response if we are going to maintain backwards compatibility
-        with the worker_queue.
-        """
 
         if not input_validator.isValid:  # 400 Bad Request
 

@@ -1,6 +1,6 @@
 import numpy as np
 from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, flat_to_nested, list_of_float
+from nested_inputs import nested_input_definitions, list_of_float
 #Note: list_of_float is actually needed
 import copy
 import os
@@ -329,10 +329,9 @@ class ValidateNestedInput:
         #         }
         #     }
 
-        def __init__(self, input_dict, nested=False):
+        def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-            self.nested = nested
             self.original_input = input_dict
 
             self.input_data_errors = []
@@ -342,16 +341,12 @@ class ValidateNestedInput:
 
             self.defaults_inserted = []
 
-            if not nested:
-                self.input_dict = flat_to_nested(input_dict)
+            self.input_dict  ={}
+            self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
 
-            if nested:
-                self.input_dict  ={}
-                self.input_dict['Scenario'] = input_dict.get('Scenario') or {} 
-                
-                for k,v in input_dict.items():
-                    if k!='Scenario':
-                        self.invalid_inputs.append([k,["Top Level"]])
+            for k,v in input_dict.items():
+                if k!='Scenario':
+                    self.invalid_inputs.append([k,["Top Level"]])
 
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
@@ -363,10 +358,7 @@ class ValidateNestedInput:
             
         @property
         def input_for_response(self):
-            if self.nested:
-                return self.input_dict
-            else:
-                return self.original_input
+            return self.input_dict
 
         @property
         def isValid(self):
