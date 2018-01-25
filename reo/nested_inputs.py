@@ -97,14 +97,14 @@ nested_input_definitions = {
         },
         "offtaker_tax_pct": {
           "type": "float",
-          "min": -1,
+          "min": 0,
           "max": 1,
           "default": 0.4,
           "description": "Host tax rate"
         },
         "offtaker_discount_pct": {
           "type": "float",
-          "min": -1,
+          "min": 0,
           "max": 1,
           "default": 0.081,
           "description": "Nominal host discount rate"
