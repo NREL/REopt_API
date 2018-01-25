@@ -341,12 +341,12 @@ class ValidateNestedInput:
 
             self.defaults_inserted = []
 
-            self.input_dict  ={}
+            self.input_dict = dict()
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
 
             for k,v in input_dict.items():
-                if k!='Scenario':
-                    self.invalid_inputs.append([k,["Top Level"]])
+                if k != 'Scenario':
+                    self.invalid_inputs.append([k, ["Top Level"]])
 
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)

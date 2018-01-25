@@ -62,11 +62,11 @@ class RunInputResource(ModelResource):
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
 
         if not input_validator.isValid:  # 400 Bad Request
 
-            set_status(data, "Invalid inputs. See messages.")
+            data['run_uuid'] = 'Error. See messages for more information. ' \
+                               'Note that inputs have default values filled in.'
 
             if saveToDb:
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
@@ -75,6 +75,8 @@ class RunInputResource(ModelResource):
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
                                                      status=400))
+
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
 
         model_manager = ModelManager()
         if saveToDb:
