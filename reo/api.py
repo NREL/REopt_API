@@ -7,7 +7,8 @@ from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
-from validators import REoptResourceValidation, ValidateNestedInput
+from tastypie.validation import Validation
+from validators import ValidateNestedInput
 from log_levels import log, setup_logging
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
@@ -31,7 +32,7 @@ class RunInputResource(ModelResource):
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
-        validation = REoptResourceValidation()
+        validation = Validation()
         
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -51,18 +52,7 @@ class RunInputResource(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         
-        if 'Scenario' not in bundle.data.keys():
-            self.is_valid(bundle)  # runs REoptResourceValidation
-            output_format = 'flat'
-
-            if bundle.errors:
-                raise ImmediateHttpResponse(response=self.error_response(bundle.request, bundle.errors))
-
-            input_validator = ValidateNestedInput(bundle.data, nested=False)
-
-        else:  # nested input
-            output_format = 'nested'
-            input_validator = ValidateNestedInput(bundle.data, nested=True)
+        input_validator = ValidateNestedInput(bundle.data)
 
         run_uuid = str(uuid.uuid4())
         
@@ -72,16 +62,11 @@ class RunInputResource(ModelResource):
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
-        """
-        for webtool need to update data with input_validator.input_for_response (flat inputs), as well as flat outputs,
-        this should be done in ModelManager.get_response if we are going to maintain backwards compatibility
-        with the worker_queue.
-        """
 
         if not input_validator.isValid:  # 400 Bad Request
 
-            set_status(data, "Invalid inputs. See messages.")
+            data['run_uuid'] = 'Error. See messages for more information. ' \
+                               'Note that inputs have default values filled in.'
 
             if saveToDb:
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
@@ -90,6 +75,8 @@ class RunInputResource(ModelResource):
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
                                                      status=400))
+
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
 
         model_manager = ModelManager()
         if saveToDb:

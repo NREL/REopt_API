@@ -27,7 +27,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = []
 
@@ -116,8 +116,10 @@ CELERY_RESULT_BACKEND = 'django-db'
 # celery task registration
 CELERY_IMPORTS = (
     'reo.src.reopt',
+    'reo.api',
+    'reo.scenario',
+    'reo.results',
 )
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
