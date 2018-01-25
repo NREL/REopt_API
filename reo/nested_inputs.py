@@ -55,8 +55,8 @@ nested_input_definitions = {
     "Site": {
       "latitude": {
         "type": "float",
-        "min": -180,
-        "max": 180,
+        "min": -90,
+        "max": 90,
         "required": True,
         "description": "The approximate latitude of the site in decimal degrees"
       },
