@@ -13,10 +13,10 @@ try:
         redis_host = ':'+ dev_redis_password + '@reopt-dev-db1.nrel.gov'
     elif env == 'staging':
         raw_env = 'reopt_api.staging_settings'
-        redis_host = ':'+ staging_redis_password + '@reopt-prod-db1.nrel.gov'
+        redis_host = ':'+ staging_redis_password + '@reopt-stage-db1.nrel.gov'
     elif env == 'production':
         raw_env = 'reopt_api.production_settings'
-        redis_host = ':'+ production_redis_password + '@reopt-stage-db1.nrel.gov'
+        redis_host = ':'+ production_redis_password + '@reopt-prod-db1.nrel.gov'
     else:
         raw_env = 'reopt_api.dev_settings'
         redis_host = 'localhost'
