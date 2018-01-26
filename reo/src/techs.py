@@ -76,16 +76,16 @@ class PV(Tech):
         self.kw_per_square_foot = kw_per_square_foot
         self.incentives = Incentives(**kwargs)
 
-        self.pvwatts = None
+        self.pvwatts_prod_factor = None
         dfm.add_pv(self)
-
 
     @property
     def prod_factor(self):
 
-        if self.pvwatts is None:
-            self.pvwatts = PVWatts(**self.kwargs)
-        return self.pvwatts.pv_prod_factor
+        if self.pvwatts_prod_factor is None:
+            pvwatts = PVWatts(**self.kwargs)
+            self.pvwatts_prod_factor = pvwatts.pv_prod_factor
+        return self.pvwatts_prod_factor
 
 
 class Wind(Tech):

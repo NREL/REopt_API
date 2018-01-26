@@ -1,11 +1,9 @@
 import os
 import copy
-from collections import namedtuple
+import math
 from datetime import datetime, timedelta
-from reo.api_definitions import default_cities, default_tmyid
-import requests
-
-from keys import developer_nrel_gov_key
+from developer_reo_api import DeveloperREOapi
+from collections import namedtuple
 
 
 class BuiltInProfile(object):
@@ -355,8 +353,10 @@ class BuiltInProfile(object):
         self.longitude = float(longitude) if longitude else None
         self.monthly_kwh = monthly_totals_kwh
         self.doe_reference_name = doe_reference_name
-        self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
+        self.nearest_city = None
         self.year = year
+        self.tried_developer_reo_api = False
+        self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
 
     @property
     def built_in_profile(self):
@@ -367,33 +367,35 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-        if self.latitude is not None and self.longitude is not None:
-            if hasattr(self, 'nearest_city'):
-                return self.nearest_city
-            else:
-                search_radius = str(25)
-                ashrae_url = "http://developer.nrel.gov/api/reo/v3.json?api_key="+developer_nrel_gov_key+"&lat=" \
-                             + str(self.latitude) + "&lon=" + str(self.longitude) + "&distance=" + search_radius + "&output_fields=ashrae_tmy"
-                r = requests.get(ashrae_url)
 
-                if r.status_code == 200 and "ashrae_tmy" in r.json()["outputs"] and "tmy_id" in r.json()["outputs"]["ashrae_tmy"]:
-                    ashrae_tmy_id = r.json()["outputs"]["ashrae_tmy"]["tmy_id"]
+        if self.nearest_city is not None:
+            return self.nearest_city
 
-                    if ashrae_tmy_id in default_tmyid():
-                        self.nearest_city = default_cities()[default_tmyid().index(ashrae_tmy_id)]
-                    else:
-                        raise AttributeError('load_profile', 'Unexpected climate zone returned by remote database')
+        if not self.tried_developer_reo_api:
+            self.tried_developer_reo_api = True
+            # get nearest city from developer reo api (not to be confused with this reo api)
+            drapi = DeveloperREOapi(lat=self.latitude, lon=self.longitude)
+            ashrae_city = drapi.get_city(self.default_cities)
+            if ashrae_city is not None:
+                self.nearest_city = ashrae_city
+                return ashrae_city
 
-                    return self.nearest_city
-                else:
-                    raise AttributeError('load_profile', 'Failed to return climate zone from database')
-
+        # else use old geometric approach, never fails...but isn't necessarily correct
+        if self.nearest_city is None:
+            min_distance = None
+            for i, c in enumerate(self.default_cities):
+                distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
+                if i == 0:
+                    min_distance = distance
+                    self.nearest_city = c.name
+                elif distance < min_distance:
+                    min_distance = distance
+                    self.nearest_city = c.name
+            return self.nearest_city
 
     @property
     def default_annual_kwh(self):
-        if self.city and self.building_type:
-            return self.annual_loads[self.city][self.building_type.lower()]
-        return None
+        return self.annual_loads[self.city][self.building_type.lower()]
 
     @property
     def building_type(self):

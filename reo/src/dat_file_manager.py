@@ -134,6 +134,7 @@ class DatFileManager:
         write_to_dat(self.file_load_size_bau, load.bau_annual_kwh, "AnnualElecLoad")
 
     def add_pv(self, pv):
+        junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
         self.pv = pv
         self.pvnm = copy.deepcopy(pv)
         self.pvnm.nmil_regime = 'NMtoIL'
