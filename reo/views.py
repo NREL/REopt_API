@@ -1,10 +1,8 @@
-import json
 import csv
 import os
 import sys
 import traceback as tb
 import uuid
-from django.shortcuts import render
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
@@ -19,7 +17,13 @@ hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
 
 def help(request):
-    return render(request, 'help.html', {'nested_input_definitions': json.dumps(nested_input_definitions)})
+
+    try:
+        del nested_input_definitions['Scenario']['Site']['Wind']
+        return JsonResponse(nested_input_definitions)
+
+    except Exception:
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
 def invalid_urdb(request):
@@ -27,8 +31,7 @@ def invalid_urdb(request):
     try:
         # invalid set is populated by the urdb validator, hard problems defined in csv
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
-        response = JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
-        return response
+        return JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
         
     except Exception:
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
