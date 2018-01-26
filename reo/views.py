@@ -4,12 +4,10 @@ import os
 import sys
 import traceback as tb
 import uuid
-from api_definitions import inputs, outputs
 from django.shortcuts import render
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
-from utilities import API_Error
 from nested_inputs import nested_input_definitions
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError, ResultsRequestError
@@ -21,35 +19,7 @@ hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
 
 def help(request):
-    return render(request, 'help.html', {'nested_input_definitions' : json.dumps(nested_input_definitions)})
-
-
-def index(request):
-    api_inputs = {}
-    reference = inputs(full_list=True)
-    for k, v in reference.items():
-        api_inputs[k] = {'req': bool(reference[k].get('req'))}
-        api_inputs[k]['type'] = reference[k].get('type').__name__
-        api_inputs[k]['description'] = reference[k].get('description')
-
-        units = reference[k].get('units')
-        if units:
-            api_inputs[k]['description'] = "%s (%s)" % (api_inputs[k]['description'], units)
-
-        api_inputs[k]['validations'] = "min: %s \n max: %s \n restrict to: %s" % (reference[k].get('min'),
-                                                                                  reference[k].get('max'),
-                                                                                  reference[k].get('restrict_to'))
-
-    api_outputs = outputs()
-    return render(request, 'template.html', {'api_inputs': api_inputs, 'api_outputs': api_outputs})
-
-
-def default_api_inputs(request):
-    try:
-        defaults = {k:v.get('default') for k,v in inputs(full_list=True).items() if v.get('default') is not None}
-        return JsonResponse(defaults)
-    except Exception as e:
-        return JsonResponse(API_Error(e).response)
+    return render(request, 'help.html', {'nested_input_definitions': json.dumps(nested_input_definitions)})
 
 
 def invalid_urdb(request):
@@ -60,8 +30,8 @@ def invalid_urdb(request):
         response = JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
         return response
         
-    except Exception as e:
-        return JsonResponse(API_Error(e).response)
+    except Exception:
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
 def annual_kwh(request):
