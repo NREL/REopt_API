@@ -8,6 +8,7 @@ import json
 import keys
 from reo.log_levels import log
 
+
 class PVWatts:
 
     def __init__(self,
@@ -70,6 +71,7 @@ class PVWatts:
         if not resp.ok:
             log("ERROR", "PVWatts status code {}. {}".format(resp.status_code, resp.content))
             raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+        log("INFO", "PVWatts API query successful.")
 
         data = json.loads(resp.text)
         return data
