@@ -2,11 +2,10 @@ import json
 import csv
 import os
 import sys
-import traceback
+import traceback as tb
 import uuid
 from api_definitions import inputs, outputs
 from django.shortcuts import render
-from django.http import HttpResponse
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
@@ -14,6 +13,7 @@ from utilities import API_Error
 from nested_inputs import nested_input_definitions
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError, ResultsRequestError
+from reo.log_levels import log
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -67,17 +67,41 @@ def invalid_urdb(request):
 def annual_kwh(request):
 
     try:
-        kwargs = {k: v for k, v in request.GET.dict().items() if k in ['latitude', 'longitude', 'doe_reference_name']}
+        latitude = float(request.GET['latitude'])  # need float to convert unicode
+        longitude = float(request.GET['longitude'])
+        doe_reference_name = request.GET['doe_reference_name']
 
-        b = BuiltInProfile(**kwargs)
+        if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
+            raise ValueError("Invalid doe_reference_name. Select from the following: {}"
+                             .format(BuiltInProfile.default_buildings))
+
+        if latitude > 90 or latitude < -90:
+            raise ValueError("latitude out of acceptable range (-90 <= latitude <= 90)")
+
+        if longitude > 180 or longitude < -180:
+            raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
+
+        b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
         
         response = JsonResponse(
             {'annual_kwh': b.annual_kwh,
              'city': b.city},
         )
         return response
-    except Exception as e:
-        return JsonResponse(API_Error(e).response)
+
+    except KeyError as e:
+        return JsonResponse({"Error. Missing": str(e.message)})
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.message)})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+                                                                            tb.format_tb(exc_traceback))
+        log("ERROR", debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
 def results(request):
