@@ -89,7 +89,7 @@ class REoptFailedToStartError(REoptError):
         super(REoptFailedToStartError, self).__init__(task, self.__name__, run_uuid, message, traceback)
 
 
-class ResultsRequestError(REoptError):
+class RequestError(REoptError):
     """
     Exception class for reo.views.results
     """

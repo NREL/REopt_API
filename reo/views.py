@@ -8,7 +8,7 @@ from src.load_profile import BuiltInProfile
 from models import URDBError
 from nested_inputs import nested_input_definitions
 from reo.models import ModelManager
-from reo.exceptions import UnexpectedError, ResultsRequestError
+from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 from reo.log_levels import log
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -89,41 +89,33 @@ def results(request):
 
     try:
         run_uuid = request.GET['run_uuid']
-
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
         d = ModelManager.make_response(run_uuid)
 
-        if 'error' in d.get('messages'):
-            err = ResultsRequestError(message=d['messages']['error'], traceback="REQUEST: {}".format(request.GET))
-            err.save_to_db()
+        # if 'error' in d.get('messages'):
+        #     err = RequestError(task='reo.views.results', message=d['messages']['error'], traceback="REQUEST: {}".format(request.GET))
+        #     err.save_to_db()
 
         response = JsonResponse(d)
         return response
 
     except KeyError:
         msg = "run_uuid parameter not provided."
-        err = ResultsRequestError(message=msg, traceback="REQUEST: {}".format(request.GET))
-        err.save_to_db()
         resp = make_error_resp(msg)
         return JsonResponse(resp, status=400)
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
-            err = ResultsRequestError(message=e.message, traceback="REQUEST: {}".format(request.GET))
-            err.save_to_db()
             resp = make_error_resp(e.message)
             return JsonResponse(resp, status=400)
 
     except Exception:
-
-        if 'run_uuid' not in locals():
+        if 'run_uuid' not in locals() or 'run_uuid' not in globals():
             run_uuid = "unable to get run_uuid from request"
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid, )
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
-
         resp = make_error_resp(err.message)
-
         return JsonResponse(resp)
