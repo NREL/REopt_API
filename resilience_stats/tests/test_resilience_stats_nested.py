@@ -174,6 +174,14 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 14)
 
+    def test_bad_uuid(self):
+        run_uuid = "5"
+        resp = self.api_client.get(self.results_url + run_uuid)
+        self.assertEqual(resp.status_code, 400)
+        resp_dict = json.loads(resp.content)
+        self.assertDictEqual(resp_dict, {"Error": "badly formed hexadecimal UUID string"})
 
-
-
+        resp = self.api_client.get('/resilience_stats/?run_uid=' + run_uuid)
+        self.assertEqual(resp.status_code, 400)
+        resp_dict = json.loads(resp.content)
+        self.assertDictEqual(resp_dict, {"Error": "run_uuid parameter not provided."})
