@@ -29,7 +29,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         uuid = json.loads(initial_post.content)['run_uuid']
 
         response = json.loads(self.api_client.get(self.results_url + uuid).content)
-        status = response['outputs']['Scenario']['status']
+
+        # # the following is not needed b/c we test the app with Celery tasks in "eager" mode
+        # # i.e. asynchronously. If we move to testing the API, then the while loop is needed
+        # status = response['outputs']['Scenario']['status']
+        # while status == "Optimizing...":
+        #     time.sleep(2)
+        #     response = json.loads(self.api_client.get(self.results_url + uuid).content)
+        #     status = response['outputs']['Scenario']['status']
+
         return response
 
     def test_creation(self):
@@ -120,4 +128,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             msg = "Failed at idx: " + str(idx) + " Value: " + str(a.value) + "!= " + str(b)
             self.assertAlmostEqual(float(a.value), b, places=2, msg=msg)
             idx += 1
+
+    def test_bad_run_uuid(self):
+        run_uuid = "5"
+        response = json.loads(self.api_client.get(self.results_url + run_uuid).content)
+        # status = response['outputs']['Scenario']['status']
+        self.assertDictEqual(response,
+                             {u'outputs': {u'Scenario': {u'status': u'error'}},
+                              u'messages': {u'error': u'badly formed hexadecimal UUID string'}})
+
 
