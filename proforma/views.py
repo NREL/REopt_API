@@ -1,8 +1,11 @@
-from models import ProForma, ScenarioModel
+import json
 import os
+import sys
+import traceback as tb
+from models import ProForma, ScenarioModel
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
-import json
+from reo.log_levels import log
 
 
 def proforma(request):
@@ -36,6 +39,10 @@ def proforma(request):
             return HttpResponse(json.dumps({type(e).__name__: msg}),
                                 content_type='application/json', status=404)
         else:
-            msg = type(e).__name__ + str(e)
-            return HttpResponse(json.dumps({"Unexpected error": msg}),
+
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+                                                                                tb.format_tb(exc_traceback))
+            log("ERROR", debug_msg)
+            return HttpResponse(json.dumps({"Unexpected error": "Unexpected Error. Please contact reopt@nrel.gov."}),
                                 content_type='application/json', status=500)
