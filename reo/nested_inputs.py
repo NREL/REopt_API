@@ -727,10 +727,9 @@ nested_input_definitions = {
             "description": "Rebate based on installed power capacity"
           }
         }
-      }
-
     }
   }
+}
 
 
 def flat_to_nested(i):
