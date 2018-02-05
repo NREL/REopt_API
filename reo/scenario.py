@@ -102,5 +102,5 @@ def setup_scenario(self, run_uuid, paths, data):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
+        log("UnexpectedError", "{} occurred while processing inputs in setup_scenario.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
