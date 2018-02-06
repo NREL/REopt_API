@@ -111,7 +111,7 @@ nested_input_definitions = {
         },
         "analysis_years": {
           "type": "int",
-          "min": 0,
+          "min": 1,
           "max": max_years,
           "default": analysis_years,
           "description": "Analysis period"
