@@ -26,6 +26,12 @@ default_buildings = ['FastFoodRest',
 macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
 macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
+#the user needs to supply valid data for at least on of these sets of attributes
+load_profile_possible_sets = [["loads_kw"],
+            ["doe_reference_name", "monthly_totals_kwh"],
+            ["annual_kwh", "doe_reference_name"],
+            ["doe_reference_name"]
+            ]
 
 def list_of_float(input):
     return [float(i) for i in input]
@@ -122,23 +128,14 @@ nested_input_definitions = {
         "doe_reference_name": {
           "type": "str",
           "restrict_to":default_buildings,
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "annual_kwh"],
-            ["doe_reference_name", "monthly_totals_kwh"]
-          ],
-          "depends_on": ["annual_kwh or monthly_totals_kwh"],
+          "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
           "type": "float",
-          "min": 0,
+          "min": 1,
           "max": 1e12,
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
         },
@@ -151,21 +148,13 @@ nested_input_definitions = {
         },
         "monthly_totals_kwh": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Array (length of 12) of total monthly energy consumption used to scale simulated building load profile."
         },
         "loads_kw": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "description": "Hourly load over all hours in one year"
         },
         "outage_start_hour": {
