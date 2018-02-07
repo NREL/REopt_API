@@ -66,7 +66,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             del test_case['Scenario']['Site'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
         for c in electric_tarrif_cases:
@@ -75,7 +75,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['ElectricTariff'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>ElectricTariff"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['loads_kw','monthly_totals_kwh','annual_kwh'],  ['loads_kw','doe_reference_name','annual_kwh']]
         for c in load_profile_cases:
@@ -84,7 +84,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 del test_case['Scenario']['Site']['LoadProfile'][r]
             response = self.get_response(test_case)
             text = "Missing Required for Scenario>Site>LoadProfile"
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
     def test_valid_data_types(self):
 
@@ -95,8 +95,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
 
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
-            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
     
     def test_valid_data_ranges(self):
 
@@ -106,17 +106,17 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
             t = json.loads(response.content)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         for attribute, test_data in input.test_data('max'):
                 text = "exceeds allowable max"
                 response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+                self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['errors']['input_errors']))
+            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
     def test_urdb_rate(self):
 
@@ -198,7 +198,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages'].get('errors')))
+            print("Error message: {}".format(d['messages']))
             raise
 
     def test_wind(self):
@@ -259,7 +259,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages'].get('errors')))
+            print("Error message: {}".format(d['messages']))
             raise
         
     def test_valid_nested_posts(self):
@@ -287,7 +287,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages'].get('errors')))
+            print("Error message: {}".format(d['messages']))
             raise
 
         # another test with custom rate and monthly kwh
@@ -317,7 +317,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.check_common_outputs(c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(c['messages'].get('errors')))
+            print("Error message: {}".format(c['messages']))
             raise
 
     def test_not_optimal_solution(self):
@@ -343,4 +343,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['errors'])
+        self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])

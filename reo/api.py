@@ -69,7 +69,7 @@ class RunInputResource(ModelResource):
                                'Note that inputs have default values filled in.'
 
             if saveToDb:
-                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']['errors']))
+                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
                 badpost.save()
 
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),

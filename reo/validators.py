@@ -372,7 +372,7 @@ class ValidateNestedInput:
             output = {}
            
             if self.errors != {}:
-                output['errors'] = self.errors
+                output = self.errors
 
             if self.warnings != {}:
                 output['warnings'] = self.warnings
@@ -401,15 +401,20 @@ class ValidateNestedInput:
         def errors(self):
             output = {}
 
-            if self.urdb_errors:
-                output["URDB_errors"] = self.urdb_errors
-
             if self.input_data_errors:
+                output["error"]= "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.input_data_errors
+
+            if self.urdb_errors and self.input_data_errors:
+                output["input_errors"] += self.urdb_errors
+            
+            elif self.urdb_errors:
+                output["error"]= "Invalid inputs. See 'input_errors'."
+                output["input_errors"] = self.urdb_errors
 
             return output
 
-        @property
+        @property 
         def warnings(self):
             output = {}
 
@@ -588,9 +593,9 @@ class ValidateNestedInput:
                     try:
                         rate_checker = URDB_RateValidator(**urdb_response)
                         if rate_checker.errors:
-                            self.urdb_errors.append(rate_checker.errors)
+                            self.urdb_errors+=rate_checker.errors
                     except:
-                        self.urdb_errors.append('Error parsing urdb rate in %s ' % (object_name_path))
+                        self.urdb_errors == 'Error parsing urdb rate in %s ' % (object_name_path)
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
