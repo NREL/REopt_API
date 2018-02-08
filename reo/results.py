@@ -34,7 +34,7 @@ class ResultsTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        self.data["messages"]["errors"] = exc.message
+        self.data["messages"]["error"] = exc.message
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 

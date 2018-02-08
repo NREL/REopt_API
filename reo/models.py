@@ -294,7 +294,7 @@ class MessageModel(models.Model):
     For Example:
     {"messages":{
                 "warnings": "This is a warning message.",
-                "errors": "REopt had an error."
+                "error": "REopt had an error."
                 }
     }
     """

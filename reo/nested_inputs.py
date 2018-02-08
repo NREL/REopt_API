@@ -26,6 +26,17 @@ default_buildings = ['FastFoodRest',
 macrs_five_year = [0.2, 0.32, 0.192, 0.1152, 0.1152, 0.0576]  # IRS pub 946
 macrs_seven_year = [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]
 
+#the user needs to supply valid data for all the attributes in at least on of these sets for load_profile_possible_sets and electric_tariff_possible_sets
+load_profile_possible_sets = [["loads_kw"],
+            ["doe_reference_name", "monthly_totals_kwh"],
+            ["annual_kwh", "doe_reference_name"],
+            ["doe_reference_name"]
+            ]
+
+electric_tariff_possible_sets = [["urdb_response"],
+            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
+            ["urdb_label"],
+            ["urdb_utilty_name", "urdb_rate_name"]]
 
 def list_of_float(input):
     return [float(i) for i in input]
@@ -111,7 +122,7 @@ nested_input_definitions = {
         },
         "analysis_years": {
           "type": "int",
-          "min": 0,
+          "min": 1,
           "max": max_years,
           "default": analysis_years,
           "description": "Analysis period"
@@ -122,23 +133,14 @@ nested_input_definitions = {
         "doe_reference_name": {
           "type": "str",
           "restrict_to":default_buildings,
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "annual_kwh"],
-            ["doe_reference_name", "monthly_totals_kwh"]
-          ],
-          "depends_on": ["annual_kwh or monthly_totals_kwh"],
+          "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
           "type": "float",
-          "min": 0,
+          "min": 1,
           "max": 1e12,
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
         },
@@ -151,21 +153,13 @@ nested_input_definitions = {
         },
         "monthly_totals_kwh": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Array (length of 12) of total monthly energy consumption used to scale simulated building load profile."
         },
         "loads_kw": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["loads_kw"],
-            ["doe_reference_name", "monthly_totals_kwh"],
-            ["annual_kwh", "doe_reference_name"]
-          ],
+          "replacement_sets": load_profile_possible_sets,
           "description": "Hourly load over all hours in one year"
         },
         "outage_start_hour": {
@@ -192,45 +186,25 @@ nested_input_definitions = {
       "ElectricTariff": {
         "urdb_utilty_name": {
           "type": "str",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["urdb_rate_name"],
           "description": "Name of Utility from  <a href='https: //openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>"
         },
         "urdb_rate_name": {
           "type": "str",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["urdb_utilty_name"],
           "description": "Name of utility rate from  <a href='https: //openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>"
         },
         "blended_monthly_rates_us_dollars_per_kwh": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["blended_monthly_demand_charges_us_dollars_per_kw"],
           "description": "Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost in $)"
         },
         "blended_monthly_demand_charges_us_dollars_per_kw": {
           "type": "list_of_float",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
@@ -256,22 +230,12 @@ nested_input_definitions = {
         },
         "urdb_response": {
           "type": "dict",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "description": "Utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         },
         "urdb_label": {
           "type": "str",
-          "replacement_sets": [
-            ["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]
-          ],
+          "replacement_sets": electric_tariff_possible_sets,
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
         }
       },
@@ -727,10 +691,9 @@ nested_input_definitions = {
             "description": "Rebate based on installed power capacity"
           }
         }
-      }
-
     }
   }
+}
 
 
 def flat_to_nested(i):
