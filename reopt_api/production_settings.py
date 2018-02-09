@@ -27,9 +27,25 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = True
+"""
+ NL 180208: The "SECURITY WARNING" above came from the django settings.py template.
+ Unfortunately, if DEBUG = False, the django/tastypie API returns the TASTYPIE_CANNED_ERROR if the API
+ is hit too rapidly. There are no other errors raised/logged when this occurs, and so far the only
+ correlation is having DEBUG = False. However, with DEBUG = True, the API can be hit as rapid as one
+ wishes, and no error is raised.
 
-ALLOWED_HOSTS = ["*"]
+ This issue was made apparent during the NREL Cyber Security Vulnerability Assessment (their tools
+ hit the API rapidly). So the assessment was carried out with DEBUG = True, and no vulnerabilities
+ were identified. Thus, for the time being we are keeping DEBUG = True.
+
+ One of the primary concerns with having DEBUG = True is that if an exception is not caught and handled
+ then a user could receive a traceback message, which would provide some details about the server
+ (such as file paths) to the user. However, to the best of my knowledge, we are catching exceptions,
+ including unexpected ones, and only returning a generic error message to users.
+"""
+DEBUG = True
+
+ALLOWED_HOSTS = []
 
 
 # Application definition
