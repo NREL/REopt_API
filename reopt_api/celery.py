@@ -17,6 +17,9 @@ try:
     elif env == 'production':
         raw_env = 'reopt_api.production_settings'
         redis_host = ':' + production_redis_password + '@reopt-prod-db1.nrel.gov'
+    elif env == 'internal_c110p':
+        raw_env = 'reopt_api.internal_c110p_settings'
+        redis_host = ':' + dev_redis_password + '@localhost'
     else:
         raw_env = 'reopt_api.dev_settings'
         redis_host = 'localhost'
