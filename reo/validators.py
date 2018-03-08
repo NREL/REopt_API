@@ -199,8 +199,8 @@ class URDB_RateValidator:
             schedule = getattr(self,schedule_name)
             
             def recursive_search(item,level=0, entry=0):
-                if type(item)==list:
-                    if len(item)!=expected_counts[level]:
+                if type(item) == list:
+                    if len(item) != expected_counts[level]:
                         msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
                         self.errors.append(msg)
                         valid = False 
@@ -216,7 +216,7 @@ class URDB_RateValidator:
             valid = True
             
             for i, r in enumerate(getattr(self, rate)):
-                if len(r)==0:
+                if len(r) == 0:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
                     valid = False
                 num_max_tags = 0
@@ -226,8 +226,8 @@ class URDB_RateValidator:
                     if t.get('rate') is None and t.get('sell') is None and t.get('adj') is None:
                         self.errors.append('Missing rate/sell/adj attributes for tier ' + str(ii) + " in rate " + str(i) + ' ' + rate)
                         valid = False
-                if len(r)>1:
-                    num_missing_max_tags = len(r)- 1 - num_max_tags
+                if len(r) > 1:
+                    num_missing_max_tags = len(r) - 1 - num_max_tags
                     if num_missing_max_tags > 0:
                         self.errors.append("Missing 'max' tag for {} tiers in rate {} for {}".format( num_missing_max_tags, i, rate ))
                         valid = False
@@ -248,7 +248,7 @@ class URDB_RateValidator:
             # Loop though all periond and catch error if if exists
             if hasattr(self,rate):
                 for period in periods:
-                    if period > len(getattr(self,rate)) - 1 or period < 0:
+                    if period > len(getattr(self, rate)) - 1 or period < 0:
                         self.errors.append(
                             '%s contains value %s which has no associated rate in %s' % (schedules, period, rate))
                         valid = False
@@ -403,7 +403,7 @@ class ValidateNestedInput:
             output = {}
 
             if self.input_data_errors:
-                output["error"]= "Invalid inputs. See 'input_errors'."
+                output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.input_data_errors
 
             if self.urdb_errors and self.input_data_errors:
@@ -589,12 +589,13 @@ class ValidateNestedInput:
 
         def check_special_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
+
                 urdb_response = real_values.get('urdb_response')
                 if urdb_response is not None:
                     try:
                         rate_checker = URDB_RateValidator(**urdb_response)
                         if rate_checker.errors:
-                            self.urdb_errors+=rate_checker.errors
+                            self.urdb_errors += rate_checker.errors
                     except:
                         self.urdb_errors == 'Error parsing urdb rate in %s ' % (object_name_path)
 
