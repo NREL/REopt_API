@@ -3,7 +3,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
-from reo.api_definitions import max_incentive
+max_incentive = 1e10
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
