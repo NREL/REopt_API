@@ -2,7 +2,6 @@ from __future__ import absolute_import, unicode_literals
 import os
 import json
 import sys
-from reo.api_definitions import outputs
 from reo.nested_outputs import nested_output_definitions
 from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
@@ -85,33 +84,14 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
             for k in Results.bau_attributes:
                 results_dict[k+'_bau'] = results_dict_bau[k]
 
-            # set missing flat outputs to None
-            for k in outputs().iterkeys():
-                results_dict.setdefault(k, None)
-
             # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
-            if results_dict['pv_kw'] is None:
+            if results_dict.get('pv_kw') is None:
                 results_dict['pv_kw'] = 0
 
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
             # dispatch
             self.po = ProcessOutputs(path_output, year)
-            results_dict['year_one_grid_to_load_series'] = self.po.get_grid_to_load()
-            results_dict['year_one_grid_to_battery_series'] = self.po.get_grid_to_batt()
-            results_dict['year_one_pv_to_load_series'] = self.po.get_pv_to_load()
-            results_dict['year_one_pv_to_battery_series'] = self.po.get_pv_to_batt()
-            results_dict['year_one_pv_to_grid_series'] = self.po.get_pv_to_grid()
-            results_dict['year_one_battery_soc_series'] = self.po.get_soc(results_dict['batt_kwh'])
-            results_dict['year_one_energy_cost_series'] = self.po.get_energy_cost()
-            results_dict['year_one_demand_cost_series'] = self.po.get_demand_cost()
-            results_dict['year_one_electric_load_series'] = self.po.get_load_profile()
-            results_dict['year_one_battery_to_load_series'] = self.po.get_batt_to_load()
-            results_dict['year_one_battery_to_grid_series'] = self.po.get_batt_to_grid()
-            results_dict['year_one_wind_to_load_series'] = self.po.get_wind_to_load()
-            results_dict['year_one_wind_to_battery_series'] = self.po.get_wind_to_batt()
-            results_dict['year_one_wind_to_grid_series'] = self.po.get_wind_to_grid()
-
             self.results_dict = results_dict
             self.results_dict_bau = results_dict_bau
             self.path_templates = path_templates
@@ -123,11 +103,8 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         def get_output(self):
-            output_dict = {'flat': {}}
-            for k in outputs().iterkeys():
-                output_dict['flat'][k] = self.results_dict[k]
             self.get_nested()
-            output_dict['nested'] = self.nested_outputs
+            output_dict = self.nested_outputs
 
             return output_dict
 
@@ -163,71 +140,74 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
                 elif name == "Financial":
-                    self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict["lcc"]
-                    self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict["lcc_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict["npv"]
-                    self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict["net_capital_costs_plus_om"]
+                    self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
+                    self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict.get("npv")
+                    self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om")
                 elif name == "PV":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["pv_kw"]
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict["average_yearly_pv_energy_produced"]
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict["average_annual_energy_exported"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict["year_one_energy_produced"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_pv_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_pv_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
-                elif name == "Wind":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["wind_kw"]
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict["average_wind_energy_produced"]
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict["average_annual_energy_exported_wind"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict["year_one_wind_energy_produced"]
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
+                elif name == "Wind":
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_wind_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_wind")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_wind_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_wind_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_wind_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_wind_to_grid()
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
                 elif name == "Storage":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict["batt_kw"]
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict["batt_kwh"]
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_batt_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_batt_to_grid()
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = self.po.get_soc(self.results_dict['batt_kwh'])
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = self.po.get_soc(self.results_dict.get('batt_kwh'))
                 elif name == "ElectricTariff":
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_us_dollars"] = self.results_dict["year_one_energy_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_us_dollars"] = self.results_dict["year_one_demand_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fixed_cost_us_dollars"] = self.results_dict["year_one_fixed_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_min_charge_adder_us_dollars"] = self.results_dict["year_one_min_charge_adder"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_bau_us_dollars"] = self.results_dict["year_one_energy_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_us_dollars"] = self.results_dict["year_one_energy_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_bau_us_dollars"] = self.results_dict["year_one_demand_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fixed_cost_bau_us_dollars"] = self.results_dict["year_one_fixed_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_min_charge_adder_bau_us_dollars"] = self.results_dict["year_one_min_charge_adder_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_energy_cost_us_dollars"] = self.results_dict["total_energy_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_demand_cost_us_dollars"] = self.results_dict["total_demand_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_fixed_cost_us_dollars"] = self.results_dict["total_fixed_cost"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_min_charge_adder_us_dollars"] = self.results_dict["total_min_charge_adder"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_energy_cost_bau_us_dollars"] = self.results_dict["total_energy_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_demand_cost_bau_us_dollars"] = self.results_dict["total_demand_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_fixed_cost_bau_us_dollars"] = self.results_dict["total_fixed_cost_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["total_min_charge_adder_bau_us_dollars"] = self.results_dict["total_min_charge_adder_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict["year_one_bill"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau_us_dollars"] = self.results_dict["year_one_bill_bau"]
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_export_benefit_us_dollars"] = self.results_dict["year_one_export_benefit"]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_us_dollars"] = self.results_dict.get("year_one_demand_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fixed_cost_us_dollars"] = self.results_dict.get("year_one_fixed_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_min_charge_adder_us_dollars"] = self.results_dict.get("year_one_min_charge_adder")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_bau_us_dollars"] = self.results_dict.get("year_one_demand_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_fixed_cost_bau_us_dollars"] = self.results_dict.get("year_one_fixed_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_min_charge_adder_bau_us_dollars"] = self.results_dict.get("year_one_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_energy_cost_us_dollars"] = self.results_dict.get("total_energy_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_demand_cost_us_dollars"] = self.results_dict.get("total_demand_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_fixed_cost_us_dollars"] = self.results_dict.get("total_fixed_cost")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_min_charge_adder_us_dollars"] = self.results_dict.get("total_min_charge_adder")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_energy_cost_bau_us_dollars"] = self.results_dict.get("total_energy_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_demand_cost_bau_us_dollars"] = self.results_dict.get("total_demand_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_fixed_cost_bau_us_dollars"] = self.results_dict.get("total_fixed_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_min_charge_adder_bau_us_dollars"] = self.results_dict.get("total_min_charge_adder_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict.get("year_one_bill")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau_us_dollars"] = self.results_dict.get("year_one_bill_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_series_us_dollars_per_kwh"] = self.po.get_energy_cost()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_series_us_dollars_per_kw"] = self.po.get_demand_cost()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict["year_one_utility_kwh"]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
 
         def compute_total_power(self, tech):
-            tech = tech.lower()
             power_lists = list()
+            d = self.nested_outputs["Scenario"]["Site"][tech]
 
-            if self.results_dict["year_one_" + tech + "_to_load_series"] is not None:
-                power_lists.append(self.results_dict["year_one_" + tech + "_to_load_series"])
-            if self.results_dict["year_one_" + tech + "_to_battery_series"] is not None:
-                power_lists.append(self.results_dict["year_one_" + tech + "_to_battery_series"])
-            if self.results_dict["year_one_" + tech + "_to_grid_series"] is not None:
-                power_lists.append(self.results_dict["year_one_" + tech + "_to_grid_series"])
+            if d.get("year_one_to_load_series_kw") is not None:
+                power_lists.append(d["year_one_to_load_series_kw"])
+
+            if d.get("year_one_to_battery_series_kw") is not None:
+                power_lists.append(d["year_one_to_battery_series_kw"])
+
+            if d.get("year_one_to_grid_series_kw") is not None:
+                power_lists.append(d["year_one_to_grid_series_kw"])
+
             power = [sum(x) for x in zip(*power_lists)]
             return power
 
@@ -247,7 +227,7 @@ def parse_run_outputs(self, data, paths, meta, saveToDB=True):
                                   paths['static_outputs'], year)
         results = process_results.get_output()
 
-        data['outputs'].update(results['nested'])
+        data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         if saveToDB:
