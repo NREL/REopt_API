@@ -38,5 +38,7 @@ elif env == 'staging':
     raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.staging_settings']
 elif env == 'production':
     raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.production_settings']
+elif env == 'internal_c110p':
+    raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.internal_c110p_settings']
 else:
     raw_env = ['DJANGO_SETTINGS_MODULE=reopt_api.dev_settings']

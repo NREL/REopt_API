@@ -1,4 +1,3 @@
-import os
 from django.test import TestCase
 from reo.src.load_profile import BuiltInProfile
 

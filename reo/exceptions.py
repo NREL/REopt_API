@@ -66,8 +66,8 @@ class NotOptimal(REoptError):
 
         msg = "REopt could not find an optimal solution for these inputs."
         if status == 'infeasible':
-            msg += " The problem is likely due to constraints that make a solution infeasible, " \
-                   + "such as a grid outage without enough resources to meet the load during the outage."
+            msg += " An 'infeasible' status is likely due to system size constraints that prevent the load from being met during a grid outage. "\
+                    + "Please adjust the selected technologies and size constraints and try again."
         super(NotOptimal, self).__init__(task, self.__name__, run_uuid, message=msg, traceback="status: " + status)
 
 

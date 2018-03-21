@@ -7,40 +7,27 @@ from outage_simulator import simulate_outage
 from reo.exceptions import UnexpectedError
 
 
-def resilience_stats(request):
+def resilience_stats(request, run_uuid):
 
-    try:  # to get run_uuid
-        run_uuid = request.GET['run_uuid']
+    try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-
-    except KeyError:
-        msg = "run_uuid parameter not provided."
-        return JsonResponse({"Error": str(msg)}, status=400)
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.message)}, status=400)
         else:
-            if 'run_uuid' not in locals() or 'run_uuid' not in globals():
-                run_uuid = "unable to get run_uuid from request"
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='resilience_stats', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
-
-    except Exception:
-        if 'run_uuid' not in locals() or 'run_uuid' not in globals():
-            run_uuid = "unable to get run_uuid from request"
-
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
-        err.save_to_db()
-        return JsonResponse({"Error": err.message})
 
     try:  # to run outage simulator
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
 
-        rm = ResilienceModel.create(scenariomodel=scenario)
+        try:  # see if ResilienceModel already created
+            rm = ResilienceModel.objects.get(scenariomodel=scenario)
+        except:
+            rm = ResilienceModel.create(scenariomodel=scenario)
         site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
         batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
         pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
@@ -65,11 +52,13 @@ def resilience_stats(request):
         response = JsonResponse(results)
         return response
 
-    except Exception:
-        if 'run_uuid' not in locals():
-            run_uuid = "unable to get run_uuid from request"
+    except Exception as e:
 
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
-        err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+        if type(e).__name__ == 'DoesNotExist':
+            msg = "Scenario {} does not exist.".format(run_uuid)
+            return JsonResponse({"Error": msg}, content_type='application/json', status=404)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='resilience_stats', run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": err.message}, status=500)

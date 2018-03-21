@@ -4,9 +4,19 @@ properties([
   parameters([
     choice(
       name: "PARAM_STAGE",
-      choices: "development\nstaging\nproduction",
+      choices: "internal_c110p\ndevelopment\nstaging\nproduction",
       description: "Where do you want to deploy to?"
     ),
+
+    [
+      $class: "GitParameterDefinition",
+      name: "PARAM_BRANCH",
+      type: "PT_BRANCH",
+      defaultValue: "origin/master",
+      sortMode: "ASCENDING_SMART",
+      selectedValue: "DEFAULT",
+      quickFilterEnabled: true,
+    ],
   ])
 ])
 
@@ -26,6 +36,8 @@ pipeline {
         script {
           if(env.PARAM_STAGE == "development") {
             git url: "git@github.nrel.gov:REopt/reopt_api.git", branch: "develop"
+          } else if(env.PARAM_STAGE == "internal_c110p") {
+            tadaCheckoutDeployBranch("git@github.nrel.gov:REopt/reopt_api.git")
           } else {
             git url: "git@github.nrel.gov:REopt/reopt_api.git", branch: "master"
           }
@@ -42,11 +54,23 @@ pipeline {
     stage("deploy") {
       steps {
         script {
-          currentBuild.description = "Stage: $PARAM_STAGE"
+          currentBuild.description = "Stage: $PARAM_STAGE Branch: $PARAM_BRANCH"
 
           sh "bundle install"
           sshagent(credentials: ["jenkins-ssh"]) {
-            sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEBUG_DEPLOY=true"
+            if(env.PARAM_STAGE == "development") {
+              // TODO: Remove this if we setup branched deployments for
+              // development.
+              if(env.PARAM_BRANCH != "origin/develop") {
+                echo "[FAILURE] Only the 'develop' branch can be deployed to the development server."
+                currentBuild.result = "FAILURE"
+                return
+              }
+
+              sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEBUG_DEPLOY=true"
+            } else {
+              sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
+            }
           }
         }
       }

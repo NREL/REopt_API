@@ -38,6 +38,7 @@ electric_tariff_possible_sets = [["urdb_response"],
             ["urdb_label"],
             ["urdb_utilty_name", "urdb_rate_name"]]
 
+
 def list_of_float(input):
     return [float(i) for i in input]
 

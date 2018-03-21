@@ -5,7 +5,6 @@ import datetime
 import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from django.test import Client
 from proforma.models import ProForma
 from reo.models import ScenarioModel
 
@@ -21,14 +20,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.example_reopt_request_data = json.loads(open('proforma/tests/test_data_nested.json').read())
-        self.submit_url = '/api/v1/reopt/'
-        self.results_url = '/reopt/results/?run_uuid='
+        self.submit_url = '/v1/job/'
+        self.results_url = '/v1/job/<run_uuid>/results/'
+        self.proforma_url = '/v1/job/<run_uuid>/proforma/'
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
 
-        response = json.loads(self.api_client.get(self.results_url + uuid).content)
+        response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
 
         # # the following is not needed b/c we test the app with Celery tasks in "eager" mode
         # # i.e. asynchronously. If we move to testing the API, then the while loop is needed
@@ -63,9 +63,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         uuid = run_output['outputs']['Scenario']['run_uuid']
 
         start_time = now()
-        response = Client().get('/proforma/?run_uuid='+uuid)
-        
-        self.assertEqual(response.status_code,200)
+        response = self.api_client.get(self.proforma_url.replace('<run_uuid>', str(uuid)))
+        self.assertEqual(response.status_code, 200)
 
         scenario = ScenarioModel.objects.get(run_uuid=uuid)
         pf = ProForma.objects.get(scenariomodel=scenario)
@@ -131,7 +130,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_bad_run_uuid(self):
         run_uuid = "5"
-        response = json.loads(self.api_client.get(self.results_url + run_uuid).content)
+        response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(run_uuid))).content)
         # status = response['outputs']['Scenario']['status']
         self.assertDictEqual(response,
                              {u'outputs': {u'Scenario': {u'status': u'error'}},
