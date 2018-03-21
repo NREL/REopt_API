@@ -17,16 +17,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         super(EntryResourceTest, self).setUp()
 
         self.data_definitions = nested_input_definitions
-        self.reopt_base = '/api/v1/reopt/'
+        self.reopt_base = '/v1/job/'
         self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
         self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
 
     @property
     def complete_valid_nestedpost(self):
         return json.load(open('reo/tests/nestedPOST.json'))
-
-    def make_url(self,string):
-        return self.reopt_base + string
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)

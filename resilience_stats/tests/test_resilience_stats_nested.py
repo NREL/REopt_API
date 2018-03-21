@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator import simulate_outage
@@ -42,8 +43,8 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
             'crit_load_factor': 1,
         }
         
-        self.submit_url = '/api/v1/reopt/'
-        self.results_url = '/resilience_stats/?run_uuid='
+        self.submit_url = '/v1/job/'
+        self.results_url = '/v1/job/<run_uuid>/resilience_stats/'
         self.test_path = test_path
 
     def test_outage_sim(self):
@@ -161,7 +162,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
         
-        resp = self.api_client.get(self.results_url + uuid)
+        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
         self.assertEqual(resp.status_code, 200)
 
         resp_dict = json.loads(resp.content)
@@ -176,12 +177,13 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
 
     def test_bad_uuid(self):
         run_uuid = "5"
-        resp = self.api_client.get(self.results_url + run_uuid)
+        resp = self.api_client.get(self.results_url.replace('<run_uuid>', run_uuid))
         self.assertEqual(resp.status_code, 400)
         resp_dict = json.loads(resp.content)
         self.assertDictEqual(resp_dict, {"Error": "badly formed hexadecimal UUID string"})
 
-        resp = self.api_client.get('/resilience_stats/?run_uid=' + run_uuid)
-        self.assertEqual(resp.status_code, 400)
+        run_uuid = str(uuid.uuid4())
+        resp = self.api_client.get(self.results_url.replace('<run_uuid>', run_uuid))
+        self.assertEqual(resp.status_code, 404)
         resp_dict = json.loads(resp.content)
-        self.assertDictEqual(resp_dict, {"Error": "run_uuid parameter not provided."})
+        self.assertDictEqual(resp_dict, {"Error": "Scenario {} does not exist.".format(run_uuid)})

@@ -22,11 +22,11 @@ api_version = "version 1.0.0"
 saveToDb = True
 
 
-class RunInputResource(ModelResource):
+class Job(ModelResource):
 
     class Meta:
         setup_logging()
-        resource_name = 'reopt'
+        resource_name = 'job'
         allowed_methods = ['post']
         detail_allowed_methods = []
         authorization = ReadOnlyAuthorization()
