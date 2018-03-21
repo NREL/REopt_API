@@ -64,7 +64,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         start_time = now()
         response = self.api_client.get(self.proforma_url.replace('<run_uuid>', str(uuid)))
-        import pdb; pdb.set_trace()
         self.assertEqual(response.status_code, 200)
 
         scenario = ScenarioModel.objects.get(run_uuid=uuid)
