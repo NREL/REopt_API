@@ -61,7 +61,7 @@ pipeline {
             if(env.PARAM_STAGE == "development") {
               // TODO: Remove this if we setup branched deployments for
               // development.
-              if(env.PARAM_BRANCH != "develop") {
+              if(env.PARAM_BRANCH != "origin/develop") {
                 echo "[FAILURE] Only the 'develop' branch can be deployed to the development server."
                 currentBuild.result = "FAILURE"
                 return
