@@ -104,6 +104,9 @@ server {
   proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
   proxy_set_header X-Forwarded-Port $http_x_forwarded_port;
 
+  # Workaround for Django requiring a trailing slash on the POST endpoint.
+  rewrite ^/v1/job$ /v1/job/ last;
+
   <% if(fetch(:app_env) != "production") %>
   # Don't allow search engine indexing of our staging sites.
   location = /robots.txt {
