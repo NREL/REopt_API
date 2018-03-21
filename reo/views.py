@@ -77,7 +77,7 @@ def annual_kwh(request):
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
-def results(request):
+def results(request, run_uuid):
 
     def make_error_resp(msg):
         resp = dict()
@@ -88,31 +88,25 @@ def results(request):
         return resp
 
     try:
-        run_uuid = request.GET['run_uuid']
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-
-        d = ModelManager.make_response(run_uuid)
-
-        # if 'error' in d.get('messages'):
-        #     err = RequestError(task='reo.views.results', message=d['messages']['error'], traceback="REQUEST: {}".format(request.GET))
-        #     err.save_to_db()
-
-        response = JsonResponse(d)
-        return response
-
-    except KeyError:
-        msg = "run_uuid parameter not provided."
-        resp = make_error_resp(msg)
-        return JsonResponse(resp, status=400)
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
             resp = make_error_resp(e.message)
             return JsonResponse(resp, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='results', run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=400)
+
+    try:
+        d = ModelManager.make_response(run_uuid)  # ModelManager has some internal exception handling
+
+        response = JsonResponse(d)
+        return response
 
     except Exception:
-        if 'run_uuid' not in locals() or 'run_uuid' not in globals():
-            run_uuid = "unable to get run_uuid from request"
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)

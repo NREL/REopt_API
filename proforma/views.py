@@ -1,23 +1,32 @@
-import json
 import os
 import sys
-import traceback as tb
+import uuid
+from django.http import JsonResponse
 from models import ProForma, ScenarioModel
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
-from reo.log_levels import log
+from reo.exceptions import UnexpectedError
 
 
-def proforma(request):
-    uuid = request.GET.get('run_uuid')
+def proforma(request, run_uuid):
 
-    if uuid is None:
-        return HttpResponse(json.dumps({"Bad Request": "No run_uuid provided"}),
-                            content_type='application/json', status=400)
     try:
-        scenario = ScenarioModel.objects.get(run_uuid=uuid)
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
-        try:
+    except ValueError as e:
+        if e.message == "badly formed hexadecimal UUID string":
+            resp = {"Error": e.message}
+            return JsonResponse(resp, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='proforma', run_uuid=run_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=400)
+
+    try:
+        scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
+
+        try:  # see if Proforma already created
             pf = ProForma.objects.get(scenariomodel=scenario)
         except:
             pf = ProForma.create(scenariomodel=scenario)
@@ -35,14 +44,10 @@ def proforma(request):
     except Exception as e:
 
         if type(e).__name__ == 'DoesNotExist':
-            msg = "Scenario {} does not exist.".format(uuid)
-            return HttpResponse(json.dumps({type(e).__name__: msg}),
-                                content_type='application/json', status=404)
+            msg = "Scenario {} does not exist.".format(run_uuid)
+            return HttpResponse(msg, status=404)
         else:
-
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
-                                                                                tb.format_tb(exc_traceback))
-            log("ERROR", debug_msg)
-            return HttpResponse(json.dumps({"Unexpected error": "Unexpected Error. Please contact reopt@nrel.gov."}),
-                                content_type='application/json', status=500)
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='proforma', run_uuid=run_uuid)
+            err.save_to_db()
+            return HttpResponse({"Error": str(err.message)}, status=400)
