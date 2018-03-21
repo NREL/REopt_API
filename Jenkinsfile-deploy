@@ -54,11 +54,21 @@ pipeline {
     stage("deploy") {
       steps {
         script {
-          currentBuild.description = "Stage: $PARAM_STAGE"
+          currentBuild.description = "Stage: $PARAM_STAGE Branch: $PARAM_BRANCH"
 
           sh "bundle install"
           sshagent(credentials: ["jenkins-ssh"]) {
-            sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
+            if(env.PARAM_STAGE == "development") {
+              // TODO: Remove this if we setup branched deployments for
+              // development.
+              if(env.PARAM_BRANCH != "develop") {
+                error("Only the 'develop' branch can be deployed to the development server.")
+              }
+
+              sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEBUG_DEPLOY=true"
+            } else {
+              sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
+            }
           }
         }
       }
