@@ -9,7 +9,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         super(EntryResourceTest, self).setUp()
-        self.annual_kwh_url = "/reopt/annual_kwh/"
+        self.annual_kwh_url = "/v1/annual_kwh/"
 
     def test_annual_kwh_random_choice(self):
         """
