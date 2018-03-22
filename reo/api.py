@@ -12,7 +12,6 @@ from validators import ValidateNestedInput
 from log_levels import log, setup_logging
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
-from reo.src.paths import Paths
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
@@ -83,21 +82,15 @@ class Job(ModelResource):
             set_status(data, 'Optimizing...')
             model_manager.create_and_save(data)
 
-        paths = vars(Paths(run_uuid=run_uuid))
-
-        # Log POST request
-        file_post_input = os.path.join(paths['inputs'], "POST.json")
-        with open(file_post_input, 'w') as file_post:
-            json.dump(input_validator.input_for_response, file_post)
-
-        setup = setup_scenario.s(run_uuid=run_uuid, paths=paths, data=data)
+        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
 
         reopt_jobs = group(
-            reopt.s(paths=paths, data=data, bau=False),
-            reopt.s(paths=paths, data=data, bau=True),
+            reopt.s(data=data, bau=False),
+            reopt.s(data=data, bau=True),
         )
-        call_back = parse_run_outputs.si(data=data, paths=paths, meta={'run_uuid': run_uuid, 'api_version': api_version})
-        # .si for immutable signature, no outputs passed from reopt_jobs
+        # a group return a list of outputs, with one item for each job in the group
+        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+        # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         try:
             chain(setup | reopt_jobs, call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.

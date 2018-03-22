@@ -3,9 +3,9 @@ import pandas as pd
 from urdb_logger import log_urdb_errors
 from nested_inputs import nested_input_definitions, list_of_float
 #Note: list_of_float is actually needed
-import copy
 import os
 import csv
+import copy
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -333,7 +333,6 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-            self.original_input = input_dict
 
             self.input_data_errors = []
             self.urdb_errors = []
@@ -356,10 +355,6 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
-            
-        @property
-        def input_for_response(self):
-            return self.input_dict
 
         @property
         def isValid(self):
