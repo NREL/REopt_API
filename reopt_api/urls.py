@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.http import Http404
+from django.http import HttpResponse
 from reo.api import Job
 from tastypie.api import Api
 from reo import views
@@ -18,7 +18,7 @@ def page_not_found(request, url):
     :param url:
     :return:
     """
-    raise Http404("Invalid URL: {}".format(url))
+    return HttpResponse("Invalid URL: {}".format(url), status=404)
 
 urlpatterns = [
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
