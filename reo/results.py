@@ -43,7 +43,9 @@ class ResultsTask(Task):
 
 
 @shared_task(bind=True, base=ResultsTask)
-def parse_run_outputs(self, data, paths, meta, saveToDB=True):
+def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
+
+    paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
     class Results:
 

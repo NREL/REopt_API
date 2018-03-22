@@ -44,7 +44,7 @@ class REoptTask(Task):
 
 
 @shared_task(bind=True, base=REoptTask)
-def reopt(self, dfm, paths, data, bau=False):
+def reopt(self, dfm, data, bau=False):
 
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
@@ -84,17 +84,17 @@ def reopt(self, dfm, paths, data, bau=False):
     timeout = data['inputs']['Scenario']['timeout_seconds']
     xpress_model = "REopt_API.mos"
 
-    file_cmd = os.path.join(paths['inputs'], "cmd.log")
-    file_cmd_bau = os.path.join(paths['inputs'], "cmd_bau.log")
+    file_cmd = os.path.join(dfm['paths']['inputs'], "cmd.log")
+    file_cmd_bau = os.path.join(dfm['paths']['inputs'], "cmd_bau.log")
 
     if bau:
-        output_path = paths['outputs_bau']
-        run_command = create_run_command(output_path, paths, xpress_model, dfm['DAT_bau'],
+        output_path = dfm['paths']['outputs_bau']
+        run_command = create_run_command(output_path, dfm['paths'], xpress_model, dfm['DAT_bau'],
                                          dfm['command_line_args_bau'], bau_string='Base',
                                          cmd_file=file_cmd_bau)
     else:
-        output_path = paths['outputs']
-        run_command = create_run_command(output_path, paths, xpress_model, dfm['DAT'],
+        output_path = dfm['paths']['outputs']
+        run_command = create_run_command(output_path, dfm['paths'], xpress_model, dfm['DAT'],
                                          dfm['command_line_args'], bau_string='', cmd_file=file_cmd)
 
     log("INFO", "Running REopt")
@@ -125,6 +125,8 @@ def reopt(self, dfm, paths, data, bau=False):
         if status.strip() != 'optimal':
             log("ERROR", "REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip())
+
+    return dfm
 
 """
 NOTE: Python 3 introduced Exception chaining using `from` statements, but we are using Python 2 :(

@@ -12,6 +12,7 @@ from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError
 from reo.log_levels import log
+from reo.src.paths import Paths
 
 
 class ScenarioTask(Task):
@@ -48,15 +49,22 @@ class ScenarioTask(Task):
 
 
 @shared_task(bind=True, base=ScenarioTask)
-def setup_scenario(self, run_uuid, paths, data):
+def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     All error handling is done in validators.py before data is passed to scenario.py
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
+    paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
+
+    # Log POST request
+    file_post_input = os.path.join(paths['inputs'], "POST.json")
+    with open(file_post_input, 'w') as file_post:
+        json.dump(raw_post, file_post)
+
     try:
         inputs_dict = data['inputs']['Scenario']
         dfm = DatFileManager(run_id=run_uuid, paths=paths,
@@ -95,6 +103,7 @@ def setup_scenario(self, run_uuid, paths, data):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
+        # delete python objects, which are not serializable
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
