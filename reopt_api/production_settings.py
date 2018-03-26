@@ -43,9 +43,9 @@ SECRET_KEY = secret_key_
  (such as file paths) to the user. However, to the best of my knowledge, we are catching exceptions,
  including unexpected ones, and only returning a generic error message to users.
 """
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
