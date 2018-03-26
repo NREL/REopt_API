@@ -49,6 +49,13 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 
 app.conf.broker_url = 'redis://' + redis_host + ':6379/0'
 
+# Create separate queues for each server (naming each queue after the server's
+# hostname). Since the worker jobs currently all have to be processes on the
+# same server (so the input/output files can be shared across jobs), having
+# server-specific queues is a simplistic way to ensure processing remains on a
+# single server.
+app.conf.task_default_queue = os.environ['APP_HOSTNAME']
+
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
 

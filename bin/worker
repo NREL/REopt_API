@@ -16,4 +16,4 @@ else
     export XPRESS=/opt/xpressmp/bin
 fi
 
-exec ./env/bin/celery -A reopt_api worker --loglevel=info
+exec ./env/bin/celery -A reopt_api worker --loglevel=info --queues="$APP_HOSTNAME"
