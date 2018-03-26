@@ -186,6 +186,7 @@ Honcho uses a `.env` file in the project root directory to define environment va
 ```
 DEPLOY_CURRENT_PATH="/Users/nlaws/projects/reopt/webtool/reopt_api"
 APP_ENV="local"
+APP_HOSTNAME="localhost"
 TEST="true"
 ```
 The first line of the `Procfile`:
