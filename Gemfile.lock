@@ -6,9 +6,10 @@ GIT
 
 GIT
   remote: https://github.nrel.gov/TADA/captastic-foreman.git
-  revision: cced6a62c02e73d2b0322025082a37b7a0aa2b69
+  revision: 5f56f5e6fa8909b73fba17c6cc6bd34155445a5f
   specs:
     captastic-foreman (0.2.1)
+      captastic
       inifile
 
 GIT
