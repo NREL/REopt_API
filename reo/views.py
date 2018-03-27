@@ -10,6 +10,7 @@ from nested_inputs import nested_input_definitions
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 from reo.log_levels import log
+import copy
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -19,8 +20,9 @@ hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 def help(request):
 
     try:
-        del nested_input_definitions['Scenario']['Site']['Wind']
-        return JsonResponse(nested_input_definitions)
+        response = copy.deepcopy(nested_input_definitions)
+        del response['Scenario']['Site']['Wind']
+        return JsonResponse(response)
 
     except Exception:
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
