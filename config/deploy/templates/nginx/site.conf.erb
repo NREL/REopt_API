@@ -40,9 +40,6 @@ expires $expires;
 <% end %>
 
 # SSL Terminator.
-#
-# This local nginx SSL terminator is only used for development purposes. The
-# WAF will provide SSL termination in staging and production.
 server {
   listen 443 ssl;
   listen [::]:443 ssl;
@@ -51,6 +48,14 @@ server {
   <% if(fetch(:base_domain) =~ /vagrant$/) %>
     ssl_certificate /etc/ssl/vagrant.crt;
     ssl_certificate_key /etc/ssl/vagrant.key;
+  <% elsif(fetch(:stage) == :internal_c110p) %>
+    <% if(fetch(:subdomain)) %>
+      ssl_certificate /etc/ssl/star_iac-c110p_nrel_gov.crt;
+      ssl_certificate_key /etc/httpd/ssl/star_iac-c110p_nrel_gov.key;
+    <% else %>
+      ssl_certificate /etc/ssl/iac-c110p_nrel_gov.crt;
+      ssl_certificate_key /etc/httpd/ssl/iac-c110p_nrel_gov.key;
+    <% end %>
   <% else %>
     ssl_certificate /etc/httpd/ssl/<%= host.hostname %>.pem;
     ssl_certificate_key /etc/httpd/ssl/<%= host.hostname %>.key;
