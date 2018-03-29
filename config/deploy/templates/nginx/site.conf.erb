@@ -51,10 +51,10 @@ server {
   <% elsif(fetch(:stage) == :internal_c110p) %>
     <% if(fetch(:subdomain)) %>
       ssl_certificate /etc/ssl/star_iac-c110p_nrel_gov.crt;
-      ssl_certificate_key /etc/httpd/ssl/star_iac-c110p_nrel_gov.key;
+      ssl_certificate_key /etc/ssl/star_iac-c110p_nrel_gov.key;
     <% else %>
       ssl_certificate /etc/ssl/iac-c110p_nrel_gov.crt;
-      ssl_certificate_key /etc/httpd/ssl/iac-c110p_nrel_gov.key;
+      ssl_certificate_key /etc/ssl/iac-c110p_nrel_gov.key;
     <% end %>
   <% else %>
     ssl_certificate /etc/httpd/ssl/<%= host.hostname %>.pem;
