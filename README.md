@@ -79,7 +79,20 @@ Fortunately, there's an [app](https://virtualenv.pypa.io/en/stable/userguide/) f
 
 ## Step 4: Install Requirements
 
+### For Windows
+Celery 4 is not supported on windows. So you will have to:
+```
+git checkout windows
+```
+BEFORE installing the requirements. The requirements.txt file is different from all other branches on the windows branch.
+Specifically, the celery version for windows is 3.1.25, and the `django-celery` package must be installed (not need on other OS's).
+Note that because of the need of Celery v3 on windows, the settings files (within the windows branch) are slightly different.
+
+### For both Mac & Windows
+
 `pip install -r requirements.txt`
+
+
 
 ## Step 5: Run Servers Locally
 All of the `commands` are done in MY-API-FOLDER.
@@ -88,6 +101,9 @@ If you wish to take advantage of the celery task manager, three separate servers
 
 1. The REopt API: `python manage.py runserver`
 2. A redis server: `redis-server`  (which acts as a message broker for the tasks)
+    - if you don't have redis go [here](https://redis.io/topics/quickstart) for mac/linux or [here](https://github.com/MicrosoftArchive/redis/releases) for Windows
+    -  **Windows**: you have to `redis-cli shutdown` before starting `redis-server`, and scripts may only be run from the Redis directory.
+        - Also, make sure your user account has full write access to the Redis directory (necessary for back-ups that Redis performs regularly)
 3. A celery server: `celery -A reopt_api worker --loglevel=info`
 
 For each step above, the last line that you should see after executing are:
@@ -101,14 +117,14 @@ An alternative API usage method, which excludes running redis and celery servers
 ## Step 6: Using the API
 There are many different ways to use the API. At high level:
 
-1. Inputs are POST'ed at `http://127.0.0.1:8000/api/v1/reopt/`
+1. Inputs are POST'ed at `http://127.0.0.1:8000/v1/job/`
 2. The response will include your run_uuid, eg:
 ```
 {
     "run_uuid": "3a76612c-e538-484a-a1f3-3793bb4b869d"
 }
 ```
-3. Resuts are obtained from `http://127.0.0.1:8000/reopt/results/?run_uuid=MY-RUN-UUID`
+3. Results are obtained from `http://127.0.0.1:8000/v1/job/MY-RUN-UUID/results/
 
 Example methods for POSTing inputs include:
 1. `curl`
