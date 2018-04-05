@@ -40,6 +40,7 @@ class Tech(object):
             return True
         return False
 
+
 class Util(Tech):
 
     def __init__(self, dfm, outage_start_hour=None, outage_end_hour=None):
@@ -106,3 +107,26 @@ class Wind(Tech):
         if self.ventyx is None:
             self.ventyx = Ventyx()
         return self.ventyx.wind_prod_factor
+
+
+class Generator(Tech):
+
+    def __init__(self, dfm, fuel_slope_gal_per_kwh, fuel_intercept_gal, fuel_avail_gal, size_kw, **kwargs):
+        super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
+        """
+        Note unique super class init for generator: we do not allow users to define min/max sizes;
+        rather users must define size_kw for "existing" generator. Also, generator is assumed to be a sunk cost.
+        """
+
+        self.fuel_slope = fuel_slope_gal_per_kwh
+        self.fuel_intercept = fuel_intercept_gal
+        self.fuel_avail = fuel_avail_gal
+        self.loads_served = ['retail']
+        self.nmil_regime = 'BelowNM'
+        self.reopt_class = 'GEN'
+
+        dfm.add_gen(self)
+
+    @property
+    def prod_factor(self):
+        return [1.0 for _ in range(8760)]
