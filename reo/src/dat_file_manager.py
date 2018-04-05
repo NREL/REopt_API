@@ -46,13 +46,14 @@ class DatFileManager:
     pvnm = None
     wind = None
     windnm = None
+    gen = None
     util = None
     storage = None
     site = None
     elec_tariff = None
 
-    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'util']  # order is critical for REopt!
-    available_tech_classes = ['PV', 'WIND', 'UTIL']  # this is a REopt 'class', not a python class
+    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
+    available_tech_classes = ['PV', 'WIND', 'GEN', 'UTIL']  # this is a REopt 'class', not a python class
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
@@ -146,6 +147,9 @@ class DatFileManager:
 
     def add_util(self, util):
         self.util = util
+
+    def add_gen(self, gen):
+        self.gen = gen
 
     def add_site(self, site):
         self.site = site
@@ -806,7 +810,7 @@ class DatFileManager:
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
                            bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
-                           loads=self.available_loads)
+                           loads=self.available_loads, gen=self.gen)
 
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
 
@@ -830,12 +834,12 @@ class DatFileManager:
         write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
         write_to_dat(self.file_max_in_tiers, ta.demand_month_max_in_tiers, 'MaxDemandMonthsInTier', 'a')
         write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
-        # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')
         write_to_dat(self.file_energy_rates, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_energy_rates, ta.annual_min_charge, 'AnnualMinCharge', 'a')
         write_to_dat(self.file_energy_rates, ta.min_monthly_charge, 'MonthlyMinCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')
-        # write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.annual_min_charge, 'AnnualMinCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.min_monthly_charge, 'MonthlyMinCharge', 'a')
@@ -848,3 +852,5 @@ class DatFileManager:
         write_to_dat(self.file_energy_tiers_num, ta.demand_tiers_num, 'DemandBinCount', 'a')
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_rate, 'FuelBurnRateM')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_rate_bau, 'FuelBurnRateM')
+        write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB')
+        write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB')
