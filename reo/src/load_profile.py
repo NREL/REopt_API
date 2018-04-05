@@ -453,7 +453,7 @@ class BuiltInProfile(object):
 
 class LoadProfile(BuiltInProfile):
 
-    def __init__(self, dfm, user_profile=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None, **kwargs):
+    def __init__(self, dfm, user_profile=None, critical_loads_kw=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
@@ -466,13 +466,14 @@ class LoadProfile(BuiltInProfile):
         self.bau_load_list = copy.copy(self.load_list)
 
         if None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
-            # modify load
-            self.load_list = self.load_list[0:outage_start_hour] \
-                           + [ld * critical_load_pct for ld in self.load_list[outage_start_hour:outage_end_hour]] \
-                           + self.load_list[outage_end_hour:]
-            self.bau_load_list = self.load_list[0:outage_start_hour] \
-                                + [0 for _ in self.load_list[outage_start_hour:outage_end_hour]] \
-                                + self.load_list[outage_end_hour:]
+            # modify loads based on percentage
+            self.load_list[ outage_start_hour : outage_end_hour ] = [ld * critical_load_pct for ld in self.load_list[ outage_start_hour : outage_end_hour ]]
+            self.bau_load_list[ outage_start_hour : outage_end_hour ] = [0 for _ in self.load_list[ outage_start_hour : outage_end_hour ]]
+
+        if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
+            # modify loads based on custom critical loads profile
+            self.load_list[ outage_start_hour : outage_end_hour ] = critical_loads_kw[ outage_start_hour : outage_end_hour ]
+            self.bau_load_list[ outage_start_hour : outage_end_hour ] = [0 for _ in self.load_list[ outage_start_hour : outage_end_hour ]]
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)
