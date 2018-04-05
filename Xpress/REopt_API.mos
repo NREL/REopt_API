@@ -140,8 +140,11 @@ declarations
   InitSOC: real  ! initial state of charge of battery
 
   dvFuelCost: array(Tech,FuelBin) of mpvar
+  dvFuelUsed: array(Tech,FuelBin) of mpvar	 !fuel consumed by tech, only used to enforce FuelAvail constraint
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
+  FuelBurnRateB: array(Tech,Load,FuelBin) of real   !Y-int of the fuel rate curve
+  FuelAvail: array(Tech,FuelBin) of real
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
   AnnualMinCharge: real ! utility min annual charge
   MonthlyMinCharge: real ! utility min monthly charge
@@ -273,6 +276,7 @@ end-initializations
 
 initializations from DAT10 ! FuelCost
 	FuelRate
+	FuelAvail
 	FixedMonthlyCharge
 	AnnualMinCharge
 	MonthlyMinCharge
@@ -303,6 +307,7 @@ end-initializations
 
 initializations from DAT16
 	FuelBurnRateM
+	FuelBurnRateB
 end-initializations
 
 initializations from DAT17  ! net metering
@@ -319,10 +324,22 @@ forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t
 	create (dvRatedProd (t,LD,ts,s,fb))
 
 !!!! Fuel tracking
-!FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
-forall (t in Tech, fb in FuelBin ) do
+! Define dvFuelUsed by each tech by summing over timesteps.  Constrain it to be less than FuelAvail.
+forall (t in Tech, fb in FuelBin) do
      sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
+     	ProdFactor(t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling  +
+     sum(ts in TimeStep, LD in Load)
+     	FuelBurnRateB(t,LD,fb) * TimeStepScaling = dvFuelUsed(t,fb)
+
+	dvFuelUsed(t,fb) <= FuelAvail(t,fb)
+end-do
+
+! FuelUsed * FuelRate = FuelCost.  Since FuelRate can vary by timestep, cannot use dvFuelUsed in the following definition
+forall (t in Tech, fb in FuelBin) do
+     sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e +
+     sum(ts in TimeStep, LD in Load)
+     	FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -469,8 +486,8 @@ forall (b in TechClass) do
     sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
 end-do
 
- !!dvRatedProduction must be greater than 0
- !CONSTRAINT 27a
+!!dvRatedProduction must be >=0
+!CONSTRAINT 27a
 forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin )   dvRatedProd(t,LD,ts,s,fb) >=0
 
 
