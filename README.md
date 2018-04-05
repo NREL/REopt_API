@@ -4,6 +4,8 @@ These instructions are for REopt API developers and internal NREL users that wis
 
 It is highly recommended that you use a virtual environment for installing the API dependencies (and thus running the API). Virtual environments allow you to have a custom set of code modules for any given project and assuage many of the permission headaches that may arise when installing software on an NREL owned computer. In brief, when a virtual environment is 'activated', a call to any module installed in the environment will be used in place of a system module. For example, newer computers are likely to have the latest version of Python installed (3.X), but the API uses Python 2.7. Thus, if one attempts to run the API with the system Python 3.X - it won't work! By installing Python 2.7 in the virtual environment all of the dependency problems are bypassed.
 
+Lastly, to our best efforts we attempt to follow the development workflow described [here](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow), which is based on using feature branches and pull requests in the development process.
+
 
 ## Step 1: Create Project Directory and Download Git Repo
 We will refer to the root directory for installing everything as **MY-API-FOLDER**, which can be anywhere you want.
