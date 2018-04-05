@@ -616,6 +616,29 @@ class ValidateNestedInput:
                     else:
                         self.input_data_errors.append("Invalid length for loads_kw. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
+                critical_load_profile = real_values.get('critical_loads_kw')
+                if critical_load_profile is not None:
+                    n = len(critical_load_profile)
+
+                    if n == 8760:
+                        pass
+
+                    elif n == 17520:  # downsample 30 minute data
+                        index = pd.date_range('1/1/2000', periods=n, freq='30T')
+                        series = pd.Series(critical_load_profile, index=index)
+                        series = series.resample('1H').mean()
+                        self.update_attribute_value(object_name_path, 'critical_loads_kw', series.tolist())
+
+                    elif n == 35040:  # downsample 15 minute data
+                        index = pd.date_range('1/1/2000', periods=n, freq='15T')
+                        series = pd.Series(critical_load_profile, index=index)
+                        series = series.resample('1H').mean()
+                        self.update_attribute_value(object_name_path, 'critical_loads_kw', series.tolist())
+
+                    else:
+                        self.input_data_errors.append("Invalid length for critical_loads_kw. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
+
+
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
                 for name, value in real_values.items():
