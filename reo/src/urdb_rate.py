@@ -32,10 +32,10 @@ try:
         rate_cache = json.load(f)
 
 except ValueError as e:
-    log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
+    log.info("Could not find rate cache. Making new {}.".format(cache_file))
     rate_cache = dict()
 except IOError:
-    log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
+    log.info("Could not find rate cache. Making new {}.".format(cache_file))
     rate_cache = dict()
 
 
@@ -55,12 +55,12 @@ class Rate(object):
 
         try:
             rate_dict = rate_cache[self.rate]
-            log("INFO", 'Found rate in cache.')
+            log.info('Found rate in cache.')
 
         except KeyError:
             rate_dict = self.download_rate()
             if rate_dict is not None:
-                log("INFO", 'Found rate in URDB.')
+                log.info('Found rate in URDB.')
                 self.add_rate_to_cache(rate_dict, rate_cache)
 
         try:
@@ -96,11 +96,11 @@ class Rate(object):
             # have to replace '&' to handle url correctly
             request_params["ratesforutility"] = self.util.replace("&", "%26")
 
-        log("INFO", 'Checking URDB for {}...'.format(self.rate))
+        log.info('Checking URDB for {}...'.format(self.rate))
         res = requests.get(url_base, params=request_params, verify=False)
 
         if not res.ok:
-            log("DEBUG", 'URDB response not OK. Code {} with message: {}'.format(res.status_code, res.text))
+            log.debug('URDB response not OK. Code {} with message: {}'.format(res.status_code, res.text))
             raise Warning('URDB response not OK.')
             # return None
 
@@ -108,7 +108,7 @@ class Rate(object):
         rates_in_util = data['items']  # data['items'] contains a list of dicts, one dict for each rate in util
 
         if len(rates_in_util) == 0:
-            log("INFO", 'Could not find {} in URDB.'.format(self.rate))
+            log.info('Could not find {} in URDB.'.format(self.rate))
             return None
 
         if not using_rate_label:
@@ -133,14 +133,14 @@ class Rate(object):
                 newest_rate = matched_rates[newest_index]
                 return newest_rate
             else:
-                log("INFO", 'Could not find {} in URDB.'.format(self.rate))
+                log.info('Could not find {} in URDB.'.format(self.rate))
                 return None
 
         elif rates_in_util[0]['label'] == self.rate:
             return rates_in_util[0]
 
         else:
-            log("INFO", 'Could not find {} in URDB'.format(self.rate))
+            log.info('Could not find {} in URDB'.format(self.rate))
             return None
 
     @staticmethod

@@ -40,6 +40,6 @@ class DeveloperREOapi:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
                                                                                 traceback.format_tb(exc_traceback))
-            log("WARNING", "Unable to get ASHRAE TMY ID from {}.".format(self.url))
-            log("WARNING", debug_msg)
+            log.warning("Unable to get ASHRAE TMY ID from {}.".format(self.url))
+            log.debug(debug_msg)
             return None

@@ -145,6 +145,8 @@ declarations
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
   FuelBurnRateB: array(Tech,Load,FuelBin) of real   !Y-int of the fuel rate curve
   FuelAvail: array(Tech,FuelBin) of real
+  MinTurndown: array (Tech) of real	  ! 0.3 would mean that a tech can only turn down to 30% of dvSystemSize
+
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
   AnnualMinCharge: real ! utility min annual charge
   MonthlyMinCharge: real ! utility min monthly charge
@@ -264,6 +266,7 @@ initializations from DAT7 ! maxsizes
 	MinStorageSizeKWH
 	MaxStorageSizeKWH
 	TechClassMinSize
+	MinTurndown
 end-initializations
 
 initializations from DAT8
@@ -486,10 +489,15 @@ forall (b in TechClass) do
     sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
 end-do
 
-!!dvRatedProduction must be >=0
+!!dvRatedProduction must be >= 0, or if MinTurndown is > 0, use semi-continuous variable
 !CONSTRAINT 27a
-forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin )   dvRatedProd(t,LD,ts,s,fb) >=0
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) = 0) do
+    dvRatedProd(t,LD,ts,s,fb) >= 0
+end-do
 
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) > 0) do
+    dvRatedProd(t,LD,ts,s,fb) is_semcont MinTurndown(t)
+end-do
 
 !Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on
 ! electric output of a CoGen with mandatory thermal tech

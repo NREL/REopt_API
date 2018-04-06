@@ -11,7 +11,6 @@ from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError
-from reo.log_levels import log
 from reo.src.paths import Paths
 
 
@@ -114,5 +113,4 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occurred while processing inputs in setup_scenario.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
