@@ -163,6 +163,10 @@ nested_input_definitions = {
           "replacement_sets": load_profile_possible_sets,
           "description": "Hourly load over all hours in one year"
         },
+        "critical_loads_kw": {
+          "type": "list_of_float",
+          "description": "Hourly critical load over all hours in one year"
+        },
         "outage_start_hour": {
           "type": "int",
           "min": 0,
