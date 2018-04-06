@@ -721,6 +721,13 @@ nested_input_definitions = {
           "max": 1e9,
           "default": 0,
           "description": "On-site generator fuel available in gallons."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.3,
+          "description": "Minimum generator loading in percent of capacity (size_kw)."
         }
       }
     }

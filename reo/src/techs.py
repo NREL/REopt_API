@@ -111,7 +111,8 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, fuel_slope_gal_per_kwh, fuel_intercept_gal, fuel_avail_gal, size_kw, **kwargs):
+    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal, fuel_avail_gal, min_turn_down_pct,
+                 outage_start_hour=None, outage_end_hour=None, **kwargs):
         super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
         """
         Note unique super class init for generator: we do not allow users to define min/max sizes;
@@ -121,12 +122,18 @@ class Generator(Tech):
         self.fuel_slope = fuel_slope_gal_per_kwh
         self.fuel_intercept = fuel_intercept_gal
         self.fuel_avail = fuel_avail_gal
+        self.min_turn_down = min_turn_down_pct
         self.loads_served = ['retail']
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'GEN'
 
-        dfm.add_gen(self)
+        dfm.add_generator(self)
 
     @property
     def prod_factor(self):
-        return [1.0 for _ in range(8760)]
+        gen_prod_factor = [0.0 for _ in range(8760)]
+
+        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # generator only available during outage
+            gen_prod_factor[self.outage_start_hour:self.outage_end_hour] = [1]*(self.outage_end_hour - self.outage_start_hour)
+
+        return gen_prod_factor

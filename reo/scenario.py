@@ -91,8 +91,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
 
-        if inputs_dict["Site"]["Generator"]["max_kw"] > 0:
-            gen = Generator(dfm=dfm, **inputs_dict["Site"]["Generator"])
+        if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
+            gen = Generator(dfm=dfm,
+                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            **inputs_dict["Site"]["Generator"]
+                            )
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
