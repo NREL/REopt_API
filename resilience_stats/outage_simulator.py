@@ -2,7 +2,7 @@
 
 
 def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, crit_load_factor=0.5,
-                    batt_roundtrip_efficiency=0.829):
+                    batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
     """
     
     :param pv_kw: float, pv capacity
@@ -13,6 +13,11 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     :param init_soc: list of floats between 0 and 1 inclusive, initial state-of-charge
     :param crit_load_factor: float between 0 and 1 inclusive, scales load during outage
     :param batt_roundtrip_efficiency: roundtrip battery efficiency
+    :param diesel_kw: float, diesel generator capacity
+    :param fuel_available: float, gallons of diesel fuel available
+    :param b: float, diesel fuel burn rate intercept (y=mx+b)  [gal/timestep]
+    :param m: float, diesel fuel burn rate slope     (y=mx+b)  [gal/kW-timestep]
+    :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
     :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
     """
     n_timesteps = len(load)
@@ -43,6 +48,7 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     for n in range(n_timesteps):  # outer loop for finding r for outage starting each timestep of year
 
         charge = batt_kwh * init_soc[n]  # reset battery for each simulation
+        fuel_tank_gal = fuel_available   # reset diesel fuel tank
 
         for bal in pvMld:  # bal == balance after PV serves load
 
@@ -53,15 +59,28 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
                     charge += min(batt_kwh - charge, bal * batt_roundtrip_efficiency, batt_kw)
 
             else:  # balance < 0 --> load not met by PV
-                b = abs(bal)
+                abs_bal = abs(bal)
                 
-                if min(charge, batt_kw) >= b:  # battery can carry balance
-                    charge = max(0, charge - b)  # prevent battery charge from going negative
+                if min(charge, batt_kw) >= abs_bal:  # battery can carry balance
+                    charge = max(0, charge - abs_bal)  # prevent battery charge from going negative
                     r[n] += 1  # survived one more timestep
+
+                else:  # battery can meet part or no load
+                    after_batt_bal = abs_bal - min(charge, batt_kw)
+                    charge -= min(charge, batt_kw)  # battery is either drained or maxing out inverter
+
+                    # NOTE: making hourly load assumptions: a kW is equivalent to a kWh!!!
+                    generator_output = max(after_batt_bal, diesel_min_turndown * diesel_kw)
+                    fuel_needed = m * generator_output + b
+
+                    if after_batt_bal <= diesel_kw and fuel_needed <= fuel_tank_gal:
+                        # diesel can meet balance
+                        fuel_tank_gal -= fuel_needed
+                        r[n] += 1  # survived one more timestep
                     
-                else:  # battery cannot carry balance
-                    pvMld = pvMld[1:] + pvMld[:1]  # shift pvMld one timestep
-                    break
+                    else:  # load not met
+                        pvMld = pvMld[1:] + pvMld[:1]  # shift pvMld one timestep
+                        break
 
     pvMld = pvMld[1:] + pvMld[:1]  # shift back to original state
 
