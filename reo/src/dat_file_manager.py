@@ -218,7 +218,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech != 'util' and not tech.startswith('wind'):  # pv has degradation
+                if tech in ['pv', 'pvnm']:  # pv has degradation
 
                     #################
                     # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
@@ -249,7 +249,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None:
                 
-                if tech != 'util':
+                if tech not in ['util', 'generator']:
 
                     # prod incentives don't need escalation
                     pwf_prod_incent.append(
@@ -268,7 +268,7 @@ class DatFileManager:
                             eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
                         )
     
-                elif tech == 'util':
+                else:
     
                     pwf_prod_incent.append(0)
                     max_prod_incent.append(0)
@@ -289,7 +289,7 @@ class DatFileManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech != 'util':
+            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
 
                 tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
                 tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
@@ -353,7 +353,7 @@ class DatFileManager:
 
                     # start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
-        
+
                         # previous points
                         xp_prev = xp_array_incent[region][point - 1]
                         yp_prev = yp_array_incent[region][point - 1]
@@ -512,7 +512,7 @@ class DatFileManager:
 
                     cap_cost_x.append(tmp_cap_cost_x[seg])
 
-            elif eval('self.' + tech) is not None and tech == 'util':
+            elif eval('self.' + tech) is not None and tech in ['util', 'generator']:
 
                 if cap_cost_segments is None:  # only util in techs (usually BAU case)
                     cap_cost_segments = 1

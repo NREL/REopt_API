@@ -125,7 +125,10 @@ class Generator(Tech):
         self.min_turn_down = min_turn_down_pct
         self.loads_served = ['retail']
         self.nmil_regime = 'BelowNM'
-        self.reopt_class = 'GEN'
+        self.reopt_class = 'GENERATOR'
+        self.outage_start_hour = outage_start_hour
+        self.outage_end_hour = outage_end_hour
+        self.derate = 0
 
         dfm.add_generator(self)
 

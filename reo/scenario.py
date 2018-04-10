@@ -110,7 +110,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
         # delete python objects, which are not serializable
-        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'gen']:
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
         return vars(dfm)  # --> REopt runs (BAU and with tech)
