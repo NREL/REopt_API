@@ -91,6 +91,19 @@ nested_input_definitions = {
         "max": 1e9,
         "description": "Area of roof in square feet available for PV siting"
       },
+      "value_of_lost_load": {
+                "type": "float",
+                "min": 0,
+                "max": max_big_number,
+                "default": 100,
+                "description": "Value placed on unmet site load during grid outages. Units are either US dollars per outage hour, or US dollars per unmet kilowatt-hour (default is dollars per hour). The units are set using the 'value_of_lost_load_unit' parameter.  The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL [$/hour] with the average number of hours that the critical load can be met by the energy system (determined by simulating outages occuring at every hour of the year). If 'value_of_lost_load_unit' is set to 'us_dollars_per_kwh' then VoLL [$/kWh] is also multiplied by the mean critical load."
+              },
+      "value_of_lost_load_unit": {
+                "type": "str",
+                "restrict_to": ["us_dollars_per_hour", "us_dollars_per_kwh"],
+                "default": "us_dollars_per_hour",
+                "description": "Unit for 'value_of_lost_load'."
+              },
 
       "Financial": {
         "om_cost_escalation_pct": {
@@ -133,7 +146,7 @@ nested_input_definitions = {
       "LoadProfile": {
         "doe_reference_name": {
           "type": "str",
-          "restrict_to":default_buildings,
+          "restrict_to": default_buildings,
           "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
