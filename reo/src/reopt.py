@@ -9,6 +9,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, SubprocessTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 
+DEBUG = False
 
 class REoptTask(Task):
     """
@@ -67,7 +68,8 @@ def reopt(self, dfm, data, bau=False):
         cmd = r"mosel %s '%s' %s OutputDir='%s' ScenarioPath='%s' BaseString='%s'" \
               % (header, xpress_model_path, outline, output_path, paths['inputs'], bau_string)
 
-        log.info("Returning Process Command: " + cmd)
+        if DEBUG:
+            log.info("Returning Process Command: " + cmd)
 
         # write a cmd file for easy debugging
         with open(cmd_file, 'w') as f:
