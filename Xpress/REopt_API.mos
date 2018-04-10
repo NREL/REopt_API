@@ -145,7 +145,8 @@ declarations
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
   FuelBurnRateB: array(Tech,Load,FuelBin) of real   !Y-int of the fuel rate curve
   FuelAvail: array(Tech,FuelBin) of real
-  MinTurndown: array (Tech) of real	  ! 0.3 would mean that a tech can only turn down to 30% of dvSystemSize
+  MinTurndown: array(Tech) of real	! 0.3 would mean that a tech can only turn down to 30% of dvSystemSize
+  binTechIsOnInTS: array(Tech,TimeStep) of mpvar  ! binary that is 1 if tech is operating during a timestep, 0 otherwise
 
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
   AnnualMinCharge: real ! utility min annual charge
@@ -332,7 +333,7 @@ forall (t in Tech, fb in FuelBin) do
      sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
      	ProdFactor(t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling  +
      sum(ts in TimeStep, LD in Load)
-     	FuelBurnRateB(t,LD,fb) * TimeStepScaling = dvFuelUsed(t,fb)
+     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling = dvFuelUsed(t,fb)
 
 	dvFuelUsed(t,fb) <= FuelAvail(t,fb)
 end-do
@@ -342,8 +343,20 @@ forall (t in Tech, fb in FuelBin) do
      sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
      	ProdFactor(t, LD, ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e +
      sum(ts in TimeStep, LD in Load)
-     	FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
+     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 end-do
+
+!CONSTRAINT 4A
+forall (t in Tech, ts in TimeStep) do
+  sum (LD in Load, s in Seg, fb in FuelBin | exists(dvRatedProd (t,LD,ts,s,fb)))
+  		ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * 100 * binTechIsOnInTS (t,ts)
+!CONSTRAINT 5A
+   sum (s in Seg) (MinTurndown(t) * dvSystemSize (t,s)) -
+  		sum (LD in Load, s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) dvRatedProd (t,LD,ts,s,fb) <=
+  		MaxSize(t) * (1 - binTechIsOnInTS (t,ts))
+end-do
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -418,6 +431,7 @@ end-do
 !binary declarations
 forall ( t in Tech, b in TechClass) binSingleBasicTech (t,b) is_binary
 forall ( t in Tech, s in Seg) binSegChosen(t, s) is_binary
+forall ( t in Tech, ts in TimeStep) binTechIsOnInTS(t,ts) is_binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! End declaring binary variables and constraining them
@@ -436,7 +450,7 @@ sum(b in BattLevel) binBattLevel(b) = 1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Determine which segment of the PWL cost curve.  binSegChosen is 1 for that segment, 0 else.
-forall (t in Tech,s in Seg) do
+forall (t in Tech, s in Seg) do
 !CONSTRAINT 20
    dvSystemSize (t,s) <= CapCostX (t,s)   * binSegChosen (t,s)
 !CONSTRAINT 21
@@ -491,11 +505,11 @@ end-do
 
 !!dvRatedProduction must be >= 0, or if MinTurndown is > 0, use semi-continuous variable
 !CONSTRAINT 27a
-forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) = 0) do
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) = 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
     dvRatedProd(t,LD,ts,s,fb) >= 0
 end-do
 
-forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) > 0) do
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) > 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
     dvRatedProd(t,LD,ts,s,fb) is_semcont MinTurndown(t)
 end-do
 
