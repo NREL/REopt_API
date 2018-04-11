@@ -346,14 +346,16 @@ forall (t in Tech, fb in FuelBin) do
      	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 end-do
 
+!! The following 2 constraints define binTechIsOnInTS to be the binary corollary to dvRatedProd,
+!! i.e. binTechIsOnInTS = 1 for dvRatedProd > 0, and binTechIsOnInTS = 0 for dvRatedProd = 0
 !CONSTRAINT 4A
 forall (t in Tech, ts in TimeStep) do
   sum (LD in Load, s in Seg, fb in FuelBin | exists(dvRatedProd (t,LD,ts,s,fb)))
   		ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * 100 * binTechIsOnInTS (t,ts)
 !CONSTRAINT 5A
    sum (s in Seg) (MinTurndown(t) * dvSystemSize (t,s)) -
-  		sum (LD in Load, s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb))) dvRatedProd (t,LD,ts,s,fb) <=
-  		MaxSize(t) * (1 - binTechIsOnInTS (t,ts))
+  		sum (LD in Load, s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))
+  		dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * (1 - binTechIsOnInTS (t,ts))
 end-do
 
 
