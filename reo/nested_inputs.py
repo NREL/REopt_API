@@ -91,19 +91,13 @@ nested_input_definitions = {
         "max": 1e9,
         "description": "Area of roof in square feet available for PV siting"
       },
-      "value_of_lost_load": {
+      "value_of_lost_load_us_dollars_per_kwh": {
                 "type": "float",
                 "min": 0,
-                "max": max_big_number,
+                "max": 1e6,
                 "default": 100,
-                "description": "Value placed on unmet site load during grid outages. Units are either US dollars per outage hour, or US dollars per unmet kilowatt-hour (default is dollars per hour). The units are set using the 'value_of_lost_load_unit' parameter.  The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL [$/hour] with the average number of hours that the critical load can be met by the energy system (determined by simulating outages occuring at every hour of the year). If 'value_of_lost_load_unit' is set to 'us_dollars_per_kwh' then VoLL [$/kWh] is also multiplied by the mean critical load."
-              },
-      "value_of_lost_load_unit": {
-                "type": "str",
-                "restrict_to": ["us_dollars_per_hour", "us_dollars_per_kwh"],
-                "default": "us_dollars_per_hour",
-                "description": "Unit for 'value_of_lost_load'."
-              },
+                "description": "Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL [$/kWh] with the average number of hours that the critical load can be met by the energy system (determined by simulating outages occuring at every hour of the year), and multiplying by the mean critical load."
+      },
 
       "Financial": {
         "om_cost_escalation_pct": {
