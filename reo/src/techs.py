@@ -124,7 +124,6 @@ class Generator(Tech):
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.loads_served = ['retail']
-        self.nmil_regime = 'BelowNM'
         self.reopt_class = 'GENERATOR'
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
