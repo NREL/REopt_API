@@ -467,7 +467,7 @@ class LoadProfile(BuiltInProfile):
 
         if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
             # modify loads based on custom critical loads profile
-            self.load_list[ outage_start_hour : outage_end_hour ] = critical_loads_kw[ outage_start_hour : outage_end_hour ]
+            self.load_list[ outage_start_hour : outage_end_hour ] = critical_loads_kw[ : outage_end_hour - outage_start_hour ]
             self.bau_load_list[ outage_start_hour : outage_end_hour ] = [0 for _ in self.load_list[ outage_start_hour : outage_end_hour ]]
 
         elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
