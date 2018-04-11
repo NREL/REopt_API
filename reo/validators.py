@@ -617,12 +617,12 @@ class ValidateNestedInput:
                         self.input_data_errors.append("Invalid length for loads_kw. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
                 critical_load_profile = real_values.get('critical_loads_kw')
+                outage_start_hour = real_values.get('outage_start_hour')
+                outage_end_hour = real_values.get('outage_end_hour')
 
-                if critical_load_profile is not None:
+                if ((critical_load_profile is not None) & ( all(isinstance(item, int) for item in [outage_start_hour, outage_end_hour]) )):
                     n = len(critical_load_profile)
-                    outage_start_hour = real_values.get('outage_start_hour')
-                    outage_end_hour = real_values.get('outage_end_hour')
-                    outage_duration = outage_end_hour - outage_start_hour
+                    outage_duration = int(outage_end_hour) - int(outage_start_hour)
 
                     if n >= outage_duration:
                         pass
