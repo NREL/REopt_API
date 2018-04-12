@@ -784,6 +784,8 @@ Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCha
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
                       dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts)
 
+GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
+
 !************************** Writing to files ************************************
 
 
@@ -943,6 +945,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_wind_energy_produced", strfmt(getsol(Year1WindProd), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElecPV), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
+    Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 
