@@ -289,6 +289,25 @@ class StorageModel(models.Model):
         return obj
 
 
+class GeneratorModel(models.Model):
+        # Inputs
+        run_uuid = models.UUIDField(unique=True)
+        size_kw = models.FloatField()
+        fuel_slope_gal_per_kwh = models.FloatField()
+        fuel_intercept_gal = models.FloatField()
+        fuel_avail_gal = models.FloatField()
+        min_turn_down_pct = models.FloatField()
+        # Outputs
+        fuel_used_gal = models.FloatField(null=True, blank=True)
+
+        @classmethod
+        def create(cls, **kwargs):
+            obj = cls(**kwargs)
+            obj.save()
+
+            return obj
+
+
 class MessageModel(models.Model):
     """
     For Example:
@@ -342,6 +361,7 @@ class ModelManager(object):
         self.pvM = None
         self.windM = None
         self.storageM = None
+        self.generatorM = None
         self.messagesM = None
 
     def create_and_save(self, data):
@@ -365,6 +385,7 @@ class ModelManager(object):
         self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
         self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
+        self.generatorM = GeneratorModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Generator']))
         for message_type, message in data['messages'].iteritems():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
@@ -385,6 +406,7 @@ class ModelManager(object):
         PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
         WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
+        GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
 
         for message_type, message in data['messages'].iteritems():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
@@ -416,7 +438,7 @@ class ModelManager(object):
         NOTE: postgres column type UUID is not JSON serializable. Work-around is removing those columns and then
               adding back into outputs->Scenario as string.
         :param run_uuid:
-        :return:
+        :return: nested dictionary matching nested_output_definitions
         """
 
         def remove_ids(d):
@@ -437,7 +459,7 @@ class ModelManager(object):
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
         
         # add try/except for get fail / bad run_uuid
-        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff']
+        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator']
         
         resp = dict()
         resp['outputs'] = dict()
@@ -467,6 +489,7 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
 
         wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
 
