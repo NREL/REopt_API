@@ -613,7 +613,7 @@ nested_input_definitions = {
         }
       },
 
-      "Storage":{
+      "Storage": {
           "min_kw": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Minimum battery power capacity size constraint for optimization"
@@ -698,7 +698,45 @@ nested_input_definitions = {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed power capacity"
           }
+        },
+
+      "Generator": {
+        "size_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Existing on-site generator capacity in kW."
+        },
+        "fuel_slope_gal_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 0,
+          "description": "Generator fuel burn rate in gallons/kWh."
+        },
+        "fuel_intercept_gal": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 0,
+          "description": "Generator fuel consumption curve y-intercept in gallons."
+        },
+        "fuel_avail_gal": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "On-site generator fuel available in gallons."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.3,
+          "description": "Minimum generator loading in percent of capacity (size_kw)."
         }
+      }
     }
   }
 }

@@ -69,9 +69,9 @@ class PVWatts:
         resp = requests.get(self.url, verify=True)
 
         if not resp.ok:
-            log("ERROR", "PVWatts status code {}. {}".format(resp.status_code, resp.content))
+            log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
             raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-        log("INFO", "PVWatts API query successful.")
+        log.info("PVWatts API query successful.")
 
         data = json.loads(resp.text)
         return data

@@ -1,48 +1,34 @@
+"""
+Custom logging set up, with handlers for writing to .log file and console.
+
+The _handler.setLevel determines the logging level to write to file or console.
+Logging levels are:
+
+Level	Numeric value
+CRITICAL	50
+ERROR	    40
+WARNING	    30
+INFO	    20
+DEBUG	    10
+NOTSET	    0
+"""
 import logging
-import inspect
 import os
 
+log = logging.getLogger('reopt_api')
+log.setLevel(logging.DEBUG)
 
-def setup_logging():
-    file_logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
-    logging.basicConfig(filename=file_logfile,
-                        format='%(asctime)s - %(levelname)s - %(message)s',
-                        datefmt='%m/%d/%Y %I:%M%S %p',
-                        level=logging.INFO)
-    log("INFO", "Logging setup")
+logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
 
+file_handler = logging.FileHandler(filename=logfile, mode='a')
+file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+file_handler.setFormatter(file_formatter)
+file_handler.setLevel(logging.INFO)
 
-# logging utility
-def log(level, message):
+console_handler = logging.StreamHandler()
+console_formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(message)s')
+console_handler.setFormatter(console_formatter)
+console_handler.setLevel(logging.WARNING)
 
-    func = inspect.currentframe().f_back.f_code
-    if level == "DEBUG":
-        logging.debug("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "INFO":
-        logging.info("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "WARNING":
-        logging.warning("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "ERROR":
-        logging.error("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
-    elif level == "CRITICAL":
-        logging.critical("%s: %s in %s" % (
-            message,
-            func.co_name,
-            func.co_filename
-        ))
+log.addHandler(file_handler)
+log.addHandler(console_handler)

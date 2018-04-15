@@ -26,7 +26,7 @@ class API_Error:
 
 def check_directory_created(path):
     if not os.path.exists(path):
-        log('ERROR', "Directory: " + path + " failed to create")
+        log.error("Directory: " + path + " failed to create")
         raise RuntimeError('utilties', "Directory failed to create: " + path)
 
 
