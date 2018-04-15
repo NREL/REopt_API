@@ -60,7 +60,7 @@ class Rate(object):
         # except KeyError:
         rate_dict = self.download_rate()
         if rate_dict is not None:
-            log("INFO", 'Found rate in URDB.')
+            log.info('Found rate in URDB.')
                 # self.add_rate_to_cache(rate_dict, rate_cache)
 
         try:
