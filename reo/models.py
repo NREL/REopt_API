@@ -41,6 +41,7 @@ class SiteModel(models.Model):
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
+    value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
