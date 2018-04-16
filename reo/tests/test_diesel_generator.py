@@ -39,6 +39,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 4.25235
         d_expected['batt_kwh'] = 7.76461
         d_expected['fuel_used_gal'] = 1.53
+        d_expected['avoided_outage_costs_us_dollars'] = 19461.47
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -70,6 +71,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 16.6802
         d_expected['batt_kwh'] = 77.8508
         d_expected['fuel_used_gal'] = 25.0
+        d_expected['avoided_outage_costs_us_dollars'] = 25352.39
 
         try:
             check_common_outputs(self, c, d_expected)
