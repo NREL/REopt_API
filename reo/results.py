@@ -8,6 +8,7 @@ from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager
+from reo.src.outage_costs import calc_avoided_outage_costs
 
 
 class ResultsTask(Task):
@@ -233,6 +234,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+
+        # Calculate avoided outage costs
+        calc_avoided_outage_costs(data)
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
