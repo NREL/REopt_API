@@ -119,8 +119,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         @staticmethod
         def setup_nested():
-
-            # Add nested outputs (preserve original format for now to support backwards compatibility)
+            """
+            Set up up empty nested dict for outputs.
+            :return: nested dict for outputs with values set to None. Results are filled in using "get_nested" method
+            """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
@@ -134,7 +136,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             return nested_outputs
 
         def get_nested(self):
-
+            """
+            Translates the "flat" results_dict (which is just the JSON output from REopt mosel code)
+            into the nested output dict.
+            :return: None (modifies self.nested_outputs)
+            """
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
             # format assumes that the flat format is still the primary default
@@ -218,6 +224,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
+
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
