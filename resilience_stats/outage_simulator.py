@@ -26,7 +26,7 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     if batt_kw == 0 or batt_kwh == 0:
         init_soc = [0] * n_timesteps  # default is None
 
-        if pv_kw == 0:  # no pv nor battery --> no resilience
+        if pv_kw == 0 and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
 
             return {"resilience_by_timestep": r,
                     "resilience_hours_min": 0,
@@ -36,9 +36,8 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
                     "probs_of_surviving": None,
                     }
 
-    if pv_kw == 0 and pv_kw_ac_hourly is None:
+    if pv_kw == 0 and pv_kw_ac_hourly in [None, []]:
         pv_kw_ac_hourly = [0] * n_timesteps
-
 
 
     # pv minus load is the burden on battery
