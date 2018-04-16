@@ -12,7 +12,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AddField(
-            model_name='sitemodel',
+            model_name='financialmodel',
+            name='avoided_outage_costs_us_dollars',
+            field=models.FloatField(null=True, blank=True),
+        ),
+        migrations.AddField(
+            model_name='financialmodel',
             name='value_of_lost_load_us_dollars_per_kwh',
             field=models.FloatField(null=True, blank=True),
         ),

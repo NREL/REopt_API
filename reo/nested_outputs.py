@@ -55,6 +55,11 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Optimal capital cost plus present value of operations and maintenance over anlaysis period",
                   "units": "$"
+                },
+                "avoided_outage_costs_us_dollars": {
+                  "type": float,
+                  "description": "Avoided outage costs are determined using the Value of Lost Load [$/kWh], multiplied by the average critical load (determined using critical_load_pct) and the average hours that the critical load is sustained (determined by simulating outages starting at every hour of the year).",
+                  "units": "$"
                 }
               },
 
