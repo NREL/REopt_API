@@ -33,5 +33,7 @@ def calc_avoided_outage_costs(data):
     )
 
     avg_crit_ld = sum(load) * crit_load_factor / len(load)
-    data['outputs']['Scenario']['Site']['Financial']['avoided_outage_costs_us_dollars'] = \
-        site_inputs['Financial']['value_of_lost_load_us_dollars_per_kwh'] * results['resilience_hours_avg'] * avg_crit_ld
+    data['outputs']['Scenario']['Site']['Financial']['avoided_outage_costs_us_dollars'] = round(
+        site_inputs['Financial']['value_of_lost_load_us_dollars_per_kwh']
+        * results['resilience_hours_avg']
+        * avg_crit_ld, 2)
