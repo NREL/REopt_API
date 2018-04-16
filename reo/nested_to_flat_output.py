@@ -23,7 +23,7 @@ def nested_to_flat(nested_output):
         'year_one_pv_to_load_series': nested_output['Scenario']['Site']['PV']['year_one_to_load_series_kw'],
         'year_one_pv_to_grid_series': nested_output['Scenario']['Site']['PV']['year_one_to_grid_series_kw'],
         
-        'batt_kw':nested_output['Scenario']['Site']['Storage']['size_kw'],
+        'batt_kw': nested_output['Scenario']['Site']['Storage']['size_kw'],
         'batt_kwh': nested_output['Scenario']['Site']['Storage']['size_kwh'],
         'year_one_battery_to_load_series': nested_output['Scenario']['Site']['Storage']['year_one_to_load_series_kw'],
         'year_one_battery_to_grid_series': nested_output['Scenario']['Site']['Storage']['year_one_to_grid_series_kw'],
@@ -52,9 +52,11 @@ def nested_to_flat(nested_output):
         'year_one_grid_to_battery_series': nested_output['Scenario']['Site']['ElectricTariff']['year_one_to_battery_series_kw'],
         'year_one_energy_cost_series': nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_cost_series_us_dollars_per_kwh'],
         'year_one_demand_cost_series': nested_output['Scenario']['Site']['ElectricTariff']['year_one_demand_cost_series_us_dollars_per_kw'],
-        'year_one_utility_kwh':nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_supplied_kwh'],
+        'year_one_utility_kwh': nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_supplied_kwh'],
         'year_one_payments_to_third_party_owner': None,
         'total_payments_to_third_party_owner': None,
+
+        'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
     }
     if nested_output['Scenario']['Site'].get('Wind') is not None:
         base.update({
