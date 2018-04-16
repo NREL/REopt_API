@@ -18,7 +18,10 @@ class REoptError(Exception):
         :param traceback: sys.exc_info()[2]
         """
         msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
-        self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
+        if 'infeasible' not in traceback:
+            self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
+        else:
+            self.message = message
         self.task = task
         self.run_uuid = run_uuid
         self.traceback = traceback
