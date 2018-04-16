@@ -4,6 +4,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
+from reo.utilities import check_common_outputs
 
 
 class GeneratorTests(ResourceTestCaseMixin, TestCase):
@@ -15,29 +16,6 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
-
-    def check_common_outputs(self, d_calculated, d_expected):
-
-        c = d_calculated
-        e = d_expected
-
-        # check all calculated keys against the expected
-        for key, value in e.iteritems():
-            tolerance = self.REopt_tol
-            if key == 'npv':
-                tolerance = 2 * self.REopt_tol
-
-            if key in c and key in e:
-                if e[key] == 0:
-                    self.assertEqual(c[key], e[key])
-                else:
-                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
-
-        # Total LCC BAU is sum of utility costs
-        self.assertTrue(
-            abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                 - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
-            < self.REopt_tol)
 
     def test_generator_big_enough_for_outage(self):
         """
@@ -63,7 +41,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 1.53
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
@@ -94,7 +72,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 25.0
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
