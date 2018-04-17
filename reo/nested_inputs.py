@@ -181,20 +181,25 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "description": "Hour of year that grid outage starts. Must be less than outage_end"
+          "description": "Hour of year that grid outage starts. Must be less than outage_end."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "description": "Hour of year that grid outage ends. Must be greater than outage_start"
+          "description": "Hour of year that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
           "type": "float",
           "min": 0,
           "max": 1,
           "default": 0.5,
-          "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive"
+          "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
+        },
+        "outage_is_major_event": {
+          "type": "bool",
+          "default": True,
+          "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         }
       },
 
