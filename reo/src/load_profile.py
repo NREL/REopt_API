@@ -453,7 +453,8 @@ class BuiltInProfile(object):
 
 class LoadProfile(BuiltInProfile):
 
-    def __init__(self, dfm, user_profile=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None, **kwargs):
+    def __init__(self, dfm, user_profile=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None,
+                 loads_kw_is_net=True, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
@@ -476,4 +477,10 @@ class LoadProfile(BuiltInProfile):
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)
+        self.loads_kw_is_net = loads_kw_is_net
         dfm.add_load(self)
+
+    def add_existing_kw(self, existing_kw, prod_factor):
+        existing_kw_list = [existing_kw * x for x in prod_factor]
+        native_load = [i + j for i, j in zip(self.load_list, existing_kw_list)]
+        self.load_list = native_load

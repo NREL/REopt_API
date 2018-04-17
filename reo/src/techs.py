@@ -66,7 +66,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, dfm, degradation_pct, acres_per_kw=6e-3, kw_per_square_foot=0.01, **kwargs):
+    def __init__(self, dfm, degradation_pct, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -77,6 +77,9 @@ class PV(Tech):
         self.incentives = Incentives(**kwargs)
 
         self.pvwatts_prod_factor = None
+        self.existing_kw = existing_kw
+        self.min_kw += existing_kw
+
         dfm.add_pv(self)
 
     @property
