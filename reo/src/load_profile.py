@@ -480,7 +480,12 @@ class LoadProfile(BuiltInProfile):
         self.loads_kw_is_net = loads_kw_is_net
         dfm.add_load(self)
 
-    def add_existing_kw(self, existing_kw, prod_factor):
+    def add_existing_kw(self, dfm, existing_kw, prod_factor):
         existing_kw_list = [existing_kw * x for x in prod_factor]
         native_load = [i + j for i, j in zip(self.load_list, existing_kw_list)]
         self.load_list = native_load
+        self.bau_load_list = native_load
+
+        import pdb
+        pdb.set_trace()
+        dfm.add_load(self)
