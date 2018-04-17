@@ -1,11 +1,15 @@
 from resilience_stats.outage_simulator import simulate_outage
 
 
-def calc_avoided_outage_costs(data):
+def calc_avoided_outage_costs(data, present_worth_factor):
     """
     Add output parameter to data:
-        data['outputs']['Scenario']['Site']['avoided_outage_costs_us_dollars'] = VoLL X avg_hrs_sustained X avg_crit_ld
+        data['outputs']['Scenario']['Site']['avoided_outage_costs_us_dollars']
+            = VoLL X avg_hrs_sustained X avg_crit_ld X present_worth_factor
     :param data: nested dict used for API response
+    :param present_worth_factor: float, accounts for escalation and discount of avoided outage costs over analysis
+        period. NOTE: we use pwf_e from REopt, which uses the electricity cost escalation rate and offtaker
+        discount rate.
     :return: None
     """
     site_inputs = data['inputs']['Scenario']['Site']
@@ -36,4 +40,5 @@ def calc_avoided_outage_costs(data):
     data['outputs']['Scenario']['Site']['Financial']['avoided_outage_costs_us_dollars'] = round(
         site_inputs['Financial']['value_of_lost_load_us_dollars_per_kwh']
         * results['resilience_hours_avg']
-        * avg_crit_ld, 2)
+        * avg_crit_ld
+        * present_worth_factor, 2)

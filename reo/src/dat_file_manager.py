@@ -62,6 +62,7 @@ class DatFileManager:
         self.run_id = run_id
         self.paths = paths
         self.n_timesteps = n_timesteps
+        self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
@@ -203,6 +204,7 @@ class DatFileManager:
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
         if pwf_owner == 0 or sf.owner_tax_pct == 0:

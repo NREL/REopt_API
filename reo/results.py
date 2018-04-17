@@ -45,6 +45,15 @@ class ResultsTask(Task):
 
 @shared_task(bind=True, base=ResultsTask)
 def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
+    """
+    Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
+    :param self: celery.Task
+    :param dfm_list: list of serialized dat_file_managers (passed from group of REopt runs)
+    :param data: nested dict mirroring API response format
+    :param meta: ={'run_uuid': run_uuid, 'api_version': api_version} from api.py
+    :param saveToDB: boolean for saving postgres models
+    :return: None
+    """
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -243,7 +252,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         # Calculate avoided outage costs
-        calc_avoided_outage_costs(data)
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
