@@ -37,6 +37,11 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     )
 
     avg_crit_ld = sum(load) * crit_load_factor / len(load)
+
+    if site_inputs['LoadProfile'].get('outage_is_major_event') is True:
+        # assume that outage occurs only once in analysis period
+        present_worth_factor = 1
+
     data['outputs']['Scenario']['Site']['Financial']['avoided_outage_costs_us_dollars'] = round(
         site_inputs['Financial']['value_of_lost_load_us_dollars_per_kwh']
         * results['resilience_hours_avg']

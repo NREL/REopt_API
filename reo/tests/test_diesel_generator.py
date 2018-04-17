@@ -25,6 +25,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         """
         test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
         nested_data = json.load(open(test_post, 'rb'))
+        nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = False
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -72,7 +73,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 16.6802
         d_expected['batt_kwh'] = 77.8508
         d_expected['fuel_used_gal'] = 25.0
-        d_expected['avoided_outage_costs_us_dollars'] = 306505.32
+        d_expected['avoided_outage_costs_us_dollars'] = 25352.39
         d_expected['microgrid_upgrade_cost_us_dollars'] = 13887.90
 
         try:
