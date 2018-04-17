@@ -59,6 +59,7 @@ class FinancialModel(models.Model):
     om_cost_escalation_pct = models.FloatField()
     offtaker_discount_pct = models.FloatField()
     offtaker_tax_pct = models.FloatField()
+    value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     # owner_discount_pct = models.FloatField(null=True)
     # owner_tax_pct = models.FloatField(null=True)
 
@@ -67,6 +68,7 @@ class FinancialModel(models.Model):
     lcc_bau_us_dollars = models.FloatField(null=True, blank=True)
     npv_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs_plus_om_us_dollars = models.FloatField(null=True, blank=True)
+    avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
     
 
     @classmethod

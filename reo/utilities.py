@@ -160,3 +160,36 @@ def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
         cap_cost_slope = 0
 
     return round(cap_cost_slope, 4)
+
+
+def check_common_outputs(Test, d_calculated, d_expected):
+    """
+    Used in tests to compare expected and API response values
+    :param Test: test class instance
+    :param d_calculated: dict of values from API (flat format)
+    :param d_expected: dict of expected values (flat format)
+    :return: None
+    """
+
+    c = d_calculated
+    e = d_expected
+
+    # check all calculated keys against the expected
+    for key, value in e.iteritems():
+        tolerance = Test.REopt_tol
+        if key == 'npv':
+            tolerance = 2 * Test.REopt_tol
+
+        if key in c and key in e:
+            if e[key] == 0:
+                Test.assertEqual(c[key], e[key])
+            else:
+                Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+        else:
+            print("Warning: Expected value for {} not in calculated dictionary.".format(key))
+
+    # Total LCC BAU is sum of utility costs
+    Test.assertTrue(
+        abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+             - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+        < Test.REopt_tol)

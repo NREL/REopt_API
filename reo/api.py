@@ -85,7 +85,7 @@ class Job(ModelResource):
             reopt.s(data=data, bau=False),
             reopt.s(data=data, bau=True),
         )
-        # a group return a list of outputs, with one item for each job in the group
+        # a group returns a list of outputs, with one item for each job in the group
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         try:

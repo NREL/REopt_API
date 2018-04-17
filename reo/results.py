@@ -8,6 +8,7 @@ from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager
+from reo.src.outage_costs import calc_avoided_outage_costs
 
 
 class ResultsTask(Task):
@@ -44,6 +45,15 @@ class ResultsTask(Task):
 
 @shared_task(bind=True, base=ResultsTask)
 def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
+    """
+    Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
+    :param self: celery.Task
+    :param dfm_list: list of serialized dat_file_managers (passed from group of REopt runs)
+    :param data: nested dict mirroring API response format
+    :param meta: ={'run_uuid': run_uuid, 'api_version': api_version} from api.py
+    :param saveToDB: boolean for saving postgres models
+    :return: None
+    """
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -118,8 +128,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         @staticmethod
         def setup_nested():
-
-            # Add nested outputs (preserve original format for now to support backwards compatibility)
+            """
+            Set up up empty nested dict for outputs.
+            :return: nested dict for outputs with values set to None. Results are filled in using "get_nested" method
+            """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
@@ -133,7 +145,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             return nested_outputs
 
         def get_nested(self):
-
+            """
+            Translates the "flat" results_dict (which is just the JSON output from REopt mosel code)
+            into the nested output dict.
+            :return: None (modifies self.nested_outputs)
+            """
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
             # format assumes that the flat format is still the primary default
@@ -217,6 +233,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
+
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
@@ -233,6 +250,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+
+        # Calculate avoided outage costs
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
