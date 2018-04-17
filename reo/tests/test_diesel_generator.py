@@ -40,6 +40,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = 7.76461
         d_expected['fuel_used_gal'] = 1.53
         d_expected['avoided_outage_costs_us_dollars'] = 235285.28
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1941.00
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -72,6 +73,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = 77.8508
         d_expected['fuel_used_gal'] = 25.0
         d_expected['avoided_outage_costs_us_dollars'] = 306505.32
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 13887.90
 
         try:
             check_common_outputs(self, c, d_expected)
