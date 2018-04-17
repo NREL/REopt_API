@@ -135,6 +135,13 @@ nested_input_definitions = {
           "default": 100,
           "description": "Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL [$/kWh] with the average number of hours that the critical load can be met by the energy system (determined by simulating outages occuring at every hour of the year), and multiplying by the mean critical load."
         },
+        "microgrid_upgrade_cost_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.3,
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
+        }
       },
 
       "LoadProfile": {
