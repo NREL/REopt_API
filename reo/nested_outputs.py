@@ -60,6 +60,10 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Capital cost for all technologies.",
                   "units": "$"
+                },
+                "microgrid_upgrade_cost_us_dollars": {
+                  "type": float,
+                  "description": "Cost in US dollars to make a distributed energy system islandable from the grid. Determined by multiplying the total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input value for microgrid_upgrade_cost_pct (which defaults to 0.30)."
                 }
               },
 
