@@ -1,5 +1,6 @@
 import traceback as tb
 from reo.models import ErrorModel
+from reo.log_levels import log
 
 
 class REoptError(Exception):
@@ -17,11 +18,15 @@ class REoptError(Exception):
         :param traceback: sys.exc_info()[2]
         """
         msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
-        self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
+        if 'infeasible' not in traceback:
+            self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
+        else:
+            self.message = message
         self.task = task
         self.run_uuid = run_uuid
         self.traceback = traceback
         self.name = name
+        log.error(traceback)
 
     def save_to_db(self):
         """
@@ -93,7 +98,7 @@ class RequestError(REoptError):
     """
     Exception class for reo.views.results
     """
-    __name__ = "ResultsRequestError"
+    __name__ = "RequestError"
 
     def __init__(self, task='reo.views.results', run_uuid='', message='', traceback=''):
         """
@@ -103,7 +108,7 @@ class RequestError(REoptError):
         :param message: message that is sent back to user in messages: errors
         :param traceback: saved to database for debugging
         """
-        super(ResultsRequestError, self).__init__(task, self.__name__, run_uuid, message, traceback)
+        super(RequestError, self).__init__(task, self.__name__, run_uuid, message, traceback)
 
 
 class UnexpectedError(REoptError):

@@ -55,6 +55,15 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Optimal capital cost plus present value of operations and maintenance over anlaysis period",
                   "units": "$"
+                },
+                "avoided_outage_costs_us_dollars": {
+                  "type": float,
+                  "description": "Avoided outage costs are determined using the Value of Lost Load [$/kWh], multiplied by the average critical load in kW (determined using critical_load_pct), the average hours that the critical load is sustained (determined by simulating outages starting at every hour of the year), and a present worth factor that accounts for cost growth with escalation_pct over the analysis_years and discounts the avoided costs to present value using offtaker_discount_pct.  Note that the use of a present worth factor presumes that the outage period and the microgrid's ability to meet the critical load is the same each year in the analysis_years. If outage_is_major_event is set to True, then the present worth factor is set to 1, which assumes that only one outage occurs in the analysis_years.",
+                  "units": "$"
+                },
+                "microgrid_upgrade_cost_us_dollars": {
+                  "type": float,
+                  "description": "Cost in US dollars to make a distributed energy system islandable from the grid. Determined by multiplying the total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input value for microgrid_upgrade_cost_pct (which defaults to 0.30)."
                 }
               },
 
@@ -292,6 +301,14 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one hourly time series of power from grid to load",
                   "units": "kWh"
+                }
+              },
+
+              "Generator": {
+                "fuel_used_gal": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage.",
+                  "units": "US gallons"
                 }
               }
             }

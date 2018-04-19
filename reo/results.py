@@ -8,6 +8,7 @@ from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager
+from reo.src.outage_costs import calc_avoided_outage_costs
 
 
 class ResultsTask(Task):
@@ -44,6 +45,15 @@ class ResultsTask(Task):
 
 @shared_task(bind=True, base=ResultsTask)
 def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
+    """
+    Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
+    :param self: celery.Task
+    :param dfm_list: list of serialized dat_file_managers (passed from group of REopt runs)
+    :param data: nested dict mirroring API response format
+    :param meta: ={'run_uuid': run_uuid, 'api_version': api_version} from api.py
+    :param saveToDB: boolean for saving postgres models
+    :return: None
+    """
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -118,8 +128,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         @staticmethod
         def setup_nested():
-
-            # Add nested outputs (preserve original format for now to support backwards compatibility)
+            """
+            Set up up empty nested dict for outputs.
+            :return: nested dict for outputs with values set to None. Results are filled in using "get_nested" method
+            """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
@@ -133,7 +145,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             return nested_outputs
 
         def get_nested(self):
-
+            """
+            Translates the "flat" results_dict (which is just the JSON output from REopt mosel code)
+            into the nested output dict.
+            :return: None (modifies self.nested_outputs)
+            """
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
             # format assumes that the flat format is still the primary default
@@ -146,6 +162,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict.get("npv")
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om")
+                    self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
+                        self.results_dict.get("net_capital_costs") \
+                        * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
@@ -196,6 +215,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
+                elif name == "Generator":
+                    self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -215,14 +236,15 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
+
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
 
         if not os.path.exists(output_file):
             msg = "Optimization failed to run. Output file does not exist: " + output_file
-            log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", msg)
+            log.debug("Current directory: " + os.getcwd())
+            log.warning(msg)
             raise RuntimeError('REopt', msg)
 
         process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
@@ -232,10 +254,12 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
+        # Calculate avoided outage costs
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)

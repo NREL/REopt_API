@@ -7,6 +7,7 @@ from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.nested_inputs import flat_to_nested
+from reo.utilities import check_common_outputs
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -31,28 +32,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def check_data_error_response(self, data, text):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
-
-    def check_common_outputs(self, d_calculated, d_expected):
-
-        c = d_calculated
-        e = d_expected
-
-        # check all calculated keys against the expected
-        for key, value in e.iteritems():
-            tolerance = self.REopt_tol
-            if key == 'npv':
-                tolerance = 2 * self.REopt_tol
-
-            if key in c and key in e:
-                if e[key] == 0:
-                    self.assertEqual(c[key], e[key])
-                else:
-                    self.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
-
-        # Total LCC BAU is sum of utility costs
-        self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
-                        < self.REopt_tol)
 
     def test_required(self):
 
@@ -192,7 +171,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['year_one_utility_kwh'] = 9614813.643
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
@@ -253,7 +232,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
@@ -281,7 +260,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['year_one_utility_kwh'] = 9614527.2568
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
@@ -311,7 +290,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['year_one_utility_kwh'] = 1916.4787
 
         try:
-            self.check_common_outputs(c, d_expected)
+            check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(c['messages']))

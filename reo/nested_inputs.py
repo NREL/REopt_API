@@ -127,13 +127,27 @@ nested_input_definitions = {
           "max": max_years,
           "default": analysis_years,
           "description": "Analysis period"
+        },
+        "value_of_lost_load_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e6,
+          "default": 100,
+          "description": "Value placed on unmet site load during grid outages. Units are US dollars per unmet kilowatt-hour. The value of lost load (VoLL) is used to determine the avoided outage costs by multiplying VoLL [$/kWh] with the average number of hours that the critical load can be met by the energy system (determined by simulating outages occuring at every hour of the year), and multiplying by the mean critical load."
+        },
+        "microgrid_upgrade_cost_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.3,
+          "description": "Additional cost, in percent of non-islandable capital costs, to make a distributed energy system islandable from the grid and able to serve critical loads. Includes all upgrade costs such as additional laber and critical load panels."
         }
       },
 
       "LoadProfile": {
         "doe_reference_name": {
           "type": "str",
-          "restrict_to":default_buildings,
+          "restrict_to": default_buildings,
           "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
@@ -167,20 +181,25 @@ nested_input_definitions = {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "description": "Hour of year that grid outage starts. Must be less than outage_end"
+          "description": "Hour of year that grid outage starts. Must be less than outage_end."
         },
         "outage_end_hour": {
           "type": "int",
           "min": 0,
           "max": 8759,
-          "description": "Hour of year that grid outage ends. Must be greater than outage_start"
+          "description": "Hour of year that grid outage ends. Must be greater than outage_start."
         },
         "critical_load_pct": {
           "type": "float",
           "min": 0,
           "max": 1,
           "default": 0.5,
-          "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive"
+          "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
+        },
+        "outage_is_major_event": {
+          "type": "bool",
+          "default": True,
+          "description": "Boolean value for if outage is a major event, which affects the avoided_outage_costs_us_dollars. If True, the avoided outage costs are calculated for a single outage occurring in the first year of the analysis_years. If False, the outage event is assumed to be an average outage event that occurs every year of the analysis period. In the latter case, the avoided outage costs for one year are escalated and discounted using the escalation_pct and offtaker_discount_pct to account for an annually recurring outage. (Average outage durations for certain utility service areas can be estimated using statistics reported on EIA form 861.)"
         }
       },
 
@@ -606,7 +625,7 @@ nested_input_definitions = {
         }
       },
 
-      "Storage":{
+      "Storage": {
           "min_kw": {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Minimum battery power capacity size constraint for optimization"
@@ -691,7 +710,45 @@ nested_input_definitions = {
             "type": "float", "min": 0, "max": 1e9, "default": 0,
             "description": "Rebate based on installed power capacity"
           }
+        },
+
+      "Generator": {
+        "size_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Existing on-site generator capacity in kW."
+        },
+        "fuel_slope_gal_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 0,
+          "description": "Generator fuel burn rate in gallons/kWh."
+        },
+        "fuel_intercept_gal": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 0,
+          "description": "Generator fuel consumption curve y-intercept in gallons."
+        },
+        "fuel_avail_gal": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "On-site generator fuel available in gallons."
+        },
+        "min_turn_down_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.3,
+          "description": "Minimum generator loading in percent of capacity (size_kw)."
         }
+      }
     }
   }
 }

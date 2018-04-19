@@ -46,13 +46,14 @@ class DatFileManager:
     pvnm = None
     wind = None
     windnm = None
+    generator = None
     util = None
     storage = None
     site = None
     elec_tariff = None
 
-    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'util']  # order is critical for REopt!
-    available_tech_classes = ['PV', 'WIND', 'UTIL']  # this is a REopt 'class', not a python class
+    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
+    available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
     available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
     bau_techs = ['util']
     NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
@@ -61,6 +62,7 @@ class DatFileManager:
         self.run_id = run_id
         self.paths = paths
         self.n_timesteps = n_timesteps
+        self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
@@ -147,6 +149,9 @@ class DatFileManager:
     def add_util(self, util):
         self.util = util
 
+    def add_generator(self, generator):
+        self.generator = generator
+
     def add_site(self, site):
         self.site = site
 
@@ -199,6 +204,7 @@ class DatFileManager:
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
         if pwf_owner == 0 or sf.owner_tax_pct == 0:
@@ -214,7 +220,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech != 'util' and not tech.startswith('wind'):  # pv has degradation
+                if tech in ['pv', 'pvnm']:  # pv has degradation
 
                     #################
                     # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
@@ -245,7 +251,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None:
                 
-                if tech != 'util':
+                if tech not in ['util', 'generator']:
 
                     # prod incentives don't need escalation
                     pwf_prod_incent.append(
@@ -264,7 +270,7 @@ class DatFileManager:
                             eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
                         )
     
-                elif tech == 'util':
+                else:
     
                     pwf_prod_incent.append(0)
                     max_prod_incent.append(0)
@@ -285,7 +291,7 @@ class DatFileManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech != 'util':
+            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
 
                 tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
                 tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
@@ -349,7 +355,7 @@ class DatFileManager:
 
                     # start at second point, first is always zero
                     for point in range(1, len(xp_array_incent[region])):
-        
+
                         # previous points
                         xp_prev = xp_array_incent[region][point - 1]
                         yp_prev = yp_array_incent[region][point - 1]
@@ -508,7 +514,7 @@ class DatFileManager:
 
                     cap_cost_x.append(tmp_cap_cost_x[seg])
 
-            elif eval('self.' + tech) is not None and tech == 'util':
+            elif eval('self.' + tech) is not None and tech in ['util', 'generator']:
 
                 if cap_cost_segments is None:  # only util in techs (usually BAU case)
                     cap_cost_segments = 1
@@ -635,13 +641,19 @@ class DatFileManager:
 
         return tech_class_min_size, tech_to_tech_class
 
-    def _get_REopt_tech_max_sizes(self, techs):
+    def _get_REopt_tech_max_sizes_min_turn_down(self, techs):
         max_sizes = list()
+        min_turn_down = list()
         for tech in techs:
 
             if eval('self.' + tech) is not None:
 
                 site_kw_max = eval('self.' + tech + '.max_kw')
+
+                if hasattr(tech, 'min_turn_down'):
+                    min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
+                else:
+                    min_turn_down.append(0)
                 
                 if eval('self.' + tech + '.acres_per_kw') is not None:
 
@@ -656,7 +668,7 @@ class DatFileManager:
 
                 max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
 
-        return max_sizes
+        return max_sizes, min_turn_down
 
     def finalize(self):
         """
@@ -680,8 +692,8 @@ class DatFileManager:
             om_dollars_per_kw_bau = \
             self._get_REopt_array_tech_load(self.bau_techs)
         
-        max_sizes = self._get_REopt_tech_max_sizes(self.available_techs)
-        max_sizes_bau = self._get_REopt_tech_max_sizes(self.bau_techs)
+        max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
+        max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs)
 
         levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
             = self._get_REopt_pwfs(self.available_techs)
@@ -755,6 +767,7 @@ class DatFileManager:
         write_to_dat(self.file_max_size, self.storage.min_kwh, 'MinStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size, self.storage.max_kwh, 'MaxStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size, tech_class_min_size, 'TechClassMinSize', mode='a')
+        write_to_dat(self.file_max_size, min_turn_down, 'MinTurndown', mode='a')
 
         write_to_dat(self.file_max_size_bau, max_sizes_bau, 'MaxSize')
         write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKW', mode='a')
@@ -762,6 +775,7 @@ class DatFileManager:
         write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
+        write_to_dat(self.file_max_size_bau, min_turn_down_bau, 'MinTurndown', mode='a')
         
         # economics.dat
         write_to_dat(self.file_economics, levelization_factor, 'LevelizationFactor')
@@ -806,7 +820,7 @@ class DatFileManager:
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
                            bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
-                           loads=self.available_loads)
+                           loads=self.available_loads, gen=self.generator)
 
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
 
@@ -830,12 +844,12 @@ class DatFileManager:
         write_to_dat(self.file_max_in_tiers, ta.energy_max_in_tiers, 'MaxUsageInTier', 'a')
         write_to_dat(self.file_max_in_tiers, ta.demand_month_max_in_tiers, 'MaxDemandMonthsInTier', 'a')
         write_to_dat(self.file_energy_rates, ta.energy_rates, 'FuelRate')
-        # write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates, ta.energy_avail, 'FuelAvail', 'a')
         write_to_dat(self.file_energy_rates, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_energy_rates, ta.annual_min_charge, 'AnnualMinCharge', 'a')
         write_to_dat(self.file_energy_rates, ta.min_monthly_charge, 'MonthlyMinCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.energy_rates_bau, 'FuelRate')
-        # write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')  # not used in REopt
+        write_to_dat(self.file_energy_rates_bau, ta.energy_avail_bau, 'FuelAvail', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.fixed_monthly_charge, 'FixedMonthlyCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.annual_min_charge, 'AnnualMinCharge', 'a')
         write_to_dat(self.file_energy_rates_bau, ta.min_monthly_charge, 'MonthlyMinCharge', 'a')
@@ -848,3 +862,5 @@ class DatFileManager:
         write_to_dat(self.file_energy_tiers_num, ta.demand_tiers_num, 'DemandBinCount', 'a')
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_rate, 'FuelBurnRateM')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_rate_bau, 'FuelBurnRateM')
+        write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB', 'a')
+        write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB', 'a')

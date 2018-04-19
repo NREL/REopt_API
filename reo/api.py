@@ -1,4 +1,3 @@
-import os
 import json
 import uuid
 import sys
@@ -9,7 +8,6 @@ from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from validators import ValidateNestedInput
-from log_levels import log, setup_logging
 from scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from reo.src.reopt import reopt
@@ -24,7 +22,6 @@ saveToDb = True
 class Job(ModelResource):
 
     class Meta:
-        setup_logging()
         resource_name = 'job'
         allowed_methods = ['post']
         detail_allowed_methods = []
@@ -88,7 +85,7 @@ class Job(ModelResource):
             reopt.s(data=data, bau=False),
             reopt.s(data=data, bau=True),
         )
-        # a group return a list of outputs, with one item for each job in the group
+        # a group returns a list of outputs, with one item for each job in the group
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         try:
@@ -99,7 +96,6 @@ class Job(ModelResource):
                 pass  # handled in each task
             else:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                log("UnexpectedError", "{} occurred in reo.api.".format(exc_type))
                 err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
 

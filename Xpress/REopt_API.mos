@@ -140,8 +140,14 @@ declarations
   InitSOC: real  ! initial state of charge of battery
 
   dvFuelCost: array(Tech,FuelBin) of mpvar
+  dvFuelUsed: array(Tech,FuelBin) of mpvar	 !fuel consumed by tech, only used to enforce FuelAvail constraint
   FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
+  FuelBurnRateB: array(Tech,Load,FuelBin) of real   !Y-int of the fuel rate curve
+  FuelAvail: array(Tech,FuelBin) of real
+  MinTurndown: array(Tech) of real	! 0.3 would mean that a tech can only turn down to 30% of dvSystemSize
+  binTechIsOnInTS: array(Tech,TimeStep) of mpvar  ! binary that is 1 if tech is operating during a timestep, 0 otherwise
+
   FixedMonthlyCharge: real ! utility rate fixed monthly charge
   AnnualMinCharge: real ! utility min annual charge
   MonthlyMinCharge: real ! utility min monthly charge
@@ -261,6 +267,7 @@ initializations from DAT7 ! maxsizes
 	MinStorageSizeKWH
 	MaxStorageSizeKWH
 	TechClassMinSize
+	MinTurndown
 end-initializations
 
 initializations from DAT8
@@ -273,6 +280,7 @@ end-initializations
 
 initializations from DAT10 ! FuelCost
 	FuelRate
+	FuelAvail
 	FixedMonthlyCharge
 	AnnualMinCharge
 	MonthlyMinCharge
@@ -303,6 +311,7 @@ end-initializations
 
 initializations from DAT16
 	FuelBurnRateM
+	FuelBurnRateB
 end-initializations
 
 initializations from DAT17  ! net metering
@@ -319,11 +328,37 @@ forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t
 	create (dvRatedProd (t,LD,ts,s,fb))
 
 !!!! Fuel tracking
-!FuelUsed * FuelRate = FuelCost.  However since FuelRate can vary by timestep, cannot just use dvFuelUsed
-forall (t in Tech, fb in FuelBin ) do
+! Define dvFuelUsed by each tech by summing over timesteps.  Constrain it to be less than FuelAvail.
+forall (t in Tech, fb in FuelBin) do
      sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
-     	ProdFactor(t, LD, ts) * LevelizationFactor(t) *  dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
+     	ProdFactor(t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling  +
+     sum(ts in TimeStep, LD in Load)
+     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling = dvFuelUsed(t,fb)
+
+	dvFuelUsed(t,fb) <= FuelAvail(t,fb)
 end-do
+
+! FuelUsed * FuelRate = FuelCost.  Since FuelRate can vary by timestep, cannot use dvFuelUsed in the following definition
+forall (t in Tech, fb in FuelBin) do
+     sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
+     	ProdFactor(t, LD, ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e +
+     sum(ts in TimeStep, LD in Load)
+     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
+end-do
+
+!! The following 2 constraints define binTechIsOnInTS to be the binary corollary to dvRatedProd,
+!! i.e. binTechIsOnInTS = 1 for dvRatedProd > 0, and binTechIsOnInTS = 0 for dvRatedProd = 0
+!CONSTRAINT 4A
+forall (t in Tech, ts in TimeStep) do
+  sum (LD in Load, s in Seg, fb in FuelBin | exists(dvRatedProd (t,LD,ts,s,fb)))
+  		ProdFactor (t,LD,ts) * dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * 100 * binTechIsOnInTS (t,ts)
+!CONSTRAINT 5A
+   sum (s in Seg) (MinTurndown(t) * dvSystemSize (t,s)) -
+  		sum (LD in Load, s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))
+  		dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * (1 - binTechIsOnInTS (t,ts))
+end-do
+
+
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -398,6 +433,7 @@ end-do
 !binary declarations
 forall ( t in Tech, b in TechClass) binSingleBasicTech (t,b) is_binary
 forall ( t in Tech, s in Seg) binSegChosen(t, s) is_binary
+forall ( t in Tech, ts in TimeStep) binTechIsOnInTS(t,ts) is_binary
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! End declaring binary variables and constraining them
@@ -416,7 +452,7 @@ sum(b in BattLevel) binBattLevel(b) = 1
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 ! Determine which segment of the PWL cost curve.  binSegChosen is 1 for that segment, 0 else.
-forall (t in Tech,s in Seg) do
+forall (t in Tech, s in Seg) do
 !CONSTRAINT 20
    dvSystemSize (t,s) <= CapCostX (t,s)   * binSegChosen (t,s)
 !CONSTRAINT 21
@@ -469,10 +505,15 @@ forall (b in TechClass) do
     sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
 end-do
 
- !!dvRatedProduction must be greater than 0
- !CONSTRAINT 27a
-forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin )   dvRatedProd(t,LD,ts,s,fb) >=0
+!!dvRatedProduction must be >= 0, or if MinTurndown is > 0, use semi-continuous variable
+!CONSTRAINT 27a
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) = 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
+    dvRatedProd(t,LD,ts,s,fb) >= 0
+end-do
 
+forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) > 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
+    dvRatedProd(t,LD,ts,s,fb) is_semcont MinTurndown(t)
+end-do
 
 !Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on
 ! electric output of a CoGen with mandatory thermal tech
@@ -743,6 +784,8 @@ Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCha
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
                       dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts)
 
+GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
+
 !************************** Writing to files ************************************
 
 
@@ -896,12 +939,14 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
     Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
     Node:=addnode(out_json, Root, "year_one_wind_energy_produced", strfmt(getsol(Year1WindProd), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElecPV), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
+    Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 
