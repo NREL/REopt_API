@@ -26,17 +26,17 @@ import json
 from reo.log_levels import log
 
 
-cache_file = "rate_cache.json"
-try:
-    with open(cache_file, 'rb') as f:
-        rate_cache = json.load(f)
-
-except ValueError as e:
-    log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
-    rate_cache = dict()
-except IOError:
-    log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
-    rate_cache = dict()
+# cache_file = "rate_cache.json"
+# try:
+#     with open(cache_file, 'rb') as f:
+#         rate_cache = json.load(f)
+#
+# except ValueError as e:
+#     log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
+#     rate_cache = dict()
+# except IOError:
+#     log("INFO", "Could not find rate cache. Making new {}.".format(cache_file))
+#     rate_cache = dict()
 
 
 class Rate(object):
@@ -53,15 +53,15 @@ class Rate(object):
 
     def get_rate(self):
 
-        try:
-            rate_dict = rate_cache[self.rate]
-            log("INFO", 'Found rate in cache.')
-
-        except KeyError:
-            rate_dict = self.download_rate()
-            if rate_dict is not None:
-                log("INFO", 'Found rate in URDB.')
-                self.add_rate_to_cache(rate_dict, rate_cache)
+        # try:
+        #     rate_dict = rate_cache[self.rate]
+        #     log("INFO", 'Found rate in cache.')
+        #
+        # except KeyError:
+        rate_dict = self.download_rate()
+        if rate_dict is not None:
+            log("INFO", 'Found rate in URDB.')
+                # self.add_rate_to_cache(rate_dict, rate_cache)
 
         try:
             if rate_dict['energyratestructure'] is None:
@@ -143,9 +143,9 @@ class Rate(object):
             log("INFO", 'Could not find {} in URDB'.format(self.rate))
             return None
 
-    @staticmethod
-    def add_rate_to_cache(rate, cache):
-
-        cache[rate['label']] = rate
-        with open(cache_file, 'wb') as f:
-            json.dump(cache, f)
+    # @staticmethod
+    # def add_rate_to_cache(rate, cache):
+    #
+    #     cache[rate['label']] = rate
+    #     with open(cache_file, 'wb') as f:
+    #         json.dump(cache, f)

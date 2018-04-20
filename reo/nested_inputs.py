@@ -167,6 +167,11 @@ nested_input_definitions = {
           "type": "list_of_float",
           "description": "Hourly critical load over all hours in one year"
         },
+        "loads_kw_is_net": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing PV, must specify whether provided load is the net load after existing PV or not."
+        },
         "outage_start_hour": {
           "type": "int",
           "min": 0,
@@ -395,6 +400,13 @@ nested_input_definitions = {
       },
 
       "PV": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Existing PV size"
+        },
         "min_kw": {
           "type": "float",
           "min": 0,

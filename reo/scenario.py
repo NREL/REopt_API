@@ -89,6 +89,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
             pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
                     longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
 
+            if pv.existing_kw > 0 and lp.loads_kw_is_net:
+                lp.add_existing_kw(dfm, pv.existing_kw, pv.prod_factor)
+
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
 

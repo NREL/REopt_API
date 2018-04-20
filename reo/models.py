@@ -87,6 +87,7 @@ class LoadProfileModel(models.Model):
     monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=[])
     loads_kw = ArrayField(models.FloatField(blank=True), default=[])
     critical_loads_kw = ArrayField(models.FloatField(blank=True), default=[])
+    loads_kw_is_net = models.BooleanField(default=True)
     outage_start_hour = models.IntegerField(null=True, blank=True)
     outage_end_hour = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
@@ -154,6 +155,7 @@ class PVModel(models.Model):
 
     #Inputs
     run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField()
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()

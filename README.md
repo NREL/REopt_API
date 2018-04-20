@@ -4,6 +4,8 @@ These instructions are for REopt API developers and internal NREL users that wis
 
 It is highly recommended that you use a virtual environment for installing the API dependencies (and thus running the API). Virtual environments allow you to have a custom set of code modules for any given project and assuage many of the permission headaches that may arise when installing software on an NREL owned computer. In brief, when a virtual environment is 'activated', a call to any module installed in the environment will be used in place of a system module. For example, newer computers are likely to have the latest version of Python installed (3.X), but the API uses Python 2.7. Thus, if one attempts to run the API with the system Python 3.X - it won't work! By installing Python 2.7 in the virtual environment all of the dependency problems are bypassed.
 
+Lastly, to our best efforts we attempt to follow the development workflow described [here](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow), which is based on using feature branches and pull requests in the development process.
+
 
 ## Step 1: Create Project Directory and Download Git Repo
 We will refer to the root directory for installing everything as **MY-API-FOLDER**, which can be anywhere you want.
@@ -79,7 +81,20 @@ Fortunately, there's an [app](https://virtualenv.pypa.io/en/stable/userguide/) f
 
 ## Step 4: Install Requirements
 
+### For Windows
+Celery 4 is not supported on windows. So you will have to:
+```
+git checkout windows
+```
+BEFORE installing the requirements. The requirements.txt file is different from all other branches on the windows branch.
+Specifically, the celery version for windows is 3.1.25, and the `django-celery` package must be installed (not need on other OS's).
+Note that because of the need of Celery v3 on windows, the settings files (within the windows branch) are slightly different.
+
+### For both Mac & Windows
+
 `pip install -r requirements.txt`
+
+
 
 ## Step 5: Run Servers Locally
 All of the `commands` are done in MY-API-FOLDER.
@@ -88,6 +103,9 @@ If you wish to take advantage of the celery task manager, three separate servers
 
 1. The REopt API: `python manage.py runserver`
 2. A redis server: `redis-server`  (which acts as a message broker for the tasks)
+    - if you don't have redis go [here](https://redis.io/topics/quickstart) for mac/linux or [here](https://github.com/MicrosoftArchive/redis/releases) for Windows
+    -  **Windows**: you have to `redis-cli shutdown` before starting `redis-server`, and scripts may only be run from the Redis directory.
+        - Also, make sure your user account has full write access to the Redis directory (necessary for back-ups that Redis performs regularly)
 3. A celery server: `celery -A reopt_api worker --loglevel=info`
 
 For each step above, the last line that you should see after executing are:
@@ -101,14 +119,14 @@ An alternative API usage method, which excludes running redis and celery servers
 ## Step 6: Using the API
 There are many different ways to use the API. At high level:
 
-1. Inputs are POST'ed at `http://127.0.0.1:8000/api/v1/reopt/`
+1. Inputs are POST'ed at `http://127.0.0.1:8000/v1/job/`
 2. The response will include your run_uuid, eg:
 ```
 {
     "run_uuid": "3a76612c-e538-484a-a1f3-3793bb4b869d"
 }
 ```
-3. Resuts are obtained from `http://127.0.0.1:8000/reopt/results/?run_uuid=MY-RUN-UUID`
+3. Results are obtained from `http://127.0.0.1:8000/v1/job/MY-RUN-UUID/results/
 
 Example methods for POSTing inputs include:
 1. `curl`
@@ -186,7 +204,7 @@ Honcho uses a `.env` file in the project root directory to define environment va
 ```
 DEPLOY_CURRENT_PATH="/Users/nlaws/projects/reopt/webtool/reopt_api"
 APP_ENV="local"
-APP_HOSTNAME="localhost"
+APP_QUEUE_NAME="localhost"
 TEST="true"
 ```
 The first line of the `Procfile`:

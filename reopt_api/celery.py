@@ -54,7 +54,7 @@ app.conf.broker_url = 'redis://' + redis_host + ':6379/0'
 # same server (so the input/output files can be shared across jobs), having
 # server-specific queues is a simplistic way to ensure processing remains on a
 # single server.
-app.conf.task_default_queue = os.environ.get('APP_HOSTNAME', 'localhost')
+app.conf.task_default_queue = os.environ.get('APP_QUEUE_NAME', 'localhost')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
