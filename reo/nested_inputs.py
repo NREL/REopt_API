@@ -172,6 +172,11 @@ nested_input_definitions = {
           "type": "bool",
           "description": "If there is existing PV, must specify whether provided load is the net load after existing PV or not."
         },
+        "critical_loads_kw_is_net": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing PV, must specify whether provided load is the net load after existing PV or not."
+        },
         "outage_start_hour": {
           "type": "int",
           "min": 0,

@@ -88,6 +88,7 @@ class LoadProfileModel(models.Model):
     loads_kw = ArrayField(models.FloatField(blank=True), default=[])
     critical_loads_kw = ArrayField(models.FloatField(blank=True), default=[])
     loads_kw_is_net = models.BooleanField(default=True)
+    critical_loads_kw_is_net = models.BooleanField(default=False)
     outage_start_hour = models.IntegerField(null=True, blank=True)
     outage_end_hour = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
