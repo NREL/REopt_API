@@ -453,9 +453,7 @@ class BuiltInProfile(object):
 
 class LoadProfile(BuiltInProfile):
 
-
-    def __init__(self, dfm, user_profile=None, critical_loads_kw=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None,
-                 loads_kw_is_net=True, **kwargs):
+    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
@@ -467,27 +465,42 @@ class LoadProfile(BuiltInProfile):
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)
 
+
+        if pv.existing_kw > 0:
+            # get pv profile
+            existing_kw_list = [pv.existing_kw * x for x in pv.prod_factor]
+
+        if pv.existing_kw > 0 and loads_kw_is_net:
+            # add existing pv if net load provided
+            native_load = [i + j for i, j in zip(self.load_list, existing_kw_list)]
+            self.load_list = native_load
+            self.bau_load_list = native_load
+
         if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
+            if pv.existing_kw > 0 and critical_loads_kw_is_net:
+                # Add existing pv in if net critical load provided
+                critical_loads_kw[ : outage_end_hour - outage_start_hour ] = [i + j for i, j in zip(
+                    critical_loads_kw[ : outage_end_hour - outage_start_hour ], 
+                    existing_kw_list[ outage_start_hour : outage_end_hour ]
+                    )]
             # modify loads based on custom critical loads profile
             self.load_list[ outage_start_hour : outage_end_hour ] = critical_loads_kw[ : outage_end_hour - outage_start_hour ]
             self.bau_load_list[ outage_start_hour : outage_end_hour ] = [0 for _ in self.load_list[ outage_start_hour : outage_end_hour ]]
 
         elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
+            critical_loads_kw = [ld * critical_load_pct for ld in self.unmodified_load_list]
+            if pv.existing_kw > 0 and loads_kw_is_net:
+                # Add existing pv in if net critical load percent provided
+                critical_loads_kw = [i + j for i, j in zip(critical_loads_kw, existing_kw_list)]
             # modify loads based on percentage
-            self.load_list[ outage_start_hour : outage_end_hour ] = [ld * critical_load_pct for ld in self.load_list[ outage_start_hour : outage_end_hour ]]
+            self.load_list[ outage_start_hour : outage_end_hour ] = critical_loads_kw[ outage_start_hour : outage_end_hour ]
             self.bau_load_list[ outage_start_hour : outage_end_hour ] = [0 for _ in self.load_list[ outage_start_hour : outage_end_hour ]]
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
+        self.critical_loads_kw_is_net = critical_loads_kw_is_net
         dfm.add_load(self)
 
-    def add_existing_kw(self, dfm, existing_kw, prod_factor):
-        existing_kw_list = [existing_kw * x for x in prod_factor]
-        native_load = [i + j for i, j in zip(self.load_list, existing_kw_list)]
-        self.load_list = native_load
-        self.bau_load_list = native_load
 
-        import pdb
-        pdb.set_trace()
-        dfm.add_load(self)
+

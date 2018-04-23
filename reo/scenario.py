@@ -75,22 +75,24 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
 
-        lp = LoadProfile(dfm=dfm, user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                         latitude=inputs_dict['Site'].get('latitude'),
-                         longitude=inputs_dict['Site'].get('longitude'),
-                         **inputs_dict['Site']['LoadProfile'])
+        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
+            pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
+        else:
+            pv = None
+
+        lp = LoadProfile(dfm=dfm, 
+                        user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                        latitude=inputs_dict['Site'].get('latitude'),
+                        longitude=inputs_dict['Site'].get('longitude'),
+                        pv=pv,
+                        **inputs_dict['Site']['LoadProfile'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
-        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
-            pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
-
-            if pv.existing_kw > 0 and lp.loads_kw_is_net:
-                lp.add_existing_kw(dfm, pv.existing_kw, pv.prod_factor)
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
