@@ -80,6 +80,9 @@ class PV(Tech):
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
 
+        if self.max_kw < self.existing_kw:
+            self.max_kw = self.existing_kw
+
         dfm.add_pv(self)
 
     @property

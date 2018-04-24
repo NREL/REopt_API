@@ -640,6 +640,10 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
+                existing_kw = 0
+                if hasattr(eval('self.' + tech), 'existing_kw'):
+                    if eval('self.' + tech + '.existing_kw') is not None:
+                        existing_kw = eval('self.' + tech + '.existing_kw')
 
                 site_kw_max = eval('self.' + tech + '.max_kw')
                 
@@ -652,7 +656,7 @@ class DatFileManager:
                             # otherwise one of them is "unlimited" in UI
                             roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
                             land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
-                            site_kw_max = roof_max_kw + land_max_kw
+                            site_kw_max = max(roof_max_kw + land_max_kw, existing_kw)
 
                 max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
 
