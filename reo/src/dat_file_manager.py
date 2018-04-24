@@ -287,6 +287,11 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None and tech != 'util':
 
+                existing_kw = 0
+                if hasattr(eval('self.' + tech), 'existing_kw'):
+                    if eval('self.' + tech + '.existing_kw') is not None:
+                        existing_kw = eval('self.' + tech + '.existing_kw')
+
                 tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
                 tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
                 tech_incentives = dict()
@@ -451,7 +456,18 @@ class DatFileManager:
 
                 tmp_cap_cost_slope = list()
                 tmp_cap_cost_yint = list()
-                tmp_cap_cost_x = cost_curve_bp_x
+                tmp_cap_cost_x = [existing_kw]
+                tmp_cap_cost_y = [0]
+
+                # Bypass the loop above and check if existing_kw fits in cost curve.
+                # Existing kW gets no capital incentives
+                for seg in range(0, len(cost_curve_bp_x)):
+                    if cost_curve_bp_x[seg] > existing_kw:
+                        tmp_cap_cost_x.append(cost_curve_bp_x[seg])
+                        tmp_cap_cost_y.append(cost_curve_bp_y[seg])
+
+                cost_curve_bp_x = tmp_cap_cost_x
+                cost_curve_bp_y = tmp_cap_cost_y
 
                 for seg in range(1, len(cost_curve_bp_x)):
                     tmp_slope = round((cost_curve_bp_y[seg] - cost_curve_bp_y[seg - 1]) /
