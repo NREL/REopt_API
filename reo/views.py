@@ -134,10 +134,14 @@ def simulated_load(request):
             raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
 
         b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
+        lp = b.built_in_profile
 
         response = JsonResponse(
-            {'loads_kw': [round(ld, 3) for ld in b.built_in_profile],
+            {'loads_kw': [round(ld, 3) for ld in lp],
              'annual_kwh': b.annual_kwh,
+             'min_kw': round(min(lp), 3),
+             'mean_kw': round(sum(lp) / len(lp), 3),
+             'max_kw': round(max(lp), 3),
              }
         )
         return response
