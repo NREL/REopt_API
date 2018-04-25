@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^invalid_urdb/', views.invalid_urdb, name='invalid_urdb'),
     url(r'^help/', views.help, name='help'),
     url(r'^results/', views.results, name='results'),
+    url(r'^simulated_load/', views.simulated_load, name='simulated_load'),
 ]
