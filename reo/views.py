@@ -159,3 +159,63 @@ def simulated_load(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+
+
+def generator_efficiency(request):
+    """
+    From Navigant report / dieselfuelsupply.com, fitting a curve to the partial to full load points:
+
+        CAPACITY RANGE      m [gal/kW]  b [gal]
+        0 < C <= 40 kW	    0.068	    0.0125
+        40 < C <= 80 kW	    0.066	    0.0142
+        80 < C <= 150 kW	0.0644	    0.0095
+        150 < C <= 250 kW	0.0648	    0.0067
+        250 < C <= 750 kW	0.0656	    0.0048
+        750 < C <= 1500 kW	0.0657	    0.0043
+        1500 < C  kW	    0.0657	    0.004
+    """
+    try:
+        generator_kw = float(request.GET['generator_kw'])  # need float to convert unicode
+
+        if generator_kw <= 0:
+            raise ValueError("Invalid generator_kw, must be greater than zero.")
+
+        if generator_kw <= 40:
+            m = 0.068
+            b = 0.0125
+        elif generator_kw <= 80:
+            m = 0.066
+            b = 0.0142
+        elif generator_kw <= 150:
+            m = 0.0644
+            b = 0.0095
+        elif generator_kw <= 250:
+            m = 0.0648
+            b = 0.0067
+        elif generator_kw <= 750:
+            m = 0.0656
+            b = 0.0048
+        elif generator_kw <= 1500:
+            m = 0.0657
+            b = 0.0043
+        else:
+            m = 0.0657
+            b = 0.004
+
+        response = JsonResponse(
+            {'slope_gal_per_kw': m,
+             'intercept_gal': b,
+             }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.message)})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
