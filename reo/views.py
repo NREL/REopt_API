@@ -3,6 +3,7 @@ import os
 import sys
 import traceback as tb
 import uuid
+import copy
 from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
@@ -10,7 +11,8 @@ from nested_inputs import nested_input_definitions
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 from reo.log_levels import log
-import copy
+from reo.src.techs import Generator
+
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
@@ -180,31 +182,11 @@ def generator_efficiency(request):
         if generator_kw <= 0:
             raise ValueError("Invalid generator_kw, must be greater than zero.")
 
-        if generator_kw <= 40:
-            m = 0.068
-            b = 0.0125
-        elif generator_kw <= 80:
-            m = 0.066
-            b = 0.0142
-        elif generator_kw <= 150:
-            m = 0.0644
-            b = 0.0095
-        elif generator_kw <= 250:
-            m = 0.0648
-            b = 0.0067
-        elif generator_kw <= 750:
-            m = 0.0656
-            b = 0.0048
-        elif generator_kw <= 1500:
-            m = 0.0657
-            b = 0.0043
-        else:
-            m = 0.0657
-            b = 0.004
+        m, b = Generator.default_fuel_burn_rate(generator_kw)
 
         response = JsonResponse(
-            {'slope_gal_per_kw': m,
-             'intercept_gal': b,
+            {'slope_gal_per_kwh': m,
+             'intercept_gal_per_hr': b,
              }
         )
         return response
