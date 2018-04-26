@@ -203,8 +203,8 @@ def generator_efficiency(request):
             b = 0.004
 
         response = JsonResponse(
-            {'slope_gal_per_kw': m,
-             'intercept_gal': b,
+            {'slope_gal_per_kwh': m,
+             'intercept_gal_per_hr': b,
              }
         )
         return response

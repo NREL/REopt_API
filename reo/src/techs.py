@@ -111,7 +111,7 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal, fuel_avail_gal, min_turn_down_pct,
+    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
                  outage_start_hour=None, outage_end_hour=None, **kwargs):
         super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
         """
@@ -120,7 +120,7 @@ class Generator(Tech):
         """
 
         self.fuel_slope = fuel_slope_gal_per_kwh
-        self.fuel_intercept = fuel_intercept_gal
+        self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.loads_served = ['retail']

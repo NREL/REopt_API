@@ -54,7 +54,7 @@ def resilience_stats(request, run_uuid):
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,
                 diesel_kw=gen.size_kw,
                 fuel_available=gen.fuel_avail_gal,
-                b=gen.fuel_intercept_gal,
+                b=gen.fuel_intercept_gal_per_hr,
                 m=gen.fuel_slope_gal_per_kwh,
                 diesel_min_turndown=gen.min_turn_down_pct
             )

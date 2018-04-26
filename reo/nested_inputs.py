@@ -723,16 +723,16 @@ nested_input_definitions = {
         "fuel_slope_gal_per_kwh": {
           "type": "float",
           "min": 0,
-          "max": 1e3,
+          "max": 10,
           "default": 0,
           "description": "Generator fuel burn rate in gallons/kWh."
         },
-        "fuel_intercept_gal": {
+        "fuel_intercept_gal_per_hr": {
           "type": "float",
           "min": 0,
-          "max": 1e3,
+          "max": 10,
           "default": 0,
-          "description": "Generator fuel consumption curve y-intercept in gallons."
+          "description": "Generator fuel consumption curve y-intercept in gallons per hour."
         },
         "fuel_avail_gal": {
           "type": "float",
