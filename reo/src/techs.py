@@ -129,6 +129,12 @@ class Generator(Tech):
         self.outage_end_hour = outage_end_hour
         self.derate = 0
 
+        default_slope, default_intercept = self.default_fuel_burn_rate(size_kw)
+        if self.fuel_slope == 0:  # default is zero
+            self.fuel_slope = default_slope
+        if self.fuel_intercept == 0:
+            self.fuel_intercept = default_intercept
+
         dfm.add_generator(self)
 
     @property
@@ -139,3 +145,32 @@ class Generator(Tech):
             gen_prod_factor[self.outage_start_hour:self.outage_end_hour] = [1]*(self.outage_end_hour - self.outage_start_hour)
 
         return gen_prod_factor
+
+    @staticmethod
+    def default_fuel_burn_rate(size_kw):
+        """
+        Based off of size_kw, we have default (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr) pairs
+        :return: (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr)
+        """
+        if size_kw <= 40:
+            m = 0.068
+            b = 0.0125
+        elif size_kw <= 80:
+            m = 0.066
+            b = 0.0142
+        elif size_kw <= 150:
+            m = 0.0644
+            b = 0.0095
+        elif size_kw <= 250:
+            m = 0.0648
+            b = 0.0067
+        elif size_kw <= 750:
+            m = 0.0656
+            b = 0.0048
+        elif size_kw <= 1500:
+            m = 0.0657
+            b = 0.0043
+        else:
+            m = 0.0657
+            b = 0.004
+        return m, b
