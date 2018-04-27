@@ -28,9 +28,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -85,18 +85,17 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-#if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'reopt',
-        'USER': 'reopt',
-        'PASSWORD': 'reopt',
-        'HOST': 'localhost',
-        'PORT': '',
+if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'reopt',
+            'USER': 'reopt',
+            'PASSWORD': 'reopt',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
     }
-}
-"""
 else:
     DATABASES = {
          'default': {
@@ -110,7 +109,7 @@ else:
              'PASSWORD': dev_user_password,
          }
      }
-"""
+
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
 
@@ -134,7 +133,6 @@ CELERY_IMPORTS = (
     'reo.scenario',
     'reo.results',
 )
-CELERY_TASK_ALWAYS_EAGER = True
 
 if 'test' in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
