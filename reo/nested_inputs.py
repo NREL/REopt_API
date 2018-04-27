@@ -165,7 +165,7 @@ nested_input_definitions = {
         },
         "critical_loads_kw": {
           "type": "list_of_float",
-          "description": "Hourly critical load over all hours in one year"
+          "description": "Critical load during outage period. Must be at least as long as outage period. If a longer duration critical load is provided, only the first timesteps up to the outage duration are used."
         },
         "loads_kw_is_net": {
           "default": True,
