@@ -628,7 +628,7 @@ class ValidateNestedInput:
                         pass
 
                     else:
-                        self.input_data_errors.append("Invalid length for critical_loads_kw. Critical load profile must be hourly (8,760 samples) and longer than the specified outage period (" + str(outage_duration) + " hrs)")
+                        self.input_data_errors.append("Invalid length for critical_loads_kw. Critical load profile must be hourly and longer than the specified outage period (" + str(outage_duration) + " hrs)")
 
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
