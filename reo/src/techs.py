@@ -111,7 +111,7 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal, fuel_avail_gal, min_turn_down_pct,
+    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
                  outage_start_hour=None, outage_end_hour=None, **kwargs):
         super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
         """
@@ -120,7 +120,7 @@ class Generator(Tech):
         """
 
         self.fuel_slope = fuel_slope_gal_per_kwh
-        self.fuel_intercept = fuel_intercept_gal
+        self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
         self.loads_served = ['retail']
@@ -128,6 +128,12 @@ class Generator(Tech):
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
         self.derate = 0
+
+        default_slope, default_intercept = self.default_fuel_burn_rate(size_kw)
+        if self.fuel_slope == 0:  # default is zero
+            self.fuel_slope = default_slope
+        if self.fuel_intercept == 0:
+            self.fuel_intercept = default_intercept
 
         dfm.add_generator(self)
 
@@ -139,3 +145,32 @@ class Generator(Tech):
             gen_prod_factor[self.outage_start_hour:self.outage_end_hour] = [1]*(self.outage_end_hour - self.outage_start_hour)
 
         return gen_prod_factor
+
+    @staticmethod
+    def default_fuel_burn_rate(size_kw):
+        """
+        Based off of size_kw, we have default (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr) pairs
+        :return: (fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr)
+        """
+        if size_kw <= 40:
+            m = 0.068
+            b = 0.0125
+        elif size_kw <= 80:
+            m = 0.066
+            b = 0.0142
+        elif size_kw <= 150:
+            m = 0.0644
+            b = 0.0095
+        elif size_kw <= 250:
+            m = 0.0648
+            b = 0.0067
+        elif size_kw <= 750:
+            m = 0.0656
+            b = 0.0048
+        elif size_kw <= 1500:
+            m = 0.0657
+            b = 0.0043
+        else:
+            m = 0.0657
+            b = 0.004
+        return m, b

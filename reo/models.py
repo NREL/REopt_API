@@ -299,7 +299,7 @@ class GeneratorModel(models.Model):
         run_uuid = models.UUIDField(unique=True)
         size_kw = models.FloatField()
         fuel_slope_gal_per_kwh = models.FloatField()
-        fuel_intercept_gal = models.FloatField()
+        fuel_intercept_gal_per_hr = models.FloatField()
         fuel_avail_gal = models.FloatField()
         min_turn_down_pct = models.FloatField()
         # Outputs
