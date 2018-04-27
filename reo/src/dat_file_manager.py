@@ -522,7 +522,7 @@ class DatFileManager:
 
                 for seg in range(cap_cost_segments + 1):
 
-                    cap_cost_x.append(tmp_cap_cost_x[seg])
+                    cap_cost_x.append(cost_curve_bp_x[seg])
 
             elif eval('self.' + tech) is not None and tech == 'util':
 
@@ -539,7 +539,7 @@ class DatFileManager:
                         x = big_number
                     cap_cost_x.append(x)
 
-        return cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments
+        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, cap_cost_segments
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
