@@ -67,6 +67,7 @@ class FinancialModel(models.Model):
     lcc_bau_us_dollars = models.FloatField(null=True, blank=True)
     npv_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs_plus_om_us_dollars = models.FloatField(null=True, blank=True)
+    net_capital_costs = models.FloatField(null=True, blank=True)
     
 
     @classmethod
