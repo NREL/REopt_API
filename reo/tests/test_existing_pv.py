@@ -11,8 +11,32 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
 
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
-        post_file = os.path.join('reo', 'tests', 'nestedPOST.json')
-        self.post = json.load(open(post_file, 'r'))
+        self.post = {"Scenario": {
+                        "Site": {
+                          "latitude": 35.2468,
+                          "longitude": -91.7337,
+
+                          "LoadProfile": {
+                            "doe_reference_name": "MidriseApartment",
+                            "year": 2017,
+                          },
+
+                          "ElectricTariff": {
+                            "blended_monthly_demand_charges_us_dollars_per_kw": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                            "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+                          },
+
+                          "PV": {
+                            "existing_kw": "100",
+                          },
+
+                          "Storage": {
+                              "max_kw": 0,
+                              "max_kwh": 0,
+                          }
+                        }
+                      }
+                    }
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
@@ -32,7 +56,10 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
 
     def test_existing_pv(self):
         """
-        Pass in existing PV size and verify that sized system is at least that big
+        Pass in existing PV size = PV max_kw and verify that:
+        - sized system is existing_kw
+        - zero capital costs (battery size set to zero)
+        - production incentives applied to existing PV
         """
 
         class ClassAttributes:
@@ -40,26 +67,38 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
                 for k, v in dictionary.items():
                     setattr(self, k, v)
 
-        existing_kw = 100
-        max_kw = 100
-        flat_load = [1] * 8760
+        pv_size = 100
+        existing_kw = pv_size
+        max_kw = pv_size
+        flat_load = [pv_size] * 8760
 
-        load_is_net = True
         self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
         self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
-        self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
+        # self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
         #self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
 
         response = self.get_response(self.post)
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
+        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
+        messages = ClassAttributes(response['messages'])
 
 
         #net_load = [a - b for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
 
+        try:
+            self.assertEqual(existing_kw, pv_out.size_kw,
+                             "Existing PV size ({} kW) does not equal REopt PV size ({} kW)."
+                             .format(pv_size, pv_out.size_kw))
 
-        self.assertGreaterEqual(existing_kw, pv_out.size_kw)
-        #self.assertListEqual(flat_load, net_load)
-
-
-
+            self.assertEqual(financial.net_capital_costs_plus_om_us_dollars, 0,
+                             "Non-zero capital cost for existing PV: {}."
+                             .format(financial.net_capital_costs_plus_om_us_dollars))
+            #self.assertListEqual(flat_load, net_load)
+        except Exception as e:
+            error_msg = None
+            if hasattr(messages, "error"):
+                error_msg = messages.error
+            print("test_existing_pv API error message: {}".format(error_msg))
+            print("Run uuid: {}".format(response['outputs']['Scenario']['run_uuid']))
+            raise e
