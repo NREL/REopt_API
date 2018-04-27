@@ -85,15 +85,15 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
 
 
         #net_load = [a - b for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
-
+        import pdb; pdb.set_trace()
         try:
             self.assertEqual(existing_kw, pv_out.size_kw,
                              "Existing PV size ({} kW) does not equal REopt PV size ({} kW)."
                              .format(pv_size, pv_out.size_kw))
 
-            self.assertEqual(financial.net_capital_costs_plus_om_us_dollars, 0,
+            self.assertEqual(financial.net_capital_costs, 0,
                              "Non-zero capital cost for existing PV: {}."
-                             .format(financial.net_capital_costs_plus_om_us_dollars))
+                             .format(financial.net_capital_costs))
             #self.assertListEqual(flat_load, net_load)
         except Exception as e:
             error_msg = None
