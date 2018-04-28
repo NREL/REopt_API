@@ -75,8 +75,8 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
 
         self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
         self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
-        # self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
-        #self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
+        self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
+        self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
 
         response = self.get_response(self.post)
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
@@ -84,8 +84,7 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         messages = ClassAttributes(response['messages'])
 
-
-        #net_load = [a - b for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
+        net_load = [a - round(b,3) for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
         try:
             self.assertEqual(existing_kw, pv_out.size_kw,
                              "Existing PV size ({} kW) does not equal REopt PV size ({} kW)."
@@ -98,7 +97,12 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
             self.assertEqual(financial.npv_us_dollars, 0,
                              "Non-zero NPV with existing PV in both BAU and cost-optimal scenarios: {}."
                              .format(financial.npv_us_dollars))
-            #self.assertListEqual(flat_load, net_load)
+
+            # self.assertListEqual(flat_load, net_load)  # takes forever!
+            zero_list = [round(a - b, 2) for a, b in zip(flat_load, net_load)]
+            zero_sum = sum(zero_list)
+            self.assertEqual(zero_sum, 0, "Net load is not being calculated correctly.")
+
         except Exception as e:
             error_msg = None
             if hasattr(messages, "error"):

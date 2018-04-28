@@ -4,7 +4,7 @@ import math
 from datetime import datetime, timedelta
 from developer_reo_api import DeveloperREOapi
 from collections import namedtuple
-
+from reo.utilities import degradation_factor
 
 class BuiltInProfile(object):
 
@@ -454,8 +454,8 @@ class BuiltInProfile(object):
 class LoadProfile(BuiltInProfile):
 
     def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
-                 outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False, 
-                 **kwargs):
+                 outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
+                 analysis_years=1, **kwargs):
 
         if user_profile:
             self.load_list = user_profile
@@ -475,7 +475,8 @@ class LoadProfile(BuiltInProfile):
                 existing_kw_list = [pv.existing_kw * x for x in pv.prod_factor]
                 if loads_kw_is_net:
                     # add existing pv if net load provided
-                    native_load = [i + j for i, j in zip(self.load_list, existing_kw_list)]
+                    levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
+                    native_load = [i + (j * levelization_factor) for i, j in zip(self.load_list, existing_kw_list)]
                     self.load_list = native_load
                     self.bau_load_list = native_load
 
