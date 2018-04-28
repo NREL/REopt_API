@@ -637,7 +637,7 @@ AverageWindProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD i
                    dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling  * LevelizationFactor(t)
 
 ! Capital Costs
-TotalTechCapCosts := sum(t in Tech, s in Seg, tc in TechClass) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s) * binSingleBasicTech(t,tc))
+TotalTechCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
 TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) + sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b)
 TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 
@@ -905,13 +905,6 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
-
-!forall (t in Tech) do
-!    writeln(t, ": ", sum(s in Seg) getsol(dvSystemSize(t,s)))
-!    writeln("CapCostSlope", ": ", sum(s in Seg) getsol(CapCostSlope(t,s)))
-!    writeln("CapCostYInt", ": ", sum(s in Seg) getsol(CapCostYInt(t,s)))
-!    writeln("binSegChosen", ": ", sum(s in Seg) getsol(binSegChosen(t,s)))
-!end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  End Output Module
