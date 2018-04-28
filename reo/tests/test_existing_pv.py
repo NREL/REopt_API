@@ -1,5 +1,4 @@
 import json
-import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
@@ -59,6 +58,8 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
         Pass in existing PV size = PV max_kw and verify that:
         - sized system is existing_kw
         - zero capital costs (battery size set to zero)
+        - npv is zero (i.e. same benefits in BAU with existing PV as in cost-optimal scenario.)
+        ...
         - production incentives applied to existing PV
         """
 
@@ -85,7 +86,6 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
 
 
         #net_load = [a - b for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
-        import pdb; pdb.set_trace()
         try:
             self.assertEqual(existing_kw, pv_out.size_kw,
                              "Existing PV size ({} kW) does not equal REopt PV size ({} kW)."
@@ -94,6 +94,10 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
             self.assertEqual(financial.net_capital_costs, 0,
                              "Non-zero capital cost for existing PV: {}."
                              .format(financial.net_capital_costs))
+
+            self.assertEqual(financial.npv_us_dollars, 0,
+                             "Non-zero NPV with existing PV in both BAU and cost-optimal scenarios: {}."
+                             .format(financial.npv_us_dollars))
             #self.assertListEqual(flat_load, net_load)
         except Exception as e:
             error_msg = None
