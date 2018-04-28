@@ -139,6 +139,9 @@ class DatFileManager:
         self.pvnm = copy.deepcopy(pv)
         self.pvnm.nmil_regime = 'NMtoIL'
 
+        if self.pv.existing_kw > 0:
+            self.bau_techs = ['pv', 'pvnm', 'util']
+
     def add_wind(self, wind):
         self.wind = wind
         self.windnm = copy.deepcopy(wind)
@@ -517,6 +520,7 @@ class DatFileManager:
                 """
                 if existing_kw > 0:
 
+                    # find the first index in cost_curve_bp_x that is larger than existing_kw, then reset cost curve
                     for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
                         if bp <= existing_kw:
                             continue
