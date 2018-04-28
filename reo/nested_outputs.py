@@ -11,7 +11,7 @@ nested_output_definitions = {
     "outputs": {
 
           "Scenario": {
-            "uuid": {
+            "run_uuid": {
               "type": str,
               "description": "Unique id",
               "units": "none"
