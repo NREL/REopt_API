@@ -408,7 +408,7 @@ nested_input_definitions = {
         "existing_kw": {
           "type": "float",
           "min": 0,
-          "max": 1e9,
+          "max": 1e5,
           "default": 0,
           "description": "Existing PV size"
         },

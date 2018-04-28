@@ -281,7 +281,8 @@ class DatFileManager:
         cap_cost_slope = list()
         cap_cost_x = list()
         cap_cost_yint = list()
-        cap_cost_segments = None
+        n_segments = None
+        tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
 
         for tech in techs:
 
@@ -293,7 +294,6 @@ class DatFileManager:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
                 tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
-                tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
                 tech_incentives = dict()
                 
                 for region in regions[:-1]:
@@ -309,8 +309,7 @@ class DatFileManager:
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
                     tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
 
-                # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
-                for region in regions[:-1]:
+                    # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
                     if tech_incentives[region]['%_max'] == max_incentive:
                         tech_incentives[region]['%_max'] = 0
                     if tech_incentives[region]['rebate_max'] == max_incentive:
@@ -328,7 +327,7 @@ class DatFileManager:
 
                 for r in range(len(regions)-1):
 
-                    region = regions[r]
+                    region = regions[r]  # regions = ['utility', 'state', 'federal', 'combined']
                     next_region = regions[r + 1]
 
                     # Apply incentives, initialize first value
@@ -456,18 +455,6 @@ class DatFileManager:
 
                 tmp_cap_cost_slope = list()
                 tmp_cap_cost_yint = list()
-                tmp_cap_cost_x = [existing_kw]
-                tmp_cap_cost_y = [0]
-
-                # Bypass the loop above and check if existing_kw fits in cost curve.
-                # Existing kW gets no capital incentives
-                for seg in range(0, len(cost_curve_bp_x)):
-                    if cost_curve_bp_x[seg] > existing_kw:
-                        tmp_cap_cost_x.append(cost_curve_bp_x[seg])
-                        tmp_cap_cost_y.append(cost_curve_bp_y[seg])
-
-                cost_curve_bp_x = tmp_cap_cost_x
-                cost_curve_bp_y = tmp_cap_cost_y
 
                 for seg in range(1, len(cost_curve_bp_x)):
                     tmp_slope = round((cost_curve_bp_y[seg] - cost_curve_bp_y[seg - 1]) /
@@ -477,14 +464,13 @@ class DatFileManager:
                     tmp_cap_cost_slope.append(tmp_slope)
                     tmp_cap_cost_yint.append(tmp_y_int)
         
-                cap_cost_segments = len(tmp_cap_cost_slope)
-                cap_cost_points = cap_cost_segments + 1
-        
+                n_segments = len(tmp_cap_cost_slope)
+
                 # Following logic modifies the cap cost segments to account for the tax benefits of the ITC and MACRs
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
-                for s in range(cap_cost_segments):
+                for s in range(n_segments):
                     
                     if cost_curve_bp_x[s + 1] > 0:
                         # Remove federal incentives for ITC basis and tax benefit calculations
@@ -507,7 +493,7 @@ class DatFileManager:
                     updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
 
-                for p in range(1, cap_cost_points):
+                for p in range(1, n_segments + 1):
                     cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
                                                                   (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
                     updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
@@ -515,31 +501,57 @@ class DatFileManager:
                 tmp_cap_cost_slope = updated_cap_cost_slope
                 tmp_cap_cost_yint = updated_y_intercept
 
-                for seg in range(cap_cost_segments):
+                """
+                Adjust first cost curve segment to account for existing_kw.
+                NOTE:
+                - first X "breakpoint" and y-intercept must ALWAYS be zero (to be compatible with REopt constraints and
+                    costing formulation.
+                - if existing_kw > 0, then the first slope must also be zero (cannot be negative!).
 
-                    cap_cost_slope.append(tmp_cap_cost_slope[seg])
-                    cap_cost_yint.append(tmp_cap_cost_yint[seg])
+                Steps:
+                    1. find the segment for existing_kw
+                    2. find the y-value for existing_kw (which is an x-value)
+                    3. set the cost curve to x-axis from zero kw up to existing_kw
+                    4. shift the rest of the cost curve down by the y-value found in step 2
+                    5. reset n_segments (existing_kw can add a breakpoint, or take them away)
+                """
+                if existing_kw > 0:
 
-                for seg in range(cap_cost_segments + 1):
+                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                        if bp <= existing_kw:
+                            continue
+                        else:
+                            y_shift = -(tmp_cap_cost_slope[i] * existing_kw + tmp_cap_cost_yint[i])
+                            tmp_cap_cost_slope = [0] + tmp_cap_cost_slope[i:]
+                            tmp_cap_cost_yint = [0] + [y + y_shift for y in tmp_cap_cost_yint[i:]]
+                            cost_curve_bp_x = [0, existing_kw] + cost_curve_bp_x[i+1:]
+                            n_segments = len(tmp_cap_cost_slope)
+                            break
 
-                    cap_cost_x.append(cost_curve_bp_x[seg])
+                    # import pdb; pdb.set_trace()
+
+                # append the current Tech's segments to the arrays that will be passed to REopt
+
+                cap_cost_slope += tmp_cap_cost_slope
+                cap_cost_yint += tmp_cap_cost_yint
+                cap_cost_x += cost_curve_bp_x
 
             elif eval('self.' + tech) is not None and tech == 'util':
 
-                if cap_cost_segments is None:  # only util in techs (usually BAU case)
-                    cap_cost_segments = 1
+                if n_segments is None:  # only util in techs (usually BAU case)
+                    n_segments = 1
 
-                for seg in range(cap_cost_segments or 1):
+                for seg in range(n_segments):
                     cap_cost_slope.append(0)
                     cap_cost_yint.append(0)
 
-                for seg in range(cap_cost_segments + 1):
+                for seg in range(n_segments + 1):
                     x = 0
                     if len(cap_cost_x) > 0 and cap_cost_x[-1] == 0:
                         x = big_number
                     cap_cost_x.append(x)
 
-        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, cap_cost_segments
+        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -713,10 +725,10 @@ class DatFileManager:
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
         
-        cap_cost_slope, cap_cost_x, cap_cost_yint, cap_cost_segments = self._get_REopt_cost_curve(self.available_techs)
-        self.command_line_args.append("CapCostSegCount=" + str(cap_cost_segments))
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, cap_cost_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        self.command_line_args_bau.append("CapCostSegCount=" + str(cap_cost_segments_bau))
+        cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
+        self.command_line_args.append("CapCostSegCount=" + str(n_segments))
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
