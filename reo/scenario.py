@@ -74,9 +74,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
 
-        lp = LoadProfile(dfm=dfm, user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
+            pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
+        else:
+            pv = None
+
+        lp = LoadProfile(dfm=dfm, 
+                         user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
                          latitude=inputs_dict['Site'].get('latitude'),
                          longitude=inputs_dict['Site'].get('longitude'),
+                         pv=pv,
+                         analysis_years=site.financial.analysis_years,
                          **inputs_dict['Site']['LoadProfile'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
@@ -84,9 +93,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
-        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
-            pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
@@ -113,7 +119,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
-        return vars(dfm)  # --> REopt runs (BAU and with tech)
+        return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()

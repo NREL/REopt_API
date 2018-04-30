@@ -177,6 +177,20 @@ nested_input_definitions = {
           "replacement_sets": load_profile_possible_sets,
           "description": "Hourly load over all hours in one year"
         },
+        "critical_loads_kw": {
+          "type": "list_of_float",
+          "description": "Critical load during outage period. Must be at least as long as outage period. If a longer duration critical load is provided, only the first timesteps up to the outage duration are used."
+        },
+        "loads_kw_is_net": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing PV, must specify whether provided load is the net load after existing PV or not."
+        },
+        "critical_loads_kw_is_net": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing PV, must specify whether provided load is the net load after existing PV or not."
+        },
         "outage_start_hour": {
           "type": "int",
           "min": 0,
@@ -410,6 +424,13 @@ nested_input_definitions = {
       },
 
       "PV": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e5,
+          "default": 0,
+          "description": "Existing PV size"
+        },
         "min_kw": {
           "type": "float",
           "min": 0,

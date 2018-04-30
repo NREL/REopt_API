@@ -71,7 +71,7 @@ class FinancialModel(models.Model):
     net_capital_costs_plus_om_us_dollars = models.FloatField(null=True, blank=True)
     avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
-    
+    net_capital_costs = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -90,6 +90,9 @@ class LoadProfileModel(models.Model):
     year = models.IntegerField(default=2018)
     monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=[])
     loads_kw = ArrayField(models.FloatField(blank=True), default=[])
+    critical_loads_kw = ArrayField(models.FloatField(blank=True), default=[])
+    loads_kw_is_net = models.BooleanField(default=True)
+    critical_loads_kw_is_net = models.BooleanField(default=False)
     outage_start_hour = models.IntegerField(null=True, blank=True)
     outage_end_hour = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
@@ -158,6 +161,7 @@ class PVModel(models.Model):
 
     #Inputs
     run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField()
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
