@@ -4,6 +4,8 @@ import calendar
 import numpy
 from reo.log_levels import log
 
+zero_array = 8760 * [0]
+
 
 class REoptArgs:
 
@@ -141,6 +143,7 @@ class UrdbParse:
         
         self.energy_rates_summary = []
         self.demand_rates_summary = []
+        self.energy_costs = []
         self.has_fixed_demand = "no"
         self.has_tou_demand = "no"
         self.has_demand_tiers = "no"
@@ -164,8 +167,19 @@ class UrdbParse:
         self.prepare_summary(current_rate)
         self.prepare_demand_periods(current_rate)  # makes demand rates too
         self.prepare_energy_costs(current_rate)
-        self.prepare_techs_and_loads_basecase()
-        self.prepare_techs_and_loads()
+
+        self.reopt_args.energy_rates, \
+        self.reopt_args.energy_avail,  \
+        self.reopt_args.export_rates, \
+        self.reopt_args.energy_burn_rate, \
+        self.reopt_args.energy_burn_intercept = self.prepare_techs_and_loads(self.techs)
+
+        self.reopt_args.energy_rates_bau, \
+        self.reopt_args.energy_avail_bau, \
+        self.reopt_args.export_rates_bau, \
+        self.reopt_args.energy_burn_rate_bau, \
+        self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
+
         self.prepare_fixed_charges(current_rate)
         self.write_files()
         
@@ -302,34 +316,16 @@ class UrdbParse:
                         adj = current_rate.energyratestructure[period][tier_use].get('adj') or 0
 
                         for step in range(0, self.time_steps_per_hour):
-                            self.reopt_args.energy_rates.append(rate + adj)
+                            self.energy_costs.append(rate + adj)
 
                         hour_of_year += 1
 
-    def prepare_techs_and_loads_basecase(self):
-
-        zero_array = 8760 * [0]
-
-        # Extract 8760 before modified, NOTE: must be rounded to the same decimal places as energy_costs for zero NPV with no Tech
-        self.reopt_args.energy_rates_bau = [round(x,5) for x in self.reopt_args.energy_rates]
-
-        self.reopt_args.energy_avail_bau = [self.big_number]
-
-        # Build base case export rate
-        tmp_list = []
-        for tech in self.bau_techs:
-            for load in self.loads:
-                tmp_list = operator.add(tmp_list, zero_array)
-
-        self.reopt_args.export_rates_bau = tmp_list
-
-    def prepare_techs_and_loads(self):
-
-        zero_array = 8760 * [0]
-        energy_costs = [round(cost, 5) for cost in self.reopt_args.energy_rates]
+    def prepare_techs_and_loads(self, techs):
+        
+        energy_costs = [round(cost, 5) for cost in self.energy_costs]
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
-        self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]
+        self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]  # MOVE ELSEWHERE
 
         # Assuming ExportRate is the equivalent to the first fuel rate tier:
         negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
@@ -337,83 +333,58 @@ class UrdbParse:
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
         # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        self.reopt_args.energy_rates = []
+        energy_rates = []
+        energy_avail = []
 
-        for tech in self.techs:
+        for tech in techs:
             for _ in range(self.reopt_args.energy_tiers_num):
                 if tech.lower() == 'generator':
                     # generator fuel is free for now since we are only modeling existing generators
-                    self.reopt_args.energy_rates = operator.add(self.reopt_args.energy_rates, zero_array)
-                    self.reopt_args.energy_avail.append(self.generator_fuel_avail)
+                    energy_rates = operator.add(energy_rates, zero_array)
+                    energy_avail.append(self.generator_fuel_avail)
                 elif tech.lower() == 'util':
-                    self.reopt_args.energy_rates += energy_costs
-                    self.reopt_args.energy_avail.append(self.big_number)
+                    energy_rates += energy_costs
+                    energy_avail.append(self.big_number)
                 else:
-                    self.reopt_args.energy_rates = operator.add(self.reopt_args.energy_rates, zero_array)
-                    self.reopt_args.energy_avail.append(0)
+                    energy_rates = operator.add(energy_rates, zero_array)
+                    energy_avail.append(0)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
-        tmp_list = []
-        for tech in self.techs:
+        export_rates = []
+        for tech in techs:
             for load in self.loads:
                 if tech.lower() != 'util' and not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
                     if load == 'wholesale':
                         if self.net_metering:
-                            tmp_list = operator.add(tmp_list, negative_energy_costs)
+                            export_rates = operator.add(export_rates, negative_energy_costs)
                         else:
-                            tmp_list = operator.add(tmp_list, negative_wholesale_rate_costs)
+                            export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
-                        tmp_list = operator.add(tmp_list, negative_excess_rate_costs)
+                        export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
-                        tmp_list = operator.add(tmp_list, zero_array)
+                        export_rates = operator.add(export_rates, zero_array)
                 else:
-                    tmp_list = operator.add(tmp_list, zero_array)
+                    export_rates = operator.add(export_rates, zero_array)
 
-        self.reopt_args.export_rates = tmp_list
-
-        """
-        FuelBurnRateM = array(Tech,Load,FuelBin)
-        FuelBurnRateB = array(Tech,Load,FuelBin)
-        Either 1 or 0, except when modeling generator.
-        """
-        FuelBurnRateM = []
-        FuelBurnRateB = []
-
-        for tech in self.techs:
+        # FuelBurnRateM = array(Tech,Load,FuelBin)
+        energy_burn_rate = []
+        energy_burn_intercept = []
+        for tech in techs:
             for load in self.loads:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'util':
-                        FuelBurnRateM.append(1)
-                        FuelBurnRateB.append(0)
+                        energy_burn_rate.append(1)
+                        energy_burn_intercept.append(0)
                     elif tech.lower() == 'generator':
-                        FuelBurnRateM.append(self.generator_fuel_slope)
-                        FuelBurnRateB.append(self.generator_fuel_intercept)
-                    else:  # PV, Wind, and Storage do not use fuel
-                        FuelBurnRateM.append(0)
-                        FuelBurnRateB.append(0)
+                        energy_burn_rate.append(self.generator_fuel_slope)
+                        energy_burn_intercept.append(self.generator_fuel_intercept)
+                    else:
+                        energy_burn_rate.append(0)
+                        energy_burn_intercept.append(0)
 
-        FuelBurnRateMBase = []
-        FuelBurnRateBBase = []
-
-        for tech in self.bau_techs:
-            for load in self.loads:
-                for _ in range(self.reopt_args.energy_tiers_num):
-                    if tech.lower() == 'util':
-                        FuelBurnRateMBase.append(1)
-                        FuelBurnRateBBase.append(0)
-                    elif tech.lower() == 'generator':
-                        FuelBurnRateMBase.append(self.generator_fuel_slope)
-                        FuelBurnRateBBase.append(self.generator_fuel_intercept)
-                    else:  # PV, Wind, and Storage do not use fuel
-                        FuelBurnRateMBase.append(0)
-                        FuelBurnRateBBase.append(0)
-                        
-        self.reopt_args.energy_burn_rate = FuelBurnRateM
-        self.reopt_args.energy_burn_rate_bau = FuelBurnRateMBase
-        self.reopt_args.energy_burn_intercept = FuelBurnRateB
-        self.reopt_args.energy_burn_intercept_bau = FuelBurnRateBBase
+        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept
 
     def prepare_demand_periods(self, current_rate):
 
