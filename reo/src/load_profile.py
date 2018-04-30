@@ -468,15 +468,21 @@ class LoadProfile(BuiltInProfile):
         self.bau_load_list = copy.copy(self.load_list)
 
         # account for existing PV in load profile if loads_kw_is_net
-        existing_kw_list = None
+        existing_pv_kw_list = None
         if pv is not None:
             if pv.existing_kw > 0:
-                # get pv profile
-                existing_kw_list = [pv.existing_kw * x for x in pv.prod_factor]
+                """
+                Create existing PV profile.
+                Must account for levelization factor to align with how PV is modeled in REopt:
+                    Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
+                    that accounts for the PV capacity degradation over the analysis_years. In other words, by
+                    multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+                """
+                levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
+                existing_pv_kw_list = [pv.existing_kw * x * levelization_factor for x in pv.prod_factor]
                 if loads_kw_is_net:
                     # add existing pv if net load provided
-                    levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
-                    native_load = [i + (j * levelization_factor) for i, j in zip(self.load_list, existing_kw_list)]
+                    native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
                     self.load_list = native_load
                     self.bau_load_list = native_load
 
@@ -489,10 +495,10 @@ class LoadProfile(BuiltInProfile):
         if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
             outage_duration = outage_end_hour - outage_start_hour
 
-            if existing_kw_list is not None and critical_loads_kw_is_net:
+            if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
                     critical_loads_kw[:outage_duration] = [i + j for i, j in zip(
-                        critical_loads_kw[:outage_duration], existing_kw_list[outage_start_hour:outage_end_hour]
+                        critical_loads_kw[:outage_duration], existing_pv_kw_list[outage_start_hour:outage_end_hour]
                         )]
 
             # modify loads based on custom critical loads profile
@@ -505,10 +511,10 @@ class LoadProfile(BuiltInProfile):
                 [ld * critical_load_pct for ld in self.unmodified_load_list[outage_start_hour:outage_end_hour]]
             outage_duration = outage_end_hour - outage_start_hour
 
-            if existing_kw_list is not None and loads_kw_is_net:
+            if existing_pv_kw_list is not None and loads_kw_is_net:
                     # Add existing pv in if net critical load percent provided
                     critical_loads_kw = [i + j for i, j in zip(
-                        critical_loads_kw, existing_kw_list[outage_start_hour:outage_end_hour]
+                        critical_loads_kw, existing_pv_kw_list[outage_start_hour:outage_end_hour]
                     )]
 
             # modify loads based on percentage
