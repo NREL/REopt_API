@@ -197,6 +197,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
+                elif name == "Generator":
+                    self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -222,8 +224,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         if not os.path.exists(output_file):
             msg = "Optimization failed to run. Output file does not exist: " + output_file
-            log("DEBUG", "Current directory: " + os.getcwd())
-            log("WARNING", msg)
+            log.debug("Current directory: " + os.getcwd())
+            log.warning(msg)
             raise RuntimeError('REopt', msg)
 
         process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
@@ -238,5 +240,4 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occurred in reo.results.parse_run_outputs.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)

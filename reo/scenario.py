@@ -7,11 +7,10 @@ from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.site import Site
 from reo.src.storage import Storage
-from reo.src.techs import PV, Util, Wind
+from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError
-from reo.log_levels import log
 from reo.src.paths import Paths
 
 
@@ -98,6 +97,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
 
+        if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
+            gen = Generator(dfm=dfm,
+                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            **inputs_dict["Site"]["Generator"]
+                            )
+
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
@@ -110,12 +116,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
         # delete python objects, which are not serializable
-        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm']:
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("UnexpectedError", "{} occurred while processing inputs in setup_scenario.".format(exc_type))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)

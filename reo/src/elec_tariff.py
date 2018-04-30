@@ -2,6 +2,7 @@ import re
 from reo.log_levels import log
 from reo.src.urdb_rate import Rate
 
+
 class ElecTariff(object):
 
     def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
@@ -19,10 +20,10 @@ class ElecTariff(object):
             self.net_metering = True
 
         if urdb_response is not None:
-            log("INFO", "Parsing URDB rate")
+            log.info("Parsing URDB rate")
         
         elif None not in [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw]:
-                log("INFO", "Making URDB rate from blended data")
+                log.info("Making URDB rate from blended data")
                 urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
 
         elif urdb_label is not None:

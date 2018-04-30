@@ -33,6 +33,8 @@ class REoptArgs:
         self.energy_avail_bau = []
         self.energy_burn_rate = []
         self.energy_burn_rate_bau = []
+        self.energy_burn_intercept = []
+        self.energy_burn_intercept_bau = []
 
         self.export_rates = []
         self.export_rates_bau = []
@@ -100,12 +102,15 @@ class UrdbParse:
     """
     Sub-function of DatFileManager.
     Makes all REopt args for dat files in Inputs/Utility directory
+
+    Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in
+    utility rate.
     """
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
-    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0):
+    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0, gen=None):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -119,8 +124,16 @@ class UrdbParse:
         self.techs = techs
         self.bau_techs = bau_techs
         self.loads = loads
+        if gen is not None:
+            self.generator_fuel_slope = gen.fuel_slope
+            self.generator_fuel_intercept = gen.fuel_intercept
+            self.generator_fuel_avail = gen.fuel_avail
+        else:
+            self.generator_fuel_slope = 0
+            self.generator_fuel_intercept = 0
+            self.generator_fuel_avail = 0
 
-        log("INFO", "URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
+        log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
         self.file_summary = os.path.join(paths['utility'], 'Summary.csv')
         self.file_energy_summary = os.path.join(paths['outputs'], "energy_cost.txt")
@@ -148,19 +161,25 @@ class UrdbParse:
             self.last_hour_in_month.append(days_elapsed * 24)
 
     def parse_rate(self, utility, rate):
-        log("INFO", "Processing: " + utility + ", " + rate)
+        log.info("Processing: " + utility + ", " + rate)
 
         current_rate = RateData(self.urdb_rate)
         self.prepare_summary(current_rate)
         self.prepare_demand_periods(current_rate)  # makes demand rates too
         self.prepare_energy_costs(current_rate)
 
-        self.reopt_args.energy_rates, self.reopt_args.energy_avail,  self.reopt_args.export_rates, \
-        self.reopt_args.energy_burn_rate = self.prepare_techs_and_loads(self.techs)
+        self.reopt_args.energy_rates, \
+        self.reopt_args.energy_avail,  \
+        self.reopt_args.export_rates, \
+        self.reopt_args.energy_burn_rate, \
+        self.reopt_args.energy_burn_intercept = self.prepare_techs_and_loads(self.techs)
 
-        self.reopt_args.energy_rates_bau, self.reopt_args.export_rates_bau, self.reopt_args.export_rates_bau, \
-        self.reopt_args.energy_burn_rate_bau = self.prepare_techs_and_loads(self.bau_techs)
-        
+        self.reopt_args.energy_rates_bau, \
+        self.reopt_args.energy_avail_bau, \
+        self.reopt_args.export_rates_bau, \
+        self.reopt_args.energy_burn_rate_bau, \
+        self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
+
         self.prepare_fixed_charges(current_rate)
         self.write_files()
         
@@ -221,7 +240,7 @@ class UrdbParse:
         energy_tier_set = set(energy_tiers)
 
         if len(energy_tier_set) > 1:
-            log("WARNING", "Warning: energy periods contain different numbers of tiers, using limits of period with most tiers")
+            log.warning("Warning: energy periods contain different numbers of tiers, using limits of period with most tiers")
 
         self.reopt_args.energy_tiers_num = max(energy_tier_set)
 
@@ -261,7 +280,7 @@ class UrdbParse:
             self.reopt_args.energy_tiers_num = 1
             self.reopt_args.energy_max_in_tiers = []
             self.reopt_args.energy_max_in_tiers.append(self.big_number)
-            log("WARNING", "Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
+            log.warning("Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
         for tier in range(0, self.reopt_args.energy_tiers_num):
             hour_of_year = 1
@@ -317,12 +336,18 @@ class UrdbParse:
         energy_rates = []
         energy_avail = []
 
-        for i in range(len(techs) - 1):
+        for tech in techs:
             for _ in range(self.reopt_args.energy_tiers_num):
-                energy_rates = operator.add(energy_rates, zero_array)
-                energy_avail.append(0)
-        energy_rates += energy_costs
-        energy_avail.append(self.big_number)
+                if tech.lower() == 'generator':
+                    # generator fuel is free for now since we are only modeling existing generators
+                    energy_rates = operator.add(energy_rates, zero_array)
+                    energy_avail.append(self.generator_fuel_avail)
+                elif tech.lower() == 'util':
+                    energy_rates += energy_costs
+                    energy_avail.append(self.big_number)
+                else:
+                    energy_rates = operator.add(energy_rates, zero_array)
+                    energy_avail.append(0)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -345,15 +370,21 @@ class UrdbParse:
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
+        energy_burn_intercept = []
         for tech in techs:
             for load in self.loads:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'util':
                         energy_burn_rate.append(1)
+                        energy_burn_intercept.append(0)
+                    elif tech.lower() == 'generator':
+                        energy_burn_rate.append(self.generator_fuel_slope)
+                        energy_burn_intercept.append(self.generator_fuel_intercept)
                     else:
                         energy_burn_rate.append(0)
+                        energy_burn_intercept.append(0)
 
-        return energy_rates, energy_avail, export_rates, energy_burn_rate
+        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept
 
     def prepare_demand_periods(self, current_rate):
 
@@ -392,7 +423,7 @@ class UrdbParse:
         n_tiers = max(demand_tier_set)
 
         if len(demand_tier_set) > 1:
-            log("WARNING", "Warning: multiple lengths of demand tiers, using tiers from the earliest period with the max number of tiers")
+            log.warning("Warning: multiple lengths of demand tiers, using tiers from the earliest period with the max number of tiers")
 
             # make the number of tiers the same across all periods by appending on identical tiers
             for r in range(n_periods):
@@ -423,7 +454,7 @@ class UrdbParse:
         # test if the highest tier is the same across all periods
         test_demand_max = set(demand_maxes)
         if len(test_demand_max) > 1:
-            log("WARNING", "Warning: highest demand tiers do not match across periods, using max from largest set of tiers")
+           log.warning("Warning: highest demand tiers do not match across periods, using max from largest set of tiers")
 
         if monthly:
             self.reopt_args.demand_month_max_in_tiers = demand_tiers[period_with_max_tiers]

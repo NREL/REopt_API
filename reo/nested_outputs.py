@@ -298,6 +298,14 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of power from grid to load",
                   "units": "kWh"
                 }
+              },
+
+              "Generator": {
+                "fuel_used_gal": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage.",
+                  "units": "US gallons"
+                }
               }
             }
           }

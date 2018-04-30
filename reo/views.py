@@ -75,7 +75,7 @@ def annual_kwh(request):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
                                                                             tb.format_tb(exc_traceback))
-        log("ERROR", debug_msg)
+        log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
