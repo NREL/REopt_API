@@ -950,7 +950,6 @@ fclose(F_OUTPUT)
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 
-
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  End Output Module
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
