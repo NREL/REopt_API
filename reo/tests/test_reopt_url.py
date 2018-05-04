@@ -256,12 +256,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 10984555
+        d_expected['lcc'] = 10988019
         d_expected['npv'] = 11276785 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 35.1549
-        d_expected['batt_kwh'] = 66.6194
-        d_expected['year_one_utility_kwh'] = 9614813.643
+        d_expected['batt_kw'] = 25.4412
+        d_expected['batt_kwh'] = 44.6609
+        d_expected['year_one_utility_kwh'] = 9615056.1985
 
         try:
             self.check_common_outputs(c, d_expected)
@@ -345,12 +345,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 11040988
-        d_expected['npv'] = 235797
+        d_expected['lcc'] = 11043958
+        d_expected['npv'] = 232827
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 24.4715
-        d_expected['batt_kwh'] = 41.2215
-        d_expected['year_one_utility_kwh'] = 9614527.2568
+        d_expected['batt_kw'] = 22.8157
+        d_expected['batt_kwh'] = 37.7725
+        d_expected['year_one_utility_kwh'] = 9614903.5772
 
         try:
             self.check_common_outputs(c, d_expected)
