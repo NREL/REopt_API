@@ -319,23 +319,23 @@ class BuiltInProfile(object):
         },
     }
 
-    default_buildings = ['fastfoodrest',
-                         'fullservicerest',
-                         'hospital',
-                         'largehotel',
-                         'largeoffice',
-                         'mediumoffice',
-                         'midriseapartment',
-                         'outpatient',
-                         'primaryschool',
-                         'retailstore',
-                         'secondaryschool',
-                         'smallhotel',
-                         'smalloffice',
-                         'stripmall',
-                         'supermarket',
-                         'warehouse',
-                         'flatload',
+    default_buildings = ['FastFoodRest',
+                         'FullServiceRest',
+                         'Hospital',
+                         'LargeHotel',
+                         'LargeOffice',
+                         'MediumOffice',
+                         'MidriseApartment',
+                         'Outpatient',
+                         'PrimarySchool',
+                         'RetailStore',
+                         'SecondarySchool',
+                         'SmallHotel',
+                         'SmallOffice',
+                         'StripMall',
+                         'Supermarket',
+                         'Warehouse',
+                         'FlatLoad',
                          ]
 
     def __init__(self, latitude=None, longitude=None, doe_reference_name='', annual_kwh=None, year=None,
@@ -397,12 +397,12 @@ class BuiltInProfile(object):
 
     @property
     def default_annual_kwh(self):
-        return self.annual_loads[self.city][self.building_type.lower()]
+        return self.annual_loads[self.city][self.building_type]
 
     @property
     def building_type(self):
         name = self.doe_reference_name.replace(' ','')
-        if name.lower() not in self.default_buildings:
+        if name not in self.default_buildings:
             raise AttributeError('load_profile', "Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
         return name
 

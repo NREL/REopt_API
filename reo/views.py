@@ -48,7 +48,7 @@ def annual_kwh(request):
         longitude = float(request.GET['longitude'])
         doe_reference_name = request.GET['doe_reference_name']
 
-        if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
+        if doe_reference_name not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
 
@@ -130,7 +130,7 @@ def simulated_load(request):
         except KeyError:
             annual_kwh = None
 
-        if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
+        if doe_reference_name not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
 
@@ -165,7 +165,7 @@ def simulated_load(request):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
                                                                             tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
+        log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
 
 
