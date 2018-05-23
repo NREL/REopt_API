@@ -125,6 +125,11 @@ def simulated_load(request):
         longitude = float(request.GET['longitude'])
         doe_reference_name = request.GET['doe_reference_name']
 
+        try:  # annual_kwh is optional. if not provided, then DOE reference value is used.
+            annual_kwh = float(request.GET['annual_kwh'])
+        except KeyError:
+            annual_kwh = None
+
         if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
@@ -135,7 +140,8 @@ def simulated_load(request):
         if longitude > 180 or longitude < -180:
             raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
 
-        b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
+        b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
+                           annual_kwh=annual_kwh)
         lp = b.built_in_profile
 
         response = JsonResponse(
@@ -160,7 +166,7 @@ def simulated_load(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
 
 
 def generator_efficiency(request):
