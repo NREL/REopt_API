@@ -165,7 +165,7 @@ def simulated_load(request):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
                                                                             tb.format_tb(exc_traceback))
-        log.debug(debug_msg)
+        log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
 
 
