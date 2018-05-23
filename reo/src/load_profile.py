@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
+from reo.log_levels import log
 
 class BuiltInProfile(object):
 
@@ -382,6 +383,7 @@ class BuiltInProfile(object):
 
         # else use old geometric approach, never fails...but isn't necessarily correct
         if self.nearest_city is None:
+            log.info("Using geometrically nearest city to lat/lng.")
             min_distance = None
             for i, c in enumerate(self.default_cities):
                 distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
