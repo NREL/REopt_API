@@ -48,7 +48,7 @@ def annual_kwh(request):
         longitude = float(request.GET['longitude'])
         doe_reference_name = request.GET['doe_reference_name']
 
-        if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
+        if doe_reference_name not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
 
@@ -130,7 +130,7 @@ def simulated_load(request):
         except KeyError:
             annual_kwh = None
 
-        if doe_reference_name.lower() not in BuiltInProfile.default_buildings:
+        if doe_reference_name not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
 
