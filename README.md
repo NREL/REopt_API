@@ -158,7 +158,7 @@ psql postgres
 CREATE USER reopt WITH PASSWORD 'reopt';
 ALTER USER reopt CREATEDB;
 CREATE DATABASE reopt;
-GRANT permissions ON DATABASE reopt TO reopt;
+GRANT ALL PRIVILEGES ON DATABASE reopt TO reopt;
 ```
 
 When tests are run, a new database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
