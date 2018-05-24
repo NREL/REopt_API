@@ -143,11 +143,17 @@ When the API server is started with `python manage.py runserver` the dev_setting
 
 ### Running tests with `python manage.py test`
 
-In order to run all test functions, one must have a [postgres](https://www.postgresql.org/download/) server installed and running locally.
+In order to run all test functions, one must have a [postgres](https://www.postgresql.org/download/) server installed and running locally.  To do this requires several packages, for example in Ubuntu:
+
+```
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib postgresql-client-common postgresql-client
+```
 
 Once you've downloaded and installed postgres, you will want to setup a local database. By default, when postgres is installed, it automatically creates a database user that matches your username, and has a default role called 'postgres'.  To create a local database called "reopt", with a username "reopt", and password "reopt":
 
 ```
+sudo -i -u postgres
 psql postgres
 CREATE USER reopt WITH PASSWORD 'reopt';
 ALTER USER reopt CREATEDB;
