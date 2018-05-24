@@ -2,6 +2,7 @@ from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
+from reo.models import GeneratorModel
 
 
 class Tech(object):
@@ -117,7 +118,7 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
+    def __init__(self, dfm, run_uuid, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
                  outage_start_hour=None, outage_end_hour=None, **kwargs):
         super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
         """
@@ -138,8 +139,10 @@ class Generator(Tech):
         default_slope, default_intercept = self.default_fuel_burn_rate(size_kw)
         if self.fuel_slope == 0:  # default is zero
             self.fuel_slope = default_slope
+            GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_slope_gal_per_kwh=self.fuel_slope)
         if self.fuel_intercept == 0:
             self.fuel_intercept = default_intercept
+            GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_intercept_gal_per_hr=self.fuel_intercept)
 
         dfm.add_generator(self)
 
