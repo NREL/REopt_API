@@ -495,23 +495,21 @@ class LoadProfile(BuiltInProfile):
         In both cases, if existing PV and load is net then add existing PV to critical_loads_kw.
         """
         if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
-            outage_duration = outage_end_hour - outage_start_hour
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
-                    critical_loads_kw[:outage_duration] = [i + j for i, j in zip(
-                        critical_loads_kw[:outage_duration], existing_pv_kw_list[outage_start_hour:outage_end_hour]
+                    critical_loads_kw = [i + j for i, j in zip(
+                        critical_loads_kw, existing_pv_kw_list
                         )]
 
             # modify loads based on custom critical loads profile
-            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[:outage_duration]
+            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
                 [0 for _ in self.load_list[outage_start_hour:outage_end_hour]]
 
         elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
             critical_loads_kw = \
                 [ld * critical_load_pct for ld in self.unmodified_load_list[outage_start_hour:outage_end_hour]]
-            outage_duration = outage_end_hour - outage_start_hour
 
             if existing_pv_kw_list is not None and loads_kw_is_net:
                     # Add existing pv in if net critical load percent provided
