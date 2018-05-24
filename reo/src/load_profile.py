@@ -397,7 +397,7 @@ class BuiltInProfile(object):
 
     @property
     def default_annual_kwh(self):
-        return self.annual_loads[self.city][self.building_type]
+        return self.annual_loads[self.city][self.building_type.lower()]
 
     @property
     def building_type(self):
