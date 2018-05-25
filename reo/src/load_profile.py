@@ -355,7 +355,7 @@ class BuiltInProfile(object):
         self.monthly_kwh = monthly_totals_kwh
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
-        self.year = year
+        self.year = year  # TODO: force this to a year that starts on Monday to align with DOE reference profiles?
         self.tried_developer_reo_api = False
         self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
 
