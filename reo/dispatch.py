@@ -47,6 +47,7 @@ class ProcessOutputs:
         self.path_elec_from_store = os.path.join(path_outputs, "ElecFromStore.csv")
         self.path_elec_to_store = os.path.join(path_outputs, "ElecToStore.csv")
         self.path_load = os.path.join(path_outputs, "Load.csv")
+        self.path_crit_load = os.path.join(path_outputs, "critical_load_series_kw.csv")
         self.path_peak_demands = os.path.join(path_outputs, "PeakDemands.csv")
         self.path_production = os.path.join(path_outputs, "Production.csv")
         self.path_stored_energy = os.path.join(path_outputs, "StoredEnergy.csv")
@@ -142,6 +143,12 @@ class ProcessOutputs:
 
         if os.path.isfile(self.path_load):
             return self._load_csv(self.path_load)
+        return None
+
+    def get_crit_load_profile(self):
+
+        if os.path.isfile(self.path_crit_load):
+            return self._load_csv(self.path_crit_load)
         return None
 
     def _load_csv(self, path):
