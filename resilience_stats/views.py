@@ -50,6 +50,8 @@ def resilience_stats(request, run_uuid):
                 load=load_profile.year_one_electric_load_series_kw,
                 pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
                 init_soc=batt.year_one_soc_series_pct,
+                critical_loads_kw=load_profile.critical_loads_kw,
+                critical_loads_kw_is_net=load_profile.critical_loads_kw_is_net,
                 crit_load_factor=load_profile.critical_load_pct,
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,
                 diesel_kw=gen.size_kw,

@@ -1,10 +1,10 @@
 #!usr/bin/python
 
 
-def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, crit_load_factor=0.5,
-                    batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
+def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, critical_loads_kw=None, critical_loads_kw_is_net=False,
+                    crit_load_factor=0.5, batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
     """
-    
+
     :param pv_kw: float, pv capacity
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
@@ -39,10 +39,13 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     if pv_kw == 0 and pv_kw_ac_hourly in [None, []]:
         pv_kw_ac_hourly = [0] * n_timesteps
 
-
     # pv minus load is the burden on battery
-    pvMld = [pf * pv_kw - crit_load_factor * ld for (pf, ld) in
-             zip(pv_kw_ac_hourly, load)]  # negative values are unmet load (by PV)
+    if critical_loads_kw not in [None, []]:
+        pvMld = [pf * pv_kw - ld for (pf, ld) in
+                 zip(pv_kw_ac_hourly, critical_loads_kw)]  # negative values are unmet load (by PV)
+    else:
+        pvMld = [pf * pv_kw - crit_load_factor * ld for (pf, ld) in
+                 zip(pv_kw_ac_hourly, load)]  # negative values are unmet load (by PV)
 
     for n in range(n_timesteps):  # outer loop for finding r for outage starting each timestep of year
 

@@ -18,6 +18,8 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     batt_roundtrip_efficiency = site_inputs['Storage']['internal_efficiency_pct'] \
                                 * site_inputs['Storage']['inverter_efficiency_pct'] \
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
+    critical_loads_kw=site_inputs['LoadProfile'].get("critical_loads_kw")
+    critical_loads_kw_is_net=site_inputs['LoadProfile'].get("critical_loads_kw_is_net")
     crit_load_factor = site_inputs['LoadProfile'].get("critical_load_pct")
 
     results = simulate_outage(
@@ -27,6 +29,8 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         load=load,
         pv_kw_ac_hourly=site_outputs['PV'].get('year_one_power_production_series_kw'),
         init_soc=site_outputs['Storage'].get('year_one_soc_series_pct'),
+        critical_loads_kw=critical_loads_kw,
+        critical_loads_kw_is_net=critical_loads_kw_is_net,
         crit_load_factor=crit_load_factor,
         batt_roundtrip_efficiency=batt_roundtrip_efficiency,
         diesel_kw=site_inputs['Generator']['size_kw'],
