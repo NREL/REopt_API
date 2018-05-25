@@ -3,38 +3,6 @@ import numpy as np
 import pandas as pd
 
 
-def resample(pd_series_data, factor, index, interpolate=False):
-    y_interp = []
-    n_data = len(pd_series_data)
-
-    if interpolate:
-
-        '''
-        file_data = open("Data.txt", 'w')
-        for d in range(0, n_data):
-            file_data.write(str(pd_series_data.iloc[d]) + "\n")
-        file_data.close()
-        '''
-        x_data = range(0, n_data)
-        x_interp = []
-        for i in range(0, n_data):
-            for j in range(0, factor):
-                x_interp.append(float(x_data[i]) + float(j) / factor)
-        y_data = pd_series_data.tolist()
-        y_interp = np.interp(x_interp, x_data, y_data)
-        '''
-        file_interp = open("Interpolated", 'w')
-        for d in range(0, len(y_interp)):
-            file_interp.write(str(y_interp[d]) + "\n")
-        '''
-    for i in range(0, n_data):
-        for f in range(0, factor):
-            if not interpolate:
-                y_interp.append(pd_series_data.iloc[i])
-
-    return pd.Series(y_interp, index=index)
-
-
 class ProcessOutputs:
 
     def __init__(self, path_outputs, year=2017):
