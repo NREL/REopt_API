@@ -1,11 +1,12 @@
 import uuid
 import sys
 from django.http import JsonResponse
-from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel
+from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel
 from models import ResilienceModel
 from outage_simulator import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
+from reo.utilities import annuity
 
 
 def resilience_stats(request, run_uuid):
@@ -51,6 +52,7 @@ def resilience_stats(request, run_uuid):
             batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
             pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
             load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
+            financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
             batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                         * batt.inverter_efficiency_pct \
@@ -69,6 +71,26 @@ def resilience_stats(request, run_uuid):
                 m=gen.fuel_slope_gal_per_kwh,
                 diesel_min_turndown=gen.min_turn_down_pct
             )
+
+            """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
+                    avoided_outage_costs_us_dollars = resilience_hours_avg * 
+                                                      value_of_lost_load_us_dollars_per_kwh * 
+                                                      avg_crit_ld *
+                                                      present_worth_factor 
+            """
+            avg_critical_load = round(sum(load_profile.critical_load_series_kw) /
+                                      len(load_profile.critical_load_series_kw), 5)
+
+            if load_profile.outage_is_major_event:
+                # assume that outage occurs only once in analysis period
+                present_worth_factor = 1
+            else:
+                present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
+                                               financial.offtaker_discount_pct)
+
+            results.update({"present_worth_factor": present_worth_factor,
+                            "avg_critical_load": avg_critical_load,
+                            })
 
             ResilienceModel.objects.filter(id=rm.id).update(**results)
 
