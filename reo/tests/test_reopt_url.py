@@ -188,10 +188,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = c['batt_kwh']
         d_expected['net_capital_costs_plus_om'] = c['net_capital_costs_plus_om']
 
-        load_during_outage = \
-            critical_post['Scenario']['Site']['LoadProfile']['loads_kw'][outage_start_hour:outage_end_hour]
         critical_post['Scenario']['Site']['LoadProfile']['critical_loads_kw'] = \
-            [critical_load_pct * i for i in load_during_outage]
+            [critical_load_pct * i for i in critical_post['Scenario']['Site']['LoadProfile']['loads_kw']]
         critical_post['Scenario']['Site']['LoadProfile']['critical_load_pct'] = 0
         # critical_loads_kw should override critical_load_pct
 

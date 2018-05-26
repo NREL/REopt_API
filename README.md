@@ -143,15 +143,29 @@ When the API server is started with `python manage.py runserver` the dev_setting
 
 ### Running tests with `python manage.py test`
 
-In order to run all test functions, one must have a [postgres](https://www.postgresql.org/download/) server installed and running locally.
+In order to run all test functions, one must have a [postgres](https://www.postgresql.org/download/) server installed and running locally.  To do this requires several packages, for example in Ubuntu:
 
-Once the postgres server is running, login to the local host via the command line:
 ```
-psql -h localhost
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib postgresql-client-common postgresql-client
+```
+
+Once you've downloaded and installed postgres, you will want to setup a local database. By default, when postgres is installed, it automatically creates a database user that matches your username, and has a default role called 'postgres'.  To create a local database called "reopt", with a username "reopt", and password "reopt":
+
+```
+sudo -i -u postgres
+psql postgres
 CREATE USER reopt WITH PASSWORD 'reopt';
 ALTER USER reopt CREATEDB;
+CREATE DATABASE reopt;
+GRANT ALL PRIVILEGES ON DATABASE reopt TO reopt;
 ```
+
 When tests are run, a new database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
+
+Working with postgres can be tricky.  Here are a few good resources:
+[link1](https://www.codementor.io/engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb)
+[link2](https://www.a2hosting.com/kb/developer-corner/postgresql/managing-postgresql-databases-and-users-from-the-command-line)
 
 ### Removing remote database dependency
 Sometimes it can be advantageous to store results locally. The database that the API uses is configured in MY-API-FOLDER/reopt_api/dev_settings.py. The easiest way to configure your own local database is to:

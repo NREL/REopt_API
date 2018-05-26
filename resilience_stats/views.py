@@ -9,6 +9,18 @@ from django.forms.models import model_to_dict
 
 
 def resilience_stats(request, run_uuid):
+    """
+    Run outage simulator for given run_uuid
+    :param request:
+    :param run_uuid:
+    :return: {"resilience_by_timestep",
+              "resilience_hours_min",
+              "resilience_hours_max",
+              "resilience_hours_avg",
+              "outage_durations",
+              "probs_of_surviving",
+             }
+    """
 
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
@@ -43,14 +55,13 @@ def resilience_stats(request, run_uuid):
             batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                         * batt.inverter_efficiency_pct \
                                         * batt.rectifier_efficiency_pct
+
             results = simulate_outage(
-                pv_kw=pv.size_kw or 0,
                 batt_kwh=batt.size_kwh or 0,
                 batt_kw=batt.size_kw or 0,
-                load=load_profile.year_one_electric_load_series_kw,
                 pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
                 init_soc=batt.year_one_soc_series_pct,
-                crit_load_factor=load_profile.critical_load_pct,
+                critical_loads_kw=load_profile.critical_load_series_kw,
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,
                 diesel_kw=gen.size_kw,
                 fuel_available=gen.fuel_avail_gal,

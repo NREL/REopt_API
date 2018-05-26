@@ -1,17 +1,14 @@
 #!usr/bin/python
 
 
-def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, crit_load_factor=0.5,
+def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads_kw,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
     """
-    
-    :param pv_kw: float, pv capacity
+
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
-    :param load: list of floats, units=kW, len(load) must equal len(pv_kw_ac_hourly)
-    :param pv_kw_ac_hourly: list of floats, production of 1kW PV system
+    :param pv_kw_ac_hourly: list of floats, production of PV system
     :param init_soc: list of floats between 0 and 1 inclusive, initial state-of-charge
-    :param crit_load_factor: float between 0 and 1 inclusive, scales load during outage
     :param batt_roundtrip_efficiency: roundtrip battery efficiency
     :param diesel_kw: float, diesel generator capacity
     :param fuel_available: float, gallons of diesel fuel available
@@ -20,13 +17,13 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
     :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
     :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
     """
-    n_timesteps = len(load)
+    n_timesteps = len(critical_loads_kw)
     r = [0] * n_timesteps  # initialize resiliency vector
 
     if batt_kw == 0 or batt_kwh == 0:
         init_soc = [0] * n_timesteps  # default is None
 
-        if pv_kw == 0 and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
+        if pv_kw_ac_hourly in [None, []] and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
 
             return {"resilience_by_timestep": r,
                     "resilience_hours_min": 0,
@@ -36,13 +33,11 @@ def simulate_outage(pv_kw, batt_kwh, batt_kw, load, pv_kw_ac_hourly, init_soc, c
                     "probs_of_surviving": None,
                     }
 
-    if pv_kw == 0 and pv_kw_ac_hourly in [None, []]:
+    if pv_kw_ac_hourly in [None, []]:
         pv_kw_ac_hourly = [0] * n_timesteps
 
-
     # pv minus load is the burden on battery
-    pvMld = [pf * pv_kw - crit_load_factor * ld for (pf, ld) in
-             zip(pv_kw_ac_hourly, load)]  # negative values are unmet load (by PV)
+    pvMld = [pv - ld for (pv, ld) in zip(pv_kw_ac_hourly, critical_loads_kw)]  # negative values are unmet load (by PV)
 
     for n in range(n_timesteps):  # outer loop for finding r for outage starting each timestep of year
 
