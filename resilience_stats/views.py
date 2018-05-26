@@ -9,6 +9,14 @@ from django.forms.models import model_to_dict
 from reo.utilities import annuity
 
 
+class ScenarioOptimizing(Exception):
+    pass
+
+
+class ScenarioErrored(Exception):
+    pass
+
+
 def resilience_stats(request, run_uuid):
     """
     Run outage simulator for given run_uuid
@@ -37,6 +45,10 @@ def resilience_stats(request, run_uuid):
 
     try:  # to run outage simulator
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
+        if scenario.status == "Optimizing...":
+            raise ScenarioOptimizing
+        elif "error" in scenario.status.lower():
+            raise ScenarioErrored
 
         try:  # see if ResilienceModel already created
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
@@ -46,12 +58,10 @@ def resilience_stats(request, run_uuid):
             del results['id']
 
         except:
-            rm = ResilienceModel.create(scenariomodel=scenario)
-
+            load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
             gen = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
             batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
             pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
             financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
             batt_roundtrip_efficiency = batt.internal_efficiency_pct \
@@ -92,16 +102,30 @@ def resilience_stats(request, run_uuid):
                             "avg_critical_load": avg_critical_load,
                             })
 
+            rm = ResilienceModel.create(scenariomodel=scenario)
             ResilienceModel.objects.filter(id=rm.id).update(**results)
+
+        results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
+                        })
 
         response = JsonResponse(results)
         return response
+
+    except ScenarioOptimizing:
+        return JsonResponse({"Error": "The scenario is still optimizing. Please try again later."},
+                            content_type='application/json', status=500)
+
+    except ScenarioErrored:
+        return JsonResponse({"Error": "An error occured in the scenario. Please check the messages from your results."},
+                            content_type='application/json', status=500)
 
     except Exception as e:
 
         if type(e).__name__ == 'DoesNotExist':
             msg = "Scenario {} does not exist.".format(run_uuid)
             return JsonResponse({"Error": msg}, content_type='application/json', status=404)
+
+
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='resilience_stats', run_uuid=run_uuid)
