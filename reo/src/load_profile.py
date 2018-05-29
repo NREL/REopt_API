@@ -512,8 +512,8 @@ class LoadProfile(BuiltInProfile):
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
-                    for p in existing_pv_kw_list:
-                        critical_loads_kw += p
+                    for i, p in enumerate(existing_pv_kw_list):
+                        critical_loads_kw[i] += p
 
             # modify loads based on custom critical loads profile
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]

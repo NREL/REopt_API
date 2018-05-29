@@ -145,7 +145,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         critical_load_pct = 0.5
         critical_post = {"Scenario": {"Site": {  
                                          "PV":{  
-                                            "max_kw": 10000
+                                            "max_kw": 10000,
+                                            "existing_kw": 100
                                          },
                                          "LoadProfile": {
                                             "year": 2018,
@@ -188,10 +189,16 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = c['batt_kwh']
         d_expected['net_capital_costs_plus_om'] = c['net_capital_costs_plus_om']
 
+        # determine the adjustment for existing pv and add it to the input as net critical load
+        loads_kw = critical_post['Scenario']['Site']['LoadProfile']['loads_kw']
+        critical_load_series_kw = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
+        pv_adjustment = [ ( b / critical_load_pct ) - a for a, b in zip(loads_kw, critical_load_series_kw)]
+        critical_post['Scenario']['Site']['LoadProfile']['critical_loads_kw_is_net'] = True
         critical_post['Scenario']['Site']['LoadProfile']['critical_loads_kw'] = \
-            [critical_load_pct * i for i in critical_post['Scenario']['Site']['LoadProfile']['loads_kw']]
-        critical_post['Scenario']['Site']['LoadProfile']['critical_load_pct'] = 0
+            [a - b for a, b in zip(critical_load_series_kw, pv_adjustment)]
+
         # critical_loads_kw should override critical_load_pct
+        critical_post['Scenario']['Site']['LoadProfile']['critical_load_pct'] = 0
 
         resp = self.get_response(data=critical_post)
         self.assertHttpCreated(resp)
