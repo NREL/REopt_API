@@ -51,7 +51,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         # Total LCC BAU is sum of utility costs
         self.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                        - float(c['total_demand_cost_bau']) - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                        - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
+                        - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
                         < self.REopt_tol)
 
     def test_required(self):
