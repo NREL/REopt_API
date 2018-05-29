@@ -673,7 +673,7 @@ class DatFileManager:
 
         return tech_class_min_size, tech_to_tech_class
 
-    def _get_REopt_tech_max_sizes_min_turn_down(self, techs):
+    def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
         for tech in techs:
@@ -702,7 +702,10 @@ class DatFileManager:
                             land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
                             site_kw_max = max(roof_max_kw + land_max_kw, existing_kw)
 
-                max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
+                if bau and existing_kw > 0:  # existing PV in BAU scenario
+                    max_sizes.append(existing_kw)
+                else:
+                    max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
 
         return max_sizes, min_turn_down
 
@@ -729,7 +732,7 @@ class DatFileManager:
             self._get_REopt_array_tech_load(self.bau_techs)
         
         max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
-        max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs)
+        max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
 
         levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
             = self._get_REopt_pwfs(self.available_techs)
