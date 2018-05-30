@@ -40,7 +40,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 2.85178
         d_expected['batt_kwh'] = 4.73317
         d_expected['fuel_used_gal'] = 1.53
-        d_expected['avoided_outage_costs_us_dollars'] = 235285.29
+        d_expected['avoided_outage_costs_us_dollars'] = 235303.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
         try:
@@ -49,6 +49,14 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
             raise
+
+        critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
+        generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
+        outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
+
+        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+            self.assertAlmostEquals(x, y, places=3)
 
     def test_generator_too_small_for_outage(self):
         """
@@ -73,7 +81,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 16.502
         d_expected['batt_kwh'] = 78.3701
         d_expected['fuel_used_gal'] = 25.0
-        d_expected['avoided_outage_costs_us_dollars'] = 27482.71
+        d_expected['avoided_outage_costs_us_dollars'] = 25277.49
         d_expected['microgrid_upgrade_cost_us_dollars'] = 14420.4
 
         try:

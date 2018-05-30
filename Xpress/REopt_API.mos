@@ -874,6 +874,16 @@ forall (t in Tech | (TechToTechClassMatrix (t, "WIND") = 1 and sum(s in Seg) get
 
 end-do
 
+forall (t in Tech | (TechToTechClassMatrix (t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+
+    fopen(OutputDir + "\\GENERATORtoLoad.csv", F_OUTPUT)
+        forall (ts in TimeStep) do
+           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
+        end-do
+    fclose(F_OUTPUT)
+
+end-do
+
 fopen(OutputDir + "\\GridToLoad.csv", F_OUTPUT)
     forall (ts in TimeStep) do
        writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1R", ts, s, fb)) * ProdFactor("UTIL1", "1R", ts) * LevelizationFactor("UTIL1"))
