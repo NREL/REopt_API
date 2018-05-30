@@ -100,6 +100,7 @@ class LoadProfileModel(models.Model):
 
     #Outputs
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
+    critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
 
     @classmethod
     def create(cls, **kwargs):
@@ -203,6 +204,7 @@ class PVModel(models.Model):
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     
 
     @classmethod

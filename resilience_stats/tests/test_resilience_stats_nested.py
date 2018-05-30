@@ -11,11 +11,14 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
     def setUp(self):
         super(TestResilStatsNested, self).setUp()
         test_path = os.path.join('resilience_stats', 'tests')
+
+        results = json.loads(open(os.path.join(test_path, 'REopt_results.json')).read())
+        pv_kw = results['PVNM']
         pv_kw_ac_hourly = list()
         
         with open(os.path.join(test_path, 'offline_pv_prod_factor.txt'), 'r') as f:
             for line in f:
-                pv_kw_ac_hourly.append(float(line.strip('\n')))
+                pv_kw_ac_hourly.append(pv_kw * float(line.strip('\n')))
 
         load = list()
         with open(os.path.join(test_path, 'Load.txt'), 'r') as f:
@@ -27,20 +30,16 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
             for line in f:
                 stored_energy.append(float(line.strip('\n')))
 
-        results = json.loads(open(os.path.join(test_path, 'REopt_results.json')).read())
-        pv_kw = results['PVNM']
         batt_kwh = results['Battery Capacity (kWh)']
         batt_kw = results['Battery Power (kW)']
         init_soc = [s / batt_kwh for s in stored_energy]
 
         self.inputs = {
-            'pv_kw': pv_kw,
             'batt_kwh': batt_kwh,
             'batt_kw': batt_kw,
             'pv_kw_ac_hourly': pv_kw_ac_hourly,
-            'load': load,
+            'critical_loads_kw': load,
             'init_soc': init_soc,
-            'crit_load_factor': 1,
         }
         
         self.submit_url = '/v1/job/'
@@ -146,7 +145,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
     def test_no_resilience(self):
-        self.inputs.update(pv_kw=0, batt_kw=0)
+        self.inputs.update(pv_kw_ac_hourly=[], batt_kw=0)
 
         resp = simulate_outage(**self.inputs)
 
@@ -169,12 +168,12 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
             resp_dict = json.loads(resp.content)
 
             self.assertEqual(resp_dict["probs_of_surviving"],
-                             [0.4734, 0.432, 0.3903, 0.3486, 0.307, 0.2653, 0.2236, 0.182, 0.1403, 0.0987, 0.0602, 0.0311,
-                              0.0115, 0.0006])
-            self.assertEqual(resp_dict["resilience_hours_avg"], 2.96)
-            self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+                             [0.5559, 0.236, 0.1902, 0.1524, 0.1167, 0.0838, 0.0539, 0.0299, 0.0152, 0.0084, 0.0043,
+                              0.0013, 0.0001])
+            self.assertEqual(resp_dict["resilience_hours_avg"], 1.45)
+            self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
             self.assertEqual(resp_dict["resilience_hours_min"], 0)
-            self.assertEqual(resp_dict["resilience_hours_max"], 14)
+            self.assertEqual(resp_dict["resilience_hours_max"], 13)
 
     def test_bad_uuid(self):
         run_uuid = "5"

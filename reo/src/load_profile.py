@@ -454,6 +454,20 @@ class BuiltInProfile(object):
 
 
 class LoadProfile(BuiltInProfile):
+    """
+    Important notes regarding different load profiles (from user's perspective):
+
+    There are four different load profiles, two within the inputs, which can be net or native:
+
+        1. "loads_kw" == typical site load optionally uploaded by user (8760), can be None
+        2. "critical_loads_kw" == site critical load optionally uploaded by user(8760), can be None
+
+    And two within the outputs:
+        3. "year_one_electric_load_series_kw" == typical load with critical load inserted during outage (8760).
+            For scenarios without outages, this series is the same as #1 if user uploads,  or the built-in profile.
+        4. "critical_load_series_kw" == critical load for outage simulator. Same as #2 if user uploads, else
+            it is determined as either "loads_kw" or built-in profile times the "critical_load_pct".
+    """
 
     def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
@@ -495,38 +509,41 @@ class LoadProfile(BuiltInProfile):
         In both cases, if existing PV and load is net then add existing PV to critical_loads_kw.
         """
         if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
-            outage_duration = outage_end_hour - outage_start_hour
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
-                    critical_loads_kw[:outage_duration] = [i + j for i, j in zip(
-                        critical_loads_kw[:outage_duration], existing_pv_kw_list[outage_start_hour:outage_end_hour]
-                        )]
+                    for i, p in enumerate(existing_pv_kw_list):
+                        critical_loads_kw[i] += p
 
             # modify loads based on custom critical loads profile
-            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[:outage_duration]
+            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in self.load_list[outage_start_hour:outage_end_hour]]
+                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
-        elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:
-            critical_loads_kw = \
-                [ld * critical_load_pct for ld in self.unmodified_load_list[outage_start_hour:outage_end_hour]]
-            outage_duration = outage_end_hour - outage_start_hour
+        elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:  # use native_load * critical_load_pct
 
-            if existing_pv_kw_list is not None and loads_kw_is_net:
-                    # Add existing pv in if net critical load percent provided
-                    critical_loads_kw = [i + j for i, j in zip(
-                        critical_loads_kw, existing_pv_kw_list[outage_start_hour:outage_end_hour]
-                    )]
+            critical_loads_kw = [ld * critical_load_pct for ld in self.load_list]
+            # Note: existing PV accounted for in load_list
 
             # modify loads based on percentage
-            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw
-            self.bau_load_list[outage_start_hour:outage_end_hour] = [0 for _ in critical_loads_kw]
+            self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
+            self.bau_load_list[outage_start_hour:outage_end_hour] = \
+                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+
+        else:
+            critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
 
         self.annual_kwh = sum(self.load_list)
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
+
+        # write csv for critical_load_series_kw. needed for outage sim
+        fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
+        with open(fp, 'wb') as f:
+            for ld in critical_loads_kw:
+                f.write((str(ld)+'\n'))
+
         dfm.add_load(self)
 
 
