@@ -310,6 +310,7 @@ class GeneratorModel(models.Model):
         min_turn_down_pct = models.FloatField()
         # Outputs
         fuel_used_gal = models.FloatField(null=True, blank=True)
+        year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):

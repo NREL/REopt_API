@@ -29,6 +29,7 @@ class ProcessOutputs:
         self.path_wind_to_load = os.path.join(path_outputs, "WINDtoLoad.csv")
         self.path_wind_to_batt = os.path.join(path_outputs, "WINDtoBatt.csv")
         self.path_wind_to_grid = os.path.join(path_outputs, "WINDtoGrid.csv")
+        self.path_gen_to_load = os.path.join(path_outputs, "GENERATORtoLoad.csv")
         self.year = year
 
     def get_batt_to_grid(self):  # this was not defined in original dispatch.py
@@ -117,6 +118,12 @@ class ProcessOutputs:
 
         if os.path.isfile(self.path_crit_load):
             return self._load_csv(self.path_crit_load)
+        return None
+
+    def get_gen_to_load(self):
+
+        if os.path.isfile(self.path_gen_to_load):
+            return self._load_csv(self.path_gen_to_load)
         return None
 
     def _load_csv(self, path):
