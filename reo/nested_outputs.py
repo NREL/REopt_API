@@ -117,6 +117,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one hourly time series of PV exporting to grid",
                   "units": "kW"
+                },
+                "existing_pv_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Lifetime O&M cost for existing PV system.",
+                  "units": "$"
                 }
               },
 
@@ -319,6 +324,11 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Generator fuel used to meet critical load during grid outage.",
                   "units": "US gallons"
+                },
+                "year_one_to_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one generator to load time series.",
+                  "units": "kW"
                 }
               }
             }
