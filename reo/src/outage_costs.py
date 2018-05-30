@@ -11,6 +11,10 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         period. NOTE: we use pwf_e from REopt, which uses the electricity cost escalation rate and offtaker
         discount rate.
     :return: None
+
+    NOTE: we cannot use resilience_stats endpoint for this calculation because it relies on the results already being
+    saved to the DB, and calculating the outage costs is done before the results are saved because it is one of the
+    results.
     """
     site_inputs = data['inputs']['Scenario']['Site']
     site_outputs = data['outputs']['Scenario']['Site']
