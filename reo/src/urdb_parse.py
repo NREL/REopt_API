@@ -236,7 +236,7 @@ class UrdbParse:
         for energy_rate in current_rate.energyratestructure:
             energy_tiers.append(len(energy_rate))
 
-        period_with_max_tiers=energy_tiers.index(max(energy_tiers))
+        period_with_max_tiers = energy_tiers.index(max(energy_tiers))
         energy_tier_set = set(energy_tiers)
 
         if len(energy_tier_set) > 1:
@@ -337,17 +337,20 @@ class UrdbParse:
         energy_avail = []
 
         for tech in techs:
-            for _ in range(self.reopt_args.energy_tiers_num):
-                if tech.lower() == 'generator':
-                    # generator fuel is free for now since we are only modeling existing generators
-                    energy_rates = operator.add(energy_rates, zero_array)
-                    energy_avail.append(self.generator_fuel_avail)
-                elif tech.lower() == 'util':
-                    energy_rates += energy_costs
-                    energy_avail.append(self.big_number)
-                else:
-                    energy_rates = operator.add(energy_rates, zero_array)
-                    energy_avail.append(0)
+            if tech.lower() == 'util':
+                energy_rates += energy_costs
+                energy_avail += [self.big_number] * self.reopt_args.energy_tiers_num
+            else:
+                # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
+                for _ in range(self.reopt_args.energy_tiers_num):
+                    if tech.lower() == 'generator':
+                        # generator fuel is free for now since we are only modeling existing generators
+                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_avail.append(self.generator_fuel_avail)
+                    else:
+                        # all other techs (PV, PVNM) have zero fuel and zero fuel cost
+                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_avail.append(0)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
