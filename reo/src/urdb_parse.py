@@ -5,6 +5,7 @@ import numpy
 from reo.log_levels import log
 
 zero_array = 8760 * [0]
+cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
 
 class REoptArgs:
@@ -13,7 +14,15 @@ class REoptArgs:
 
         # these vars are passed to DFM as REopt params, written to dats
         self.demand_rates_monthly = 12 * [0]
-        self.demand_ratchets_monthly = []
+        """
+        demand_ratchets_monthly == TimeStepRatchetsMonth in mosel
+        It is not only used for demand rates, but also for summing the energy use in each month for rates with energy
+        tiers.
+        """
+        self.demand_ratchets_monthly = [[] for i in range(12)]  # initialize empty lists to fill with timesteps
+        for month in range(12):
+            for hour in range(24 * cum_days_in_yr[month]+1, 24 * cum_days_in_yr[month+1]+1):
+                self.demand_ratchets_monthly[month].append(hour)
         self.demand_rates_tou = []
         self.demand_ratchets_tou = []
         self.demand_num_ratchets = 12
@@ -108,7 +117,6 @@ class UrdbParse:
     """
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
     def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0, gen=None):
 
@@ -236,7 +244,7 @@ class UrdbParse:
         for energy_rate in current_rate.energyratestructure:
             energy_tiers.append(len(energy_rate))
 
-        period_with_max_tiers=energy_tiers.index(max(energy_tiers))
+        period_with_max_tiers = energy_tiers.index(max(energy_tiers))
         energy_tier_set = set(energy_tiers)
 
         if len(energy_tier_set) > 1:
@@ -252,6 +260,7 @@ class UrdbParse:
         self.reopt_args.energy_max_in_tiers = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
+            # energy_tier is a dictionary, eg. {'max': 1000, 'rate': 0.07531, 'adj': 0.0119, 'unit': 'kWh'}
             energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
@@ -323,6 +332,7 @@ class UrdbParse:
     def prepare_techs_and_loads(self, techs):
         
         energy_costs = [round(cost, 5) for cost in self.energy_costs]
+        # len(self.energy_costs) = 8760 * self.time_steps_per_hour * self.reopt_args.energy_tiers_num
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
         self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]  # MOVE ELSEWHERE
@@ -332,22 +342,26 @@ class UrdbParse:
         negative_wholesale_rate_costs = 8760 * [-1 * self.wholesale_rate]
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
-        # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
+        # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
+        # FuelAvail: array(Tech, FuelBin)
         energy_avail = []
 
         for tech in techs:
-            for _ in range(self.reopt_args.energy_tiers_num):
-                if tech.lower() == 'generator':
-                    # generator fuel is free for now since we are only modeling existing generators
-                    energy_rates = operator.add(energy_rates, zero_array)
-                    energy_avail.append(self.generator_fuel_avail)
-                elif tech.lower() == 'util':
-                    energy_rates += energy_costs
-                    energy_avail.append(self.big_number)
-                else:
-                    energy_rates = operator.add(energy_rates, zero_array)
-                    energy_avail.append(0)
+            if tech.lower() == 'util':
+                energy_rates += energy_costs
+                energy_avail += [self.big_number] * self.reopt_args.energy_tiers_num
+            else:
+                # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
+                for _ in range(self.reopt_args.energy_tiers_num):
+                    if tech.lower() == 'generator':
+                        # generator fuel is free for now since we are only modeling existing generators
+                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_avail.append(self.generator_fuel_avail)
+                    else:
+                        # all other techs (PV, PVNM) have zero fuel and zero fuel cost
+                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_avail.append(0)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -466,12 +480,8 @@ class UrdbParse:
     def prepare_flat_demand(self, current_rate):
 
         self.reopt_args.demand_rates_monthly = []
-        self.reopt_args.demand_ratchets_monthly = [[] for i in range(12)]
 
         for month in range(12):
-
-            for hour in range(24*self.cum_days_in_yr[month]+1, 24*self.cum_days_in_yr[month+1]+1):
-                self.reopt_args.demand_ratchets_monthly[month].append(hour)
 
             for period_idx, seasonal_period in enumerate(current_rate.flatdemandstructure):
                 period_in_month = 0
