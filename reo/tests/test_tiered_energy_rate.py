@@ -3,7 +3,7 @@ from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
 
-class TestExistingPV(ResourceTestCaseMixin, TestCase):
+class TestEnergyTiers(ResourceTestCaseMixin, TestCase):
     """
     Tariff from Florida Light & Power (residential) with simple tiered energy rate:
     "energyratestructure":
@@ -14,7 +14,7 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
     """
 
     def setUp(self):
-        super(TestExistingPV, self).setUp()
+        super(TestEnergyTiers, self).setUp()
 
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
