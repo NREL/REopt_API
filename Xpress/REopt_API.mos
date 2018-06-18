@@ -569,8 +569,8 @@ forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
 end-do
 
 ! Compute tiered energy rates
-forall ( fb in FuelBin, m in Month)  do
-	UsageInTier(m, fb) :=  sum(LD in Load, db in DemandBin, dbm in DemandMonthsBin, ts in TimeStepRatchetsMonth(m)) dvGrid(LD,ts,db,fb,dbm) ! validate
+forall (fb in FuelBin, m in Month)  do
+	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb)
    	UsageInTier(m, fb) >= 0
 end-do
 
