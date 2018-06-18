@@ -260,6 +260,7 @@ class UrdbParse:
         self.reopt_args.energy_max_in_tiers = []
 
         for energy_tier in current_rate.energyratestructure[period_with_max_tiers]:
+            # energy_tier is a dictionary, eg. {'max': 1000, 'rate': 0.07531, 'adj': 0.0119, 'unit': 'kWh'}
             energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
@@ -331,6 +332,7 @@ class UrdbParse:
     def prepare_techs_and_loads(self, techs):
         
         energy_costs = [round(cost, 5) for cost in self.energy_costs]
+        # len(self.energy_costs) = 8760 * self.time_steps_per_hour * self.reopt_args.energy_tiers_num
 
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
         self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]  # MOVE ELSEWHERE
@@ -340,8 +342,9 @@ class UrdbParse:
         negative_wholesale_rate_costs = 8760 * [-1 * self.wholesale_rate]
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
-        # FuelRate=array( Tech,FuelBin,TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
+        # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
+        # FuelAvail: array(Tech, FuelBin)
         energy_avail = []
 
         for tech in techs:
