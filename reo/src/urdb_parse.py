@@ -5,6 +5,7 @@ import numpy
 from reo.log_levels import log
 
 zero_array = 8760 * [0]
+cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
 
 class REoptArgs:
@@ -13,7 +14,15 @@ class REoptArgs:
 
         # these vars are passed to DFM as REopt params, written to dats
         self.demand_rates_monthly = 12 * [0]
-        self.demand_ratchets_monthly = []
+        """
+        demand_ratchets_monthly == TimeStepRatchetsMonth in mosel
+        It is not only used for demand rates, but also for summing the energy use in each month for rates with energy
+        tiers.
+        """
+        self.demand_ratchets_monthly = [[] for i in range(12)]  # initialize empty lists to fill with timesteps
+        for month in range(12):
+            for hour in range(24 * cum_days_in_yr[month]+1, 24 * cum_days_in_yr[month+1]+1):
+                self.demand_ratchets_monthly[month].append(hour)
         self.demand_rates_tou = []
         self.demand_ratchets_tou = []
         self.demand_num_ratchets = 12
@@ -108,7 +117,6 @@ class UrdbParse:
     """
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
-    cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
     def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0, gen=None):
 
@@ -469,12 +477,8 @@ class UrdbParse:
     def prepare_flat_demand(self, current_rate):
 
         self.reopt_args.demand_rates_monthly = []
-        self.reopt_args.demand_ratchets_monthly = [[] for i in range(12)]
 
         for month in range(12):
-
-            for hour in range(24*self.cum_days_in_yr[month]+1, 24*self.cum_days_in_yr[month+1]+1):
-                self.reopt_args.demand_ratchets_monthly[month].append(hour)
 
             for period_idx, seasonal_period in enumerate(current_rate.flatdemandstructure):
                 period_in_month = 0
