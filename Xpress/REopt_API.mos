@@ -66,7 +66,7 @@ declarations
   EndTime: real
 
   TimeStepRatchets: array(Ratchets) of set of integer  !same as above, but omits the first hour, so 2-24, 26-48....
-  TimeStepRatchetsMonth: array(Ratchets) of set of integer  !same as above, but omits the first hour, so 2-24, 26-48....
+  TimeStepRatchetsMonth: array(Month) of set of integer  !time steps in each month
 
   TechClass: set of string    !all Tech belong to a class:  Wind, PV, BIO, WTE, SVP SHW, LFG
   Tech: set of string
@@ -100,7 +100,7 @@ declarations
 
   binSegChosen: array (Tech, Seg) of mpvar ! for the appropriate segment of the cost curve
   dvSystemSize: array (Tech, Seg) of mpvar
-  dvGrid: array (Load,TimeStep,DemandBin, FuelBin, DemandMonthsBin) of mpvar
+  dvGrid: array(Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin) of mpvar
   dvRatedProd: dynamic array (Tech,Load,TimeStep,Seg,FuelBin) of mpvar !Rated Production at every timestep.  Multiply by ProdFactor to get actual energy.
 
   !Next 2 for ProductionIncentive Cap
@@ -141,7 +141,7 @@ declarations
 
   dvFuelCost: array(Tech,FuelBin) of mpvar
   dvFuelUsed: array(Tech,FuelBin) of mpvar	 !fuel consumed by tech, only used to enforce FuelAvail constraint
-  FuelRate: array( Tech,FuelBin,TimeStep) of real  !cost per unit for fuel
+  FuelRate: array(Tech, FuelBin, TimeStep) of real  !cost per unit for fuel
   FuelBurnRateM: array(Tech,Load,FuelBin) of real   !slope of the fuel rate curve
   FuelBurnRateB: array(Tech,Load,FuelBin) of real   !Y-int of the fuel rate curve
   FuelAvail: array(Tech,FuelBin) of real
@@ -574,7 +574,7 @@ forall (fb in FuelBin, m in Month)  do
    	UsageInTier(m, fb) >= 0
 end-do
 
-forall ( fb in FuelBin, m in Month) do
+forall (fb in FuelBin, m in Month) do
 	binUsageTier(m, fb) is_binary
 end-do
 
@@ -584,10 +584,10 @@ end-do
 forall (m in Month) do
 	indicator(-1, binUsageTier(m, FuelBinCount), UsageInTier(m, FuelBinCount) <= 0)
 end-do
-	
-forall ( fb in FuelBin | fb >= 2, m in Month) do
+
+forall (fb in FuelBin | fb >= 2, m in Month) do
 	binUsageTier(m, fb) - binUsageTier(m, fb-1) <= 0
-	binUsageTier(m, fb)*MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
+	binUsageTier(m, fb) * MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
 end-do
 
 
