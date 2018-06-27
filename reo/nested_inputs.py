@@ -54,7 +54,7 @@ nested_input_definitions = {
     },
     "user_id": {
       "type": "str",
-      "description": "Not currently used"
+      "description": "The assigned unique ID of a signed in REOpt user"
     },
     "time_steps_per_hour": {
       "type": "int",
