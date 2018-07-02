@@ -36,7 +36,7 @@ load_profile_possible_sets = [["loads_kw"],
 electric_tariff_possible_sets = [["urdb_response"],
             ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
             ["urdb_label"],
-            ["urdb_utilty_name", "urdb_rate_name"]]
+            ["urdb_utility_name", "urdb_rate_name"]]
 
 
 def list_of_float(input):
@@ -218,7 +218,7 @@ nested_input_definitions = {
       },
 
       "ElectricTariff": {
-        "urdb_utilty_name": {
+        "urdb_utility_name": {
           "type": "str",
           "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["urdb_rate_name"],
@@ -227,7 +227,7 @@ nested_input_definitions = {
         "urdb_rate_name": {
           "type": "str",
           "replacement_sets": electric_tariff_possible_sets,
-          "depends_on": ["urdb_utilty_name"],
+          "depends_on": ["urdb_utility_name"],
           "description": "Name of utility rate from  <a href='https: //openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>"
         },
         "blended_monthly_rates_us_dollars_per_kwh": {
@@ -813,7 +813,7 @@ def flat_to_nested(i):
 
                 "ElectricTariff":
                     {
-                        "urdb_utilty_name": i.get("utility_name"),
+                        "urdb_utility_name": i.get("utility_name"),
                         "urdb_rate_name": i.get("rate_name"),
                         "urdb_response": i.get("urdb_rate"),
                         "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
