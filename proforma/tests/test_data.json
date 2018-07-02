@@ -1129,7 +1129,7 @@
         "interconnection_limit_kw": null,
         "urdb_rate_name": null,
         "wholesale_rate_us_dollars_per_kwh": null,
-        "urdb_utilty_name": null
+        "urdb_utility_name": null
       },
       "outage_start_hour": null
     }
