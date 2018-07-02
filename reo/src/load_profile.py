@@ -361,7 +361,7 @@ class BuiltInProfile(object):
 
     @property
     def built_in_profile(self):
-        if self.monthly_kwh is None:
+        if self.monthly_kwh in [None, []]:
             return [ld * self.annual_kwh for ld in self.normalized_profile]
 
         return self.monthly_scaled_profile
