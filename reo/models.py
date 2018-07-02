@@ -114,7 +114,7 @@ class ElectricTariffModel(models.Model):
     
     #Inputs
     run_uuid = models.UUIDField(unique=True)
-    urdb_utilty_name = models.TextField(blank=True, default='')
+    urdb_utility_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
     blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=[])
