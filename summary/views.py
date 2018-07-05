@@ -48,12 +48,6 @@ def summary(request, user_id):
 			financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
 			tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
-
-			print (scenario.status)
-			print (scenario.run_uuid)
-			print (site, load, batt, pv, wind, financial, tariff)
-			print (scenario.status)
-
 			# Run ID
 			results['run_uuid'] = str(scenario.run_uuid)
 
