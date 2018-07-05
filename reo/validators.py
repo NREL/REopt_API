@@ -587,6 +587,13 @@ class ValidateNestedInput:
 
                 urdb_response = real_values.get('urdb_response')
                 if urdb_response is not None:
+                    
+                    if real_values.get('urdb_utility_name') is None:
+                        self.update_attribute_value(object_name_path, 'urdb_utility_name', urdb_response.get('utility'))
+                    
+                    if real_values.get('urdb_rate_name') is None:
+                        self.update_attribute_value(object_name_path, 'urdb_rate_name', urdb_response.get('name'))
+                    
                     try:
                         rate_checker = URDB_RateValidator(**urdb_response)
                         if rate_checker.errors:
@@ -595,7 +602,7 @@ class ValidateNestedInput:
                         self.urdb_errors == 'Error parsing urdb rate in %s ' % (object_name_path)
 
                 load_profile = real_values.get('loads_kw')
-                if load_profile is not None:
+                if load_profile not in [None, []]:
                     n = len(load_profile)
 
                     if n == 8760:
@@ -617,7 +624,7 @@ class ValidateNestedInput:
                         self.input_data_errors.append("Invalid length for loads_kw. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
                 critical_load_profile = real_values.get('critical_loads_kw')
-                if critical_load_profile is not None:
+                if critical_load_profile not in [None, []]:
                     n = len(critical_load_profile)
 
                     if n == 8760:

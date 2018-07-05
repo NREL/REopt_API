@@ -116,7 +116,7 @@ class ElectricTariffModel(models.Model):
     
     #Inputs
     run_uuid = models.UUIDField(unique=True)
-    urdb_utilty_name = models.TextField(blank=True, default='')
+    urdb_utility_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
     blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=[])
@@ -124,7 +124,7 @@ class ElectricTariffModel(models.Model):
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
     wholesale_rate_us_dollars_per_kwh = models.FloatField()
-    urdb_response = PickledObjectField(null=True)
+    urdb_response = PickledObjectField(null=True, editable=True)
 
     #Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)

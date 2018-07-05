@@ -6,7 +6,7 @@ from reo.src.urdb_rate import Rate
 class ElecTariff(object):
 
     def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
-                 time_steps_per_hour, urdb_label=None, urdb_utilty_name=None, urdb_rate_name=None,
+                 time_steps_per_hour, urdb_label=None, urdb_utility_name=None, urdb_rate_name=None,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, **kwargs):
 
@@ -22,7 +22,7 @@ class ElecTariff(object):
         if urdb_response is not None:
             log.info("Parsing URDB rate")
         
-        elif None not in [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw]:
+        elif all(x not in [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw] for x in [None, []]):
                 log.info("Making URDB rate from blended data")
                 urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
 
@@ -30,7 +30,7 @@ class ElecTariff(object):
             rate = Rate(rate=urdb_label)
             urdb_response = rate.urdb_dict
 
-        elif None not in [urdb_utilty_name, urdb_rate_name]:
+        elif all(x not in [urdb_utilty_name, urdb_rate_name] for x in [None, ""]):
             rate = Rate(util=urdb_utilty_name, rate=urdb_rate_name)
             urdb_response = rate.urdb_dict
 
@@ -39,7 +39,7 @@ class ElecTariff(object):
                              "User must provide urdb_response or \
                               urdb_label or \
                               [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw] or \
-                              [urdb_utilty_name, urdb_rate_name]."
+                              [urdb_utility_name, urdb_rate_name]."
                              )
 
         self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
