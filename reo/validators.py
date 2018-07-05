@@ -587,6 +587,13 @@ class ValidateNestedInput:
 
                 urdb_response = real_values.get('urdb_response')
                 if urdb_response is not None:
+                    
+                    if real_values.get('urdb_utility_name') is None:
+                        self.update_attribute_value(object_name_path, 'urdb_utility_name', urdb_response.get('utility'))
+                    
+                    if real_values.get('urdb_rate_name') is None:
+                        self.update_attribute_value(object_name_path, 'urdb_rate_name', urdb_response.get('name'))
+                    
                     try:
                         rate_checker = URDB_RateValidator(**urdb_response)
                         if rate_checker.errors:
