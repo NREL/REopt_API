@@ -18,9 +18,9 @@ def summary(request, user_id):
 				  "run_uuid",					# Run ID
 				  "status",						# Status
 				  "created",					# Date
+				  "description",				# Description
 				  "focus",						# Focus
-				  "latitude",					# Location
-				  "longitude",					# Location
+				  "location",					# Location
 				  "urdb_rate_name",				# Utility Tariff
 				  "doe_reference_name",			# Load Profile
 				  "npv_us_dollars",				# Net Present Value ($)
@@ -48,6 +48,12 @@ def summary(request, user_id):
 			financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
 			tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
+
+			print (scenario.status)
+			print (scenario.run_uuid)
+			print (site, load, batt, pv, wind, financial, tariff)
+			print (scenario.status)
+
 			# Run ID
 			results['run_uuid'] = str(scenario.run_uuid)
 
@@ -57,70 +63,74 @@ def summary(request, user_id):
 			# Date
 			results['created'] = scenario.created
 
-			# Focus
-			if load.outage_start_hour:
-				results['focus'] = "Resilience"
-			else:
-				results['focus'] = "Financial"
+			if site:
 
-			# Location
-			results['latitude'] = site.latitude
-			results['longitude'] = site.longitude
+				# Description
+				results['run_description'] = site.run_description
 
-			# Utility Tariff
-			if tariff.urdb_rate_name:
-				results['urdb_rate_name'] = tariff.urdb_rate_name
-			else:
-				results['urdb_rate_name'] = "Custom"
+				# Focus
+				if load.outage_start_hour:
+					results['focus'] = "Resilience"
+				else:
+					results['focus'] = "Financial"
 
-			# Load Profile
-			if load.loads_kw:
-				results['doe_reference_name'] = "Custom"
-			else:
-				results['doe_reference_name'] = load.doe_reference_name
+				# Location
+				results['location'] = site.location
 
-			# NPV
-			results['npv_us_dollars'] = financial.npv_us_dollars
+				# Utility Tariff
+				if tariff.urdb_rate_name:
+					results['urdb_rate_name'] = tariff.urdb_rate_name
+				else:
+					results['urdb_rate_name'] = "Custom"
 
-			# DG System Cost
-			results['net_capital_costs'] = financial.net_capital_costs
+				# Load Profile
+				if load.loads_kw:
+					results['doe_reference_name'] = "Custom"
+				else:
+					results['doe_reference_name'] = load.doe_reference_name
 
-			# Year 1 Savings
-			year_one_costs = sum(filter(None, [
-				tariff.year_one_energy_cost_us_dollars,
-				tariff.year_one_demand_cost_us_dollars,
-				tariff.year_one_fixed_cost_us_dollars,
-				tariff.year_one_min_charge_adder_us_dollars,
-				tariff.year_one_bill_us_dollars
-				]))
-			year_one_costs_bau = sum(filter(None, [
-				tariff.year_one_energy_cost_bau_us_dollars,
-				tariff.year_one_demand_cost_bau_us_dollars,
-				tariff.year_one_fixed_cost_bau_us_dollars,
-				tariff.year_one_min_charge_adder_bau_us_dollars,
-				tariff.year_one_bill_bau_us_dollars
-				]))
-			results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
+				# NPV
+				results['npv_us_dollars'] = financial.npv_us_dollars
 
-			# PV Size
-			if pv.max_kw > 0:
-				results['pv_kw'] = pv.size_kw
-			else:
-				results['pv_kw'] = 'not evaluated'
+				# DG System Cost
+				results['net_capital_costs'] = financial.net_capital_costs
 
-			# Wind Size
-			if wind.max_kw > 0:
-				results['wind_kw'] = wind.size_kw
-			else:
-				results['wind_kw'] = 'not evaluated'
+				# Year 1 Savings
+				year_one_costs = sum(filter(None, [
+					tariff.year_one_energy_cost_us_dollars,
+					tariff.year_one_demand_cost_us_dollars,
+					tariff.year_one_fixed_cost_us_dollars,
+					tariff.year_one_min_charge_adder_us_dollars,
+					tariff.year_one_bill_us_dollars
+					]))
+				year_one_costs_bau = sum(filter(None, [
+					tariff.year_one_energy_cost_bau_us_dollars,
+					tariff.year_one_demand_cost_bau_us_dollars,
+					tariff.year_one_fixed_cost_bau_us_dollars,
+					tariff.year_one_min_charge_adder_bau_us_dollars,
+					tariff.year_one_bill_bau_us_dollars
+					]))
+				results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
-			# Battery Size
-			if batt.max_kw > 0:
-				results['batt_kw'] = batt.size_kw
-				results['batt_kwh'] = batt.size_kwh
-			else:
-				results['batt_kw'] = 'not evaluated'
-				results['batt_kwh'] = 'not evaluated'
+				# PV Size
+				if pv.max_kw > 0:
+					results['pv_kw'] = pv.size_kw
+				else:
+					results['pv_kw'] = 'not evaluated'
+
+				# Wind Size
+				if wind.max_kw > 0:
+					results['wind_kw'] = wind.size_kw
+				else:
+					results['wind_kw'] = 'not evaluated'
+
+				# Battery Size
+				if batt.max_kw > 0:
+					results['batt_kw'] = batt.size_kw
+					results['batt_kwh'] = batt.size_kwh
+				else:
+					results['batt_kw'] = 'not evaluated'
+					results['batt_kwh'] = 'not evaluated'
 
 
 			json['scenarios'].append(results)

@@ -79,6 +79,14 @@ nested_input_definitions = {
         "required": True,
         "description": "The approximate longitude of the site in decimal degrees"
       },
+      "location": {
+        "type": "str",
+        "description": "The user defined location (street address, city, state or zip code)"
+      },
+      "run_description": {
+        "type": "str",
+        "description": "The user defined description to describe the scenario and run"
+      },
       "land_acres": {
         "type": "float",
         "min": 0,
@@ -786,6 +794,8 @@ def flat_to_nested(i):
             "Site": {
                 "latitude": i.get("latitude"),
                 "longitude": i.get("longitude"),
+                "location": i.get("location"),
+                "run_description": i.get("run_description"),
                 "land_acres": i.get("land_area"),
                 "roof_squarefeet": i.get("roof_area"),
 
