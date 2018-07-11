@@ -35,6 +35,7 @@ psycopg2==2.6.2
 ptyprocess==0.5.1
 Pygments==2.2.0
 pyparsing==2.1.10
+pyproj==1.9.5.1
 python-dateutil==2.5.2
 python-mimeparse==1.5.1
 pytz==2016.4
