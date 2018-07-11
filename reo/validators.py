@@ -599,7 +599,7 @@ class ValidateNestedInput:
                         if rate_checker.errors:
                             self.urdb_errors += rate_checker.errors
                     except:
-                        self.urdb_errors == 'Error parsing urdb rate in %s ' % (object_name_path)
+                        self.urdb_errors += 'Error parsing urdb rate in %s ' % (object_name_path)
 
                 load_profile = real_values.get('loads_kw')
                 if load_profile not in [None, []]:
