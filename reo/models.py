@@ -37,8 +37,8 @@ class SiteModel(models.Model):
 
     #Inputs
     run_uuid = models.UUIDField(unique=True)
-    location = models.TextField(blank=True, default='')
-    run_description = models.TextField(blank=True, default='')
+    location = models.TextField(null=True, blank=True, default='')
+    run_description = models.TextField(null=True, blank=True, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
