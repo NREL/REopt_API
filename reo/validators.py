@@ -356,6 +356,10 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
+            if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0 \
+                    and self.input_dict['Scenario']['Site']['Wind'].get("resource_meters_per_sec") is None:
+                self.validate_wind_resource()
+
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
@@ -656,31 +660,6 @@ class ValidateNestedInput:
                     else:
                         self.input_data_errors.append("Invalid length for critical_loads_kw. Critical load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
-                if object_name_path[-1] == 'Wind':
-
-                    if real_values.get("resource_meters_per_sec") is None \
-                            and self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
-                        """
-                        Validate that provided lat/lon lies within the wind toolkit data set. 
-                        If the location is not within the dataset, then return input_data_error.
-                        If the location is within the dataset, add the resource_meters_per_sec to the Wind inputs so 
-                        that we only query the database once.
-                        """
-                        from reo.src.wind_resource import get_wind_resource
-                        from reo.src.techs import Wind
-
-                        try:
-                            wind_meters_per_sec = get_wind_resource(
-                                latitude=self.input_dict['Scenario']['Site']['latitude'],
-                                longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                hub_height_meters=Wind.size_class_to_hub_height[self.input_dict['Scenario']['Site']['Wind']['size_class']],
-                                time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour']
-                            )
-                            self.update_attribute_value(object_name_path, 'resource_meters_per_sec', wind_meters_per_sec)
-
-                        except ValueError:
-                            self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds. Please provide Wind.resource_meters_per_sec")
-
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
                 for name, value in real_values.items():
@@ -793,3 +772,26 @@ class ValidateNestedInput:
 
             if final_message != '':
                 self.input_data_errors.append('Missing Required for %s: %s' % (self.object_name_string(object_name_path), final_message))
+
+        def validate_wind_resource(self):
+            """
+            Validate that provided lat/lon lies within the wind toolkit data set.
+            If the location is not within the dataset, then return input_data_error.
+            If the location is within the dataset, add the resource_meters_per_sec to the Wind inputs so
+            that we only query the database once.
+            :return: None
+            """
+            from reo.src.wind_resource import get_wind_resource
+            from reo.src.techs import Wind
+
+            try:
+                wind_meters_per_sec = get_wind_resource(
+                    latitude=self.input_dict['Scenario']['Site']['latitude'],
+                    longitude=self.input_dict['Scenario']['Site']['longitude'],
+                    hub_height_meters=Wind.size_class_to_hub_height[self.input_dict['Scenario']['Site']['Wind']['size_class']],
+                    time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour']
+                )
+                self.update_attribute_value(["Scenario", "Site", "Wind"], 'resource_meters_per_sec', wind_meters_per_sec)
+
+            except ValueError as e:
+                self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds. Please provide Wind.resource_meters_per_sec")
