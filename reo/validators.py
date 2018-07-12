@@ -480,6 +480,12 @@ class ValidateNestedInput:
             return '>'.join(object_name_path)
 
         def test_data(self, definition_attribute):
+            """
+            Used only in reo.tests.test_reopt_url. Does not actually validate inputs.
+            :param definition_attribute:
+            :return: test_data_list is a list of lists, with each sub list a pair of [str, dict],
+                where the str is an input param, dict is an entire post with a bad value for that input param
+            """
             test_data_list = []
 
             if definition_attribute == 'min':
@@ -511,14 +517,12 @@ class ValidateNestedInput:
 
             if definition_attribute == 'type':
                 def swap_logic(object_name_path, name, definition, current_value):
-                    attribute_type = eval(definition['type'])
-                    value = attribute_type(current_value)
-                    if isinstance(value, float) or isinstance(value, int) or isinstance(value, dict) or isinstance(
-                            value, bool):
+                    if isinstance(current_value, float) or isinstance(current_value, int) or isinstance(current_value, dict) or isinstance(
+                            current_value, bool):
                         new_value = "OOPS"
                         self.update_attribute_value(object_name_path, name, new_value)
                         test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, value)
+                        self.update_attribute_value(object_name_path, name, current_value)
 
             def add_invalid_data(object_name_path, template_values=None, real_values=None):
                 if real_values is not None:
@@ -528,8 +532,6 @@ class ValidateNestedInput:
 
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
 
-            # test_data_list is a list of lists, with each sub list a pair of [str, dict],
-            # where the str is an input param, dict is an entire post with a bad value for that input param
             return test_data_list
 
 
