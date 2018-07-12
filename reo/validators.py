@@ -352,13 +352,20 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_special_data_types)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0 \
                     and self.input_dict['Scenario']['Site']['Wind'].get("resource_meters_per_sec") is None:
                 self.validate_wind_resource()
+
+            if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response') is not None:
+                self.validate_urdb_response()
+
+            for lp in ['critical_loads_kw', 'loads_kw']:
+
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                    self.validate_load_profile(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), lp)
 
         @property
         def isValid(self):
@@ -538,7 +545,6 @@ class ValidateNestedInput:
 
             return test_data_list
 
-
 #Following functions go into recursively_check_input_by_objectnames_and_values on instantiation and validation to check an object name and set of values
 #    object_name_path is the location of the object name as in ["Scenario", "Site"]
 #    template_values is the reference dictionary for checking as in {'latitude':{'type':'float',...}...} from the nested dictionary
@@ -588,77 +594,6 @@ class ValidateNestedInput:
                             if value not in data_validators['restrict_to']:
                                 self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (
                                 name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
-
-        def check_special_data_types(self, object_name_path, template_values=None, real_values=None):
-            """
-            Validate special data types.
-            :param object_name_path: list of strings, eg. ["Scenario", "Site", "Wind"]
-            :param template_values: not used in this function, placeholder for usage in
-                self.recursively_check_input_by_objectnames_and_values
-            :param real_values: dict, posted values starting at the end of the object_name_path with defaults filled in
-            :return: None
-            """
-            if real_values is not None:
-
-                urdb_response = real_values.get('urdb_response')
-                if urdb_response is not None:
-                    
-                    if real_values.get('urdb_utility_name') is None:
-                        self.update_attribute_value(object_name_path, 'urdb_utility_name', urdb_response.get('utility'))
-                    
-                    if real_values.get('urdb_rate_name') is None:
-                        self.update_attribute_value(object_name_path, 'urdb_rate_name', urdb_response.get('name'))
-                    
-                    try:
-                        rate_checker = URDB_RateValidator(**urdb_response)
-                        if rate_checker.errors:
-                            self.urdb_errors += rate_checker.errors
-                    except:
-                        self.urdb_errors += 'Error parsing urdb rate in %s ' % (object_name_path)
-
-                load_profile = real_values.get('loads_kw')
-                if load_profile not in [None, []]:
-                    n = len(load_profile)
-
-                    if n == 8760:
-                        pass
-
-                    elif n == 17520:  # downsample 30 minute data
-                        index = pd.date_range('1/1/2000', periods=n, freq='30T')
-                        series = pd.Series(load_profile, index=index)
-                        series = series.resample('1H').mean()
-                        self.update_attribute_value(object_name_path, 'loads_kw', series.tolist())
-
-                    elif n == 35040:  # downsample 15 minute data
-                        index = pd.date_range('1/1/2000', periods=n, freq='15T')
-                        series = pd.Series(load_profile, index=index)
-                        series = series.resample('1H').mean()
-                        self.update_attribute_value(object_name_path, 'loads_kw', series.tolist())
-
-                    else:
-                        self.input_data_errors.append("Invalid length for loads_kw. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
-
-                critical_load_profile = real_values.get('critical_loads_kw')
-                if critical_load_profile not in [None, []]:
-                    n = len(critical_load_profile)
-
-                    if n == 8760:
-                        pass
-
-                    elif n == 17520:  # downsample 30 minute data
-                        index = pd.date_range('1/1/2000', periods=n, freq='30T')
-                        series = pd.Series(critical_load_profile, index=index)
-                        series = series.resample('1H').mean()
-                        self.update_attribute_value(object_name_path, 'critical_loads_kw', series.tolist())
-
-                    elif n == 35040:  # downsample 15 minute data
-                        index = pd.date_range('1/1/2000', periods=n, freq='15T')
-                        series = pd.Series(critical_load_profile, index=index)
-                        series = series.resample('1H').mean()
-                        self.update_attribute_value(object_name_path, 'critical_loads_kw', series.tolist())
-
-                    else:
-                        self.input_data_errors.append("Invalid length for critical_loads_kw. Critical load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
@@ -795,3 +730,42 @@ class ValidateNestedInput:
 
             except ValueError as e:
                 self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds. Please provide Wind.resource_meters_per_sec")
+
+        def validate_urdb_response(self):
+
+            urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')
+
+            if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name') is None:
+                self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], 'urdb_utility_name', urdb_response.get('utility'))
+
+            if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name') is None:
+                self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], 'urdb_rate_name', urdb_response.get('name'))
+
+            try:
+                rate_checker = URDB_RateValidator(**urdb_response)
+                if rate_checker.errors:
+                    self.urdb_errors += rate_checker.errors
+            except:
+                self.urdb_errors += 'Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"])
+
+        def validate_load_profile(self, load_profile, name):
+
+            n = len(load_profile)
+
+            if n == 8760:
+                pass
+
+            elif n == 17520:  # downsample 30 minute data
+                index = pd.date_range('1/1/2000', periods=n, freq='30T')
+                series = pd.Series(load_profile, index=index)
+                series = series.resample('1H').mean()
+                self.update_attribute_value(["Scenario", "Site", "LoadProfile"], name, series.tolist())
+
+            elif n == 35040:  # downsample 15 minute data
+                index = pd.date_range('1/1/2000', periods=n, freq='15T')
+                series = pd.Series(load_profile, index=index)
+                series = series.resample('1H').mean()
+                self.update_attribute_value(["Scenario", "Site", "LoadProfile"], name, series.tolist())
+
+            else:
+                self.input_data_errors.append("Invalid length for {}. Load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(name))
