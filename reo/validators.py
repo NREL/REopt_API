@@ -479,38 +479,37 @@ class ValidateNestedInput:
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
-        def test_data(self, defintion_attribute):
+        def test_data(self, definition_attribute):
+            test_data_list = []
 
-            self.test_data_list = []
-
-            if defintion_attribute == 'min':
+            if definition_attribute == 'min':
                 def swap_logic(object_name_path, name, definition, current_value):
                     attribute_min = definition.get('min')
                     if attribute_min is not None:
                         new_value = attribute_min - 1
                         self.update_attribute_value(object_name_path, name, new_value)
-                        self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
+                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
                         self.update_attribute_value(object_name_path, name, current_value)
 
-            if defintion_attribute == 'max':
+            if definition_attribute == 'max':
                 def swap_logic(object_name_path, name, definition, current_value):
                     attribute_max = definition.get('max')
                     if attribute_max is not None:
                         new_value = attribute_max + 1
                         self.update_attribute_value(object_name_path, name, new_value)
-                        self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
+                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
                         self.update_attribute_value(object_name_path, name, current_value)
 
-            if defintion_attribute == 'restrict_to':
+            if definition_attribute == 'restrict_to':
                 def swap_logic(object_name_path, name, definition, current_value):
                     attribute = definition.get('restrict_to')
                     if attribute is not None:
                         new_value = "OOPS"
                         self.update_attribute_value(object_name_path, name, new_value)
-                        self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
+                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
                         self.update_attribute_value(object_name_path, name, current_value)
 
-            if defintion_attribute == 'type':
+            if definition_attribute == 'type':
                 def swap_logic(object_name_path, name, definition, current_value):
                     attribute_type = eval(definition['type'])
                     value = attribute_type(current_value)
@@ -518,7 +517,7 @@ class ValidateNestedInput:
                             value, bool):
                         new_value = "OOPS"
                         self.update_attribute_value(object_name_path, name, new_value)
-                        self.test_data_list.append([name, copy.deepcopy(self.input_dict)])
+                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
                         self.update_attribute_value(object_name_path, name, value)
 
             def add_invalid_data(object_name_path, template_values=None, real_values=None):
@@ -529,7 +528,9 @@ class ValidateNestedInput:
 
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
 
-            return self.test_data_list
+            # test_data_list is a list of lists, with each sub list a pair of [str, dict],
+            # where the str is an input param, dict is an entire post with a bad value for that input param
+            return test_data_list
 
 
 #Following functions go into recursively_check_input_by_objectnames_and_values on instantiation and validation to check an object name and set of values
