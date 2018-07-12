@@ -89,4 +89,6 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     else:
         wind_meters_per_sec = list(hourly_wind_meters_per_sec[:-1])  # see Note above about dropping last value
 
+    wind_meters_per_sec = [float(x) for x in wind_meters_per_sec]  # numpy float32 is not json serializable
+
     return wind_meters_per_sec
