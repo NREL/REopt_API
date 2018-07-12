@@ -584,6 +584,14 @@ class ValidateNestedInput:
                                 name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
 
         def check_special_data_types(self, object_name_path, template_values=None, real_values=None):
+            """
+            Validate special data types.
+            :param object_name_path: list of strings, eg. ["Scenario", "Site", "Wind"]
+            :param template_values: not used in this function, placeholder for usage in
+                self.recursively_check_input_by_objectnames_and_values
+            :param real_values: dict, posted values starting at the end of the object_name_path with defaults filled in
+            :return: None
+            """
             if real_values is not None:
 
                 urdb_response = real_values.get('urdb_response')
@@ -646,6 +654,30 @@ class ValidateNestedInput:
                     else:
                         self.input_data_errors.append("Invalid length for critical_loads_kw. Critical load profile must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)")
 
+                if object_name_path[-1] == 'Wind':
+
+                    if real_values.get("resource_meters_per_sec") is None \
+                            and self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
+                        """
+                        Validate that provided lat/lon lies within the wind toolkit data set. 
+                        If the location is not within the dataset, then return input_data_error.
+                        If the location is within the dataset, add the resource_meters_per_sec to the Wind inputs so 
+                        that we only query the database once.
+                        """
+                        from reo.src.wind_resource import get_wind_resource
+                        from reo.src.techs import Wind
+
+                        try:
+                            wind_meters_per_sec = get_wind_resource(
+                                latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                hub_height_meters=Wind.size_class_to_hub_height[self.input_dict['Scenario']['Site']['Wind']['size_class']],
+                                time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour']
+                            )
+                            self.update_attribute_value(object_name_path, 'resource_meters_per_sec', wind_meters_per_sec)
+
+                        except ValueError:
+                            self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds. Please provide Wind.resource_meters_per_sec")
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
             if real_values is not None:
@@ -678,11 +710,12 @@ class ValidateNestedInput:
                 if self.isAttribute(template_key):
                     default = template_value.get('default')
                     if default is not None and real_values.get(template_key) is None:
-                        if isinstance(default, str):
-                            d = self.input_dict['Scenario']
-                            for key in default.split(' '):
-                                d = d.get(key)
-                            default = d
+                        if isinstance(default, str):  # special case for PV.tilt.default = "Site latitude"
+                            if " " in default:
+                                d = self.input_dict['Scenario']
+                                for key in default.split(' '):
+                                    d = d.get(key)
+                                default = d
                         self.update_attribute_value(object_name_path, template_key, default)
                         self.defaults_inserted.append([template_key, object_name_path])
 

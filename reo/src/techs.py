@@ -98,19 +98,33 @@ class PV(Tech):
 
 class Wind(Tech):
 
-    def __init__(self, dfm, acres_per_kw=.03, **kwargs):
+    size_class_to_hub_height = {
+        'residential': 20,
+        'commercial': 40,
+        'medium': 60,
+        'large': 80,  # default value
+    }
+
+    def __init__(self, dfm, resource_meters_per_sec, acres_per_kw=.03, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
+        self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
+        self.resource_meters_per_sec = resource_meters_per_sec
 
         self.ventyx = None
         dfm.add_wind(self)
 
     @property
     def prod_factor(self):
+        """
+        Pass resource_meters_per_sec to SAM SDK to get production factor
+        :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
+        """
+        # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
         if self.ventyx is None:
             self.ventyx = Ventyx()
         return self.ventyx.wind_prod_factor
