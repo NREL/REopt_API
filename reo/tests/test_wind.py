@@ -93,7 +93,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         self.assertEqual(len(wind_meters_per_sec), 8760)
 
     def test_location_outside_wind_toolkit_dataset(self):
-        bad_post = copy.copy(wind_post)
+        bad_post = copy.deepcopy(wind_post)
         bad_post['Scenario']['Site']['longitude'] = 100
         validator = ValidateNestedInput(bad_post)
         assert(any("Latitude/longitude is outside of wind resource dataset bounds"
