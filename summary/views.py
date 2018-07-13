@@ -20,7 +20,7 @@ def summary(request, user_id):
 				  "created",					# Date
 				  "description",				# Description
 				  "focus",						# Focus
-				  "location",					# Location
+				  "address",					# Address
 				  "urdb_rate_name",				# Utility Tariff
 				  "doe_reference_name",			# Load Profile
 				  "npv_us_dollars",				# Net Present Value ($)
@@ -37,6 +37,11 @@ def summary(request, user_id):
 	try:
 		scenarios = ScenarioModel.objects.filter(user_id=user_id).order_by('-created')
 		json = {"user_id": user_id, "scenarios": []}
+
+		if len(scenarios) == 0:
+			response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_id)}, content_type='application/json', status=404)
+			return response
+
 		for scenario in scenarios:
 			results = {}
 
@@ -60,7 +65,7 @@ def summary(request, user_id):
 			if site:
 
 				# Description
-				results['run_description'] = site.run_description
+				results['description'] = scenario.description
 
 				# Focus
 				if load.outage_start_hour:
@@ -68,8 +73,8 @@ def summary(request, user_id):
 				else:
 					results['focus'] = "Financial"
 
-				# Location
-				results['location'] = site.location
+				# Address
+				results['address'] = site.address
 
 				# Utility Tariff
 				if tariff.urdb_rate_name:
@@ -132,6 +137,7 @@ def summary(request, user_id):
 		return response
 
 	except Exception as e:
-		return JsonResponse({"Error": e}, status=500)
-
-
+		exc_type, exc_value, exc_traceback = sys.exc_info()
+		err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_id=user_id)
+		err.save_to_db()
+		return JsonResponse({"Error": err.message}, status=500)

@@ -21,6 +21,7 @@ class ScenarioModel(models.Model):
     api_version = models.TextField(null=True, blank=True, default='')
     user_id = models.TextField(null=True, blank=True)
     
+    description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
@@ -37,8 +38,7 @@ class SiteModel(models.Model):
 
     #Inputs
     run_uuid = models.UUIDField(unique=True)
-    location = models.TextField(null=True, blank=True, default='')
-    run_description = models.TextField(null=True, blank=True, default='')
+    address = models.TextField(null=True, blank=True, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)

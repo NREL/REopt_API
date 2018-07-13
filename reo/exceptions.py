@@ -8,22 +8,30 @@ class REoptError(Exception):
     Base class for exceptions in reo app.
     """
 
-    def __init__(self, task='', name='', run_uuid='', message='', traceback=''):
+    def __init__(self, task='', name='', run_uuid='', user_id='', message='', traceback=''):
         """
 
         :param task: task where error occurred, e.g. scenario_setup, reopt, process_results
         :param name: name of error class, e.g. SubprocessTimeout
         :param run_uuid:
+        :param user_id:
         :param message: message that is sent back to user in messages: errors
         :param traceback: sys.exc_info()[2]
         """
-        msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
+        if run_uuid:
+            msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
+        elif user_id:
+            msg_with_email = " Please email reopt@nrel.gov with your user_id ({}) for support.".format(user_id)
+        else:
+            msg_with_email = " Please email reopt@nrel.gov for support."
+
         if 'infeasible' not in traceback:
             self.message = message + msg_with_email  # msg_with_email included in messages: error response, but not in error table
         else:
             self.message = message
         self.task = task
         self.run_uuid = run_uuid
+        self.user_id = user_id
         self.traceback = traceback
         self.name = name
         log.error(traceback)
@@ -121,8 +129,8 @@ class UnexpectedError(REoptError):
 
     __name__ = 'UnexpectedError'
 
-    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid=''):
+    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid='', user_id=''):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
         message = "Unexpected Error."
-        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, message=message, 
+        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_id=user_id, message=message, 
                                               traceback=debug_msg)

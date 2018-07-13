@@ -7,18 +7,18 @@ from django.db import models, migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('reo', '0020_merge'),
+        ('reo', '0019_merge'),
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='sitemodel',
-            name='location',
+        migrations.AddField(
+            model_name='scenariomodel',
+            name='description',
             field=models.TextField(default=b'', null=True, blank=True),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='sitemodel',
-            name='run_description',
+            name='address',
             field=models.TextField(default=b'', null=True, blank=True),
         ),
     ]

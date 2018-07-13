@@ -56,6 +56,10 @@ nested_input_definitions = {
       "type": "str",
       "description": "The assigned unique ID of a signed in REOpt user"
     },
+    "description": {
+      "type": "str",
+      "description": "An optional user defined description to describe the scenario and run"
+    },
     "time_steps_per_hour": {
       "type": "int",
       "min": 1,
@@ -79,13 +83,9 @@ nested_input_definitions = {
         "required": True,
         "description": "The approximate longitude of the site in decimal degrees"
       },
-      "location": {
+      "address": {
         "type": "str",
-        "description": "The user defined location (street address, city, state or zip code)"
-      },
-      "run_description": {
-        "type": "str",
-        "description": "The user defined description to describe the scenario and run"
+        "description": "A user defined address as optional metadata (street address, city, state or zip code)"
       },
       "land_acres": {
         "type": "float",
@@ -789,13 +789,13 @@ def flat_to_nested(i):
         "Scenario": {
             "timeout_seconds": i.get("timeout"),
             "user_id": i.get("user_id"),
+            "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
 
             "Site": {
                 "latitude": i.get("latitude"),
                 "longitude": i.get("longitude"),
-                "location": i.get("location"),
-                "run_description": i.get("run_description"),
+                "address": i.get("address"),
                 "land_acres": i.get("land_area"),
                 "roof_squarefeet": i.get("roof_area"),
 
