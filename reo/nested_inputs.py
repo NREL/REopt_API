@@ -275,6 +275,16 @@ nested_input_definitions = {
       },
 
       "Wind": {
+        "size_class": {
+          "type": "str",
+          "default": "large",
+          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "description": "Turbine size-class. One of [residential, commercial, medium, large]"
+        },
+        "resource_meters_per_sec": {
+          "type": "list_of_float",
+          "description": "Optional wind resource for site in meters/sec. Must contain a value for each time step in one year."
+        },
         "min_kw": {
           "type": "float",
           "min": 0,

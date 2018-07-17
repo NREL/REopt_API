@@ -538,8 +538,6 @@ class DatFileManager:
                             n_segments = len(tmp_cap_cost_slope)
                             break
 
-                    # import pdb; pdb.set_trace()
-
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
                 cap_cost_slope += tmp_cap_cost_slope
