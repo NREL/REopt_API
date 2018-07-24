@@ -34,10 +34,11 @@ class REoptError(Exception):
             task = models.TextField(blank=True, default='')
             name = models.TextField(blank=True, default='')
             run_uuid = models.TextField(blank=True, default='')
+            user_id = models.TextField(blank=True, default='')
             message = models.TextField(blank=True, default='')
             traceback = models.TextField(blank=True, default='')
         """
-        em = ErrorModel(task=self.task, name=self.name, run_uuid=self.run_uuid, message=self.message,
+        em = ErrorModel(task=self.task, name=self.name, run_uuid=self.run_uuid, user_id=self.user_id, message=self.message,
                         traceback=self.traceback)
         em.save()
 
