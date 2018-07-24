@@ -21,6 +21,7 @@ class ScenarioModel(models.Model):
     api_version = models.TextField(null=True, blank=True, default='')
     user_id = models.TextField(null=True, blank=True)
     
+    description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
@@ -37,6 +38,7 @@ class SiteModel(models.Model):
 
     #Inputs
     run_uuid = models.UUIDField(unique=True)
+    address = models.TextField(null=True, blank=True, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
@@ -359,6 +361,7 @@ class ErrorModel(models.Model):
     task = models.TextField(blank=True, default='')
     name = models.TextField(blank=True, default='')
     run_uuid = models.TextField(blank=True, default='')
+    user_id = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
     traceback = models.TextField(blank=True, default='')
     created = models.DateTimeField(auto_now_add=True)
