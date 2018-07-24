@@ -359,6 +359,7 @@ class ErrorModel(models.Model):
     task = models.TextField(blank=True, default='')
     name = models.TextField(blank=True, default='')
     run_uuid = models.TextField(blank=True, default='')
+    user_id = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
     traceback = models.TextField(blank=True, default='')
     created = models.DateTimeField(auto_now_add=True)
