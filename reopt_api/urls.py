@@ -24,6 +24,7 @@ urlpatterns = [
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', include('resilience_stats.urls'), name='resilience_stats'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results, name='results'),
+    url(r'^v1/user/(?P<user_id>[0-9a-z-]+)/summary/?$', include('summary.urls'), name='summary'),
     url(r'^v1/help/?$', views.help, name='help'),
     url(r'^v1/invalid_urdb/?$', views.invalid_urdb, name='invalid_urdb'),
     url(r'^v1/annual_kwh/?$', views.annual_kwh, name='annual_kwh'),
