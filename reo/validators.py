@@ -725,16 +725,26 @@ class ValidateNestedInput:
             from reo.src.techs import Wind
 
             try:
-                wind_meters_per_sec = get_wind_resource(
+                wind_data = get_wind_resource(
                     latitude=self.input_dict['Scenario']['Site']['latitude'],
                     longitude=self.input_dict['Scenario']['Site']['longitude'],
                     hub_height_meters=Wind.size_class_to_hub_height[self.input_dict['Scenario']['Site']['Wind']['size_class']],
                     time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour']
                 )
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'resource_meters_per_sec', wind_meters_per_sec)
+                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_meters_per_sec',
+                                            wind_data['wind_meters_per_sec'])
+
+                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_direction_degrees',
+                                            wind_data['wind_direction_degrees'])
+
+                self.update_attribute_value(["Scenario", "Site", "Wind"], 'temperature_celsius',
+                                            wind_data['temperature_celsius'])
+
+                self.update_attribute_value(["Scenario", "Site", "Wind"], 'pressure_atmospheres',
+                                            wind_data['pressure_atmospheres'])
 
             except ValueError as e:
-                self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds. Please provide Wind.resource_meters_per_sec")
+                self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds.")
 
         def validate_urdb_response(self):
 

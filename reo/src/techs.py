@@ -105,7 +105,7 @@ class Wind(Tech):
         'large': 80,  # default value
     }
 
-    def __init__(self, dfm, resource_meters_per_sec, acres_per_kw=.03, **kwargs):
+    def __init__(self, dfm, acres_per_kw=.03, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.nmil_regime = 'BelowNM'
@@ -113,7 +113,7 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        self.resource_meters_per_sec = resource_meters_per_sec
+        self.kwargs = kwargs  # includes wind data for SAM SDK
 
         self.ventyx = None
         dfm.add_wind(self)

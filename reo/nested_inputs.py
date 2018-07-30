@@ -289,9 +289,21 @@ nested_input_definitions = {
           "restrict_to": "['residential', 'commercial', 'medium', 'large']",
           "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
-        "resource_meters_per_sec": {
+        "wind_meters_per_sec": {
           "type": "list_of_float",
-          "description": "Optional wind resource for site in meters/sec. Must contain a value for each time step in one year."
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "wind_direction_degrees": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "temperature_celsius": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "pressure_atmospheres": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
         },
         "min_kw": {
           "type": "float",
