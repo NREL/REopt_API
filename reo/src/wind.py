@@ -60,6 +60,8 @@ class WindSAMSDK:
         self.data = []
         self.module = []
 
+        self.make_ssc()
+
     def make_ssc(self):
 
         ssc = PySSC()
@@ -97,18 +99,25 @@ class WindSAMSDK:
         ssc.data_set_number(data, 'wind_farm_wake_model', 0)
         ssc.data_set_number(data, 'adjust:constant', 0)
 
-        if ssc.module_exec(module, data) == 0:
+        self.ssc = ssc
+        self.data = data
+        self.module = module
+
+    def wind_prod_factor(self):
+
+        if self.ssc.module_exec(self.module, self.data) == 0:
             print ('windpower simulation error')
             idx = 1
-            msg = ssc.module_log(module, 0)
+            msg = self.ssc.module_log(self.module, 0)
             while (msg != None):
                 print ('	: ' + msg)
-                msg = ssc.module_log(module, idx)
+                msg = self.ssc.module_log(self.module, idx)
                 idx = idx + 1
-        ssc.module_free(module)
-        annual_energy = ssc.data_get_number(data, 'annual_energy')
-        print 'Annual energy (year 1) = ', annual_energy
-        capacity_factor = ssc.data_get_number(data, 'capacity_factor')
-        print 'Capacity factor (year 1) = ', capacity_factor
-        ssc.data_free(data)
+        self.ssc.module_free(self.module)
+        system_power = self.ssc.data_get_array(self.data, 'gen')
+        prod_factor = [power/self.system_capacity for power in system_power]
+        self.ssc.data_free(self.data)
+        return prod_factor
+
+
 

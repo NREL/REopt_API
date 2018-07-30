@@ -1,5 +1,6 @@
 from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
+from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
@@ -116,6 +117,7 @@ class Wind(Tech):
         self.resource_meters_per_sec = resource_meters_per_sec
 
         self.ventyx = None
+        self.sam_prod_factor = None
         dfm.add_wind(self)
 
     @property
@@ -124,10 +126,16 @@ class Wind(Tech):
         Pass resource_meters_per_sec to SAM SDK to get production factor
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
+        if self.sam_prod_factor is None:
+            sam = WindSAMSDK(**self.kwargs)
+            self.sam_prod_factor = sam.wind_prod_factor()
+
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
         if self.ventyx is None:
             self.ventyx = Ventyx()
-        return self.ventyx.wind_prod_factor
+        # return self.ventyx.wind_prod_factor
+
+        return self.sam_prod_factor
 
 
 class Generator(Tech):
