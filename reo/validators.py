@@ -357,9 +357,18 @@ class ValidateNestedInput:
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
-                if self.input_dict['Scenario']['Site']['Wind'].get("resource_meters_per_sec"):
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("resource_meters_per_sec"),
-                                       "Wind", "resource_meters_per_sec")
+                if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
+                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
+                                       "Wind", "wind_meters_per_sec")
+
+                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
+                                       "Wind", "wind_direction_degrees")
+
+                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
+                                       "Wind", "temperature_celsius")
+
+                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
+                                       "Wind", "pressure_atmospheres")
                 else:
                     self.validate_wind_resource()
 
@@ -717,7 +726,7 @@ class ValidateNestedInput:
             """
             Validate that provided lat/lon lies within the wind toolkit data set.
             If the location is not within the dataset, then return input_data_error.
-            If the location is within the dataset, add the resource_meters_per_sec to the Wind inputs so
+            If the location is within the dataset, add the wind_meters_per_sec to the Wind inputs so
             that we only query the database once.
             :return: None
             """
