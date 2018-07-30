@@ -14,9 +14,9 @@ class WindSAMSDK:
                  elevation=None,
                  year=None,
                  size_class='commercial',
-                 temperatures_celcius=None,
-                 pressures_atmospheres=None,
                  hub_height_meters=None,
+                 temperature_celsius=None,
+                 pressure_atmospheres=None,
                  wind_direction_degrees=None,
                  wind_meters_per_sec=None):
 
@@ -27,8 +27,8 @@ class WindSAMSDK:
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
 
-        self.temperatures_celcius = temperatures_celcius
-        self.pressure_atmospheres = pressures_atmospheres
+        self.temperatures_celsius = temperature_celsius
+        self.pressure_atmospheres = pressure_atmospheres
         self.wind_direction_degrees = wind_direction_degrees
         self.wind_meters_per_sec = wind_meters_per_sec
 
@@ -42,17 +42,17 @@ class WindSAMSDK:
                                                        66.483200073242188, 94.660652160644531, 100, 100, 100, 100, 100,
                                                        100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 ]
 
-        self.wind_turbine_powercurve['midsize'] = [ 0, 0, 0, 10.517849922180176, 24.93120002746582, 48.693748474121094,
+        self.wind_turbine_powercurve['medium'] = [ 0, 0, 0, 10.517849922180176, 24.93120002746582, 48.693748474121094,
                                                     84.142799377441406, 133.61564636230469, 199.44960021972656,
                                                     283.98196411132813, 300, 300, 300, 300, 300, 300, 300, 300, 300,
                                                     300, 300, 300, 300, 300, 300, 300 ]
 
         self.rotor_diameter['large'] = 53.5
-        self.rotor_diameter['midsize'] = 24
+        self.rotor_diameter['medium'] = 24
         self.rotor_diameter['commercial'] = 13.8
 
         self.system_capacity['large'] = 1500
-        self.system_capacity['midsize'] = 300
+        self.system_capacity['medium'] = 300
         self.system_capacity['commercial'] = 100
 
 
@@ -76,7 +76,7 @@ class WindSAMSDK:
         wind_data['year'] = self.year
         wind_data['heights'] = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters, self.hub_height_meters]
         wind_data['fields'] [1, 2, 3, 4]
-        wind_data['data'] = [self.temperatures_celcius, self.pressure_atmospheres, self.wind_direction_degrees, self.wind_meters_per_sec]
+        wind_data['data'] = [self.temperature_celsius, self.pressure_atmospheres, self.wind_direction_degrees, self.wind_meters_per_sec]
 
         ssc.data_set_table(data, 'wind_resource_data', wind_data)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
