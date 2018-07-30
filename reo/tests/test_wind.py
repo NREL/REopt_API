@@ -85,12 +85,12 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
         latitude, longitude = 39.7555, -105.2211
 
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
-        self.assertEqual(len(wind_meters_per_sec), 8760*4)
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=60, time_steps_per_hour=2)
-        self.assertEqual(len(wind_meters_per_sec), 8760 * 2)
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
-        self.assertEqual(len(wind_meters_per_sec), 8760)
+        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
+        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760*4)
+        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=60, time_steps_per_hour=2)
+        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760 * 2)
+        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
+        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
     def test_location_outside_wind_toolkit_dataset(self):
         bad_post = copy.deepcopy(wind_post)
@@ -101,4 +101,4 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
     def test_validator_fills_in_wind_resource(self):
         validator = ValidateNestedInput(wind_post)
-        assert(len(validator.input_dict['Scenario']['Site']['Wind']['resource_meters_per_sec']) == 8760)
+        assert(len(validator.input_dict['Scenario']['Site']['Wind']['wind_meters_per_sec']) == 8760)
