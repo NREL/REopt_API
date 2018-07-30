@@ -77,6 +77,9 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     :param time_steps_per_hour: int, 1, 2, or 4
     :return: list with length = 8760 * time_steps_per_hour, wind_meters_per_sec
     """
+
+    pascals_to_atm = float(1 / 101325)
+    kelvin_to_celsius = -273.15
     db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
     y, x = get_conic_coords(db_conn, latitude, longitude)
     """
@@ -102,22 +105,22 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
 
         series = pd.Series(hourly_temperature, index=index)
         series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
-        temperature_celsius = series.tolist()[:-1]  # see Note above about dropping last value
+        temperature_kelvin = series.tolist()[:-1]  # see Note above about dropping last value
 
         series = pd.Series(hourly_pressure, index=index)
         series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
-        pressure_atmospheres = series.tolist()[:-1]  # see Note above about dropping last value
+        pressure_pascals = series.tolist()[:-1]  # see Note above about dropping last value
 
     else:
         wind_meters_per_sec = list(hourly_windspeed_meters_per_sec[:-1])  # see Note above about dropping last value
         wind_direction_degrees = list(hourly_wind_direction_degrees[:-1])
-        temperature_celsius = list(hourly_temperature[:-1])
-        pressure_atmospheres = list(hourly_pressure[:-1])
+        temperature_kelvin = list(hourly_temperature[:-1])
+        pressure_pascals = list(hourly_pressure[:-1])
 
     wind_meters_per_sec = [float(x) for x in wind_meters_per_sec]  # numpy float32 is not json serializable
     wind_direction_degrees = [float(x) for x in wind_direction_degrees]
-    temperature_celsius = [float(x) for x in temperature_celsius]
-    pressure_atmospheres = [float(x) for x in pressure_atmospheres]
+    temperature_celsius = [float(x) + kelvin_to_celsius for x in temperature_kelvin]
+    pressure_atmospheres = [float(x * pascals_to_atm) for x in pressure_pascals]
 
     return {
         'wind_meters_per_sec': wind_meters_per_sec,

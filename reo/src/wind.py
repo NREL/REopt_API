@@ -1,4 +1,5 @@
 from sscapi import PySSC
+import numpy as np
 
 
 class WindSAMSDK:
@@ -18,7 +19,9 @@ class WindSAMSDK:
                  temperature_celsius=None,
                  pressure_atmospheres=None,
                  wind_direction_degrees=None,
-                 wind_meters_per_sec=None):
+                 wind_meters_per_sec=None,
+                 **kwargs
+                 ):
 
         self.elevation = elevation
         self.latitude=latitude
@@ -27,7 +30,7 @@ class WindSAMSDK:
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
 
-        self.temperatures_celsius = temperature_celsius
+        self.temperature_celsius = temperature_celsius
         self.pressure_atmospheres = pressure_atmospheres
         self.wind_direction_degrees = wind_direction_degrees
         self.wind_meters_per_sec = wind_meters_per_sec
@@ -75,8 +78,10 @@ class WindSAMSDK:
         wind_data['elevation'] = self.elevation
         wind_data['year'] = self.year
         wind_data['heights'] = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters, self.hub_height_meters]
-        wind_data['fields'] [1, 2, 3, 4]
-        wind_data['data'] = [self.temperature_celsius, self.pressure_atmospheres, self.wind_direction_degrees, self.wind_meters_per_sec]
+        wind_data['fields'] = [1, 2, 3, 4]
+
+        data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec, self.wind_direction_degrees])
+        wind_data['data'] = data_matrix.transpose()
 
         ssc.data_set_table(data, 'wind_resource_data', wind_data)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
