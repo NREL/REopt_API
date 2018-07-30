@@ -54,7 +54,11 @@ nested_input_definitions = {
     },
     "user_id": {
       "type": "str",
-      "description": "Not currently used"
+      "description": "The assigned unique ID of a signed in REOpt user"
+    },
+    "description": {
+      "type": "str",
+      "description": "An optional user defined description to describe the scenario and run"
     },
     "time_steps_per_hour": {
       "type": "int",
@@ -78,6 +82,10 @@ nested_input_definitions = {
         "max": 180,
         "required": True,
         "description": "The approximate longitude of the site in decimal degrees"
+      },
+      "address": {
+        "type": "str",
+        "description": "A user defined address as optional metadata (street address, city, state or zip code)"
       },
       "land_acres": {
         "type": "float",
@@ -275,6 +283,16 @@ nested_input_definitions = {
       },
 
       "Wind": {
+        "size_class": {
+          "type": "str",
+          "default": "large",
+          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "description": "Turbine size-class. One of [residential, commercial, medium, large]"
+        },
+        "resource_meters_per_sec": {
+          "type": "list_of_float",
+          "description": "Optional wind resource for site in meters/sec. Must contain a value for each time step in one year."
+        },
         "min_kw": {
           "type": "float",
           "min": 0,
@@ -781,11 +799,13 @@ def flat_to_nested(i):
         "Scenario": {
             "timeout_seconds": i.get("timeout"),
             "user_id": i.get("user_id"),
+            "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
 
             "Site": {
                 "latitude": i.get("latitude"),
                 "longitude": i.get("longitude"),
+                "address": i.get("address"),
                 "land_acres": i.get("land_area"),
                 "roof_squarefeet": i.get("roof_area"),
 
