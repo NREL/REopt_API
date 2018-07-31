@@ -18,8 +18,7 @@ pipeline {
         sh """
 	virtualenv env
 	source env/bin/activate
-	ls $JENKINS_HOME/jobs/reopt-api/branches/jenkinsfile/builds
-	ls $JENKINS_HOME/jobs/reopt-api/branches/jenkinsfile/workspace
+	ls $JENKINS_HOME/jobs/reopt-api/branches/jenkinsfile/builds/14
 	/*
 	cp $JENKINS_HOME/keys.py .
 	pip install -r requirements.txt
