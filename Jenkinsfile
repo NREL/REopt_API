@@ -16,12 +16,16 @@ pipeline {
     stage("Test") {
       steps {
         sh """
-	pip install virtualenv
 	virtualenv env
 	source env/bin/activate
-	pip install -r requirements.txt
+	ls $JENKINS_HOME
+	find / -name "keys.py" 
+	ls
+	/*
 	cp $JENKINS_HOME/keys.py .
+	pip install -r requirements.txt
 	python manage.py test --noinput
+	*/
 	"""
       }
     }
