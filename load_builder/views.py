@@ -1,3 +1,5 @@
+import csv
+import io
 import json
 import sys
 import numpy as np
@@ -52,9 +54,18 @@ def load_builder(request):
         if request.method == 'POST':
             post = request.body
             try:
-                loads_table = json.loads(post)
+                # Try to import JSON, then try to import CSV
+                try:
+                    loads_table = json.loads(post)
+                except:
+                    loads_table = unicode(post, "utf-8")
+                finally:
+                    if not isinstance(loads_table, list):
+                        csv_reader = csv.DictReader(io.StringIO(loads_table))
+                        loads_table = list(csv_reader)
+
             except:
-                return JsonResponse({"Error": "Invalid JSON"})
+                return JsonResponse({"Error": "Invalid JSON or CSV"})
 
             # Validation
             if not check_load_builder_inputs(loads_table):

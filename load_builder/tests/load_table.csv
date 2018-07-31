@@ -1,0 +1,3 @@
+Emergency Load Type,Power (W),Quantity,Start Hr.,Stop Hr.,Start Mo.,Stop Mo.,% Run Time
+ADA - wheelchair charging,720,2,0,24,January,December,42
+Comms - WIFI,529,1,0,24,January,December,100
