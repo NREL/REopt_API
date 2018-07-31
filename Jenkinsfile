@@ -12,9 +12,11 @@ pipeline {
     DB_PASSWORD = "postgres"
   }
 
+  stages{
     stage("Test") {
       steps {
         python manage.py test
       }
     }
+  }
 }
