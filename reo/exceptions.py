@@ -8,7 +8,7 @@ class REoptError(Exception):
     Base class for exceptions in reo app.
     """
 
-    def __init__(self, task='', name='', run_uuid='', user_id='', message='', traceback=''):
+    def __init__(self, task='', name='', run_uuid='', message='', traceback='', user_id=''):
         """
 
         :param task: task where error occurred, e.g. scenario_setup, reopt, process_results
