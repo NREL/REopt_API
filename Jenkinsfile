@@ -19,8 +19,8 @@ pipeline {
 	virtualenv env
 	source env/bin/activate
 	ls $JENKINS_HOME
-	find / -name "keys.py" 
 	ls
+	sudo ls /etc/
 	/*
 	cp $JENKINS_HOME/keys.py .
 	pip install -r requirements.txt
