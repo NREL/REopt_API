@@ -2,9 +2,6 @@
 
 pipeline {
   agent any
-  triggers {
-    cron("H H(0-5) * * *")
-  }
 
   environment {
     PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/pgsql-9.4/bin:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
@@ -20,6 +17,4 @@ pipeline {
         python manage.py test
       }
     }
-  }
- }
 }
