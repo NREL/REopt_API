@@ -15,7 +15,10 @@ pipeline {
   stages{
     stage("Test") {
       steps {
-        sh 'python manage.py test'
+        sh """
+	pip install -r requirements.txt
+	python manage.py test --noinput
+	"""
       }
     }
   }
