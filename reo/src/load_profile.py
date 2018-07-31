@@ -508,7 +508,7 @@ class LoadProfile(BuiltInProfile):
             2. if user DOES NOT provide critical_loads_kw, use critical_load_pct to scale load_list during outage.
         In both cases, if existing PV and load is net then add existing PV to critical_loads_kw.
         """
-        if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
+        if all(x not in [critical_loads_kw, outage_start_hour, outage_end_hour] for x in [None, []]):
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
