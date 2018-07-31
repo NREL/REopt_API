@@ -20,6 +20,7 @@ pipeline {
 	virtualenv env
 	source env/bin/activate
 	pip install -r requirements.txt
+	cp $JENKINS_HOME/keys.py .
 	python manage.py test --noinput
 	"""
       }
