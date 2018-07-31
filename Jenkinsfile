@@ -15,7 +15,7 @@ pipeline {
   stages{
     stage("Test") {
       steps {
-        python manage.py test
+        sh 'python manage.py test'
       }
     }
   }
