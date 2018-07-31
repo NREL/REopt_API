@@ -1,4 +1,4 @@
-@Library("reopt-api-jenkins-library") _
+@Library("tada-jenkins-library") _
 
 pipeline {
   agent any
