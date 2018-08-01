@@ -18,10 +18,11 @@ class WindSAMSDK:
                  hub_height_meters=None,
                  temperature_celsius=None,
                  pressure_atmospheres=None,
-                 wind_direction_degrees=None,
                  wind_meters_per_sec=None,
+                 wind_direction_degrees=None,
                  **kwargs
                  ):
+
 
         self.elevation = elevation
         self.latitude=latitude
@@ -72,18 +73,21 @@ class WindSAMSDK:
         data = ssc.data_create()
         module = ssc.module_create('windpower')
 
-        wind_data = dict()
-        wind_data['latitude'] = self.latitude
-        wind_data['longitude'] = self.longitude
-        wind_data['elevation'] = self.elevation
-        wind_data['year'] = self.year
-        wind_data['heights'] = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters, self.hub_height_meters]
-        wind_data['fields'] = [1, 2, 3, 4]
-
+        # must setup wind resource in it's own ssc data structure
+        wind_resource = ssc.data_create()
+        ssc.data_set_number(wind_resource, 'latitude', self.latitude)
+        ssc.data_set_number(wind_resource, 'longitude', self.longitude)
+        ssc.data_set_number(wind_resource, 'elevation', self.elevation)
+        ssc.data_set_number(wind_resource, 'year', self.year)
+        heights = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters, self.hub_height_meters]
+        ssc.data_set_array(wind_resource, 'heights', heights)
+        fields = [1, 2, 3, 4]
+        ssc.data_set_array(wind_resource, 'fields', fields)
         data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec, self.wind_direction_degrees])
-        wind_data['data'] = data_matrix.transpose()
+        data_matrix = data_matrix.transpose()
+        ssc.data_set_matrix(wind_resource, 'data', data_matrix.tolist() )
 
-        ssc.data_set_table(data, 'wind_resource_data', wind_data)
+        ssc.data_set_table(data, 'wind_resource_data', wind_resource)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
         ssc.data_set_number(data, 'wind_resource_turbulence_coeff', 0.10000000149011612)
         ssc.data_set_number(data, 'system_capacity', self.system_capacity[self.size_class])
@@ -104,6 +108,7 @@ class WindSAMSDK:
         ssc.data_set_number(data, 'wind_farm_wake_model', 0)
         ssc.data_set_number(data, 'adjust:constant', 0)
 
+        ssc.data_free(wind_resource)
         self.ssc = ssc
         self.data = data
         self.module = module
@@ -120,7 +125,7 @@ class WindSAMSDK:
                 idx = idx + 1
         self.ssc.module_free(self.module)
         system_power = self.ssc.data_get_array(self.data, 'gen')
-        prod_factor = [power/self.system_capacity for power in system_power]
+        prod_factor = [power/self.system_capacity[self.size_class] for power in system_power]
         self.ssc.data_free(self.data)
         return prod_factor
 
