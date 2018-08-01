@@ -12,8 +12,8 @@ class WindSAMSDK:
     def __init__(self,
                  latitude=None,
                  longitude=None,
-                 elevation=None,
-                 year=None,
+                 elevation=0,  # not actually used in SDK
+                 year=2012,    # not used in SDK, but required
                  size_class='commercial',
                  hub_height_meters=None,
                  temperature_celsius=None,
@@ -75,6 +75,7 @@ class WindSAMSDK:
 
         # must setup wind resource in it's own ssc data structure
         wind_resource = ssc.data_create()
+
         ssc.data_set_number(wind_resource, 'latitude', self.latitude)
         ssc.data_set_number(wind_resource, 'longitude', self.longitude)
         ssc.data_set_number(wind_resource, 'elevation', self.elevation)

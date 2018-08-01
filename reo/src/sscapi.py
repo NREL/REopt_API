@@ -22,7 +22,7 @@ class PySSC:
 		elif sys.platform == 'darwin':
 			self.pdll = CDLL("ssc.dylib") 
 		elif sys.platform == 'linux2':
-			self.pdll = CDLL('./ssc.so')   # instead of relative path, require user to have on LD_LIBRARY_PATH
+			self.pdll = CDLL('ssc.so')   # instead of relative path, require user to have on LD_LIBRARY_PATH
 		else:
 			print "Platform not supported ", sys.platform
 
