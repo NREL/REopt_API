@@ -29,7 +29,9 @@ This can be ignored (it is only needed for the web servers).
 
 You can check which branch you are on with `git status`. It should be the master branch.
 
-Lastly, get *keys.py* from another API developer (these are access keys that we do not version control).
+Lastly, **get *keys.py* from another API developer** (these are access keys that we do not version control).
+
+
 
 ## Step 2: Python 2.7.15
 If you have not already, you need to install [Xcode](https://developer.apple.com/xcode/), which can be found in the app store or installed via terminal with `xcode-select --install`
@@ -44,7 +46,7 @@ Sometime in 2018 Mac released an update that caused SSL issues for python 2.7. [
 
 Confirm your version of python with `python --version`.
 
-### FYI
+#### FYI
 Mac computers come with python installed in two locations: `/System/Library/Frameworks/Python.framework` and `/usr/bin/python`. These should not be modified since Apple and third party apps may depend on them.  [Homebrew](http://docs.python-guide.org/en/latest/starting/install/osx/) is a popular option for managing Mac software packages, including python versions.
 
 
@@ -58,12 +60,13 @@ Fortunately, there's an [app](https://virtualenv.pypa.io/en/stable/userguide/) f
 
    NOTE: Virtual environments can be installed into any directory with any name. However, we already have the "env" directory in the .gitignore file so that the virtual environment is not version controlled if it is installed in MY-API-FOLDER.
 
-3. Activate the virtual environment, which you should do whenever you are using the API:
+4. Activate the virtual environment, which you should do whenever you are using the API:
    - `source env/bin/activate`
 
    NOTE: If you open a new terminal or command prompt the environment will need to be activated for that session. Also, you can activate the environment from any directory by providing the full path to the `source` command.
 
-4. DO NOT DO THIS NOW, but for future reference, to deactivate the virtual environment simply `deactivate` from any directory.
+#### FYI
+DO NOT DO THIS NOW, but for future reference, to deactivate the virtual environment simply `deactivate` from any directory.
 
 
 ## Step 4: Install Requirements
@@ -133,6 +136,7 @@ Once your PostgreSQL server is up and running, in your development environment:
 python manage.py migrate
 ```
 
+#### FYI
 If you totally bugger up your local PostgreSQL database during development, log into psql and:
 ```
 drop database reopt;
@@ -149,6 +153,7 @@ python manage.py migrate
 Run all test with `python manage.py test`.
 When tests are run, a new PostgreSQL database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
 
+#### FYI
 A good option to know is `--failfast`, as in:
 ```
 python manage.py test --failfast
@@ -168,7 +173,7 @@ python manage.py test reo.tests.test_wind
 
 
 ## Step 7: Starting API server and Celery workers
-First, one must define some local environment variables. Open a new file in the root directory of the API and include:
+First, one must define some local environment variables. Open a new file called `.env` in the root directory of the API and include:
 ```
 DEPLOY_CURRENT_PATH="/full/path/to/MY-API-FOLDER"
 APP_ENV="local"
@@ -180,6 +185,8 @@ With the two database servers up and running (Redis and PostgreSQL), you're read
 ```
 honcho start
 ```
+
+#### FYI
 [Honcho](https://honcho.readthedocs.io/en/latest/index.html) is a Python port of the Ruby based Foreman.
 
 The actual API servers (develop, staging, and production) use Chef to set up each node (including daemonizing Redis).
