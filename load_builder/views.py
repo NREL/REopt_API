@@ -4,10 +4,8 @@ import json
 import sys
 import numpy as np
 from django.http import JsonResponse
-from django.shortcuts import render
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel
 from reo.exceptions import UnexpectedError
-from django.forms.models import model_to_dict
+
 
 def check_load_builder_inputs(loads_table):
     required_inputs = ["Power (W)", "Quantity", "% Run Time", "Start Mo.", "Stop Mo.", "Start Hr.", "Stop Hr."]
@@ -19,6 +17,7 @@ def check_load_builder_inputs(loads_table):
             else:
                 return False
     return True
+
 
 def validate_load_builder_inputs(loads_table):
     numeric_inputs = ["Power (W)", "Quantity", "% Run Time"]
@@ -43,6 +42,7 @@ def validate_load_builder_inputs(loads_table):
                 return False
 
     return True
+
 
 def load_builder(request):
     """
@@ -85,8 +85,6 @@ def load_builder(request):
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='load_builder')
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)
-
-
 
 
 def convert_loads(loads_table):
