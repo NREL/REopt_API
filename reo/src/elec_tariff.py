@@ -30,8 +30,8 @@ class ElecTariff(object):
             rate = Rate(rate=urdb_label)
             urdb_response = rate.urdb_dict
 
-        elif all(x not in [urdb_utilty_name, urdb_rate_name] for x in [None, ""]):
-            rate = Rate(util=urdb_utilty_name, rate=urdb_rate_name)
+        elif all(x not in [urdb_utility_name, urdb_rate_name] for x in [None, ""]):
+            rate = Rate(util=urdb_utility_name, rate=urdb_rate_name)
             urdb_response = rate.urdb_dict
 
         else:
