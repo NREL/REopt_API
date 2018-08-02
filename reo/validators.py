@@ -6,6 +6,7 @@ from nested_inputs import nested_input_definitions, list_of_float
 import os
 import csv
 import copy
+from reo.src.urdb_rate import Rate
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -363,8 +364,42 @@ class ValidateNestedInput:
                 else:
                     self.validate_wind_resource()
 
+            """
+            If using URDB, user provides either:
+            - urdb_response, 
+            - OR urdb_label, 
+            - OR urdb_rate_name AND urdb_utility_name.
+            For the latter two options, we have to get the urdb_response.
+            """
             if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response') is not None:
                 self.validate_urdb_response()
+
+            elif self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label') not in [None, ""]:
+                rate = Rate(rate=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label'))
+
+                if rate.urdb_dict is None:
+                    self.urdb_errors.append(
+                        "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
+                            .format(self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label'))
+                    )
+                else:
+                    self.input_dict['Scenario']['Site']['ElectricTariff']['urdb_response'] = rate.urdb_dict
+                    self.validate_urdb_response()
+
+            elif all(x not in [self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name'),
+                               self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name')]
+                     for x in [None, ""]):
+                rate = Rate(util=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name'),
+                            rate=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name'))
+
+                if rate.urdb_dict is None:
+                    self.urdb_errors.append(
+                        "Unable to download {} from URDB. Please check the input values for 'urdb_utility_name' and 'urdb_rate_name'."
+                            .format(self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name'))
+                    )
+                else:
+                    self.input_dict['Scenario']['Site']['ElectricTariff']['urdb_response'] = rate.urdb_dict
+                    self.validate_urdb_response()
 
             for lp in ['critical_loads_kw', 'loads_kw']:
 
@@ -421,7 +456,7 @@ class ValidateNestedInput:
                 output["input_errors"] += self.urdb_errors
             
             elif self.urdb_errors:
-                output["error"]= "Invalid inputs. See 'input_errors'."
+                output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.urdb_errors
 
             return output
@@ -749,9 +784,9 @@ class ValidateNestedInput:
             try:
                 rate_checker = URDB_RateValidator(**urdb_response)
                 if rate_checker.errors:
-                    self.urdb_errors += rate_checker.errors
+                    self.urdb_errors.append(rate_checker.errors)
             except:
-                self.urdb_errors += 'Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"])
+                self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
         def validate_8760(self, attr, obj_name, attr_name):
 

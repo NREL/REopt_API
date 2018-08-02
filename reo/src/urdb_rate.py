@@ -62,6 +62,8 @@ class Rate(object):
         if rate_dict is not None:
             log.info('Found rate in URDB.')
                 # self.add_rate_to_cache(rate_dict, rate_cache)
+        else:
+            return None
 
         try:
             if rate_dict['energyratestructure'] is None:
