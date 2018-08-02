@@ -71,25 +71,144 @@ Fortunately, there's an [app](https://virtualenv.pypa.io/en/stable/userguide/) f
 
 
 
-## Step 5: Run Servers Locally
-All of the `commands` are done in MY-API-FOLDER with the virtual environment activated.
+## Step 5: Set up database servers
+Note that all of the commands below are done in MY-API-FOLDER with the virtual environment activated.
 
-If you wish to take advantage of the celery task manager, three separate servers must be started (in three separate command windows or terminals):
+There are four different servers required for the API:
+1. Django
+2. Celery
+3. Redis
+4. PostgreSQL
 
-1. The REopt API: `python manage.py runserver`
-2. A redis server: `redis-server`  (which acts as a message broker for the tasks)
-    - if you don't have redis go [here](https://redis.io/topics/quickstart)
-3. A celery server: `celery -A reopt_api worker --loglevel=info`
+The Django server provides the API itself.
+The Celery server manages the celery tasks (functions within the API).
+The Redis server is a database for storing and retrieving Celery tasks (aka a message broker).
+The PostgreSQL server is a database for all of the data models in the API (stores inputs, outputs, and errors).
 
-For each step above, the last line that you should see after executing are:
-1. `Starting development server at http://127.0.0.1:8000/`
-2. ...`Ready to accept connections`
-3. ...`celery@<YOUR-MACHINE> ready.`
-
-An alternative API usage method, which excludes running redis and celery servers, is described in the **Advanced** section below
+In the production environment, we have separate machines for the database components (Redis and PostgreSQL).
+However, for development all of the servers are run locally.
 
 
-## Step 6: Using the API
+### Redis server
+To install redis go [here](https://redis.io/topics/quickstart)
+Start the server with
+```
+redis-server
+```
+
+
+### PostgreSQL backend database
+
+The REopt API uses a PostgreSQL datbase to save invalid posts, scenarios, and exceptions.
+Separate databases are configured for the three different web servers in MY-API-FOLDER/reopt_api/[dev_settings.py, production_settings.py, staging_settings.py].
+
+When using the API locally a remote database can be used.
+However, due to problems that can arise with database migrations (especially when modifying inputs or outputs to the API) it is highly recommended that a local database be used for development.
+Also, **a local PostgreSQL database is necessary for running tests.**
+
+To install [PostgreSQL](https://www.postgresql.org/download/):
+
+```
+sudo apt-get update
+sudo apt-get install postgresql postgresql-contrib postgresql-client-common postgresql-client
+```
+
+Once you've downloaded and installed PostgreSQL, you will want to setup a local database.
+By default, when PostgreSQL is installed, it automatically creates a database user that matches your username, and has a default role called 'PostgreSQL'.
+To create a local database called "reopt", with a username "reopt", and password "reopt":
+```
+sudo -i -u PostgreSQL
+psql PostgreSQL
+CREATE USER reopt WITH PASSWORD 'reopt';
+ALTER USER reopt CREATEDB;
+CREATE DATABASE reopt;
+GRANT ALL PRIVILEGES ON DATABASE reopt TO reopt;
+```
+Working with PostgreSQL can be tricky.  Here are a few good resources:
+[link1](https://www.codementor.io/engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb)
+[link2](https://www.a2hosting.com/kb/developer-corner/postgresql/managing-postgresql-databases-and-users-from-the-command-line)
+
+Once your PostgreSQL server is up and running, in your development environment:
+```
+python manage.py migrate
+```
+
+If you totally bugger up your local PostgreSQL database during development, log into psql and:
+```
+drop database reopt;
+create database reopt;
+```
+Then in your development environment:
+```
+python manage.py migrate
+```
+
+
+
+## Step 6: Test the API
+Run all test with `python manage.py test`.
+When tests are run, a new PostgreSQL database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
+
+A good option to know is `--failfast`, as in:
+```
+python manage.py test --failfast
+```
+which will stop the test suite as soon as one test fails or errors.
+
+You can also test individual apps:
+```
+python manage.py test reo.tests
+```
+Or an individual test function:
+```
+python manage.py test reo.tests.test_wind
+```
+
+
+
+
+## Step 7: Starting API server and Celery workers
+First, one must define some local environment variables. Open a new file in the root directory of the API and include:
+```
+DEPLOY_CURRENT_PATH="/full/path/to/MY-API-FOLDER"
+APP_ENV="local"
+APP_QUEUE_NAME="localhost"
+TEST="true"
+```
+
+With the two database servers up and running (Redis and PostgreSQL), you're ready to start the Django server and Celery workers:
+```
+honcho start
+```
+[Honcho](https://honcho.readthedocs.io/en/latest/index.html) is a Python port of the Ruby based Foreman.
+
+The actual API servers (develop, staging, and production) use Chef to set up each node (including daemonizing Redis).
+The Gunicorn instance (which is a [Python WSGI HTTP server for Unix](http://gunicorn.org/)) and the Celery workers
+are all started via the `Procfile` by [Foreman](http://ddollar.github.io/foreman/).
+
+The first line of the `Procfile`:
+```
+web: $DEPLOY_CURRENT_PATH/bin/server
+```
+requires that `DEPLOY_CURRENT_PATH` point to your root directory for the API (MY-API-FOLDER). It will run the bash file located in
+MY-API-FOLDER/bin. You can expect these lines to fail (gracefully):
+```
+. /opt/xpressmp/bin/xpvars.sh
+export XPRESS=/opt/xpressmp/bin
+```
+which define the Mosel environment variables on the linux servers.
+
+Finally, `exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi` will start the Gunicorn server.
+With `TEST="true"` the server will listen at `127.0.0.1:8000`, which is defined in MY-API-FOLDER/config/gunicorn.conf.py.
+The gunicorn.conf.py file also uses `APP_ENV="local"` to select the Django configuration file.
+
+
+Note that you can also start the API and Celery servers individually with `python manage.py runserver`
+and `celery -A reopt_api worker --loglevel=info`.
+
+
+
+## Step 8: Using the API
 There are many different ways to use the API. At high level:
 
 1. Inputs are POST'ed at `http://127.0.0.1:8000/v1/job/`
@@ -107,71 +226,36 @@ Example methods for POSTing inputs include:
 3. https://github.nrel.gov/REopt/API_scripts
 
 
-# Advanced
+# Debugging
 
-## Backend Database
-The REopt API uses a PostgreSQL datbase to save invalid posts, scenarios, and exceptions.  Separate databases are configured for the three different web servers in MY-API-FOLDER/reopt_api/[dev_settings.py, production_settings.py, staging_settings.py]. When using the API locally, it still relies on a remote database.
+### Interactive debugging
+Unless you manually set `CELERY_TASK_ALWAYS_EAGER = True` in the django settings file (eg. dev_settings.py) then you can not directly use the Python debugger (i.e. `pdb`).
+(When running tests, the celery tasks are run in "eager" mode, which means that they are run synchronously and thus the reopt endpoint will not respond with the run_uuid until the model has solved.)
 
-When the API server is started with `python manage.py runserver` the dev_settings.py is used. Within dev_setings.py, you will see that a different, local database is used for testing (when using `python manage.py test`). Thus, **in order to run tests, a local postgres database must be set up**.
-
-### Running tests with `python manage.py test`
-
-In order to run all test functions, one must have a [postgres](https://www.postgresql.org/download/) server installed and running locally.  To do this requires several packages, for example in Ubuntu:
-
+For interactive debugging with celery tasks, you need to use the remote debugger. Place the following where you want to start the interactive Python debugger:
 ```
-sudo apt-get update
-sudo apt-get install postgresql postgresql-contrib postgresql-client-common postgresql-client
+from celery.contrib import rdb; rdb.set_trace()
 ```
-
-Once you've downloaded and installed postgres, you will want to setup a local database. By default, when postgres is installed, it automatically creates a database user that matches your username, and has a default role called 'postgres'.  To create a local database called "reopt", with a username "reopt", and password "reopt":
-
+In the celery terminal you will see something like:
 ```
-sudo -i -u postgres
-psql postgres
-CREATE USER reopt WITH PASSWORD 'reopt';
-ALTER USER reopt CREATEDB;
-CREATE DATABASE reopt;
-GRANT ALL PRIVILEGES ON DATABASE reopt TO reopt;
+Remote Debugger:6902: Ready to connect: telnet 127.0.0.1 6902
 ```
+Open a new terminal and copy and paste the `telnet 127.0.0.1 6902` line into the new terminal, which will log you into the interactive Python debugger session.
+Once you continue or exit the pdb session, the celery worker will continue.
 
-When tests are run, a new database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
 
-Working with postgres can be tricky.  Here are a few good resources:
-[link1](https://www.codementor.io/engineerapart/getting-started-with-postgresql-on-mac-osx-are8jcopb)
-[link2](https://www.a2hosting.com/kb/developer-corner/postgresql/managing-postgresql-databases-and-users-from-the-command-line)
+### Exeptions and traceback information
+Unfortunately, having `DEBUG=True` in the django settings leads to a memory leak (seems to be related to Celery task chord.unlock getting stuck in infinite loop).
+However, if you want to receive debugging information from the API, you can temporarily set `DEBUG=False`. **DO NOT PUSH ANY COMMITS WITH DEBUG=False!**
 
-### Removing remote database dependency
-Sometimes it can be advantageous to store results locally. The database that the API uses is configured in MY-API-FOLDER/reopt_api/dev_settings.py. The easiest way to configure your own local database is to:
-0. Log into `psql`
-1. `CREATE USER reopt WITH PASSWORD 'reopt';` (if you haven't already for testing)
-2. `CREATE DATABASE reopt;`
-3. Remove the second `DATABASES` definition from dev_settings.py, as well as the if/else statements
-4. De-dent the `DATABASES` definition that was below `if 'test' in sys.argv:`, so that it looks like:
+Another, safer way to view exception information is to log into your PostgreSQL server and query the `reo_errormodel` table. For example:
 ```
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'reopt',
-        'USER': 'reopt',
-        'PASSWORD': 'reopt',
-        'HOST': 'localhost',
-        'PORT': '',
-    }
-}
+\c reopt;
+select * from reo_errormodel where run_uuid = '<my_run_uuid>';
+select * from reo_errormodel order by id desc limit 2;
+\q
 ```
-5. `python manage.py migrate`
-
-NOTE: You can use any values for the `DATABASES` settings that you want as long as you set up the same values in your Postgres server.  For example, you could create a database with the name of `MY-PROJECT` and use your own log-in information.
-
-## Removing redis/celery dependency
-When running tests, the celery tasks are run in "eager" mode, which means that they are run synchronously and thus the reopt endpoint will not responde with the run_uuid until the model has solved.  This setting is achieved with:
-```
-if 'test' in sys.argv:
-    CELERY_TASK_ALWAYS_EAGER = True
-```
-within dev_settings.py.
-
-To run scenarios without having to start the redis and celery servers, simply remove the `if` statement and de-dent `CELERY_TASK_ALWAYS_EAGER = True`, such that all scenarios are run in "eager" mode.
+**Note that PostgreSQL uses single quotes around strings, such as the run_uuid field.**
 
 
 ## Monitoring and Management
@@ -179,41 +263,3 @@ To run scenarios without having to start the redis and celery servers, simply re
 Celery offers a web-based task monitor (under development). To start the "flower" (pronounced like water flow) server:
 `celery -A reopt_api flower --port=5555`
 which will allow you to view tasks in your brower at [http://localhost:5555](http://localhost:5555).
-
-
-## Alternative Method for running API server locally
-The actual API servers (develop, staging, and production) use Chef to set up each node (including daemonizing Redis).
-The Gunicorn instance (which is a [Python WSGI HTTP server for Unix](http://gunicorn.org/)) and the Celery workers
-are all started via the `Procfile` by [Foreman](http://ddollar.github.io/foreman/).
-
-[Honcho](https://honcho.readthedocs.io/en/latest/index.html) is a Python port of the Ruby based Foreman and can be easily installed with
-`pip install honcho`.
-
-Honcho uses a `.env` file in the project root directory to define environment variables, which should define the following:
-```
-DEPLOY_CURRENT_PATH="/full/path/to/MY-API-FOLDER"
-APP_ENV="local"
-APP_QUEUE_NAME="localhost"
-TEST="true"
-```
-The first line of the `Procfile`:
-```
-web: $DEPLOY_CURRENT_PATH/bin/server
-```
-requires that `DEPLOY_CURRENT_PATH` point to your root directory for the API (MY-API-FOLDER). It will run the bash file located in
-MY-API-FOLDER/bin. You can expect these lines to fail (gracefully):
-```
-. /opt/xpressmp/bin/xpvars.sh
-export XPRESS=/opt/xpressmp/bin
-```
-which define the Mosel environment variables on the linux servers.
-
-Finally, `exec ./env/bin/gunicorn --config ./config/gunicorn.conf.py reopt_api.wsgi` will start the Gunicorn server.
-With `TEST="true"` the server will listen at `127.0.0.1:8000`, which is defined in MY-API-FOLDER/config/gunicorn.conf.py.
-The gunicorn.conf.py file also uses `APP_ENV="local"` to select the Django configuration file.
-
-Once you have honcho installed, your .env variables defined, and a `redis-server` running, you can:
-```
-honcho start
-```
-which will start the API server and Celery workers.
