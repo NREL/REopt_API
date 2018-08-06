@@ -1,11 +1,14 @@
 import json
 import copy
+import os
+import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
+from reo.src.wind import WindSAMSDK
 
 
 wind_post = {"Scenario": {"Site": {
@@ -79,6 +82,40 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
             raise
+
+    def test_wind_sam_sdk(self):
+        """"
+        Validation run for wind data downloaded from Wind Toolkit and run through SAM
+        Using wind resource from file directly since WindToolkit data download is spotty
+        :return
+        """
+
+        resource_data = os.path.join('reo', 'tests', 'wind_data.csv')
+        df = pd.read_csv(resource_data, header=0)
+
+        hub_height_meters = 60
+        kwargs = dict()
+        kwargs['longitude'] = -105.2348
+        kwargs['latitude'] = 39.91065
+        kwargs['size_class'] = 'medium'
+
+        temperature_kelvin = df["temperature"].tolist()
+        temperature_celsius = [x - 273.15 for x in temperature_kelvin]
+        kwargs['temperature_celsius'] = temperature_celsius
+
+        pressure_pascals = df["pressure_100m"].tolist()
+        pressure_atm = [x / 101325.00 for x in pressure_pascals]
+        kwargs['pressure_atmospheres'] = pressure_atm
+        kwargs['wind_meters_per_sec'] = df["windspeed"].tolist()
+        kwargs['wind_direction_degrees'] = df["winddirection"].tolist()
+
+        sam_wind = WindSAMSDK(hub_height_meters, **kwargs)
+        prod_factor = sam_wind.wind_prod_factor()
+
+        prod_factor = [round(x, 3) for x in prod_factor]
+        expected_prod_factor = df['prod_factor']
+        expected_prod_factor = [round(x, 3) for x in expected_prod_factor]
+        self.assertListEqual(prod_factor, expected_prod_factor)
 
     def test_wind_toolkit_api(self):
         from reo.src.wind_resource import get_wind_resource
