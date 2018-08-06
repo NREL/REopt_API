@@ -57,17 +57,18 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
     def test_wind(self):
         """
-        Validation run for wind scenario that matches REopt desktop results as of 9/26/17.
+        Validation run for wind scenario with updated WindToolkit data
+        Not validated against REopt desktop, replaces results that matched REopt desktop results as of 9/26/17.
         Note no tax, no ITC, no MACRS.
         :return:
         """
 
         d_expected = dict()
-        d_expected['lcc'] = 9849424
-        d_expected['npv'] = 14861356
-        d_expected['wind_kw'] = 4077.9
-        d_expected['average_annual_energy_exported_wind'] = 5751360
-        d_expected['net_capital_costs_plus_om'] = 9835212
+        d_expected['lcc'] = 9021776
+        d_expected['npv'] = 15689004
+        d_expected['wind_kw'] = 3734.95
+        d_expected['average_annual_energy_exported_wind'] = 5540776
+        d_expected['net_capital_costs_plus_om'] = 9008084
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
