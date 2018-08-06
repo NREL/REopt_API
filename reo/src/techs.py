@@ -114,7 +114,6 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        self.kwargs = kwargs  # includes wind data for SAM SDK
 
         self.ventyx = None
         self.sam_prod_factor = None
@@ -127,7 +126,8 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-            sam = WindSAMSDK(self.hub_height_meters, self.kwargs)
+
+            sam = WindSAMSDK(self.hub_height_meters, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test

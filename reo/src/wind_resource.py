@@ -78,8 +78,21 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     :return: list with length = 8760 * time_steps_per_hour, wind_meters_per_sec
     """
 
-    pascals_to_atm = float(1 / 101325)
+    pascals_to_atm = float(1.0 / 101325.0)
     kelvin_to_celsius = -273.15
+
+    """
+    import os
+    filename = "wind_data.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        wind_meters_per_sec = df['windspeed'].tolist()[:-1]
+        wind_direction_degrees = df['winddirection'].tolist()[:-1]
+        temperature_kelvin = df['temperature'].tolist()[:-1]
+        pressure_pascals = df['pressure_100m'].tolist()[:-1]
+    """
+    #else:
+
     db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
     y, x = get_conic_coords(db_conn, latitude, longitude)
     """
@@ -117,10 +130,14 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
         temperature_kelvin = list(hourly_temperature[:-1])
         pressure_pascals = list(hourly_pressure[:-1])
 
+    #d = {'windspeed': wind_meters_per_sec, 'winddirection': wind_direction_degrees, 'temperature': temperature_kelvin, 'pressure_100m': pressure_pascals}
+    #df = pd.DataFrame(data=d)
+    #df.to_csv(filename)
+
     wind_meters_per_sec = [float(x) for x in wind_meters_per_sec]  # numpy float32 is not json serializable
     wind_direction_degrees = [float(x) for x in wind_direction_degrees]
     temperature_celsius = [float(x) + kelvin_to_celsius for x in temperature_kelvin]
-    pressure_atmospheres = [float(x * pascals_to_atm) for x in pressure_pascals]
+    pressure_atmospheres = [float(x) * pascals_to_atm for x in pressure_pascals]
 
     return {
         'wind_meters_per_sec': wind_meters_per_sec,
