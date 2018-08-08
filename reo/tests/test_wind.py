@@ -64,11 +64,11 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         """
 
         d_expected = dict()
-        d_expected['lcc'] = 9021776
-        d_expected['npv'] = 15689004
+        d_expected['lcc'] = 8551172
+        d_expected['npv'] = 16159608
         d_expected['wind_kw'] = 3734.95
-        d_expected['average_annual_energy_exported_wind'] = 5540776
-        d_expected['net_capital_costs_plus_om'] = 9008084
+        d_expected['average_annual_energy_exported_wind'] = 5540765
+        d_expected['net_capital_costs_plus_om'] = 8537480
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
