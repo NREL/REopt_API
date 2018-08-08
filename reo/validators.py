@@ -69,7 +69,8 @@ class URDB_RateValidator:
             annualmincharge             Type: decimal
         """
         self.errors = []                             #Catch Errors - write to output file
-        self.warnings = []                           #Catch Warnings 
+        self.warnings = []                           #Catch Warnings
+        kwargs.setdefault("label", "custom")
         for key in kwargs:                           #Load in attributes          
             setattr(self, key, kwargs[key])
 
