@@ -100,10 +100,16 @@ class PV(Tech):
 class Wind(Tech):
 
     size_class_to_hub_height = {
-        'residential': 20,
+        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
         'commercial': 40,
         'medium': 60,
         'large': 80,  # default value
+    }
+    size_class_to_installed_cost = {
+        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
+        'commercial': 4989,
+        'medium': 4111,
+        'large': 1874,  # default value
     }
 
     def __init__(self, dfm, acres_per_kw=.03, **kwargs):
@@ -114,6 +120,7 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
+        self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
 
         self.ventyx = None
         self.sam_prod_factor = None

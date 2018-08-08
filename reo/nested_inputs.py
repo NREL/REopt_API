@@ -323,8 +323,8 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2000,
-          "description": "Total upfront installed costs"
+          "default": 1874,
+          "description": "Total upfront installed costs in US dollars/kW. Defaults to the 'large' (>1MW) size_class cost of $1,874/kW. For the 'medium' size_class the cost is $4,111/kW and for the 'commercial' size_class the cost is $4,989/kW."
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
