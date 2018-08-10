@@ -120,8 +120,8 @@ Once you've downloaded and installed PostgreSQL, you will want to setup a local 
 By default, when PostgreSQL is installed, it automatically creates a database user that matches your username, and has a default role called 'PostgreSQL'.
 To create a local database called "reopt", with a username "reopt", and password "reopt":
 ```
-sudo -i -u PostgreSQL
-psql PostgreSQL
+sudo su - postgres
+psql postgres
 CREATE USER reopt WITH PASSWORD 'reopt';
 ALTER USER reopt CREATEDB;
 CREATE DATABASE reopt;
