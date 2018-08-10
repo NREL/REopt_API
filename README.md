@@ -147,9 +147,10 @@ Then in your development environment:
 python manage.py migrate
 ```
 
+## Step 7: Setting up Xpress
+In order to run the API, you'll need to get a license key for Xpress on your virtual environment. To do this, please follow the instructions here: https://github.nrel.gov/dcutler/fico-xpress. If you don't have access to this page, email Dylan Cutler.
 
-
-## Step 6: Test the API
+## Step 7: Test the API
 Run all test with `python manage.py test`.
 When tests are run, a new PostgreSQL database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
 
@@ -172,7 +173,7 @@ python manage.py test reo.tests.test_wind
 
 
 
-## Step 7: Starting API server and Celery workers
+## Step 8: Starting API server and Celery workers
 First, one must define some local environment variables. Open a new file called `.env` in the root directory of the API and include:
 ```
 DEPLOY_CURRENT_PATH="/full/path/to/MY-API-FOLDER"
@@ -215,7 +216,7 @@ and `celery -A reopt_api worker --loglevel=info`.
 
 
 
-## Step 8: Using the API
+## Step 9: Using the API
 There are many different ways to use the API. At high level:
 
 1. Inputs are POST'ed at `http://127.0.0.1:8000/v1/job/`
