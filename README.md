@@ -253,7 +253,7 @@ Once you continue or exit the pdb session, the celery worker will continue.
 
 ### Exeptions and traceback information
 Unfortunately, having `DEBUG=True` in the django settings leads to a memory leak (seems to be related to Celery task chord.unlock getting stuck in infinite loop).
-However, if you want to receive debugging information from the API, you can temporarily set `DEBUG=False`. **DO NOT PUSH ANY COMMITS WITH DEBUG=False!**
+However, if you want to receive debugging information from the API, you can temporarily set `DEBUG=True`. **DO NOT PUSH ANY COMMITS WITH DEBUG=True!**
 
 Another, safer way to view exception information is to log into your PostgreSQL server and query the `reo_errormodel` table. For example:
 ```
