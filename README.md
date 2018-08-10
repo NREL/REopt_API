@@ -147,7 +147,7 @@ Then in your development environment:
 python manage.py migrate
 ```
 
-## Step 7: Setting up Xpress
+## Step 6: Setting up Xpress
 In order to run the API, you'll need to get a license key for Xpress on your virtual environment. To do this, please follow the instructions here: https://github.nrel.gov/dcutler/fico-xpress. If you don't have access to this page, email Dylan Cutler.
 
 ## Step 7: Test the API
