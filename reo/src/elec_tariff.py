@@ -1,6 +1,5 @@
 import re
 from reo.log_levels import log
-from reo.src.urdb_rate import Rate
 
 
 class ElecTariff(object):
@@ -22,25 +21,9 @@ class ElecTariff(object):
         if urdb_response is not None:
             log.info("Parsing URDB rate")
         
-        elif all(x not in [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw] for x in [None, []]):
-                log.info("Making URDB rate from blended data")
-                urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
-
-        elif urdb_label is not None:
-            rate = Rate(rate=urdb_label)
-            urdb_response = rate.urdb_dict
-
-        elif all(x not in [urdb_utilty_name, urdb_rate_name] for x in [None, ""]):
-            rate = Rate(util=urdb_utilty_name, rate=urdb_rate_name)
-            urdb_response = rate.urdb_dict
-
         else:
-            raise ValueError('ElectricTariff',
-                             "User must provide urdb_response or \
-                              urdb_label or \
-                              [blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw] or \
-                              [urdb_utility_name, urdb_rate_name]."
-                             )
+            log.info("Making URDB rate from blended data")
+            urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
 
         self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
         self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
