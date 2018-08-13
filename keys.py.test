@@ -1,7 +1,7 @@
 pvwatts_api_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
 developer_nrel_gov_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
 
-secret_key_=''
+secret_key_='secret_key_test'
 
 dev_user = 'reopt_api'
 dev_user_password = 'password'
