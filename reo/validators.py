@@ -733,6 +733,34 @@ class ValidateNestedInput:
             from reo.src.wind_resource import get_wind_resource
             from reo.src.techs import Wind
 
+            if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
+                """
+                size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
+                climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
+                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the 
+                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be 
+                handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
+                modified.
+                """
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
+
+                    from reo.src.load_profile import BuiltInProfile
+                    b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                       longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                       **self.input_dict['Scenario']['Site']['LoadProfile']
+                                       )
+                    self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
+
+                avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
+                              / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
+
+                if avg_load_kw <= 100:
+                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
+                elif avg_load_kw <= 1000:
+                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
+                else:
+                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
+
             try:
                 wind_data = get_wind_resource(
                     latitude=self.input_dict['Scenario']['Site']['latitude'],
