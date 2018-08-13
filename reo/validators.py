@@ -7,6 +7,7 @@ import os
 import csv
 import copy
 from reo.src.urdb_rate import Rate
+import re
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -356,6 +357,13 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+
+            self.validate_text_fields(str = self.input_dict['Scenario']['user_id'], pattern = r'^[0-9a-zA-Z]*$',
+                          err_msg = "user_id must not include special characters. Restricted to 0-9, a-z, and A-Z.")
+            self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
+                          err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
+            self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
+                          err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
@@ -810,3 +818,10 @@ class ValidateNestedInput:
 
             else:
                 self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
+
+        def validate_text_fields(self, pattern=r'^[0-9a-zA-Z]*$', str="", err_msg=""):
+            match = re.search(pattern, str)
+            if match:
+                pass
+            else:
+                self.input_data_errors.append(err_msg)
