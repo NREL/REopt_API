@@ -355,6 +355,12 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
+            for lp in ['critical_loads_kw', 'loads_kw']:
+
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
+                                       "LoadProfile", lp)
+
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
                 if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
@@ -374,12 +380,6 @@ class ValidateNestedInput:
 
             if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response') is not None:
                 self.validate_urdb_response()
-
-            for lp in ['critical_loads_kw', 'loads_kw']:
-
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
-                                       "LoadProfile", lp)
 
         @property
         def isValid(self):
