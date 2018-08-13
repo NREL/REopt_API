@@ -125,8 +125,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
         wind_data = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
         self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760*4)
-        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=60, time_steps_per_hour=2)
-        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760 * 2)
         wind_data = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
         self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
