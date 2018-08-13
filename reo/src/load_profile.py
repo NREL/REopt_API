@@ -7,6 +7,7 @@ from collections import namedtuple
 from reo.utilities import degradation_factor
 from reo.log_levels import log
 
+
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
