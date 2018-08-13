@@ -18,11 +18,10 @@ pipeline {
         sh """
 	virtualenv env
 	source env/bin/activate
-	/*
-	cp $JENKINS_HOME/keys.py .
+
+	cp keys.py.test keys.py
 	pip install -r requirements.txt
 	python manage.py test --noinput
-	*/
 	"""
       }
     }
