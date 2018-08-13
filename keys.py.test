@@ -1,0 +1,11 @@
+pvwatts_api_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
+developer_nrel_gov_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
+
+secret_key_=''
+
+dev_user = 'reopt_api'
+dev_user_password = 'password'
+dev_redis_password = 'password'
+
+urdb_error_team_emails_test = ['ted.kwasnik@nrel.gov']
+urdb_error_team_emails = ['ted.kwasnik@nrel.gov','Jay.Huggins@nrel.gov']
