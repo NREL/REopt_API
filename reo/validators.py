@@ -358,11 +358,14 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
-            self.validate_text_fields(str = self.input_dict['Scenario']['user_id'], pattern = r'^[0-9a-zA-Z]*$',
+            if self.input_dict['Scenario'].get('user_id') is not None:
+                self.validate_text_fields(str = self.input_dict['Scenario']['user_id'], pattern = r'^[0-9a-zA-Z]*$',
                           err_msg = "user_id must not include special characters. Restricted to 0-9, a-z, and A-Z.")
-            self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
+            if self.input_dict['Scenario'].get('description') is not None:
+                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
-            self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
+            if self.input_dict['Scenario']['Site'].get('address') is not None:
+                self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
