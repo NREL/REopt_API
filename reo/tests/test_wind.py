@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase, skip  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
@@ -118,7 +118,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         expected_prod_factor = [round(x, 3) for x in expected_prod_factor]
         self.assertListEqual(prod_factor, expected_prod_factor)
 
-    @skip("Warning: skipping test until Wind Toolkit API speed issues are resolved.")
     def test_wind_toolkit_api(self):
         from reo.src.wind_resource import get_wind_resource
 
@@ -131,7 +130,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         wind_data = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
         self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
-    @skip("Warning: skipping test until Wind Toolkit API speed issues are resolved.")
     def test_location_outside_wind_toolkit_dataset(self):
         bad_post = copy.deepcopy(wind_post)
         bad_post['Scenario']['Site']['longitude'] = 100
@@ -139,7 +137,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         assert(any("Latitude/longitude is outside of wind resource dataset bounds"
                    in e for e in validator.errors['input_errors']))
 
-    @skip("Warning: skipping test until Wind Toolkit API speed issues are resolved.")
     def test_validator_fills_in_wind_resource(self):
         validator = ValidateNestedInput(wind_post)
         assert(len(validator.input_dict['Scenario']['Site']['Wind']['wind_meters_per_sec']) == 8760)
