@@ -51,7 +51,6 @@ class ScenarioTask(Task):
 def setup_scenario(self, run_uuid, data, raw_post):
     """
 
-    All error handling is done in validators.py before data is passed to scenario.py
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
@@ -93,9 +92,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
-
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-            wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
+            wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+                        longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["Wind"])
 
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,

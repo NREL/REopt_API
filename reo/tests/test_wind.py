@@ -1,11 +1,14 @@
 import json
 import copy
+import os
+import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
+from reo.src.wind import WindSAMSDK
 
 
 wind_post = {"Scenario": {"Site": {
@@ -54,17 +57,18 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
     def test_wind(self):
         """
-        Validation run for wind scenario that matches REopt desktop results as of 9/26/17.
+        Validation run for wind scenario with updated WindToolkit data
+        Not validated against REopt desktop, replaces results that matched REopt desktop results as of 9/26/17.
         Note no tax, no ITC, no MACRS.
         :return:
         """
 
         d_expected = dict()
-        d_expected['lcc'] = 9849424
-        d_expected['npv'] = 14861356
-        d_expected['wind_kw'] = 4077.9
-        d_expected['average_annual_energy_exported_wind'] = 5751360
-        d_expected['net_capital_costs_plus_om'] = 9835212
+        d_expected['lcc'] = 8551172
+        d_expected['npv'] = 16159608
+        d_expected['wind_kw'] = 3734.95
+        d_expected['average_annual_energy_exported_wind'] = 5540765
+        d_expected['net_capital_costs_plus_om'] = 8537480
 
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
@@ -80,17 +84,49 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
+    def test_wind_sam_sdk(self):
+        """"
+        Validation run for wind data downloaded from Wind Toolkit and run through SAM
+        Using wind resource from file directly since WindToolkit data download is spotty
+        :return
+        """
+
+        resource_data = os.path.join('reo', 'tests', 'wind_data.csv')
+        df = pd.read_csv(resource_data, header=0)
+
+        hub_height_meters = 60
+        kwargs = dict()
+        kwargs['longitude'] = -105.2348
+        kwargs['latitude'] = 39.91065
+        kwargs['size_class'] = 'medium'
+
+        temperature_kelvin = df["temperature"].tolist()
+        temperature_celsius = [x - 273.15 for x in temperature_kelvin]
+        kwargs['temperature_celsius'] = temperature_celsius
+
+        pressure_pascals = df["pressure_100m"].tolist()
+        pressure_atm = [x / 101325.00 for x in pressure_pascals]
+        kwargs['pressure_atmospheres'] = pressure_atm
+        kwargs['wind_meters_per_sec'] = df["windspeed"].tolist()
+        kwargs['wind_direction_degrees'] = df["winddirection"].tolist()
+
+        sam_wind = WindSAMSDK(hub_height_meters, **kwargs)
+        prod_factor = sam_wind.wind_prod_factor()
+
+        prod_factor = [round(x, 3) for x in prod_factor]
+        expected_prod_factor = df['prod_factor']
+        expected_prod_factor = [round(x, 3) for x in expected_prod_factor]
+        self.assertListEqual(prod_factor, expected_prod_factor)
+
     def test_wind_toolkit_api(self):
         from reo.src.wind_resource import get_wind_resource
 
         latitude, longitude = 39.7555, -105.2211
 
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
-        self.assertEqual(len(wind_meters_per_sec), 8760*4)
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=60, time_steps_per_hour=2)
-        self.assertEqual(len(wind_meters_per_sec), 8760 * 2)
-        wind_meters_per_sec = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
-        self.assertEqual(len(wind_meters_per_sec), 8760)
+        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
+        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760*4)
+        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
+        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
     def test_location_outside_wind_toolkit_dataset(self):
         bad_post = copy.deepcopy(wind_post)
@@ -101,4 +137,4 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
     def test_validator_fills_in_wind_resource(self):
         validator = ValidateNestedInput(wind_post)
-        assert(len(validator.input_dict['Scenario']['Site']['Wind']['resource_meters_per_sec']) == 8760)
+        assert(len(validator.input_dict['Scenario']['Site']['Wind']['wind_meters_per_sec']) == 8760)

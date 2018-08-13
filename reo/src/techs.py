@@ -1,5 +1,6 @@
 from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
+from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
@@ -99,13 +100,19 @@ class PV(Tech):
 class Wind(Tech):
 
     size_class_to_hub_height = {
-        'residential': 20,
+        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
         'commercial': 40,
         'medium': 60,
         'large': 80,  # default value
     }
+    size_class_to_installed_cost = {
+        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
+        'commercial': 4989,
+        'medium': 4111,
+        'large': 1874,  # default value
+    }
 
-    def __init__(self, dfm, resource_meters_per_sec, acres_per_kw=.03, **kwargs):
+    def __init__(self, dfm, acres_per_kw=.03, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.nmil_regime = 'BelowNM'
@@ -113,9 +120,10 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        self.resource_meters_per_sec = resource_meters_per_sec
+        self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
 
         self.ventyx = None
+        self.sam_prod_factor = None
         dfm.add_wind(self)
 
     @property
@@ -124,10 +132,16 @@ class Wind(Tech):
         Pass resource_meters_per_sec to SAM SDK to get production factor
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
+        if self.sam_prod_factor is None:
+
+            sam = WindSAMSDK(self.hub_height_meters, **self.kwargs)
+            self.sam_prod_factor = sam.wind_prod_factor()
+
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
         if self.ventyx is None:
             self.ventyx = Ventyx()
-        return self.ventyx.wind_prod_factor
+        # return self.ventyx.wind_prod_factor
+        return self.sam_prod_factor
 
 
 class Generator(Tech):

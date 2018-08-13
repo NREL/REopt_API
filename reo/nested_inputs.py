@@ -285,13 +285,24 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "default": "large",
-          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
-          "description": "Turbine size-class. One of [residential, commercial, medium, large]"
+          "restrict_to": "['commercial', 'medium', 'large']",
+          "description": "Turbine size-class. One of [commercial, medium, large]"
         },
-        "resource_meters_per_sec": {
+        "wind_meters_per_sec": {
           "type": "list_of_float",
-          "description": "Optional wind resource for site in meters/sec. Must contain a value for each time step in one year."
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "wind_direction_degrees": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "temperature_celsius": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "pressure_atmospheres": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
         },
         "min_kw": {
           "type": "float",
@@ -311,8 +322,8 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2000,
-          "description": "Total upfront installed costs"
+          "default": 1874,
+          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>1MW) size_class the cost is $1,874/kW. For the 'medium' size_class the cost is $4,111/kW and for the 'commercial' size_class the cost is $4,989/kW."
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",

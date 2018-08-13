@@ -26,12 +26,16 @@ We use t values for 2012, since it is the closest year to the AMY data from AWS 
 However, since 2012 was a leap year, we only take the values through December 30th to get 8,760 values (52,584)
 """
 
-hub_height_strings = {
-    20: "windspeed_20m",  # residential?
-    40: "windspeed_40m",  # commercial
-    60: "windspeed_60m",  # medium
-    80: "windspeed_80m",  # large
-    100: "windspeed_100m",
+hub_height_strings = {  # unused values included for potential future use
+    10: "_10m",  # residential?
+    40: "_40m",  # commercial
+    60: "_60m",  # medium
+    80: "_80m",  # large
+    100: "_100m",
+    120: "_120m",
+    140: "_140m",
+    160: "_160m",
+    200: "_200m",
 }
 frequency_map = {  # time_steps_per_hour to pandas sampling frequency string
     2: '30T',
@@ -73,22 +77,71 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     :param time_steps_per_hour: int, 1, 2, or 4
     :return: list with length = 8760 * time_steps_per_hour, wind_meters_per_sec
     """
+
+    pascals_to_atm = float(1.0 / 101325.0)
+    kelvin_to_celsius = -273.15
+
+    """
+    import os
+    filename = "wind_data.csv"
+    if os.path.exists(filename):
+        df = pd.read_csv(filename)
+        wind_meters_per_sec = df['windspeed'].tolist()[:-1]
+        wind_direction_degrees = df['winddirection'].tolist()[:-1]
+        temperature_kelvin = df['temperature'].tolist()[:-1]
+        pressure_pascals = df['pressure_100m'].tolist()[:-1]
+    """
+    #else:
+
     db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
     y, x = get_conic_coords(db_conn, latitude, longitude)
     """
     Note: we add one hourly value to wind resource when querying the database for interpolating to higher time 
     resolutions. The last value must be dropped even if upsampling occurs.
     """
-    hourly_wind_meters_per_sec = db_conn[hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
+    hourly_windspeed_meters_per_sec = db_conn['windspeed' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
+    hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
+    hourly_temperature = db_conn['temperature' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
+    hourly_pressure = db_conn['pressure_100m'][43824:52584+1, y, x]
 
     if time_steps_per_hour != 1:  # upsample data
+
         index = pd.date_range('1/1/2018', periods=8761, freq='H')
-        series = pd.Series(hourly_wind_meters_per_sec, index=index)
+
+        series = pd.Series(hourly_windspeed_meters_per_sec, index=index)
         series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
         wind_meters_per_sec = series.tolist()[:-1]  # see Note above about dropping last value
+
+        series = pd.Series(hourly_wind_direction_degrees, index=index)
+        series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
+        wind_direction_degrees = series.tolist()[:-1]  # see Note above about dropping last value
+
+        series = pd.Series(hourly_temperature, index=index)
+        series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
+        temperature_kelvin = series.tolist()[:-1]  # see Note above about dropping last value
+
+        series = pd.Series(hourly_pressure, index=index)
+        series = series.resample(frequency_map[time_steps_per_hour]).interpolate(method='linear')
+        pressure_pascals = series.tolist()[:-1]  # see Note above about dropping last value
+
     else:
-        wind_meters_per_sec = list(hourly_wind_meters_per_sec[:-1])  # see Note above about dropping last value
+        wind_meters_per_sec = list(hourly_windspeed_meters_per_sec[:-1])  # see Note above about dropping last value
+        wind_direction_degrees = list(hourly_wind_direction_degrees[:-1])
+        temperature_kelvin = list(hourly_temperature[:-1])
+        pressure_pascals = list(hourly_pressure[:-1])
+
+    #d = {'windspeed': wind_meters_per_sec, 'winddirection': wind_direction_degrees, 'temperature': temperature_kelvin, 'pressure_100m': pressure_pascals}
+    #df = pd.DataFrame(data=d)
+    #df.to_csv(filename)
 
     wind_meters_per_sec = [float(x) for x in wind_meters_per_sec]  # numpy float32 is not json serializable
+    wind_direction_degrees = [float(x) for x in wind_direction_degrees]
+    temperature_celsius = [float(x) + kelvin_to_celsius for x in temperature_kelvin]
+    pressure_atmospheres = [float(x) * pascals_to_atm for x in pressure_pascals]
 
-    return wind_meters_per_sec
+    return {
+        'wind_meters_per_sec': wind_meters_per_sec,
+        'wind_direction_degrees': wind_direction_degrees,
+        'temperature_celsius': temperature_celsius,
+        'pressure_atmospheres': pressure_atmospheres,
+    }
