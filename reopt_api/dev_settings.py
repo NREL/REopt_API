@@ -85,18 +85,7 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'reopt',
-            'USER': 'reopt',
-            'PASSWORD': 'reopt',
-            'HOST': 'localhost',
-            'PORT': '',
-        }
-}
-elif os.environ.get('BUILD_TYPE') == 'jenkins':
+if os.environ.get('BUILD_TYPE') == 'jenkins':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -107,6 +96,17 @@ elif os.environ.get('BUILD_TYPE') == 'jenkins':
             'PORT': os.environ.get('DB_PORT'),
         }
     }
+elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'reopt',
+            'USER': 'reopt',
+            'PASSWORD': 'reopt',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+}
 else:
     DATABASES = {
          'default': {
