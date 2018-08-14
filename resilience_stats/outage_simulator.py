@@ -1,14 +1,16 @@
 #!usr/bin/python
 
 
-def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads_kw,
+def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads_kw, wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
     """
 
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
-    :param pv_kw_ac_hourly: list of floats, production of PV system
+    :param pv_kw_ac_hourly: list of floats, AC production of PV system
     :param init_soc: list of floats between 0 and 1 inclusive, initial state-of-charge
+    :param critical_loads_kw: list of floats
+    :param wind_kw_ac_hourly: list of floats, AC production of wind turbine
     :param batt_roundtrip_efficiency: roundtrip battery efficiency
     :param diesel_kw: float, diesel generator capacity
     :param fuel_available: float, gallons of diesel fuel available
@@ -35,16 +37,19 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
 
     if pv_kw_ac_hourly in [None, []]:
         pv_kw_ac_hourly = [0] * n_timesteps
+    if wind_kw_ac_hourly in [None, []]:
+        wind_kw_ac_hourly = [0] * n_timesteps
 
-    # pv minus load is the burden on battery
-    pvMld = [pv - ld for (pv, ld) in zip(pv_kw_ac_hourly, critical_loads_kw)]  # negative values are unmet load (by PV)
+    # distributed generation minus load is the burden on battery
+    # negative values are unmet load
+    dGenMld = [pv + wd - ld for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
 
     for n in range(n_timesteps):  # outer loop for finding r for outage starting each timestep of year
 
         charge = batt_kwh * init_soc[n]  # reset battery for each simulation
         fuel_tank_gal = fuel_available   # reset diesel fuel tank
 
-        for bal in pvMld:  # bal == balance after PV serves load
+        for bal in dGenMld:  # bal == balance after PV serves load
 
             if bal >= 0:  # load met by PV
                 r[n] += 1  # survived one more timestep
@@ -73,10 +78,10 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
                         r[n] += 1  # survived one more timestep
                     
                     else:  # load not met
-                        pvMld = pvMld[1:] + pvMld[:1]  # shift pvMld one timestep
+                        dGenMld = dGenMld[1:] + dGenMld[:1]  # shift dGenMld one timestep
                         break
 
-    pvMld = pvMld[1:] + pvMld[:1]  # shift back to original state
+    dGenMld = dGenMld[1:] + dGenMld[:1]  # shift back to original state
 
     r_min = min(r)
     r_max = max(r)

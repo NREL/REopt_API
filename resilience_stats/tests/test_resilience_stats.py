@@ -6,10 +6,10 @@ from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator import simulate_outage
 
 
-class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
+class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
-        super(TestResilStatsNested, self).setUp()
+        super(TestResilStats, self).setUp()
         test_path = os.path.join('resilience_stats', 'tests')
 
         results = json.loads(open(os.path.join(test_path, 'REopt_results.json')).read())
@@ -38,6 +38,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
             'batt_kwh': batt_kwh,
             'batt_kw': batt_kw,
             'pv_kw_ac_hourly': pv_kw_ac_hourly,
+            'wind_kw_ac_hourly': [],
             'critical_loads_kw': load,
             'init_soc': init_soc,
         }
@@ -155,7 +156,7 @@ class TestResilStatsNested(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['outage_durations'])
         self.assertEqual(None, resp['probs_of_surviving'])
 
-    def test_resil_endpoint_nested(self):
+    def test_resil_endpoint(self):
         post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
         r = self.api_client.post(self.submit_url, format='json', data=post)
         reopt_resp = json.loads(r.content)
