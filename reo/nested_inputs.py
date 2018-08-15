@@ -285,8 +285,8 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "restrict_to": "['commercial', 'medium', 'large']",
-          "description": "Turbine size-class. One of [commercial, medium, large]"
+          "restrict_to": "['residential', 'commercial', 'medium', 'large']",
+          "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
         "wind_meters_per_sec": {
           "type": "list_of_float",
