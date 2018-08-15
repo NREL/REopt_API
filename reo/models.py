@@ -222,7 +222,10 @@ class WindModel(models.Model):
     #Inputs
     run_uuid = models.UUIDField(unique=True)
     size_class = models.TextField(null=True, blank=True, default='')
-    resource_meters_per_sec = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    wind_meters_per_sec = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    wind_direction_degrees = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    temperature_celsius = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    pressure_atmospheres = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     min_kw = models.FloatField()
     max_kw = models.FloatField()
     installed_cost_us_dollars_per_kw = models.FloatField()
