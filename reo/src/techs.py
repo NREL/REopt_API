@@ -102,8 +102,8 @@ class Wind(Tech):
     size_class_to_hub_height = {
         'residential': 20,
         'commercial': 40,
-        'medium': 50,
-        'large': 80,  # default value
+        'medium': 60,  # Owen Roberts provided 50m for medium size_class, but Wind Toolkit has increments of 20m
+        'large': 80,
     }
     size_class_to_installed_cost = {
         'residential': 10792,

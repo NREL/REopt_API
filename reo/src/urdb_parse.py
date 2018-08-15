@@ -417,7 +417,23 @@ class UrdbParse:
             self.prepare_demand_tiers(current_rate, n_tou, False)
             self.prepare_tou_demand(current_rate)
 
+        self.prepare_demand_ratchets(current_rate)
         self.prepare_demand_rate_summary()
+
+
+    def prepare_demand_ratchets(self, current_rate):
+
+        demand_ratchet_percentages = current_rate.demandratchetpercentage
+        demand_lookback_months = 12 * [0]
+        demand_lookback_percentage = 0
+
+        for month in range(0, 12):
+            if (demand_ratchet_percentages[month] > 0):
+                demand_lookback_months[month] = 1
+                demand_lookback_percentage = demand_ratchet_percentages[month]
+
+        self.reopt_args.demand_lookback_months = demand_lookback_months
+        self.reopt_args.demand_lookback_percent = demand_lookback_percentage
 
     def prepare_demand_tiers(self, current_rate, n_periods, monthly):
 
