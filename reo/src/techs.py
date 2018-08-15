@@ -1,3 +1,4 @@
+import os
 from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
@@ -133,8 +134,10 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-
+            cur_dir = os.getcwd()
+            os.chdir(os.path.join(cur_dir, 'reo', 'src'))  # necessary for loading ssc library
             sam = WindSAMSDK(self.hub_height_meters, **self.kwargs)
+            os.chdir(cur_dir)
             self.sam_prod_factor = sam.wind_prod_factor()
 
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
