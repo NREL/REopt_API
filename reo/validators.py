@@ -374,6 +374,9 @@ class ValidateNestedInput:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp)
 
+                else:  # When using DOE load profile, year must start on Sunday
+                    self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
                 if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
