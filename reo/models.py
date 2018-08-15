@@ -452,6 +452,17 @@ class ModelManager(object):
                 MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
     @staticmethod
+    def update_user_id(user_id, run_uuid):
+        """
+        update the user_id associated with a Scenario
+        :param user_id: string
+        :param run_uuid: string
+        :return: None
+        """
+        d = {"user_id": user_id}
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**d)
+
+    @staticmethod
     def make_response(run_uuid):
         """
         Reconstruct response dictionary from postgres tables (django models).
