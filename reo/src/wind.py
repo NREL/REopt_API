@@ -36,28 +36,31 @@ class WindSAMSDK:
         self.wind_direction_degrees = wind_direction_degrees
         self.wind_meters_per_sec = wind_meters_per_sec
 
-        self.wind_turbine_powercurve['large'] = [0, 0, 0, 52.589248657226563, 124.65599822998047, 243.46875,
-                                                 420.7139892578125, 668.0782470703125, 997.24798583984375,
-                                                 1419.9097900390625, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500,
-                                                 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500]
+        self.wind_turbine_powercurve['large'] = [0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
+                                                 1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
+                                                 2000, 2000, 2000, 2000, 2000, 2000]
 
-        self.wind_turbine_powercurve['commercial'] = [ 0, 0, 0, 3.5059499740600586, 8.3104000091552734,
-                                                       16.231250762939453, 28.047599792480469, 44.538551330566406,
-                                                       66.483200073242188, 94.660652160644531, 100, 100, 100, 100, 100,
-                                                       100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100 ]
+        self.wind_turbine_powercurve['medium'] = [0, 0, 0, 8.764875, 20.776, 40.578125, 70.119, 111.346375, 166.208,
+                                                  236.651625, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+                                                  250, 250, 250, 250, 250]
 
-        self.wind_turbine_powercurve['medium'] = [ 0, 0, 0, 10.517849922180176, 24.93120002746582, 48.693748474121094,
-                                                    84.142799377441406, 133.61564636230469, 199.44960021972656,
-                                                    283.98196411132813, 300, 300, 300, 300, 300, 300, 300, 300, 300,
-                                                    300, 300, 300, 300, 300, 300, 300 ]
+        self.wind_turbine_powercurve['commercial'] = [0, 0, 0, 3.50595, 8.3104, 16.23125, 28.0476, 44.53855, 66.4832,
+                                                      94.66065, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+                                                      100, 100, 100, 100, 100]
 
-        self.rotor_diameter['large'] = 53.5
-        self.rotor_diameter['medium'] = 24
+        self.wind_turbine_powercurve['residential'] = [0, 0, 0, 0.070542773, 0.1672125, 0.326586914, 0.564342188,
+                                                       0.896154492, 1.3377, 1.904654883, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
+                                                       2.5, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 0]
+
+        self.rotor_diameter['large'] = 55
+        self.rotor_diameter['medium'] = 21.9
         self.rotor_diameter['commercial'] = 13.8
+        self.rotor_diameter['residential'] = 1.85
 
-        self.system_capacity['large'] = 1500
-        self.system_capacity['medium'] = 300
+        self.system_capacity['large'] = 2000
+        self.system_capacity['medium'] = 250
         self.system_capacity['commercial'] = 100
+        self.system_capacity['residential'] = 2.5
 
 
         self.ssc = []
