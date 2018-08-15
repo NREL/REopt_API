@@ -100,13 +100,13 @@ class PV(Tech):
 class Wind(Tech):
 
     size_class_to_hub_height = {
-        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
+        'residential': 20,
         'commercial': 40,
-        'medium': 60,
-        'large': 80,  # default value
+        'medium': 60,  # Owen Roberts provided 50m for medium size_class, but Wind Toolkit has increments of 20m
+        'large': 80,
     }
     size_class_to_installed_cost = {
-        # 'residential': 20,  # TODO nlaws 180707: waiting on values from Owen Roberts
+        'residential': 10792,
         'commercial': 4989,
         'medium': 4111,
         'large': 1874,  # default value
