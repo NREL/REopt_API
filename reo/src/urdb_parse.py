@@ -423,8 +423,10 @@ class UrdbParse:
 
     def prepare_demand_ratchets(self, current_rate):
 
-        demand_ratchet_percentages = current_rate.demandratchetpercentage
         demand_lookback_months = 12 * [0]
+        demand_ratchet_percentages = 12 * [0]
+        if len(current_rate.demandratchetpercentage) == 12:
+            demand_ratchet_percentages = current_rate.demandratchetpercentage
         demand_lookback_percentage = 0
 
         for month in range(0, 12):
