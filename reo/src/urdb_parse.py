@@ -337,8 +337,22 @@ class UrdbParse:
         start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
         self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]  # MOVE ELSEWHERE
 
-        # Assuming ExportRate is the equivalent to the first fuel rate tier:
-        negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
+        """
+        ExportRate should be lowest energy cost for tiered rates. Otherwise, ExportRate can be > FuelRate, which
+        leads REopt to export all PV energy produced.
+        """
+        tier_with_lowest_energy_cost = 0
+        if self.reopt_args.energy_tiers_num > 1:
+            annual_energy_charge_sums = []
+            for i in range(0, len(energy_costs), 8760):
+                annual_energy_charge_sums.append(
+                    sum(energy_costs[i:i+8760])
+                )
+            tier_with_lowest_energy_cost = annual_energy_charge_sums.index(min(annual_energy_charge_sums))
+
+        negative_energy_costs = [cost * -0.999 for cost in
+                                 energy_costs[tier_with_lowest_energy_cost*8760:(tier_with_lowest_energy_cost+1)*8760]]
+
         negative_wholesale_rate_costs = 8760 * [-1 * self.wholesale_rate]
         negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
 
