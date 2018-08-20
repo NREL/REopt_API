@@ -429,9 +429,10 @@ class UrdbParse:
             demand_ratchet_percentages = current_rate.demandratchetpercentage
         demand_lookback_percentage = 0
 
+        # REopt currently only supports one lookback percentage, so use the last one
         for month in range(0, 12):
             if (demand_ratchet_percentages[month] > 0):
-                demand_lookback_months[month] = 1
+                demand_lookback_months[month] = month + 1
                 demand_lookback_percentage = demand_ratchet_percentages[month]
 
         self.reopt_args.demand_lookback_months = demand_lookback_months
