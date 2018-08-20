@@ -29,6 +29,27 @@ This can be ignored (it is only needed for the web servers).
 
 You can check which branch you are on with `git status`. It should be the master branch.
 
+Next, you need to copy a couple files to your \$HOME directory (which has the alias of ~).
+Assuming that you do not already have a `bash_profile` set up (otherwise you will want to copy and paste the contents of the REopt API `.bash_profile` into your bash_profile)
+from MY-API-FOLDER:
+```
+cp .bash_profile ~/.bash_profile
+cp .hscfg ~/.hscfg
+```
+You then need to point the environment variables in the .bash_profile to the correct directories:
+```
+#------------------------------------------------------------------------------
+#  Define the following based on your file structure
+#------------------------------------------------------------------------------
+#  xpress path
+XPRESSDIR="/usr/local/opt/xpress"
+
+#  path to reopt_api/reo/src for SAM SDK C libraries
+SRC_DIR="~/projects/reopt/webtool/reopt_api/reo/src"
+```
+
+The `XPRESSDIR` is probably correct; but you will need to change the `SRC_DIR`.  Note that for these changes to take effect you need to either `source` them or open a new terminal session.
+
 Lastly, **get *keys.py* from another API developer** (these are access keys that we do not version control).
 
 
