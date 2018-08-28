@@ -33,6 +33,6 @@ urlpatterns = [
     url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'(.*)', page_not_found, name='404'),
-]
+    ]
 
 urlpatterns += staticfiles_urlpatterns()

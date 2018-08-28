@@ -1,6 +1,6 @@
 {
   "Scenario": {
-    "user_id": null,
+    "user_uuid": null,
     "time_steps_per_hour": null,
     "timeout_seconds": null,
     "Site": {

@@ -8,6 +8,7 @@ import csv
 import copy
 from reo.src.urdb_rate import Rate
 import re
+import uuid
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -358,9 +359,8 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
-            if self.input_dict['Scenario'].get('user_id') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['user_id'], pattern = r'^[0-9a-zA-Z]*$',
-                          err_msg = "user_id must not include special characters. Restricted to 0-9, a-z, and A-Z.")
+            if self.input_dict['Scenario'].get('user_uuid') is not None:
+                self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
             if self.input_dict['Scenario'].get('description') is not None:
                 self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
@@ -877,4 +877,10 @@ class ValidateNestedInput:
             if match:
                 pass
             else:
+                self.input_data_errors.append(err_msg)
+
+        def validate_user_uuid(self, user_uuid="", err_msg=""):
+            try:
+                uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+            except:
                 self.input_data_errors.append(err_msg)

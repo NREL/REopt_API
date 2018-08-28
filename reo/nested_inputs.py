@@ -52,7 +52,7 @@ nested_input_definitions = {
       "default": 295,
       "description": "The number of seconds allowed before the optimization times out"
     },
-    "user_id": {
+    "user_uuid": {
       "type": "str",
       "description": "The assigned unique ID of a signed in REOpt user"
     },
@@ -809,7 +809,7 @@ def flat_to_nested(i):
     return {
         "Scenario": {
             "timeout_seconds": i.get("timeout"),
-            "user_id": i.get("user_id"),
+            "user_uuid": i.get("user_uuid"),
             "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
 
