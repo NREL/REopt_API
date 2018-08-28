@@ -50,7 +50,7 @@ def reopt(self, dfm, data, bau=False):
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
         # RE case
-        header = 'exec '
+        header = 'exec -g '
         xpress_model_path = os.path.join(paths['xpress'], xpress_model)
 
         # Command line constants and Dat file overrides

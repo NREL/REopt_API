@@ -189,6 +189,9 @@ declarations
 
 end-declarations
 
+! Set up verbose reporting for debugging
+setparam("XPRS_VERBOSE", true)
+setparam("XPRS_LOADNAMES", true)
 
 ! This option sets the tolerance of the integer solution
 ! setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
