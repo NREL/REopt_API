@@ -4,14 +4,15 @@ from django.http import JsonResponse
 from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
+import uuid
 
 
-def update_user_id(request):
+def add_user_uuid(request):
     """
-    update the user_id associated with a Scenario run_uuid
+    update the user_uuid associated with a Scenario run_uuid
     :param request POST:
         {
-            "user_id",
+            "user_uuid",
             "run_uuid"
         }
     :return: None
@@ -23,37 +24,44 @@ def update_user_id(request):
             try:
                 data = json.loads(post)
                 try:
-                    user_id = str(data['user_id'])
+                    user_uuid = str(data['user_uuid'])
                     run_uuid = str(data['run_uuid'])
+                    uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+                    uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
                     try:
-                        # import pdb; pdb.set_trace()
-                        ModelManager.update_user_id(user_id, run_uuid)
-                        response = JsonResponse(
-                            {"Success": "user_id for run_uuid {} has been set to {}".format(run_uuid, user_id)})
-                        return response
+                        scenario = ScenarioModel.objects.filter(run_uuid=run_uuid).first()
+                        print (scenario.user_uuid)
+                        if scenario.user_uuid is None:
+                            print ('None')
+                            ModelManager.add_user_uuid(user_uuid, run_uuid)
+                            response = JsonResponse(
+                                {"Success": "user_uuid for run_uuid {} has been set to {}".format(run_uuid, user_uuid)})
+                            return response
+                        else:
+                            return JsonResponse({"Error": "a user_uuid already exists for run_uuid {}".format(run_uuid)})
                     except:
                         return JsonResponse({"Error": "run_uuid does not exist"})
                 except:
-                    return JsonResponse({"Error": "Invalid inputs: must provide user_id and run_uuid key value pairs"})
+                    return JsonResponse({"Error": "Invalid inputs: must provide user_uuid and run_uuid key value pairs as valid UUIDs"})
             except:
                 return JsonResponse({"Error": "Invalid JSON"})
         else:
-            return JsonResponse({"Error": "Must POST a JSON with user_id and run_uuid key value pairs"})
+            return JsonResponse({"Error": "Must POST a JSON with user_uuid and run_uuid key value pairs"})
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='update_user_id')
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='add_user_uuid')
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)
 
-def summary(request, user_id):
+def summary(request, user_uuid):
     """
-    Retrieve a summary of scenarios for given user_id
+    Retrieve a summary of scenarios for given user_uuid
     :param request:
-    :param user_id:
+    :param user_uuid:
     :return:
         {
-            "user_id",
+            "user_uuid",
             "scenarios":
                 [{
                   "run_uuid",                   # Run ID
@@ -75,12 +83,25 @@ def summary(request, user_id):
                 }]
         }
     """
+
     try:
-        scenarios = ScenarioModel.objects.filter(user_id=user_id).order_by('-created')
-        json = {"user_id": user_id, "scenarios": []}
+        uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+
+    except ValueError as e:
+        if e.message == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.message)}, status=400)
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
+            err.save_to_db()
+            return JsonResponse({"Error": str(err.message)}, status=400)
+
+    try:
+        scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
+        json = {"user_uuid": user_uuid, "scenarios": []}
 
         if len(scenarios) == 0:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_id)}, content_type='application/json', status=404)
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
 
         for scenario in scenarios:
@@ -179,6 +200,6 @@ def summary(request, user_id):
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_id=user_id)
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)

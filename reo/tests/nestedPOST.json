@@ -2,7 +2,7 @@
 {
     "Scenario": {
         "timeout_seconds": 290,
-        "user_id": "User",
+        "user_uuid": "User",
         "time_steps_per_hour": 1,
 
         "Site": {

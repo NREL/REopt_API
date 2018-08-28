@@ -19,7 +19,7 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_id = models.TextField(null=True, blank=True)
+    user_uuid = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
@@ -364,7 +364,7 @@ class ErrorModel(models.Model):
     task = models.TextField(blank=True, default='')
     name = models.TextField(blank=True, default='')
     run_uuid = models.TextField(blank=True, default='')
-    user_id = models.TextField(blank=True, default='')
+    user_uuid = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
     traceback = models.TextField(blank=True, default='')
     created = models.DateTimeField(auto_now_add=True)
@@ -452,15 +452,16 @@ class ModelManager(object):
                 MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
     @staticmethod
-    def update_user_id(user_id, run_uuid):
+    def add_user_uuid(user_uuid, run_uuid):
         """
-        update the user_id associated with a Scenario
-        :param user_id: string
+        update the user_uuid associated with a Scenario
+        :param user_uuid: string
         :param run_uuid: string
         :return: None
         """
-        d = {"user_id": user_id}
+        d = {"user_uuid": user_uuid}
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**d)
+        ErrorModel.objects.filter(run_uuid=run_uuid).update(**d)
 
     @staticmethod
     def make_response(run_uuid):
