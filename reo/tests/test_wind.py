@@ -55,6 +55,37 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    def test_wind_size_class(self):
+        """
+        Validation to ensure that max_kw of wind is set to size_class
+        Annual kWh results in roughly 11 kW average load, going into commercial size_class for wind (max_kw = 100)
+        Trying to set min_kw to 1000 should result in min_kw getting reset to max_kw for size_class and wind_kw coming to 100 kW
+        :return:
+        """
+
+        wind_post_updated = wind_post
+        wind_post_updated["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
+        wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 1000
+
+        d_expected = dict()
+        d_expected['wind_kw'] = 100
+
+
+        resp = self.get_response(data=wind_post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+        c = nested_to_flat(d['outputs'])
+
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages']))
+            raise
+
+
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
