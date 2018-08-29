@@ -126,6 +126,26 @@ class Wind(Tech):
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
+        # residential <= 10 kW
+        # commercial <= 100  kW
+        # medium <= 1000 kW
+        # Large <= 2500 kW (2.5 MW)
+
+        if kwargs.get('size_class') == 'residential':
+            self.max_kw = 10
+        elif kwargs.get('size_class') == 'commercial':
+            self.max_kw = 100
+        elif kwargs.get('size_class') == 'medium':
+            self.max_kw = 1000
+
+        if self.min_kw > self.max_kw:
+            self.min_kw = self.max_kw
+
+        #else:
+        #    self.max_kw = 2500
+
+
+
     @property
     def prod_factor(self):
         """
