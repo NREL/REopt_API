@@ -81,15 +81,12 @@ class Job(ModelResource):
 
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
 
-        reopt_jobs = group(
-            reopt.s(data=data, bau=False),
-            reopt.s(data=data, bau=True),
-        )
         # a group returns a list of outputs, with one item for each job in the group
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         try:
-            chain(setup | reopt_jobs, call_back)()
+            chain(setup | group(reopt.s(data=data, bau=False), reopt.s(data=data, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
 
             if isinstance(e, REoptError):

@@ -43,7 +43,7 @@ class ResultsTask(Task):
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
-@shared_task(bind=True, base=ResultsTask)
+@shared_task(bind=True, base=ResultsTask, ignore_result=True)
 def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     """
     Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
