@@ -105,16 +105,19 @@ def reopt(self, dfm, data, bau=False):
     except sp.CalledProcessError as e:
         msg = "REopt failed to start."
         debug_msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+        log.error(debug_msg)
         raise REoptFailedToStartError(task=name, run_uuid=self.run_uuid, message=msg, traceback=debug_msg)
 
     except sp.TimeoutExpired:
         msg = "Optimization exceeded timeout: {} seconds.".format(timeout)
+        log.error(msg)
         exc_traceback = sys.exc_info()[2]
         raise SubprocessTimeout(task=name, message=msg, run_uuid=self.run_uuid,
                                 traceback=traceback.format_tb(exc_traceback, limit=1))
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=name, run_uuid=self.run_uuid)
 
     else:

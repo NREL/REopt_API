@@ -9,6 +9,7 @@ from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from validators import ValidateNestedInput
 from scenario import setup_scenario
+from reo.log_levels import log
 from reo.models import ModelManager, BadPost
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
@@ -48,9 +49,13 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
+        log.info("Entered obj_get_list")
+
         input_validator = ValidateNestedInput(bundle.data)
 
         run_uuid = str(uuid.uuid4())
+        log.info("Run UUID: " + run_uuid)
+
         
         def set_status(d, status):
             d["outputs"]["Scenario"]["status"] = status
@@ -85,6 +90,7 @@ class Job(ModelResource):
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
+        log.info("Starting celery chain")
         try:
             chain(setup | group(reopt.s(data=data, bau=False), reopt.s(data=data, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
@@ -98,11 +104,11 @@ class Job(ModelResource):
 
                 set_status(data, 'Internal Server Error. See messages for more.')
                 data['messages']['error'] = err.message
-
+                log.error("Raising 500 error line 107")
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
-
+        log.info("Raising 201 response line 112")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
 

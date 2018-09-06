@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import os
 import sys
+from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
@@ -122,4 +123,5 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("Scenario.py raising Unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
