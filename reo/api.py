@@ -1,4 +1,5 @@
 import json
+import logging
 import uuid
 import sys
 from tastypie.authorization import ReadOnlyAuthorization
@@ -18,6 +19,16 @@ from celery import group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
+
+
+class UUIDFilter(logging.Filter):
+
+    def __init__(self, uuidstr):
+        self.uuidstr = uuidstr
+
+    def filter(self, record):
+        record.uuidstr = self.uuidstr
+        return True
 
 
 class Job(ModelResource):
@@ -51,7 +62,11 @@ class Job(ModelResource):
 
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
-        log.info('UUID: ' + run_uuid + " entered obj_get_list")
+
+        # Setup log to include UUID of run
+        uuidFilter = UUIDFilter(run_uuid)
+        log.addFilter(uuidFilter)
+        log.info('Beginning run setup')
 
         def set_status(d, status):
             d["outputs"]["Scenario"]["status"] = status
@@ -61,7 +76,7 @@ class Job(ModelResource):
         data["messages"] = input_validator.messages
 
         if not input_validator.isValid:  # 400 Bad Request
-            log.error('UUID: ' + run_uuid + " API.py immediateHttpResponse " + json.dumps(data))
+            log.error("input_validator not valid " + json.dumps(data))
 
             data['run_uuid'] = 'Error. See messages for more information. ' \
                                'Note that inputs have default values filled in.'
@@ -87,7 +102,7 @@ class Job(ModelResource):
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-        log.info('UUID: ' + run_uuid + " starting celery chain")
+        log.info("Starting celery chain")
         try:
             chain(setup | group(reopt.s(data=data, bau=False), reopt.s(data=data, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
@@ -101,11 +116,11 @@ class Job(ModelResource):
 
                 set_status(data, 'Internal Server Error. See messages for more.')
                 data['messages']['error'] = err.message
-                log.error('UUID: ' + run_uuid + " Raising 500 error")
+                log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
-        log.info("UUID: " + run_uuid + " 201 response")
+        log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
 
