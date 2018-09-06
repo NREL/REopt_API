@@ -76,7 +76,7 @@ class Job(ModelResource):
         data["messages"] = input_validator.messages
 
         if not input_validator.isValid:  # 400 Bad Request
-            log.error("input_validator not valid " + json.dumps(data))
+            log.info("input_validator not valid " + json.dumps(data))
 
             data['run_uuid'] = 'Error. See messages for more information. ' \
                                'Note that inputs have default values filled in.'
@@ -116,7 +116,7 @@ class Job(ModelResource):
 
                 set_status(data, 'Internal Server Error. See messages for more.')
                 data['messages']['error'] = err.message
-                log.error("Internal Server error: " + err.message)
+                log.info("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
