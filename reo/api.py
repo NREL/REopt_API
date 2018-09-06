@@ -76,7 +76,7 @@ class Job(ModelResource):
         data["messages"] = input_validator.messages
 
         if not input_validator.isValid:  # 400 Bad Request
-            log.info("input_validator not valid " + json.dumps(data))
+            log.error("input_validator not valid " + json.dumps(data))
 
             data['run_uuid'] = 'Error. See messages for more information. ' \
                                'Note that inputs have default values filled in.'
@@ -91,14 +91,17 @@ class Job(ModelResource):
 
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
 
+        log.info('Entering ModelManager')
         model_manager = ModelManager()
         if saveToDb:
             set_status(data, 'Optimizing...')
             model_manager.create_and_save(data)
 
+        log.info('Setup Scenario')
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
 
         # a group returns a list of outputs, with one item for each job in the group
+        log.info('Parse run outputs')
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
@@ -116,7 +119,7 @@ class Job(ModelResource):
 
                 set_status(data, 'Internal Server Error. See messages for more.')
                 data['messages']['error'] = err.message
-                log.info("Internal Server error: " + err.message)
+                log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
