@@ -50,7 +50,6 @@ class Job(ModelResource):
     def obj_create(self, bundle, **kwargs):
 
         log.info("Entered obj_get_list")
-
         input_validator = ValidateNestedInput(bundle.data)
 
         run_uuid = str(uuid.uuid4())
@@ -73,6 +72,7 @@ class Job(ModelResource):
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
                 badpost.save()
 
+            log.error("API.py immediateHttpResponse " + json.dumps(data))
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
                                                      status=400))
