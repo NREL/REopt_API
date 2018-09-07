@@ -12,24 +12,22 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
             "Site": {
-                "latitude": 34.5794343,
-                "longitude": -118.1164613,
+                "latitude": 35.2468,
+                "longitude": -91.7337,
 
                 "LoadProfile": {
-                    "doe_reference_name": "Supermarket",
-                    "annual_kwh": 20000000,
-                    "year": 2017
+                    "doe_reference_name": "MidriseApartment",
+                    "year": 2017,
                 },
 
                 "ElectricTariff": {
                     "urdb_rate_name": "custom",
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5,
-                                                                 0.5],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50]
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
                 },
 
                 "PV": {
-                    "max_kw": 200
+                    "max_kw": "200"
 
                 },
 
@@ -73,10 +71,10 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         #max_kw = pv_size
         flat_load = [pv_size] * 8760
 
-        self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
+        #self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
         #self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
-        self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
-        self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
+        #self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
+        #self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
 
         response = self.get_response(self.post)
 
