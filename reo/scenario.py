@@ -87,6 +87,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                          longitude=inputs_dict['Site'].get('longitude'),
                          pv=pv,
                          analysis_years=site.financial.analysis_years,
+                         time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                          **inputs_dict['Site']['LoadProfile'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,

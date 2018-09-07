@@ -901,3 +901,10 @@ class DatFileManager:
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_rate_bau, 'FuelBurnRateM')
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB', 'a')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB', 'a')
+
+        # time_steps_per_hour
+        self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
+        self.command_line_args.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
+
+        self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
+        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))

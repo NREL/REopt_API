@@ -11,6 +11,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
+            "time_steps_per_hour": 1,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
