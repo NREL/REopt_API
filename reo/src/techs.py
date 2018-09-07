@@ -69,7 +69,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, dfm, degradation_pct, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -77,6 +77,7 @@ class PV(Tech):
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
+        self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
 
         self.pvwatts_prod_factor = None
@@ -92,7 +93,7 @@ class PV(Tech):
     def prod_factor(self):
 
         if self.pvwatts_prod_factor is None:
-            pvwatts = PVWatts(**self.kwargs)
+            pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.pvwatts_prod_factor = pvwatts.pv_prod_factor
         return self.pvwatts_prod_factor
 

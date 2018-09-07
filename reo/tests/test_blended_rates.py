@@ -17,6 +17,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
                 "LoadProfile": {
                     "doe_reference_name": "MidriseApartment",
+                    "annual_kwh": 229671,
                     "year": 2017,
                 },
 
@@ -52,12 +53,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
         return response
 
-    """
-    def testing(self):
-        response = self.get_response(self.post)
-        #print(response)
-    """
-
 
     def test_blended_rate(self):
 
@@ -66,21 +61,9 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 for k, v in dictionary.items():
                     setattr(self, k, v)
 
-        pv_size = 0
-        existing_kw = pv_size
-        #max_kw = pv_size
-        flat_load = [pv_size] * 8760
-
-        #self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
-        #self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
-        #self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
-        #self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
-
         response = self.get_response(self.post)
 
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         messages = ClassAttributes(response['messages'])
-
-        net_load = [a - round(b,3) for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
