@@ -43,7 +43,7 @@ fts_post_1 = {"Scenario": {
         }
 
 fts_post_2 = {"Scenario": {
-            "time_steps_per_hour": 2,
+            "time_steps_per_hour": 4,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
@@ -99,7 +99,7 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         :return:
         """
 
-        REopt_tol = 1e-2
+        self.REopt_tol = 1e-2
 
         # results for time_steps_per_hour = 1
         response1 = self.get_response(fts_post_1)

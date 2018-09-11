@@ -53,13 +53,14 @@ class Util(Tech):
         self.loads_served = ['retail', 'storage']
         self.is_grid = True
         self.derate = 0
+        self.n_timesteps = dfm.n_timesteps
 
         dfm.add_util(self)
 
     @property
     def prod_factor(self):
 
-        grid_prod_factor = [1.0 for _ in range(8760)]
+        grid_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
         if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
             grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
