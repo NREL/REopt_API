@@ -107,10 +107,17 @@ class PVWatts:
                 prod_factor.append(round(ac_hourly[hour]/ dc_nameplate, 4))
 
         else:
+            prod_factor_original = list()
             prod_factor = list()
             import os
             with open(os.path.join('reo', 'tests', 'offline_pv_prod_factor.txt'), 'r') as f:
                 for line in f:
-                    prod_factor.append(float(line.strip('\n')))
+                    prod_factor_original.append(float(line.strip('\n')))
+
+            # the stored values in offline_pv_prod_factor.txt are 8760 rows, thus modifying prod_factor list
+            # to have 8760*4 values
+
+            if self.time_steps_per_hour == 4:
+                prod_factor = [val for val in prod_factor_original for _ in range(4)]
 
         return prod_factor
