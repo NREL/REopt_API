@@ -80,15 +80,14 @@ fts_post_2 = {"Scenario": {
 
 
 class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
+    REopt_tol = 1e-2
 
     def setUp(self):
         super(TestFlexibleTimeSteps, self).setUp()
-
-        self.submit_url = '/v1/job/'
-        self.results_url = '/v1/job/<run_uuid>/results/'
+        self.reopt_base = '/v1/job/'
 
     def get_response(self, data):
-        return self.api_client.post(self.submit_url, format='json', data=data)
+        return self.api_client.post(self.reopt_base, format='json', data=data)
 
 
     def test_flexible_time_steps(self):
@@ -102,41 +101,28 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         self.REopt_tol = 1e-2
 
         # results for time_steps_per_hour = 1
-        response1 = self.get_response(fts_post_1)
-        self.assertHttpCreated(response1)
-        r1 = json.loads(response1.content)
+        resp1 = self.get_response(data=fts_post_1)
+        self.assertHttpCreated(resp1)
+        r1 = json.loads(resp1.content)
         run_uuid1 = r1.get('run_uuid')
         d1 = ModelManager.make_response(run_uuid=run_uuid1)
         c1 = nested_to_flat(d1['outputs'])
-        print(d1['messages'])
+        print(c1.keys())
 
-        # results for time_steps_per_hour = 2
-        response2 = self.get_response(fts_post_2)
+
+        # results for time_steps_per_hour = 4
+        response2 = self.get_response(data=fts_post_2)
         self.assertHttpCreated(response2)
         r2 = json.loads(response2.content)
         run_uuid2 = r2.get('run_uuid')
         d2 = ModelManager.make_response(run_uuid=run_uuid2)
         c2 = nested_to_flat(d2['outputs'])
+        print(c2.keys())
 
         try:
             check_common_outputs(self, c1, c2)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
             #print("Error message with ts=1: {}".format(d1['messages']))
-            print("Error message with ts=2: {}".format(d2['messages']))
+            print("Error message with ts=4: {}") #.format(d2['messages']
             raise
-
-
-
-
-        """
-        class ClassAttributes:
-            def __init__(self, dictionary):
-                for k, v in dictionary.items():
-                    setattr(self, k, v)
-
-        pv_out = ClassAttributes(response2['outputs']['Scenario']['Site']['PV'])
-        load_out = ClassAttributes(response2['outputs']['Scenario']['Site']['LoadProfile'])
-        financial = ClassAttributes(response2['outputs']['Scenario']['Site']['Financial'])
-        messages = ClassAttributes(response2['messages'])
-        """
