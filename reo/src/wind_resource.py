@@ -43,6 +43,8 @@ frequency_map = {  # time_steps_per_hour to pandas sampling frequency string
 }
 
 
+
+
 def get_conic_coords(db_conn, lat, lng):
     """
     Convert latitude, longitude into integer values for wind tool kit database.

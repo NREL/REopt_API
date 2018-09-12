@@ -1,6 +1,7 @@
 from sscapi import PySSC
 import numpy as np
-
+from reo.log_levels import log
+from exceptions import RuntimeError
 
 class WindSAMSDK:
 
@@ -23,7 +24,6 @@ class WindSAMSDK:
                  **kwargs
                  ):
 
-
         self.elevation = elevation
         self.latitude=latitude
         self.longitude=longitude
@@ -31,10 +31,31 @@ class WindSAMSDK:
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
 
-        self.temperature_celsius = temperature_celsius
-        self.pressure_atmospheres = pressure_atmospheres
-        self.wind_direction_degrees = wind_direction_degrees
-        self.wind_meters_per_sec = wind_meters_per_sec
+        if temperature_celsius is None or pressure_atmospheres is \
+                None or wind_direction_degrees is None or wind_meters_per_sec is None:
+
+            from reo.src.wind_resource import get_wind_resource
+            try:
+                wind_data = get_wind_resource(
+                    latitude=self.latitude,
+                    longitude=self.longitude,
+                    hub_height_meters=self.hub_height_meters,
+                    time_steps_per_hour=1
+                )
+                self.temperature_celsius = wind_data['temperature_celsius']
+                self.pressure_atmospheres = wind_data['pressure_atmospheres']
+                self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
+                self.temperature_celsius = wind_data['wind_direction_degrees']
+            except ValueError as e:
+               log.error("Latitude/longitude is outside of wind resource dataset bounds.")
+            except:
+                log.error("Wind data download timed out")
+                raise RuntimeError("Wind data download timed out")
+        else:
+            self.temperature_celsius = temperature_celsius
+            self.pressure_atmospheres = pressure_atmospheres
+            self.wind_direction_degrees = wind_direction_degrees
+            self.wind_meters_per_sec = wind_meters_per_sec
 
         self.wind_turbine_powercurve['large'] = [0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
                                                  1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
