@@ -45,7 +45,7 @@ class WindSAMSDK:
                 self.temperature_celsius = wind_data['temperature_celsius']
                 self.pressure_atmospheres = wind_data['pressure_atmospheres']
                 self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
-                self.temperature_celsius = wind_data['wind_direction_degrees']
+                self.wind_direction_degrees = wind_data['wind_direction_degrees']
             except ValueError as e:
                log.error("Latitude/longitude is outside of wind resource dataset bounds.")
             except:
