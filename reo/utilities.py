@@ -184,7 +184,10 @@ def check_common_outputs(Test, d_calculated, d_expected):
             if e[key] == 0:
                 Test.assertEqual(c[key], e[key])
             else:
-                Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+                if isinstance(type(e[key]), float):
+                    Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+                else:
+                    pass
         else:
             print("Warning: Expected value for {} not in calculated dictionary.".format(key))
 

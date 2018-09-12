@@ -260,7 +260,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
         # Calculate avoided outage costs
-        #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
