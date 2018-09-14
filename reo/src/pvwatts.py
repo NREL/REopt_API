@@ -117,13 +117,6 @@ class PVWatts:
             # the stored values in offline_pv_prod_factor.txt are 8760 rows, thus modifying prod_factor list
             # to have 8760*4 values
 
-            if self.time_steps_per_hour == 2:
-                prod_factor = [val for val in prod_factor_original for _ in range(2)]
-
-            if self.time_steps_per_hour == 3:
-                prod_factor = [val for val in prod_factor_original for _ in range(3)]
-
-            if self.time_steps_per_hour == 4:
-                prod_factor = [val for val in prod_factor_original for _ in range(4)]
+            prod_factor = [val for val in prod_factor_original for _ in range(self.time_steps_per_hour)]
 
         return prod_factor
