@@ -485,14 +485,7 @@ class LoadProfile(BuiltInProfile):
             self.load_list = self.built_in_profile
             self.load_list_original = copy.deepcopy(self.load_list)
 
-            if self.time_steps_per_hour==2:
-                self.load_list = [val for val in self.load_list_original for _ in range(2)]
-
-            elif self.time_steps_per_hour==3:
-                self.load_list = [val for val in self.load_list_original for _ in range(3)]
-
-            elif self.time_steps_per_hour==4:
-                self.load_list = [val for val in self.load_list_original for _ in range(4)]
+            self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
 
 
         self.unmodified_load_list = copy.copy(self.load_list)
