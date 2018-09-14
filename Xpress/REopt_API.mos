@@ -784,13 +784,10 @@ Year1MinCharges := MinChargeAdder / pwf_e
 Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
 
-Year1UtilityEnergy_org := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
-                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts)
+Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
+                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts) * TimeStepScaling
 
-if TimeStepCount <> 1 then
-	Year1UtilityEnergy := Year1UtilityEnergy_org * TimeStepScaling
 
-end-if
 
 GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
 
