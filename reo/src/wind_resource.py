@@ -92,9 +92,16 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
         pressure_pascals = df['pressure_100m'].tolist()[:-1]
     """
     #else:
-
+    import datetime
+    from IPython import embed
+    embed()
+    s = datetime.datetime.now()
     db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
+    s0 = datetime.datetime.now() - s
+    s =  datetime.datetime.now()
     y, x = get_conic_coords(db_conn, latitude, longitude)
+    s1 = datetime.datetime.now() - s
+    s =  datetime.datetime.now()
     """
     Note: we add one hourly value to wind resource when querying the database for interpolating to higher time 
     resolutions. The last value must be dropped even if upsampling occurs.
@@ -103,7 +110,7 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_temperature = db_conn['temperature' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_pressure = db_conn['pressure_100m'][43824:52584+1, y, x]
-
+    s2 = datetime.datetime.now() - s
     if time_steps_per_hour != 1:  # upsample data
 
         index = pd.date_range('1/1/2018', periods=8761, freq='H')
