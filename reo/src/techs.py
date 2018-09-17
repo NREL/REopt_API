@@ -141,11 +141,6 @@ class Wind(Tech):
         if self.min_kw > self.max_kw:
             self.min_kw = self.max_kw
 
-        #else:
-        #    self.max_kw = 2500
-
-
-
     @property
     def prod_factor(self):
         """
