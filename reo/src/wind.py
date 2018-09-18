@@ -42,7 +42,6 @@ class WindSAMSDK:
                  pressure_atmospheres=None,
                  wind_meters_per_sec=None,
                  wind_direction_degrees=None,
-                 run_uuid=None,
                  **kwargs
                  ):
 
@@ -56,6 +55,7 @@ class WindSAMSDK:
         if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             from reo.src.wind_resource import get_wind_resource
             try:
+                
                 wind_data = get_wind_resource(
                     latitude=self.latitude,
                     longitude=self.longitude,
@@ -66,7 +66,7 @@ class WindSAMSDK:
                 self.pressure_atmospheres = wind_data['pressure_atmospheres']
                 self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
                 self.wind_direction_degrees = wind_data['wind_direction_degrees']
-                ModelManager.updateModel('WindModel', wind_data, run_uuid)
+                ModelManager.updateModel('WindModel', wind_data, kwargs['run_uuid'])
 
             except:
                 log.error("Wind data download timed out")
@@ -147,7 +147,7 @@ class WindSAMSDK:
                 idx = idx + 1
         self.ssc.module_free(self.module)
         system_power = self.ssc.data_get_array(self.data, 'gen')
-        prod_factor = [power/self.system_capacity[self.size_class] for power in system_power]
+        prod_factor = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
         return prod_factor
 

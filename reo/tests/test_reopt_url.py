@@ -255,6 +255,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['year_one_utility_kwh'] = 9614689.2606
 
         try:
+            from IPython import embed
+            embed()
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
