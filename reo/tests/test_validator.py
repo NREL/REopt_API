@@ -10,6 +10,7 @@ class InputValidatorTests(TestCase):
         post_file = os.path.join('reo', 'tests', 'nestedPOST.json')
         self.post = json.load(open(post_file, 'r'))
 
+
     @staticmethod
     def get_validator(post):
         validator = ValidateNestedInput(post)
