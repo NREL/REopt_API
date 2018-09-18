@@ -182,14 +182,14 @@ def check_common_outputs(Test, d_calculated, d_expected):
 
         if key in c and key in e:
             if e[key] == 0:
-                Test.assertEqual(c[key], e[key])
+                Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
-                Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance)
+                Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
         else:
             print("Warning: Expected value for {} not in calculated dictionary.".format(key))
 
     # Total LCC BAU is sum of utility costs
-        Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                        - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
-                        - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
-                        < Test.REopt_tol)
+    Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                    - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
+                    - float(c['total_fixed_cost_bau'])) / float(c['lcc_bau']))
+                    < Test.REopt_tol, "LCC_BAU doesn't add up to sum of utility costs")

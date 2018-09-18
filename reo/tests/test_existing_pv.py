@@ -28,7 +28,9 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
                           "PV": {
                             "existing_kw": "100",
                           },
-
+                        "Wind": {
+                            "max_kw": 0,
+                            },
                           "Storage": {
                               "max_kw": 0,
                               "max_kwh": 0,
