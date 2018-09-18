@@ -780,6 +780,7 @@ class ValidateNestedInput:
             that we only query the database once.
             :return: None
             """
+            from reo.src.wind_resource import get_conic_coords
 
             if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
                 """
@@ -808,21 +809,13 @@ class ValidateNestedInput:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
                 else:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
+            try:
+                get_conic_coords(
+                    lat=self.input_dict['Scenario']['Site']['latitude'],   
+                    lng=self.input_dict['Scenario']['Site']['longitude'])
+            except Exception as e:
+                self.input_data_errors.append(e.message)
 
-
-                """
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_meters_per_sec',
-                                            wind_data['wind_meters_per_sec'])
-
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_direction_degrees',
-                                            wind_data['wind_direction_degrees'])
-
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'temperature_celsius',
-                                            wind_data['temperature_celsius'])
-
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'pressure_atmospheres',
-                                            wind_data['pressure_atmospheres'])
-                """
 
 
         def validate_urdb_response(self):

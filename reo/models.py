@@ -409,6 +409,11 @@ class ModelManager(object):
         for message_type, message in data['messages'].iteritems():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
+    
+    @staticmethod
+    def updateModel(modelName, modelData, run_uuid):
+        eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+
     @staticmethod
     def update(data, run_uuid):
         """

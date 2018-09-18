@@ -42,10 +42,10 @@ frequency_map = {  # time_steps_per_hour to pandas sampling frequency string
     4: '15T',
 }
 
+WTK_ORIGIN = (19.624062, -123.30661)
+WTK_SHAPE = (1602, 2976)
 
-
-
-def get_conic_coords(db_conn, lat, lng):
+def get_conic_coords(lat, lng):
     """
     Convert latitude, longitude into integer values for wind tool kit database.
     Modified from "indicesForCoord" in https://github.com/NREL/hsds-examples/blob/master/notebooks/01_introduction.ipynb
@@ -55,20 +55,21 @@ def get_conic_coords(db_conn, lat, lng):
     :param longitude:
     :return: (y, x) values to index into db_conn
     """
-    dset_coords = db_conn['coordinates']
+    #dset = h5pyd.File("/nrel/wtk-us.h5", 'r')['coordinates']
     projstring = """+proj=lcc +lat_1=30 +lat_2=60 
                     +lat_0=38.47240422490422 +lon_0=-96.0 
                     +x_0=0 +y_0=0 +ellps=sphere 
                     +units=m +no_defs """
     projectLcc = Proj(projstring)
-    origin_ll = reversed(dset_coords[0][0])  # Grab origin directly from database
+    origin_ll = reversed(WTK_ORIGIN)  # origin_ll = reversed(dset[0][0])  to grab origin directly from database
     origin = projectLcc(*origin_ll)
-
-    coords = projectLcc(lng, lat)
-    delta = np.subtract(coords, origin)
-    ij = [int(round(x / 2000)) for x in delta]
-    return tuple(reversed(ij))
-
+    point = projectLcc(lng, lat)
+    delta = np.subtract(point, origin)
+    x,y = [int(round(x / 2000)) for x in delta]
+    y_max, x_max = WTK_SHAPE # dset.shape to grab shape directly  from database
+    if (x<0) or (y<0) or (x>=x_max) or (y>=y_max):
+        raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
+    return y,x
 
 def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hour=1):
     """
@@ -94,16 +95,11 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
         pressure_pascals = df['pressure_100m'].tolist()[:-1]
     """
     #else:
-    import datetime
-    from IPython import embed
-    embed()
-    s = datetime.datetime.now()
+
     db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
-    s0 = datetime.datetime.now() - s
-    s =  datetime.datetime.now()
-    y, x = get_conic_coords(db_conn, latitude, longitude)
-    s1 = datetime.datetime.now() - s
-    s =  datetime.datetime.now()
+    y, x = get_conic_coords(latitude, longitude)
+    #y, x = get_conic_coords(db_conn, latitude, longitude)
+    
     """
     Note: we add one hourly value to wind resource when querying the database for interpolating to higher time 
     resolutions. The last value must be dropped even if upsampling occurs.
@@ -112,7 +108,7 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_temperature = db_conn['temperature' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_pressure = db_conn['pressure_100m'][43824:52584+1, y, x]
-    s2 = datetime.datetime.now() - s
+    
     if time_steps_per_hour != 1:  # upsample data
 
         index = pd.date_range('1/1/2018', periods=8761, freq='H')

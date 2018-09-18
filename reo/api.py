@@ -59,10 +59,10 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-
+    
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
-        
+
         # Setup log to include UUID of run
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)

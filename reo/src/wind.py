@@ -2,12 +2,33 @@ from sscapi import PySSC
 import numpy as np
 from reo.log_levels import log
 from exceptions import RuntimeError
+from reo.models import ModelManager
+
+wind_turbine_powercurve_lookup = {'large':[0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
+                                                 1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
+                                                 2000, 2000, 2000, 2000, 2000, 2000],
+        'medium':[0, 0, 0, 8.764875, 20.776, 40.578125, 70.119, 111.346375, 166.208,
+                                                  236.651625, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+                                                  250, 250, 250, 250, 250],
+        'commercial': [0, 0, 0, 3.50595, 8.3104, 16.23125, 28.0476, 44.53855, 66.4832,
+                                                      94.66065, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+                                                      100, 100, 100, 100, 100],
+        'residential' :[0, 0, 0, 0.070542773, 0.1672125, 0.326586914, 0.564342188,
+                                                       0.896154492, 1.3377, 1.904654883, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
+                                                       2.5, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 0]}
+
+system_capacity_lookup = {'large': 2000,
+        'medium': 250,
+        'commercial': 100,
+        'residential': 2.5}
+       
+rotor_diameter_lookup = {'large': 55,
+        'medium': 21.9,
+        'commercial': 13.8,
+        'residential': 1.85}
 
 class WindSAMSDK:
 
-    rotor_diameter = dict()
-    wind_turbine_powercurve = dict()
-    system_capacity = dict()
     wind_turbine_speeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
     def __init__(self,
@@ -21,6 +42,7 @@ class WindSAMSDK:
                  pressure_atmospheres=None,
                  wind_meters_per_sec=None,
                  wind_direction_degrees=None,
+                 run_uuid=None,
                  **kwargs
                  ):
 
@@ -31,9 +53,7 @@ class WindSAMSDK:
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
 
-        if temperature_celsius is None or pressure_atmospheres is \
-                None or wind_direction_degrees is None or wind_meters_per_sec is None:
-
+        if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             from reo.src.wind_resource import get_wind_resource
             try:
                 wind_data = get_wind_resource(
@@ -46,8 +66,8 @@ class WindSAMSDK:
                 self.pressure_atmospheres = wind_data['pressure_atmospheres']
                 self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
                 self.wind_direction_degrees = wind_data['wind_direction_degrees']
-            except ValueError as e:
-               log.error("Latitude/longitude is outside of wind resource dataset bounds.")
+                ModelManager.updateModel('WindModel', wind_data, run_uuid)
+
             except:
                 log.error("Wind data download timed out")
                 raise RuntimeError("Wind data download timed out")
@@ -57,32 +77,9 @@ class WindSAMSDK:
             self.wind_direction_degrees = wind_direction_degrees
             self.wind_meters_per_sec = wind_meters_per_sec
 
-        self.wind_turbine_powercurve['large'] = [0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
-                                                 1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
-                                                 2000, 2000, 2000, 2000, 2000, 2000]
-
-        self.wind_turbine_powercurve['medium'] = [0, 0, 0, 8.764875, 20.776, 40.578125, 70.119, 111.346375, 166.208,
-                                                  236.651625, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
-                                                  250, 250, 250, 250, 250]
-
-        self.wind_turbine_powercurve['commercial'] = [0, 0, 0, 3.50595, 8.3104, 16.23125, 28.0476, 44.53855, 66.4832,
-                                                      94.66065, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-                                                      100, 100, 100, 100, 100]
-
-        self.wind_turbine_powercurve['residential'] = [0, 0, 0, 0.070542773, 0.1672125, 0.326586914, 0.564342188,
-                                                       0.896154492, 1.3377, 1.904654883, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
-                                                       2.5, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 0]
-
-        self.rotor_diameter['large'] = 55
-        self.rotor_diameter['medium'] = 21.9
-        self.rotor_diameter['commercial'] = 13.8
-        self.rotor_diameter['residential'] = 1.85
-
-        self.system_capacity['large'] = 2000
-        self.system_capacity['medium'] = 250
-        self.system_capacity['commercial'] = 100
-        self.system_capacity['residential'] = 2.5
-
+        self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 
+        self.system_capacity = system_capacity_lookup[size_class] 
+        self.rotor_diameter = rotor_diameter_lookup[size_class] 
 
         self.ssc = []
         self.data = []
@@ -115,14 +112,14 @@ class WindSAMSDK:
         ssc.data_set_table(data, 'wind_resource_data', wind_resource)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
         ssc.data_set_number(data, 'wind_resource_turbulence_coeff', 0.10000000149011612)
-        ssc.data_set_number(data, 'system_capacity', self.system_capacity[self.size_class])
+        ssc.data_set_number(data, 'system_capacity', self.system_capacity)
         ssc.data_set_number(data, 'wind_resource_model_choice', 0)
         ssc.data_set_number(data, 'weibull_reference_height', 50)
         ssc.data_set_number(data, 'weibull_k_factor', 2)
         ssc.data_set_number(data, 'weibull_wind_speed', 7.25)
-        ssc.data_set_number(data, 'wind_turbine_rotor_diameter', self.rotor_diameter[self.size_class])
+        ssc.data_set_number(data, 'wind_turbine_rotor_diameter', self.rotor_diameter)
         ssc.data_set_array(data, 'wind_turbine_powercurve_windspeeds', self.wind_turbine_speeds)
-        ssc.data_set_array(data, 'wind_turbine_powercurve_powerout', self.wind_turbine_powercurve[self.size_class]);
+        ssc.data_set_array(data, 'wind_turbine_powercurve_powerout', self.wind_turbine_powercurve);
         ssc.data_set_number(data, 'wind_turbine_hub_ht', 80)
         ssc.data_set_number(data, 'wind_turbine_max_cp', 0.44999998807907104)
         wind_farm_xCoordinates = [0]

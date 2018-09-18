@@ -95,7 +95,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                        longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["Wind"])
+                        longitude=inputs_dict['Site'].get('longitude'),run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
 
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
