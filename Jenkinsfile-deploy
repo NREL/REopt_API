@@ -56,7 +56,7 @@ pipeline {
 
           sh "bundle install"
           sshagent(credentials: ["jenkins-ssh"]) {
-            if(env.PARAM_STAGE == "development") {
+            if(env.PARAM_STAGE == "development" || env.PARAM_STAGE == "staging") {
               // TODO: Remove this if we setup branched deployments for
               // development (with real DNS subdomain support).
               sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEV_BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"

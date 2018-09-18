@@ -67,11 +67,15 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         wind_post_updated["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
         wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 1000
 
+        # For some reason, when running full suite, validators isn't run, and this is not updated
+        wind_post_updated["Scenario"]["Site"]["Wind"]["size_class"] = "commercial"
+
+
         d_expected = dict()
         d_expected['wind_kw'] = 100
 
 
-        resp = self.get_response(data=wind_post)
+        resp = self.get_response(data=wind_post_updated)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')

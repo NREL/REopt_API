@@ -1,5 +1,5 @@
 #!usr/bin/python
-
+from math import floor
 
 def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads_kw, wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3):
@@ -20,6 +20,7 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
     :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
     """
     n_timesteps = len(critical_loads_kw)
+    n_steps_per_hour = n_timesteps / 8760
     r = [0] * n_timesteps  # initialize resiliency vector
 
     if batt_kw == 0 or batt_kwh == 0:
@@ -83,11 +84,11 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
 
     dGenMld = dGenMld[1:] + dGenMld[:1]  # shift back to original state
 
-    r_min = min(r)
-    r_max = max(r)
-    r_avg = round(float(sum(r)) / float(len(r)), 2)
+    r_min = min(r)/n_steps_per_hour
+    r_max = max(r)/n_steps_per_hour
+    r_avg = round((float(sum(r)) / float(len(r))/n_steps_per_hour), 2)
 
-    x_vals = range(1, r_max+1)
+    x_vals = range(1, int(floor(r_max)+1))
     y_vals = list()
     for hrs in x_vals:
         y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))

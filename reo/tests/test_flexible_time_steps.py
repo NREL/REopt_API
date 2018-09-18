@@ -36,7 +36,6 @@ fts_post_1 = {"Scenario": {
 
                 "Wind": {
                     "max_kw": 0,
-                    "max_kwh": 0,
                 }
             }
         }
@@ -72,7 +71,6 @@ fts_post_2 = {"Scenario": {
 
                 "Wind": {
                     "max_kw": 0,
-                    "max_kwh": 0,
                 }
             }
         }
@@ -107,8 +105,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         run_uuid1 = r1.get('run_uuid')
         d1 = ModelManager.make_response(run_uuid=run_uuid1)
         c1 = nested_to_flat(d1['outputs'])
-        print(c1.keys())
-
 
         # results for time_steps_per_hour = 4
         response2 = self.get_response(data=fts_post_2)
@@ -117,7 +113,11 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         run_uuid2 = r2.get('run_uuid')
         d2 = ModelManager.make_response(run_uuid=run_uuid2)
         c2 = nested_to_flat(d2['outputs'])
-        print(c2.keys())
+
+        # Seems reasonable that the exact resiliency average will be different due to a great granularity of survival
+        # information in a quarter-hourly simulation vs hourly.
+        del c1['avoided_outage_costs_us_dollars']
+        del c2['avoided_outage_costs_us_dollars']
 
         try:
             check_common_outputs(self, c1, c2)
