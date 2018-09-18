@@ -123,7 +123,7 @@ class WindSAMSDK:
         ssc.data_set_number(data, 'wind_turbine_rotor_diameter', self.rotor_diameter[self.size_class])
         ssc.data_set_array(data, 'wind_turbine_powercurve_windspeeds', self.wind_turbine_speeds)
         ssc.data_set_array(data, 'wind_turbine_powercurve_powerout', self.wind_turbine_powercurve[self.size_class]);
-        ssc.data_set_number(data, 'wind_turbine_hub_ht', 80)
+        ssc.data_set_number(data, 'wind_turbine_hub_ht', self.hub_height_meters)
         ssc.data_set_number(data, 'wind_turbine_max_cp', 0.44999998807907104)
         wind_farm_xCoordinates = [0]
         ssc.data_set_array(data, 'wind_farm_xCoordinates', wind_farm_xCoordinates)
