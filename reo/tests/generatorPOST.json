@@ -21,6 +21,9 @@
         "fuel_slope_gal_per_kwh": 0.0656,
         "fuel_intercept_gal_per_hr": 0.0048,
         "fuel_avail_gal": 25
+      },
+      "Wind": {
+        "max_kw": 0
       }
     }
   }

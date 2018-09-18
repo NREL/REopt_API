@@ -791,7 +791,12 @@ class ValidateNestedInput:
                 handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
                 modified.
                 """
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
+
+                avg_load_kw = 0
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
+                    avg_load_kw = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') / 8760
+
+                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
 
                     from reo.src.load_profile import BuiltInProfile
                     b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
@@ -800,8 +805,8 @@ class ValidateNestedInput:
                                        )
                     self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
 
-                avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
-                              / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
+                    avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
+                                  / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
 
                 if avg_load_kw <= 100:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
