@@ -76,7 +76,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["PV"]["max_kw"] > 0:
             pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
+                    longitude=inputs_dict['Site'].get('longitude'), time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                    **inputs_dict["Site"]["PV"])
         else:
             pv = None
 
@@ -86,6 +87,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                          longitude=inputs_dict['Site'].get('longitude'),
                          pv=pv,
                          analysis_years=site.financial.analysis_years,
+                         time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                          **inputs_dict['Site']['LoadProfile'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,

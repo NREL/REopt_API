@@ -121,7 +121,7 @@ def reopt(self, dfm, data, bau=False):
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=name, run_uuid=self.run_uuid)
 
     else:
-        log.info("REopt run successfully. Status {}".format(status))
+        log.info("REopt run successful. Status {}".format(status))
 
         if status.strip() != 'optimal':
             log.error("REopt status not optimal. Raising NotOptimal Exception.")

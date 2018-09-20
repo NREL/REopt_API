@@ -1,6 +1,7 @@
 import os
 from log_levels import log
 from numpy import npv
+import types
 
 
 class API_Error:
@@ -181,10 +182,16 @@ def check_common_outputs(Test, d_calculated, d_expected):
             tolerance = 2 * Test.REopt_tol
 
         if key in c and key in e:
-            if e[key] == 0:
+            if (not isinstance(e[key], types.ListType) and isinstance(e[key], types.ListType)) or \
+                    (isinstance(e[key], types.ListType) and not isinstance(e[key], types.ListType)):
+                Test.fail('Key: {0} expected type: {1} actual type {2}'.format(key, str(type(e[key])), str(type(c[key]))))
+            elif e[key] == 0:
                 Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
-                Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+                if isinstance(e[key], types.FloatType):
+                    Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+                else:
+                    pass
         else:
             print("Warning: Expected value for {} not in calculated dictionary.".format(key))
 

@@ -64,7 +64,7 @@ nested_input_definitions = {
     "time_steps_per_hour": {
       "type": "int",
       "min": 1,
-      "max": 1,
+      "max": 4,
       "default": 1,
       "description": "The number of time steps per hour in the REopt simulation"
     },
