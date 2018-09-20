@@ -21,7 +21,7 @@ class ElecTariff(object):
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
-        elif blended_annual_rates_us_dollars_per_kwh and blended_annual_demand_charges_us_dollars_per_kw:
+        elif blended_annual_rates_us_dollars_per_kwh is not None and blended_annual_demand_charges_us_dollars_per_kw is not None:
             blended_monthly_rates_us_dollars_per_kwh = 12 * [blended_annual_rates_us_dollars_per_kwh]
             blended_monthly_demand_charges_us_dollars_per_kw = 12 * [blended_annual_demand_charges_us_dollars_per_kw]
             log.info("Making URDB rate from annual blended data")

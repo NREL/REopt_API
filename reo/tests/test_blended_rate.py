@@ -69,3 +69,21 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         messages = ClassAttributes(response['messages'])
+
+    def test_blended_annual_rate(self):
+
+        class ClassAttributes:
+            def __init__(self, dictionary):
+                for k, v in dictionary.items():
+                    setattr(self, k, v)
+
+
+        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
+        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
+
+        response = self.get_response(self.post)
+
+        pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
+        load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
+        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
+        messages = ClassAttributes(response['messages'])
