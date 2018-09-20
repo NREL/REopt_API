@@ -35,6 +35,7 @@ load_profile_possible_sets = [["loads_kw"],
 
 electric_tariff_possible_sets = [["urdb_response"],
             ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
+            ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
             ["urdb_label"],
             ["urdb_utility_name", "urdb_rate_name"]]
 
@@ -849,6 +850,8 @@ def flat_to_nested(i):
                         "urdb_response": i.get("urdb_rate"),
                         "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
                         "blended_monthly_demand_charges_us_dollars_per_kw": i.get("demand_charge"),
+                        "blended_annual_rates_us_dollars_per_kwh": i.get("blended_utility_rate")[0],
+                        "blended_annual_rates_us_dollars_per_kwh": i.get("demand_charge")[0],
                         "net_metering_limit_kw": i.get("net_metering_limit"),
                         "wholesale_rate_us_dollars_per_kwh": i.get("wholesale_rate"),
                         "interconnection_limit_kw": i.get("interconnection_limit"),
