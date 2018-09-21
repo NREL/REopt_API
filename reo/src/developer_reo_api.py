@@ -9,7 +9,10 @@ class DeveloperREOapi:
 
     def __init__(self,
                  lat, lon,
-                 url_base="http://developer.nrel.gov/api/reo/v3.json",
+                 # FIXME: Revert back to
+                 # https://developer.nrel.gov/api/reo/v3.json once ITS fixed
+                 # the API routing.
+                 url_base="http://devprod-int.nrel.gov/api/reo/v3.json",
                  api_key=developer_nrel_gov_key,
                  search_radius=25,
                  output_fields="ashrae_tmy",
