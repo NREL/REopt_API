@@ -254,13 +254,13 @@ nested_input_definitions = {
           "blended_annual_rates_us_dollars_per_kwh": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
+              "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
               "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
           },
           "blended_annual_demand_charges_us_dollars_per_kw": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
+              "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
               "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
           },
         "net_metering_limit_kw": {
