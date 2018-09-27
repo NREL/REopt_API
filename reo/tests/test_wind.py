@@ -13,8 +13,8 @@ from reo.src.wind import WindSAMSDK
 
 wind_post = {"Scenario": {"Site": {
     "LoadProfile": {
-        "annual_kwh": 10000000,
-        "doe_reference_name": "MediumOffice"
+        "annual_kwh": 10000,
+        "doe_reference_name": "MidriseApartment"
     },
     "Storage": {
         "max_kwh": 0,
@@ -26,7 +26,7 @@ wind_post = {"Scenario": {"Site": {
     },
     "Wind": {
         "macrs_bonus_pct": 0.0,
-        "max_kw": 10000,
+        "max_kw": 10,
         "federal_itc_pct": 0,
         "macrs_option_years": 0,
         "size_class": 'residential',
