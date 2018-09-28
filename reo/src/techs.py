@@ -124,33 +124,13 @@ class Wind(Tech):
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
         # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
 
-        if kwargs.get('size_class') == 'residential':
-            if (kwargs.get('installed_cost_us_dollars_per_kw') > 11500 or kwargs.get('installed_cost_us_dollar_per_kw') < 9999 ):
+        import pdb
+        pdb.set_trace()
+
+        if kwargs.get('installed_cost_us_dollars_per_kw') == 3:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-            else:
-                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
-
-        elif kwargs.get('size_class') == 'commercial':
-
-            if (kwargs.get('installed_cost_us_dollars_per_kw') > 5500 or kwargs.get('installed_cost_us_dollar_per_kw') < 4500 ):
-                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-            else:
-                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
-
-        elif kwargs.get('size_class') == 'medium':
-            if (kwargs.get('installed_cost_us_dollars_per_kw') > 4500 or kwargs.get('installed_cost_us_dollars_per_kw') < 3800 ):
-                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-            else:
-                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
-
-        elif kwargs.get('size_class') == 'large':
-            if (kwargs.get('installed_cost_us_dollars_per_kw') > 2000 or kwargs.get('installed_cost_us_dollars_per_kw') < 1600 ):
-                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-            else:
-                self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
-
         else:
-            self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         self.ventyx = None
         self.sam_prod_factor = None
