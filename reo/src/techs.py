@@ -124,9 +124,6 @@ class Wind(Tech):
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
         # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
 
-        import pdb
-        pdb.set_trace()
-
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
         else:
