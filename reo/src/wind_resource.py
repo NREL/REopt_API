@@ -84,6 +84,9 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     pascals_to_atm = float(1.0 / 101325.0)
     kelvin_to_celsius = -273.15
 
+    if hub_height_meters == 20:
+        hub_height_meters = 10
+
     """
     import os
     filename = "wind_data.csv"
@@ -104,6 +107,8 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     Note: we add one hourly value to wind resource when querying the database for interpolating to higher time 
     resolutions. The last value must be dropped even if upsampling occurs.
     """
+
+
     hourly_windspeed_meters_per_sec = db_conn['windspeed' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_temperature = db_conn['temperature' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
