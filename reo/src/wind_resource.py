@@ -108,8 +108,6 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     resolutions. The last value must be dropped even if upsampling occurs.
     """
 
-    import pdb
-    pdb.set_trace()
 
     hourly_windspeed_meters_per_sec = db_conn['windspeed' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
     hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
