@@ -122,22 +122,29 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
+        # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
+
+        if kwargs.get('installed_cost_us_dollars_per_kw') == 3000:
+                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+        else:
+                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         self.ventyx = None
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
-        # residential <= 10 kW
+        # residential <= 2.5 kW
         # commercial <= 100  kW
         # medium <= 1000 kW
         # Large <= 2500 kW (2.5 MW)
 
         if kwargs.get('size_class') == 'residential':
-            self.max_kw = 10
+            self.max_kw = 2.5
         elif kwargs.get('size_class') == 'commercial':
             self.max_kw = 100
         elif kwargs.get('size_class') == 'medium':
+            self.max_kw = 250
+        elif kwargs.get('size_class') == 'large':
             self.max_kw = 1000
 
         if self.min_kw > self.max_kw:
