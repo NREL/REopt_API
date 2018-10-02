@@ -1,7 +1,7 @@
 import sys
 import json
 from django.http import JsonResponse
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel
+from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel, MessageModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 import uuid
@@ -114,6 +114,13 @@ def summary(request, user_uuid):
             wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
             financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
             tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
+
+            # Messages
+            results['messages'] = {}
+            for message_type in ['warnings', 'error']:
+                message = MessageModel.objects.filter(run_uuid=scenario.run_uuid, message_type=message_type).first()
+                if message:
+                    results['messages'][message_type] = message.message
 
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
