@@ -98,6 +98,7 @@ class ProForma(models.Model):
         ws['B13'] = electric_tariff.year_one_export_benefit_us_dollars or 0
         ws['B14'] = pv_energy
         ws['B15'] = wind_energy
+        ws['B16'] = wind_energy + pv_energy
 
         # System Costs
         ws['B19'] = pv_cost + batt_cost + wind_cost
