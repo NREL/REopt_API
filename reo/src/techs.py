@@ -111,7 +111,14 @@ class Wind(Tech):
         'residential': 10792,
         'commercial': 4989,
         'medium': 4111,
-        'large': 1874,  # default value
+        'large': 1874,
+    }
+
+    size_class_to_itc_incentives = {
+        'residential': 0.3,
+        'commercial': 0.3,
+        'medium': 0.18,
+        'large': 0.18,
     }
 
     def __init__(self, dfm, acres_per_kw=.03, **kwargs):
@@ -121,6 +128,9 @@ class Wind(Tech):
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
+
+        """ placeholder for setting up default ITC logic"""
+
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
         # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
 
