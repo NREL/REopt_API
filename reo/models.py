@@ -19,7 +19,7 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_id = models.TextField(null=True, blank=True)
+    user_uuid = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
@@ -121,6 +121,8 @@ class ElectricTariffModel(models.Model):
     urdb_label = models.TextField(blank=True, default='')
     blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=[])
     blended_monthly_demand_charges_us_dollars_per_kw = ArrayField(models.FloatField(blank=True), default=[])
+    blended_annual_rates_us_dollars_per_kwh = models.FloatField(blank=True, default=0, null=True)
+    blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(blank=True, default=0, null=True)
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
     wholesale_rate_us_dollars_per_kwh = models.FloatField()
@@ -364,7 +366,7 @@ class ErrorModel(models.Model):
     task = models.TextField(blank=True, default='')
     name = models.TextField(blank=True, default='')
     run_uuid = models.TextField(blank=True, default='')
-    user_id = models.TextField(blank=True, default='')
+    user_uuid = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
     traceback = models.TextField(blank=True, default='')
     created = models.DateTimeField(auto_now_add=True)
@@ -409,6 +411,11 @@ class ModelManager(object):
         for message_type, message in data['messages'].iteritems():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
+    
+    @staticmethod
+    def updateModel(modelName, modelData, run_uuid):
+        eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+
     @staticmethod
     def update(data, run_uuid):
         """
@@ -452,15 +459,16 @@ class ModelManager(object):
                 MessageModel.create(run_uuid=run_uuid, message_type=message_type, message=message)
 
     @staticmethod
-    def update_user_id(user_id, run_uuid):
+    def add_user_uuid(user_uuid, run_uuid):
         """
-        update the user_id associated with a Scenario
-        :param user_id: string
+        update the user_uuid associated with a Scenario
+        :param user_uuid: string
         :param run_uuid: string
         :return: None
         """
-        d = {"user_id": user_id}
+        d = {"user_uuid": user_uuid}
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**d)
+        ErrorModel.objects.filter(run_uuid=run_uuid).update(**d)
 
     @staticmethod
     def make_response(run_uuid):

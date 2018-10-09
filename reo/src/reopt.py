@@ -50,7 +50,7 @@ def reopt(self, dfm, data, bau=False):
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
         # RE case
-        header = 'exec '
+        header = 'exec -g '
         xpress_model_path = os.path.join(paths['xpress'], xpress_model)
 
         # Command line constants and Dat file overrides
@@ -105,20 +105,23 @@ def reopt(self, dfm, data, bau=False):
     except sp.CalledProcessError as e:
         msg = "REopt failed to start."
         debug_msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
+        log.error(debug_msg)
         raise REoptFailedToStartError(task=name, run_uuid=self.run_uuid, message=msg, traceback=debug_msg)
 
     except sp.TimeoutExpired:
         msg = "Optimization exceeded timeout: {} seconds.".format(timeout)
+        log.error(msg)
         exc_traceback = sys.exc_info()[2]
         raise SubprocessTimeout(task=name, message=msg, run_uuid=self.run_uuid,
                                 traceback=traceback.format_tb(exc_traceback, limit=1))
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=name, run_uuid=self.run_uuid)
 
     else:
-        log.info("REopt run successfully. Status {}".format(status))
+        log.info("REopt run successful. Status {}".format(status))
 
         if status.strip() != 'optimal':
             log.error("REopt status not optimal. Raising NotOptimal Exception.")

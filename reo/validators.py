@@ -8,6 +8,7 @@ import csv
 import copy
 from reo.src.urdb_rate import Rate
 import re
+import uuid
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -358,9 +359,8 @@ class ValidateNestedInput:
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
 
-            if self.input_dict['Scenario'].get('user_id') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['user_id'], pattern = r'^[0-9a-zA-Z]*$',
-                          err_msg = "user_id must not include special characters. Restricted to 0-9, a-z, and A-Z.")
+            if self.input_dict['Scenario'].get('user_uuid') is not None:
+                self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
             if self.input_dict['Scenario'].get('description') is not None:
                 self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
@@ -780,8 +780,7 @@ class ValidateNestedInput:
             that we only query the database once.
             :return: None
             """
-            from reo.src.wind_resource import get_wind_resource
-            from reo.src.techs import Wind
+            from reo.src.wind_resource import get_conic_coords
 
             if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
                 """
@@ -792,7 +791,12 @@ class ValidateNestedInput:
                 handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
                 modified.
                 """
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
+
+                avg_load_kw = 0
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
+                    avg_load_kw = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') / 8760
+
+                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
 
                     from reo.src.load_profile import BuiltInProfile
                     b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
@@ -801,8 +805,8 @@ class ValidateNestedInput:
                                        )
                     self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
 
-                avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
-                              / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
+                    avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
+                                  / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
 
                 if avg_load_kw <= 100:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
@@ -810,28 +814,14 @@ class ValidateNestedInput:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
                 else:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
-
             try:
-                wind_data = get_wind_resource(
-                    latitude=self.input_dict['Scenario']['Site']['latitude'],
-                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                    hub_height_meters=Wind.size_class_to_hub_height[self.input_dict['Scenario']['Site']['Wind']['size_class']],
-                    time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour']
-                )
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_meters_per_sec',
-                                            wind_data['wind_meters_per_sec'])
+                get_conic_coords(
+                    lat=self.input_dict['Scenario']['Site']['latitude'],   
+                    lng=self.input_dict['Scenario']['Site']['longitude'])
+            except Exception as e:
+                self.input_data_errors.append(e.message)
 
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'wind_direction_degrees',
-                                            wind_data['wind_direction_degrees'])
 
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'temperature_celsius',
-                                            wind_data['temperature_celsius'])
-
-                self.update_attribute_value(["Scenario", "Site", "Wind"], 'pressure_atmospheres',
-                                            wind_data['pressure_atmospheres'])
-
-            except ValueError as e:
-                self.input_data_errors.append("Latitude/longitude is outside of wind resource dataset bounds.")
 
         def validate_urdb_response(self):
 
@@ -877,4 +867,10 @@ class ValidateNestedInput:
             if match:
                 pass
             else:
+                self.input_data_errors.append(err_msg)
+
+        def validate_user_uuid(self, user_uuid="", err_msg=""):
+            try:
+                uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
+            except:
                 self.input_data_errors.append(err_msg)

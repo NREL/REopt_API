@@ -34,9 +34,7 @@ pipeline {
     stage("checkout-deploy-branch") {
       steps {
         script {
-          if(env.PARAM_STAGE == "development") {
-            git url: "git@github.nrel.gov:REopt/reopt_api.git", branch: "develop"
-          } else if(env.PARAM_STAGE == "internal_c110p") {
+          if(env.PARAM_STAGE == "development" || env.PARAM_STAGE == "internal_c110p") {
             tadaCheckoutDeployBranch("git@github.nrel.gov:REopt/reopt_api.git")
           } else {
             git url: "git@github.nrel.gov:REopt/reopt_api.git", branch: "master"
@@ -58,16 +56,10 @@ pipeline {
 
           sh "bundle install"
           sshagent(credentials: ["jenkins-ssh"]) {
-            if(env.PARAM_STAGE == "development") {
+            if(env.PARAM_STAGE == "development" || env.PARAM_STAGE == "staging") {
               // TODO: Remove this if we setup branched deployments for
-              // development.
-              if(env.PARAM_BRANCH != "origin/develop") {
-                echo "[FAILURE] Only the 'develop' branch can be deployed to the development server."
-                currentBuild.result = "FAILURE"
-                return
-              }
-
-              sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEBUG_DEPLOY=true"
+              // development (with real DNS subdomain support).
+              sh "bundle exec cap ${PARAM_STAGE} deploy --trace DEV_BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
             } else {
               sh "bundle exec cap ${PARAM_STAGE} deploy --trace BRANCH=${PARAM_BRANCH} DEBUG_DEPLOY=true"
             }

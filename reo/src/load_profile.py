@@ -472,7 +472,10 @@ class LoadProfile(BuiltInProfile):
 
     def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
-                 analysis_years=1, **kwargs):
+                 analysis_years=1, time_steps_per_hour=1, **kwargs):
+
+        self.time_steps_per_hour = time_steps_per_hour
+        self.n_timesteps = self.time_steps_per_hour*8760
 
         if user_profile:
             self.load_list = user_profile
@@ -480,6 +483,10 @@ class LoadProfile(BuiltInProfile):
         else:  # building type and (annual_kwh OR monthly_totals_kwh) defined by user
             super(LoadProfile, self).__init__(**kwargs)
             self.load_list = self.built_in_profile
+            self.load_list_original = copy.deepcopy(self.load_list)
+
+            self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
+
 
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)
@@ -538,6 +545,7 @@ class LoadProfile(BuiltInProfile):
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
+        #self.critical_load_series_kw = critical_loads_kw
 
         # write csv for critical_load_series_kw. needed for outage sim
         fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')

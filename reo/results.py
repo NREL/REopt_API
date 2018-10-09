@@ -43,7 +43,7 @@ class ResultsTask(Task):
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
-@shared_task(bind=True, base=ResultsTask)
+@shared_task(bind=True, base=ResultsTask, ignore_result=True)
 def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     """
     Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
@@ -249,7 +249,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         if not os.path.exists(output_file):
             msg = "Optimization failed to run. Output file does not exist: " + output_file
             log.debug("Current directory: " + os.getcwd())
-            log.warning(msg)
+            log.error(msg)
             raise RuntimeError('REopt', msg)
 
         process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
@@ -267,4 +267,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        log("Results.py raise unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
