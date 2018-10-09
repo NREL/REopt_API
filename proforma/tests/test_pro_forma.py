@@ -42,42 +42,9 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
     def test_full_tech_mix(self):
         run_output = self.get_response(self.example_reopt_request_data)
-
-        class ClassAttributes:
-            def __init__(self, dictionary):
-                for k, v in dictionary.items():
-                    setattr(self, k, v)
-
-        self.scenario_in = ClassAttributes(run_output['inputs']['Scenario'])
-        self.pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
-        self.batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
-        self.wind_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Wind'])
-        self.tariff_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['ElectricTariff'])
-        self.finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
-
-        self.scenario_out = ClassAttributes(run_output['outputs']['Scenario'])
-        self.pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
-        self.batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
-        self.wind_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Wind'])
-        self.tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
-        self.finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
-
         uuid = run_output['outputs']['Scenario']['run_uuid']
+        mapping = self.get_mapping(run_output, uuid)
 
-        start_time = now()
-        response = self.api_client.get(self.proforma_url.replace('<run_uuid>', str(uuid)))
-        self.assertEqual(response.status_code, 200)
-
-        scenario = ScenarioModel.objects.get(run_uuid=uuid)
-        pf = ProForma.objects.get(scenariomodel=scenario)
-
-        self.assertTrue(os.path.exists(pf.output_file))
-        self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
-
-        wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
-        ws = wb.get_sheet_by_name(pf.sheet_io)
-
-        mapping = self.get_mapping(ws)
         idx = 0
         for a, b in mapping:
             msg = "Failed at idx: " + str(idx) + " Value: " + str(a.value) + "!= " + str(b) + " run_uuid: " + str(uuid)
@@ -87,41 +54,8 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
     def test_wind(self):
         self.example_reopt_request_data = json.loads(open('proforma/tests/test_wind_isolated.json').read())
         run_output = self.get_response(self.example_reopt_request_data)
-
-        class ClassAttributes:
-            def __init__(self, dictionary):
-                for k, v in dictionary.items():
-                    setattr(self, k, v)
-
-        self.scenario_in = ClassAttributes(run_output['inputs']['Scenario'])
-        self.pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
-        self.batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
-        self.wind_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Wind'])
-        self.tariff_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['ElectricTariff'])
-        self.finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
-
-        self.scenario_out = ClassAttributes(run_output['outputs']['Scenario'])
-        self.pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
-        self.batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
-        self.wind_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Wind'])
-        self.tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
-        self.finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
-
         uuid = run_output['outputs']['Scenario']['run_uuid']
-
-        start_time = now()
-        response = self.api_client.get(self.proforma_url.replace('<run_uuid>', str(uuid)))
-        self.assertEqual(response.status_code, 200)
-
-        scenario = ScenarioModel.objects.get(run_uuid=uuid)
-        pf = ProForma.objects.get(scenariomodel=scenario)
-
-        self.assertTrue(os.path.exists(pf.output_file))
-        self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
-
-        wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
-        ws = wb.get_sheet_by_name(pf.sheet_io)
-        mapping = self.get_mapping(ws)
+        mapping = self.get_mapping(run_output, uuid)
 
         idx = 0
         for a, b in mapping:
@@ -138,20 +72,40 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
                              {u'outputs': {u'Scenario': {u'status': u'error'}},
                               u'messages': {u'error': u'badly formed hexadecimal UUID string'}})
 
+    def get_mapping(self, run_output, uuid):
 
-    def get_mapping(self, ws):
-        adjusted_pv_kw = self.pv_out.size_kw - self.pv_in.existing_kw
+        start_time = now()
+        response = self.api_client.get(self.proforma_url.replace('<run_uuid>', str(uuid)))
+        self.assertEqual(response.status_code, 200)
 
-        pv_in = self.pv_in
-        batt_in = self.batt_in
-        wind_in = self.wind_in
-        finance_in = self.finance_in
+        scenario = ScenarioModel.objects.get(run_uuid=uuid)
+        pf = ProForma.objects.get(scenariomodel=scenario)
 
-        pv_out = self.pv_out
-        batt_out = self.batt_out
-        wind_out = self.wind_out
-        tariff_out = self.tariff_out
+        self.assertTrue(os.path.exists(pf.output_file))
+        self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
 
+        wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
+        ws = wb.get_sheet_by_name(pf.sheet_io)
+
+        class ClassAttributes:
+            def __init__(self, dictionary):
+                for k, v in dictionary.items():
+                    setattr(self, k, v)
+
+        pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
+        batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
+        wind_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Wind'])
+        finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
+
+        pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
+        batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
+        wind_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Wind'])
+        tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
+        finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
+
+        adjusted_pv_kw =pv_out.size_kw - pv_in.existing_kw
+
+        # Note, cannot evaluate LCC, LCC_BAU, and NPV, since that would require having openpxl evaluate formulas in excel
         mapping = [
             [ws['B3'], adjusted_pv_kw],
             [ws['B4'], pv_in.existing_kw],
