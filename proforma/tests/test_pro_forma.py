@@ -48,9 +48,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                 for k, v in dictionary.items():
                     setattr(self, k, v)
 
-        import pdb
-        pdb.set_trace()
-
         scenario_in = ClassAttributes(run_output['inputs']['Scenario'])
         pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
         batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
@@ -147,7 +144,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         [ws['B95'], pv_in.macrs_option_years],
         [ws['B96'], pv_in.macrs_bonus_pct],
         [ws['C95'], batt_in.macrs_option_years],
-        [ws['C96'], batt_in.macrs_bonus_pct]
+        [ws['C96'], batt_in.macrs_bonus_pct],
+        [ws['D95'], wind_in.macrs_option_years],
+        [ws['D96'], wind_in.macrs_bonus_pct]
         ]
 
         idx = 0
