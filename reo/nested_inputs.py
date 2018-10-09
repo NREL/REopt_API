@@ -120,7 +120,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 0.26,
           "description": "Host tax rate"
         },
         "offtaker_discount_pct": {
