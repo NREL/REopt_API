@@ -148,7 +148,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                             "escalation_pct": 0.006,
                                             "offtaker_discount_pct": 0.07,
                                             "analysis_years": 25,
-                                            "offtaker_tax_pct": 0.0
+                                            "offtaker_tax_pct": 0.0,
+
                                          },
                                         "Wind" : {
                                             "max_kw": 0
@@ -268,6 +269,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_valid_nested_posts(self):
 
+
         flat_data = {"roof_area": 5000.0, "batt_can_gridcharge": True, "load_profile_name": "RetailStore", "pv_macrs_schedule": 5, "load_size": 10000000.0, "longitude": -118.1164613,
                      "pv_macrs_bonus_fraction": 0.4, "batt_macrs_bonus_fraction": 0.4, "offtaker_tax_rate": 0.4,
                      "batt_macrs_schedule": 5, "latitude": 34.5794343, "module_type": 1, "array_type": 1, "land_area": 1.0, "crit_load_factor": 1.0, "blended_utility_rate":[0], "demand_charge":[0], "wind_kw_max":0,
@@ -282,13 +284,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 10543382
-        d_expected['npv'] = 713783
+        d_expected['lcc'] = 11013855
+        d_expected['lcc_bau'] =  11257165
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 66.3877
-        d_expected['batt_kwh'] = 115.133
-        d_expected['wind_kw'] = 757.612
-        d_expected['year_one_utility_kwh'] = 7601044.0004
+        d_expected['batt_kw'] = 18.5481
+        d_expected['batt_kwh'] = 26.5174
+        d_expected['year_one_utility_kwh'] = 9614654.6688
 
         try:
             check_common_outputs(self, c, d_expected)
