@@ -211,10 +211,13 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                       'LoadProfile': {'annual_kwh': 10000000.0,
                                                       'doe_reference_name': 'RetailStore'
                                                       },
+                                      "Financial": {
+                                          "offtaker_tax_pct": 0.4
+                                      },
                                       'Storage': {'total_rebate_us_dollars_per_kw': 100,
                                                   'canGridCharge': True,
                                                   'macrs_option_years': 5,
-                                                  'macrs_bonus_pct': 0.4
+                                                  'macrs_bonus_pct': 0.4,
                                                   },
                                       'PV': {'utility_ibi_max_us_dollars': 10000,
                                              'pbi_system_max_kw': 10,
