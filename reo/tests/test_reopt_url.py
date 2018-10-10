@@ -148,7 +148,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                             "escalation_pct": 0.006,
                                             "offtaker_discount_pct": 0.07,
                                             "analysis_years": 25,
-                                            "offtaker_tax_pct": 0.0
+                                            "offtaker_tax_pct": 0.0,
+
                                          },
                                         "Wind" : {
                                             "max_kw": 0
@@ -212,7 +213,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                                       },
                                       'Storage': {'total_rebate_us_dollars_per_kw': 100,
                                                   'canGridCharge': True,
-                                                  'macrs_option_years': 5
+                                                  'macrs_option_years': 5,
+                                                  'macrs_bonus_pct': 0.4
                                                   },
                                       'PV': {'utility_ibi_max_us_dollars': 10000,
                                              'pbi_system_max_kw': 10,
@@ -220,6 +222,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                              'state_ibi_pct': 0.2,
                                              'state_ibi_max_us_dollars': 10000,
                                              'macrs_option_years': 5,
+                                             'macrs_bonus_pct': 0.4,
                                              'federal_itc_pct': 0.3,
                                              'module_type': 1,
                                              'array_type': 1,
