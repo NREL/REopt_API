@@ -290,6 +290,7 @@ class DatFileManager:
         cap_cost_slope = list()
         cap_cost_x = list()
         cap_cost_yint = list()
+        n_segments_out = 0
         n_segments = None
         tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
 
@@ -472,8 +473,8 @@ class DatFileManager:
         
                     tmp_cap_cost_slope.append(tmp_slope)
                     tmp_cap_cost_yint.append(tmp_y_int)
-        
-                n_segments = len(tmp_cap_cost_slope)
+
+                n_segments =len(tmp_cap_cost_slope)
 
                 # Following logic modifies the cap cost segments to account for the tax benefits of the ITC and MACRs
                 updated_cap_cost_slope = list()
@@ -544,6 +545,9 @@ class DatFileManager:
                 cap_cost_yint += tmp_cap_cost_yint
                 cap_cost_x += cost_curve_bp_x
 
+                # Have to take n_segments as the maximum number across all technologies
+                n_segments_out = max(n_segments, n_segments_out)
+
             elif eval('self.' + tech) is not None and tech in ['util', 'generator']:
 
                 if n_segments is None:  # only util in techs (usually BAU case)
@@ -559,7 +563,10 @@ class DatFileManager:
                         x = big_number
                     cap_cost_x.append(x)
 
-        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments
+                # Have to take n_segments as the maximum number across all technologies
+                n_segments_out = max(n_segments, n_segments_out)
+
+        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments_out
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()

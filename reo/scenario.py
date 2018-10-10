@@ -125,5 +125,5 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising Unexpected error")
+        log.error("Scenario.py raising error: " + exc_value)
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)

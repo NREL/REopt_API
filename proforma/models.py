@@ -5,7 +5,7 @@ import datetime, tzlocal
 from openpyxl import load_workbook
 from reo.models import ScenarioModel, SiteModel, PVModel, WindModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
 from reo.src.dat_file_manager import big_number
-
+from reo.log_levels import log
 
 class ProForma(models.Model):
 
@@ -50,6 +50,8 @@ class ProForma(models.Model):
         return os.path.join(os.getcwd(),'static', 'files', str(self.uuid), self.output_file_name)
           
     def generate_spreadsheet(self):
+
+        log.info("Generating proforma spreadsheet")
 
         scenario = self.scenariomodel
         batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
