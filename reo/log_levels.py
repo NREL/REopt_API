@@ -16,7 +16,7 @@ import logging
 import os
 
 log = logging.getLogger('reopt_api')
-log.setLevel(logging.INFO)
+log.setLevel(logging.WARNING)
 
 logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
 
