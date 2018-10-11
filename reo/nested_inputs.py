@@ -643,7 +643,7 @@ nested_input_definitions = {
         "array_type": {
           "type": "int",
           "restrict_to": [0, 1, 2, 3, 4],
-          "default": 0,
+          "default": 1,
           "description": "PV Watts array type (0: Ground Mount Fixed (Open Rack); 1: Rooftop, Fixed; 2: Ground Mount 1-Axis Tracking; 3 : 1-Axis Backtracking; 4: Ground Mount, 2-Axis Tracking)"
         },
         "module_type": {

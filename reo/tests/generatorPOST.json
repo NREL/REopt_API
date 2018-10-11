@@ -28,7 +28,8 @@
         "max_kw": 0
       },
       "PV": {
-        "macrs_bonus_pct": 0.4
+        "macrs_bonus_pct": 0.4,
+        "array_type": 0
       },
       "Storage": {
         "macrs_bonus_pct": 0.4
