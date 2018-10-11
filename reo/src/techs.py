@@ -129,7 +129,9 @@ class Wind(Tech):
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
 
-        """ placeholder for setting up default ITC logic"""
+        # if user hasn't entered the federal itc, itc value gets set based on size_class
+        if self.incentives.federal.itc == 0.9995:
+            self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
         # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]

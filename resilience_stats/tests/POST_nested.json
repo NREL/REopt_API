@@ -48,7 +48,7 @@
         "utility_rebate_max_us_dollars": null,
         "installed_cost_us_dollars_per_kw": null,
         "utility_ibi_max_us_dollars": null,
-        "tilt": null,
+        "tilt": 34.5794343,
         "gcr": null,
         "pbi_system_max_kw": null,
         "utility_ibi_pct": null,
