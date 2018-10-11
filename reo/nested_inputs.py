@@ -683,7 +683,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 90,
-          "default": "Site latitude",
+          "default": 10,
           "description": "PV system tilt"
         }
       },
