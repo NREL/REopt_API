@@ -127,20 +127,18 @@ class Wind(Tech):
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
-        self.incentives = Incentives(**kwargs)
+        self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
         self.time_steps_per_hour = time_steps_per_hour
+        self.incentives = Incentives(**kwargs)
+        self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
-        # if user hasn't entered the federal itc, itc value gets set based on size_class
+        # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.9995:
             self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
-        self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-
-
+        # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-        else:
-                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         self.ventyx = None
         self.sam_prod_factor = None
