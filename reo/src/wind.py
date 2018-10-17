@@ -42,6 +42,7 @@ class WindSAMSDK:
                  pressure_atmospheres=None,
                  wind_meters_per_sec=None,
                  wind_direction_degrees=None,
+                 time_steps_per_hour=1,
                  **kwargs
                  ):
 
@@ -51,6 +52,7 @@ class WindSAMSDK:
         self.year = year
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
+        self.time_steps_per_hour = time_steps_per_hour
 
         if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             from reo.src.wind_resource import get_wind_resource
@@ -60,7 +62,7 @@ class WindSAMSDK:
                     latitude=self.latitude,
                     longitude=self.longitude,
                     hub_height_meters=self.hub_height_meters,
-                    time_steps_per_hour=1
+                    time_steps_per_hour=self.time_steps_per_hour
                 )
                 self.temperature_celsius = wind_data['temperature_celsius']
                 self.pressure_atmospheres = wind_data['pressure_atmospheres']
@@ -147,8 +149,26 @@ class WindSAMSDK:
                 idx = idx + 1
         self.ssc.module_free(self.module)
         system_power = self.ssc.data_get_array(self.data, 'gen')
-        prod_factor = [power/self.system_capacity for power in system_power]
+        prod_factor_original = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
+
+        # subhourly (i.e 15 minute data)
+        if self.time_steps_per_hour >= 1:
+            timesteps = []
+            timesteps_base = range(0, 8760)
+            for ts_b in timesteps_base:
+                for step in range(0, self.time_steps_per_hour):
+                    timesteps.append(ts_b)
+
+        # downscaled run (i.e 288 steps per year) or keep the same
+        else:
+            timesteps = range(0, 8760, int(1 / self.time_steps_per_hour))
+
+        prod_factor = []
+
+        for hour in timesteps:
+            prod_factor.append(round(prod_factor_original[hour]/self.time_steps_per_hour, 3))
+
         return prod_factor
 
 

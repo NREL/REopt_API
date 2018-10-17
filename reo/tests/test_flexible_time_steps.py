@@ -35,7 +35,7 @@ fts_post_1 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 0,
+                    "max_kw": 125,
                 }
             }
         }
@@ -70,11 +70,12 @@ fts_post_2 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 0,
+                    "max_kw": 125,
                 }
             }
         }
         }
+
 
 
 class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
@@ -98,6 +99,7 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
 
         self.REopt_tol = 1e-2
 
+        
         # results for time_steps_per_hour = 1
         resp1 = self.get_response(data=fts_post_1)
         self.assertHttpCreated(resp1)
@@ -105,6 +107,7 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         run_uuid1 = r1.get('run_uuid')
         d1 = ModelManager.make_response(run_uuid=run_uuid1)
         c1 = nested_to_flat(d1['outputs'])
+
 
         # results for time_steps_per_hour = 4
         response2 = self.get_response(data=fts_post_2)
@@ -119,6 +122,7 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         del c1['avoided_outage_costs_us_dollars']
         del c2['avoided_outage_costs_us_dollars']
 
+
         try:
             check_common_outputs(self, c1, c2)
             print("Test Successful!")
@@ -127,3 +131,4 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
             #print("Error message with ts=1: {}".format(d1['messages']))
             print("Error message with ts=4: {}") #.format(d2['messages']
             raise
+
