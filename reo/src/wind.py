@@ -160,14 +160,15 @@ class WindSAMSDK:
                 for step in range(0, self.time_steps_per_hour):
                     timesteps.append(ts_b)
 
-        # downscaled run (i.e 288 steps per year) or keep the same
+        # downscaled run (i.e 288 steps per year)
         else:
             timesteps = range(0, 8760, int(1 / self.time_steps_per_hour))
 
         prod_factor = []
 
         for hour in timesteps:
-            prod_factor.append(round(prod_factor_original[hour]/self.time_steps_per_hour, 3))
+            #prod_factor.append(round(prod_factor_original[hour]/self.time_steps_per_hour, 3))
+            prod_factor.append(prod_factor_original[hour])
 
         return prod_factor
 

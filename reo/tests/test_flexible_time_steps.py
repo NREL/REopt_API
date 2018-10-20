@@ -20,12 +20,12 @@ fts_post_1 = {"Scenario": {
 
                 "ElectricTariff": {
                     "urdb_rate_name": "custom",
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
                 },
 
                 "PV": {
-                    "max_kw": "200"
+                    "max_kw": 0
 
                 },
 
@@ -35,7 +35,7 @@ fts_post_1 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 125,
+                    "max_kw": 100,
                 }
             }
         }
@@ -55,12 +55,12 @@ fts_post_2 = {"Scenario": {
 
                 "ElectricTariff": {
                     "urdb_rate_name": "custom",
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29, 0.29],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20]
                 },
 
                 "PV": {
-                    "max_kw": "200"
+                    "max_kw": 0
 
                 },
 
@@ -70,7 +70,7 @@ fts_post_2 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 125,
+                    "max_kw": 100,
                 }
             }
         }
