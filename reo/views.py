@@ -130,6 +130,11 @@ def simulated_load(request):
         except KeyError:
             annual_kwh = None
 
+        try:  # monthly_totals_kwh is optional. if not provided, then DOE reference value is used.
+            monthly_totals_kwh = float(request.GET['monthly_totals_kwh'])
+        except KeyError:
+            monthly_totals_kwh = None
+
         if doe_reference_name not in BuiltInProfile.default_buildings:
             raise ValueError("Invalid doe_reference_name. Select from the following: {}"
                              .format(BuiltInProfile.default_buildings))
@@ -141,7 +146,7 @@ def simulated_load(request):
             raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
 
         b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name,
-                           annual_kwh=annual_kwh)
+                           annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh)
         lp = b.built_in_profile
 
         response = JsonResponse(

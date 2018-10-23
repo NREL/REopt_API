@@ -4,7 +4,6 @@ import calendar
 import numpy
 from reo.log_levels import log
 
-zero_array = 8760 * [0]
 cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
 
@@ -123,6 +122,8 @@ class UrdbParse:
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
+        self.ts_per_year = 8760 * self.time_steps_per_hour
+        self.zero_array = [0] * self.ts_per_year
         self.net_metering = elec_tariff.net_metering
         self.wholesale_rate = elec_tariff.wholesale_rate
         self.excess_rate = excess_rate
@@ -332,15 +333,29 @@ class UrdbParse:
     def prepare_techs_and_loads(self, techs):
         
         energy_costs = [round(cost, 5) for cost in self.energy_costs]
-        # len(self.energy_costs) = 8760 * self.time_steps_per_hour * self.reopt_args.energy_tiers_num
+        # len(self.energy_costs) = self.ts_per_year * self.reopt_args.energy_tiers_num
 
-        start_index = len(energy_costs) - 8760 * self.time_steps_per_hour
+        start_index = len(energy_costs) - self.ts_per_year
         self.energy_rates_summary = energy_costs[start_index:len(energy_costs)]  # MOVE ELSEWHERE
 
-        # Assuming ExportRate is the equivalent to the first fuel rate tier:
-        negative_energy_costs = [cost * -0.999 for cost in energy_costs[0:8760]]
-        negative_wholesale_rate_costs = 8760 * [-1 * self.wholesale_rate]
-        negative_excess_rate_costs = 8760 * [-1 * self.excess_rate]
+        """
+        ExportRate should be lowest energy cost for tiered rates. Otherwise, ExportRate can be > FuelRate, which
+        leads REopt to export all PV energy produced.
+        """
+        tier_with_lowest_energy_cost = 0
+        if self.reopt_args.energy_tiers_num > 1:
+            annual_energy_charge_sums = []
+            for i in range(0, len(energy_costs), self.ts_per_year):
+                annual_energy_charge_sums.append(
+                    sum(energy_costs[i:i+self.ts_per_year])
+                )
+            tier_with_lowest_energy_cost = annual_energy_charge_sums.index(min(annual_energy_charge_sums))
+
+        negative_energy_costs = [cost * -0.999 for cost in
+                                 energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
+
+        negative_wholesale_rate_costs = self.ts_per_year * [-1 * self.wholesale_rate]
+        negative_excess_rate_costs = self.ts_per_year * [-1 * self.excess_rate]
 
         # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
@@ -356,11 +371,11 @@ class UrdbParse:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'generator':
                         # generator fuel is free for now since we are only modeling existing generators
-                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_rates = operator.add(energy_rates, self.zero_array)
                         energy_avail.append(self.generator_fuel_avail)
                     else:
                         # all other techs (PV, PVNM) have zero fuel and zero fuel cost
-                        energy_rates = operator.add(energy_rates, zero_array)
+                        energy_rates = operator.add(energy_rates, self.zero_array)
                         energy_avail.append(0)
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
@@ -378,9 +393,9 @@ class UrdbParse:
                     elif load == 'export':
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
-                        export_rates = operator.add(export_rates, zero_array)
+                        export_rates = operator.add(export_rates, self.zero_array)
                 else:
-                    export_rates = operator.add(export_rates, zero_array)
+                    export_rates = operator.add(export_rates, self.zero_array)
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
@@ -406,7 +421,7 @@ class UrdbParse:
         n_tou = len(current_rate.demandratestructure)
         n_rates = n_flat + n_tou
 
-        self.demand_rates_summary = 8760 * self.time_steps_per_hour * [0]
+        self.demand_rates_summary = self.ts_per_year * [0]
 
         if n_rates == 0:
             return
@@ -417,7 +432,26 @@ class UrdbParse:
             self.prepare_demand_tiers(current_rate, n_tou, False)
             self.prepare_tou_demand(current_rate)
 
+        self.prepare_demand_ratchets(current_rate)
         self.prepare_demand_rate_summary()
+
+
+    def prepare_demand_ratchets(self, current_rate):
+
+        demand_lookback_months = list()
+        demand_ratchet_percentages = 12 * [0]
+        if len(current_rate.demandratchetpercentage) == 12:
+            demand_ratchet_percentages = current_rate.demandratchetpercentage
+        demand_lookback_percentage = 0
+
+        # REopt currently only supports one lookback percentage, so use the last one
+        for month in range(0, 12):
+            if (demand_ratchet_percentages[month] > 0):
+                demand_lookback_months.append(month + 1)
+                demand_lookback_percentage = demand_ratchet_percentages[month]
+
+        self.reopt_args.demand_lookback_months = demand_lookback_months
+        self.reopt_args.demand_lookback_percent = demand_lookback_percentage
 
     def prepare_demand_tiers(self, current_rate, n_periods, monthly):
 

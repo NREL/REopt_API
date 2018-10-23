@@ -1,7 +1,7 @@
 import uuid
 import sys
 from django.http import JsonResponse
-from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel
+from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from models import ResilienceModel
 from outage_simulator import simulate_outage
 from reo.exceptions import UnexpectedError
@@ -63,6 +63,7 @@ def resilience_stats(request, run_uuid):
             batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
             pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
             financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+            wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
             batt_roundtrip_efficiency = batt.internal_efficiency_pct \
                                         * batt.inverter_efficiency_pct \
@@ -72,6 +73,7 @@ def resilience_stats(request, run_uuid):
                 batt_kwh=batt.size_kwh or 0,
                 batt_kw=batt.size_kw or 0,
                 pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
+                wind_kw_ac_hourly=wind.year_one_power_production_series_kw,
                 init_soc=batt.year_one_soc_series_pct,
                 critical_loads_kw=load_profile.critical_load_series_kw,
                 batt_roundtrip_efficiency=batt_roundtrip_efficiency,

@@ -1,0 +1,22 @@
+[  
+    {  
+        "Emergency Load Type":"ADA - wheelchair charging",
+        "Power (W)":"720",
+        "Quantity":"2",
+        "Start Hr.":"0",
+        "Stop Hr.":"24",
+        "Start Mo.":"January",
+        "Stop Mo.":"December",
+        "% Run Time":"42"
+    },
+    {  
+        "Emergency Load Type":"Comms - WIFI",
+        "Power (W)":"529",
+        "Quantity":"1",
+        "Start Hr.":"0",
+        "Stop Hr.":"24",
+        "Start Mo.":"January",
+        "Stop Mo.":"December",
+        "% Run Time":"100"
+    }
+]

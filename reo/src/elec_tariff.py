@@ -8,8 +8,9 @@ class ElecTariff(object):
     def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
                  time_steps_per_hour, urdb_label=None, urdb_utility_name=None, urdb_rate_name=None,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
-                 urdb_response=None,add_blended_rates_to_urdb_rate=None, **kwargs):
-
+                 urdb_response=None,add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None, blended_annual_demand_charges_us_dollars_per_kw=None,
+                  **kwargs):
+      
         self.run_id = run_id
         self.wholesale_rate = wholesale_rate_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
@@ -23,9 +24,17 @@ class ElecTariff(object):
             log.info("Parsing URDB rate")
             if add_blended_rates_to_urdb_rate:
                 urdb_response = self.update_urdb_with_monthly_energy_and_demand(urdb_response, blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
-        else:
-            log.info("Making URDB rate from blended data")
-            urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
+
+        elif blended_monthly_rates_us_dollars_per_kwh is not None and blended_monthly_demand_charges_us_dollars_per_kw is not None::
+            log.info("Making URDB rate from monthly blended data")
+            urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
+                                                blended_monthly_demand_charges_us_dollars_per_kw)
+        elif blended_annual_rates_us_dollars_per_kwh si not None and blended_annual_demand_charges_us_dollars_per_kw is not None: 
+            blended_monthly_rates_us_dollars_per_kwh = 12 * [blended_annual_rates_us_dollars_per_kwh]
+            blended_monthly_demand_charges_us_dollars_per_kw = 12 * [blended_annual_demand_charges_us_dollars_per_kw]
+            log.info("Making URDB rate from annual blended data")
+            urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
+                                                blended_monthly_demand_charges_us_dollars_per_kw)
 
         self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
         self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))

@@ -29,6 +29,27 @@ This can be ignored (it is only needed for the web servers).
 
 You can check which branch you are on with `git status`. It should be the master branch.
 
+Next, you need to copy a couple files to your \$HOME directory (which has the alias of ~).
+Assuming that you do not already have a `bash_profile` set up (otherwise you will want to copy and paste the contents of the REopt API `.bash_profile` into your bash_profile)
+from MY-API-FOLDER:
+```
+cp .bash_profile ~/.bash_profile
+cp .hscfg ~/.hscfg
+```
+You then need to point the environment variables in the .bash_profile to the correct directories:
+```
+#------------------------------------------------------------------------------
+#  Define the following based on your file structure
+#------------------------------------------------------------------------------
+#  xpress path
+XPRESSDIR="/usr/local/opt/xpress"
+
+#  path to reopt_api/reo/src for SAM SDK C libraries
+SRC_DIR="~/projects/reopt/webtool/reopt_api/reo/src"
+```
+
+The `XPRESSDIR` is probably correct; but you will need to change the `SRC_DIR`.  Note that for these changes to take effect you need to either `source` them or open a new terminal session.
+
 Lastly, **get *keys.py* from another API developer** (these are access keys that we do not version control).
 
 
@@ -120,8 +141,8 @@ Once you've downloaded and installed PostgreSQL, you will want to setup a local 
 By default, when PostgreSQL is installed, it automatically creates a database user that matches your username, and has a default role called 'PostgreSQL'.
 To create a local database called "reopt", with a username "reopt", and password "reopt":
 ```
-sudo -i -u PostgreSQL
-psql PostgreSQL
+sudo su - postgres
+psql postgres
 CREATE USER reopt WITH PASSWORD 'reopt';
 ALTER USER reopt CREATEDB;
 CREATE DATABASE reopt;
@@ -147,9 +168,10 @@ Then in your development environment:
 python manage.py migrate
 ```
 
+## Step 6: Setting up Xpress
+In order to run the API, you'll need to get a license key for Xpress on your virtual environment. To do this, please follow the instructions here: https://github.nrel.gov/dcutler/fico-xpress. If you don't have access to this page, email Dylan Cutler.
 
-
-## Step 6: Test the API
+## Step 7: Test the API
 Run all test with `python manage.py test`.
 When tests are run, a new PostgreSQL database will be created, with `test_` prepended to the `NAME` defined in dev_settings.py.
 
@@ -172,7 +194,7 @@ python manage.py test reo.tests.test_wind
 
 
 
-## Step 7: Starting API server and Celery workers
+## Step 8: Starting API server and Celery workers
 First, one must define some local environment variables. Open a new file called `.env` in the root directory of the API and include:
 ```
 DEPLOY_CURRENT_PATH="/full/path/to/MY-API-FOLDER"
@@ -215,7 +237,7 @@ and `celery -A reopt_api worker --loglevel=info`.
 
 
 
-## Step 8: Using the API
+## Step 9: Using the API
 There are many different ways to use the API. At high level:
 
 1. Inputs are POST'ed at `http://127.0.0.1:8000/v1/job/`
@@ -253,7 +275,7 @@ Once you continue or exit the pdb session, the celery worker will continue.
 
 ### Exeptions and traceback information
 Unfortunately, having `DEBUG=True` in the django settings leads to a memory leak (seems to be related to Celery task chord.unlock getting stuck in infinite loop).
-However, if you want to receive debugging information from the API, you can temporarily set `DEBUG=False`. **DO NOT PUSH ANY COMMITS WITH DEBUG=False!**
+However, if you want to receive debugging information from the API, you can temporarily set `DEBUG=True`. **DO NOT PUSH ANY COMMITS WITH DEBUG=True!**
 
 Another, safer way to view exception information is to log into your PostgreSQL server and query the `reo_errormodel` table. For example:
 ```
