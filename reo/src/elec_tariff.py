@@ -25,11 +25,11 @@ class ElecTariff(object):
             if add_blended_rates_to_urdb_rate:
                 urdb_response = self.update_urdb_with_monthly_energy_and_demand(urdb_response, blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
 
-        elif blended_monthly_rates_us_dollars_per_kwh is not None and blended_monthly_demand_charges_us_dollars_per_kw is not None::
+        elif blended_monthly_rates_us_dollars_per_kwh is not None and blended_monthly_demand_charges_us_dollars_per_kw is not None:
             log.info("Making URDB rate from monthly blended data")
             urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
                                                 blended_monthly_demand_charges_us_dollars_per_kw)
-        elif blended_annual_rates_us_dollars_per_kwh si not None and blended_annual_demand_charges_us_dollars_per_kw is not None: 
+        elif blended_annual_rates_us_dollars_per_kwh is not None and blended_annual_demand_charges_us_dollars_per_kw is not None: 
             blended_monthly_rates_us_dollars_per_kwh = 12 * [blended_annual_rates_us_dollars_per_kwh]
             blended_monthly_demand_charges_us_dollars_per_kw = 12 * [blended_annual_demand_charges_us_dollars_per_kw]
             log.info("Making URDB rate from annual blended data")
