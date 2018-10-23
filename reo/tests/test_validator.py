@@ -15,6 +15,45 @@ class InputValidatorTests(TestCase):
         validator = ValidateNestedInput(post)
         return validator
 
+    def test_add_blended_to_urdb(self):
+        """
+        try setting the add blended to urdb rate without sufficient inpute
+        
+        also confirm that blended fields must be 12 entries long each
+        :return: None
+        """
+        
+        self.post['Scenario']['Site']['ElectricTariff']['add_blended_rates_to_urdb_rate'] = True
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_rates_us_dollars_per_kwh'] = None
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_demand_charges_us_dollars_per_kw'] = None
+        validator = self.get_validator(self.post)
+        assert(any("add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: " in e for e in validator.errors['input_errors']))
+
+        self.post['Scenario']['Site']['ElectricTariff']['add_blended_rates_to_urdb_rate'] = True
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_rates_us_dollars_per_kwh'] = [0]*12
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_demand_charges_us_dollars_per_kw'] = None
+        validator = self.get_validator(self.post)
+        assert(any("add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: " in e for e in validator.errors['input_errors']))
+
+        self.post['Scenario']['Site']['ElectricTariff']['add_blended_rates_to_urdb_rate'] = True
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_rates_us_dollars_per_kwh'] = None
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_demand_charges_us_dollars_per_kw'] = [0]*12
+        validator = self.get_validator(self.post)
+        assert(any("add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: " in e for e in validator.errors['input_errors']))
+
+        self.post['Scenario']['Site']['ElectricTariff']['add_blended_rates_to_urdb_rate'] = True
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_rates_us_dollars_per_kwh'] = [0]*12
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_demand_charges_us_dollars_per_kw'] = [0]*5
+        validator = self.get_validator(self.post)
+        assert(any("array needs to contain 12 valid numbers." in e for e in validator.errors['input_errors']))
+
+        self.post['Scenario']['Site']['ElectricTariff']['add_blended_rates_to_urdb_rate'] = True
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_rates_us_dollars_per_kwh'] = [0]*5
+        self.post['Scenario']['Site']['ElectricTariff']['blended_monthly_demand_charges_us_dollars_per_kw'] = [0]*12
+        validator = self.get_validator(self.post)
+        assert(any("array needs to contain 12 valid numbers." in e for e in validator.errors['input_errors']))
+
+
     def test_different_load_profiles(self):
         """
         try different lengths of load profiles, where the following are valid:
