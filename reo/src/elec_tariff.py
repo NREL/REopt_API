@@ -46,12 +46,12 @@ class ElecTariff(object):
         #Make sure at least monthly energy and demand are captured
         if 'flatdemandmonths' not in urdb_rate.keys() :
             urdb_rate['flatdemandstructure'] = [[{'rate':0.0}]]
-            urdb_rate['flatdemandmonths'] = [0]*12
+            urdb_rate['flatdemandmonths'] = [0 for _ in range(0,12)]
 
         if 'energyratestructure' not in urdb_rate.keys():
             urdb_rate['energyratestructure'] = [[{'rate':0.0}]]
-            urdb_rate['energyweekdayschedule'] = [[0]*24]*12
-            urdb_rate['energyweekendschedule'] = [[0]*24]*12
+            urdb_rate['energyweekdayschedule'] = [[0 for _ in range(0,24)] for __ in range(0,12)]
+            urdb_rate['energyweekendschedule'] = [[0 for _ in range(0,24)] for __ in range(0,12)]
 
         #Add Demand Charges
         updated_rates = []
@@ -130,7 +130,7 @@ class ElecTariff(object):
             demand_period = 0
             for energy_rate in unique_energy_rates:
                 if energy_rate == blended_utility_rate[month]:
-                    tmp = [energy_period] * 24
+                    tmp = [energy_period for _ in range(0,24)]
                     energyweekdayschedule.append(tmp)
                     energyweekendschedule.append(tmp)
                 energy_period += 1
