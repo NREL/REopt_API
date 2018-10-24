@@ -10,10 +10,10 @@ References:
 Requires a configuration file at ~/.hscfg with contents like so:
 
 # HDFCloud configuration file
-hs_endpoint = https://developer.nrel.gov/api/hsds/
-hs_username = None
-hs_password = None
-hs_api_key = <YOUR-API-KEY>  # from developer.nrel.gov
+-hs_endpoint = https://developer.nrel.gov/api/hsds/ +v
+-hs_username = None 
+-hs_password = None 
+-hs_api_key = <YOUR-API-KEY>  # from developer.nrel.gov
 
 
 The h5pyd Files is indexed on [t, y, x], where:
