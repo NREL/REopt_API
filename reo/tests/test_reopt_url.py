@@ -99,8 +99,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         data = self.complete_valid_nestedpost
 
         data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
-        data['Scenario']['Site']['ElectricTariff']['urdb_response']['label'] = '539f6b63ec4f024411ec9c69'
-        text = "URDB Rate (label=539f6b63ec4f024411ec9c69) is currently restricted due to performance limitations"
+        data['Scenario']['Site']['ElectricTariff']['urdb_response']['label'] = '55fc8115682bea28da645f70'
+        text = "URDB Rate (label=55fc8115682bea28da645f70) is currently restricted due to performance limitations"
         self.check_data_error_response(data,text)
 
         data['Scenario']['Site']['ElectricTariff']['urdb_response'] = self.missing_rate_urdb
