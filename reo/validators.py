@@ -401,36 +401,62 @@ class ValidateNestedInput:
             - OR urdb_rate_name AND urdb_utility_name.
             For the latter two options, we have to get the urdb_response.
             """
-            if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response') is not None:
+            electric_tariff = self.input_dict['Scenario']['Site']['ElectricTariff']
+
+            if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
 
-            elif self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label') not in [None, ""]:
-                rate = Rate(rate=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label'))
+            elif electric_tariff.get('urdb_label','') != '':
+                rate = Rate(rate=electric_tariff.get('urdb_label'))
 
                 if rate.urdb_dict is None:
                     self.urdb_errors.append(
                         "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
-                            .format(self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_label'))
+                            .format(electric_tariff.get('urdb_label'))
                     )
                 else:
-                    self.input_dict['Scenario']['Site']['ElectricTariff']['urdb_response'] = rate.urdb_dict
+                    electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
-            elif all(x not in [self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name'),
-                               self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name')]
-                     for x in [None, ""]):
-                rate = Rate(util=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name'),
-                            rate=self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name'))
+            elif electric_tariff.get('urdb_utility_name','') != '' and electric_tariff.get('urdb_rate_name','') != '':
+                rate = Rate(util=electric_tariff.get('urdb_utility_name'), rate=electric_tariff.get('urdb_rate_name'))
 
                 if rate.urdb_dict is None:
                     self.urdb_errors.append(
                         "Unable to download {} from URDB. Please check the input values for 'urdb_utility_name' and 'urdb_rate_name'."
-                            .format(self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name'))
+                            .format(electric_tariff.get('urdb_rate_name'))
                     )
                 else:
-                    self.input_dict['Scenario']['Site']['ElectricTariff']['urdb_response'] = rate.urdb_dict
+                    electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
+
+            if electric_tariff['add_blended_rates_to_urdb_rate']:
+                monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
+                monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
+                urdb_rate = electric_tariff.get('urdb_response', True)
+
+                if monthly_demand==True or monthly_energy==True or urdb_rate==True:
+                    missing_keys = []
+                    if monthly_demand==True:
+                        missing_keys.append('blended_monthly_demand_charges_us_dollars_per_kw')
+                    if monthly_energy==True:
+                        missing_keys.append('blended_monthly_rates_us_dollars_per_kwh')
+                    if urdb_rate==True:
+                        missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
+
+                    self.input_data_errors.append('add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: {}'.format(', '.join(missing_keys)))
+
+            for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
+                if electric_tariff.get(blended, False):
+                    if len(electric_tariff.get(blended)) != 12:
+                        self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
+            
+            for lp in ['critical_loads_kw', 'loads_kw']:
+
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
+                                       "LoadProfile", lp)
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
