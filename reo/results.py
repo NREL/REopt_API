@@ -108,6 +108,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             if results_dict.get('pv_kw') is None:
                 results_dict['pv_kw'] = 0
 
+            # if wind is zero then no value is written to REopt results.json
+            if results_dict.get("wind_kw") is None:
+                results_dict['wind_kw'] = 0
+
+
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
             # dispatch
