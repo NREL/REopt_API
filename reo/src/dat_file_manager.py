@@ -551,10 +551,9 @@ class DatFileManager:
 
                 elif existing_kw_flag:
 
-                    # find the first index in cost_curve_bp_x that is larger than existing_kw, then reset cost curve
                     for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
-                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1]
-                        tmp_cap_cost_yint = [0] + [big_number]
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0] + [big_number]    
                         cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
                         n_segments = len(tmp_cap_cost_slope)
                         break
