@@ -128,6 +128,7 @@ class DatFileManager:
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
+            load.bau_load_list.append(big_number)
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
