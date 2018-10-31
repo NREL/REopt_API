@@ -507,8 +507,8 @@ class LoadProfile(BuiltInProfile):
                 if loads_kw_is_net:
                     # add existing pv if net load provided
                     native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
-                    self.load_list = native_load
-                    self.bau_load_list = native_load
+                    self.load_list = copy.deepcopy(native_load)
+                    self.bau_load_list = copy.deepcopy(native_load)
 
         """
         Account for outage in load_list (loads_kw).
