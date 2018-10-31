@@ -294,6 +294,16 @@ class DatFileManager:
         n_segments = None
         tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
 
+        # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
+        for tech in techs:
+
+            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
+
+                existing_kw = 0
+                if hasattr(eval('self.' + tech), 'existing_kw'):
+                    if eval('self.' + tech + '.existing_kw') is not None:
+                        existing_kw_flag = True
+
         for tech in techs:
 
             if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
@@ -538,6 +548,16 @@ class DatFileManager:
                             cost_curve_bp_x = [0, existing_kw] + cost_curve_bp_x[i+1:]
                             n_segments = len(tmp_cap_cost_slope)
                             break
+
+                elif existing_kw_flag:
+
+                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0] + [big_number]    
+                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
+                        n_segments = len(tmp_cap_cost_slope)
+                        break
+
 
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
