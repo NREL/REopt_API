@@ -197,76 +197,76 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    def test_complex_incentives(self):
-        """
-        Tests scenario where: PV has ITC, federal, state, local rebate with maxes, MACRS, bonus, Battery has ITC,
-        rebate, MACRS, bonus.
-        :return: None
-        """
+    # def test_complex_incentives(self):
+    #     """
+    #     Tests scenario where: PV has ITC, federal, state, local rebate with maxes, MACRS, bonus, Battery has ITC,
+    #     rebate, MACRS, bonus.
+    #     :return: None
+    #     """
 
-        data = {'Scenario': {'Site': {'land_acres': 1.0,
-                                      'latitude': 34.5794343,
-                                      'longitude': -118.1164613,
-                                      'roof_squarefeet': 5000.0,
-                                      'LoadProfile': {'annual_kwh': 10000000.0,
-                                                      'doe_reference_name': 'RetailStore'
-                                                      },
-                                      "Financial": {
-                                          "offtaker_tax_pct": 0.4
-                                      },
-                                      'Storage': {'total_rebate_us_dollars_per_kw': 100,
-                                                  'canGridCharge': True,
-                                                  'macrs_option_years': 5,
-                                                  'macrs_bonus_pct': 0.4,
-                                                  },
-                                      'PV': {'utility_ibi_max_us_dollars': 10000,
-                                             'pbi_system_max_kw': 10,
-                                             'utility_ibi_pct': 0.1,
-                                             'state_ibi_pct': 0.2,
-                                             'state_ibi_max_us_dollars': 10000,
-                                             'macrs_option_years': 5,
-                                             'macrs_bonus_pct': 0.4,
-                                             'federal_itc_pct': 0.3,
-                                             'module_type': 1,
-                                             'array_type': 1,
-                                             'tilt': 34.5794343,
-                                             'pbi_us_dollars_per_kwh': 0.0,
-                                             'utility_rebate_us_dollars_per_kw': 50,
-                                             'federal_rebate_us_dollars_per_kw': 100,
-                                             'state_rebate_us_dollars_per_kw': 200,
-                                             },
-                                      'Wind': {
-                                          'max_kw': 0
-                                      },
-                                      'ElectricTariff': {'net_metering_limit_kw': 0,
-                                                         'urdb_response':
-                                                             {'sector': 'Commercial', 'voltageminimum': 2000, 'description': '-Energytieredcharge=generationcharge+deliverycharge\r\n\r\n-Timeofdaydemandcharges(generation-based)aretobeaddedtothemonthlydemandcharge(Deliverybased).', 'peakkwcapacitymax': 200, 'energyattrs': [{'VoltageDiscount(2KV-<50KV)': '$-0.00106/Kwh'}, {'VoltageDiscount(>50KV<220KV)': '$-0.00238/Kwh'}, {'VoltageDiscountat220KV': '$-0.0024/Kwh'}, {'CaliforniaClimatecredit': '$-0.00669/kwh'}], 'enddate': 1451520000, 'peakkwcapacityhistory': 12, 'energyratestructure': [[{'rate': 0.0712, 'unit': 'kWh'}], [{'rate': 0.09368, 'unit': 'kWh'}], [{'rate': 0.066, 'unit': 'kWh'}], [{'rate': 0.08888, 'unit': 'kWh'}], [{'rate': 0.1355, 'unit': 'kWh'}]], 'flatdemandmonths': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'energyweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], 'energyweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'demandweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'approved': True, 'utility': 'SouthernCaliforniaEdisonCo', 'flatdemandstructure': [[{'rate': 13.2}]], 'startdate': 1433116800, 'fixedmonthlycharge': 259.2, 'phasewiring': 'SinglePhase', 'name': 'TimeofUse,GeneralService,DemandMetered,OptionB:GS-2TOUB,SinglePhase', 'eiaid': 17609, 'country': 'USA', 'uri': 'http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae', 'voltagemaximum': 50000, 'label': '55fc81d7682bea28da64f9ae', 'flatdemandunit': 'kW', 'source': 'http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf', 'voltagecategory': 'Primary', 'peakkwcapacitymin': 20, 'demandattrs': [{'FaciltiesVoltageDiscount(2KV-<50KV)': '$-0.18/KW'}, {'FaciltiesVoltageDiscount>50kV-<220kV': '$-5.78/KW'}, {'FaciltiesVoltageDiscount>220kV': '$-9.96/KW'}, {'TimeVoltageDiscount(2KV-<50KV)': '$-0.70/KW'}, {'TimeVoltageDiscount>50kV-<220kV': '$-1.93/KW'}, {'TimeVoltageDiscount>220kV': '$-1.95/KW'}], 'demandrateunit': 'kW', 'revisions': [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], 'demandratestructure': [[{'rate': 0}], [{'rate': 5.3}], [{'rate': 18.11}]], 'demandweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}
-                                                         },
-                                      }
-                             }
-                }
-        resp = self.get_response(data=data)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        d = ModelManager.make_response(run_uuid=run_uuid)
+    #     data = {'Scenario': {'Site': {'land_acres': 1.0,
+    #                                   'latitude': 34.5794343,
+    #                                   'longitude': -118.1164613,
+    #                                   'roof_squarefeet': 5000.0,
+    #                                   'LoadProfile': {'annual_kwh': 10000000.0,
+    #                                                   'doe_reference_name': 'RetailStore'
+    #                                                   },
+    #                                   "Financial": {
+    #                                       "offtaker_tax_pct": 0.4
+    #                                   },
+    #                                   'Storage': {'total_rebate_us_dollars_per_kw': 100,
+    #                                               'canGridCharge': True,
+    #                                               'macrs_option_years': 5,
+    #                                               'macrs_bonus_pct': 0.4,
+    #                                               },
+    #                                   'PV': {'utility_ibi_max_us_dollars': 10000,
+    #                                          'pbi_system_max_kw': 10,
+    #                                          'utility_ibi_pct': 0.1,
+    #                                          'state_ibi_pct': 0.2,
+    #                                          'state_ibi_max_us_dollars': 10000,
+    #                                          'macrs_option_years': 5,
+    #                                          'macrs_bonus_pct': 0.4,
+    #                                          'federal_itc_pct': 0.3,
+    #                                          'module_type': 1,
+    #                                          'array_type': 1,
+    #                                          'tilt': 34.5794343,
+    #                                          'pbi_us_dollars_per_kwh': 0.0,
+    #                                          'utility_rebate_us_dollars_per_kw': 50,
+    #                                          'federal_rebate_us_dollars_per_kw': 100,
+    #                                          'state_rebate_us_dollars_per_kw': 200,
+    #                                          },
+    #                                   'Wind': {
+    #                                       'max_kw': 0
+    #                                   },
+    #                                   'ElectricTariff': {'net_metering_limit_kw': 0,
+    #                                                      'urdb_response':
+    #                                                          {'sector': 'Commercial', 'voltageminimum': 2000, 'description': '-Energytieredcharge=generationcharge+deliverycharge\r\n\r\n-Timeofdaydemandcharges(generation-based)aretobeaddedtothemonthlydemandcharge(Deliverybased).', 'peakkwcapacitymax': 200, 'energyattrs': [{'VoltageDiscount(2KV-<50KV)': '$-0.00106/Kwh'}, {'VoltageDiscount(>50KV<220KV)': '$-0.00238/Kwh'}, {'VoltageDiscountat220KV': '$-0.0024/Kwh'}, {'CaliforniaClimatecredit': '$-0.00669/kwh'}], 'enddate': 1451520000, 'peakkwcapacityhistory': 12, 'energyratestructure': [[{'rate': 0.0712, 'unit': 'kWh'}], [{'rate': 0.09368, 'unit': 'kWh'}], [{'rate': 0.066, 'unit': 'kWh'}], [{'rate': 0.08888, 'unit': 'kWh'}], [{'rate': 0.1355, 'unit': 'kWh'}]], 'flatdemandmonths': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'energyweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], 'energyweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'demandweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'approved': True, 'utility': 'SouthernCaliforniaEdisonCo', 'flatdemandstructure': [[{'rate': 13.2}]], 'startdate': 1433116800, 'fixedmonthlycharge': 259.2, 'phasewiring': 'SinglePhase', 'name': 'TimeofUse,GeneralService,DemandMetered,OptionB:GS-2TOUB,SinglePhase', 'eiaid': 17609, 'country': 'USA', 'uri': 'http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae', 'voltagemaximum': 50000, 'label': '55fc81d7682bea28da64f9ae', 'flatdemandunit': 'kW', 'source': 'http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf', 'voltagecategory': 'Primary', 'peakkwcapacitymin': 20, 'demandattrs': [{'FaciltiesVoltageDiscount(2KV-<50KV)': '$-0.18/KW'}, {'FaciltiesVoltageDiscount>50kV-<220kV': '$-5.78/KW'}, {'FaciltiesVoltageDiscount>220kV': '$-9.96/KW'}, {'TimeVoltageDiscount(2KV-<50KV)': '$-0.70/KW'}, {'TimeVoltageDiscount>50kV-<220kV': '$-1.93/KW'}, {'TimeVoltageDiscount>220kV': '$-1.95/KW'}], 'demandrateunit': 'kW', 'revisions': [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], 'demandratestructure': [[{'rate': 0}], [{'rate': 5.3}], [{'rate': 18.11}]], 'demandweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}
+    #                                                      },
+    #                                   }
+    #                          }
+    #             }
+    #     resp = self.get_response(data=data)
+    #     self.assertHttpCreated(resp)
+    #     r = json.loads(resp.content)
+    #     run_uuid = r.get('run_uuid')
+    #     d = ModelManager.make_response(run_uuid=run_uuid)
 
-        c = nested_to_flat(d['outputs'])
+    #     c = nested_to_flat(d['outputs'])
 
-        d_expected = dict()
-        d_expected['lcc'] = 10958277
-        d_expected['npv'] = 11257165 - d_expected['lcc']
-        d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 19.161
-        d_expected['batt_kwh'] = 28.0978
-        d_expected['year_one_utility_kwh'] = 9614689.2606
+    #     d_expected = dict()
+    #     d_expected['lcc'] = 10958277
+    #     d_expected['npv'] = 11257165 - d_expected['lcc']
+    #     d_expected['pv_kw'] = 216.667
+    #     d_expected['batt_kw'] = 19.161
+    #     d_expected['batt_kwh'] = 28.0978
+    #     d_expected['year_one_utility_kwh'] = 9614689.2606
 
-        try:
-            check_common_outputs(self, c, d_expected)
-        except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages'].get('error')))
-            raise
+    #     try:
+    #         check_common_outputs(self, c, d_expected)
+    #     except:
+    #         print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+    #         print("Error message: {}".format(d['messages'].get('error')))
+    #         raise
 
     def test_valid_nested_posts(self):
 
