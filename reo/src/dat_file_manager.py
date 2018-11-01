@@ -128,6 +128,7 @@ class DatFileManager:
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
+            load.bau_load_list.append(big_number)
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
@@ -295,6 +296,7 @@ class DatFileManager:
         tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
 
         # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
+        existing_kw_flag = False
         for tech in techs:
 
             if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
@@ -741,7 +743,6 @@ class DatFileManager:
         Note: whether or not a given Tech can serve a given Load can also be controlled via TechToLoadMatrix
         :return: None
         """
-
         reopt_techs = self._get_REopt_techs(self.available_techs)
         reopt_techs_bau = self._get_REopt_techs(self.bau_techs)
 
