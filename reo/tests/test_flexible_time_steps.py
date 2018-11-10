@@ -92,7 +92,7 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
     def test_flexible_time_steps(self):
         """
         - Validation to ensure that upon entering time_steps_per_hour=1 or 4, the results of the analysis
-        are as expected (keeping wind and storage off for the time being)
+        are as expected (keeping pv and storage off to test wind module's performance)
         - the output csv files dimensions (8760, 35040 etc) must also match time_steps_per_hour given as input
         :return:
         """
