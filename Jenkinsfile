@@ -11,6 +11,7 @@ pipeline {
     DB_PORT = "5496"
     DB_USERNAME = "postgres"
     DB_PASSWORD = "postgres"
+    XPRESS = "/opt/xpressmp/bin"	  
   }
 
   stages{
@@ -19,6 +20,7 @@ pipeline {
         sh """
 	virtualenv env
 	source env/bin/activate
+	source /opt/xpressmp/bin/xpvars.sh
 
 	cp keys.py.test keys.py
 	pip install -r requirements.txt
