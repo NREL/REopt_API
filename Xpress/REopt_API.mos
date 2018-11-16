@@ -189,6 +189,9 @@ declarations
 
 end-declarations
 
+! Set up verbose reporting for debugging
+! setparam("XPRS_VERBOSE", true)
+! setparam("XPRS_LOADNAMES", true)
 
 ! This option sets the tolerance of the integer solution
 ! setparam("XPRS_MIPTOL", 1e-2)   !default is 5e-5
@@ -782,7 +785,9 @@ Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCha
 
 
 Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
-                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts)
+                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts) * TimeStepScaling
+
+
 
 GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
 

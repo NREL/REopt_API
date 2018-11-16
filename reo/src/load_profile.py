@@ -7,6 +7,7 @@ from collections import namedtuple
 from reo.utilities import degradation_factor
 from reo.log_levels import log
 
+
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
@@ -355,7 +356,7 @@ class BuiltInProfile(object):
         self.monthly_kwh = monthly_totals_kwh
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
-        self.year = year  # TODO: force this to a year that starts on Monday to align with DOE reference profiles?
+        self.year = year
         self.tried_developer_reo_api = False
         self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
 
@@ -471,7 +472,10 @@ class LoadProfile(BuiltInProfile):
 
     def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
-                 analysis_years=1, **kwargs):
+                 analysis_years=1, time_steps_per_hour=1, **kwargs):
+
+        self.time_steps_per_hour = time_steps_per_hour
+        self.n_timesteps = self.time_steps_per_hour*8760
 
         if user_profile:
             self.load_list = user_profile
@@ -479,6 +483,10 @@ class LoadProfile(BuiltInProfile):
         else:  # building type and (annual_kwh OR monthly_totals_kwh) defined by user
             super(LoadProfile, self).__init__(**kwargs)
             self.load_list = self.built_in_profile
+            self.load_list_original = copy.deepcopy(self.load_list)
+
+            self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
+
 
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)
@@ -499,8 +507,8 @@ class LoadProfile(BuiltInProfile):
                 if loads_kw_is_net:
                     # add existing pv if net load provided
                     native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
-                    self.load_list = native_load
-                    self.bau_load_list = native_load
+                    self.load_list = copy.deepcopy(native_load)
+                    self.bau_load_list = copy.deepcopy(native_load)
 
         """
         Account for outage in load_list (loads_kw).
@@ -508,7 +516,7 @@ class LoadProfile(BuiltInProfile):
             2. if user DOES NOT provide critical_loads_kw, use critical_load_pct to scale load_list during outage.
         In both cases, if existing PV and load is net then add existing PV to critical_loads_kw.
         """
-        if None not in [critical_loads_kw, outage_start_hour, outage_end_hour]:
+        if all(x not in [critical_loads_kw, outage_start_hour, outage_end_hour] for x in [None, []]):
 
             if existing_pv_kw_list is not None and critical_loads_kw_is_net:
                     # Add existing pv in if net critical load provided
@@ -527,8 +535,7 @@ class LoadProfile(BuiltInProfile):
 
             # modify loads based on percentage
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
-            self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+            self.bau_load_list[outage_start_hour:outage_end_hour] = [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
         else:
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
@@ -537,6 +544,7 @@ class LoadProfile(BuiltInProfile):
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
+        #self.critical_load_series_kw = critical_loads_kw
 
         # write csv for critical_load_series_kw. needed for outage sim
         fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')

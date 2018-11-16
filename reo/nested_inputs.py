@@ -35,6 +35,7 @@ load_profile_possible_sets = [["loads_kw"],
 
 electric_tariff_possible_sets = [["urdb_response"],
             ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
+            ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
             ["urdb_label"],
             ["urdb_utility_name", "urdb_rate_name"]]
 
@@ -52,7 +53,7 @@ nested_input_definitions = {
       "default": 295,
       "description": "The number of seconds allowed before the optimization times out"
     },
-    "user_id": {
+    "user_uuid": {
       "type": "str",
       "description": "The assigned unique ID of a signed in REOpt user"
     },
@@ -63,7 +64,7 @@ nested_input_definitions = {
     "time_steps_per_hour": {
       "type": "int",
       "min": 1,
-      "max": 1,
+      "max": 4,
       "default": 1,
       "description": "The number of time steps per hour in the REopt simulation"
     },
@@ -119,7 +120,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.4,
+          "default": 0.26,
           "description": "Host tax rate"
         },
         "offtaker_discount_pct": {
@@ -172,7 +173,7 @@ nested_input_definitions = {
           "min": 1,
           "max": 9999,
           "default": 2018,
-          "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff"
+          "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka 'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday."
         },
         "monthly_totals_kwh": {
           "type": "list_of_float",
@@ -238,6 +239,11 @@ nested_input_definitions = {
           "depends_on": ["urdb_utility_name"],
           "description": "Name of utility rate from  <a href='https: //openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>"
         },
+        "add_blended_rates_to_urdb_rate": {
+          "type": "bool",
+          "default": False,
+          "description": "Set to 'true' to add the monthly blended energy rates and demand charges to the URDB rate schedule. Otherwise, blended rates will only be considered if a URDB rate is not provided. "
+        },
         "blended_monthly_rates_us_dollars_per_kwh": {
           "type": "list_of_float",
           "replacement_sets": electric_tariff_possible_sets,
@@ -245,11 +251,23 @@ nested_input_definitions = {
           "description": "Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost in $)"
         },
         "blended_monthly_demand_charges_us_dollars_per_kw": {
-          "type": "list_of_float",
+          "type": "list_of_float", 
           "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
+          "blended_annual_rates_us_dollars_per_kwh": {
+              "type": "float",
+              "replacement_sets": electric_tariff_possible_sets,
+              "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
+              "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
+          },
+          "blended_annual_demand_charges_us_dollars_per_kw": {
+              "type": "float",
+              "replacement_sets": electric_tariff_possible_sets,
+              "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
+              "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
+          },
         "net_metering_limit_kw": {
           "type": "float",
           "min": 0,
@@ -285,13 +303,24 @@ nested_input_definitions = {
       "Wind": {
         "size_class": {
           "type": "str",
-          "default": "large",
           "restrict_to": "['residential', 'commercial', 'medium', 'large']",
           "description": "Turbine size-class. One of [residential, commercial, medium, large]"
         },
-        "resource_meters_per_sec": {
+        "wind_meters_per_sec": {
           "type": "list_of_float",
-          "description": "Optional wind resource for site in meters/sec. Must contain a value for each time step in one year."
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "wind_direction_degrees": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "temperature_celsius": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
+        },
+        "pressure_atmospheres": {
+          "type": "list_of_float",
+          "description": "Data downloaded from Wind ToolKit for modeling wind turbine."
         },
         "min_kw": {
           "type": "float",
@@ -304,15 +333,15 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e9,
-          "default": 0,
-          "description": "Maximum wind power capacity constraint for optimization. Set to zero to disable Wind. Disabled by default"
+          "default":1e9,
+          "description": "Maximum wind power capacity constraint for optimization. Set to zero to disable Wind. Enabled by default"
         },
         "installed_cost_us_dollars_per_kw": {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2000,
-          "description": "Total upfront installed costs"
+          "default": 3013,  # if the default value of 3013 goes in techs.py, there is a logic to assign actual defaul cost based on 'size_class'
+          "description": "Total upfront installed costs in US dollars/kW. Determined by size_class. For the 'large' (>2MW) size_class the cost is $1,874/kW. For the 'medium commercial' size_class the cost is $4,111/kW. For the 'small commercial' size_class the cost is $4,989/kW and for the 'residential' size_class the cost is $10,792/kW "
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
@@ -331,7 +360,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.4,
+          "default": 0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
@@ -345,7 +374,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.3,
+          "default": 0.9995,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
@@ -487,7 +516,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.4,
+          "default": 0,
           "description": "Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
         },
         "macrs_itc_reduction": {
@@ -619,7 +648,7 @@ nested_input_definitions = {
         "array_type": {
           "type": "int",
           "restrict_to": [0, 1, 2, 3, 4],
-          "default": 0,
+          "default": 1,
           "description": "PV Watts array type (0: Ground Mount Fixed (Open Rack); 1: Rooftop, Fixed; 2: Ground Mount 1-Axis Tracking; 3 : 1-Axis Backtracking; 4: Ground Mount, 2-Axis Tracking)"
         },
         "module_type": {
@@ -659,7 +688,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 90,
-          "default": "Site latitude",
+          "default": 10,
           "description": "PV system tilt"
         }
       },
@@ -734,7 +763,7 @@ nested_input_definitions = {
             "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
           },
           "macrs_bonus_pct": {
-            "type": "float", "min": 0, "max": 1, "default": 0.4,
+            "type": "float", "min": 0, "max": 1, "default": 0,
             "description": "Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation"
           },
           "macrs_itc_reduction": {
@@ -798,7 +827,7 @@ def flat_to_nested(i):
     return {
         "Scenario": {
             "timeout_seconds": i.get("timeout"),
-            "user_id": i.get("user_id"),
+            "user_uuid": i.get("user_uuid"),
             "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
 
@@ -838,6 +867,8 @@ def flat_to_nested(i):
                         "urdb_response": i.get("urdb_rate"),
                         "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
                         "blended_monthly_demand_charges_us_dollars_per_kw": i.get("demand_charge"),
+                        "blended_annual_rates_us_dollars_per_kwh": i.get("blended_utility_rate")[0],
+                        "blended_annual_rates_us_dollars_per_kwh": i.get("demand_charge")[0],
                         "net_metering_limit_kw": i.get("net_metering_limit"),
                         "wholesale_rate_us_dollars_per_kwh": i.get("wholesale_rate"),
                         "interconnection_limit_kw": i.get("interconnection_limit"),

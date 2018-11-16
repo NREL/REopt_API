@@ -1,6 +1,6 @@
 {
   "Scenario": {
-    "user_id": null,
+    "user_uuid": null,
     "time_steps_per_hour": null,
     "timeout_seconds": null,
     "Site": {
@@ -79,7 +79,8 @@
         "utility_rebate_us_dollars_per_kw": null,
         "min_kw": null,
         "pbi_years": null,
-        "max_kw": null,
+        "max_kw": 5,
+        "min_kw": 4,
         "state_rebate_max_us_dollars": null,
         "state_rebate_us_dollars_per_kw": null,
         "federal_itc_pct": null,

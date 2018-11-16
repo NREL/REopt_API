@@ -2,6 +2,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import os
 import sys
+from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
@@ -51,7 +52,6 @@ class ScenarioTask(Task):
 def setup_scenario(self, run_uuid, data, raw_post):
     """
 
-    All error handling is done in validators.py before data is passed to scenario.py
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
@@ -76,7 +76,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["PV"]["max_kw"] > 0:
             pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                    longitude=inputs_dict['Site'].get('longitude'), **inputs_dict["Site"]["PV"])
+                    longitude=inputs_dict['Site'].get('longitude'), time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                    **inputs_dict["Site"]["PV"])
         else:
             pv = None
 
@@ -86,6 +87,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                          longitude=inputs_dict['Site'].get('longitude'),
                          pv=pv,
                          analysis_years=site.financial.analysis_years,
+                         time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                          **inputs_dict['Site']['LoadProfile'])
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
@@ -93,9 +95,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                                  **inputs_dict['Site']['ElectricTariff'])
 
-
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-            wind = Wind(dfm=dfm, **inputs_dict["Site"]["Wind"])
+            wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+                        longitude=inputs_dict['Site'].get('longitude'),run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
 
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
@@ -123,4 +125,5 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("Scenario.py raising error: " + exc_value)
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)

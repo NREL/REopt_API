@@ -25,7 +25,6 @@ import requests
 import json
 from reo.log_levels import log
 
-
 # cache_file = "rate_cache.json"
 # try:
 #     with open(cache_file, 'rb') as f:
@@ -49,7 +48,7 @@ class Rate(object):
         self.util = util
         self.rate = rate  # rate name string
 
-        self.urdb_dict = self.get_rate()  # can return None
+        self.urdb_dict = self.get_rate() # can return None
 
     def get_rate(self):
 
@@ -62,6 +61,8 @@ class Rate(object):
         if rate_dict is not None:
             log.info('Found rate in URDB.')
                 # self.add_rate_to_cache(rate_dict, rate_cache)
+        else:
+            return None
 
         try:
             if rate_dict['energyratestructure'] is None:

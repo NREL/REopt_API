@@ -16,19 +16,20 @@ import logging
 import os
 
 log = logging.getLogger('reopt_api')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.WARNING)
 
 logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
 
 file_handler = logging.FileHandler(filename=logfile, mode='a')
-file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+file_formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s uuid:%(uuidstr)s %(message)s')
 file_handler.setFormatter(file_formatter)
-file_handler.setLevel(logging.INFO)
+file_handler.setLevel(logging.DEBUG)
 
 console_handler = logging.StreamHandler()
-console_formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(message)s')
+console_formatter = logging.Formatter('%(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s uuid:%(uuidstr)s %(message)s')
 console_handler.setFormatter(console_formatter)
-console_handler.setLevel(logging.WARNING)
+console_handler.setLevel(logging.DEBUG)
 
 log.addHandler(file_handler)
 log.addHandler(console_handler)
+

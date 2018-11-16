@@ -1,5 +1,6 @@
 from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
+from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
@@ -52,13 +53,14 @@ class Util(Tech):
         self.loads_served = ['retail', 'storage']
         self.is_grid = True
         self.derate = 0
+        self.n_timesteps = dfm.n_timesteps
 
         dfm.add_util(self)
 
     @property
     def prod_factor(self):
 
-        grid_prod_factor = [1.0 for _ in range(8760)]
+        grid_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
         if self.outage_start_hour is not None and self.outage_end_hour is not None:  # "turn off" grid resource
             grid_prod_factor[self.outage_start_hour:self.outage_end_hour] = [0]*(self.outage_end_hour - self.outage_start_hour)
@@ -68,7 +70,7 @@ class Util(Tech):
 
 class PV(Tech):
 
-    def __init__(self, dfm, degradation_pct, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -76,6 +78,7 @@ class PV(Tech):
         self.reopt_class = 'PV'
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
+        self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
 
         self.pvwatts_prod_factor = None
@@ -91,7 +94,7 @@ class PV(Tech):
     def prod_factor(self):
 
         if self.pvwatts_prod_factor is None:
-            pvwatts = PVWatts(**self.kwargs)
+            pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.pvwatts_prod_factor = pvwatts.pv_prod_factor
         return self.pvwatts_prod_factor
 
@@ -101,22 +104,63 @@ class Wind(Tech):
     size_class_to_hub_height = {
         'residential': 20,
         'commercial': 40,
-        'medium': 60,
-        'large': 80,  # default value
+        'medium': 60,  # Owen Roberts provided 50m for medium size_class, but Wind Toolkit has increments of 20m
+        'large': 80,
+    }
+    size_class_to_installed_cost = {
+        'residential': 10792,
+        'commercial': 4989,
+        'medium': 4111,
+        'large': 1874,
     }
 
-    def __init__(self, dfm, resource_meters_per_sec, acres_per_kw=.03, **kwargs):
+    size_class_to_itc_incentives = {
+        'residential': 0.3,
+        'commercial': 0.3,
+        'medium': 0.18,
+        'large': 0.18,
+    }
+
+    def __init__(self, dfm, acres_per_kw=.03, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
         self.incentives = Incentives(**kwargs)
+
+        # if user hasn't entered the federal itc, itc value gets set based on size_class
+        if self.incentives.federal.itc == 0.9995:
+            self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
+
         self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        self.resource_meters_per_sec = resource_meters_per_sec
+        # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
+
+        if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
+                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+        else:
+                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         self.ventyx = None
+        self.sam_prod_factor = None
         dfm.add_wind(self)
+
+        # residential <= 2.5 kW
+        # commercial <= 100  kW
+        # medium <= 1000 kW
+        # Large <= 2500 kW (2.5 MW)
+
+        if kwargs.get('size_class') == 'residential':
+            self.max_kw = 2.5
+        elif kwargs.get('size_class') == 'commercial':
+            self.max_kw = 100
+        elif kwargs.get('size_class') == 'medium':
+            self.max_kw = 250
+        elif kwargs.get('size_class') == 'large':
+            self.max_kw = 1000
+
+        if self.min_kw > self.max_kw:
+            self.min_kw = self.max_kw
 
     @property
     def prod_factor(self):
@@ -124,10 +168,16 @@ class Wind(Tech):
         Pass resource_meters_per_sec to SAM SDK to get production factor
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
+        if self.sam_prod_factor is None:
+
+            sam = WindSAMSDK(self.hub_height_meters, **self.kwargs)
+            self.sam_prod_factor = sam.wind_prod_factor()
+
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
         if self.ventyx is None:
             self.ventyx = Ventyx()
-        return self.ventyx.wind_prod_factor
+        # return self.ventyx.wind_prod_factor
+        return self.sam_prod_factor
 
 
 class Generator(Tech):
