@@ -35,7 +35,8 @@ fts_post_1 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 100,
+                    "max_kw": 35,
+                    "min_kw":35
                 }
             }
         }
@@ -70,7 +71,8 @@ fts_post_2 = {"Scenario": {
                 },
 
                 "Wind": {
-                    "max_kw": 100,
+                    "max_kw": 35,
+                    "min_kw": 35
                 }
             }
         }
