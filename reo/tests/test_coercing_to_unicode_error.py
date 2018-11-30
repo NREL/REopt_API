@@ -24,6 +24,8 @@ class UnicodeErrorTests(ResourceTestCaseMixin, TestCase):
         """
         test_post = os.path.join('reo', 'tests', 'unicodeErrorPOST.json')
         nested_data = json.load(open(test_post, 'rb'))
+        # comment out  the following line if want to reproduce the error
+        nested_data['Scenario']['Site']['LoadProfile']['doe_reference_name'] = 'MediumOffice'
         #nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = False
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
