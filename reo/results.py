@@ -93,6 +93,13 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             with open(os.path.join(path_output_bau, "REopt_results.json"), 'r') as f:
                 results_dict_bau = json.loads(f.read())
 
+            #remove invalid sizes due to optimization error margins
+            for r in [results_dict,results_dict_bau]:
+                for key,value in r.items():
+                    if key.endswith('kw') or key.endswith('kwh'):
+                        if value < 0:
+                            r[key] = 0
+
             # add bau outputs to results_dict
             for k in Results.bau_attributes:
                 results_dict[k+'_bau'] = results_dict_bau[k]
@@ -100,6 +107,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
             if results_dict.get('pv_kw') is None:
                 results_dict['pv_kw'] = 0
+
+            # if wind is zero then no value is written to REopt results.json
+            if results_dict.get("wind_kw") is None:
+                results_dict['wind_kw'] = 0
+
 
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 

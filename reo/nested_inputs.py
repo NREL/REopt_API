@@ -239,6 +239,11 @@ nested_input_definitions = {
           "depends_on": ["urdb_utility_name"],
           "description": "Name of utility rate from  <a href='https: //openei.org/wiki/Utility_Rate_Database' target='blank'>Utility Rate Database</a>"
         },
+        "add_blended_rates_to_urdb_rate": {
+          "type": "bool",
+          "default": False,
+          "description": "Set to 'true' to add the monthly blended energy rates and demand charges to the URDB rate schedule. Otherwise, blended rates will only be considered if a URDB rate is not provided. "
+        },
         "blended_monthly_rates_us_dollars_per_kwh": {
           "type": "list_of_float",
           "replacement_sets": electric_tariff_possible_sets,
@@ -246,7 +251,7 @@ nested_input_definitions = {
           "description": "Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost in $)"
         },
         "blended_monthly_demand_charges_us_dollars_per_kw": {
-          "type": "list_of_float",
+          "type": "list_of_float", 
           "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"

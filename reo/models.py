@@ -127,6 +127,7 @@ class ElectricTariffModel(models.Model):
     interconnection_limit_kw = models.FloatField()
     wholesale_rate_us_dollars_per_kwh = models.FloatField()
     urdb_response = PickledObjectField(null=True, editable=True)
+    add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
 
     #Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)

@@ -128,6 +128,7 @@ class DatFileManager:
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
+            load.bau_load_list.append(big_number)
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
@@ -293,6 +294,17 @@ class DatFileManager:
         n_segments_out = 0
         n_segments = None
         tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
+
+        # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
+        existing_kw_flag = False
+        for tech in techs:
+
+            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
+
+                existing_kw = 0
+                if hasattr(eval('self.' + tech), 'existing_kw'):
+                    if eval('self.' + tech + '.existing_kw') is not None:
+                        existing_kw_flag = True
 
         for tech in techs:
 
@@ -539,6 +551,16 @@ class DatFileManager:
                             n_segments = len(tmp_cap_cost_slope)
                             break
 
+                elif existing_kw_flag:
+
+                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0] + [big_number]    
+                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
+                        n_segments = len(tmp_cap_cost_slope)
+                        break
+
+
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
                 cap_cost_slope += tmp_cap_cost_slope
@@ -721,7 +743,6 @@ class DatFileManager:
         Note: whether or not a given Tech can serve a given Load can also be controlled via TechToLoadMatrix
         :return: None
         """
-
         reopt_techs = self._get_REopt_techs(self.available_techs)
         reopt_techs_bau = self._get_REopt_techs(self.bau_techs)
 

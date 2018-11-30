@@ -507,8 +507,8 @@ class LoadProfile(BuiltInProfile):
                 if loads_kw_is_net:
                     # add existing pv if net load provided
                     native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
-                    self.load_list = native_load
-                    self.bau_load_list = native_load
+                    self.load_list = copy.deepcopy(native_load)
+                    self.bau_load_list = copy.deepcopy(native_load)
 
         """
         Account for outage in load_list (loads_kw).
@@ -535,8 +535,7 @@ class LoadProfile(BuiltInProfile):
 
             # modify loads based on percentage
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
-            self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+            self.bau_load_list[outage_start_hour:outage_end_hour] = [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
         else:
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
