@@ -404,7 +404,7 @@ class BuiltInProfile(object):
     def building_type(self):
         name = self.doe_reference_name.replace(' ','')
         if name not in self.default_buildings:
-            raise AttributeError('load_profile', "Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
+            raise AttributeError("load_profile error. Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
         return name
 
     @property

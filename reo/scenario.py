@@ -11,7 +11,7 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError
 from reo.src.paths import Paths
 
 
@@ -81,14 +81,23 @@ def setup_scenario(self, run_uuid, data, raw_post):
         else:
             pv = None
 
-        lp = LoadProfile(dfm=dfm, 
-                         user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                         latitude=inputs_dict['Site'].get('latitude'),
-                         longitude=inputs_dict['Site'].get('longitude'),
-                         pv=pv,
-                         analysis_years=site.financial.analysis_years,
-                         time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                         **inputs_dict['Site']['LoadProfile'])
+        try:
+            lp = LoadProfile(dfm=dfm,
+                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                             latitude=inputs_dict['Site'].get('latitude'),
+                             longitude=inputs_dict['Site'].get('longitude'),
+                             pv=pv,
+                             analysis_years=site.financial.analysis_years,
+                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                             **inputs_dict['Site']['LoadProfile'])
+        except Exception as lp_error:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            log.error("Scenario.py raising error: " + exc_value.message)
+            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
+
+
+
+
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -125,5 +134,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising error: " + exc_value)
-        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+        if hasattr(exc_value, 'name'):
+            if exc_value.name == 'LoadProfileError':
+                log.error("Scenario.py raising error: " + exc_value.message)
+        else:
+            log.error("Scenario.py raising error: " + exc_value)
+            raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
