@@ -362,7 +362,7 @@ class ValidateNestedInput:
             if self.input_dict['Scenario'].get('user_uuid') is not None:
                 self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
             if self.input_dict['Scenario'].get('description') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
+                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[-0-9a-zA-Z. ]*$',
                           err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
             if self.input_dict['Scenario']['Site'].get('address') is not None:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
@@ -373,6 +373,10 @@ class ValidateNestedInput:
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp)
+
+                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                    self.input_data_errors.append("If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
+
 
                 else:  # When using DOE load profile, year must start on Sunday
                     self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
@@ -888,7 +892,7 @@ class ValidateNestedInput:
             else:
                 self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
 
-        def validate_text_fields(self, pattern=r'^[0-9a-zA-Z]*$', str="", err_msg=""):
+        def validate_text_fields(self, pattern=r'^[-0-9a-zA-Z]*$', str="", err_msg=""):
             match = re.search(pattern, str)
             if match:
                 pass

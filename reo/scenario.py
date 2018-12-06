@@ -137,6 +137,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if hasattr(exc_value, 'name'):
             if exc_value.name == 'LoadProfileError':
                 log.error("Scenario.py raising error: " + exc_value.message)
+                pass
         else:
             log.error("Scenario.py raising error: " + exc_value)
             raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
