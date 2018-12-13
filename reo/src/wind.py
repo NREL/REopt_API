@@ -86,7 +86,7 @@ class WindSAMSDK:
         self.ssc = []
         self.data = []
         self.module = []
-
+        self.wind_resource = []
         self.make_ssc()
 
     def make_ssc(self):
@@ -132,12 +132,16 @@ class WindSAMSDK:
         ssc.data_set_number(data, 'wind_farm_wake_model', 0)
         ssc.data_set_number(data, 'adjust:constant', 0)
 
-        ssc.data_free(wind_resource)
         self.ssc = ssc
         self.data = data
         self.module = module
+        self.wind_resource = wind_resource
+
 
     def wind_prod_factor(self):
+
+        #wind_resource = self.ssc.data_get_table(self.data, 'wind_resource_data')
+        #data = self.ssc.data_get_matrix(wind_resource, 'data')
 
         if self.ssc.module_exec(self.module, self.data) == 0:
             print ('windpower simulation error')
@@ -151,6 +155,7 @@ class WindSAMSDK:
         system_power = self.ssc.data_get_array(self.data, 'gen')
         prod_factor_original = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
+        self.ssc.data_free(self.wind_resource)
 
         # subhourly (i.e 15 minute data)
         if self.time_steps_per_hour >= 1:
