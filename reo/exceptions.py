@@ -135,3 +135,21 @@ class UnexpectedError(REoptError):
         message = "Unexpected Error."
         super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
                                               traceback=debug_msg)
+
+
+class LoadProfileError(REoptError):
+    """
+        REopt catch-all exception class
+
+        Attributes:
+            message - explanation of the error
+        """
+
+    __name__ = 'LoadProfileError'
+
+    def __init__(self, exc_value, exc_traceback, task='', run_uuid='', user_uuid=''):
+        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value,tb.format_tb(exc_traceback))
+        message = "If the load profile is not uploaded by the user, then 'doe_reference_name' is a required input."
+        super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                              message=message, traceback=debug_msg)
+

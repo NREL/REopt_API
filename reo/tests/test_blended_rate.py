@@ -2,6 +2,10 @@ import json
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
+# original tariff
+
+#"blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
+#"blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
@@ -24,8 +28,8 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
                 "ElectricTariff": {
                     "urdb_rate_name": "custom",
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.15, 0.2, 0.21, 0.23, 0.27, 0.19, 0.22, 0.17, 0.24, 0.26, 0.18,0.2],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [0.08, 0.11, 0, 0, 0.15, 0.14, 0.09, 0.06, 0, 0, 0.05, 0]
                 },
 
                 "PV": {
