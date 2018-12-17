@@ -109,7 +109,8 @@ class WindSAMSDK:
         ssc.data_set_array(wind_resource, 'fields', fields)
         data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec, self.wind_direction_degrees])
         data_matrix = data_matrix.transpose()
-        ssc.data_set_matrix(wind_resource, 'data', data_matrix.tolist() )
+        data_matrix = data_matrix.tolist()
+        ssc.data_set_matrix(wind_resource, 'data', data_matrix)
 
         ssc.data_set_table(data, 'wind_resource_data', wind_resource)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
