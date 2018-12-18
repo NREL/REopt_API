@@ -42,6 +42,7 @@ class WindSAMSDK:
                  pressure_atmospheres=None,
                  wind_meters_per_sec=None,
                  wind_direction_degrees=None,
+                 time_steps_per_hour=1,
                  **kwargs
                  ):
 
@@ -51,6 +52,7 @@ class WindSAMSDK:
         self.year = year
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
+        self.time_steps_per_hour = time_steps_per_hour
 
         if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             from reo.src.wind_resource import get_wind_resource
@@ -60,7 +62,7 @@ class WindSAMSDK:
                     latitude=self.latitude,
                     longitude=self.longitude,
                     hub_height_meters=self.hub_height_meters,
-                    time_steps_per_hour=1
+                    time_steps_per_hour=self.time_steps_per_hour
                 )
                 self.temperature_celsius = wind_data['temperature_celsius']
                 self.pressure_atmospheres = wind_data['pressure_atmospheres']
@@ -84,7 +86,7 @@ class WindSAMSDK:
         self.ssc = []
         self.data = []
         self.module = []
-
+        self.wind_resource = []
         self.make_ssc()
 
     def make_ssc(self):
@@ -107,7 +109,8 @@ class WindSAMSDK:
         ssc.data_set_array(wind_resource, 'fields', fields)
         data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec, self.wind_direction_degrees])
         data_matrix = data_matrix.transpose()
-        ssc.data_set_matrix(wind_resource, 'data', data_matrix.tolist() )
+        data_matrix = data_matrix.tolist()
+        ssc.data_set_matrix(wind_resource, 'data', data_matrix)
 
         ssc.data_set_table(data, 'wind_resource_data', wind_resource)
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
@@ -130,12 +133,16 @@ class WindSAMSDK:
         ssc.data_set_number(data, 'wind_farm_wake_model', 0)
         ssc.data_set_number(data, 'adjust:constant', 0)
 
-        ssc.data_free(wind_resource)
         self.ssc = ssc
         self.data = data
         self.module = module
+        self.wind_resource = wind_resource
+
 
     def wind_prod_factor(self):
+
+        #wind_resource = self.ssc.data_get_table(self.data, 'wind_resource_data')
+        #data = self.ssc.data_get_matrix(wind_resource, 'data')
 
         if self.ssc.module_exec(self.module, self.data) == 0:
             print ('windpower simulation error')
@@ -146,10 +153,32 @@ class WindSAMSDK:
                 msg = self.ssc.module_log(self.module, idx)
                 idx = idx + 1
         self.ssc.module_free(self.module)
+        # the system_power output from SAMSDK is of same length as input (i.e. 35040 series for 4 times steps/hour)
         system_power = self.ssc.data_get_array(self.data, 'gen')
-        prod_factor = [power/self.system_capacity for power in system_power]
+        prod_factor_original = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
-        return prod_factor
+        self.ssc.data_free(self.wind_resource)
+
+
+        # subhourly (i.e 15 minute data)
+        if self.time_steps_per_hour >= 1:
+            timesteps = []
+            timesteps_base = range(0, 8760)
+            for ts_b in timesteps_base:
+                for step in range(0, self.time_steps_per_hour):
+                    timesteps.append(ts_b)
+
+        # downscaled run (i.e 288 steps per year)
+        else:
+            timesteps = range(0, 8760, int(1 / self.time_steps_per_hour))
+
+        prod_factor = []
+
+        for hour in timesteps:
+            #prod_factor.append(round(prod_factor_original[hour]/self.time_steps_per_hour, 3))
+            prod_factor.append(prod_factor_original[hour])
+
+        return prod_factor_original
 
 
 

@@ -838,7 +838,9 @@ class ValidateNestedInput:
                     avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
                                   / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
 
-                if avg_load_kw <= 100:
+                if avg_load_kw <= 12.5:
+                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
+                elif avg_load_kw <= 100:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
                 elif avg_load_kw <= 1000:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'

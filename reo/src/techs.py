@@ -121,30 +121,31 @@ class Wind(Tech):
         'large': 0.18,
     }
 
-    def __init__(self, dfm, acres_per_kw=.03, **kwargs):
+    def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
+        self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
+        self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
+        self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
-        # if user hasn't entered the federal itc, itc value gets set based on size_class
+        # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.9995:
             self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
-        self.hub_height_meters = Wind.size_class_to_hub_height[kwargs['size_class']]
-        # self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs['size_class']]
-
+        # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
-        else:
-                self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         self.ventyx = None
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
+        """
+        # restricting max_kw based on size_class constraints reo to consider just 1 turbine per simulation.
         # residential <= 2.5 kW
         # commercial <= 100  kW
         # medium <= 1000 kW
@@ -161,6 +162,7 @@ class Wind(Tech):
 
         if self.min_kw > self.max_kw:
             self.min_kw = self.max_kw
+        """
 
     @property
     def prod_factor(self):
@@ -170,7 +172,7 @@ class Wind(Tech):
         """
         if self.sam_prod_factor is None:
 
-            sam = WindSAMSDK(self.hub_height_meters, **self.kwargs)
+            sam = WindSAMSDK(self.hub_height_meters, time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test

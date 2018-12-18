@@ -27,7 +27,7 @@ However, since 2012 was a leap year, we only take the values through December 30
 """
 
 hub_height_strings = {  # unused values included for potential future use
-    10: "_10m",  # residential?
+    10: "_10m",  # residential? - yes it is currently being used for residential
     40: "_40m",  # commercial
     60: "_60m",  # medium
     80: "_80m",  # large
@@ -39,6 +39,7 @@ hub_height_strings = {  # unused values included for potential future use
 }
 frequency_map = {  # time_steps_per_hour to pandas sampling frequency string
     2: '30T',
+    3: '20T',
     4: '15T',
 }
 
