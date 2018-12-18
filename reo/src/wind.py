@@ -153,10 +153,12 @@ class WindSAMSDK:
                 msg = self.ssc.module_log(self.module, idx)
                 idx = idx + 1
         self.ssc.module_free(self.module)
+        # the system_power output from SAMSDK is of same length as input (i.e. 35040 series for 4 times steps/hour)
         system_power = self.ssc.data_get_array(self.data, 'gen')
         prod_factor_original = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
         self.ssc.data_free(self.wind_resource)
+
 
         # subhourly (i.e 15 minute data)
         if self.time_steps_per_hour >= 1:
@@ -176,7 +178,7 @@ class WindSAMSDK:
             #prod_factor.append(round(prod_factor_original[hour]/self.time_steps_per_hour, 3))
             prod_factor.append(prod_factor_original[hour])
 
-        return prod_factor
+        return prod_factor_original
 
 
 
