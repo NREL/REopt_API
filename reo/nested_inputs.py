@@ -374,7 +374,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.9995,
+          "default": 0.30,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
