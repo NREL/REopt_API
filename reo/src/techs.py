@@ -117,8 +117,8 @@ class Wind(Tech):
     size_class_to_itc_incentives = {
         'residential': 0.3,
         'commercial': 0.3,
-        'medium': 0.18,
-        'large': 0.18,
+        'medium': 0.12,
+        'large': 0.12,
     }
 
     def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
