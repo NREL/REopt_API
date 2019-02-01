@@ -374,7 +374,7 @@ class ValidateNestedInput:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp)
 
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
                     self.input_data_errors.append("If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
 
