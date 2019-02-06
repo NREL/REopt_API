@@ -247,13 +247,13 @@ nested_input_definitions = {
         "blended_monthly_rates_us_dollars_per_kwh": {
           "type": "list_of_float",
           "replacement_sets": electric_tariff_possible_sets,
-          "depends_on": ["blended_monthly_demand_charges_us_dollars_per_kw"],
+          "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost in $)"
         },
         "blended_monthly_demand_charges_us_dollars_per_kw": {
           "type": "list_of_float", 
           "replacement_sets": electric_tariff_possible_sets,
-          "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
+          "depends_on": ["blended_monthly_demand_charges_us_dollars_per_kw" ],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
           "blended_annual_rates_us_dollars_per_kwh": {
@@ -374,7 +374,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.9995,
+          "default": 0.30,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
@@ -868,7 +868,7 @@ def flat_to_nested(i):
                         "blended_monthly_rates_us_dollars_per_kwh": i.get("blended_utility_rate"),
                         "blended_monthly_demand_charges_us_dollars_per_kw": i.get("demand_charge"),
                         "blended_annual_rates_us_dollars_per_kwh": i.get("blended_utility_rate")[0],
-                        "blended_annual_rates_us_dollars_per_kwh": i.get("demand_charge")[0],
+                        "blended_annual_rates_us_dollars_per_kw": i.get("demand_charge")[0],
                         "net_metering_limit_kw": i.get("net_metering_limit"),
                         "wholesale_rate_us_dollars_per_kwh": i.get("wholesale_rate"),
                         "interconnection_limit_kw": i.get("interconnection_limit"),

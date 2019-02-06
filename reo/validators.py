@@ -368,18 +368,25 @@ class ValidateNestedInput:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
+            # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
+            # 'doe_reference_name is a mandatory input'
+            counter = 2
             for lp in ['critical_loads_kw', 'loads_kw']:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp)
 
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
-                    self.input_data_errors.append("If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
-
+                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                    counter -= 1
 
                 else:  # When using DOE load profile, year must start on Sunday
                     self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
+            # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
+            if counter == 0:
+                self.input_data_errors.append(
+                    "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
