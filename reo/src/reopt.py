@@ -8,6 +8,7 @@ from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, SubprocessTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
+from reo.src.profiler import Profiler
 
 DEBUG = False
 
@@ -45,7 +46,13 @@ class REoptTask(Task):
 
 
 @shared_task(bind=True, base=REoptTask)
-def reopt(self, dfm, data, bau=False):
+def reopt(self, dfm, data, profiler, bau=False):
+
+    reoptString = 'reopt'
+    if bau:
+        reoptString = 'reopt_bau'
+    profiler.profileStart(reoptString)
+
 
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
@@ -127,6 +134,7 @@ def reopt(self, dfm, data, bau=False):
             log.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip())
 
+    profiler.profileEnd(reoptString)
     return dfm
 
 """

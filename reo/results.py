@@ -9,6 +9,7 @@ from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager
 from reo.src.outage_costs import calc_avoided_outage_costs
+from reo.src.profiler import Profiler
 
 
 class ResultsTask(Task):
@@ -44,7 +45,7 @@ class ResultsTask(Task):
 
 
 @shared_task(bind=True, base=ResultsTask, ignore_result=True)
-def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
+def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
     """
     Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
     :param self: celery.Task
@@ -54,6 +55,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    profiler.profileStart('parse_run_outputs')
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -281,3 +283,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log("Results.py raise unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
+
+    profiler.profileEnd('parse_run_outputs')

@@ -12,6 +12,7 @@ from validators import ValidateNestedInput
 from scenario import setup_scenario
 from reo.log_levels import log
 from reo.models import ModelManager, BadPost
+from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
@@ -59,9 +60,13 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-      
+
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
+
+        # Setup Profile
+        profiler = Profiler(run_uuid)
+        profiler.profileStart('pre_setup_scenario')
 
         # Setup log to include UUID of run
         uuidFilter = UUIDFilter(run_uuid)
@@ -100,17 +105,19 @@ class Job(ModelResource):
             set_status(data, 'Optimizing...')
             model_manager.create_and_save(data)
 
+        profiler.profileEnd('pre_setup_scenario')
+
         log.info('Setup Scenario')
-        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
+        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data, profiler=profiler)
 
         # a group returns a list of outputs, with one item for each job in the group
         log.info('Parse run outputs')
-        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version}, profiler=profiler)
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, bau=False), reopt.s(data=data, bau=True)) | call_back)()
+            chain(setup | group(reopt.s(data=data, profiler=profiler, bau=False), reopt.s(data=data, profiler=profiler, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
 
             if isinstance(e, REoptError):
@@ -127,6 +134,11 @@ class Job(ModelResource):
                                                          content_type='application/json',
                                                          status=500))  # internal server error
         log.info("Returning with HTTP 201")
+
+        for key in profiler.getKeys():
+            log.error(key + ': ' + str(profiler.getDuration(key)))
+
+
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
 

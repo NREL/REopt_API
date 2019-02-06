@@ -6,6 +6,7 @@ from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
+from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
@@ -49,12 +50,14 @@ class ScenarioTask(Task):
 
 
 @shared_task(bind=True, base=ScenarioTask)
-def setup_scenario(self, run_uuid, data, raw_post):
+def setup_scenario(self, run_uuid, data, raw_post, profiler):
     """
 
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
+    profiler.profileStart('setup_scenario')
+
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
@@ -131,6 +134,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
+
+        profiler.profileEnd('setup_scenario')
+
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception:
