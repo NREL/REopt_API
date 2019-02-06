@@ -133,11 +133,11 @@ class Wind(Tech):
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
-        if self.incentives.federal.itc == 0.9995:
+        if self.incentives.federal.itc == 0.3:
             self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
-        if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
+        if kwargs.get('installed_cost_us_dollars_per_kw') == 4989:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
         self.ventyx = None
