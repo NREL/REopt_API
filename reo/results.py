@@ -149,6 +149,7 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
             """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
+            nested_outputs["Scenario"]["Profile"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
 
             # Loop through all sub-site dicts and init
@@ -237,6 +238,14 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
 
+            profiler.profileEnd('parse_run_outputs')
+            self.nested_outputs["Scenario"]["Profile"]["pre_setup_scenario"] = profiler.getDuration(
+                'pre_setup_scenario')
+            self.nested_outputs["Scenario"]["Profile"]["setup_scenario"] = profiler.getDuration('setup_scenario')
+            self.nested_outputs["Scenario"]["Profile"]["reopt"] = profiler.getDuration('reopt')
+            self.nested_outputs["Scenario"]["Profile"]["reopt_bau"] = profiler.getDuration('reopt_bau')
+            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs"] = profiler.getDuration('parse_run_outputs')
+
         def compute_total_power(self, tech):
             power_lists = list()
             d = self.nested_outputs["Scenario"]["Site"][tech]
@@ -283,5 +292,3 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log("Results.py raise unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
-
-    profiler.profileEnd('parse_run_outputs')

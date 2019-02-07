@@ -11,7 +11,7 @@ from tastypie.validation import Validation
 from validators import ValidateNestedInput
 from scenario import setup_scenario
 from reo.log_levels import log
-from reo.models import ModelManager, BadPost
+from reo.models import ModelManager, ProfileModel, BadPost
 from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
@@ -135,9 +135,9 @@ class Job(ModelResource):
                                                          status=500))  # internal server error
         log.info("Returning with HTTP 201")
 
+        #model_manager.updateModel("ProfileModel", profiler, run_uuid)
         for key in profiler.getKeys():
             log.error(key + ': ' + str(profiler.getDuration(key)))
-
 
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
