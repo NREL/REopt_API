@@ -5,7 +5,6 @@ from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
 
-
 class Tech(object):
     """
     base class for REopt energy generation technology
@@ -137,7 +136,7 @@ class Wind(Tech):
             self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
-        if kwargs.get('installed_cost_us_dollars_per_kw') == 4989:
+        if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
                 self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
         self.ventyx = None

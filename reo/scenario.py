@@ -108,6 +108,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
             # must propogate these changes back to database for proforma
             data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind.installed_cost_us_dollars_per_kw
             data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind.incentives.federal.itc
+            tmp = dict()
+            tmp['federal_itc_pct'] = wind.incentives.federal.itc
+            tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
+
+            ModelManager.updateModel('WindModel', tmp, run_uuid)
 
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
