@@ -27,6 +27,7 @@ class ProfileModel(models.Model):
         obj.save()
         return obj
 
+
 class ScenarioModel(models.Model):
 
     # Inputs
@@ -413,7 +414,7 @@ class ModelManager(object):
         scenario_dict.update(d)
 
         self.scenarioM = ScenarioModel.create(**attribute_inputs(scenario_dict))
-        self.profileM = ProfileModel().create(run_uuid=self.scenarioM.run_uuid,
+        self.profileM = ProfileModel.create(run_uuid=self.scenarioM.run_uuid,
                                                 **attribute_inputs(scenario_dict['Profile']))
         self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
         self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
