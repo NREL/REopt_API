@@ -97,7 +97,9 @@ class Job(ModelResource):
                                                      content_type='application/json',
                                                      status=400))
 
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
+                                        'Profile': {'pre_setup_scenario': 0, 'setup_scenario': 0, 'reopt': 0,
+                                                    'reopt_bau': 0, 'parse_run_outputs': 0}}}
 
         log.info('Entering ModelManager')
         model_manager = ModelManager()

@@ -157,7 +157,10 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
                 nested_outputs["Scenario"]["Site"][name] = dict()
                 for k in d.iterkeys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
-
+            for name, d in nested_output_definitions["outputs"]["Scenario"]["Profile"].items():
+                nested_outputs["Scenario"]["Profile"][name] = dict()
+                for k in d.iterkeys():
+                    nested_outputs["Scenario"]["Profile"][name].setdefault(k, None)
             return nested_outputs
 
         def get_nested(self):

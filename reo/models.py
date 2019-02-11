@@ -21,6 +21,11 @@ class ProfileModel(models.Model):
     reopt_bau = models.FloatField(null=True, default='')
     parse_run_outputs = models.FloatField(null=True, default='')
 
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 class ScenarioModel(models.Model):
 
@@ -407,8 +412,9 @@ class ModelManager(object):
         scenario_dict = data["outputs"]['Scenario'].copy()
         scenario_dict.update(d)
 
-        self.profileM = ProfileModel()
         self.scenarioM = ScenarioModel.create(**attribute_inputs(scenario_dict))
+        self.profileM = ProfileModel().create(run_uuid=self.scenarioM.run_uuid,
+                                                **attribute_inputs(scenario_dict['Profile']))
         self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
         self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
                                                 **attribute_inputs(d['Site']['Financial']))
