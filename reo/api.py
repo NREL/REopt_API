@@ -11,7 +11,7 @@ from tastypie.validation import Validation
 from validators import ValidateNestedInput
 from scenario import setup_scenario
 from reo.log_levels import log
-from reo.models import ModelManager, ProfileModel, BadPost
+from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
@@ -65,8 +65,8 @@ class Job(ModelResource):
         run_uuid = str(uuid.uuid4())
 
         # Setup Profile
-        profiler = Profiler(run_uuid)
-        profiler.profileStart('pre_setup_scenario')
+        profiler_presetup = Profiler()
+        profiler_presetup.profileStart('pre_setup_scenario')
 
         # Setup log to include UUID of run
         uuidFilter = UUIDFilter(run_uuid)
@@ -103,23 +103,22 @@ class Job(ModelResource):
 
         log.info('Entering ModelManager')
         model_manager = ModelManager()
+        profiler_presetup.profileEnd('pre_setup_scenario')
+
         if saveToDb:
             set_status(data, 'Optimizing...')
+            data['outputs']['Scenario']['Profile']['pre_setup_scenario'] = profiler_presetup.getDuration('pre_setup_scenario')
             model_manager.create_and_save(data)
 
-        profiler.profileEnd('pre_setup_scenario')
 
-        log.info('Setup Scenario')
-        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data, profiler=profiler)
-
-        # a group returns a list of outputs, with one item for each job in the group
-        log.info('Parse run outputs')
-        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version}, profiler=profiler)
+        # setup the shared tasks to pass to Celery
+        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
+        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, profiler=profiler, bau=False), reopt.s(data=data, profiler=profiler, bau=True)) | call_back)()
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
 
             if isinstance(e, REoptError):
@@ -135,12 +134,8 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
+
         log.info("Returning with HTTP 201")
-
-        #model_manager.updateModel("ProfileModel", profiler, run_uuid)
-        for key in profiler.getKeys():
-            log.error(key + ': ' + str(profiler.getDuration(key)))
-
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
 

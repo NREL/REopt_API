@@ -1,6 +1,10 @@
-import time
+from time import time
 
-class Profiler:
+
+"""
+Full profiler class implementation which unfortunately is not serializable by Celery
+"""
+class Profiler():
 
     keys_allowed = ['pre_setup_scenario',
                     'setup_scenario',
@@ -10,18 +14,17 @@ class Profiler:
                     ]
 
 
-    def __init__(self, uuid):
-        self.uuid = uuid
+    def __init__(self):
         self.profile = dict()
 
     def profileStart(self, profileDescription):
         if profileDescription in self.keys_allowed:
             self.profile[profileDescription] = dict()
-            self.profile[profileDescription]['start'] = time.time()
+            self.profile[profileDescription]['start'] = time()
 
     def profileEnd(self, profileDescription):
         if profileDescription in self.keys_allowed:
-            self.profile[profileDescription]['end'] = time.time()
+            self.profile[profileDescription]['end'] = time()
 
             if 'start' in self.profile[profileDescription]:
                 self.profile[profileDescription]['duration'] = self.profile[profileDescription]['end'] - \
@@ -31,3 +34,7 @@ class Profiler:
 
     def getDuration(self, profileDescription):
         return self.profile[profileDescription]['duration']
+
+
+
+

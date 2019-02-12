@@ -50,13 +50,15 @@ class ScenarioTask(Task):
 
 
 @shared_task(bind=True, base=ScenarioTask)
-def setup_scenario(self, run_uuid, data, raw_post, profiler):
+def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
-    profiler.profileStart('setup_scenario')
+
+    self.profiler = Profiler()
+    self.profiler.profileStart('setup_scenario')
 
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
@@ -135,7 +137,11 @@ def setup_scenario(self, run_uuid, data, raw_post, profiler):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
-        profiler.profileEnd('setup_scenario')
+        self.profiler.profileEnd('setup_scenario')
+
+        tmp = dict()
+        tmp['setup_scenario'] = self.profiler.getDuration('setup_scenario')
+        ModelManager.updateModel('ProfileModel', tmp, run_uuid )
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 

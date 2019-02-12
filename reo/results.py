@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager
+from reo.models import ModelManager, ProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -45,7 +45,7 @@ class ResultsTask(Task):
 
 
 @shared_task(bind=True, base=ResultsTask, ignore_result=True)
-def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
+def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     """
     Translates REopt_results.json into API outputs, along with time-series data saved to csv's by REopt.
     :param self: celery.Task
@@ -55,7 +55,6 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
-    profiler.profileStart('parse_run_outputs')
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -88,6 +87,8 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
             :param path_static: path to copy proForma to for user download
             :param year: load_year
             """
+            self.profiler = Profiler()
+            self.profiler.profileStart('parse_run_outputs')
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
                 results_dict = json.loads(f.read())
@@ -157,10 +158,6 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
                 nested_outputs["Scenario"]["Site"][name] = dict()
                 for k in d.iterkeys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
-            for name, d in nested_output_definitions["outputs"]["Scenario"]["Profile"].items():
-                nested_outputs["Scenario"]["Profile"][name] = dict()
-                for k in d.iterkeys():
-                    nested_outputs["Scenario"]["Profile"][name].setdefault(k, None)
             return nested_outputs
 
         def get_nested(self):
@@ -241,13 +238,8 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
 
-            profiler.profileEnd('parse_run_outputs')
-            self.nested_outputs["Scenario"]["Profile"]["pre_setup_scenario"] = profiler.getDuration(
-                'pre_setup_scenario')
-            self.nested_outputs["Scenario"]["Profile"]["setup_scenario"] = profiler.getDuration('setup_scenario')
-            self.nested_outputs["Scenario"]["Profile"]["reopt"] = profiler.getDuration('reopt')
-            self.nested_outputs["Scenario"]["Profile"]["reopt_bau"] = profiler.getDuration('reopt_bau')
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs"] = profiler.getDuration('parse_run_outputs')
+            self.profiler.profileEnd('parse_run_outputs')
+            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs"] = self.profiler.getDuration('parse_run_outputs')
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -291,7 +283,27 @@ def parse_run_outputs(self, dfm_list, data, meta, profiler, saveToDB=True):
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
 
+
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log("Results.py raise unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
+
+
+"""
+def finalize_profiler(run_uuid, profiler_pre_setup, profiler_setup, profiler_reopt, profiler_bau, profiler_results,
+                      saveToDB=True):
+    profile_outputs = dict()
+
+    profile_outputs["pre_setup_scenario"] = profiler_pre_setup.getDuration('pre_setup_scenario')
+    profile_outputs["setup_scenario"] =
+    profile_outputs["reopt"] = profiler_reopt.getDuration('reopt')
+    profile_outputs["reopt_bau"] = profiler_bau.getDuration('reopt_bau')
+    profile_outputs["parse_run_outputs"] = profiler_results.getDuration('parse_run_outputs')
+
+    if saveToDB:
+        ModelManager.updateModel('ProfileModel', profile_outputs, run_uuid=run_uuid)
+
+    return profile_outputs
+
+"""

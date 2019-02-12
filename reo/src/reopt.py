@@ -46,12 +46,15 @@ class REoptTask(Task):
 
 
 @shared_task(bind=True, base=REoptTask)
-def reopt(self, dfm, data, profiler, bau=False):
+def reopt(self, dfm, data, run_uuid, bau=False):
+
+    self.profiler = Profiler()
 
     reoptString = 'reopt'
     if bau:
         reoptString = 'reopt_bau'
-    profiler.profileStart(reoptString)
+
+    self.profiler.profileStart(reoptString)
 
 
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
@@ -134,7 +137,10 @@ def reopt(self, dfm, data, profiler, bau=False):
             log.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip())
 
-    profiler.profileEnd(reoptString)
+    self.profiler.profileEnd(reoptString)
+    tmp = dict()
+    tmp[reoptString] = self.profiler.getDuration(reoptString)
+    ModelManager.updateModel('ProfileModel', tmp, run_uuid)
     return dfm
 
 """

@@ -523,6 +523,7 @@ class ModelManager(object):
         resp = dict()
         resp['outputs'] = dict()
         resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['Profile'] = dict()
         resp['inputs'] = dict()
         resp['inputs']['Scenario'] = dict()
         resp['inputs']['Scenario']['Site'] = dict()
@@ -549,6 +550,8 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(ProfileModel.objects.get(run_uuid=run_uuid)))
+
 
         wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
 
