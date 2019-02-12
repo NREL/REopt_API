@@ -3,37 +3,29 @@ from time import time
 
 """
 Full profiler class implementation which unfortunately is not serializable by Celery
+As implemented intended to hold one profile
 """
 class Profiler():
 
-    keys_allowed = ['pre_setup_scenario',
-                    'setup_scenario',
-                    'reopt',
-                    'reopt_bau',
-                    'parse_run_outputs'
-                    ]
-
-
     def __init__(self):
-        self.profile = dict()
+        self.start = None
+        self.end = None
+        self.duration = None
 
-    def profileStart(self, profileDescription):
-        if profileDescription in self.keys_allowed:
-            self.profile[profileDescription] = dict()
-            self.profile[profileDescription]['start'] = time()
+        #assume initialization is invocation
+        self.profileStart()
 
-    def profileEnd(self, profileDescription):
-        if profileDescription in self.keys_allowed:
-            self.profile[profileDescription]['end'] = time()
+    def profileStart(self):
+        self.start = time()
 
-            if 'start' in self.profile[profileDescription]:
-                self.profile[profileDescription]['duration'] = self.profile[profileDescription]['end'] - \
-                                                               self.profile[profileDescription]['start']
-    def getKeys(self):
-        return self.profile.keys()
+    def profileEnd(self):
+        self.end = time()
 
-    def getDuration(self, profileDescription):
-        return self.profile[profileDescription]['duration']
+        if self.start is not None:
+            self.duration = self.end - self.start
+
+    def getDuration(self):
+        return self.duration
 
 
 

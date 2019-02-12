@@ -50,12 +50,9 @@ def reopt(self, dfm, data, run_uuid, bau=False):
 
     self.profiler = Profiler()
 
-    reoptString = 'reopt'
+    reoptString = 'reopt_seconds'
     if bau:
-        reoptString = 'reopt_bau'
-
-    self.profiler.profileStart(reoptString)
-
+        reoptString = 'reopt_bau_seconds'
 
     def create_run_command(output_path, paths, xpress_model, DATs, cmd_line_args, bau_string, cmd_file):
 
@@ -137,9 +134,9 @@ def reopt(self, dfm, data, run_uuid, bau=False):
             log.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip())
 
-    self.profiler.profileEnd(reoptString)
+    self.profiler.profileEnd()
     tmp = dict()
-    tmp[reoptString] = self.profiler.getDuration(reoptString)
+    tmp[reoptString] = self.profiler.getDuration()
     ModelManager.updateModel('ProfileModel', tmp, run_uuid)
     return dfm
 

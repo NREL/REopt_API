@@ -77,13 +77,12 @@ class TestEnergyTiers(ResourceTestCaseMixin, TestCase):
                              "Year one energy bill ({}) does not equal expected cost ({})."
                              .format(tariff_out['year_one_energy_cost_us_dollars'], expected_year_one_energy_cost))
 
-            """
-            self.assertGreater(profile_out['pre_setup_scenario'], 0, "Profiling results failed")
-            self.assertGreater(profile_out['setup_scenario'], 0, "Profiling results failed")
-            self.assertGreater(profile_out['reopt'], 0, "Profiling results failed")
-            self.assertGreater(profile_out['reopt_bau'], 0, "Profiling results failed")
-            self.assertGreater(profile_out['parse_run_outputs'], 0, "Profiling results failed")
-            """
+            self.assertGreater(profile_out['pre_setup_scenario_seconds'], 0, "Profiling results failed")
+            self.assertGreater(profile_out['setup_scenario_seconds'], 0, "Profiling results failed")
+            self.assertGreater(profile_out['reopt_seconds'], 0, "Profiling results failed")
+            self.assertGreater(profile_out['reopt_bau_seconds'], 0, "Profiling results failed")
+            self.assertGreater(profile_out['parse_run_outputs_seconds'], 0, "Profiling results failed")
+
 
         except Exception as e:
             error_msg = None

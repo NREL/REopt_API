@@ -88,7 +88,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             :param year: load_year
             """
             self.profiler = Profiler()
-            self.profiler.profileStart('parse_run_outputs')
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
                 results_dict = json.loads(f.read())
@@ -238,8 +237,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
 
-            self.profiler.profileEnd('parse_run_outputs')
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs"] = self.profiler.getDuration('parse_run_outputs')
+            self.profiler.profileEnd()
+            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -283,27 +282,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
 
-
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log("Results.py raise unexpected error")
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
-
-
-"""
-def finalize_profiler(run_uuid, profiler_pre_setup, profiler_setup, profiler_reopt, profiler_bau, profiler_results,
-                      saveToDB=True):
-    profile_outputs = dict()
-
-    profile_outputs["pre_setup_scenario"] = profiler_pre_setup.getDuration('pre_setup_scenario')
-    profile_outputs["setup_scenario"] =
-    profile_outputs["reopt"] = profiler_reopt.getDuration('reopt')
-    profile_outputs["reopt_bau"] = profiler_bau.getDuration('reopt_bau')
-    profile_outputs["parse_run_outputs"] = profiler_results.getDuration('parse_run_outputs')
-
-    if saveToDB:
-        ModelManager.updateModel('ProfileModel', profile_outputs, run_uuid=run_uuid)
-
-    return profile_outputs
-
-"""

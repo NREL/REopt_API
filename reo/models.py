@@ -15,11 +15,11 @@ class URDBError(models.Model):
 
 class ProfileModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
-    pre_setup_scenario = models.FloatField(null=True, default='')
-    setup_scenario = models.FloatField(null=True, default='')
-    reopt = models.FloatField(null=True, default='')
-    reopt_bau = models.FloatField(null=True, default='')
-    parse_run_outputs = models.FloatField(null=True, default='')
+    pre_setup_scenario_seconds = models.FloatField(null=True, default='')
+    setup_scenario_seconds = models.FloatField(null=True, default='')
+    reopt_seconds = models.FloatField(null=True, default='')
+    reopt_bau_seconds = models.FloatField(null=True, default='')
+    parse_run_outputs_seconds = models.FloatField(null=True, default='')
 
     @classmethod
     def create(cls, **kwargs):

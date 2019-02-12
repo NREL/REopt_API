@@ -64,9 +64,8 @@ class Job(ModelResource):
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
 
-        # Setup Profile
-        profiler_presetup = Profiler()
-        profiler_presetup.profileStart('pre_setup_scenario')
+        # Setup and start profile
+        profiler = Profiler()
 
         # Setup log to include UUID of run
         uuidFilter = UUIDFilter(run_uuid)
@@ -98,18 +97,18 @@ class Job(ModelResource):
                                                      status=400))
 
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
-                                        'Profile': {'pre_setup_scenario': 0, 'setup_scenario': 0, 'reopt': 0,
-                                                    'reopt_bau': 0, 'parse_run_outputs': 0}}}
+                                        'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
+                                                    'reopt_seconds': 0, 'reopt_bau_seconds': 0,
+                                                    'parse_run_outputs_seconds': 0}}}
 
         log.info('Entering ModelManager')
         model_manager = ModelManager()
-        profiler_presetup.profileEnd('pre_setup_scenario')
+        profiler.profileEnd()
 
         if saveToDb:
             set_status(data, 'Optimizing...')
-            data['outputs']['Scenario']['Profile']['pre_setup_scenario'] = profiler_presetup.getDuration('pre_setup_scenario')
+            data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             model_manager.create_and_save(data)
-
 
         # setup the shared tasks to pass to Celery
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)

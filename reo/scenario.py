@@ -58,8 +58,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     self.profiler = Profiler()
-    self.profiler.profileStart('setup_scenario')
-
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
@@ -137,11 +135,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
-        self.profiler.profileEnd('setup_scenario')
-
+        self.profiler.profileEnd()
         tmp = dict()
-        tmp['setup_scenario'] = self.profiler.getDuration('setup_scenario')
-        ModelManager.updateModel('ProfileModel', tmp, run_uuid )
+        tmp['setup_scenario_seconds'] = self.profiler.getDuration()
+        ModelManager.updateModel('ProfileModel', tmp, run_uuid)
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
