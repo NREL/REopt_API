@@ -114,7 +114,8 @@ However, for development all of the servers are run locally.
 
 
 ### Redis server
-To install redis go [here](https://redis.io/topics/quickstart)
+To install redis go [here](https://redis.io/topics/quickstart)  
+
 Start the server with
 ```
 redis-server
