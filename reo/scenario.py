@@ -111,6 +111,15 @@ def setup_scenario(self, run_uuid, data, raw_post):
             wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
                         longitude=inputs_dict['Site'].get('longitude'),time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
 
+            # must propogate these changes back to database for proforma
+            data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind.installed_cost_us_dollars_per_kw
+            data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind.incentives.federal.itc
+            tmp = dict()
+            tmp['federal_itc_pct'] = wind.incentives.federal.itc
+            tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
+
+            ModelManager.updateModel('WindModel', tmp, run_uuid)
+
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -135,7 +144,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
-        self.profiler.profileEnd()
+	self.data = data
+	self.profiler.profileEnd()
         tmp = dict()
         tmp['setup_scenario_seconds'] = self.profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
