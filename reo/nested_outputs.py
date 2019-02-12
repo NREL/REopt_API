@@ -38,6 +38,11 @@ nested_output_definitions = {
                   "description": "Hourly critical load for outage simulator. Values are either uploaded by user, or determined from typical load (either uploaded or simulated) and critical_load_pct.",
                   "units": "kW"
                 },
+                "annual_calculated_kwh": {
+                  "type": "float",
+                  "description": "Annual energy consumption calculated by summing up 8760 load profile",
+                  "units": "kWh"
+                },
               },
 
               "Financial": {
