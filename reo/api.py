@@ -59,7 +59,7 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-      
+
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
 
@@ -101,6 +101,7 @@ class Job(ModelResource):
             model_manager.create_and_save(data)
 
         log.info('Setup Scenario')
+
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
 
         # a group returns a list of outputs, with one item for each job in the group

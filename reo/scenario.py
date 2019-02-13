@@ -55,6 +55,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
+
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
@@ -95,7 +96,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             log.error("Scenario.py raising error: " + exc_value.message)
             raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
 
-
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -133,7 +133,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
-        # delete python objects, which are not serializable
+            # delete python objects, which are not serializable
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
