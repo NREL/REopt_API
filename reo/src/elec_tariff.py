@@ -74,17 +74,17 @@ class ElecTariff(object):
         urdb_rate['flatdemandstructure'] = updated_rates
 
         #Add Energy Charges
-        added_charges_set, schedule_type, schedules = [monthly_energy, 'energyratestructure', ['energyweekdayschedule', 'energyweekendschedule']],
+        added_charges_set, schedules = monthly_energy, ['energyweekdayschedule', 'energyweekendschedule']
         
-        if schedule_type in urdb_rate.keys():
+        if 'energyratestructure' in urdb_rate.keys():
             updated_rates = []
             rate_adj_combos = []
             for schedule in schedules:
-                if schedule_type in urdb_rate.keys():
+                if schedule in urdb_rate.keys():
                     for position, month in enumerate(urdb_rate[schedule]): 
                         for original_rate_id in list(set(month)):
                             adj = added_charges_set[position]
-                            rates = copy.deepcopy(urdb_rate[schedule_type][original_rate_id])
+                            rates = copy.deepcopy(urdb_rate['energyratestructure'][original_rate_id])
                             combo = [original_rate_id, adj]
                             if combo not in rate_adj_combos:
                                 rate_adj_combos.append(combo)
@@ -98,7 +98,7 @@ class ElecTariff(object):
                             for ii, entry in enumerate(month):
                                 if entry==original_rate_id:
                                     month[ii] = rate_id
-                    urdb_rate[schedule_type] = updated_rates
+                    urdb_rate['energyratestructure'] = updated_rates
        
         return  urdb_rate
 
