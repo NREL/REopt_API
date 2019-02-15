@@ -277,6 +277,11 @@ nested_output_definitions = {
                   "description": "Business as usual total utility fixed cost over the lifecycle, after-tax",
                   "units": "$"
                 },
+                "total_export_benefit_us_dollars": {
+                  "type": float,
+                  "description": "Total export benefit cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
                 "total_min_charge_adder_bau_us_dollars": {
                   "type": float,
                   "description": "Business as usual total utility minimum charge adder",
