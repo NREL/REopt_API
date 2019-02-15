@@ -11,15 +11,15 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "114479"
-  ScenarioPath = "C:\\Users\\nlaws\\Desktop\\Run114479\\Inputs"
-  OutputDir = "C:\\Users\\nlaws\\Desktop\\Run114479\\trial_outputs"
-  BaseString = "Base"
+  ScenarioNum = "6fdd78b4-2262-4cf1-9b5c-7c27bee27485"
+  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run6fdd78b4-2262-4cf1-9b5c-7c27bee27485\\Inputs"
+  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run6fdd78b4-2262-4cf1-9b5c-7c27bee27485\\Outputs"
+  BaseString = ""
 
   CapCostSegCount = 2
   FuelBinCount = 1
   DemandBinCount = 1
-  DemandMonthsBinCount = 2
+  DemandMonthsBinCount = 1
   BattLevelCount = 1
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
@@ -686,7 +686,7 @@ TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPe
 TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 
 ! Utility and Taxable Costs
-TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
+TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) 
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
@@ -773,7 +773,7 @@ ExportedElecWIND := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in F
                 dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
 
 ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-                    dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * ExportRates(t,LD,ts)
+                    dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * LevelizationFactor(t)* ExportRates(t,LD,ts) !Needs levelization factor
 
 Year1EnergyCost := TotalEnergyCharges / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
@@ -951,6 +951,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_fixed_cost", strfmt(getsol(TotalFixedCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "total_export_benefit", strfmt(getsol(TotalEnergyExports) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
     Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
