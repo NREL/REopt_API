@@ -406,9 +406,6 @@ class UrdbParse:
                     else:
                         export_rates = operator.add(export_rates, self.zero_array)
 
-                else:
-                    export_rates = operator.add(export_rates, self.zero_array)
-
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
         energy_burn_intercept = []
