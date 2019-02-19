@@ -383,7 +383,10 @@ class UrdbParse:
         export_rates = []
         for tech in techs:
             for load in self.loads:
-                if tech.lower() != 'util' and not tech.lower().endswith('nm'):
+                if tech.lower() == 'util':
+                    export_rates = operator.add(export_rates, self.zero_array)
+                
+                elif not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
                     if load == 'wholesale':
                         if self.net_metering:
@@ -395,7 +398,7 @@ class UrdbParse:
                     else:
                         export_rates = operator.add(export_rates, self.zero_array)
 
-                elif tech.lower() != 'util' and tech.lower().endswith('nm'):
+                elif tech.lower().endswith('nm'):
                     if load == 'wholesale':
                         export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
