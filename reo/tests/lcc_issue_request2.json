@@ -33,7 +33,8 @@
         "urdb_rate_name": "custom",
         "blended_monthly_rates_us_dollars_per_kwh": [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,0.1],
         "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        "net_metering_limit_kw": 2000
+        "net_metering_limit_kw": 750,
+        "wholesale_rate_us_dollars_per_kwh": 0.1
                       },
 
       "PV": {

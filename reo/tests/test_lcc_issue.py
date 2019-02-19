@@ -22,7 +22,7 @@ class LccIssueTests(ResourceTestCaseMixin, TestCase):
         Using lcc_issue_request.json to reproduce the error
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'lcc_issue_request.json')
+        test_post = os.path.join('reo', 'tests', 'lcc_issue_request2.json')
         nested_data = json.load(open(test_post, 'rb'))
         # comment out  the following line if want to reproduce the error
         #nested_data['Scenario']['Site']['LoadProfile']['doe_reference_name'] = 'MediumOffice'

@@ -383,19 +383,28 @@ class UrdbParse:
         export_rates = []
         for tech in techs:
             for load in self.loads:
-                if tech.lower() != 'util' and not tech.lower().endswith('nm'):
+                if tech.lower() == 'util':
+                    export_rates = operator.add(export_rates, self.zero_array)
+                
+                elif not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
                     if load == 'wholesale':
                         if self.net_metering:
                             export_rates = operator.add(export_rates, negative_energy_costs)
-                        else:
-                            export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
+                        # else:
+                        #     export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
                         export_rates = operator.add(export_rates, self.zero_array)
-                else:
-                    export_rates = operator.add(export_rates, self.zero_array)
+
+                elif tech.lower().endswith('nm'):
+                    if load == 'wholesale':
+                        export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
+                    elif load == 'export':
+                        export_rates = operator.add(export_rates, negative_excess_rate_costs)
+                    else:
+                        export_rates = operator.add(export_rates, self.zero_array)
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
