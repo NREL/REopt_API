@@ -13,16 +13,20 @@ def harmonize_traceback_lookups(urdb_results,error_results):
 	common_lookup = copy.deepcopy(urdb_results['traceback_lookup'])
 	
 	for tb_id, tb in copy.deepcopy(error_results['traceback_lookup'].items()):
+		stats = copy.deepcopy(error_results['traceback'][tb_id])
 		
 		del error_results['traceback'][tb_id]
 		
 		if tb in common_lookup.values():
 			new_id = [k for k,v in common_lookup.items() if v==tb][0]
 		else:
-			new_id = max(common_lookup.keys()) + 1
+			if len(common_lookup.keys())==0:
+				new_id = 0
+			else:
+				new_id = max(common_lookup.keys()) + 1
 			common_lookup[new_id] = tb
 		
-		error_results['traceback'][new_id] = tb
+		error_results['traceback'][new_id] = stats
 	
 	del urdb_results['traceback_lookup'] 
 	del error_results['traceback_lookup']
@@ -47,7 +51,8 @@ def combine_bad_post_summaries(bp_summaries):
 			if k not in result.keys():
 				result[k] = v
 			else:
-				result[k] += v
+				for kk,vv in v.items():
+					result[k][kk] += vv
 
 	return result
 
@@ -66,9 +71,8 @@ def process_error_set(e_set):
 		if e_traceback not in traceback_lookup.values():
 			tb_id = len(traceback_lookup.keys())
 			traceback_lookup[tb_id] = e_traceback
-			e_traceback = tb_id
 		else:
-			e_traceback = [k for k,v in traceback_lookup.items() if v==e_traceback][0] 
+			tb_id = [k for k,v in traceback_lookup.items() if v==e_traceback][0] 
 		
 		for n in ['task','name','message', 'traceback']:
 			
@@ -80,7 +84,7 @@ def process_error_set(e_set):
 
 			attr =  getattr(e,n)
 			if n == 'traceback':
-				attr = e_traceback
+				attr = tb_id
 
 			if attr in result[n].keys():
 				result[n][attr]['count'] += 1
@@ -122,39 +126,36 @@ def combine_error_summaries(error_summaries):
 					result['traceback_lookup'][new_tb_id] = tb
 			del es['traceback_lookup']
 				
-	try:
-		for i,es in enumerate(error_summaries):		
-			if es is not None:
-				for error_type in es.keys():
-					if error_type != 'traceback_lookup':
-						if error_type not in result.keys():
-							result[error_type] = copy.deepcopy(es[error_type])
-						else:
-							for error_type_id in es[error_type].keys():
-								if error_type == 'traceback':
-									value =  copy.deepcopy(es[error_type][error_type_id])
-									new_error_type_id = tb_recode[i][error_type_id]
-									del  es[error_type][error_type_id]
-									error_type_id = new_error_type_id
-									es[error_type][error_type_id] = value
-								
-								if error_type_id not in result[error_type].keys():
-									result[error_type][error_type_id] = copy.deepcopy(es[error_type][error_type_id])
-								else:
-									for attr_name, attr in es[error_type][error_type_id].items():
-										if attr_name.startswith('count'):
-											if attr_name in result[error_type][error_type_id].keys():
-												result[error_type][error_type_id][attr_name] += attr
-											else:
-												result[error_type][error_type_id][attr_name] = attr
-										elif attr_name == 'most_recent':
-											if result[error_type][error_type_id][attr_name] < attr:
-												result[error_type][error_type_id][attr_name] = attr
-										else:	
-											result[error_type][error_type_id][attr_name]+=attr
-	except Exception as e:
-		from IPython import embed
-		embed()
+	
+	for i,es in enumerate(error_summaries):		
+		if es is not None:
+			for error_type in es.keys():
+				if error_type != 'traceback_lookup':
+					if error_type not in result.keys():
+						result[error_type] = copy.deepcopy(es[error_type])
+					else:
+						for error_type_id in es[error_type].keys():
+							if error_type == 'traceback':
+								value =  copy.deepcopy(es[error_type][error_type_id])
+								new_error_type_id = tb_recode[i][error_type_id]
+								del  es[error_type][error_type_id]
+								error_type_id = new_error_type_id
+								es[error_type][error_type_id] = value
+							
+							if error_type_id not in result[error_type].keys():
+								result[error_type][error_type_id] = copy.deepcopy(es[error_type][error_type_id])
+							else:
+								for attr_name, attr in es[error_type][error_type_id].items():
+									if attr_name.startswith('count'):
+										if attr_name in result[error_type][error_type_id].keys():
+											result[error_type][error_type_id][attr_name] += attr
+										else:
+											result[error_type][error_type_id][attr_name] = attr
+									elif attr_name == 'most_recent':
+										if result[error_type][error_type_id][attr_name] < attr:
+											result[error_type][error_type_id][attr_name] = attr
+									else:	
+										result[error_type][error_type_id][attr_name]+=attr
 	return result
 
 
