@@ -7,8 +7,9 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager
+from reo.models import ModelManager, ProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
+from reo.src.profiler import Profiler
 
 
 class ResultsTask(Task):
@@ -86,6 +87,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             :param path_static: path to copy proForma to for user download
             :param year: load_year
             """
+            self.profiler = Profiler()
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
                 results_dict = json.loads(f.read())
@@ -146,6 +148,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
+            nested_outputs["Scenario"]["Profile"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
 
             # Loop through all sub-site dicts and init
@@ -153,7 +156,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 nested_outputs["Scenario"]["Site"][name] = dict()
                 for k in d.iterkeys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
-
             return nested_outputs
 
         def get_nested(self):
@@ -235,6 +237,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+
+            self.profiler.profileEnd()
+            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
         def compute_total_power(self, tech):
             power_lists = list()

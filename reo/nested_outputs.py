@@ -24,6 +24,33 @@ nested_output_definitions = {
               "description": "Problem Status",
               "units": "none"
             },
+            "Profile": {
+                "pre_setup_scenario_seconds": {
+                  "type": float,
+                  "description": "Time spent before setting up scenario",
+                  "units": "seconds"
+                },
+                "setup_scenario_seconds": {
+                  "type": float,
+                  "description": "Time spent setting up scenario",
+                  "units": "seconds"
+                },
+                "reopt_seconds":{
+                  "type": float,
+                  "description": "Time spent solving scenario",
+                  "units": "seconds"
+                },
+                "reopt_bau_seconds": {
+                  "type": float,
+                  "description": "Time spent solving base-case scenario",
+                  "units": "seconds"
+                },
+                "parse_run_outputs_seconds": {
+                  "type": float,
+                  "description": "Time spent parsing outputs",
+                  "units": "seconds"
+                }
+            },
 
             "Site": {
 

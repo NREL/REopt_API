@@ -6,6 +6,7 @@ from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
+from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
@@ -56,6 +57,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
     :param inputs_dict: validated POST of input parameters
     """
 
+    self.profiler = Profiler()
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
@@ -138,8 +140,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
-        #finalize by updating internal structures with changed values
-        self.data = data
+	self.data = data
+	self.profiler.profileEnd()
+        tmp = dict()
+        tmp['setup_scenario_seconds'] = self.profiler.getDuration()
+        ModelManager.updateModel('ProfileModel', tmp, run_uuid)
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
