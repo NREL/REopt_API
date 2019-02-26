@@ -110,7 +110,6 @@ class Job(ModelResource):
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             model_manager.create_and_save(data)
 
-        # setup the shared tasks to pass to Celery
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 

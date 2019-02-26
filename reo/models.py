@@ -161,6 +161,7 @@ class ElectricTariffModel(models.Model):
     total_energy_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_demand_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)

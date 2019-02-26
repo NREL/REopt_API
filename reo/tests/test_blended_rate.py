@@ -15,7 +15,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
-            "time_steps_per_hour": 4,
+            "time_steps_per_hour": 1,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
@@ -82,8 +82,8 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                     setattr(self, k, v)
 
 
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
+        #self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
+        #self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
 
         response = self.get_response(self.post)
 
