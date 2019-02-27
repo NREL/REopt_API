@@ -3,7 +3,6 @@ import h5pyd
 from pyproj import Proj
 import numpy as np
 import pandas as pd
-from reo.exceptions import UnexpectedError
 from reo.log_levels import log 
 """
 References: 
