@@ -12,7 +12,7 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError,WindDownloadError
 from reo.src.paths import Paths
 
 
@@ -148,12 +148,20 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        if hasattr(exc_value, 'name'):
-            if exc_value.name == 'LoadProfileError':
-                log.error("Scenario.py raising error: " + exc_value.message)
-                pass
+    except Exception as e:
+
+        if hasattr(e, 'message'):
+            if e.message == 'Wind Dataset Timed Out':
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid)
+
+        if isinstance(e, REoptError):
+            pass
         else:
-            log.error("Scenario.py raising error: " + exc_value)
-            raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            if hasattr(exc_value, 'name'):
+                if exc_value.name == 'LoadProfileError':
+                    log.error("Scenario.py raising error: " + exc_value.message)
+                    pass
+            else:
+                log.error("Scenario.py raising error: " + exc_value)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)

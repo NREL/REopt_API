@@ -118,7 +118,6 @@ class Job(ModelResource):
         try:
             chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
-
             if isinstance(e, REoptError):
                 pass  # handled in each task
             else:
