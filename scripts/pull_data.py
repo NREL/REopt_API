@@ -43,10 +43,10 @@ def process_bad_post_set(bp_set):
 	for bp in bp_set:
 		error = str(eval(bp.__dict__['errors'])['input_errors'])
 		if error not in result.keys():
-			result[error[0:100]] = {'count':1,'run_uuids':[str(bp.__dict__['run_uuid'])]}
+			result[error] = {'count':1,'run_uuids':[str(bp.__dict__['run_uuid'])]}
 		else:
-			result[error[0:100]]['count'] += 1
-			result[error[0:100]]['run_uuids'].append(str(bp.__dict__['run_uuid']))
+			result[error]['count'] += 1
+			result[error]['run_uuids'].append(str(bp.__dict__['run_uuid']))
 	return result
 	
 def combine_bad_post_summaries(bp_summaries):
@@ -65,7 +65,7 @@ def process_error_set(e_set):
 	if len(e_set) == 0:
 		return None
 	
-	result = {'most_recent_error':0,'count_total_errors':0,"count_new_errors":0}
+	result = {'most_recent_error':0,'count_total_errors':0,"count_new_errors":0,'count_unique_run_uuids':[]}
 	
 	daily_count = {}
 	
@@ -76,6 +76,9 @@ def process_error_set(e_set):
 	now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
 	
 	for e in e_set:
+		if e.run_uuid not in result['count_unique_run_uuids']:
+			result['count_unique_run_uuids'].append(e.run_uuid)
+		
 		result['count_total_errors'] +=1
 		
 		e_created = int(round((e.created - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
@@ -109,16 +112,17 @@ def process_error_set(e_set):
 				 e.message = e.message.replace(e.run_uuid,'<run_uuid>')
 
 			attr =  getattr(e,n)
+			
 			if n == 'traceback':
 				attr = tb_id
 			
-			if attr in result[n].keys():
-				result[n][attr]['count'] += 1
-				if e_created > result[n][attr]['most_recent_error']:
-					result[n][attr]['most_recent_error'] = e_created
-			else:
-				result[n][attr] = {'count_new'.format(recent_interval_days):0, 'count':1, 'most_recent_error': e_created, 'run_uuids_new':[],'run_uuids_old': []}
-
+			if attr not in result[n].keys():
+				result[n][attr] = {'count_new_errors':0, 'count':1, 'most_recent_error': 0, 'run_uuids_new':[],'run_uuids_old': []}
+			
+			result[n][attr]['count'] += 1
+			if e_created > result[n][attr]['most_recent_error']:
+				result[n][attr]['most_recent_error'] = e_created
+			
 			if (now - e_created) / (60*60*24.0) < recent_interval_days:
 				result[n][attr]['count_new_errors'] +=1
 				if str(e.run_uuid) not in result[n][attr]['run_uuids_new']:
@@ -129,6 +133,7 @@ def process_error_set(e_set):
 	
 	result['traceback_lookup'] = traceback_lookup
 	result['daily_count'] = daily_count
+	result['count_unique_run_uuids'] = len(result['count_unique_run_uuids'])
 	return result 
 
 def combine_error_summaries(error_summaries):
@@ -207,7 +212,7 @@ def process_urdb_set(urdb_set):
 	if len(urdb_set) == 0:
 		return None
 
-	result = {"count_none":0,"count_total_uses":0,'count_total_errors':0,'count_new_errors':0,'count_new_uses':0,'most_recent_error':0,'count_urdb_plus_blended':0,'count_blended_annual':0,'count_blended_monthly':0}
+	result = {"count_none":0,"count_total_uses":0,'count_total_errors':0,'count_new_errors':0,'count_new_uses':0,'most_recent_error':0,'count_urdb_plus_blended':0,'count_blended_annual':0,'count_blended_monthly':0,'count_total_uses_with_errors':0}
 	for u in urdb_set:
 
 		urdb_label,urdb_response,run_uuid,blended_annual_demand_charges_us_dollars_per_kw,blended_annual_rates_us_dollars_per_kwh,blended_monthly_demand_charges_us_dollars_per_kw,blended_monthly_rates_us_dollars_per_kwh,add_blended_rates_to_urdb_rate = u
@@ -239,9 +244,11 @@ def process_urdb_set(urdb_set):
 		if not k.startswith('count') and k != 'most_recent_error':
 			e_set = [i for i in ErrorModel.objects.filter(run_uuid__in=v)]
 
-			result[k] = process_error_set(e_set) or {'most_recent_error':0, 'count_total_errors':0,"count_new_errors":0,'count_new_uses':0}
+			result[k] = process_error_set(e_set) or {'most_recent_error':0, 'count_total_errors':0,"count_new_errors":0,'count_new_uses':0,'count_unique_run_uuids':0}
 
-			result['count_total_errors']+=len(e_set) 
+			result[k]['count_total_uses'] = len(v)
+			result['count_total_uses_with_errors']+=result[k]['count_unique_run_uuids']
+			result['count_total_errors']=len(e_set) 
 			result['count_new_errors']+=result[k]['count_new_errors']
 
 			if result[k]['most_recent_error'] > result['most_recent_error']:
@@ -369,10 +376,9 @@ def run(*args):
 
 		total_t = ElectricTariffModel.objects.all().count()
 		urdb_results = {}
-		for r in [10,11,12,13]:#range(0,int(total_t/10000.0)+1):
+		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
 			end = min((r+1)*10000,total_t)
-			print start, end, total_t
 			tmp = np.array_split(np.array(ElectricTariffModel.objects.values_list("urdb_label","urdb_response","run_uuid","blended_annual_demand_charges_us_dollars_per_kw","blended_annual_rates_us_dollars_per_kwh","blended_monthly_demand_charges_us_dollars_per_kw","blended_monthly_rates_us_dollars_per_kwh","add_blended_rates_to_urdb_rate").all()[start:end]),CORES)
 			urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
 		
@@ -383,19 +389,19 @@ def run(*args):
 
 		summary_info ={'count_all_posts':ScenarioModel.objects.all().count(),'count_bad_posts':BadPost.objects.all().count()}
 
-		with open('scripts/summary_info.js','w+') as output_file:
+		with open('scripts/error_page/data/summary_info.js','w+') as output_file:
 			output_file.write("var summary_info = " +  json.dumps(summary_info))
 
-		with open('scripts/urdb_results.js','w+') as output_file:
+		with open('scripts/error_page/data/urdb_results.js','w+') as output_file:
 			output_file.write("var urdb_results = " +  json.dumps(urdb_results))
 
-		with open('scripts/error_results.js','w+') as output_file:
+		with open('scripts/error_page/data/error_results.js','w+') as output_file:
 			output_file.write("var error_results = " + json.dumps(error_results))
 
-		with open('scripts/common_lookup.js','w+') as output_file:
+		with open('scripts/error_page/data/common_lookup.js','w+') as output_file:
 			output_file.write("var common_lookup = " +  json.dumps(common_lookup))
 
 		badpost_sets = np.array_split(np.array(BadPost.objects.all()),CORES)
 		bad_post_results = combine_bad_post_summaries(p.map(process_bad_post_set, badpost_sets))
-		with open('scripts/bad_posts.js','w+') as output_file:
+		with open('scripts/error_page/data/bad_posts.js','w+') as output_file:
 			output_file.write("var bad_posts = " + json.dumps(bad_post_results))

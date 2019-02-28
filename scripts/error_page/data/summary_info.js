@@ -1,0 +1,1 @@
+var summary_info = {"count_all_posts": 1160821, "count_bad_posts": 692}

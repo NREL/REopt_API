@@ -18,6 +18,7 @@
   <!-- Custom styles for this template-->
   <link href="css/sb-admin-2.min.css" rel="stylesheet">
 
+
 </head>
 
 <body id="page-top">
@@ -36,11 +37,18 @@
         <div class="container-fluid">
 
           <!-- Page Heading -->
-          <br><br>
-          <div class="d-sm-flex align-items-center justify-content-between mb-4">
-            <h1 class="h3 mb-0 text-gray-800">REopt Lite Error Dashboard</h1>
-            <!-- <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm"><i class="fas fa-download fa-sm text-white-50"></i> Generate Report</a> -->
+          <div class="row">
+            <div class="offset-md-4 offset-xl-4 col-md-4 col-xl-4 ">
+              <img src="reopt-lite-logo.png" style="width:100%"><br>
+              <center><span class="h3 text-gray-800"">REopt Lite Usage Dashboard</span></center>
+              <br>
+            </div>
+            <div class="offset-md-1 offset-xl-1 col-md-2 col-xl-2 ">
+              <img style="width:100%" src="nrel-logo.png">
+            </div>
+
           </div>
+          
 
           <!-- Content Row -->
           <div class="row">
@@ -136,25 +144,50 @@
                   
                 <!-- Card Body -->
                 <div class="card-body">
+                 <small>Scroll to zoom; Click, hold and drag in the window to pan; Hover to view dates and counts</small>
                   <div class="chart-area">
                     <canvas id="dailyErrorCounts"></canvas>
                   </div>
+                  <div class="table-responsive">
+
+                    <table class="table table-bordered" id="dataTable_queryErrors" width="100%" cellspacing="0">
+                    <h6 class="m-0 font-weight-bold text-primary">Query Errors</h6><br>
+                    <label>By Date:&nbsp;&nbsp;</label>
+                    <input type="date" id="errorQueryByDate">&nbsp;&nbsp;&nbsp;&nbsp;
+                    <label>By ID:&nbsp;&nbsp;</label>
+                    <input type="text" id="errorQueryByID">  
+                      <thead>
+                        <tr>
+                          <th>Traceback</th>
+                          <th>Traceback ID</th>
+                          <th>Run UUID</th>
+                          <th>Occurrences</th>
+                          <th>Date</th>
+                          
+                        </tr>
+                      </thead>
+                      
+                      <tbody id = "tableBody_queryErrors">
+                      </tbody>
+                    </table>
                 </div>
-              </div>
-            </div>
+                </div>
 
 
+
+                </div>
+          </div>
           </div>
         <div class="row">
           
           
+          
+          
 
-          <!-- Content Row -->
-          <!-- DataTales Example -->
           <div class="offset-xl-1 col-xl-10 offset-lg-1 col-lg-10">
           <div class="card shadow mb-12">
             <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">REopt Lite Errors</h6>
+              <h6 class="m-0 font-weight-bold text-primary">Error Summary</h6>
             </div>
             <div class="card-body">
               <div class="table-responsive">
@@ -162,7 +195,7 @@
                   <thead>
                     <tr>
                       <th>Traceback</th>
-                      <th>ID</th>
+                      <th>Run UUID</th>
                       <th>Most Recent</th>
                       <th>Count</th>
                     </tr>
@@ -179,39 +212,18 @@
           <div class="offset-xl-1 col-xl-10 offset-lg-1 col-lg-10">
           <div class="card shadow mb-4">
             <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">Bad Posts</h6>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table table-bordered" id="dataTable_BadPost" width="100%" cellspacing="0">
-                  <thead>
-                    <tr>
-                      <th>Message</th>
-                      <th>ID</th>
-                      <th>Count</th>
-                    </tr>
-                  </thead>
-                  <tbody id = "tableBody_BadPost">
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          </div>
-
-          <div class="offset-xl-1 col-xl-10 offset-lg-1 col-lg-10">
-          <div class="card shadow mb-4">
-            <div class="card-header py-3">
-              <h6 class="m-0 font-weight-bold text-primary">URDB Usage Stats</h6>
+              <h6 class="m-0 font-weight-bold text-primary">URDB Summary</h6>
             </div>
             <div class="card-body">
               <div class="table-responsive">
                 <table class="table table-bordered" id="dataTable_URDB" width="100%" cellspacing="0">
                   <thead>
+                      <label>Show only those with errors:&nbsp;&nbsp;</label>
+                      <input type="checkbox" id="filterURDBbyErrors" name="filterURDBbyErrors"/>
                     <tr>
                       <th>URDB Label</th>              
                       <th>Total Uses</th>              
-                      <th>Uses last 7 Days</th>
+                      <th>Errors last 7 Days</th>
                       <th>Most Recent Error</th>              
                       <th>% Fails</th>                                    
                       
@@ -226,6 +238,32 @@
             </div>
           </div>
           </div>
+
+          <div class="offset-xl-1 col-xl-10 offset-lg-1 col-lg-10">
+          <div class="card shadow mb-4">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary">Bad Post Summary</h6>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-bordered" id="dataTable_BadPost" width="100%" cellspacing="0">
+                  <thead>
+                    <tr>
+                      <th>Message</th>
+                      <th>Run UUID</th>
+                      <th>Count</th>
+                    </tr>
+                  </thead>
+                  <tbody id = "tableBody_BadPost">
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          </div>
+
+          
+
           </div>
         </div>
         <!-- /.container-fluid -->
@@ -271,14 +309,20 @@
   <!-- Core plugin JavaScript-->
   <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
   <script src="vendor/datatables/jquery.dataTables.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
-  <script src="https://cdn.datatables.net/plug-ins/1.10.19/sorting/datetime-moment.js"></script>
+  <script src="vendor/moment/moment.js"></script>
+  
+  <script src="vendor/moment/moment-datetime.js"></script>
+
+  
+
   <!-- Custom scripts for all pages-->
   <script src="js/sb-admin-2.min.js"></script>
 
   <!-- Page level plugins -->
+  <script src="data/summary_info.js"></script>
   <script src="data/urdb_results.js"></script>
   <script src="data/bad_posts.js"></script>
   <script src="data/error_results.js"></script>
@@ -286,14 +330,14 @@
 
   <script src="js/reopt_lite.js"></script>
   <script src="vendor/chart.js/Chart.min.js"></script>
+  <script src="vendor/hammer/hammer.min.js"></script>
+  <script src="vendor/chart.js/chartjs-plugin-zoom.js"></script>
 
-  
-  
+
   <!-- Page level custom scripts -->
   <script src="js/demo/chart-bar.js"></script>
-  <script src="js/demo/chart-pie.js"></script>
-  <script src="js/demo/datatables-demo.js"></script>
+  <script src="js/demo/onLoad.js"></script>
 
 </body>
-
+<center><small>Free Template provided by  <a href = "https://startbootstrap.com/themes/sb-admin-2/" target='blank'> Blackrock Digital LLC</a><br></small></center>
 </html>

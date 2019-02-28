@@ -38,12 +38,12 @@ function number_format(number, decimals, dec_point, thousands_sep) {
 var ctx = document.getElementById("dailyErrorCounts");
 
 var totalDays = Object.keys(error_results['daily_count']).length
-var data_points = Object.entries(sortObject(error_results['daily_count'])).slice(totalDays-20,totalDays.length)
+var data_points = Object.entries(sortObject(error_results['daily_count']))
 var barchart_labels = []
 var barchart_data = []
 for (var entry in data_points){
   var newDate = new Date(data_points[entry][0]*1000)
-  barchart_labels.push( (newDate.getMonth()+1)  + "/" + (newDate.getDate()+1) + "/" + newDate.getFullYear() )
+  barchart_labels.push(moment.unix(data_points[entry][0]).format("MM-DD-YYYY")) 
   barchart_data.push(data_points[entry][1])
 }
 
@@ -60,7 +60,24 @@ var dailyErrorCount = new Chart(ctx, {
     }],
   },
   options: {
+    responsive: true,
     maintainAspectRatio: false,
+    pan: {
+      enabled: true,
+      mode: 'x',
+      rangeMin: {y:0},
+      rangeMax: {y:Math.max.apply(Math, barchart_data)*1.2}
+    },
+    zoom: {
+      enabled: true,
+      drag: false,
+      mode: 'x',
+      speed: 10,
+      threshold: 10,
+      rangeMin: {y:0,x:'02-01-2018'},
+      rangeMax: {y:Math.max.apply(Math, barchart_data)*1.2}
+
+    },
     layout: {
       padding: {
         left: 10,
@@ -71,19 +88,29 @@ var dailyErrorCount = new Chart(ctx, {
     },
     scales: {
       xAxes: [{
-        time: {
+
+        type: 'time',
+       time: {
+          
+          parser: "MM-DD-YYYY",
           unit: 'month'
         },
         gridLines: {
           display: false,
           drawBorder: false
         },
+        scaleLabel: {
+            display: true,
+            labelString: 'Date'
+        },
         ticks: {
-          maxTicksLimit: 6
+          maxTicksLimit: 6,
+          maxRotation: 0
         },
         maxBarThickness: 25,
       }],
       yAxes: [{
+        min:0,
         ticks: {
           min: 0,
           max:  Math.max.apply(Math, barchart_data)*1.2,
@@ -133,8 +160,19 @@ var ctx2 = document.getElementById("URDBBreakdown");
 debugger
 var notURDB = urdb_results["count_blended_monthly"] + urdb_results["count_urdb_plus_blended"] + urdb_results["count_blended_annual"]
 var URDBbarchart_labels = ["URDB Rate", "Blended Monthly", "Blended Monthly + URDB", "Blended Annual"]
-var URDBbarchart_data = [urdb_results["count"] - notURDB,urdb_results["count_blended_monthly"],urdb_results["count_urdb_plus_blended"],urdb_results["count_blended_annual"]]
-
+var URDBbarchart_data = [urdb_results["count_total_uses"] - notURDB,urdb_results["count_blended_monthly"],urdb_results["count_urdb_plus_blended"],urdb_results["count_blended_annual"]]
+var yAxisType 
+if (Math.max.apply(Math, URDBbarchart_data)*1.2 > 10000){
+  yAxisType = 'logarithmic' 
+  yAxisFormatCallback = function(value, index, values) {
+            if (Math.log10(value).toString().length===1 && value.toString().substring(0,1)==='1'){
+                return number_format(value)
+            }}
+} else {
+  yAxisType = 'linear'
+  yAxisFormatCallback = function(value, index, values) {return number_format(value)}
+}
+console.log(yAxisType)
 var URDBBreakdown = new Chart(ctx2, {
   type: 'bar',
   data: {
@@ -172,19 +210,14 @@ var URDBBreakdown = new Chart(ctx2, {
         maxBarThickness: 25,
       }],
       yAxes: [{
-        type: 'logarithmic',
+        type: yAxisType,
         ticks: {
           min: 0,
           max:  Math.max.apply(Math, URDBbarchart_data)*1.2,
           padding: 1,
           autoSkip: true,
           // Include a dollar sign in the ticks
-          callback: function(value, index, values) {
-            if (Math.log10(value).toString().length===1 && value.toString().substring(0,1)==='1'){
-            return number_format(value)  
-            }
-            ;
-          }
+          callback: yAxisFormatCallback
         },
         gridLines: {
           color: "rgb(234, 236, 244)",
