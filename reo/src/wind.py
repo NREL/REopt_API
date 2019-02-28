@@ -56,23 +56,23 @@ class WindSAMSDK:
 
         if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             from reo.src.wind_resource import get_wind_resource
-            try:
+            
                 
-                wind_data = get_wind_resource(
-                    latitude=self.latitude,
-                    longitude=self.longitude,
-                    hub_height_meters=self.hub_height_meters,
-                    time_steps_per_hour=self.time_steps_per_hour
-                )
-                self.temperature_celsius = wind_data['temperature_celsius']
-                self.pressure_atmospheres = wind_data['pressure_atmospheres']
-                self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
-                self.wind_direction_degrees = wind_data['wind_direction_degrees']
-                ModelManager.updateModel('WindModel', wind_data, kwargs['run_uuid'])
+            wind_data = get_wind_resource(
+                latitude=self.latitude,
+                longitude=self.longitude,
+                hub_height_meters=self.hub_height_meters,
+                time_steps_per_hour=self.time_steps_per_hour
+            )
+            self.temperature_celsius = wind_data['temperature_celsius']
+            self.pressure_atmospheres = wind_data['pressure_atmospheres']
+            self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
+            self.wind_direction_degrees = wind_data['wind_direction_degrees']
+            ModelManager.updateModel('WindModel', wind_data, kwargs['run_uuid'])
 
-            except:
-                log.error("Wind data download timed out")
-                raise RuntimeError("Wind data download timed out")
+            
+                
+                
         else:
             self.temperature_celsius = temperature_celsius
             self.pressure_atmospheres = pressure_atmospheres

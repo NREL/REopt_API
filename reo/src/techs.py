@@ -170,7 +170,7 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-
+            
             sam = WindSAMSDK(self.hub_height_meters, time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 

@@ -561,6 +561,7 @@ class ModelManager(object):
             resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
             site_keys.append('Wind')
 
+
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
 
             resp['messages'][m['message_type']] = m['message']

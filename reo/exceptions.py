@@ -18,10 +18,12 @@ class REoptError(Exception):
         :param message: message that is sent back to user in messages: errors
         :param traceback: sys.exc_info()[2]
         """
-        if run_uuid:
+        if message == "Wind Dataset Timed Out":
+            msg_with_email = ". Please try again later or email reopt@nrel.gov for support."
+        elif run_uuid:
             msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
         elif user_uuid:
-            msg_with_email = " Please email reopt@nrel.gov with your user_uuid ({}) for support.".format(user_uuid)
+            msg_with_email = " Please email reopt@nrel.gov with your user_uuid ({}) for support.".format(user_uuid) 
         else:
             msg_with_email = " Please email reopt@nrel.gov for support."
 
@@ -46,6 +48,7 @@ class REoptError(Exception):
             message = models.TextField(blank=True, default='')
             traceback = models.TextField(blank=True, default='')
         """
+
         em = ErrorModel(task=self.task, name=self.name, run_uuid=self.run_uuid, user_uuid=self.user_uuid, message=self.message,
                         traceback=self.traceback)
         em.save()
@@ -135,6 +138,22 @@ class UnexpectedError(REoptError):
         message = "Unexpected Error."
         super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
                                               traceback=debug_msg)
+
+
+class WindDownloadError(REoptError):
+    """
+    REopt catch-all exception class
+
+    Attributes:
+        message - explanation of the error
+    """
+
+    __name__ = 'WindDownloadError'
+
+    def __init__(self, task='', run_uuid='', user_uuid=''):
+        message = "Wind Dataset Timed Out"
+        super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
+                                              traceback='')
 
 
 class LoadProfileError(REoptError):
