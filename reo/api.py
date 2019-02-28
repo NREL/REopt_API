@@ -59,7 +59,8 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-
+        from IPython import embed
+        embed()
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
 
