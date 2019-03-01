@@ -1,2 +1,2 @@
 #!/bin/bash
-/home/reopt/software/julia-1.0.3/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@
+/home/reopt/software/julia-1.0.3/bin/julia --project="/local/workspace/reopt_os/reo_jump/env" $@
