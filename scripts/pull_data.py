@@ -65,7 +65,7 @@ def process_error_set(e_set):
 	if len(e_set) == 0:
 		return None
 	
-	result = {'most_recent_error':0,'count_total_errors':0,"count_new_errors":0,'count_unique_run_uuids':[]}
+	result = {'most_recent_error':0,'count_total_errors':0,"count_new_errors":0,'count_unique_error_run_uuids':[]}
 	
 	daily_count = {}
 	
@@ -76,20 +76,15 @@ def process_error_set(e_set):
 	now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
 	
 	for e in e_set:
-		if e.run_uuid not in result['count_unique_run_uuids']:
-			result['count_unique_run_uuids'].append(e.run_uuid)
+		if e.run_uuid not in result['count_unique_error_run_uuids']:
+			result['count_unique_error_run_uuids'].append(e.run_uuid)
 		
 		result['count_total_errors'] +=1
 		
 		e_created = int(round((e.created - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
 		
-		day = int(round((datetime.datetime(*e.created.timetuple()[:3],tzinfo=pytz.utc) - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
 		
-		if day in daily_count.keys():
-			daily_count[day] += 1
-		else:
-			daily_count[day] = 1
-
+				
 		e_traceback = e.traceback.replace(str(e.run_uuid), '<run_uuid>')
 		if e_traceback not in traceback_lookup.values():
 			tb_id = len(traceback_lookup.keys())
@@ -97,6 +92,14 @@ def process_error_set(e_set):
 		else:
 			tb_id = [k for k,v in traceback_lookup.items() if v==e_traceback][0] 
 		
+		day = int(round((datetime.datetime(*e.created.timetuple()[:3],tzinfo=pytz.utc) - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+		
+		if day in daily_count.keys():
+			daily_count[day] += [tb_id]
+		else:
+			daily_count[day] = [tb_id]
+
+
 		if e_created > result['most_recent_error']:
 			result['most_recent_error'] = e_created
 
@@ -133,7 +136,7 @@ def process_error_set(e_set):
 	
 	result['traceback_lookup'] = traceback_lookup
 	result['daily_count'] = daily_count
-	result['count_unique_run_uuids'] = len(result['count_unique_run_uuids'])
+	result['count_unique_error_run_uuids'] = len(result['count_unique_error_run_uuids'])
 	return result 
 
 def combine_error_summaries(error_summaries):
@@ -142,6 +145,7 @@ def combine_error_summaries(error_summaries):
 	tb_recode = {}
 	for i, es in enumerate(error_summaries):
 		if es is not None:
+			#harmonize tracbacks
 			tb_recode[i] = {}
 			for tb_id, tb in es['traceback_lookup'].items():
 				if tb in result['traceback_lookup'].values():
@@ -151,59 +155,58 @@ def combine_error_summaries(error_summaries):
 						new_tb_id = tb_id
 						
 					else:
-						if len(result['traceback_lookup'].keys()) ==0:
-							new_tb_id =0
-						else:
-							new_tb_id = max(result['traceback_lookup'].keys()) +1
+						new_tb_id = max(result['traceback_lookup'].keys()) +1
 					tb_recode[i][tb_id] = new_tb_id
 					result['traceback_lookup'][new_tb_id] = tb
 			del es['traceback_lookup']
-			for day, count in es['daily_count'].items():
+			
+			#harmonize daily counts and also recode tracebacks
+			for day, tb_series in es['daily_count'].items():
+				tb_series = [tb_recode[i][x] for x in tb_series]
 				if day not in result['daily_count'].keys():
-					result['daily_count'][day] = count
+					result['daily_count'][day] = tb_series
 				else:
-					result['daily_count'][day] += count
+					result['daily_count'][day] += tb_series
 			del es['daily_count']
-
-	for i,es in enumerate(error_summaries):		
-		if es is not None:
-			for error_type in es.keys():
+			
+			#harmonize other attributes
+			for error_type,error_value in es.items():
 				if error_type not in ['traceback_lookup','daily_count']:
 					if error_type not in result.keys():
 						result[error_type] = copy.deepcopy(es[error_type])
 					else:
-						if type(es[error_type]) == int:
+						if type(error_value) == int:
 							if error_type not in result.keys():
-								result[error_type] += es[error_type]
+								result[error_type] = error_value
 							else:
 								if error_type.startswith('count'):
-									result[error_type] += es[error_type]
+									result[error_type] += error_value
 								if error_type.startswith('most_recent_error'):
-									if result[error_type] < es[error_type]:
-										result[error_type] = es[error_type]
+									if result[error_type] < error_value:
+										result[error_type] = error_value
 						else:
-							for error_type_id in es[error_type].keys():
+							for error_type_id in error_value.keys():
 								if error_type == 'traceback':
-									value =  copy.deepcopy(es[error_type][error_type_id])
+									original_traceback =  copy.deepcopy(error_value[error_type_id])
 									new_error_type_id = tb_recode[i][error_type_id]
-									del  es[error_type][error_type_id]
+									del  error_value[error_type_id]
 									error_type_id = new_error_type_id
-									es[error_type][error_type_id] = value
+									error_value[error_type_id] = original_traceback
 								
 								if error_type_id not in result[error_type].keys():
-									result[error_type][error_type_id] = copy.deepcopy(es[error_type][error_type_id])
+									result[error_type][error_type_id] = copy.deepcopy(error_value[error_type_id])
 								else:
-									for attr_name, attr in es[error_type][error_type_id].items():
-										if attr_name.startswith('count'):
-											if attr_name in result[error_type][error_type_id].keys():
-												result[error_type][error_type_id][attr_name] += attr
-											else:
-												result[error_type][error_type_id][attr_name] = attr
-										elif attr_name == 'most_recent_error':
-											if result[error_type][error_type_id][attr_name] < attr:
-												result[error_type][error_type_id][attr_name] = attr
+									for attr_name, attr in error_value[error_type_id].items():
+										if attr_name not in result[error_type][error_type_id].keys():
+											result[error_type][error_type_id][attr_name] = attr
 										else:	
-											result[error_type][error_type_id][attr_name]+=attr
+											if attr_name.startswith('count'):
+												result[error_type][error_type_id][attr_name] += attr
+											elif attr_name == 'most_recent_error':
+												if result[error_type][error_type_id][attr_name] < attr:
+													result[error_type][error_type_id][attr_name] = attr
+											else:	
+												result[error_type][error_type_id][attr_name]+=attr
 	return result
 
 
@@ -212,7 +215,7 @@ def process_urdb_set(urdb_set):
 	if len(urdb_set) == 0:
 		return None
 
-	result = {"count_none":0,"count_total_uses":0,'count_total_errors':0,'count_new_errors':0,'count_new_uses':0,'most_recent_error':0,'count_urdb_plus_blended':0,'count_blended_annual':0,'count_blended_monthly':0,'count_total_uses_with_errors':0}
+	result = {"count_none":0,"count_total_uses":0,'count_total_errors':0,'count_new_errors':0,'count_new_uses':0,'most_recent_error':0,'count_urdb_plus_blended':0,'count_blended_annual':0,'count_blended_monthly':0,'count_unique_error_run_uuids':0}
 	for u in urdb_set:
 
 		urdb_label,urdb_response,run_uuid,blended_annual_demand_charges_us_dollars_per_kw,blended_annual_rates_us_dollars_per_kwh,blended_monthly_demand_charges_us_dollars_per_kw,blended_monthly_rates_us_dollars_per_kwh,add_blended_rates_to_urdb_rate = u
@@ -244,10 +247,11 @@ def process_urdb_set(urdb_set):
 		if not k.startswith('count') and k != 'most_recent_error':
 			e_set = [i for i in ErrorModel.objects.filter(run_uuid__in=v)]
 
-			result[k] = process_error_set(e_set) or {'most_recent_error':0, 'count_total_errors':0,"count_new_errors":0,'count_new_uses':0,'count_unique_run_uuids':0}
+			result[k] = process_error_set(e_set) or {'most_recent_error':0, 'count_total_errors':0,"count_new_errors":0,'count_new_uses':0,'count_unique_error_run_uuids':0}
 
 			result[k]['count_total_uses'] = len(v)
-			result['count_total_uses_with_errors']+=result[k]['count_unique_run_uuids']
+			
+			result['count_unique_error_run_uuids']+=result[k]['count_unique_error_run_uuids']
 			result['count_total_errors']=len(e_set) 
 			result['count_new_errors']+=result[k]['count_new_errors']
 
@@ -257,12 +261,12 @@ def process_urdb_set(urdb_set):
 	return result
 
 def combine_urdb_summaries(urdb_rates):
-	print 'combining summaries', sys.getsizeof(cPickle.dumps(urdb_rates))
 	
 	result = {'traceback_lookup':{}}
 	tb_recode = {}
 	
 	for u in urdb_rates:
+		recode_lookup = None
 		if u is not None:
 			if 'traceback_lookup' in u.keys():
 				tb_recode['traceback_lookup'] = {}
@@ -270,101 +274,94 @@ def combine_urdb_summaries(urdb_rates):
 					if tb in result['traceback_lookup'].values():
 						tb_recode['traceback_lookup'][tb_id] = [k for k,v in result['traceback_lookup'].items() if v==tb][0]
 					else:
-						if len(result['traceback_lookup'])==0:
-							new_tb_id = 0
+						if tb_id not in result['traceback_lookup'].keys():
+							new_tb_id = tb_id
 						else:
 							new_tb_id = max(result['traceback_lookup'].keys())+1 
 						result['traceback_lookup'][new_tb_id] = tb
-						tb_recode['traceback_lookup'][tb_id] = new_tb_id				
+						tb_recode['traceback_lookup'][tb_id] = new_tb_id			
 			else:
 				for rate, rate_stats in u.items():
-					if rate not in tb_recode.keys():
-						tb_recode[rate] = {}
-					if not rate.startswith('count') and not rate.startswith('most_recent_error'):
-							if 'traceback_lookup' in rate_stats.keys():
-								for tb_id, tb in rate_stats['traceback_lookup'].items():
-									if tb in result['traceback_lookup'].values():
-										tb_recode[rate][tb_id] = [k for k,v in result['traceback_lookup'].items() if v==tb][0]
+					if not rate.startswith('count') and not rate.startswith('most_recent_error'):					
+						if rate not in tb_recode.keys():
+							tb_recode[rate] = {}
+						if 'traceback_lookup' in rate_stats.keys():
+							for tb_id, tb in rate_stats['traceback_lookup'].items():
+								if tb in result['traceback_lookup'].values():
+									tb_recode[rate][tb_id] = [k for k,v in result['traceback_lookup'].items() if v==tb][0]
+								else:
+									if tb_id not in result['traceback_lookup'].keys():
+										new_tb_id = tb_id
 									else:
-										if len(result['traceback_lookup'])==0:
-											new_tb_id = 0
-										else:
-											new_tb_id = max(result['traceback_lookup'].keys())+1 
-										result['traceback_lookup'][new_tb_id] = tb
-										tb_recode[rate][tb_id] = new_tb_id
-								del rate_stats['traceback_lookup']
-			
-	for u in urdb_rates:		
-		if u is not None:
+										new_tb_id = max(result['traceback_lookup'].keys())+1 
+									result['traceback_lookup'][new_tb_id] = tb
+									tb_recode[rate][tb_id] = new_tb_id
+		
 			for rate, rate_stats in u.items():
-				if not rate.startswith('count') and not rate.startswith('most_recent_error'):					
-					if 'traceback' in rate_stats.keys():
+				if not rate.startswith('count') and not rate.startswith('most_recent_error') and rate != 'traceback_lookup':					
+					if 'traceback' in rate_stats.keys() or 'daily_count' in rate_stats.keys():
 						if 'traceback_lookup' in u.keys():
 							recode_lookup = 'traceback_lookup'
 						else:
 							recode_lookup = rate
-						new_traceback_data = {}
-						for tb_id,tb_info in rate_stats['traceback'].items():
-							new_traceback_data[tb_recode[recode_lookup][tb_id]] = tb_info
-						rate_stats['traceback'] = new_traceback_data
-						del new_traceback_data
+						if 'traceback' in rate_stats.keys():
+							new_traceback_data = {}
+							for tb_id,tb_info in rate_stats['traceback'].items():
+								new_traceback_data[tb_recode[recode_lookup][tb_id]] = tb_info
+							rate_stats['traceback'] = new_traceback_data
+							del new_traceback_data
+						
+						if 'daily_count' in rate_stats.keys():
+							for day, tb_series in rate_stats['daily_count'].items():
+								rate_stats['daily_count'][day] = [ tb_recode[recode_lookup][x] for x in tb_series ]
 
-					if rate != 'traceback_lookup':
 						if rate not in result.keys():
-							result[rate] = copy.deepcopy(u[rate])
+							result[rate] = copy.deepcopy(rate_stats)
 						else:
-							for rate_stat_key,rate_stat_info in rate_stats.items():							
-								if type(rate_stat_info)==int:
-									if rate_stat_key not in result[rate].keys():
-										 result[rate][rate_stat_key] = rate_stat_info
-									else:
-										if rate_stat_key =='most_recent_error':
-											if rate_stat_info > result[rate][rate_stat_key]:
-												result[rate][rate_stat_key] = rate_stat_info
+							for rate_stat_key,rate_stat_info in rate_stats.items():
+								if rate_stat_key != 'traceback_lookup':							
+									if type(rate_stat_info)==int:
+										if rate_stat_key not in result[rate].keys():
+											 result[rate][rate_stat_key] = rate_stat_info
 										else:
-											result[rate][rate_stat_key] += rate_stat_info
-								else:
-									if rate_stat_key not in result[rate].keys():
-										result[rate][rate_stat_key] = copy.deepcopy(rate_stat_info)
+											if rate_stat_key =='most_recent_error':
+												if rate_stat_info > result[rate][rate_stat_key]:
+													result[rate][rate_stat_key] = rate_stat_info
+											else:
+												result[rate][rate_stat_key] += rate_stat_info
 									else:
-										for sub_group, sub_group_data in rate_stat_info.items():
-											if sub_group not in result[rate][rate_stat_key].keys():
-												result[rate][rate_stat_key][sub_group] = {}
-											if type(sub_group_data) == int:
-												if result[rate][rate_stat_key][sub_group] == {}:
+										if rate_stat_key not in result[rate].keys():
+											result[rate][rate_stat_key] = copy.deepcopy(rate_stat_info)
+										else:
+											for sub_group, sub_group_data in rate_stat_info.items():
+												if sub_group not in result[rate][rate_stat_key].keys():
 													result[rate][rate_stat_key][sub_group] = sub_group_data
 												else:
-													result[rate][rate_stat_key][sub_group] += sub_group_data
-											else:
-												for attr_name, attr in sub_group_data.items():
-													if attr_name.startswith('count'):
-														if attr_name in result[rate][rate_stat_key][sub_group].keys():
-															result[rate][rate_stat_key][sub_group][attr_name] += attr
-														else:
+													for attr_name, attr in sub_group_data.items():
+														if attr_name not in result[rate][rate_stat_key][sub_group].keys():
 															result[rate][rate_stat_key][sub_group][attr_name] = attr
-													elif attr_name == 'most_recent_error':
-														if attr not in result[rate][rate_stat_key][sub_group].keys():
-															result[rate][rate_stat_key][sub_group][attr_name] = attr
-														elif result[rate][rate_stat_key][sub_group][attr_name] < attr:
-															result[rate][rate_stat_key][sub_group][attr_name] = attr
-													elif attr_name.startswith('run_uuid'):
-														if attr_name in result[rate][rate_stat_key][sub_group].keys():
-															for r_id in attr:
-																if r_id not in result[rate][rate_stat_key][sub_group][attr_name]:
-																	result[rate][rate_stat_key][sub_group][attr_name]+=[r_id]
 														else:
-															result[rate][rate_stat_key][sub_group][attr_name] = list(np.unique(attr))
-													else:
-														if attr_name in result[rate][rate_stat_key][sub_group].keys():
-															result[rate][rate_stat_key][sub_group][attr_name]+=attr
-														else:
-															result[rate][rate_stat_key][sub_group][attr_name] =attr
+															if attr_name.startswith('count'):
+																result[rate][rate_stat_key][sub_group][attr_name] = attr
+															elif attr_name == 'most_recent_error':
+																if result[rate][rate_stat_key][sub_group][attr_name] < attr:
+																	result[rate][rate_stat_key][sub_group][attr_name] = attr
+															else:
+																result[rate][rate_stat_key][sub_group][attr_name]+=attr
 				else:
-					if rate in result.keys():
-						result[rate] += rate_stats
-					else:
-						result[rate] = rate_stats
-	return result
+					if rate != 'traceback_lookup':
+						if rate not in result.keys():
+								result[rate] = rate_stats
+						else:
+							if type(rate_stats) == int:
+								if rate.startswith('count'):
+									result[rate] += rate_stats
+								if rate.startswith('most_recent_error'):
+									if result[rate] < rate_stats:
+										result[rate] = rate_stats
+							else:
+								result[rate] += rate_stats
+		return result
 
 def run(*args):
 	CORES = 6
@@ -379,9 +376,10 @@ def run(*args):
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
 			end = min((r+1)*10000,total_t)
-			tmp = np.array_split(np.array(ElectricTariffModel.objects.values_list("urdb_label","urdb_response","run_uuid","blended_annual_demand_charges_us_dollars_per_kw","blended_annual_rates_us_dollars_per_kwh","blended_monthly_demand_charges_us_dollars_per_kw","blended_monthly_rates_us_dollars_per_kwh","add_blended_rates_to_urdb_rate").all()[start:end]),CORES)
-			urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
-		
+			if start > 800000:
+				tmp = np.array_split(np.array(ElectricTariffModel.objects.values_list("urdb_label","urdb_response","run_uuid","blended_annual_demand_charges_us_dollars_per_kw","blended_annual_rates_us_dollars_per_kwh","blended_monthly_demand_charges_us_dollars_per_kw","blended_monthly_rates_us_dollars_per_kwh","add_blended_rates_to_urdb_rate").all()[start:end]),CORES)
+				urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
+				
 		error_sets = np.array_split(np.array(ErrorModel.objects.all()),CORES)
 		error_results = combine_error_summaries(p.map(process_error_set, error_sets))
 

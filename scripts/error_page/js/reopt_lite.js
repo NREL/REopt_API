@@ -63,7 +63,7 @@
 
 	for (var entry in urdb_entries){
 		if (urdb_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && urdb_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
-			      
+			    debugger
 				var detail= $('<tr>')
 				detail.append($('<td>').append($('<span>').html(urdb_entries[entry][0])).append($('<br><span>Look Up @ </span>')).append($('<a target="blank" href="https://openei.org/apps/USURDB/rate/view/'+urdb_entries[entry][0]+'"><small>USURDB </small></a>"') ).append($('<span> or </span>')).append($('<a target="blank" href="https://openei.org/apps/IURDB/rate/view/'+urdb_entries[entry][0]+'"><small>IURDB </small></a>"') ))
 				detail.append($('<td>').html(urdb_entries[entry][1]['count_total_uses']))
@@ -74,7 +74,7 @@
 				} else {
 					detail.append($('<td>').html(moment.unix(most_recent).format("MM-DD-YYYY HH:mm:ss")))
 				}
-				detail.append($('<td>').html((urdb_entries[entry][1]['count_unique_run_uuids']*100/(urdb_entries[entry][1]['count_total_uses'])).toFixed(0)))	
+				detail.append($('<td>').html((urdb_entries[entry][1]['count_unique_error_run_uuids']*100/(urdb_entries[entry][1]['count_total_uses'])).toFixed(0)))	
 				detail.append($('<td>').html(format_names(urdb_entries[entry][1]['name']) ) )
 				$('#tableBody_URDB').append(detail)			          
 		}

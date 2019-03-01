@@ -42,9 +42,8 @@ var data_points = Object.entries(sortObject(error_results['daily_count']))
 var barchart_labels = []
 var barchart_data = []
 for (var entry in data_points){
-  var newDate = new Date(data_points[entry][0]*1000)
   barchart_labels.push(moment.unix(data_points[entry][0]).format("MM-DD-YYYY")) 
-  barchart_data.push(data_points[entry][1])
+  barchart_data.push(data_points[entry][1].length)
 }
 
 var dailyErrorCount = new Chart(ctx, {
@@ -52,7 +51,7 @@ var dailyErrorCount = new Chart(ctx, {
   data: {
     labels: barchart_labels,
     datasets: [{
-      label: "Error Count",
+      label: "Tracebacks",
       backgroundColor: "#4e73df",
       hoverBackgroundColor: "#2e59d9",
       borderColor: "#4e73df",
@@ -147,8 +146,22 @@ var dailyErrorCount = new Chart(ctx, {
       caretPadding: 10,
       callbacks: {
         label: function(tooltipItem, chart) {
+          console.log(tooltipItem.index)
           var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
-          return datasetLabel + ': ' + number_format(tooltipItem.yLabel);
+          var label = {}
+          for (var i = 0; i < data_points[tooltipItem.index][1].length; i++){
+            var key = data_points[tooltipItem.index][1][i]
+            if (!(key in label)){
+              label[key] = 1
+            } else {
+              label[key] ++
+            } 
+          } 
+          var label_text = []
+          for (entry in  Object.entries(label)){
+              label_text.push( Object.entries(' ' + label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)" )
+          }
+          return datasetLabel + ' : ' + label_text.join('\n');
         }
       }
     },
