@@ -11,6 +11,31 @@
 	// $('$progressbar_CorrectlyFormatted').attr({'valuenow':goodPosts})
 	$("#recentErrors").html(numberWithCommas(error_results['count_new_errors']))
 	$("#uniqueURDB").html(numberWithCommas(Object.keys(urdb_results).length - 8))
+	$("#last_updated").html(moment.unix(summary_info['last_updated']).format('MM-DD-YYYY HH:mm:ss'))
+
+
+	function task_content(tasks){
+		var result = $('<div></div>')
+		tasks = [...new Set(tasks)]
+		for (var t in tasks){
+			result.append($('<button>').html(tasks[t]).addClass("badge badge-info float-right"))
+			result.append($('<span>').html(" "))
+		}
+		return result.html()
+
+	}
+
+	function message_content(messages){
+		var result = $('<div><small><br><em><b>Message(s) to User</em></b></small><br></div>')
+		messages = [...new Set(messages)]
+		
+		for (var m in messages){
+			result.append($('<small>').html($('<span>').html(messages[m]).html()+'<br>'))
+		}
+		return result.html()
+		
+	}
+
 
 	function format_names(names){
 		if (names!==undefined) {
@@ -54,7 +79,7 @@
 
 	function create_generic_popup(link_text,header, text, id){
 		
-		return '<br><span title="'+header+'" class="text-info" data-toggle="popover"  data-content="'+text.replace(/"/g, '\'')+'" style="margin:20px;">'+link_text+'</span>'
+		return '<span title="'+header+'" class="text-info" data-toggle="popover"  data-content="'+text.replace(/"/g, '\'')+'" style="margin:20px;">'+link_text+'</span>'
 	}
 	
 	
@@ -63,11 +88,11 @@
 
 	for (var entry in urdb_entries){
 		if (urdb_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && urdb_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
-			    debugger
 				var detail= $('<tr>')
 				detail.append($('<td>').append($('<span>').html(urdb_entries[entry][0])).append($('<br><span>Look Up @ </span>')).append($('<a target="blank" href="https://openei.org/apps/USURDB/rate/view/'+urdb_entries[entry][0]+'"><small>USURDB </small></a>"') ).append($('<span> or </span>')).append($('<a target="blank" href="https://openei.org/apps/IURDB/rate/view/'+urdb_entries[entry][0]+'"><small>IURDB </small></a>"') ))
 				detail.append($('<td>').html(urdb_entries[entry][1]['count_total_uses']))
 				detail.append($('<td>').html(urdb_entries[entry][1]['count_total_errors']))
+				detail.append($('<td>').html(urdb_entries[entry][1]['count_new_errors']))
 				var most_recent = urdb_entries[entry][1]['most_recent_error']
 				if (most_recent===0 || most_recent===undefined){
 					detail.append($('<td>').html(''))	
@@ -88,11 +113,11 @@
 		if (error_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && error_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
 				var errordetail= $('<tr>')
 				var errorcontent = $('<div>')
-				errorcontent.html(common_lookup[error_entries[entry][0]].substring(0,189))
-				if (common_lookup[error_entries[entry][0]].length > 189){
+				errorcontent.html("<b>(#" +error_entries[entry][0]+ ")</b> " + common_lookup[error_entries[entry][0]].substring(0,225))
+				if (common_lookup[error_entries[entry][0]].length > 224){
 					errorcontent.append(create_generic_popup('...(see full)', 'Traceback', common_lookup[error_entries[entry][0]],"errorPopUp"+entry.toString()))
 				}
-				errordetail.append($('<td>').html(errorcontent))
+				errordetail.append($('<td>').html(errorcontent.html() + message_content(error_entries[entry][1]['message'])  + task_content(error_entries[entry][1]['task']) ))
 				errordetail.append($('<td>').html(create_run_uuid_popup(error_entries[entry][1]['run_uuids_new'],error_entries[entry][1]['run_uuids_old'],"Recent").html(),"errorRunUUIDPopUp"+entry.toString()))
 				errordetail.append($('<td>').html(moment.unix(error_entries[entry][1]['most_recent_error']).format("MM-DD-YYYY HH:mm:ss")))
 				errordetail.append($('<td>').html(error_entries[entry][1]['count'] ))

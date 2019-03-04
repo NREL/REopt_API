@@ -71,7 +71,13 @@
                       <div id="pctCorrectlyFormatted" class="h5 mb-0 font-weight-bold text-gray-800"></div>
                       <br>
                       <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Errors in Last 7 days</div>
-                      <div id="recentErrors" class="h5 mb-0 font-weight-bold text-gray-800"></div><br>                      
+                      <div id="recentErrors" class="h5 mb-0 font-weight-bold text-gray-800"></div><br>            
+
+                      <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Last Updated</div>
+                      <div id="last_updated" class="h5 mb-0 font-weight-bold text-gray-800"></div><br>                                
+
+
+                      
                     </div>
  <!--                    <div class="col-auto">
                       <i class="fas fa-calendar fa-2x text-gray-300"></i>
@@ -161,6 +167,7 @@
                           <th>Traceback</th>
                           <th>Traceback ID</th>
                           <th>Occurrences</th>
+                          <th>Run UUID</th>
                           <th>Date</th>
                           
                         </tr>
@@ -222,6 +229,7 @@
                     <tr>
                       <th>URDB Label</th>              
                       <th>Total Uses</th>              
+                      <th>Total Errors</th>
                       <th>Errors last 7 Days</th>
                       <th>Most Recent Error</th>              
                       <th>% Fails</th>                                    
@@ -334,8 +342,8 @@
 
 
   <!-- Page level custom scripts -->
-  <script src="js/demo/chart-bar.js"></script>
-  <script src="js/demo/onLoad.js"></script>
+  <script src="js/chart-bar.js"></script>
+  <script src="js/onLoad.js"></script>
 
 </body>
 <center><small>Free Template provided by  <a href = "https://startbootstrap.com/themes/sb-admin-2/" target='blank'> Blackrock Digital LLC</a><br></small></center>

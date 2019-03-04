@@ -112,6 +112,7 @@ var dailyErrorCount = new Chart(ctx, {
         maxBarThickness: 25,
       }],
       yAxes: [{
+        type: 'logarithmic',
         min:0,
         ticks: {
           min: 0,
@@ -120,8 +121,9 @@ var dailyErrorCount = new Chart(ctx, {
           padding: 10,
           // Include a dollar sign in the ticks
           callback: function(value, index, values) {
-            return number_format(value);
-          }
+            if (Math.log10(value).toString().length===1 && value.toString().substring(0,1)==='1'){
+                return number_format(value)
+            }}
         },
         gridLines: {
           color: "rgb(234, 236, 244)",
@@ -163,7 +165,7 @@ var dailyErrorCount = new Chart(ctx, {
           } 
           var label_text = []
           for (entry in  Object.entries(label)){
-              label_text.push( ' ' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
+              label_text.push( ' #' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
           }
           return datasetLabel + ' : ' + label_text.join('\n');
         }

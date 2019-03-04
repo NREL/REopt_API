@@ -102,7 +102,7 @@ $(document).ready(function() {
 	          		$('#dataTable_queryErrors').DataTable().row.add(
 					[
 						tb_text,
-						Object.entries(label)[entry][0],
+						'#' + Object.entries(label)[entry][0],
 						Object.entries(label)[entry][1][0],
 						create_run_uuid_popup(Object.entries(label)[entry][1][1]),
 						moment($('#errorQueryByDate').val()).format('MM-DD-YYYY')
@@ -160,7 +160,7 @@ $(document).ready(function() {
 	          		
 	          		$('#dataTable_queryErrors').DataTable().row.add([
 						tb_text,
-						tb_id,
+						'#' + tb_id,
 						label[tb_id][0],
 						create_run_uuid_popup(label[tb_id][1]),
 						moment.unix(day_entries[i][0]).format('MM-DD-YYYY')
