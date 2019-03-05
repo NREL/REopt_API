@@ -421,19 +421,19 @@ def run(*args):
 						'last_updated': now,
 						}
 
-		with open('static/js/error_page_data/summary_info.js','w+') as output_file:
+		with open('reo/static/reo/js/data/summary_info.js','w+') as output_file:
 			output_file.write("var summary_info = " +  json.dumps(summary_info))
 
-		with open('static/error_page_data/urdb_results.js','w+') as output_file:
+		with open('reo/static/reo/js/data/urdb_results.js','w+') as output_file:
 			output_file.write("var urdb_results = " +  json.dumps(urdb_results))
 
-		with open('static/error_page_data/error_results.js','w+') as output_file:
+		with open('reo/static/reo/js/data/error_results.js','w+') as output_file:
 			output_file.write("var error_results = " + json.dumps(error_results))
 
-		with open('static/error_page_data/common_lookup.js','w+') as output_file:
+		with open('reo/static/reo/js/data/common_lookup.js','w+') as output_file:
 			output_file.write("var common_lookup = " +  json.dumps(common_lookup))
 
 		badpost_sets = np.array_split(np.array(BadPost.objects.all()),CORES)
 		bad_post_results = combine_bad_post_summaries(p.map(process_bad_post_set, badpost_sets))
-		with open('static/error_page_data/bad_posts.js','w+') as output_file:
+		with open('reo/static/reo/js/data/bad_posts.js','w+') as output_file:
 			output_file.write("var bad_posts = " + json.dumps(bad_post_results))
