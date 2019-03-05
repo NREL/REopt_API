@@ -11,6 +11,7 @@ import pytz
 import copy
 import datetime
 import pytz
+
 recent_interval_days = 7
 
 
@@ -392,7 +393,7 @@ def combine_urdb_summaries(urdb_rates):
 	return result
 
 def run(*args):
-	CORES = 8
+	CORES = 6
 	
 	if 'pull_data' not in globals().values():
 		p = mp.Pool(processes=CORES)	
@@ -402,8 +403,10 @@ def run(*args):
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
 			end = min((r+1)*10000,total_t)
+			print start, end, total_t
 			tmp = np.array_split(np.array(ElectricTariffModel.objects.values_list("urdb_label","urdb_response","run_uuid","blended_annual_demand_charges_us_dollars_per_kw","blended_annual_rates_us_dollars_per_kwh","blended_monthly_demand_charges_us_dollars_per_kw","blended_monthly_rates_us_dollars_per_kwh","add_blended_rates_to_urdb_rate").all()[start:end]),CORES)			
-		urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
+			urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
+		
 		error_sets = np.array_split(np.array(ErrorModel.objects.all()),CORES)
 		error_results = combine_error_summaries(p.map(process_error_set, error_sets))
 		
@@ -418,19 +421,19 @@ def run(*args):
 						'last_updated': now,
 						}
 
-		with open('scripts/error_page/data/summary_info.js','w+') as output_file:
+		with open('static/js/error_page_data/summary_info.js','w+') as output_file:
 			output_file.write("var summary_info = " +  json.dumps(summary_info))
 
-		with open('scripts/error_page/data/urdb_results.js','w+') as output_file:
+		with open('static/error_page_data/urdb_results.js','w+') as output_file:
 			output_file.write("var urdb_results = " +  json.dumps(urdb_results))
 
-		with open('scripts/error_page/data/error_results.js','w+') as output_file:
+		with open('static/error_page_data/error_results.js','w+') as output_file:
 			output_file.write("var error_results = " + json.dumps(error_results))
 
-		with open('scripts/error_page/data/common_lookup.js','w+') as output_file:
+		with open('static/error_page_data/common_lookup.js','w+') as output_file:
 			output_file.write("var common_lookup = " +  json.dumps(common_lookup))
 
 		badpost_sets = np.array_split(np.array(BadPost.objects.all()),CORES)
 		bad_post_results = combine_bad_post_summaries(p.map(process_bad_post_set, badpost_sets))
-		with open('scripts/error_page/data/bad_posts.js','w+') as output_file:
+		with open('static/error_page_data/bad_posts.js','w+') as output_file:
 			output_file.write("var bad_posts = " + json.dumps(bad_post_results))

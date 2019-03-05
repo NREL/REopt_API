@@ -55,8 +55,6 @@ def add_user_uuid(request):
         return JsonResponse({"Error": err.message}, status=500)
 
 def summary(request, user_uuid):
-    from IPython import embed
-    embed()
     """
     Retrieve a summary of scenarios for given user_uuid
     :param request:
