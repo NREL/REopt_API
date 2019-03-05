@@ -13,17 +13,23 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 from reo.log_levels import log
 from reo.src.techs import Generator
 
-from django.http import HttpResponse
+from django.http import HttpResponse,Http404
 from django.template import  loader
+
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
+from keys import admin_error_page_password
 
-def error_page(request):
-    template= loader.get_template("error_page.html")
-    return HttpResponse(template.render())
+def errors(request, page_uuid):
+    print admin_error_page_password
+    print page_uuid
+    if admin_error_page_password == page_uuid:
+        template= loader.get_template("errors.html")
+        return HttpResponse(template.render())
+    raise Http404()
 
 def help(request):
 

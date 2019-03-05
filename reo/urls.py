@@ -8,7 +8,7 @@ embed()
 
 print "AAAA"
 urlpatterns = [
-    url(r'^error_page/', views.error_page, name='error_page'),
+    url(r'^errors/', views.errors, name='errors'),
     url(r'^annual_kwh/', views.annual_kwh, name='annual_kwh'),
     url(r'^invalid_urdb/', views.invalid_urdb, name='invalid_urdb'),
     url(r'^help/', views.help, name='help'),
