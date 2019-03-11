@@ -1,8 +1,8 @@
 #=
 ed_example:
 - Julia version: 1.0.3
-- Author: reopt
-- Date: 2019-01-12
+- Author: Sakshi Mishra
+- Date: 2019-03-10
 =#
 
 using JuMP
@@ -32,7 +32,8 @@ const w_f = 200;
 function solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f)
 
     #Define the economic dispatch (ED) model
-    ed=Model(solver = CbcSolver())
+    #ed=Model(solver = CbcSolver())
+    ed=Model(with_optimizer(Cbc.Optimizer))
 
     # Define decision variables
     @variable(ed, 0 <= g[i=1:2] <= g_max[i]) # power output of generators
@@ -54,18 +55,29 @@ function solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f)
     @constraint(ed, sum(g[i] for i in 1:2) + w == d)
 
     # Solve statement
-    solve(ed)
+    #solve(ed)
+    JuMP.optimize!(ed)
 
+    for i in 1:2
+    #find a way to save the values of generation dispatch in a array of floats
+        println(JuMP.value(g[i]))
+    end
     # return the optimal value of the objective function and its minimizers
-    return JuMP.getvalue(g), JuMP.getvalue(w), w_f-JuMP.getvalue(w), JuMP.getobjectivevalue(ed)
+    #return JuMP.value(g), JuMP.value(w), w_f-JuMP.value(w), JuMP.objective_value(ed)
+    return JuMP.value(w), w_f-JuMP.value(w), JuMP.objective_value(ed)
+
 end
 
 # Solve the economic dispatch problem
-(g_opt,w_opt,ws_opt,obj)=solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f);
+#(g_opt,w_opt,ws_opt,obj)=solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f);
+(w_opt,ws_opt,obj)=solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f);
+
+
 
 println("\n")
-println("Dispatch of Generators: ", g_opt[1:2], " MW")
+#println("Dispatch of Generators: ", g_opt[1:2], " MW")
 println("Dispatch of Wind: ", w_opt, " MW")
 println("Wind spillage: ", w_f-w_opt, " MW")
 println("\n")
 println("Total cost: ", obj, "\$")
+println("\n")
