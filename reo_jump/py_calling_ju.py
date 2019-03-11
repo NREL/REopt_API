@@ -22,11 +22,13 @@ Main.d = 1500;
 # Wind forecast
 Main.w_f = 200;
 
-(g_opt,w_opt,ws_opt,obj)= j.eval("solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f)")
+#(g_opt,w_opt,ws_opt,obj)= j.eval("solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f)")
+(w_opt,ws_opt,obj)= j.eval("solve_ed(g_max, g_min, c_g, c_g0, c_w, d, w_f)")
 
 print("\n")
-print("Dispatch of Generators: ", g_opt[1:2], " MW")
+#print("Dispatch of Generators: ", g_opt[1:2], " MW")
 print("Dispatch of Wind: ", w_opt, " MW")
 print("Wind spillage: ", Main.w_f-w_opt, " MW")
 print("\n")
 print("Total cost: ", obj, "$")
+print("\n")
