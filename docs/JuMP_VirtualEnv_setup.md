@@ -132,6 +132,6 @@
 - Pick _Julia_ in the options which show up when you click + button
 - fill out the details as given in the following snapshot:  
 - ![Pycharm Interpreter for Julia](edit_config_2.png)  
-- __ed_example.jl __ file is an example julia script located inside reo_jump folder
+- __ed_example.jl__ file is an example julia script located inside reo_jump folder
 - __julia-optimization__ was created in previous steps
 - Hit _Apply_ and _OK_  
