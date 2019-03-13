@@ -26,6 +26,7 @@ This is the guide for the git version control work-flow, which is being used for
 
 - All the development activites are executed on _develop_ branch and when the the new features pass all the back-end tests on development server, UI user tests on staging server, then the _develop_ branch is merged with the _master_ branch.
 - _master_ branch is then deployed to the production server.
+- read more about this git flow model [here](https://nvie.com/posts/a-successful-git-branching-model/)
 
 
 ![git workflow model](git_workflow_model.png)
