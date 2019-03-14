@@ -5,7 +5,6 @@ from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
 
-
 class Tech(object):
     """
     base class for REopt energy generation technology
@@ -117,8 +116,8 @@ class Wind(Tech):
     size_class_to_itc_incentives = {
         'residential': 0.3,
         'commercial': 0.3,
-        'medium': 0.18,
-        'large': 0.18,
+        'medium': 0.12,
+        'large': 0.12,
     }
 
     def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
@@ -133,7 +132,7 @@ class Wind(Tech):
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
-        if self.incentives.federal.itc == 0.9995:
+        if self.incentives.federal.itc == 0.3:
             self.incentives.federal.itc = Wind.size_class_to_itc_incentives[kwargs.get('size_class')]
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
@@ -171,7 +170,7 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-
+            
             sam = WindSAMSDK(self.hub_height_meters, time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 

@@ -6,12 +6,13 @@ from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
+from reo.src.profiler import Profiler
 from reo.src.site import Site
 from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError,WindDownloadError
 from reo.src.paths import Paths
 
 
@@ -55,6 +56,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
     :param run_uuid:
     :param inputs_dict: validated POST of input parameters
     """
+
+    self.profiler = Profiler()
     paths = vars(Paths(run_uuid=run_uuid))
     self.run_uuid = run_uuid
     self.data = data
@@ -95,10 +98,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             log.error("Scenario.py raising error: " + exc_value.message)
             raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
 
-
-
-
-
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -107,6 +106,15 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
                         longitude=inputs_dict['Site'].get('longitude'),time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
+
+            # must propogate these changes back to database for proforma
+            data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind.installed_cost_us_dollars_per_kw
+            data['inputs']['Scenario']["Site"]["Wind"]["federal_itc_pct"] = wind.incentives.federal.itc
+            tmp = dict()
+            tmp['federal_itc_pct'] = wind.incentives.federal.itc
+            tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
+
+            ModelManager.updateModel('WindModel', tmp, run_uuid)
 
         if inputs_dict["Site"]["Generator"]["size_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
@@ -127,18 +135,33 @@ def setup_scenario(self, run_uuid, data, raw_post):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
-        # delete python objects, which are not serializable
+            # delete python objects, which are not serializable
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
+
+	self.data = data
+	self.profiler.profileEnd()
+        tmp = dict()
+        tmp['setup_scenario_seconds'] = self.profiler.getDuration()
+        ModelManager.updateModel('ProfileModel', tmp, run_uuid)
+
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
-    except Exception:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        if hasattr(exc_value, 'name'):
-            if exc_value.name == 'LoadProfileError':
-                log.error("Scenario.py raising error: " + exc_value.message)
-                pass
+    except Exception as e:
+
+        if hasattr(e, 'message'):
+            if e.message == 'Wind Dataset Timed Out':
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid)
+
+        if isinstance(e, REoptError):
+            pass
         else:
-            log.error("Scenario.py raising error: " + exc_value)
-            raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            if hasattr(exc_value, 'name'):
+                if exc_value.name == 'LoadProfileError':
+                    log.error("Scenario.py raising error: " + exc_value.message)
+                    pass
+            else:
+                log.error("Scenario.py raising error: " + exc_value)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)

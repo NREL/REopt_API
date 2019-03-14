@@ -7,8 +7,9 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager
+from reo.models import ModelManager, ProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
+from reo.src.profiler import Profiler
 
 
 class ResultsTask(Task):
@@ -86,6 +87,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             :param path_static: path to copy proForma to for user download
             :param year: load_year
             """
+            self.profiler = Profiler()
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
                 results_dict = json.loads(f.read())
@@ -111,7 +113,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # if wind is zero then no value is written to REopt results.json
             if results_dict.get("wind_kw") is None:
                 results_dict['wind_kw'] = 0
-
 
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
@@ -147,6 +148,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             """
             nested_outputs = dict()
             nested_outputs["Scenario"] = dict()
+            nested_outputs["Scenario"]["Profile"] = dict()
             nested_outputs["Scenario"]["Site"] = dict()
 
             # Loop through all sub-site dicts and init
@@ -154,7 +156,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 nested_outputs["Scenario"]["Site"][name] = dict()
                 for k in d.iterkeys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
-
             return nested_outputs
 
         def get_nested(self):
@@ -171,6 +172,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.po.get_crit_load_profile()
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.po.get_annual_kwh()
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
@@ -226,6 +228,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_us_dollars"] = self.results_dict.get("year_one_bill")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_bill_bau_us_dollars"] = self.results_dict.get("year_one_bill_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
+                    self.nested_outputs["Scenario"]["Site"][name]["total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_cost_series_us_dollars_per_kwh"] = self.po.get_energy_cost()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_demand_cost_series_us_dollars_per_kw"] = self.po.get_demand_cost()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
@@ -234,6 +237,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+
+            self.profiler.profileEnd()
+            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
         def compute_total_power(self, tech):
             power_lists = list()

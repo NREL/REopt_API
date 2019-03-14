@@ -24,6 +24,33 @@ nested_output_definitions = {
               "description": "Problem Status",
               "units": "none"
             },
+            "Profile": {
+                "pre_setup_scenario_seconds": {
+                  "type": float,
+                  "description": "Time spent before setting up scenario",
+                  "units": "seconds"
+                },
+                "setup_scenario_seconds": {
+                  "type": float,
+                  "description": "Time spent setting up scenario",
+                  "units": "seconds"
+                },
+                "reopt_seconds":{
+                  "type": float,
+                  "description": "Time spent solving scenario",
+                  "units": "seconds"
+                },
+                "reopt_bau_seconds": {
+                  "type": float,
+                  "description": "Time spent solving base-case scenario",
+                  "units": "seconds"
+                },
+                "parse_run_outputs_seconds": {
+                  "type": float,
+                  "description": "Time spent parsing outputs",
+                  "units": "seconds"
+                }
+            },
 
             "Site": {
 
@@ -37,6 +64,11 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Hourly critical load for outage simulator. Values are either uploaded by user, or determined from typical load (either uploaded or simulated) and critical_load_pct.",
                   "units": "kW"
+                },
+                "annual_calculated_kwh": {
+                  "type": "float",
+                  "description": "Annual energy consumption calculated by summing up 8760 load profile",
+                  "units": "kWh"
                 },
               },
 
@@ -270,6 +302,11 @@ nested_output_definitions = {
                 "total_fixed_cost_bau_us_dollars": {
                   "type": float,
                   "description": "Business as usual total utility fixed cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
+                "total_export_benefit_us_dollars": {
+                  "type": float,
+                  "description": "Total export benefit cost over the lifecycle, after-tax",
                   "units": "$"
                 },
                 "total_min_charge_adder_bau_us_dollars": {

@@ -12,6 +12,7 @@ from validators import ValidateNestedInput
 from scenario import setup_scenario
 from reo.log_levels import log
 from reo.models import ModelManager, BadPost
+from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
@@ -59,9 +60,12 @@ class Job(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-      
+
         input_validator = ValidateNestedInput(bundle.data)
         run_uuid = str(uuid.uuid4())
+
+        # Setup and start profile
+        profiler = Profiler()
 
         # Setup log to include UUID of run
         uuidFilter = UUIDFilter(run_uuid)
@@ -92,27 +96,28 @@ class Job(ModelResource):
                                                      content_type='application/json',
                                                      status=400))
 
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version}}
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
+                                        'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
+                                                    'reopt_seconds': 0, 'reopt_bau_seconds': 0,
+                                                    'parse_run_outputs_seconds': 0}}}
 
         log.info('Entering ModelManager')
         model_manager = ModelManager()
+        profiler.profileEnd()
+
         if saveToDb:
             set_status(data, 'Optimizing...')
+            data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
             model_manager.create_and_save(data)
 
-        log.info('Setup Scenario')
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
-
-        # a group returns a list of outputs, with one item for each job in the group
-        log.info('Parse run outputs')
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, bau=False), reopt.s(data=data, bau=True)) | call_back)()
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
         except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
-
             if isinstance(e, REoptError):
                 pass  # handled in each task
             else:
@@ -126,6 +131,7 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
+
         log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
                                                  content_type='application/json', status=201))
