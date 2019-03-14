@@ -122,7 +122,7 @@
 
 
   #### Step 5.2: Setting up project interpreter for running Julia file inside PyCharm
-- go to File &rarr $$\to$$ Settings $$\to$$ Languages & Frameworks $$\to$$ Julia  
+- go to File &rarr Settings &rarr Languages & Frameworks &rarr Julia  
 - ![snapshot of Julia Interpreter](Pycharm_Julia_Interpreter_setting.png)  
 - Enter the paths in the  _Julia executable_ and _Julia base path_ as shown the above snapshot
 - Hit _Apply_ and _OK_
