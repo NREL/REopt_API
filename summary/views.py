@@ -83,7 +83,6 @@ def summary(request, user_uuid):
                 }]
         }
     """
-
     try:
         uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
 
@@ -103,25 +102,47 @@ def summary(request, user_uuid):
         if len(scenarios) == 0:
             response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
             return response
+        
+        scenario_run_uuids =  [s.run_uuid for s in scenarios]
+        
+        #saving time by only calling each table once
+        def dbToDict(db_results):
+            result = {}
+            for r in db_results:
+                if r in result.keys():
+                    result[r.run_uuid] = result[r.run_uuid] + [r]
+                else:
+                    result[r.run_uuid] = r
+            return result
 
+        messages = dbToDict(MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        sites = dbToDict(SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        loads = dbToDict(LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
+        
         for scenario in scenarios:
             results = {}
-
-            site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
-
+            
+            message_set = messages.get(scenario.run_uuid,[])
+            if not type(message_set) == list:
+                message_set = [message_set]
+            site = sites.get(scenario.run_uuid)
+            load = loads.get(scenario.run_uuid)
+            batt = batts.get(scenario.run_uuid)
+            pv = pvs.get(scenario.run_uuid)
+            wind = winds.get(scenario.run_uuid)
+            financial = financials.get(scenario.run_uuid)
+            tariff = tariffs.get(scenario.run_uuid)
+            
             # Messages
             results['messages'] = {}
-            for message_type in ['warnings', 'error']:
-                message = MessageModel.objects.filter(run_uuid=scenario.run_uuid, message_type=message_type).first()
-                if message:
-                    results['messages'][message_type] = message.message
-
+            for message in message_set:
+                results['messages'][message.message_type] = message.message
+            
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
 
