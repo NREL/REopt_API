@@ -83,9 +83,6 @@ def summary(request, user_uuid):
                 }]
         }
     """
-    from datetime import datetime
-    start = datetime.now()
-    print 'start',start
     try:
         uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
 
@@ -227,7 +224,6 @@ def summary(request, user_uuid):
 
             json['scenarios'].append(results)
         response = JsonResponse(json)
-        print 'end',(datetime.now()-start).seconds
         return response
 
     except Exception as e:
