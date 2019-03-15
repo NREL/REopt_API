@@ -52,9 +52,16 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
             idx += 1
 
     def test_wind(self):
-        self.example_reopt_request_data = json.loads(open('proforma/tests/test_wind_isolated.json').read())
+        self.example_reopt_request_data = json.loads(open('proforma/tests/wind_bug.json').read())
         run_output = self.get_response(self.example_reopt_request_data)
         uuid = run_output['outputs']['Scenario']['run_uuid']
+
+        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["pre_setup_scenario_seconds"], 0)
+        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["setup_scenario_seconds"], 0)
+        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["reopt_seconds"], 0)
+        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["reopt_bau_seconds"], 0)
+        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["parse_run_outputs_seconds"], 0)
+
         mapping = self.get_mapping(run_output, uuid)
 
         idx = 0

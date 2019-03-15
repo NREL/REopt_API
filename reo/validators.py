@@ -362,20 +362,31 @@ class ValidateNestedInput:
             if self.input_dict['Scenario'].get('user_uuid') is not None:
                 self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
             if self.input_dict['Scenario'].get('description') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[0-9a-zA-Z. ]*$',
+                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[-0-9a-zA-Z.  $:;)(*&#!@]*$',
                           err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
             if self.input_dict['Scenario']['Site'].get('address') is not None:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
+            # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
+            # 'doe_reference_name is a mandatory input'
+            counter = 2
             for lp in ['critical_loads_kw', 'loads_kw']:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp)
 
+                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                    counter -= 1
+
                 else:  # When using DOE load profile, year must start on Sunday
                     self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
+            # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
+            if counter == 0:
+                self.input_data_errors.append(
+                    "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
             if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
@@ -834,7 +845,9 @@ class ValidateNestedInput:
                     avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
                                   / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
 
-                if avg_load_kw <= 100:
+                if avg_load_kw <= 12.5:
+                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
+                elif avg_load_kw <= 100:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
                 elif avg_load_kw <= 1000:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
@@ -888,7 +901,7 @@ class ValidateNestedInput:
             else:
                 self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
 
-        def validate_text_fields(self, pattern=r'^[0-9a-zA-Z]*$', str="", err_msg=""):
+        def validate_text_fields(self, pattern=r'^[-0-9a-zA-Z  $:;)(*&#!@]*$', str="", err_msg=""):
             match = re.search(pattern, str)
             if match:
                 pass

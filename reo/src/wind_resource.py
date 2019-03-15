@@ -1,7 +1,9 @@
+import time
 import h5pyd
 from pyproj import Proj
 import numpy as np
 import pandas as pd
+from reo.log_levels import log 
 """
 References: 
 - https://www.nrel.gov/grid/wind-toolkit.html
@@ -27,7 +29,7 @@ However, since 2012 was a leap year, we only take the values through December 30
 """
 
 hub_height_strings = {  # unused values included for potential future use
-    10: "_10m",  # residential?
+    10: "_10m",  # residential? - yes it is currently being used for residential
     40: "_40m",  # commercial
     60: "_60m",  # medium
     80: "_80m",  # large
@@ -39,6 +41,7 @@ hub_height_strings = {  # unused values included for potential future use
 }
 frequency_map = {  # time_steps_per_hour to pandas sampling frequency string
     2: '30T',
+    3: '20T',
     4: '15T',
 }
 
@@ -99,7 +102,20 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     """
     #else:
 
-    db_conn = h5pyd.File("/nrel/wtk-us.h5", 'r')
+    def getWindData(name, start_i,end_i,y,x):
+        numberTries = 0
+        while numberTries < 20:
+            try:
+                with h5pyd.File("/nrel/wtk-us.h5", 'r') as hf:
+                    return hf[name][start_i:end_i,y,x]
+            except:
+                print "wind dataset timed out {} times".format(numberTries+1)
+                time.sleep(0.2)
+                numberTries +=1
+        log.error("Wind data download timed out")
+        raise  ValueError('Wind Dataset Timed Out')
+
+
     y, x = get_conic_coords(latitude, longitude)
     #y, x = get_conic_coords(db_conn, latitude, longitude)
     
@@ -108,11 +124,13 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     resolutions. The last value must be dropped even if upsampling occurs.
     """
 
+    start_i = 43824
+    end_i = 52584+1
 
-    hourly_windspeed_meters_per_sec = db_conn['windspeed' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
-    hourly_wind_direction_degrees = db_conn['winddirection' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
-    hourly_temperature = db_conn['temperature' + hub_height_strings[hub_height_meters]][43824:52584+1, y, x]
-    hourly_pressure = db_conn['pressure_100m'][43824:52584+1, y, x]
+    hourly_windspeed_meters_per_sec = getWindData('windspeed' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+    hourly_wind_direction_degrees = getWindData('winddirection' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+    hourly_temperature = getWindData('temperature' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+    hourly_pressure = getWindData('pressure_100m',start_i,end_i,y,x)
     
     if time_steps_per_hour != 1:  # upsample data
 

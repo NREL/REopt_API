@@ -404,7 +404,7 @@ class BuiltInProfile(object):
     def building_type(self):
         name = self.doe_reference_name.replace(' ','')
         if name not in self.default_buildings:
-            raise AttributeError('load_profile', "Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
+            raise AttributeError("load_profile error. Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
         return name
 
     @property
@@ -541,6 +541,11 @@ class LoadProfile(BuiltInProfile):
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
 
         self.annual_kwh = sum(self.load_list)
+        # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
+        fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
+        with open(fp, 'wb') as f:
+            f.write(str(self.annual_kwh))
+
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net

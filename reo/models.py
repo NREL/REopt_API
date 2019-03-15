@@ -13,6 +13,21 @@ class URDBError(models.Model):
     message = models.TextField(blank=True, default='')
 
 
+class ProfileModel(models.Model):
+    run_uuid = models.UUIDField(unique=True)
+    pre_setup_scenario_seconds = models.FloatField(null=True, default='')
+    setup_scenario_seconds = models.FloatField(null=True, default='')
+    reopt_seconds = models.FloatField(null=True, default='')
+    reopt_bau_seconds = models.FloatField(null=True, default='')
+    parse_run_outputs_seconds = models.FloatField(null=True, default='')
+
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
+
+
 class ScenarioModel(models.Model):
 
     # Inputs
@@ -103,6 +118,7 @@ class LoadProfileModel(models.Model):
     #Outputs
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
+    annual_calculated_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -145,6 +161,7 @@ class ElectricTariffModel(models.Model):
     total_energy_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_demand_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
+    total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
@@ -385,6 +402,7 @@ class ModelManager(object):
         self.windM = None
         self.storageM = None
         self.generatorM = None
+        self.profileM = None
         self.messagesM = None
 
     def create_and_save(self, data):
@@ -398,6 +416,8 @@ class ModelManager(object):
         scenario_dict.update(d)
 
         self.scenarioM = ScenarioModel.create(**attribute_inputs(scenario_dict))
+        self.profileM = ProfileModel.create(run_uuid=self.scenarioM.run_uuid,
+                                                **attribute_inputs(scenario_dict['Profile']))
         self.siteM = SiteModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']))
         self.financialM = FinancialModel.create(run_uuid=self.scenarioM.run_uuid,
                                                 **attribute_inputs(d['Site']['Financial']))
@@ -427,6 +447,7 @@ class ModelManager(object):
         """
         d = data["outputs"]["Scenario"]
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
         LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
@@ -504,6 +525,7 @@ class ModelManager(object):
         resp = dict()
         resp['outputs'] = dict()
         resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['Profile'] = dict()
         resp['inputs'] = dict()
         resp['inputs']['Scenario'] = dict()
         resp['inputs']['Scenario']['Site'] = dict()
@@ -530,12 +552,15 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(ProfileModel.objects.get(run_uuid=run_uuid)))
+
 
         wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
 
         if wind_dict['max_kw'] > 0:
             resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
             site_keys.append('Wind')
+
 
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
 

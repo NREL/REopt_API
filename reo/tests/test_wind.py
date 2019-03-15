@@ -68,7 +68,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
         wind_post_updated = wind_post
         wind_post_updated["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
-        wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 1000
+        wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 0
 
         # For some reason, when running full suite, validators isn't run, and this is not updated
         wind_post_updated["Scenario"]["Site"]["Wind"]["size_class"] = "commercial"

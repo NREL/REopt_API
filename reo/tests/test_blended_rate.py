@@ -2,6 +2,10 @@ import json
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
+# original tariff
+
+#"blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
+#"blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 
 class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
@@ -11,7 +15,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
-            "time_steps_per_hour": 4,
+            "time_steps_per_hour": 1,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
@@ -24,8 +28,8 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
                 "ElectricTariff": {
                     "urdb_rate_name": "custom",
-                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,0.2],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.15, 0.2, 0.21, 0.23, 0.27, 0.19, 0.22, 0.17, 0.24, 0.26, 0.18,0.2],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [0.08, 0.11, 0, 0, 0.15, 0.14, 0.09, 0.06, 0, 0, 0.05, 0]
                 },
 
                 "PV": {
@@ -78,8 +82,8 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                     setattr(self, k, v)
 
 
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
+        #self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
+        #self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
 
         response = self.get_response(self.post)
 
