@@ -52,10 +52,10 @@
 
 - In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work.  To configure PyCall.jl to use Python interpreter `/home/reopt/anaconda3/envs/reo_jump/bin/python`, run the following commands in the Julia interpreter (to get to Julia interpreter, open a new terminal and type `julia`) and then type the following commands:  
 
-    `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`
+    `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
     `using Pkg`  
-    `Pkg.add("PyCall")`
-    `Pkg.build("PyCall")`  
+    `Pkg.add("PyCall")`  
+    `Pkg.build("PyCall")`    
 
 ### Step 3: IJulia and JuMP Installation
 
