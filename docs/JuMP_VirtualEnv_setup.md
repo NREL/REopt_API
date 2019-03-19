@@ -35,24 +35,23 @@
     `pip install ipykernel`  
     `ipython kernel install --user --name=reo_jump`
     
-- Navigate to `path/to/installed/julia/.julia/`
-- Create a new folder named config (if it doesn't already exist) using the following command:  
-    ` mkdir config`
+- Julia configuration setup   
+     `cd $HOME/.julia/`
+     `mkdir config`
 
 - Create a file named startup.jl in the newly created folder (you will need a text editior like gedit to create a file)
-- Add the following to your ~/.julia/config/startup.jl  
+- Add the following to your `$HOME/.julia/config/startup.jl`, obtaining the path to python and juptyer by: `which python`
 
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
     `ENV["JUPYTER"] = "/home/reopt/anaconda3/envs/reo_jump/bin/jupyter"`
 
-- In Julia >= 0.7, above two paths to `libpython` have to match exactly
-  in order for PyJulia to work.  To configure PyCall.jl to use Python
-  interpreter "/home/reopt/anaconda3/envs/reo_jump/bin/python",
-  run the following commands in the Julia interpreter (to get to Julia interpreter, open a new terminal and type `julia`) and then type the following commands:  
+- In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work.  To configure PyCall.jl to use Python interpreter `/home/reopt/anaconda3/envs/reo_jump/bin/python`, run the following commands in the Julia interpreter (to get to Julia interpreter, open a new terminal and type `julia`) and then type the following commands:  
 
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`
     
     `using Pkg`  
+    
+    `Pkg.add("PyCall")`
     
     `Pkg.build("PyCall")`  
 
