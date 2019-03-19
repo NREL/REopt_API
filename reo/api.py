@@ -82,7 +82,7 @@ class Job(ModelResource):
         
 
         if not input_validator.isValid:  # 400 Bad Request
-            log.error("input_validator not valid")
+            log.debug("input_validator not valid")
             log.debug(json.dumps(data))
 
             data['run_uuid'] = 'Error. See messages for more information. ' \

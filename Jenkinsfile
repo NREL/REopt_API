@@ -25,7 +25,7 @@ pipeline {
 
 	cp keys.py.test keys.py
 	pip install -r requirements.txt
-	python manage.py test 
+	python manage.py test -v 2 --failfast
 	"""
       }
     }
