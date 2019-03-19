@@ -65,15 +65,11 @@
 - Execute the following set of commands:  
      `Pkg.add("Cbc")`  
      `Pkg.add("GLPK")`  
-     `Pkg.add("MathOptInterface")`  
+     `Pkg.add("MathOptInterface")`   
 
+#### Step 4.1 Additional dependencies to install (outside of Julia environment)
 
-#### Step 4.1 If you do not have svn already installed on your machine then execute the following commands:  
-     `sudo apt-get update`  
-     `sudo apt-get install subversion`   
-
-#### Step 4.2 If you do not have fortran compiler already installed on your machine then execute the following command:
-
+    `sudo apt-get update`  
     `sudo apt-get install gfortran`
 
 ### Step 5: Installing **Julia Plugin** for PyCharm
