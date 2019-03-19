@@ -113,3 +113,9 @@
 - __ed_example.jl__ file is an example julia script located inside reo_jump folder
 - __julia-optimization__ was created in previous steps
 - Hit _Apply_ and _OK_  
+
+  #### Step 5.3: Setting up python project interpreter in PyCharm
+  - go to `File->Settings->Project->Project Interpreter`
+  - Add existing project interpreter, point to `/path/to/miniconda/bin/python`
+  - Hit _Apply_ and _OK_
+
