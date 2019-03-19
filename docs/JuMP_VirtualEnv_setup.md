@@ -74,17 +74,18 @@
 
 ### Step 5: Installing **Julia Plugin** for PyCharm
 
-- go to File $$\to$$ Settings $$\to$$ Plugins $$\to$$ towards the end $$\to$$ Browse Repositories... $$\to$$ search "Julia"
-
+- Open pycharm
+- Go to `File -> Settings -> Plugins -> Browse Repositories`
+- Search `Julia`
 - install the Julia plugin and restart Pycharm
 
-  #### Step 5.1: Setting up julia project environment insdie reopt_api folder
+  #### Step 5.1: Setting up julia project environment inside reopt_api folder
 
 - create a new file named 'julia-optimization' in a folder named __reo_jump__.
 
 - Add the following content to the file:
 
-     `` /path/to/your/julia/folder/julia-1.0.3/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@ ``  
+     `` /path/to/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@ ``  
 
 - save and close the file
 
