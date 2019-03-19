@@ -28,11 +28,11 @@
 
 - Install python's julia package for calling julia functions in python  
 
-    `conda install -c conda-forge julia`
+    `conda install -c conda-forge julia`  
     `python2 -m pip install julia`
 
 - Adding the python virtualenv (_reo_jump_)  to the ipython notebook, run the following set of commands:  
-    `pip install ipykernel`
+    `pip install ipykernel`  
     `ipython kernel install --user --name=reo_jump`
     
 - Navigate to `path/to/installed/julia/.julia/`
