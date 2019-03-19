@@ -80,22 +80,16 @@
 - install the Julia plugin and restart Pycharm
 
   #### Step 5.1: Setting up julia project environment inside reopt_api folder
-
-- create a new file named 'julia-optimization' in a folder named __reo_jump__.
-
-- Add the following content to the file:
+- Create a folder `reo_jump` within the root of the `reopt_api` directory  
+- Create a new file named 'julia-optimization' in the `reo_jump` folder.  
+- Add the following content to the file:  
 
      `` /path/to/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@ ``  
 
-- save and close the file
-
-- create a new folder named __env__ in the __reo_jump__ folder
-
-- in the __env__ folder, open a new terminal, type
-
-     `julia`
-
-- you will see *_(v1.1)>_* in the repl, type the following commands:
+- Save and close the file  
+- Create a new folder named `env` in the `reo_jump` folder
+- In the `env` folder, open a new terminal, type: `julia`
+- You will see *_(v1.1)>_* in the repl, type the following commands:
 
      *_(v1.1)_*>  `activate .`  
      *_(env)_*>  `status`  
@@ -105,9 +99,8 @@
      *_(env)_*>   `add Interface`  
 
 
-
   #### Step 5.2: Setting up project interpreter for running Julia file inside PyCharm
-- go to File &rarr Settings &rarr Languages & Frameworks &rarr Julia  
+- go to `File->Settings->Languages & Frameworks->Julia`
 - ![snapshot of Julia Interpreter](Pycharm_Julia_Interpreter_setting.png)  
 - Enter the paths in the  _Julia executable_ and _Julia base path_ as shown the above snapshot
 - Hit _Apply_ and _OK_
