@@ -48,11 +48,8 @@
 - In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work.  To configure PyCall.jl to use Python interpreter `/home/reopt/anaconda3/envs/reo_jump/bin/python`, run the following commands in the Julia interpreter (to get to Julia interpreter, open a new terminal and type `julia`) and then type the following commands:  
 
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`
-    
     `using Pkg`  
-    
     `Pkg.add("PyCall")`
-    
     `Pkg.build("PyCall")`  
 
 ### Step 3: IJulia and JuMP Installation
@@ -60,23 +57,15 @@
 - Open a terminal and launch julia with the command: `julia`
 - Install IJulia with the following commands:  
      `using Pkg`  
-     
      `Pkg.add("IJulia")`  
-
-- Further help on IJulia notebook:  [here](https://github.com/JuliaLang/IJulia.jl)
-  
-- Install JuMP with the following commands (in the terminal where julia was launched):  
      `Pkg.add("JuMP")`  
-- Install PyCall:  
-
-     `Pkg.add("PyCall")`
+- Further help on IJulia notebook:  [here](https://github.com/JuliaLang/IJulia.jl)
 
 ### Step 4 Installing Solvers
 - Execute the following set of commands:  
      `Pkg.add("Cbc")`  
      `Pkg.add("GLPK")`  
      `Pkg.add("MathOptInterface")`  
-     `Pkg.add("Interface")`  
 
 
 #### Step 4.1 If you do not have svn already installed on your machine then execute the following commands:  
