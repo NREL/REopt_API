@@ -18,13 +18,13 @@
 - In a new bash terminal, run the following command to create a new virtual environment named *reo_jump*:  
 
     `conda create --name reo_jump python=2.7.15`
+  
+ - Activate the newly created python virtual environment using the command:  
+
+    `conda activate reo_jump`
 
 - Install the required packages for REopt_OpenSource project using the following command:  
     `pip install -r /local/workspace/reopt_api/requirements.txt`
-
-- Activate the newly created python virtual environment using the command:  
-
-    `source activate reo_jump`
 
 - Install python's julia package for calling julia functions in python  
 
