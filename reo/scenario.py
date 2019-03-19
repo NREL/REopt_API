@@ -149,7 +149,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception as e:
-        print e
         if hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
                 raise WindDownloadError(task=self.name, run_uuid=run_uuid)
