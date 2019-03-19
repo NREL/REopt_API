@@ -25,8 +25,7 @@ XPRESSDIR="/usr/local/opt/xpress"
 
 #  path to reopt_api/reo/src for SAM SDK C libraries
 SRC_DIR="${HOME}/projects/reopt/webtool/reopt_api/reo/src"
-APP_ENV=local
-. /opt/xpressmp/bin/xpvars.sh
+
 #==============================================================================
 
 #------------------------------------------------------------------------------
