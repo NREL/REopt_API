@@ -84,8 +84,8 @@
 - Create a new file named 'julia-optimization' in the `reo_jump` folder.  
 - Add the following content to the file:  
 
-     `` /path/to/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@ ``  
-
+ `` /path/to/your/julia/folder/julia-1.0.3/bin/julia --project="/local/workspace/reopt_api/reo_jump/env" $@ `` 
+ 
 - Save and close the file  
 - Create a new folder named `env` in the `reo_jump` folder
 - In the `env` folder, open a new terminal, type: `julia`
