@@ -1,5 +1,10 @@
 ## REopt open-source JuMP set-up 
 
+### Step 0: 
+- `git clone https://github.com/nrel/reopt_api.git`  
+- `cd reopt_api`  
+- `git checkout jump_dev`  
+
 ### Step 1: Miniconda Installation
 - Download the Python 2.7 version (64-bit(x86)) installer from
 
