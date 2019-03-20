@@ -2,7 +2,7 @@
 WIND Toolkit data from NREL downloaded on 2019-3-26
 Temperature,Pressure,Speed,Direction,Temperature,Pressure,Speed,Direction
 C,atm,m/s,Degrees,C,atm,m/s,Degrees
-40,40,40,40,40,40,40,40
+40,40,40,40,60,60,60,60
 -2.8,0.81,10.541,176.1,-2.8,0.81,10.541,176.1
 -3.3,0.81,10.15,173.6,-3.3,0.81,10.15,173.6
 -3.3,0.81,8.576,171.4,-3.3,0.81,8.576,171.4

@@ -4,38 +4,63 @@ import os
 
 from sscapi import PySSC
 
-wind_turbine_powercurve_lookup = {'large':[0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
-                                                 1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
-                                                 2000, 2000, 2000, 2000, 2000, 2000],
-        'medium':[0, 0, 0, 8.764875, 20.776, 40.578125, 70.119, 111.346375, 166.208,
-                                                  236.651625, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
-                                                  250, 250, 250, 250, 250],
-        'commercial': [0, 0, 0, 3.50595, 8.3104, 16.23125, 28.0476, 44.53855, 66.4832,
-                                                      94.66065, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
-                                                      100, 100, 100, 100, 100],
-        'residential' :[0, 0, 0, 0.070542773, 0.1672125, 0.326586914, 0.564342188,
-                                                       0.896154492, 1.3377, 1.904654883, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
-                                                       2.5, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 0]}
+wind_turbine_powercurve_lookup = {'large': [0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
+                                            1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
+                                            2000, 2000, 2000, 2000, 2000, 2000],
+                                  'medium': [0, 0, 0, 8.764875, 20.776, 40.578125, 70.119, 111.346375, 166.208,
+                                             236.651625, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250, 250,
+                                             250, 250, 250, 250, 250],
+                                  'commercial': [0, 0, 0, 3.50595, 8.3104, 16.23125, 28.0476, 44.53855, 66.4832,
+                                                 94.66065, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100,
+                                                 100, 100, 100, 100, 100],
+                                  'residential': [0, 0, 0, 0.070542773, 0.1672125, 0.326586914, 0.564342188,
+                                                  0.896154492, 1.3377, 1.904654883, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5,
+                                                  2.5, 2.5, 2.5, 0, 0, 0, 0, 0, 0, 0]}
 
 system_capacity_lookup = {'large': 2000,
-        'medium': 250,
-        'commercial': 100,
-        'residential': 2.5}
-       
+                          'medium': 250,
+                          'commercial': 100,
+                          'residential': 2.5}
+
 rotor_diameter_lookup = {'large': 55,
-        'medium': 21.9,
-        'commercial': 13.8,
-        'residential': 1.85}
+                         'medium': 21.9,
+                         'commercial': 13.8,
+                         'residential': 1.85}
 
 
 time_step_hour_to_minute_interval_lookup = {
     round(float(1), 2): '60',
-    round(float(0.5),2): '30',
-    round(float(0.25),2): '15',
-    round(float(5/60),2): '5',
-    round(float(1/60),2): '1'}
+    round(float(0.5), 2): '30',
+    round(float(0.25), 2): '15',
+    round(float(5/60), 2): '5',
+    round(float(1/60), 2): '1'}
 
 allowed_hub_height_meters = [10, 40, 60, 80, 100, 120, 140, 160, 200]
+
+
+def combine_wind_files(file_resource_heights, file_combined):
+    data = [None] * 2
+    for height, f in file_resource_heights.iteritems():
+        if os.path.isfile(f):
+            with open(f) as file_in:
+                csv_reader = csv.reader(file_in, delimiter=',')
+                line = 0
+                for row in csv_reader:
+                    if line < 2:
+                        data[line] = row
+                    else:
+                        if line >= len(data):
+                            data.append(row)
+                        else:
+                            data[line] += row
+                    line += 1
+
+    with open(file_combined, 'w') as fo:
+        writer = csv.writer(fo)
+        writer.writerows(data)
+
+    return os.path.isfile(file_combined)
+
 
 class WindSAMSDK:
 
@@ -117,9 +142,7 @@ class WindSAMSDK:
 
             # combine into one file to pass to SAM
             if len(heights) > 1:
-                self.file_downloaded = self.combine_files(self.file_resource_heights, self.file_resource_full)
-
-
+                self.file_downloaded = combine_wind_files(self.file_resource_heights, self.file_resource_full)
 
         self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 
         self.system_capacity = system_capacity_lookup[size_class] 
@@ -230,25 +253,5 @@ class WindSAMSDK:
 
         return prod_factor_original
 
-    def combine_files(self, file_resource_heights, file_combined):
-        data = [None] * 2
-        for height, f in file_resource_heights.iteritems():
-            if os.path.isfile(f):
-                with open(f) as file_in:
-                    csv_reader = csv.reader(file_in, delimiter=',')
-                    line = 0
-                    for row in csv_reader:
-                        if line < 2:
-                            data[line] = row
-                        else:
-                            if line >= len(data):
-                                data.append(row)
-                            else:
-                                data[line] += row
-                        line += 1
 
-        with open(file_combined, 'w') as file_out:
-            writer = csv.writer(file_out)
-            writer.writerows(data)
 
-        return os.path.isfile(file_combined)

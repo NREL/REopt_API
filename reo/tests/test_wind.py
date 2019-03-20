@@ -9,7 +9,7 @@ from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
-from reo.src.wind import WindSAMSDK
+from reo.src.wind import WindSAMSDK, combine_wind_files
 
 
 wind_post = {"Scenario": {"Site": {
@@ -161,12 +161,17 @@ class WindTests(ResourceTestCaseMixin, TestCase):
 
     def test_combine_wind(self):
 
-        file1 = os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_40m.srw")
-        file2 = os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_60m.srw")
-        file_out =  os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
+        path_inputs = os.path.join('reo', 'tests', 'wind_resource')
+
+        file1 = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m.srw")
+        file2 = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_60m.srw")
+        file_out = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
 
         file_resource_heights = {40: file1, 60: file2}
-        heights = [40, 60]
+
+        if os.path.isfile(file_out):
+            os.remove(file_out)
+        self.assertTrue(combine_wind_files(file_resource_heights, file_out))
 
     @skip("HSDS wind api barely works")
     def test_wind_toolkit_api(self):
