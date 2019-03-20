@@ -59,7 +59,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("HSDS wind api barely works")
+
     def test_wind_size_class(self):
         """
         Validation to ensure that max_kw of wind is set to size_class
@@ -158,6 +158,15 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         expected_prod_factor = df['prod_factor']
         expected_prod_factor = [round(x, 2) for x in expected_prod_factor]
         self.assertListEqual(prod_factor, expected_prod_factor)
+
+    def test_combine_wind(self):
+
+        file1 = os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_40m.srw")
+        file2 = os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_60m.srw")
+        file_out =  os.path.join("wind_resource", "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
+
+        file_resource_heights = {40: file1, 60: file2}
+        heights = [40, 60]
 
     @skip("HSDS wind api barely works")
     def test_wind_toolkit_api(self):

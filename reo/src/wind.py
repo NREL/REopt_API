@@ -1,3 +1,4 @@
+import csv
 import numpy as np
 import os
 
@@ -34,6 +35,8 @@ time_step_hour_to_minute_interval_lookup = {
     round(float(5/60),2): '5',
     round(float(1/60),2): '1'}
 
+allowed_hub_height_meters = [10, 40, 60, 80, 100, 120, 140, 160, 200]
+
 class WindSAMSDK:
 
     wind_turbine_speeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
@@ -55,15 +58,39 @@ class WindSAMSDK:
                  ):
 
         self.elevation = elevation
-        self.latitude=latitude
-        self.longitude=longitude
+        self.latitude = latitude
+        self.longitude = longitude
         self.year = year
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
         self.time_steps_per_hour = time_steps_per_hour
         self.interval = time_step_hour_to_minute_interval_lookup[round(float(time_steps_per_hour), 2)]
-        self.file_resource = os.path.join(path_inputs, str(latitude) + "_" + str(longitude) + "_windtoolkit_" + str(year) + "_" + str(self.interval) + "min.srw")
-        self.file_downloaded = os.path.isfile(self.file_resource)
+
+        # evaluate hub height, determine what heights to download
+        heights = [hub_height_meters]
+        if hub_height_meters not in allowed_hub_height_meters:
+            height_low = allowed_hub_height_meters[0]
+            height_high = allowed_hub_height_meters[-1]
+            for h in allowed_hub_height_meters:
+                if h < hub_height_meters:
+                    height_low = h
+                elif h > hub_height_meters:
+                    height_high = h
+            heights[0] = height_low
+            heights.append(height_high)
+
+        file_resource_base = os.path.join(path_inputs, str(latitude) + "_" + str(longitude) + "_windtoolkit_" + str(year) + "_" + str(self.interval) + "min")
+        file_resource_full = file_resource_base
+        file_resource_heights = {}
+
+        for h in heights:
+            file_resource_heights[h] = file_resource_base + '_' + str(h) + 'm.srw'
+            file_resource_full += "_" + str(h) + 'm'
+        file_resource_full += ".srw"
+
+        self.file_resource_heights = file_resource_heights
+        self.file_resource_full = file_resource_full
+        self.file_downloaded = os.path.isfile(self.file_resource_full)
         self.use_input_data = False
 
         # maintain capability to pass in test data directly
@@ -74,18 +101,25 @@ class WindSAMSDK:
             self.wind_meters_per_sec = wind_meters_per_sec
             self.use_input_data = True
 
-
         elif not self.file_downloaded:
             from reo.src.wind_resource import get_wind_resource_developer_api
             
             # currently only available for hourly data
-            self.file_downloaded = get_wind_resource_developer_api(
-                filename=self.file_resource,
-                year=self.year,
-                latitude=self.latitude,
-                longitude=self.longitude,
-                hub_height_meters=self.hub_height_meters
-            )
+            for height, f in self.file_resource_heights.iteritems():
+                success = get_wind_resource_developer_api(
+                    filename=f,
+                    year=self.year,
+                    latitude=self.latitude,
+                    longitude=self.longitude,
+                    hub_height_meters=height)
+                if not success:
+                    raise ValueError('Unable to download wind data')
+
+            # combine into one file to pass to SAM
+            if len(heights) > 1:
+                self.file_downloaded = self.combine_files(self.file_resource_heights, self.file_resource_full)
+
+
 
         self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 
         self.system_capacity = system_capacity_lookup[size_class] 
@@ -126,8 +160,7 @@ class WindSAMSDK:
 
             ssc.data_set_table(data, 'wind_resource_data', wind_resource)
         else:
-            ssc.data_set_table(data, 'wind_resource_filename', self.file_resource)
-
+            ssc.data_set_string(data, 'wind_resource_filename', self.file_resource)
 
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
         ssc.data_set_number(data, 'wind_resource_turbulence_coeff', 0.10000000149011612)
@@ -197,5 +230,25 @@ class WindSAMSDK:
 
         return prod_factor_original
 
+    def combine_files(self, file_resource_heights, file_combined):
+        data = [None] * 2
+        for height, f in file_resource_heights.iteritems():
+            if os.path.isfile(f):
+                with open(f) as file_in:
+                    csv_reader = csv.reader(file_in, delimiter=',')
+                    line = 0
+                    for row in csv_reader:
+                        if line < 2:
+                            data[line] = row
+                        else:
+                            if line >= len(data):
+                                data.append(row)
+                            else:
+                                data[line] += row
+                        line += 1
 
+        with open(file_combined, 'w') as file_out:
+            writer = csv.writer(file_out)
+            writer.writerows(data)
 
+        return os.path.isfile(file_combined)
