@@ -6,7 +6,7 @@ pipeline {
   environment {
     PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/pgsql-9.6/bin:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
     BUILD_TYPE ="jenkins"
-    LD_LIBRARY_PATH = "/usr/pgsql-9.6/lib:${VIRTUAL_ENV}/reo/src/"
+    LD_LIBRARY_PATH = "/usr/pgsql-9.6/lib"
     DB_HOSTNAME = "localhost"
     DB_PORT = "5496"
     DB_USERNAME = "postgres"
@@ -20,6 +20,7 @@ pipeline {
 	virtualenv env
 	source env/bin/activate
 	source /opt/xpressmp/bin/xpvars.sh
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$VIRTUAL_ENV/reo/src/
 	echo $LD_LIBRARY_PATH
 	export XPRESS=/opt/xpressmp/bin
 	cat /opt/xpressmp/bin/xpauth.xpr
