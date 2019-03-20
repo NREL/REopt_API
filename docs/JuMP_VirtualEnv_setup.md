@@ -43,11 +43,16 @@
 #### Step 2.1 Installing Julia programming language
 - Open a new terminal
 - Navigate to installation location
-- Either download from [here](https://julialang.org/downloads) or:  
+- Linux users: Either download from <a href="https://julialang.org/downloads" target="_blank">here</a> or:  
 
      `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.3-linux-x86_64.tar.gz`
 
     `tar xvzf julia-1.0.3-linux-x86_64.tar.gz`
+- Mac users: Go to <a href="https://julialang.org/downloads" target="_blank">here</a> 
+    - download .dmg 
+    - manually run
+    - click and drag icon to Applications
+    
 - Add `julia-1.0.3/bin/julia` to the `PATH`: `export PATH=~/julia-1.0.3/bin:$PATH`
    
 - Julia configuration setup   
@@ -60,7 +65,8 @@
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
     `ENV["JUPYTER"] = "/home/reopt/anaconda3/envs/reo_jump/bin/jupyter"`
 
-- In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work.  To configure PyCall.jl to use Python interpreter `/home/reopt/anaconda3/envs/reo_jump/bin/python`, run the following commands in the Julia interpreter (to get to Julia interpreter, open a new terminal and type `julia`) and then type the following commands:  
+- In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work. Open the terminal window and type `julia` to launch the REPL.  
+- For configuring PyCall.jl to use project specific Python interpreter (which is `/home/reopt/anaconda3/envs/reo_jump/bin/python`), run the following commands in the Julia REPL opened in previous step:  
 
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
     `using Pkg`  
@@ -84,8 +90,12 @@
 
 #### Step 4.1 Additional dependencies to install (outside of Julia environment)
 
+- for linux users:
     `sudo apt-get update`  
     `sudo apt-get install gfortran`
+ 
+- for mac users:
+    `conda install -c anaconda gfortran_osx-64`
 
 
 
