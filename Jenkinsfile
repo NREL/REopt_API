@@ -21,13 +21,12 @@ pipeline {
 	source env/bin/activate
 	source /opt/xpressmp/bin/xpvars.sh
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WORKSPACE/reo/src/
-	echo $LD_LIBRARY_PATH
 	export XPRESS=/opt/xpressmp/bin
 	cat /opt/xpressmp/bin/xpauth.xpr
 
 	cp keys.py.test keys.py
 	pip install -r requirements.txt
-	python manage.py test -v 2 --failfast reo.tests.test_wind.WindTests.test_wind_sam_sdk
+	python manage.py test -v 2 --failfast
 	"""
       }
     }
