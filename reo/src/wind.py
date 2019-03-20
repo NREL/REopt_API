@@ -1,8 +1,7 @@
-from sscapi import PySSC
 import numpy as np
-from reo.log_levels import log
-from exceptions import RuntimeError
-from reo.models import ModelManager
+import os
+
+from sscapi import PySSC
 
 wind_turbine_powercurve_lookup = {'large':[0, 0, 0, 70.119, 166.208, 324.625, 560.952, 890.771, 1329.664,
                                                  1893.213, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
@@ -27,16 +26,25 @@ rotor_diameter_lookup = {'large': 55,
         'commercial': 13.8,
         'residential': 1.85}
 
+
+time_step_hour_to_minute_interval_lookup = {
+    round(float(1), 2): '60',
+    round(float(0.5),2): '30',
+    round(float(0.25),2): '15',
+    round(float(5/60),2): '5',
+    round(float(1/60),2): '1'}
+
 class WindSAMSDK:
 
     wind_turbine_speeds = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
 
     def __init__(self,
+                 path_inputs=None,
                  hub_height_meters=None,
                  latitude=None,
                  longitude=None,
                  elevation=0,  # not actually used in SDK
-                 year=2012,    # not used in SDK, but required
+                 year=2012,
                  size_class='commercial',
                  temperature_celsius=None,
                  pressure_atmospheres=None,
@@ -53,31 +61,31 @@ class WindSAMSDK:
         self.size_class = size_class
         self.hub_height_meters = hub_height_meters
         self.time_steps_per_hour = time_steps_per_hour
+        self.interval = time_step_hour_to_minute_interval_lookup[round(float(time_steps_per_hour), 2)]
+        self.file_resource = os.path.join(path_inputs, str(latitude) + "_" + str(longitude) + "_windtoolkit_" + str(year) + "_" + str(self.interval) + "min.srw")
+        self.file_downloaded = os.path.isfile(self.file_resource)
+        self.use_input_data = False
 
-        if None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
-            from reo.src.wind_resource import get_wind_resource
-            
-                
-            wind_data = get_wind_resource(
-                latitude=self.latitude,
-                longitude=self.longitude,
-                hub_height_meters=self.hub_height_meters,
-                time_steps_per_hour=self.time_steps_per_hour
-            )
-            self.temperature_celsius = wind_data['temperature_celsius']
-            self.pressure_atmospheres = wind_data['pressure_atmospheres']
-            self.wind_meters_per_sec = wind_data['wind_meters_per_sec']
-            self.wind_direction_degrees = wind_data['wind_direction_degrees']
-            ModelManager.updateModel('WindModel', wind_data, kwargs['run_uuid'])
-
-            
-                
-                
-        else:
+        # maintain capability to pass in test data directly
+        if not None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             self.temperature_celsius = temperature_celsius
             self.pressure_atmospheres = pressure_atmospheres
             self.wind_direction_degrees = wind_direction_degrees
             self.wind_meters_per_sec = wind_meters_per_sec
+            self.use_input_data = True
+
+
+        elif not self.file_downloaded:
+            from reo.src.wind_resource import get_wind_resource_developer_api
+            
+            # currently only available for hourly data
+            self.file_downloaded = get_wind_resource_developer_api(
+                filename=self.file_resource,
+                year=self.year,
+                latitude=self.latitude,
+                longitude=self.longitude,
+                hub_height_meters=self.hub_height_meters
+            )
 
         self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 
         self.system_capacity = system_capacity_lookup[size_class] 
@@ -96,23 +104,31 @@ class WindSAMSDK:
         data = ssc.data_create()
         module = ssc.module_create('windpower')
 
-        # must setup wind resource in it's own ssc data structure
-        wind_resource = ssc.data_create()
+        # must setup wind resource in its own ssc data structure
+        wind_resource = []
+        if self.use_input_data:
+            wind_resource = ssc.data_create()
 
-        ssc.data_set_number(wind_resource, 'latitude', self.latitude)
-        ssc.data_set_number(wind_resource, 'longitude', self.longitude)
-        ssc.data_set_number(wind_resource, 'elevation', self.elevation)
-        ssc.data_set_number(wind_resource, 'year', self.year)
-        heights = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters, self.hub_height_meters]
-        ssc.data_set_array(wind_resource, 'heights', heights)
-        fields = [1, 2, 3, 4]
-        ssc.data_set_array(wind_resource, 'fields', fields)
-        data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec, self.wind_direction_degrees])
-        data_matrix = data_matrix.transpose()
-        data_matrix = data_matrix.tolist()
-        ssc.data_set_matrix(wind_resource, 'data', data_matrix)
+            ssc.data_set_number(wind_resource, 'latitude', self.latitude)
+            ssc.data_set_number(wind_resource, 'longitude', self.longitude)
+            ssc.data_set_number(wind_resource, 'elevation', self.elevation)
+            ssc.data_set_number(wind_resource, 'year', self.year)
+            heights = [self.hub_height_meters, self.hub_height_meters, self.hub_height_meters,
+                                self.hub_height_meters]
+            ssc.data_set_array(wind_resource, 'heights', heights)
+            fields = [1, 2, 3, 4]
+            ssc.data_set_array(wind_resource, 'fields', fields)
+            data_matrix = np.matrix([self.temperature_celsius, self.pressure_atmospheres, self.wind_meters_per_sec,
+                                              self.wind_direction_degrees])
+            data_matrix = data_matrix.transpose()
+            data_matrix = data_matrix.tolist()
+            ssc.data_set_matrix(wind_resource, 'data', data_matrix)
 
-        ssc.data_set_table(data, 'wind_resource_data', wind_resource)
+            ssc.data_set_table(data, 'wind_resource_data', wind_resource)
+        else:
+            ssc.data_set_table(data, 'wind_resource_filename', self.file_resource)
+
+
         ssc.data_set_number(data, 'wind_resource_shear', 0.14000000059604645)
         ssc.data_set_number(data, 'wind_resource_turbulence_coeff', 0.10000000149011612)
         ssc.data_set_number(data, 'system_capacity', self.system_capacity)
@@ -148,17 +164,18 @@ class WindSAMSDK:
             print ('windpower simulation error')
             idx = 1
             msg = self.ssc.module_log(self.module, 0)
-            while (msg != None):
+            while msg is not None:
                 print ('	: ' + msg)
                 msg = self.ssc.module_log(self.module, idx)
                 idx = idx + 1
         self.ssc.module_free(self.module)
+
         # the system_power output from SAMSDK is of same length as input (i.e. 35040 series for 4 times steps/hour)
         system_power = self.ssc.data_get_array(self.data, 'gen')
         prod_factor_original = [power/self.system_capacity for power in system_power]
         self.ssc.data_free(self.data)
-        self.ssc.data_free(self.wind_resource)
-
+        if self.use_input_data:
+            self.ssc.data_free(self.wind_resource)
 
         # subhourly (i.e 15 minute data)
         if self.time_steps_per_hour >= 1:
