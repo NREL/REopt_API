@@ -20,7 +20,7 @@ pipeline {
 	virtualenv env
 	source env/bin/activate
 	source /opt/xpressmp/bin/xpvars.sh
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WORKSPACE/reo/src/
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WORKSPACE/reo/src/:/opt/xpressmp/lib
 	export XPRESS=/opt/xpressmp/bin
 	cat /opt/xpressmp/bin/xpauth.xpr
 
