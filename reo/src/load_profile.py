@@ -361,7 +361,6 @@ class BuiltInProfile(object):
         self.nearest_city = None
         self.year = year
         self.tried_developer_reo_api = False
-        self.tried_alternate_api = False
 
         self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
 
@@ -388,8 +387,7 @@ class BuiltInProfile(object):
                 return ashrae_city
 
         # else use alternate API
-        elif not self.tried_alternate_api:
-            self.tried_alternate_api = True
+        if self.nearest_city is None:
             log.info("Using alternate location api.")
 
             search = SearchEngine(simple_zipcode=True)
