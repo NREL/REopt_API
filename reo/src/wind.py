@@ -119,7 +119,7 @@ class WindSAMSDK:
         self.use_input_data = False
 
         # maintain capability to pass in test data directly
-        if not None in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
+        if None not in [temperature_celsius, pressure_atmospheres, wind_direction_degrees, wind_meters_per_sec]:
             self.temperature_celsius = temperature_celsius
             self.pressure_atmospheres = pressure_atmospheres
             self.wind_direction_degrees = wind_direction_degrees
