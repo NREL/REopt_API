@@ -98,9 +98,14 @@
   #### Step 5.1: Setting up julia project environment inside reopt_api folder
 - Open a new terminal
 - Navigate to `reopt_api\reo_jump\env`, type: `julia`
-- You will see *_(v1.1)>_* in the repl, type the following commands:
+- You will see *_(v1.1)>_* in the repl:
+- ![snapshot of Julia REPL](julia_REPL.png)  
+- type the following commands:
 
      *_(v1.1)_*>  `activate .`  
+     
+- You will see *_(v1.1)>_* changing to *_(env)>_* in the repl, then type:
+
      *_(env)_*>  `status`  
      *_(env)_*>  `add Cbc`  
      *_(env)_*>  `add GLPK`  
