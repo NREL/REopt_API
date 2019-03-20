@@ -111,11 +111,11 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
                 with h5pyd.File("/nrel/wtk-us.h5", 'r') as hf:
                     return hf[name][start_i:end_i,y,x]
             except:
-                print "wind dataset timed out {} times".format(numberTries+1)
+                # print "wind dataset timed out {} times".format(numberTries+1)
                 time.sleep(0.2)
                 numberTries +=1
         log.error("Wind data download timed out")
-        raise  ValueError('Wind Dataset Timed Out')
+        raise ValueError('Wind Dataset Timed Out')
 
 
     y, x = get_conic_coords(latitude, longitude)

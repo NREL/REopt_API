@@ -1,10 +1,13 @@
 import os
 import copy
+import json
 import math
+import requests
 from datetime import datetime, timedelta
 from developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
+from uszipcode import SearchEngine
 from reo.log_levels import log
 
 
@@ -12,24 +15,24 @@ class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
     
-    Default_city = namedtuple("Default_city", "name lat lng tmyid")
+    Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
     
     default_cities = [
-        Default_city('Miami', 25.761680, -80.191790, 722020),
-        Default_city('Houston', 29.760427, -95.369803, 722430),
-        Default_city('Phoenix', 33.448377, -112.074037, 722780),
-        Default_city('Atlanta', 33.748995, -84.387982, 722190),
-        Default_city('LosAngeles', 34.052234, -118.243685, 722950),
-        Default_city('SanFrancisco', 37.3382, -121.8863, 724940),
-        Default_city('Baltimore', 39.290385, -76.612189, 724060),
-        Default_city('Albuquerque', 35.085334, -106.605553, 723650),
-        Default_city('Seattle', 47.606209, -122.332071, 727930),
-        Default_city('Chicago', 41.878114, -87.629798, 725300),
-        Default_city('Boulder', 40.014986, -105.270546, 724699),
-        Default_city('Minneapolis', 44.977753, -93.265011, 726580),
-        Default_city('Helena', 46.588371, -112.024505, 727720),
-        Default_city('Duluth', 46.786672, -92.100485, 727450),
-        Default_city('Fairbanks', 59.0397, -158.4575, 702610),
+        Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
+        Default_city('Houston', 29.760427, -95.369803, 722430, '2A'),
+        Default_city('Phoenix', 33.448377, -112.074037, 722780, '2B'),
+        Default_city('Atlanta', 33.748995, -84.387982, 722190, '3A'),
+        Default_city('LosAngeles', 34.052234, -118.243685, 722950, '3B'),
+        Default_city('SanFrancisco', 37.3382, -121.8863, 724940, '3C'),
+        Default_city('Baltimore', 39.290385, -76.612189, 724060, '4A'),
+        Default_city('Albuquerque', 35.085334, -106.605553, 723650, '4B'),
+        Default_city('Seattle', 47.606209, -122.332071, 727930, '4C'),
+        Default_city('Chicago', 41.878114, -87.629798, 725300, '5A'),
+        Default_city('Boulder', 40.014986, -105.270546, 724699, '5B'),
+        Default_city('Minneapolis', 44.977753, -93.265011, 726580, '6A'),
+        Default_city('Helena', 46.588371, -112.024505, 727720, '6B'),
+        Default_city('Duluth', 46.786672, -92.100485, 727450, '7'),
+        Default_city('Fairbanks', 59.0397, -158.4575, 702610,'8'),
     ]
 
     annual_loads = {
@@ -358,6 +361,7 @@ class BuiltInProfile(object):
         self.nearest_city = None
         self.year = year
         self.tried_developer_reo_api = False
+
         self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
 
     @property
@@ -382,18 +386,45 @@ class BuiltInProfile(object):
                 self.nearest_city = ashrae_city
                 return ashrae_city
 
+        # else use alternate API
+        if self.nearest_city is None:
+            log.info("Using alternate location api.")
+
+            search = SearchEngine(simple_zipcode=True)
+            result = search.by_coordinates(self.latitude, self.longitude, radius=50, returns=1)
+
+            if len(result) > 0:
+                zip = result[0].zipcode
+
+                url = "http://www.afanalytics.com/api/climatezone/" + str(zip)
+                r = requests.get(url)
+                resp = json.loads(r.content)
+                zone_number = str(resp["climate_zone_number"])
+                zone_letter = str(resp["climate_zone_letter"])
+                if zone_letter == 'None':
+                    zone_letter = ''
+                zone = zone_number + zone_letter
+
+                for city in map(self.Default_city._make, self.default_cities):
+                    if city.zoneid == zone:
+                        self.nearest_city = city.name
+                        return self.nearest_city
+
         # else use old geometric approach, never fails...but isn't necessarily correct
         if self.nearest_city is None:
             log.info("Using geometrically nearest city to lat/lng.")
             min_distance = None
+
             for i, c in enumerate(self.default_cities):
-                distance = math.sqrt((self.latitude - c.lat)**2 + (self.longitude - c.lng)**2)
+                distance = math.sqrt((self.latitude - c.lat) ** 2 + (self.longitude - c.lng) ** 2)
+
                 if i == 0:
                     min_distance = distance
                     self.nearest_city = c.name
                 elif distance < min_distance:
                     min_distance = distance
                     self.nearest_city = c.name
+
             return self.nearest_city
 
     @property
