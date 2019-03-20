@@ -39,7 +39,17 @@
 - Adding the python virtualenv (_reo_jump_)  to the ipython notebook, run the following set of commands:  
     `pip install ipykernel`  
     `ipython kernel install --user --name=reo_jump`
-    
+ 
+#### Step 2.1 Installing Julia programming language
+- Open a new terminal
+- Navigate to installation location
+- Either download from [here](https://julialang.org/downloads) or:  
+
+     `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.3-linux-x86_64.tar.gz`
+
+    `tar xvzf julia-1.0.3-linux-x86_64.tar.gz`
+- Add `julia-1.0.3/bin/julia` to the `PATH`: `export PATH=~/julia-1.0.3/bin:$PATH`
+   
 - Julia configuration setup   
      `cd $HOME/.julia/`
      `mkdir config`
@@ -77,13 +87,7 @@
     `sudo apt-get update`  
     `sudo apt-get install gfortran`
 
-#### Step 4.2 Installing a second Julia environment (why?)
-- Open a new terminal
-- Navigate to installation location
-- Either download from [here](https://julialang.org/downloads) or:  
-- `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.3-linux-x86_64.tar.gz`
-- `tar xvzf julia-1.0.3-linux-x86_64.tar.gz`
-- Add `julia-1.0.3/bin/julia` to the `PATH`: `export PATH=~/julia-1.0.3/bin:$PATH`
+
 
 ### Step 5: Installing **Julia Plugin** for PyCharm
 - Open pycharm
