@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from src.load_profile import BuiltInProfile
 from models import URDBError
 from nested_inputs import nested_input_definitions
+from reo.api import UUIDFilter
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 from reo.log_levels import log
@@ -69,6 +70,8 @@ def annual_kwh(request):
         if longitude > 180 or longitude < -180:
             raise ValueError("longitude out of acceptable range (-180 <= longitude <= 180)")
 
+        uuidFilter = UUIDFilter('no_id')
+        log.addFilter(uuidFilter)
         b = BuiltInProfile(latitude=latitude, longitude=longitude, doe_reference_name=doe_reference_name)
         
         response = JsonResponse(

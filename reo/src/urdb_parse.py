@@ -1,3 +1,4 @@
+import json
 import os
 import operator
 import calendar
@@ -149,6 +150,7 @@ class UrdbParse:
         self.file_demand_summary = os.path.join(paths['outputs'], "demand_cost.txt")
         self.file_energy_summary_bau = os.path.join(paths['outputs_bau'], "energy_cost.txt")
         self.file_demand_summary_bau = os.path.join(paths['outputs_bau'], "demand_cost.txt")
+        self.file_urdb_json = os.path.join(paths['utility'], 'urdb.json')
         
         self.energy_rates_summary = []
         self.demand_rates_summary = []
@@ -604,6 +606,11 @@ class UrdbParse:
         self.write_demand_cost(self.file_demand_summary)
         self.write_energy_cost(self.file_energy_summary_bau)
         self.write_demand_cost(self.file_demand_summary_bau)
+        self.write_urdb_json(self.file_urdb_json)
+
+    def write_urdb_json(self, file_name):
+        with open(file_name, 'w') as outfile:
+            json.dump(self.urdb_rate, outfile)
 
     def write_summary(self, file_name):
         file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')

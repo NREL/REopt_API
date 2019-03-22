@@ -86,7 +86,18 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 
-if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
+if os.environ.get('BUILD_TYPE') == 'jenkins':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': os.environ.get('DB_USERNAME'),
+            'USER': os.environ.get('DB_USERNAME'),
+            'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'HOST': os.environ.get('DB_HOSTNAME'),
+            'PORT': os.environ.get('DB_PORT'),
+        }
+    }
+elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -96,7 +107,7 @@ if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
             'HOST': 'localhost',
             'PORT': '',
         }
-    }
+}
 else:
     DATABASES = {
          'default': {
@@ -109,7 +120,7 @@ else:
              'USER': dev_user,
              'PASSWORD': dev_user_password,
          }
-     }
+}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
@@ -135,9 +146,9 @@ CELERY_IMPORTS = (
     'reo.results',
 )
 
-if 'test' in sys.argv:
-    CELERY_TASK_ALWAYS_EAGER = True
-    CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
+#if 'test' in sys.argv:
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
