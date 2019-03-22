@@ -32,7 +32,7 @@ urlpatterns = [
     url(r'^v1/annual_kwh/?$', views.annual_kwh, name='annual_kwh'),
     url(r'^v1/simulated_load/?$', views.simulated_load, name='simulated_load'),
     url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
-    url(r'^admin/errors/(?P<page_uuid>[0-9a-f-]+)', views.errors, name='errors'),
+    url(r'^admin/errors/(?P<page_uuid>.*)', views.errors, name='errors'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'(.*)', page_not_found, name='404'),
     ]

@@ -3,10 +3,6 @@ from . import views
 from django.conf.urls.static import static
 from django.conf import settings
 
-from IPython import embed
-embed()
-
-print "AAAA"
 urlpatterns = [
     url(r'^errors/', views.errors, name='errors'),
     url(r'^annual_kwh/', views.annual_kwh, name='annual_kwh'),
