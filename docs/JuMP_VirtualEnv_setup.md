@@ -43,12 +43,12 @@
 #### Step 2.1 Installing Julia programming language
 - Open a new terminal
 - Navigate to installation location
-- Linux users: Either download from <a href="https://julialang.org/downloads" target="_blank">here</a> or:  
+- Linux users: Either download from <a href="https://julialang.org/downloads" target="blank">here</a> or:  
 
      `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.3-linux-x86_64.tar.gz`
 
     `tar xvzf julia-1.0.3-linux-x86_64.tar.gz`
-- Mac users: Go to <a href="https://julialang.org/downloads" target="_blank">here</a> 
+- Mac users: Go to <a href="https://julialang.org/downloads" target="blank">here</a> 
     - download .dmg 
     - manually run
     - click and drag icon to Applications
