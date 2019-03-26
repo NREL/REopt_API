@@ -157,6 +157,6 @@ If you do not define these as environment variables, then just replace instances
 
   #### Step 5.3: Setting up python project interpreter in PyCharm
   - go to `File->Settings->Project->Project Interpreter`
-  - Add existing project interpreter, point to `$MINICONDA_PATH/bin/python`
+  - Add existing project interpreter, point to `$MINICONDA_PATH/envs/reo_jump/bin/python`
   - Hit _Apply_ and _OK_
 
