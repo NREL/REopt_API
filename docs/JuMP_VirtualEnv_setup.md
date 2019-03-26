@@ -137,7 +137,7 @@ If you do not define these as environment variables, then just replace instances
      *_(env)_*>  `add Cbc`  
      *_(env)_*>  `add GLPK`  
      *_(env)_*>  `add MathOptInterface`  
-     *_(env)_*>   `add Interface`  
+     *_(env)_*>   `add Interact`  
 
 
   #### Step 5.2: Setting up project interpreter for running Julia file inside PyCharm
