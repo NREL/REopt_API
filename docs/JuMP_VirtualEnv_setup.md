@@ -5,10 +5,19 @@
 - `cd reopt_api`  
 - `git checkout jump_dev`  
 - There are several paths to keep track of during this installation, which will be referred to using these generic names:
-1. `PROJECT_PATH` - The location where you clone the REopt code, i.e, `/local/workspace/'
+1. `PROJECT_PATH` - The location where you clone the REopt code, i.e, `/local/workspace/`
 2. `REOPT_PATH` - The location of the REopt_API code, i.e, `$PROJECT_PATH/reopt_api`
 3. `CONDA_PATH` - The location of your miniconda installation, i.e, `$PROJECT_PATH/miniconda`
 4. `JULIA_PATH` - The location of your Julia 1.03 installation, i.e, `$PROJECT_PATH/julia-1.0.3`
+
+If you want to use these paths symbolically, you may add them to `$HOME/.bashrc`, replacing the paths with relevent locations:
+`export PROJECT_PATH=/path/to/workpace`
+`export REOPT_PATH=$PROJECT_PATH/reopt_api`
+`export CONDA_PATH=$PROJECT_PATH/miniconda`
+`export JULIA_PATH=$PROJECT_PATH/julia-1.0.3`
+
+If you do not define these as environment variables, then just replace instances of `$PROJECT_PATH` (and the other paths), with the actual path in instructions below.
+
 
 
 ### Step 1: Miniconda Installation
