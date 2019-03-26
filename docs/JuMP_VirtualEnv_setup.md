@@ -97,8 +97,6 @@
 - for mac users:
     `conda install -c anaconda gfortran_osx-64`
 
-
-
 ### Step 5: Installing **Julia Plugin** for PyCharm
 - Open pycharm
 - Go to `File -> Settings -> Plugins -> Browse Repositories`
@@ -107,14 +105,15 @@
 
   #### Step 5.1: Setting up julia project environment inside reopt_api folder
 - Open a new terminal
-- Navigate to `reopt_api\reo_jump\env`, type: `julia`
-- You will see *_(v1.1)>_* in the repl:
+- Navigate to `reopt_api\reo_jump\env`, type: `julia` to activate the Julia REPL
+- Type `]` to toggle to the `Pkg` specific REPL, see more [here](https://docs.julialang.org/en/v1/stdlib/Pkg/index.html)
+- You will see *_(v1.0)>_* in the repl:
 - ![snapshot of Julia REPL](julia_REPL.png)  
 - type the following commands:
 
-     *_(v1.1)_*>  `activate .`  
+     *_(v1.0)_*>  `activate .`  
      
-- You will see *_(v1.1)>_* changing to *_(env)>_* in the repl, then type:
+- You will see *_(v1.0)>_* changing to *_(env)>_* in the repl, then type:
 
      *_(env)_*>  `status`  
      *_(env)_*>  `add Cbc`  
