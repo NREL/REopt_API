@@ -4,6 +4,12 @@
 - `git clone https://github.com/nrel/reopt_api.git`  
 - `cd reopt_api`  
 - `git checkout jump_dev`  
+- There are several paths to keep track of during this installation, which will be referred to using these generic names:
+1. `PROJECT_PATH` - The location where you clone the REopt code, i.e, `/local/workspace/'
+2. `REOPT_PATH` - The location of the REopt_API code, i.e, `$PROJECT_PATH/reopt_api`
+3. `CONDA_PATH` - The location of your miniconda installation, i.e, `$PROJECT_PATH/miniconda`
+4. `JULIA_PATH` - The location of your Julia 1.03 installation, i.e, `$PROJECT_PATH/julia-1.0.3`
+
 
 ### Step 1: Miniconda Installation
 - Download the Python 2.7 version (64-bit(x86)) installer from
@@ -28,8 +34,8 @@
 
     `conda activate reo_jump`
 
-- Install the required packages for REopt_OpenSource project using the following command:  
-    `pip install -r /local/workspace/reopt_api/requirements.txt`
+- Install the required packages for REopt_OpenSource project using the following command, where `$REOPT_PATH` is replaced by the location of your REopt api root defined in Step 0.
+    `pip install -r $REOPT_PATH/requirements.txt`
 
 - Install python's julia package for calling julia functions in python  
 
@@ -52,23 +58,23 @@
     - download .dmg 
     - manually run
     - click and drag icon to Applications
-    
-- Add `julia-1.0.3/bin/julia` to the `PATH`: `export PATH=~/julia-1.0.3/bin:$PATH`
+- Recall from Step 0: `$JULIA_PATH` is the generic location of wherever you installed julia: `~/julia-1.0.3/`
+- Add `$JULIA_PATH/bin/julia` to the `PATH`: `export PATH=$JULIA_PATH/bin:$PATH`
    
-- Julia configuration setup   
+- Julia configuration setup.  When setting up julia, by default a `.julia` folder is created in `$HOME`:
      `cd $HOME/.julia/`
      `mkdir config`
 
 - Create a file named startup.jl in the newly created folder (you will need a text editior like gedit to create a file)
-- Add the following to your `$HOME/.julia/config/startup.jl`, obtaining the path to python and juptyer by: `which python`
+- Add the following to your `$HOME/.julia/config/startup.jl`, obtaining the path to python and juptyer by: `which python` while in your activated conda environment.  Note that $MINICONDA_PATH should be replaced by the location of your anaconda or miniconda installation.
 
-    `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
-    `ENV["JUPYTER"] = "/home/reopt/anaconda3/envs/reo_jump/bin/jupyter"`
+    `ENV["PYTHON"] = "$MINICONDA_PATH/envs/reo_jump/bin/python"`  
+    `ENV["JUPYTER"] = "$MINICONDA_PATH/envs/reo_jump/bin/jupyter"`
 
 - In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work. Open the terminal window and type `julia` to launch the Julia interactive command-line read-eval-print-loop (REPL).  
-- For configuring PyCall.jl to use project specific Python interpreter (which is `/home/reopt/anaconda3/envs/reo_jump/bin/python`), run the following commands in the Julia REPL opened in previous step:  
+- For configuring PyCall.jl to use project specific Python interpreter (which is `$MINICONDA_PATH/envs/reo_jump/bin/python`), run the following commands in the Julia REPL opened in previous step:  
 
-    `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
+    `ENV["PYTHON"] = "$MINICONDA_PATH/envs/reo_jump/bin/python"`  
     `using Pkg`  
     `Pkg.add("PyCall")`  
     `Pkg.build("PyCall")`    
@@ -105,15 +111,18 @@
 
   #### Step 5.1: Setting up julia project environment inside reopt_api folder
 - Open a new terminal
-- Navigate to `reopt_api\reo_jump\env`, type: `julia` to activate the Julia REPL
+- Navigate to `$REOPT_PATH/reo_jump`
+- Open `julia-optimization` in a text editor
+- Replace the paths to reflect your paths for `$JULIA_PATH` and `REOPT_PATH`: `$JULIA_PATH/bin/julia --project="$REOPT_PATH/reo_jump/env" $@`
+- Navigate to `$REOPT_PATH/reo_jump/env`, type: `julia` to activate the Julia REPL
 - Type `]` to toggle to the `Pkg` specific REPL, see more [here](https://docs.julialang.org/en/v1/stdlib/Pkg/index.html)
 - You will see *_(v1.0)>_* in the repl:
 - ![snapshot of Julia REPL](julia_REPL.png)  
 - type the following commands:
 
-     *_(v1.0)_*>  `activate .`  
+     *_(v1.0)_*>  `activate .`  _this command will activate an environment within the current folder, `env`_
      
-- You will see *_(v1.0)>_* changing to *_(env)>_* in the repl, then type:
+- You will see *_(v1.0)>_* changing to *_(env)>_* in the repl.  You've setup the environment, and now will define packages for that environment:
 
      *_(env)_*>  `status`  
      *_(env)_*>  `add Cbc`  
@@ -139,6 +148,6 @@
 
   #### Step 5.3: Setting up python project interpreter in PyCharm
   - go to `File->Settings->Project->Project Interpreter`
-  - Add existing project interpreter, point to `/path/to/miniconda/bin/python`
+  - Add existing project interpreter, point to `$MINICONDA_PATH/bin/python`
   - Hit _Apply_ and _OK_
 
