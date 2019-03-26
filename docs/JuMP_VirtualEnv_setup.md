@@ -65,7 +65,7 @@
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
     `ENV["JUPYTER"] = "/home/reopt/anaconda3/envs/reo_jump/bin/jupyter"`
 
-- In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work. Open the terminal window and type `julia` to launch the REPL.  
+- In Julia >= 0.7, above two paths to `libpython` have to match exactly in order for PyJulia to work. Open the terminal window and type `julia` to launch the Julia interactive command-line read-eval-print-loop (REPL).  
 - For configuring PyCall.jl to use project specific Python interpreter (which is `/home/reopt/anaconda3/envs/reo_jump/bin/python`), run the following commands in the Julia REPL opened in previous step:  
 
     `ENV["PYTHON"] = "/home/reopt/anaconda3/envs/reo_jump/bin/python"`  
