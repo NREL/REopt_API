@@ -3,6 +3,8 @@ import h5pyd
 from pyproj import Proj
 import numpy as np
 import pandas as pd
+import os
+import json
 from reo.log_levels import log 
 """
 References: 
@@ -109,11 +111,11 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
                 with h5pyd.File("/nrel/wtk-us.h5", 'r') as hf:
                     return hf[name][start_i:end_i,y,x]
             except:
-                print "wind dataset timed out {} times".format(numberTries+1)
+                # print "wind dataset timed out {} times".format(numberTries+1)
                 time.sleep(0.2)
                 numberTries +=1
         log.error("Wind data download timed out")
-        raise  ValueError('Wind Dataset Timed Out')
+        raise ValueError('Wind Dataset Timed Out')
 
 
     y, x = get_conic_coords(latitude, longitude)
@@ -126,11 +128,19 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
 
     start_i = 43824
     end_i = 52584+1
-
-    hourly_windspeed_meters_per_sec = getWindData('windspeed' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
-    hourly_wind_direction_degrees = getWindData('winddirection' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
-    hourly_temperature = getWindData('temperature' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
-    hourly_pressure = getWindData('pressure_100m',start_i,end_i,y,x)
+    
+    cache_file = "reo/wind_cache/{}_{}.json".format(y,x)
+    if os.path.exists(cache_file):
+        data = json.loads(open(cache_file,'r').readlines()[0])
+        hourly_windspeed_meters_per_sec = data['hourly_windspeed_meters_per_sec']
+        hourly_wind_direction_degrees = data['hourly_wind_direction_degrees']
+        hourly_temperature = data['hourly_temperature']
+        hourly_pressure = data['hourly_pressure']
+    else:
+        hourly_windspeed_meters_per_sec = getWindData('windspeed' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+        hourly_wind_direction_degrees = getWindData('winddirection' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+        hourly_temperature = getWindData('temperature' + hub_height_strings[hub_height_meters],start_i,end_i,y,x)
+        hourly_pressure = getWindData('pressure_100m',start_i,end_i,y,x)
     
     if time_steps_per_hour != 1:  # upsample data
 
@@ -166,7 +176,6 @@ def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hou
     wind_direction_degrees = [float(x) for x in wind_direction_degrees]
     temperature_celsius = [float(x) + kelvin_to_celsius for x in temperature_kelvin]
     pressure_atmospheres = [float(x) * pascals_to_atm for x in pressure_pascals]
-
     return {
         'wind_meters_per_sec': wind_meters_per_sec,
         'wind_direction_degrees': wind_direction_degrees,

@@ -20,8 +20,8 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
                         "Site": {
-                          "latitude": 35.2468,
-                          "longitude": -91.7337,
+                          "latitude": 33.748995,
+                          "longitude": -84.387982,
 
                           "LoadProfile": {
                             "doe_reference_name": "MidriseApartment",
@@ -30,7 +30,7 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
                           },
 
                           "ElectricTariff": {
-                            "urdb_label": "539f6a23ec4f024411ec8bf9"
+                            "urdb_response": {"sector": "Industrial", "utility": "Town of Wallingford, Connecticut (Utility Company)", "energyratestructure": [[{"rate": 0.0687, "adj": 0.008376, "unit": "kWh"}], [{"rate": 0.0619, "adj": 0.008376, "unit": "kWh"}]], "energyweekendschedule": [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], "revisions": [1376316457, 1376316486, 1399411674, 1399585108, 1401288502, 1402428494, 1402433957, 1427405196], "flatdemandstructure": [[{"rate": 11.5}], [{"rate": 10.5}]], "startdate": 1372658400, "phasewiring": "3-Phase", "source": "http://www.town.wallingford.ct.us/images/customer-files//EDRate5110813.pdf", "label": "539f6a23ec4f024411ec8bf9", "flatdemandunit": "kW", "eiaid": 20038, "demandrateunit": "kW", "energycomments": "energy adjustments can be found here: http://www.town.wallingford.ct.us/images/customer-files//EDRate12PCAHist60514.pdf", "sourceparent": "http://www.town.wallingford.ct.us/Content/Retail_Rates_and_Fees.asp", "energyweekdayschedule": [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]], "flatdemandmonths": [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1], "approved": "true", "demandratchetpercentage": [0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35, 0.35], "enddate": 1383199200, "name": "Primary Service - Northford", "fixedmonthlycharge": 275, "uri": "https://openei.org/apps/USURDB/rate/view/539f6a23ec4f024411ec8bf9", "peakkwcapacitymin": 400, "demandreactivepowercharge": 2.7}
                           },
 
                           "PV": {
