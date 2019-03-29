@@ -1,12 +1,43 @@
 import os
 import copy
+import json
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
+
 max_incentive = 1e10
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
+
+dat1a_constant = dict()
+dat1b_constant = dict()
+dat2a_economics = dict()
+dat2b_economics = dict()
+dat3a_LoadSize = dict()
+dat3b_LoadSize = dict()
+dat4a_Load8760 = dict()
+dat4b_Load8760 = dict()
+dat5a_GIS = dict()
+dat5b_GIS = dict()
+dat6a_storage = dict()
+dat6b_storage = dict()
+dat7a_maxsizes = dict()
+dat7b_maxsizes = dict()
+dat8a_util_TimeStepsDemand = dict()
+dat9a_util_DemandRate = dict()
+dat10a_util_FuelCost = dict()
+dat10b_util_FuelCostBase = dict()
+dat11a_util_ExportRates = dict()
+dat11b_util_ExportRatesBase = dict()
+dat12_util_TimeStepRatchetsMonth = dict()
+dat13_util_DemandRatesMonth = dict()
+dat14_util_LookbackMonthsAndPercent = dict()
+dat15_util_UtilityTiers = dict()
+dat16a_util_FuelBurnRate = dict()
+dat16b_util_FuelBurnRate = dict()
+dat17a_NEM = dict()
+dat17b_NEM = dict()
 
 
 def _write_var(f, var, dat_var):
@@ -103,7 +134,7 @@ class DatFileManager:
         self.file_max_in_tiers = os.path.join(paths['utility'], 'UtilityTiers.dat')
         self.file_export_rates = os.path.join(paths['utility'], 'ExportRates.dat')
         self.file_export_rates_bau = os.path.join(paths['utility'], 'ExportRatesBase.dat')
-        
+
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
@@ -124,17 +155,23 @@ class DatFileManager:
         self.command_line_args.append("ScenarioNum=" + str(run_id))
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
-    def add_load(self, load): 
+    def add_load(self, load):
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
-                              
+
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
+        dat3a_LoadSize.update({"AnnualElecLoad": load.annual_kwh})
+        dat4a_Load8760.update({"LoadProfile": load.load_list})
+
         write_to_dat(self.file_load_profile_bau, load.bau_load_list, "LoadProfile")
         write_to_dat(self.file_load_size_bau, load.bau_annual_kwh, "AnnualElecLoad")
+
+        dat3b_LoadSize.update({"AnnualElecLoad": load.bau_annual_kwh})
+        dat4b_Load8760.update({"LoadProfile": load.bau_load_list})
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -168,14 +205,19 @@ class DatFileManager:
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
 
         write_to_dat(self.file_NEM,
-                              [net_metering_limit, interconnection_limit, interconnection_limit*10],
-                              'NMILLimits')
+                     [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+                     'NMILLimits')
         write_to_dat(self.file_NEM, TechToNMILMapping, 'TechToNMILMapping', mode='a')
 
         write_to_dat(self.file_NEM_bau,
-                              [net_metering_limit, interconnection_limit, interconnection_limit*10],
-                              'NMILLimits')
+                     [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+                     'NMILLimits')
         write_to_dat(self.file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
+
+        dat17a_NEM.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+                           "TechToNMILMapping": TechToNMILMapping})
+        dat17b_NEM.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+                           "TechToNMILMapping": TechToNMILMapping_bau})
 
     def add_storage(self, storage):
         self.storage = storage
@@ -196,15 +238,23 @@ class DatFileManager:
         write_to_dat(self.file_storage, storage.soc_init_pct, 'InitSOC', mode='a')
         write_to_dat(self.file_storage_bau, storage.soc_init_pct, 'InitSOC', mode='a')
 
+        dat6a_storage.update({"BattLevelCoef": batt_level_coef,
+                              "StorageMinChargePcent": storage.soc_min_pct,
+                              "InitSOC": storage.soc_init_pct})
+
+        dat6b_storage.update({"BattLevelCoef": batt_level_coef,
+                              "StorageMinChargePcent": storage.soc_min_pct,
+                              "InitSOC": storage.soc_init_pct})
+
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
     def add_elec_tariff(self, elec_tariff):
         self.elec_tariff = elec_tariff
-            
+
     def _get_REopt_pwfs(self, techs):
 
         sf = self.site.financial
-        pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
+        pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct)  # not used in REopt
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
@@ -215,7 +265,7 @@ class DatFileManager:
             two_party_factor = 0
         else:
             two_party_factor = (pwf_offtaker * sf.offtaker_tax_pct) \
-                                / (pwf_owner * sf.owner_tax_pct)
+                               / (pwf_owner * sf.owner_tax_pct)
 
         levelization_factor = list()
         production_incentive_levelization_factor = list()
@@ -254,7 +304,7 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-                
+
                 if tech not in ['util', 'generator']:
 
                     # prod incentives don't need escalation
@@ -268,23 +318,23 @@ class DatFileManager:
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
                     )
-    
+
                     for load in self.available_loads:
                         prod_incent_rate.append(
                             eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
                         )
-    
+
                 else:
-    
+
                     pwf_prod_incent.append(0)
                     max_prod_incent.append(0)
                     max_size_for_prod_incent.append(0)
-    
+
                     for load in self.available_loads:
                         prod_incent_rate.append(0)
-                    
+
         return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent
-        
+
     def _get_REopt_cost_curve(self, techs):
 
         regions = ['utility', 'state', 'federal', 'combined']
@@ -293,7 +343,7 @@ class DatFileManager:
         cap_cost_yint = list()
         n_segments_out = 0
         n_segments = None
-        tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
+        tech_to_size = float(big_number / 1e4)  # sized such that default max incentives will not create breakpoint
 
         # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
         existing_kw_flag = False
@@ -317,19 +367,20 @@ class DatFileManager:
 
                 tech_cost = eval('self.' + tech + '.installed_cost_us_dollars_per_kw')
                 tech_incentives = dict()
-                
+
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
                     if region == 'federal' or region == 'total':
                         tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
                         tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
-                    else: # region == 'state' or region == 'utility'
+                    else:  # region == 'state' or region == 'utility'
                         tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
                         tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
 
                     tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
-                    tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
+                    tech_incentives[region]['rebate_max'] = eval(
+                        'self.' + tech + '.incentives.' + region + '.rebate_max')
 
                     # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
                     if tech_incentives[region]['%_max'] == max_incentive:
@@ -339,15 +390,15 @@ class DatFileManager:
 
                 # Intermediate Cost curve
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, tech_to_size]  #kW
+                xp_array_incent['utility'] = [0.0, tech_to_size]  # kW
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  #$
+                yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  # $
 
                 # Final cost curve
                 cost_curve_bp_x = [0]
                 cost_curve_bp_y = [0]
 
-                for r in range(len(regions)-1):
+                for r in range(len(regions) - 1):
 
                     region = regions[r]  # regions = ['utility', 'state', 'federal', 'combined']
                     next_region = regions[r + 1]
@@ -355,15 +406,15 @@ class DatFileManager:
                     # Apply incentives, initialize first value
                     xp_array_incent[next_region] = [0]
                     yp_array_incent[next_region] = [0]
-        
+
                     # percentage based incentives
                     p = float(tech_incentives[region]['%'])
                     p_cap = float(tech_incentives[region]['%_max'])
-        
+
                     # rebates, for some reason called 'u' in REopt
                     u = float(tech_incentives[region]['rebate'])
                     u_cap = float(tech_incentives[region]['rebate_max'])
-        
+
                     # reset switches and break point counter
                     switch_percentage = False
                     switch_rebate = False
@@ -379,50 +430,53 @@ class DatFileManager:
                         # previous points
                         xp_prev = xp_array_incent[region][point - 1]
                         yp_prev = yp_array_incent[region][point - 1]
-        
+
                         # current, unadjusted points
                         xp = xp_array_incent[region][point]
                         yp = yp_array_incent[region][point]
-        
+
                         # initialize the adjusted points on cost curve
                         xa = xp
                         ya = yp
-        
+
                         # initialize break points
                         u_xbp = 0
                         u_ybp = 0
                         p_xbp = 0
                         p_ybp = 0
-        
+
                         if not switch_rebate:
                             u_xbp = u_cap / u
                             u_ybp = slope(xp_prev, yp_prev, xp, yp) * u_xbp + intercept(xp_prev, yp_prev, xp, yp)
-        
+
                         if not switch_percentage:
                             p_xbp = (p_cap / p - intercept(xp_prev, yp_prev, xp, yp)) / slope(xp_prev, yp_prev, xp, yp)
                             p_ybp = p_cap / p
-        
+
                         if ((p * yp) < p_cap or p_cap == 0) and ((u * xp) < u_cap or u_cap == 0):
                             ya = yp - (p * yp + u * xp)
                         elif (p * yp) < p_cap and (u * xp) >= u_cap:
                             if not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                                    u_cap)
                                 switch_rebate = True
                             ya = yp - (p * yp + u_cap)
                         elif (p * yp) >= p_cap and (u * xp) < u_cap:
                             if not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u, p_cap)
+                                        insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
+                                                    p_cap)
                                 switch_percentage = True
                             ya = yp - (p_cap + xp * u)
                         elif p * yp >= p_cap and u * xp >= u_cap:
                             if not switch_rebate and not switch_percentage:
                                 if p_xbp == u_xbp:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                                    u_cap)
                                     switch_percentage = True
                                     switch_rebate = True
                                 elif p_xbp < u_xbp:
@@ -433,32 +487,37 @@ class DatFileManager:
                                     switch_percentage = True
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
+                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp,
+                                                                u_ybp,
                                                                 p, p_cap, u_cap)
                                     switch_rebate = True
                                 else:
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
+                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                                        u_cap)
                                     switch_rebate = True
                                     if p * yp != p_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
+                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp,
+                                                                p_ybp,
                                                                 u, u_cap, p_cap)
                                     switch_percentage = True
                             elif switch_rebate and not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
+                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
+                                                            u,
                                                             u_cap, p_cap)
                                 switch_percentage = True
                             elif switch_percentage and not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
+                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
+                                                            p,
                                                             p_cap, u_cap)
                                 switch_rebate = True
-        
+
                             # Finally compute adjusted values
                             if p_cap == 0:
                                 ya = yp - (p * yp + u_cap)
@@ -482,18 +541,18 @@ class DatFileManager:
                     tmp_slope = round((cost_curve_bp_y[seg] - cost_curve_bp_y[seg - 1]) /
                                       (cost_curve_bp_x[seg] - cost_curve_bp_x[seg - 1]), 0)
                     tmp_y_int = round(cost_curve_bp_y[seg] - tmp_slope * cost_curve_bp_x[seg], 0)
-        
+
                     tmp_cap_cost_slope.append(tmp_slope)
                     tmp_cap_cost_yint.append(tmp_y_int)
 
-                n_segments =len(tmp_cap_cost_slope)
+                n_segments = len(tmp_cap_cost_slope)
 
                 # Following logic modifies the cap cost segments to account for the tax benefits of the ITC and MACRs
                 updated_cap_cost_slope = list()
                 updated_y_intercept = list()
 
                 for s in range(n_segments):
-                    
+
                     if cost_curve_bp_x[s + 1] > 0:
                         # Remove federal incentives for ITC basis and tax benefit calculations
                         itc = eval('self.' + tech + '.incentives.federal.itc')
@@ -501,7 +560,8 @@ class DatFileManager:
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
+                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,
+                                                                 # input tech cost with incentives, but no ITC
                                                                  0,
                                                                  sf.analysis_years,
                                                                  sf.owner_discount_pct,
@@ -509,7 +569,8 @@ class DatFileManager:
                                                                  itc,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
+                                                                 eval(
+                                                                     'self.' + tech + '.incentives.macrs_itc_reduction'))
 
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
@@ -517,9 +578,9 @@ class DatFileManager:
 
                 for p in range(1, n_segments + 1):
                     cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
-                                                                  (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+                                         (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
                     updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
-        
+
                 tmp_cap_cost_slope = updated_cap_cost_slope
                 tmp_cap_cost_yint = updated_y_intercept
 
@@ -529,7 +590,6 @@ class DatFileManager:
                 - first X "breakpoint" and y-intercept must ALWAYS be zero (to be compatible with REopt constraints and
                     costing formulation.
                 - if existing_kw > 0, then the first slope must also be zero (cannot be negative!).
-
                 Steps:
                     1. find the segment for existing_kw
                     2. find the y-value for existing_kw (which is an x-value)
@@ -540,26 +600,28 @@ class DatFileManager:
                 if existing_kw > 0:
 
                     # find the first index in cost_curve_bp_x that is larger than existing_kw, then reset cost curve
-                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                    for i, bp in enumerate(
+                            cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
                         if bp <= existing_kw:
                             continue
                         else:
                             y_shift = -(tmp_cap_cost_slope[i] * existing_kw + tmp_cap_cost_yint[i])
                             tmp_cap_cost_slope = [0] + tmp_cap_cost_slope[i:]
                             tmp_cap_cost_yint = [0] + [y + y_shift for y in tmp_cap_cost_yint[i:]]
-                            cost_curve_bp_x = [0, existing_kw] + cost_curve_bp_x[i+1:]
+                            cost_curve_bp_x = [0, existing_kw] + cost_curve_bp_x[i + 1:]
                             n_segments = len(tmp_cap_cost_slope)
                             break
 
                 elif existing_kw_flag:
 
-                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
-                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
-                        tmp_cap_cost_yint = [0] + [big_number]    
-                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
+                    for i, bp in enumerate(
+                            cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [
+                            1]  # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0] + [big_number]
+                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i + 1]] + [cost_curve_bp_x[-1] + 1]
                         n_segments = len(tmp_cap_cost_slope)
                         break
-
 
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
@@ -588,7 +650,7 @@ class DatFileManager:
                 # Have to take n_segments as the maximum number across all technologies
                 n_segments_out = max(n_segments, n_segments_out)
 
-        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments_out
+        return cap_cost_slope, [0] + cap_cost_x[1:], cap_cost_yint, n_segments_out
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -631,7 +693,7 @@ class DatFileManager:
                 for load in self.available_loads:
 
                     eta_storage_in.append(self.storage.rectifier_efficiency_pct *
-                                          self.storage.internal_efficiency_pct**0.5 if load == 'storage' else 1)
+                                          self.storage.internal_efficiency_pct ** 0.5 if load == 'storage' else 1)
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
 
@@ -654,7 +716,7 @@ class DatFileManager:
 
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
-            eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
+            eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct ** 0.5
                                    if load == 'storage' else 1)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
@@ -666,14 +728,13 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-
                 reopt_techs.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
 
         return reopt_techs
 
     def _get_REopt_tech_classes(self, techs):
         """
-        
+
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
@@ -717,7 +778,7 @@ class DatFileManager:
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
                 else:
                     min_turn_down.append(0)
-                
+
                 if eval('self.' + tech + '.acres_per_kw') is not None:
 
                     if eval('self.' + tech + '.kw_per_square_foot') is not None:
@@ -754,9 +815,9 @@ class DatFileManager:
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw = \
             self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
-            om_dollars_per_kw_bau = \
+        om_dollars_per_kw_bau = \
             self._get_REopt_array_tech_load(self.bau_techs)
-        
+
         max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
 
@@ -764,19 +825,21 @@ class DatFileManager:
             = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, production_incentive_levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau \
             = self._get_REopt_pwfs(self.bau_techs)
-        
+
         pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent \
             = self._get_REopt_production_incentives(self.available_techs)
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
-        
+
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         self.command_line_args.append("CapCostSegCount=" + str(n_segments))
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
+            self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
 
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,
+                                                        # use full cost as basis
                                                         self.storage.replace_cost_us_dollars_per_kw,
                                                         self.storage.inverter_replacement_year,
                                                         sf.owner_discount_pct,
@@ -786,7 +849,8 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_bonus_pct,
                                                         self.storage.incentives.macrs_itc_reduction)
         StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,
+                                                         # there are no cash incentives for kwh
                                                          self.storage.replace_cost_us_dollars_per_kwh,
                                                          self.storage.battery_replacement_year,
                                                          sf.owner_discount_pct,
@@ -806,6 +870,16 @@ class DatFileManager:
         write_to_dat(self.file_constant, derate, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
 
+        dat1a_constant.update({'Tech': reopt_techs,
+                               'TechIsGrid': tech_is_grid,
+                               'load': load_list,
+                               'TechToLoadMatrix': tech_to_load,
+                               'TechClass': self.available_tech_classes,
+                               'NMILRegime': self.NMILRegime,
+                               'TurbineDerate': derate,
+                               'TechToTechClassMatrix': tech_to_tech_class
+                               })
+
         write_to_dat(self.file_constant_bau, reopt_techs_bau, 'Tech')
         write_to_dat(self.file_constant_bau, tech_is_grid_bau, 'TechIsGrid', mode='a')
         write_to_dat(self.file_constant_bau, load_list, 'Load', mode='a')
@@ -815,15 +889,34 @@ class DatFileManager:
         write_to_dat(self.file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
 
+        dat1b_constant.update({'Tech': reopt_techs_bau,
+                               'TechIsGrid': tech_is_grid_bau,
+                               'load': load_list,
+                               'TechToLoadMatrix': tech_to_load_bau,
+                               'TechClass': self.available_tech_classes,
+                               'NMILRegime': self.NMILRegime,
+                               'TurbineDerate': derate_bau,
+                               'TechToTechClassMatrix': tech_to_tech_class_bau
+                               })
+
         # ProdFactor stored in GIS.dat
         write_to_dat(self.file_gis, prod_factor, "ProdFactor")
         write_to_dat(self.file_gis_bau, prod_factor_bau, "ProdFactor")
+
+        dat5a_GIS.update({"ProdFactor": prod_factor})
+        dat5b_GIS.update({"ProdFactor": prod_factor_bau})
 
         # storage.dat
         write_to_dat(self.file_storage, eta_storage_in, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage, eta_storage_out, 'EtaStorOut', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_in_bau, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_out_bau, 'EtaStorOut', mode='a')
+
+        dat6a_storage.update({"EtaStorIn": eta_storage_in,
+                              "EtaStorOut": eta_storage_out})
+
+        dat6b_storage.update({"EtaStorIn": eta_storage_in,
+                              "EtaStorOut": eta_storage_out})
 
         # maxsizes.dat
         write_to_dat(self.file_max_size, max_sizes, 'MaxSize')
@@ -834,6 +927,14 @@ class DatFileManager:
         write_to_dat(self.file_max_size, tech_class_min_size, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size, min_turn_down, 'MinTurndown', mode='a')
 
+        dat7a_maxsizes.update({"MaxSize": max_sizes,
+                               "MinStorageSizeKW": self.storage.min_kw,
+                               "MaxStorageSizeKW": self.storage.max_kw,
+                               "MinStorageSizeKWH": self.storage.min_kwh,
+                               "MaxStorageSizeKWH": self.storage.max_kwh,
+                               "TechClassMinSize": tech_class_min_size,
+                               "MinTurndown": min_turn_down})
+
         write_to_dat(self.file_max_size_bau, max_sizes_bau, 'MaxSize')
         write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKW', mode='a')
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKW', mode='a')
@@ -841,10 +942,19 @@ class DatFileManager:
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size_bau, min_turn_down_bau, 'MinTurndown', mode='a')
-        
+
+        dat7b_maxsizes.update({"MaxSize": max_sizes_bau,
+                               "MinStorageSizeKW": 0,
+                               "MaxStorageSizeKW": 0,
+                               "MinStorageSizeKWH": 0,
+                               "MaxStorageSizeKWH": 0,
+                               "TechClassMinSize": tech_class_min_size_bau,
+                               "MinTurndown": min_turn_down_bau})
+
         # economics.dat
         write_to_dat(self.file_economics, levelization_factor, 'LevelizationFactor')
-        write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent', mode='a')
+        write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent',
+                     mode='a')
         write_to_dat(self.file_economics, pwf_e, 'pwf_e', mode='a')
         write_to_dat(self.file_economics, pwf_om, 'pwf_om', mode='a')
         write_to_dat(self.file_economics, two_party_factor, 'two_party_factor', mode='a')
@@ -862,8 +972,28 @@ class DatFileManager:
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
+        dat2a_economics.update({"LevelizationFactor": levelization_factor,
+                                "LevelizationFactorProdIncent": production_incentive_levelization_factor,
+                                "pwf_e": pwf_e,
+                                "pwf_om": pwf_om,
+                                "two_party_factor": two_party_factor,
+                                "pwf_prod_incent": pwf_prod_incent,
+                                "ProdIncentRate": prod_incent_rate,
+                                "MaxProdIncent": max_prod_incent,
+                                "MaxSizeForProdIncent": max_size_for_prod_incent,
+                                "CapCostSlope": cap_cost_slope,
+                                "CapCostX": cap_cost_x,
+                                "CapCostYInt": cap_cost_yint,
+                                "r_tax_owner": sf.owner_tax_pct,
+                                "r_tax_offtaker": sf.offtaker_tax_pct,
+                                "StorageCostPerKW": StorageCostPerKW,
+                                "StorageCostPerKWH": StorageCostPerKWH,
+                                "OMperUnitSize": om_cost_us_dollars_per_kw,
+                                "analysis_years": sf.analysis_years})
+
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
-        write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau, 'LevelizationFactorProdIncent', mode='a')
+        write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau,
+                     'LevelizationFactorProdIncent', mode='a')
         write_to_dat(self.file_economics_bau, pwf_e_bau, 'pwf_e', mode='a')
         write_to_dat(self.file_economics_bau, pwf_om_bau, 'pwf_om', mode='a')
         write_to_dat(self.file_economics_bau, two_party_factor_bau, 'two_party_factor', mode='a')
@@ -880,6 +1010,25 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
+
+        dat2b_economics.update({"LevelizationFactor": levelization_factor_bau,
+                                "LevelizationFactorProdIncent": production_incentive_levelization_factor_bau,
+                                "pwf_e": pwf_e_bau,
+                                "pwf_om": pwf_om_bau,
+                                "two_party_factor": two_party_factor_bau,
+                                "pwf_prod_incent": pwf_prod_incent_bau,
+                                "ProdIncentRate": prod_incent_rate_bau,
+                                "MaxProdIncent": max_prod_incent_bau,
+                                "MaxSizeForProdIncent": max_size_for_prod_incent_bau,
+                                "CapCostSlope": cap_cost_slope_bau,
+                                "CapCostX": cap_cost_x_bau,
+                                "CapCostYInt": cap_cost_yint_bau,
+                                "r_tax_owner": sf.owner_tax_pct,
+                                "r_tax_offtaker": sf.offtaker_tax_pct,
+                                "StorageCostPerKW": StorageCostPerKW,
+                                "StorageCostPerKWH": StorageCostPerKWH,
+                                "OMperUnitSize": om_dollars_per_kw_bau,
+                                "analysis_years": sf.analysis_years})
 
         # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
@@ -930,9 +1079,83 @@ class DatFileManager:
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB', 'a')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB', 'a')
 
+        dat8a_util_TimeStepsDemand.update({"TimeStepRatchets": ta.demand_ratchets_tou})
+        dat9a_util_DemandRate.update({"DemandRates": ta.demand_rates_tou})
+
+        dat10a_util_FuelCost.update({"FuelRate": ta.energy_rates,
+                                     "FuelAvail": ta.energy_avail,
+                                     "FixedMonthlyCharge": ta.fixed_monthly_charge,
+                                     "AnnualMinCharge": ta.annual_min_charge,
+                                     "MonthlyMinCharge": ta.min_monthly_charge})
+
+        dat10b_util_FuelCostBase.update({"FuelRate": ta.energy_rates_bau,
+                                         "FuelAvail": ta.energy_avail_bau,
+                                         "FixedMonthlyCharge": ta.fixed_monthly_charge,
+                                         "AnnualMinCharge": ta.annual_min_charge,
+                                         "MonthlyMinCharge": ta.min_monthly_charge})
+
+        dat11a_util_ExportRates.update({"ExportRates": ta.export_rates})
+
+        dat11b_util_ExportRatesBase.update({"ExportRates": ta.export_rates_bau})
+
+        dat12_util_TimeStepRatchetsMonth.update({"TimeStepRatchetsMonth": ta.demand_ratchets_monthly})
+
+        dat13_util_DemandRatesMonth.update({"DemandRatesMonth": ta.demand_rates_monthly})
+
+        dat14_util_LookbackMonthsAndPercent.update({"DemandLookbackMonths": ta.demand_lookback_months,
+                                                    "DemandLookbackPercent": ta.demand_lookback_percent})
+
+        dat15_util_UtilityTiers.update({"MaxDemandInTier": ta.demand_max_in_tiers,
+                                        "MaxUsageInTier": ta.energy_max_in_tiers,
+                                        "MaxDemandMonthsInTier": ta.demand_month_max_in_tiers})
+
+        dat16a_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate,
+                                         "FuelBurnRateB": ta.energy_burn_intercept})
+
+        dat16b_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate_bau,
+                                         "FuelBurnRateB": ta.energy_burn_intercept_bau})
+
         # time_steps_per_hour
         self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
-        self.command_line_args.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
+        self.command_line_args.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
-        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
+        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
+
+        """
+        big_dict = {"command_line_args": self.command_line_args,
+                            "command_line_args_bau": self.command_line_args_bau,
+                            "dat1a_constant": dat1a_constant,
+                            "dat1b_constant": dat1b_constant,
+                            "dat2a_economics":dat2a_economics,
+                            "dat2b_economics":dat2b_economics,
+                            "dat3a_LoadSize":dat3a_LoadSize,
+                            "dat3b_LoadSize":dat3b_LoadSize,
+                            "dat4a_Load8760":dat4a_Load8760,
+                            "dat4b_Load8760":dat4b_Load8760,
+                            "dat5a_GIS":dat5a_GIS,
+                            "dat5b_GIS":dat5b_GIS,
+                            "dat6a_storage":dat6a_storage,
+                            "dat6b_storage":dat6b_storage,
+                            "dat7a_maxsizes":dat7a_maxsizes,
+                            "dat7b_maxsizes":dat7b_maxsizes,
+                            "dat8a_util_TimeStepsDemand":dat8a_util_TimeStepsDemand,
+                            "dat9a_util_DemandRate":dat9a_util_DemandRate,
+                            "dat10a_util_FuelCost": dat10a_util_FuelCost,
+                            "dat10b_util_FuelCostBase":dat10b_util_FuelCostBase,
+                            "dat11a_util_ExportRates":dat11a_util_ExportRates,
+                            "dat11b_util_ExportRatesBase":dat11b_util_ExportRatesBase,
+                            "dat12_util_TimeStepRatchetsMonth":dat12_util_TimeStepRatchetsMonth,
+                            "dat13_util_DemandRatesMonth":dat13_util_DemandRatesMonth,
+                            "dat14_util_LookbackMonthsAndPercent":dat14_util_LookbackMonthsAndPercent,
+                            "dat15_util_UtilityTiers":dat15_util_UtilityTiers,
+                            "dat16a_util_FuelBurnRate":dat16a_util_FuelBurnRate,
+                            "dat16b_util_FuelBurnRate":dat16b_util_FuelBurnRate,
+                            "dat17a_NEM":dat17a_NEM,
+                            "dat17b_NEM":dat17b_NEM
+                            }
+        with open('all_data.json', 'w') as fout:
+            json.dump(big_dict, fout)
+
+                results = ReoptApiPyomo(self.command_line_args, self.command_line_args_bau, dat1a_constant=dat1a_constant, dat1b_constant=dat1b_constant,dat2a_economics=dat2a_economics, dat2b_economics=dat2b_economics, dat3a_LoadSize=dat3a_LoadSize, dat3b_LoadSize=dat3b_LoadSize, dat4a_Load8760=dat4a_Load8760, dat4b_Load8760=dat4b_Load8760, dat5a_GIS=dat5a_GIS, dat5b_GIS=dat5b_GIS, dat6a_storage=dat6a_storage, dat6b_storage=dat6b_storage,dat7a_maxsizes=dat7a_maxsizes, dat7b_maxsizes=dat7b_maxsizes, dat8a_util_TimeStepsDemand=dat8a_util_TimeStepsDemand, dat9a_util_DemandRate=dat9a_util_DemandRate, dat10a_util_FuelCost= dat10a_util_FuelCost, dat10b_util_FuelCostBase=dat10b_util_FuelCostBase, dat11a_util_ExportRates=dat11a_util_ExportRates, dat11b_util_ExportRatesBase=dat11b_util_ExportRatesBase, dat12_util_TimeStepRatchetsMonth=dat12_util_TimeStepRatchetsMonth, dat13_util_DemandRatesMonth=dat13_util_DemandRatesMonth, dat14_util_LookbackMonthsAndPercent=dat14_util_LookbackMonthsAndPercent, dat15_util_UtilityTiers=dat15_util_UtilityTiers,dat16a_util_FuelBurnRate=dat16a_util_FuelBurnRate, dat16b_util_FuelBurnRate=dat16b_util_FuelBurnRate, dat17a_NEM=dat17a_NEM, dat17b_NEM=dat17b_NEM)
+        """
