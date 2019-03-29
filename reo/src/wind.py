@@ -101,6 +101,7 @@ class WindSAMSDK:
                     height_low = h
                 elif h > hub_height_meters:
                     height_high = h
+		    break
             heights[0] = height_low
             heights.append(height_high)
 
