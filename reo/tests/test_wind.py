@@ -187,7 +187,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         self.assertTrue(combine_wind_files(file_resource_heights, file_out))
 
     @skip("HSDS wind api barely works")
-    def test_wind_toolkit_api(self):
+    def test_wind_hsds_api(self):
         from reo.src.wind_resource import get_wind_resource_hsds
 
         latitude, longitude = 39.7555, -105.2211
