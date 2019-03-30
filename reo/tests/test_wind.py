@@ -133,7 +133,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         :return
         """
 
-        path_inputs = os.path.join('reo', 'tests')
+        # First test passing in data in memory directly
+        path_inputs = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wind_resource')
         resource_data = os.path.join(path_inputs, 'wind_data.csv')
         df = pd.read_csv(resource_data, header=0)
 
@@ -158,6 +159,18 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         expected_prod_factor = df['prod_factor']
         expected_prod_factor = [round(x, 2) for x in expected_prod_factor]
         self.assertListEqual(prod_factor, expected_prod_factor)
+
+        # Second test passing in resource file
+        kwargs2 = dict()
+        kwargs2['hub_height_meters'] = 50
+        kwargs['longitude'] = -105.2348
+        kwargs['latitude'] = 39.91065
+        kwargs['size_class'] = 'medium'
+        kwargs2['file_resource_full'] = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
+
+        sam_wind2 = WindSAMSDK(**kwargs2)
+        prod_factor2 = sam_wind2.wind_prod_factor()
+        self.assertEqual(len(prod_factor2), 8760)
 
     def test_combine_wind(self):
 

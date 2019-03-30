@@ -93,17 +93,20 @@ def get_data(url, filename):
     n_max_tries = 5
     success = False
     while n_tries < n_max_tries:
-
         try:
             r = requests.get(url)
-            if r:
+            if r and not r.status_code == requests.codes.ok:
+                time.sleep(0.2)
+                n_tries += 1
+                if n_tries == n_max_tries:
+                    log.error("Wind Toolkit returned invalid data, HTTP " + str(r.status_code))
+                    raise ValueError('Wind Toolkit returned invalid data, HTTP ' + str(r.status_code))
+            elif r and r.status_code == requests.codes.ok:
                 localfile = open(filename, mode='w+')
                 localfile.write(r.text)
                 if os.path.isfile(filename):
                     success = True
                     break
-            elif r.status_code == 404:
-                raise requests.exceptions.HTTPError
         except requests.exceptions.Timeout:
             time.sleep(0.2)
             n_tries += 1
