@@ -22,14 +22,12 @@ from django.template import  loader
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
-from keys import admin_error_page_password
 
 def errors(request, page_uuid):
-    if admin_error_page_password == page_uuid:
-        template= loader.get_template("errors.html")
-        return HttpResponse(template.render())
-    print "bad password"
-    raise Http404()
+    
+    template= loader.get_template("errors.html")
+    return HttpResponse(template.render())
+    
 
 def help(request):
 
