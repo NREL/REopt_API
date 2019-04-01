@@ -267,9 +267,6 @@ def process_urdb_set(urdb_set):
 
 
 	for k,v in result.items():
-		if k == '5b86df23682bea49aaeba00d':
-			from IPython import embed
-			embed()
 		if not k.startswith('count') and k != 'most_recent_error':
 			e_set = [i for i in ErrorModel.objects.filter(run_uuid__in=v)]
 
