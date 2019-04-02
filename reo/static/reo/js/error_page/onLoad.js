@@ -5,19 +5,20 @@ function create_generic_popup(link_text,header, text, id){
 		return '<br><span title="'+header+'" class="text-info" data-toggle="popover"  data-content="'+text.replace(/"/g, '\'')+'" style="margin:20px;">'+link_text+'</span>'
 	}
 
-function create_run_uuid_popup(recent_uuids,id){
+
+function create_run_uuid_popup(recent_uuids){
 		
 		if (recent_uuids===undefined){recent_uuids={}}
-		var base = $('<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" style="height:'+Math.min((39+(30*(recent_uuids.length))),150)+'px;overflow:auto;" aria-labelledby="'+ id+'"><div class="dropdown-header">Run UUID\'s</div></div>')
+	
+		var base = $('<div class ="popoverList"></div>')
+		var list = $('<ul style="list-style: none;" class ="popoverList"></ul>')
 		for (var i = 0; i < recent_uuids.length; i++){
-			var uuid = $('<span class="dropdown-item" href="#"></span>')
+			var uuid = $('<li class ="popoverList"></li>')
 			uuid.html(recent_uuids[i])
-			base.append(uuid)
+			list.append(uuid)
 		}
-		var result = $('<div class="dropdown arrow"></div>')
-		result.append($('<a class="dropdown-toggle" href="#" role="button" id="'+id+'" data-toggle="dropdown" aria-haspopup="true" ></a>') )
-        result.append(base)
-		return result.html()
+		base.append(list)
+		return "<span title='UUID\'s' class='uuid_popover text-info'  data-toggle='popover' data-html='true' data-content='"+ base.prop('outerHTML') +"''>UUID\'s</span>"
 	}
 
 $.fn.dataTable.ext.search.push(
@@ -41,7 +42,14 @@ $.fn.dataTable.ext.search.push(
 
 	);
 $(document).ready(function() {
-  
+  $('body').on('click', function (e) {
+    if ($(e.target).attr('class')===undefined){
+		$('[data-toggle="popover"]').popover('hide');
+    }
+    else if ($(e.target).attr('class').includes('popover')===false) { 
+        $('[data-toggle="popover"]').popover('hide');
+    }
+});
   error_results_lookup = []
   for (var i = 0; i < Object.entries(error_results['daily_count']).length; i++){
   	error_results_lookup.push(moment.unix(Object.entries(error_results['daily_count'])[i][0]).format('YYYY-MM-DD'))

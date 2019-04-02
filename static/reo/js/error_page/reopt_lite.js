@@ -36,7 +36,6 @@
 		
 	}
 
-
 	function format_names(names){
 		if (names!==undefined) {
 		var obj = Object.entries(names) 		
@@ -45,44 +44,44 @@
 				var key = obj[entry][0]
 				var value = obj[entry][1]
 				var detail = $("<li>")
-				debugger
-				detail.html(key + " (" + (value['run_uuids_old'].length + value['run_uuids_new'].length) + ") " + create_run_uuid_popup(value['run_uuids_new'],value['run_uuids_old'],"Recent",key+"nameRunUUIDPopUp"+entry.toString()).html() + "&nbsp;&nbsp;<em><small>Most Recent: </em>" + moment.unix(value['most_recent_error']).format("MM-DD-YYYY HH:mm:ss") + "</small>")
+				detail.html(key + " (" + (value['run_uuids_old'].length + value['run_uuids_new'].length) + ") " + create_run_uuid_popup(value['run_uuids_new'],value['run_uuids_old']) + "&nbsp;&nbsp;<br><em><small>Most Recent: </em>" + moment.unix(value['most_recent_error']).format("MM-DD-YYYY HH:mm:ss") + "</small>")
 				list.append(detail)
 			}
 		}
 		return list
 	}
 
-	function create_run_uuid_popup(recent_uuids, older_uuids,text,id){
+	function create_run_uuid_popup(recent_uuids, older_uuids){
+		
 		if (older_uuids===undefined){older_uuids={}}
 		if (recent_uuids===undefined){recent_uuids={}}
-		var base = $('<div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" style="height:'+Math.min((39+(30*(recent_uuids.length + older_uuids.length))),150)+'px;overflow:auto;" aria-labelledby="'+ id+'"><div class="dropdown-header">'+text+ ' Run UUID\'s</div></div>')
+	
+		var base = $('<div class ="popoverList"><h6 class ="popoverList">Recent</h6></div>')
+		var list = $('<ul class ="popoverList" style="list-style: none;"></ul>')
 		for (var i = 0; i < recent_uuids.length; i++){
-			var uuid = $('<span class="dropdown-item" href="#"></span>')
+			var uuid = $('<li class ="popoverList"></li>')
 			uuid.html(recent_uuids[i])
-			base.append(uuid)
+			list.append(uuid)
 		}
+		base.append(list)
 		if (older_uuids.length > 0 ) {
-			base.append($('<div class="dropdown-divider"></div>'))
-			base.append($('<div class="dropdown-header">Other Run UUID\'s</div>'))
+			base.append($('<hr class ="popoverList"/><br class ="popoverList"><h6 class ="popoverList">Older</h6>'))
+			list = $('<ul class ="popoverList" style="list-style:none;"></ul>')
 			for (var i = 0; i < older_uuids.length; i++){
-						var uuid = $('<span class="dropdown-item" href="#"></span>')
+						var uuid = $('<li class ="popoverList"></span>')
 						uuid.html(older_uuids[i])
-						base.append(uuid)
+						list.append(uuid)
 					}
+			base.append(list)
 		}
-		var result = $('<div class="dropdown arrow"></div>')
-		result.append($('<a class="dropdown-toggle" href="#" role="button" id="'+id+'" data-toggle="dropdown" aria-haspopup="true" ></a>') )
-        result.append(base)
-		return result
+		return "<span title='UUID\'s' class='uuid_popover text-info' data-toggle='popover' data-html='true'  data-content='"+ base.prop('outerHTML')+"'>"+"UUID\'s"+"</span>"
 	}
 
 
 	function create_generic_popup(link_text,header, text, id){
 		
-		return '<span title="'+header+'" class="text-info" data-toggle="popover"  data-content="'+text.replace(/"/g, '\'')+'" style="margin:20px;">'+link_text+'</span>'
+		return '<span title="'+header+'" class="text-info" data-toggle="popover"   data-content="'+text.replace(/"/g, '\'')+'" style="max-width:100%;margin:20px;">'+link_text+'</span>'
 	}
-	
 	
 	
 	var urdb_entries = Object.entries(urdb_results)
@@ -108,12 +107,13 @@
 		if (error_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && error_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
 				var errordetail= $('<tr>')
 				var errorcontent = $('<div>')
-				errorcontent.html("<b>(#" +error_entries[entry][0]+ ")</b> " + common_lookup[error_entries[entry][0]].substring(0,225))
+				var errorcontent_text = common_lookup[error_entries[entry][0]].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")  
+				errorcontent.html("<b>(#" +error_entries[entry][0]+ ")</b> " + errorcontent_text.substring(0,225))
 				if (common_lookup[error_entries[entry][0]].length > 224){
-					errorcontent.append(create_generic_popup('...(see full)', 'Traceback', common_lookup[error_entries[entry][0]],"errorPopUp"+entry.toString()))
+					errorcontent.append(create_generic_popup('...(see full)', 'Traceback', errorcontent_text,"errorPopUp"+entry.toString()))
 				}
 				errordetail.append($('<td>').html(errorcontent.html() + message_content(error_entries[entry][1]['message'])  + task_content(error_entries[entry][1]['task']) ))
-				errordetail.append($('<td>').html(create_run_uuid_popup(error_entries[entry][1]['run_uuids_new'],error_entries[entry][1]['run_uuids_old'],"Recent").html(),"errorRunUUIDPopUp"+entry.toString()))
+				errordetail.append($('<td>').html(create_run_uuid_popup(error_entries[entry][1]['run_uuids_new'],error_entries[entry][1]['run_uuids_old'])))
 				errordetail.append($('<td>').html(moment.unix(error_entries[entry][1]['most_recent_error']).format("MM-DD-YYYY HH:mm:ss")))
 				errordetail.append($('<td>').html(error_entries[entry][1]['count'] ))
 				$('#tableBody_Errors').append(errordetail)			          
@@ -133,10 +133,10 @@
 					badPostcontent.append(create_generic_popup('...(see full)', 'Error', bad_posts_entries[entry][0],"badPostPopUp"+entry.toString()))
 				}
 				badPostdetail.append($('<td>').html(badPostcontent))
-				badPostdetail.append($('<td>').html(create_run_uuid_popup(bad_posts_entries[entry][1]['run_uuids'],[],"").html(),"badPostRunUUIDPopUp"+entry.toString()))
+				debugger
+				badPostdetail.append($('<td>').html(create_run_uuid_popup(bad_posts_entries[entry][1]['run_uuids'],[])))
 				badPostdetail.append($('<td>').html(bad_posts_entries[entry][1]['count'] ))
 				$('#tableBody_BadPost').append(badPostdetail)			       
 		}
-
 	}
 })(jQuery); // End of use strict
