@@ -46,6 +46,7 @@ INSTALLED_APPS = (
     'proforma',
     'resilience_stats',
     'django_celery_results',
+    'django_extensions'
    
 )
 
