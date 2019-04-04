@@ -124,6 +124,9 @@ class DatFileManager:
         self.command_line_args.append("ScenarioNum=" + str(run_id))
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
+    def get_paths(self):
+        return self.paths
+
     def add_load(self, load): 
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):

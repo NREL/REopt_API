@@ -12,7 +12,7 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError,WindDownloadError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError
 from reo.src.paths import Paths
 
 
@@ -140,8 +140,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
-	self.data = data
-	self.profiler.profileEnd()
+        self.data = data
+        self.profiler.profileEnd()
         tmp = dict()
         tmp['setup_scenario_seconds'] = self.profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
@@ -152,6 +152,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
                 raise WindDownloadError(task=self.name, run_uuid=run_uuid)
+            else:
+                log.error(e.message)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message)
 
         if isinstance(e, REoptError):
             pass

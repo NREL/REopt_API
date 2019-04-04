@@ -123,6 +123,7 @@ class Wind(Tech):
     def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
+        self.path_inputs = dfm.get_paths()['inputs']
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
@@ -171,7 +172,8 @@ class Wind(Tech):
         """
         if self.sam_prod_factor is None:
             
-            sam = WindSAMSDK(self.hub_height_meters, time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
+            sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
+                             time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
