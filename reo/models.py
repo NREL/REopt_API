@@ -552,7 +552,9 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
-        resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(ProfileModel.objects.get(run_uuid=run_uuid)))
+        profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
+        if len(profile_data) > 0:
+            resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
 
 
         wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
