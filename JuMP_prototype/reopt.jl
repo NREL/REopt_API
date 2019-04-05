@@ -16,7 +16,7 @@ REopt = Model(with_optimizer(Xpress.Optimizer))
 CapCostSegCount = 2
 FuelBinCount = 1
 DemandBinCount = 1
-DemandMonthsBinCount = 2
+DemandMonthsBinCount = 1
 BattLevelCount = 1
 TimeStepScaling = 1.0
 TimeStepCount =8760
@@ -40,98 +40,98 @@ TimeStepBat=0:TimeStepCount
 ##############################
 
 #initializations from DAT1 ! constants
-Tech = strToSym(allData["dat1a_constant"]["Tech"])
-Load = strToSym(allData["dat1a_constant"]["load"])
-TechIsGrid = allData["dat1a_constant"]["TechIsGrid"]
-TechToLoadMatrix = allData["dat1a_constant"]["TechToLoadMatrix"]
-TechClass = strToSym(allData["dat1a_constant"]["TechClass"])
-TurbineDerate = allData["dat1a_constant"]["TurbineDerate"]
-TechToTechClassMatrix = allData["dat1a_constant"]["TechToTechClassMatrix"]
-NMILRegime = strToSym(allData["dat1a_constant"]["NMILRegime"])
+#Tech
+#Load ##Had to change JSON from "load" to "Load"
+TechIsGrid = set1param(Tech, TechIsGrid)
+TechToLoadMatrix = set2param(Tech, Load, TechToLoadMatrix)
+#TechClass
+TurbineDerate = set1param(Tech, TurbineDerate)
+TechToTechClassMatrix = set2param(Tech, TechClass, TechToTechClassMatrix)
+#NMILRegime
 
 #initializations from DAT2 ! economics
-r_tax_owner = allData["dat2a_economics"]["r_tax_owner"]
-r_tax_offtaker = allData["dat2a_economics"]["r_tax_offtaker"]
-pwf_om = allData["dat2a_economics"]["pwf_om"]
-pwf_e = allData["dat2a_economics"]["pwf_e"]
-pwf_prod_incent = allData["dat2a_economics"]["pwf_prod_incent"]
+#r_tax_owner
+#r_tax_offtaker
+#pwf_om
+#pwf_e
+#pwf_prod_incent
 LevelizationFactor = set1param(Tech, LevelizationFactor)
 LevelizationFactorProdIncent = set1param(Tech, LevelizationFactorProdIncent)
-StorageCostPerKW = allData["dat2a_economics"]["StorageCostPerKW"]
-StorageCostPerKWH = allData["dat2a_economics"]["StorageCostPerKWH"]
-OMperUnitSize = allData["dat2a_economics"]["OMperUnitSize"]
-CapCostSlope = allData["dat2a_economics"]["CapCostSlope"]
-CapCostYInt = allData["dat2a_economics"]["CapCostYInt"]
-CapCostX = allData["dat2a_economics"]["CapCostX"]
-ProdIncentRate = allData["dat2a_economics"]["ProdIncentRate"]
-MaxProdIncent = allData["dat2a_economics"]["MaxProdIncent"]
-MaxSizeForProdIncent = allData["dat2a_economics"]["MaxSizeForProdIncent"]
-two_party_factor = allData["dat2a_economics"]["two_party_factor"]
-analysis_years = allData["dat2a_economics"]["analysis_years"]
+StorageCostPerKW = set1param(BattLevel, [StorageCostPerKW])
+StorageCostPerKWH = set1param(BattLevel, [StorageCostPerKWH])
+OMperUnitSize = set1param(Tech, OMperUnitSize)
+CapCostSlope = set2param(Tech, Seg, CapCostSlope)
+CapCostYInt = set2param(Tech, Seg, CapCostYInt)
+CapCostX = set2param(Tech, Points, CapCostX)
+ProdIncentRate = set2param(Tech, Load, ProdIncentRate)
+MaxProdIncent = set1param(Tech, MaxProdIncent)
+MaxSizeForProdIncent = set1param(Tech, MaxSizeForProdIncent)
+#two_party_factor
+#analysis_years
 
 #initializations from DAT3
-AnnualElecLoad = allData["dat3a_LoadSize"]["AnnualElecLoad"]
+#AnnualElecLoad
 
 #initializations from DAT4
-LoadProfile = allData["dat4a_Load8760"]["LoadProfile"]
+LoadProfile = set2param(Load, TimeStep, LoadProfile)
 
 #initializations from DAT5 ! GIS
 ProdFactor = set3param(Tech, Load, TimeStep, ProdFactor)
 
 #initializations from DAT6 ! storage <--NEED A BAU VERSION WITH EMPTY PARAMS?
-StorageMinChargePcent = allData["dat6a_storage"]["StorageMinChargePcent"]
-EtaStorIn = allData["dat6a_storage"]["EtaStorIn"]
-EtaStorOut = allData["dat6a_storage"]["EtaStorOut"]
-BattLevelCoef = allData["dat6a_storage"]["BattLevelCoef"]
-InitSOC = allData["dat6a_storage"]["InitSOC"]
+#StorageMinChargePcent
+EtaStorIn = set2param(Tech, Load, EtaStorIn)
+EtaStorOut = set1param(Load, EtaStorOut)
+BattLevelCoef = set2param(BattLevel, 1:2, BattLevelCoef)
+#InitSOC
 
 #initializations from DAT7 ! maxsizes
-MaxSize = allData["dat7a_maxsizes"]["MaxSize"]
-MinStorageSizeKW = allData["dat7a_maxsizes"]["MinStorageSizeKW"]
-MaxStorageSizeKW = allData["dat7a_maxsizes"]["MaxStorageSizeKW"]
-MinStorageSizeKWH = allData["dat7a_maxsizes"]["MinStorageSizeKWH"]
-MaxStorageSizeKWH = allData["dat7a_maxsizes"]["MaxStorageSizeKWH"]
-TechClassMinSize = allData["dat7a_maxsizes"]["TechClassMinSize"]
-MinTurndown = allData["dat7a_maxsizes"]["MinTurndown"]
+MaxSize = set1param(Tech, MaxSize)
+#MinStorageSizeKW
+#MaxStorageSizeKW
+#MinStorageSizeKWH
+#MaxStorageSizeKWH
+TechClassMinSize = set1param(TechClass, TechClassMinSize)
+MinTurndown = set1param(Tech, MinTurndown)
 
 #initializations from DAT8
-TimeStepRatchets = allData["dat8a_util_TimeStepsDemand"]["TimeStepRatchets"]
+#TimeStepRatchets = set1param(Ratchets, TimeStepRatchets) #not populated
 
 #initializations from DAT9
-DemandRates = allData["dat9a_util_DemandRate"]["DemandRates"]
+#DemandRates = set2param(Ratchets, DemandBin, DemandRates) #not populated
 
 #initializations from DAT10 ! FuelCost
-FuelRate = allData["dat10a_util_FuelCost"]["FuelRate"]
-FuelAvail = allData["dat10a_util_FuelCost"]["FuelAvail"]
-FixedMonthlyCharge = allData["dat10a_util_FuelCost"]["FixedMonthlyCharge"]
-AnnualMinCharge = allData["dat10a_util_FuelCost"]["AnnualMinCharge"]
-MonthlyMinCharge = allData["dat10a_util_FuelCost"]["MonthlyMinCharge"]
+FuelRate = set3param(Tech, FuelBin, TimeStep, FuelRate)
+FuelAvail = set2param(Tech, FuelBin, FuelAvail)
+#FixedMonthlyCharge
+#AnnualMinCharge
+#MonthlyMinCharge
 
 #initializations from DAT11
-ExportRates = allData["dat11a_util_ExportRates"]["ExportRates"]
+ExportRates = set3param(Tech, Load, TimeStep, ExportRates)
 
 #initializations from DAT12
-TimeStepRatchetsMonth = allData["dat12_util_TimeStepRatchetsMonth"]["TimeStepRatchetsMonth"]
+TimeStepRatchetsMonth = set1param(Month, TimeStepRatchetsMonth)
 
 #initializations from DAT13
-DemandRatesMonth = allData["dat13_util_DemandRatesMonth"]["DemandRatesMonth"]
+DemandRatesMonth = set2param(Month, DemandMonthsBin, DemandRatesMonth)
 
 #initializations from DAT14 ! LookbackMonthsAndPercent
-DemandLookbackMonths = allData["dat14_util_LookbackMonthsAndPercent"]["DemandLookbackMonths"]
-DemandLookbackPercent = allData["dat14_util_LookbackMonthsAndPercent"]["DemandLookbackPercent"]
+#DemandLookbackMonths
+#DemandLookbackPercent
 
 #initializations from DAT15 ! UtilityTiers
-MaxDemandInTier = allData["dat15_util_UtilityTiers"]["MaxDemandInTier"]
-MaxDemandMonthsInTier = allData["dat15_util_UtilityTiers"]["MaxDemandMonthsInTier"]
-MaxUsageInTier = allData["dat15_util_UtilityTiers"]["MaxUsageInTier"]
+MaxDemandInTier = set1param(DemandBin, MaxDemandInTier)
+MaxDemandMonthsInTier = set1param(DemandMonthsBin, MaxDemandMonthsInTier)
+MaxUsageInTier = set1param(FuelBin, MaxUsageInTier)
 
 #initializations from DAT16
 FuelBurnRateM = set3param(Tech, Load, FuelBin, FuelBurnRateM)
-FuelBurnRateB = allData["dat16a_util_FuelBurnRate"]["FuelBurnRateB"]
+FuelBurnRateB = set3param(Tech, Load, FuelBin, FuelBurnRateB)
 
 #initializations from DAT17  ! net metering
-NMILLimits = allData["dat17a_NEM"]["NMILLimits"]
-TechToNMILMapping = allData["dat17a_NEM"]["TechToNMILMapping"]
+NMILLimits = set1param(NMILRegime, NMILLimits)
+TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
 
 ### Begin Variable Initialization ###
 ######################################

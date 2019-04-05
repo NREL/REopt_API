@@ -30,13 +30,17 @@ function jsonToVariable(path)
         for (k,v) in dic
             var = Symbol(k)
             try
-                if v[1] isa Number
+                if v[1] isa Number || v[1] isa Array
+                    println(var)
                     globalInit(var, v)
                 elseif v[1] isa String
+                    println(var)
                     v = strToSym(v)
                     globalInit(var, v)
                 end
-            catch
+            catch y
+                #println(y)
+                #println(var, " ", v)
             end
         end
     end
