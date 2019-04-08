@@ -141,7 +141,7 @@ TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
     binSegChosen[Tech, Seg]
     dvSystemSize[Tech, Seg]
     dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin]
-    dvRatedProd[Tech,Load,TimeStep,Seg,FuelBin]
+    dvRatedProd[Tech,Load,TimeStep,Seg,FuelBin] >= 0
     dvProdIncent[Tech]
     binProdIncent[Tech]
     binSingleBasicTech[Tech,TechClass]
@@ -185,14 +185,18 @@ end
 #	dvFuelUsed(t,fb) <= FuelAvail(t,fb)
 #end-do
 
-for t in Tech
-    for fb in FuelBin
-        @constraints REopt begin
-            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
-            for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb]
-        end
-    end
-end
+#for t in Tech
+#    for fb in FuelBin
+#        @constraints REopt begin
+#            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
+#            for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb]
+#        end
+#    end
+#end
+
+#@constraint(REopt, [t in Tech, fb in FuelBin],
+#            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
+#                for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb])
 
 #
 #! FuelUsed * FuelRate = FuelCost.  Since FuelRate can vary by timestep, cannot use dvFuelUsed in the following definition
@@ -292,7 +296,7 @@ end
 #forall ( t in Tech, s in Seg) binSegChosen(t, s) is_binary
 #forall ( t in Tech, ts in TimeStep) binTechIsOnInTS(t,ts) is_binary
 #
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End declaring binary variables and constraining them
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
@@ -386,9 +390,19 @@ end
 #  sum (t in Tech, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
 #  		 ProdFactor (t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) <= LoadProfile (LD,ts)
 #end-do
+
+######@constraint(REopt, [t in Tech, fb in FuelBin],
+######            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
+######                for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb])
+
 #
 #!CONSTRAINT 38
 #!companion to the above.  Electric load can be met from generation OR from the storage
+
+@constraint(REopt, linconst[LD in Load, ts in TimeStep; LD == Symbol("1R")],
+            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] #+ dvElecFromStor[ts]
+                for t in Tech, s in Seg, fb in FuelBin) >= LoadProfile[LD,ts])
+
 #forall (LD in Load,ts in TimeStep  | LD = "1R") do
 #  sum (t in Tech, s in Seg,fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)) ) dvRatedProd (t,LD,ts,s,fb) * ProdFactor (t,LD,ts) * LevelizationFactor(t) + dvElecFromStor( ts) >=
 #  		  LoadProfile (LD,ts)
@@ -587,6 +601,28 @@ end
 #TotalProductionIncentive * r_tax_fraction_owner
 #
 #
+
+
+# Prototype Objective Function
+cost = set1param(Tech, [50, 100, 75])
+
+@objective(REopt, Min,
+            sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
+                for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+
+optimize!(REopt)
+
+
+println(JuMP.termination_status(REopt))
+println(JuMP.objective_value(REopt))
+
+let x = 0
+    for ts in 1100:1110
+        println(JuMP.value(dvRatedProd[:UTIL1, Symbol("1R"), ts, 1, 1]))
+    end
+end
+
+
 #!! END OBJECTIVE FUNCTION VALUE
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #

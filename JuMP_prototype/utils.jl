@@ -31,10 +31,9 @@ function jsonToVariable(path)
             var = Symbol(k)
             try
                 if v[1] isa Number || v[1] isa Array
-                    println(var)
+                    #println(var)
                     globalInit(var, v)
                 elseif v[1] isa String
-                    println(var)
                     v = strToSym(v)
                     globalInit(var, v)
                 end
