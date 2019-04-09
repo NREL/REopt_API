@@ -3,7 +3,7 @@
 # Data
 include("utils.jl")
 jsonToVariable("all_data.json")
-allData = importDict("all_data.json")
+#allData = importDict("all_data.json")
 
 # Optimization
 using JuMP
@@ -54,8 +54,8 @@ TechToTechClassMatrix = set2param(Tech, TechClass, TechToTechClassMatrix)
 #r_tax_offtaker
 #pwf_om
 #pwf_e
-#pwf_prod_incent
-LevelizationFactor = set1param(Tech, LevelizationFactor)
+pwf_prod_incent = set1param(Tech, pwf_prod_incent)
+LevelizationFactor = set1param((Tech), LevelizationFactor)
 LevelizationFactorProdIncent = set1param(Tech, LevelizationFactorProdIncent)
 StorageCostPerKW = set1param(BattLevel, [StorageCostPerKW])
 StorageCostPerKWH = set1param(BattLevel, [StorageCostPerKWH])
@@ -137,68 +137,65 @@ TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
 ######################################
 
 @variables REopt begin
-    binNMLorIL[NMILRegime]
-    binSegChosen[Tech, Seg]
-    dvSystemSize[Tech, Seg]
-    dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin]
-    dvRatedProd[Tech,Load,TimeStep,Seg,FuelBin] >= 0
-    dvProdIncent[Tech]
-    binProdIncent[Tech]
-    binSingleBasicTech[Tech,TechClass]
-    dvPeakDemandE[Ratchets, DemandBin]
-    dvPeakDemandEMonth[Month, DemandMonthsBin]
-    dvElecToStor[TimeStep]
-    dvElecFromStor[TimeStep]
-    dvStoredEnergy[TimeStepBat]
-    dvStorageSizeKWH[ BattLevel]
-    dvStorageSizeKW[ BattLevel]
-    dvMeanSOC
-    binBattCharge[TimeStep]
-    binBattDischarge[TimeStep]
-    dvFuelCost[Tech,FuelBin]
-    dvFuelUsed[Tech,FuelBin]
-    binTechIsOnInTS[Tech,TimeStep]
-    MinChargeAdder
-    binDemandTier[Ratchets, DemandBin]
-    binDemandMonthsTier[Month, DemandMonthsBin]
-    binUsageTier[Month, FuelBin]
-    dvPeakDemandELookback
-    binBattLevel[BattLevel]
+    binNMLorIL[NMILRegime], Bin
+    binSegChosen[Tech, Seg], Bin
+    dvSystemSize[Tech, Seg] >= 0
+
+ #!"exist" formatting
+#forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (t,LD,ts))
+#	create (dvRatedProd (t,LD,ts,s,fb))   dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin] >= 0
+    #Exist formatting, causes difficulty writing constraints
+    #dvRatedProd[t in Tech, LD in Load, ts in TimeStep, Seg, FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] !=0 ] >= 0
+
+    dvRatedProd[Tech, Load, TimeStep, Seg, FuelBin] >= 0
+    dvProdIncent[Tech] >= 0
+    binProdIncent[Tech], Bin
+    binSingleBasicTech[Tech,TechClass], Bin
+    dvPeakDemandE[Ratchets, DemandBin] >= 0
+    dvPeakDemandEMonth[Month, DemandMonthsBin] >= 0
+    dvElecToStor[TimeStep] >= 0
+    dvElecFromStor[TimeStep] >= 0
+    dvStoredEnergy[TimeStepBat] >= 0
+    dvStorageSizeKWH[BattLevel] >= 0
+    dvStorageSizeKW[BattLevel] >= 0
+    dvMeanSOC >= 0
+    binBattCharge[TimeStep], Bin
+    binBattDischarge[TimeStep], Bin
+    dvFuelCost[Tech, FuelBin]
+    dvFuelUsed[Tech, FuelBin]
+    binTechIsOnInTS[Tech, TimeStep], Bin
+    MinChargeAdder >= 0
+    binDemandTier[Ratchets, DemandBin], Bin
+    binDemandMonthsTier[Month, DemandMonthsBin], Bin
+    binUsageTier[Month, FuelBin], Bin
+    dvPeakDemandELookback >= 0
+    binBattLevel[BattLevel], Bin
+    ElecToBatt[Tech] >= 0
 end
 
 
 
 ### Begin Constraints###
 ########################
-#!"exist" formatting
-#forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (t,LD,ts))
-#	create (dvRatedProd (t,LD,ts,s,fb))
-#
+@constraints(REopt, begin
 #!!!! Fuel tracking
 #! Define dvFuelUsed by each tech by summing over timesteps.  Constrain it to be less than FuelAvail.
 #forall (t in Tech, fb in FuelBin) do
 #     sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
-#     	ProdFactor(t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,Tech, Load, TimeStep, ateM(t,LD,fb) * TimeStepScaling )
+#     	ProdFactor(t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) * FuelBurnRateM(t,LD,fb) * TimeStepScaling  +
 #     sum(ts in TimeStep, LD in Load)
 #     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling = dvFuelUsed(t,fb)
 #
 #	dvFuelUsed(t,fb) <= FuelAvail(t,fb)
 #end-do
+    [t in Tech, fb in FuelBin],
+    sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
+        for ts in TimeStep, LD in Load, s in Seg) +
+    sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling
+        for ts in TimeStep, LD in Load) == dvFuelUsed[t,fb]
+    [t in Tech, fb in FuelBin],
+    dvFuelUsed[t,fb] <= FuelAvail[t,fb]
 
-#for t in Tech
-#    for fb in FuelBin
-#        @constraints REopt begin
-#            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
-#            for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb]
-#        end
-#    end
-#end
-
-#@constraint(REopt, [t in Tech, fb in FuelBin],
-#            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
-#                for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb])
-
-#
 #! FuelUsed * FuelRate = FuelCost.  Since FuelRate can vary by timestep, cannot use dvFuelUsed in the following definition
 #forall (t in Tech, fb in FuelBin) do
 #     sum (ts in TimeStep, LD in Load, s in Seg |exists (dvRatedProd (t,LD,ts,s,fb)))
@@ -206,7 +203,12 @@ end
 #     sum(ts in TimeStep, LD in Load)
 #     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 #end-do
-#
+    [t in Tech, fb in FuelBin],
+    sum(ProdFactor[t, LD, ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
+        for ts in TimeStep, LD in Load, s in Seg) +
+    sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
+        for ts in TimeStep, LD in Load) == dvFuelCost[t,fb]
+
 #!! The following 2 constraints define binTechIsOnInTS to be the binary corollary to dvRatedProd,
 #!! i.e. binTechIsOnInTS = 1 for dvRatedProd > 0, and binTechIsOnInTS = 0 for dvRatedProd = 0
 #!CONSTRAINT 4A
@@ -218,9 +220,11 @@ end
 #  		sum (LD in Load, s in Seg, fb in FuelBin | exists (dvRatedProd (t,LD,ts,s,fb)))
 #  		dvRatedProd (t,LD,ts,s,fb) <= MaxSize(t) * (1 - binTechIsOnInTS (t,ts))
 #end-do
-#
-#
-#
+
+    [t in Tech, ts in TimeStep],
+    sum(ProdFactor[t,LD,ts] * dvRatedProd[t,LD,ts,s,fb] for LD in Load, s in Seg, fb in FuelBin) <=
+    MaxSize[t] * 100 * binTechIsOnInTS[t,ts]
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
 #!the state of the storage system at the beginning is 0
@@ -232,8 +236,10 @@ end
 #	sum(b in BattLevel) dvStorageSizeKWH(b) >=  MinStorageSizeKWH
 #	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW
 #	sum(b in BattLevel) dvStorageSizeKW(b) >= MinStorageSizeKW
-#
-#
+
+    MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in BattLevel) <=  MaxStorageSizeKWH
+    MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in BattLevel) <=  MaxStorageSizeKW
+
 #forall ( ts in TimeStep) do
 #	! Electricity to be stored is the sum of the electricity in the S-bin for that timestep
 #	dvElecToStor( ts) = (sum(t in Tech, s in Seg, fb in FuelBin | exists (dvRatedProd(t,"1S",ts,s,fb))) ProdFactor(t,"1S",ts) * LevelizationFactor(t) * dvRatedProd (t,"1S",ts,s,fb) * EtaStorIn(t,"1S"))
@@ -245,19 +251,41 @@ end
 #	dvStoredEnergy(ts) >=  StorageMinChargePcent * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling  ! / TimeStepScaling
 #	dvElecFromStor( ts) >= 0
 #end-do
-#
+
+    [ts in TimeStep],
+	dvElecToStor[ts] == sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * EtaStorIn[t,LD]
+                            for t in Tech, LD in [Symbol("1S")], s in Seg, fb in FuelBin)
+    [ts in TimeStep],
+	dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + dvElecToStor[ts] - dvElecFromStor[ts] / EtaStorOut[Symbol("1S")]
+    [ts in TimeStep],
+	dvElecFromStor[ts] / EtaStorOut[Symbol("1S")] <=  dvStoredEnergy[ts-1]
+    [ts in TimeStep],
+	dvStoredEnergy[ts] >=  StorageMinChargePcent * sum(dvStorageSizeKWH[b] / TimeStepScaling for b in BattLevel)
+    [ts in TimeStep],
+	dvElecFromStor[ts] >= 0
+
 #forall ( ts in TimeStep )  do
 #	sum(b in BattLevel) dvStorageSizeKW(b) >=  dvElecToStor( ts)
 #	sum(b in BattLevel) dvStorageSizeKW(b) >=  dvElecFromStor( ts)
 #end-do
-#
+
+    [ts in TimeStep],
+	sum(dvStorageSizeKW[b] for b in BattLevel) >=  dvElecToStor[ts]
+    [ts in TimeStep],
+	sum(dvStorageSizeKW[b] for b in BattLevel) >=  dvElecFromStor[ts]
+
 #dvMeanSOC = sum(ts in TimeStep) dvStoredEnergy(ts) / TimeStepCount
-#
+
+    dvMeanSOC == sum(dvStoredEnergy[ts] / TimeStepCount for ts in TimeStep)
+
 #! the physical size of the storage system is the max amount of charge at any timestep.
 #forall (  ts in TimeStep) do
 #	sum(b in BattLevel) dvStorageSizeKWH(b) >=  dvStoredEnergy(ts) * TimeStepScaling
 #end-do
-#
+
+    [ts in TimeStep],
+	sum(dvStorageSizeKWH[b] for b in BattLevel) >=  dvStoredEnergy[ts] * TimeStepScaling
+
 #!Prevent storage from charging and discharging within same timestep
 #forall ( ts in TimeStep) do
 #  dvElecToStor(ts) <= MaxStorageSizeKW * binBattCharge(ts)
@@ -266,16 +294,28 @@ end
 #  binBattCharge (ts) is_binary
 #  binBattDischarge (ts) is_binary
 #end-do
-#
+
+    [ts in TimeStep],
+    dvElecToStor[ts] <= MaxStorageSizeKW * binBattCharge[ts]
+    [ts in TimeStep],
+    dvElecFromStor[ts] <= MaxStorageSizeKW * binBattDischarge[ts]
+    [ts in TimeStep],
+    binBattDischarge[ts] + binBattCharge[ts] <= 1
+
 #forall ( t in Tech) do
 #	ElecToBatt(t) := sum(ts in TimeStep,  s in Seg, fb in FuelBin) dvRatedProd(t,"1S",ts,s,fb) * ProdFactor(t,"1S",ts) * LevelizationFactor(t)
 #end-do
-#
+
+    [t in Tech],
+	ElecToBatt[t] == sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
+                        for ts in TimeStep, LD in [Symbol("1S")], s in Seg, fb in FuelBin)
+
 #forall ( b in BattLevel) do
+#   !!!!!!!NEED TO ADD THIS TO FORMULATION!!!!!!!!
 #	BattLevelCoef(b,1)*sum(t in Tech | TechIsGrid(t)=1) ElecToBatt(t)-sum(t in Tech | TechIsGrid(t)<>1)BattLevelCoef(b,2)*ElecToBatt(t)   <= (1-binBattLevel(b)) *MaxStorageSizeKWH/TimeStepScaling*365*2  !assume that the maximum size battery can make 2 complete cycles per day.  May need to bump this up in select situations
 #	binBattLevel(b) is_binary
 #end-do
-#
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! This section is declaring binary variables and constraining them
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -284,19 +324,24 @@ end
 #forall (t in Tech) do
 #   sum (s in Seg) binSegChosen (t,s) = 1
 #end-do
-#
+
+    [t in Tech],
+    sum(binSegChosen[t,s] for s in Seg) == 1
+
 #!CONSTRAINT 3
 #! can only hve one tech from each tech class
 #forall ( b in TechClass) do
 #   sum (t in Tech) binSingleBasicTech (t,b) <= 1
 #end-do
-#
+
+    [b in TechClass],
+    sum(binSingleBasicTech[t,b] for t in Tech) <= 1
+
 #!binary declarations
 #forall ( t in Tech, b in TechClass) binSingleBasicTech (t,b) is_binary
 #forall ( t in Tech, s in Seg) binSegChosen(t, s) is_binary
 #forall ( t in Tech, ts in TimeStep) binTechIsOnInTS(t,ts) is_binary
-#
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End declaring binary variables and constraining them
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
@@ -304,10 +349,16 @@ end
 #   dvStorageSizeKWH(b) <= MaxStorageSizeKWH* binBattLevel(b)
 #   dvStorageSizeKW(b) <= MaxStorageSizeKW* binBattLevel(b)
 #end-do
-#
+
+    [b in BattLevel],
+    dvStorageSizeKWH[b] <= MaxStorageSizeKWH * binBattLevel[b]
+    [b in BattLevel],
+    dvStorageSizeKW[b] <= MaxStorageSizeKW * binBattLevel[b]
+
 #sum(b in BattLevel) binBattLevel(b) = 1
-#
-#
+
+    sum(binBattLevel[b] for b in BattLevel) == 1
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! CapCost constraints
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -319,8 +370,12 @@ end
 #!CONSTRAINT 21
 #   dvSystemSize (t,s) >= CapCostX (t,s-1) * binSegChosen (t,s)
 #end-do
-#
-#
+
+    [t in Tech, s in Seg],
+    dvSystemSize[t,s] <= CapCostX[t,s] * binSegChosen[t,s]
+    [t in Tech, s in Seg],
+    dvSystemSize[t,s] >= CapCostX[t,s-1] * binSegChosen[t,s]
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End CapCost constraints
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -334,7 +389,10 @@ end
 #!CONSTRAINT 22
 #! Number 1: The Production Incentive can't exceed a certain dollar max (and is "0" if system size is too big)
 #forall (t in Tech) dvProdIncent (t) <= binProdIncent (t) * MaxProdIncent (t) * pwf_prod_incent(t)
-#
+
+    [t in Tech],
+    dvProdIncent[t] <= binProdIncent[t] * MaxProdIncent[t] * pwf_prod_incent[t]
+
 #!CONSTRAINT 23
 #! Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that.
 #! added LD to Prod Incent ExportRates 8912
@@ -342,13 +400,27 @@ end
 #     dvProdIncent (t) <= sum (LD in Load, ts in TimeStep, s in Seg, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)))
 #     	ProdFactor(t, LD, ts) * LevelizationFactorProdIncent(t) *  dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdIncentRate (t, LD) * pwf_prod_incent(t)
 #end-do
-#
+
+    [t in Tech],
+    dvProdIncent[t] <= sum(ProdFactor[t, LD, ts] * LevelizationFactorProdIncent[t] * dvRatedProd[t,LD,ts,s,fb] *
+                           TimeStepScaling * ProdIncentRate[t, LD] * pwf_prod_incent[t]
+                           for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
+
+
 #!CONSTRAINT 24
 #! Number 3: If system size is bigger than MaxSizeForProdIncent, binProdIncent is 0, meaning you don't get the Prod Incent.
 #forall (t in Tech, LD in Load,ts in TimeStep  ) do
 #    sum (s in Seg) dvSystemSize (t,s) <= MaxSizeForProdIncent (t) + MaxSize(t) * (1 - binProdIncent (t))
 #end-do
-#
+
+    [t in Tech, LD in Load,ts in TimeStep],
+    sum(dvSystemSize[t,s] for s in Seg) <= MaxSizeForProdIncent[t] + MaxSize[t] * (1 - binProdIncent[t])
+
+end)
+
+println("Model built, moving on to optimizer...")
+
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!  End Production Incentive Cap Module
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

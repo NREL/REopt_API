@@ -46,6 +46,16 @@ function jsonToVariable(path)
 end
 
 
+function parameter(setTup::Tuple, data)
+    shapedData = reshape(data, Tuple([length(set) for set in setTup]))
+    return AxisArray(shapedData, setTup)
+end
+
+function parameter(set, data)
+    shapedData = reshape(data, length(set))
+    return AxisArray(shapedData, setTup)
+end
+
 function set1param(set1, data)
     tmp1 = []
 
