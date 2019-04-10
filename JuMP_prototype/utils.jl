@@ -1,5 +1,6 @@
 import JSON
 import IndexedTables
+using AxisArrays
 const I = IndexedTables
 
 function importDict(path)
@@ -53,7 +54,7 @@ end
 
 function parameter(set, data)
     shapedData = reshape(data, length(set))
-    return AxisArray(shapedData, setTup)
+    return AxisArray(shapedData, set)
 end
 
 function set1param(set1, data)

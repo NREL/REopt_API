@@ -147,6 +147,7 @@ TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
     #Exist formatting, causes difficulty writing constraints
     #dvRatedProd[t in Tech, LD in Load, ts in TimeStep, Seg, FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] !=0 ] >= 0
 
+    dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin] >= 0
     dvRatedProd[Tech, Load, TimeStep, Seg, FuelBin] >= 0
     dvProdIncent[Tech] >= 0
     binProdIncent[Tech], Bin
@@ -170,7 +171,20 @@ TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
     binUsageTier[Month, FuelBin], Bin
     dvPeakDemandELookback >= 0
     binBattLevel[BattLevel], Bin
+
+# ADDED due to implied types
     ElecToBatt[Tech] >= 0
+    UsageInTier[Month, FuelBin] >= 0
+    TotalTechCapCosts >= 0
+    TotalStorageCapCosts >= 0
+    TotalOMCosts >= 0
+    TotalEnergyCharges >= 0
+    DemandTOUCharges >= 0
+    DemandFlatCharges >= 0
+    TotalDemandCharges >= 0
+    TotalFixedCharges >= 0
+    TotalEnergyExports >= 0
+    TotalProductionIncentive >= 0
 end
 
 
@@ -416,11 +430,6 @@ end
     [t in Tech, LD in Load,ts in TimeStep],
     sum(dvSystemSize[t,s] for s in Seg) <= MaxSizeForProdIncent[t] + MaxSize[t] * (1 - binProdIncent[t])
 
-end)
-
-println("Model built, moving on to optimizer...")
-
-
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!  End Production Incentive Cap Module
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -434,20 +443,26 @@ println("Model built, moving on to optimizer...")
 # !CONSTRAINT 27
 #forall (t in Tech,s in Seg)   dvSystemSize (t,s) <=  MaxSize (t)
 #
+
+    [t in Tech, s in Seg],
+    dvSystemSize[t,s] <=  MaxSize[t]
+
 #forall (b in TechClass) do
 #    sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
 #end-do
-#
+
+    [b in TechClass],
+    sum(dvSystemSize[t, s] * TechToTechClassMatrix[t,b] for t in Tech, s in Seg) >= TechClassMinSize[b]
+
 #!!dvRatedProduction must be >= 0, or if MinTurndown is > 0, use semi-continuous variable
 #!CONSTRAINT 27a
 #forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) = 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
 #    dvRatedProd(t,LD,ts,s,fb) >= 0
 #end-do
-#
+#############NEED TO ADD############################
 #forall (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | MinTurndown(t) > 0 and exists (dvRatedProd (t,LD,ts,s,fb))) do
 #    dvRatedProd(t,LD,ts,s,fb) is_semcont MinTurndown(t)
 #end-do
-#
 #!Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on
 #! electric output of a CoGen with mandatory thermal tech
 #!For most techs, Rated Production across all loads cannot exceed System size
@@ -455,6 +470,10 @@ println("Model built, moving on to optimizer...")
 #forall (t in Tech,s in Seg,ts in TimeStep)  !for variable effiency gensets
 #	 sum (LD in Load, fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb))) dvRatedProd (t,LD,ts,s,fb) <= dvSystemSize (t, s)
 #
+
+    [t in Tech, s in Seg, ts in TimeStep],
+    sum(dvRatedProd[t,LD,ts,s,fb] for LD in Load, fb in FuelBin) <= dvSystemSize[t, s]
+
 #!CONSTRAINT 35
 #! sum of everything but retail electric produced by all techs must be less than max load for each fuel type
 #!TS 31513 should this exclude SHW?
@@ -463,23 +482,21 @@ println("Model built, moving on to optimizer...")
 #  		 ProdFactor (t,LD,ts) * LevelizationFactor(t) * dvRatedProd (t,LD,ts,s,fb) <= LoadProfile (LD,ts)
 #end-do
 
-######@constraint(REopt, [t in Tech, fb in FuelBin],
-######            sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling
-######                for ts in TimeStep, LD in Load, s in Seg) == dvFuelUsed[t,fb])
+    [LD in Load, ts in TimeStep; LD != "1R" && LD != "1S"],
+    sum(ProdFactor[t,LD,ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb]
+        for t in Tech, s in Seg, fb in FuelBin) <= LoadProfile[LD,ts]
 
-#
 #!CONSTRAINT 38
 #!companion to the above.  Electric load can be met from generation OR from the storage
-
-@constraint(REopt, linconst[LD in Load, ts in TimeStep; LD == Symbol("1R")],
-            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] #+ dvElecFromStor[ts]
-                for t in Tech, s in Seg, fb in FuelBin) >= LoadProfile[LD,ts])
-
 #forall (LD in Load,ts in TimeStep  | LD = "1R") do
 #  sum (t in Tech, s in Seg,fb in FuelBin |exists (dvRatedProd (t,LD,ts,s,fb)) ) dvRatedProd (t,LD,ts,s,fb) * ProdFactor (t,LD,ts) * LevelizationFactor(t) + dvElecFromStor( ts) >=
 #  		  LoadProfile (LD,ts)
 #end-do
-#
+
+##########NEED TO UNCOMMENT ELECFROM##############3
+    [LD in Load, ts in TimeStep; LD == Symbol("1R")],
+    sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] + dvElecFromStor[ts]
+        for t in Tech, s in Seg, fb in FuelBin) >= LoadProfile[LD,ts]
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End system size and production constraints
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -493,16 +510,23 @@ println("Model built, moving on to optimizer...")
 # !can only be in regime at a time.
 # !CONSTRAINT 43
 #sum (n in NMILRegime) binNMLorIL(n) = 1
-#
+
+    sum(binNMLorIL[n] for n in NMILRegime) == 1
+
 #! The sum of the electricity output of all techs must be less than the limit for the regime
 #!CONSTRAINT 44
 #forall (n in NMILRegime | n <> "AboveIL") do
 #      sum (t in Tech, s in Seg)
 #      		TechToNMILMapping (t,n)*TurbineDerate(t)*dvSystemSize(t, s) <= NMILLimits(n) * binNMLorIL(n)
 #end-do
-#
+
+    [n in NMILRegime; n != :AboveIL],
+    sum(TechToNMILMapping[t,n] * TurbineDerate[t] * dvSystemSize[t,s]
+        for t in Tech, s in Seg) <= NMILLimits[n] * binNMLorIL[n]
+
+####NEED TO ADD###
 #indicator(-1, binNMLorIL("AboveIL"), sum(t in Tech, s in Seg) TechToNMILMapping(t,"AboveIL") * TurbineDerate(t) * dvSystemSize(t, s) <= 0)
-#
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!  Demand Rate Module
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -510,13 +534,20 @@ println("Model built, moving on to optimizer...")
 #forall ( LD in Load, fb in FuelBin, ts in TimeStep) do
 #	sum(s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) = sum(db in DemandBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 #end-do
-#
+
+    [t in [Symbol("UTIL1")], LD in Load, fb in FuelBin, ts in TimeStep],
+	sum(dvRatedProd[t,LD,ts,s,fb] for s in Seg) == sum(dvGrid[LD,ts,db,fb,dbm] for db in DemandBin, dbm in DemandMonthsBin)
+
 #! Compute tiered energy rates
 #forall (fb in FuelBin, m in Month)  do
 #	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb)
 #   	UsageInTier(m, fb) >= 0
 #end-do
-#
+
+    [t in [Symbol("UTIL1")], fb in FuelBin, m in Month],
+	UsageInTier[m, fb] ==  sum(dvRatedProd[t,LD,ts,s,fb] for LD in Load, ts in TimeStepRatchetsMonth[m], s in Seg)
+
+
 #forall (fb in FuelBin, m in Month) do
 #	binUsageTier(m, fb) is_binary
 #end-do
@@ -524,73 +555,124 @@ println("Model built, moving on to optimizer...")
 #forall (m in Month, fb in FuelBin | fb < FuelBinCount) do
 #    UsageInTier(m, fb) <= binUsageTier(m, fb) * MaxUsageInTier(fb)
 #end-do
+
+    [m in Month, fb in FuelBin; fb < FuelBinCount],
+    UsageInTier[m, fb] <= binUsageTier[m, fb] * MaxUsageInTier[fb]
+
+####NEED TO ADD
 #forall (m in Month) do
 #	indicator(-1, binUsageTier(m, FuelBinCount), UsageInTier(m, FuelBinCount) <= 0)
 #end-do
-#
 #forall (fb in FuelBin | fb >= 2, m in Month) do
 #	binUsageTier(m, fb) - binUsageTier(m, fb-1) <= 0
 #	binUsageTier(m, fb) * MaxUsageInTier(fb-1) - UsageInTier(m, fb-1) <= 0
 #end-do
-#
-#
+
+    [fb in FuelBin, m in Month; fb >= 2],
+	binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0
+
+    [fb in FuelBin, m in Month; fb >= 2],
+	binUsageTier[m, fb] * MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0
+
 #! Compute tiered demand rates
 #forall (db in DemandBin, r in Ratchets) do
 #	binDemandTier(r, db) is_binary
 #end-do
-#
 #forall (db in DemandBin, r in Ratchets | db < DemandBinCount) do
 #	dvPeakDemandE(r, db) <= binDemandTier(r,db) * MaxDemandInTier(db)
 #end-do
+
+    [db in DemandBin, r in Ratchets; db < DemandBinCount],
+    dvPeakDemandE[r, db] <= binDemandTier[r,db] * MaxDemandInTier[db]
+
+#### NEED TO ADD
 #forall (r in Ratchets) do
 #	indicator(-1, binDemandTier(r, DemandBinCount), dvPeakDemandE(r, DemandBinCount) <= 0)
 #end-do
-#
 #forall ( db in DemandBin | db >= 2, r in Ratchets) do
 #	binDemandTier(r, db) - binDemandTier(r, db-1) <= 0
 #	binDemandTier(r, db)*MaxDemandInTier(db-1) - dvPeakDemandE(r, db-1) <= 0
 #end-do
-#
+
+
+    [db in DemandBin, r in Ratchets; db >= 2],
+    binDemandTier[r, db] - binDemandTier[r, db-1] <= 0
+
+    [db in DemandBin, r in Ratchets; db >= 2],
+    binDemandTier[r, db]*MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0
+
 #forall ( db in DemandBin, r in Ratchets, ts in TimeStepRatchets(r))  do
 #	dvPeakDemandE(r,db) >= sum(LD in Load, fb in FuelBin, dbm in DemandMonthsBin) dvGrid(LD,ts,db,fb,dbm)
 #   	dvPeakDemandE(r,db) >= 0
 #   	dvPeakDemandE(r,db) >= DemandLookbackPercent * dvPeakDemandELookback
 #end-do
+
+
+####### NEED UPDATED JSON FOR THESE
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#	dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin)
 #
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#   	dvPeakDemandE[r,db] >= 0
+#
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#   	dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback
+
 #! Compute tiered monthly demand rates
 #forall (dbm in DemandMonthsBin, m in Month) do
 #	binDemandMonthsTier(m, dbm) is_binary
 #end-do
-#
 #forall ( dbm in DemandMonthsBin, m in Month | dbm < DemandMonthsBinCount) do
 #	dvPeakDemandEMonth(m, dbm) <= binDemandMonthsTier(m,dbm) * MaxDemandMonthsInTier(dbm)
 #end-do
+
+    [dbm in DemandMonthsBin, m in Month; dbm < DemandMonthsBinCount],
+	dvPeakDemandEMonth[m, dbm] <= binDemandMonthsTier[m,dbm] * MaxDemandMonthsInTier[dbm]
+
+### NEED TO ADD
 #forall (m in Month) do
 #	indicator(-1, binDemandMonthsTier(m, DemandMonthsBinCount), dvPeakDemandEMonth(m, DemandMonthsBinCount) <= 0)
 #end-do
-#
+
 #forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
 #	binDemandMonthsTier(m, dbm) - binDemandMonthsTier(m, dbm-1) <= 0
 #	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) <= dvPeakDemandEMonth(m, dbm-1) ! enforces full bins
 #end-do
-#
+
+    [dbm in DemandMonthsBin, m in Month; dbm >= 2],
+	binDemandMonthsTier[m, dbm] - binDemandMonthsTier[m, dbm-1] <= 0
+
+    [dbm in DemandMonthsBin, m in Month; dbm >= 2],
+	binDemandMonthsTier[m, dbm] * MaxDemandMonthsInTier[dbm-1] <= dvPeakDemandEMonth[m, dbm-1]
+
 #forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
 #	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb,dbm) ! validate
 #   	dvPeakDemandEMonth(m, dbm) >= 0
 #end-do
-#
+
+    [dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth[m]],
+	dvPeakDemandEMonth[m, dbm] >=  sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, db in DemandBin, fb in FuelBin)
+
 #! find the peak demand of the lookback months (lbm)
 #forall (LD in Load, lbm in DemandLookbackMonths)  do
 #	dvPeakDemandELookback >= sum(dbm in DemandMonthsBin) dvPeakDemandEMonth(lbm, dbm)
 #end-do
-#
+
+####NEED UPDATED JSON
+#    [LD in Load, lbm in DemandLookbackMonths],
+#	dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in DemandMonthsBin)
+
 #!! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
 #!! Once site load is met, excess electricity goes into X bin with lower sellback rate
 #!!4313 TS.  Adding elec penalty to annual site load
 #!!41513 TS.  Excluding Grid.
 #
 #   sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (LD="1R" or LD="1W" or LD="1S") and TechIsGrid(t) = 0)
-# 		(dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling)  <=  AnnualElecLoad
+
+    sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] *  TimeStepScaling
+        for t in Tech, LD in [Symbol("1R"), Symbol("1W"), Symbol("1S")],
+        ts in TimeStep, s in Seg, fb in FuelBin if TechIsGrid[t] == 0) <=  AnnualElecLoad
+
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!!!!!!!  End Electric Net Zero Module
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -598,10 +680,11 @@ println("Model built, moving on to optimizer...")
 #! Added 8912, modified 81012 by TS
 #! Can only have one tech from each tech class
 #!CONSTRAINT 46
+######NEED TO ADD
 #forall (t in Tech,  b in TechClass) do
 #   indicator(-1, binSingleBasicTech (t,b), sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <=  0)
 #end-do
-#
+
 #!Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.
 #!This prevents PV and wind from 'turning down'.  They always produce at max.
 #!CONSTRAINT 47
@@ -609,7 +692,12 @@ println("Model built, moving on to optimizer...")
 #	sum (fb in FuelBin, LD in Load |exists (dvRatedProd (t,LD,ts,s,fb)) and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"))
 #		dvRatedProd (t,LD,ts,s,fb) =  dvSystemSize (t, s)
 #end-do
-#
+
+    [t in Tech, ts in TimeStep, s in Seg; TechToTechClassMatrix[t, :PV] == 1 | TechToTechClassMatrix[t, :WIND] == 1],
+	sum(dvRatedProd[t,LD,ts,s,fb] for fb in FuelBin,
+        LD in [Symbol("1R"), Symbol("1W"), Symbol("1X"), Symbol("1S")]) ==  dvSystemSize[t, s]
+
+###LEFT THESE OUT
 #! System production
 #Year1ElecProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S")))
 #                 dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) *  TimeStepScaling
@@ -624,19 +712,51 @@ println("Model built, moving on to optimizer...")
 #TotalTechCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
 #TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) + sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b)
 #TotalOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
-#
-#! Utility and Taxable Costs
+
+    TotalTechCapCosts == sum(CapCostSlope[t, s] * dvSystemSize[t, s] + CapCostYInt[t,s] * binSegChosen[t,s]
+                             for t in Tech, s in Seg)
+
+    TotalStorageCapCosts == sum(dvStorageSizeKWH[b] * StorageCostPerKWH[b] + dvStorageSizeKW[b] *  StorageCostPerKW[b]
+                                for b in BattLevel)
+
+    TotalOMCosts == sum(OMperUnitSize[t] * pwf_om * dvSystemSize[t, s]
+                        for t in Tech, s in Seg)
 #TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
 #DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 #DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 #TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
 #TotalFixedCharges := FixedMonthlyCharge * 12 * pwf_e
+
+    TotalEnergyCharges == sum(dvFuelCost[t,fb]
+                              for t in Tech, fb in FuelBin)
+
+    #NEED UPDATED JSON
+    #DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
+    #                        for r in Ratchets, db in DemandBin)
+
+    #DemandFlatCharges == sum(dvPeakDemandEMonth[m, dbm] * DemandRatesMonth[m, dbm] * pwf_e
+    #                         for m in Month, dbm in DemandMonthsBin)
+
+    TotalDemandCharges ==  DemandTOUCharges + DemandFlatCharges
+
+    TotalFixedCharges == FixedMonthlyCharge * 12 * pwf_e
+
+#! Utility and Taxable Costs
 #
 #! Incentives
 #TotalEnergyExports := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
 #					dvRatedProd (t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e
 #TotalProductionIncentive := sum(t in Tech ) dvProdIncent (t)
-#
+
+    TotalEnergyExports == sum(dvRatedProd[t,LD,ts,s,fb] * TimeStepScaling * ProdFactor[t, LD, ts] * LevelizationFactor[t] * ExportRates[t,LD,ts] * pwf_e
+                           for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
+
+    TotalProductionIncentive == sum(dvProdIncent[t] for t in Tech)
+
+end)
+
+println("Model built, moving on to optimizer...")
+
 #! Tax benefit to system owner
 #r_tax_fraction_owner := (1 - r_tax_owner)
 #r_tax_fraction_offtaker := (1 - r_tax_offtaker)
