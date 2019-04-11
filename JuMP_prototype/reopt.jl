@@ -806,27 +806,27 @@ end)
 #
 #
 
-@objective(REopt, Min,
+#@objective(REopt, Min,
            # Capital Costs
            #TotalTechCapCosts + TotalStorageCapCosts #+
 
            # Fixed O&M, tax deductible for owner
-           TotalOMCosts * r_tax_fraction_owner #+
+           #TotalOMCosts * r_tax_fraction_owner #+
 
            # Utility Bill, tax deductible for offtaker
            #(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker #-
 
            # Subtract Incentives, which are taxable
            #TotalProductionIncentive * r_tax_fraction_owner
-           )
+           #)
 
 
 # Prototype Objective Function
-#cost = set1param(Tech, [50, 100, 75])
-#
-#@objective(REopt, Min,
-#            sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
-#                for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+cost = set1param(Tech, [50, 100, 75])
+
+@objective(REopt, Min,
+            sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
+                for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
 
 println("Model built, moving on to optimizer...")
 optimize!(REopt)
