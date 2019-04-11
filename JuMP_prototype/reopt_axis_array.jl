@@ -42,11 +42,11 @@ TimeStepBat=0:TimeStepCount
 #initializations from DAT1 ! constants
 #Tech
 #Load ##Had to change JSON from "load" to "Load"
-TechIsGrid = set1param(Tech, TechIsGrid)
-TechToLoadMatrix = set2param(Tech, Load, TechToLoadMatrix)
+TechIsGrid = parameter(Tech, TechIsGrid)
+TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
 #TechClass
-TurbineDerate = set1param(Tech, TurbineDerate)
-TechToTechClassMatrix = set2param(Tech, TechClass, TechToTechClassMatrix)
+TurbineDerate = parameter(Tech, TurbineDerate)
+TechToTechClassMatrix = parameter((Tech, TechClass), TechToTechClassMatrix)
 #NMILRegime
 
 #initializations from DAT2 ! economics
@@ -54,18 +54,18 @@ TechToTechClassMatrix = set2param(Tech, TechClass, TechToTechClassMatrix)
 #r_tax_offtaker
 #pwf_om
 #pwf_e
-pwf_prod_incent = set1param(Tech, pwf_prod_incent)
-LevelizationFactor = set1param((Tech), LevelizationFactor)
-LevelizationFactorProdIncent = set1param(Tech, LevelizationFactorProdIncent)
-StorageCostPerKW = set1param(BattLevel, [StorageCostPerKW])
-StorageCostPerKWH = set1param(BattLevel, [StorageCostPerKWH])
-OMperUnitSize = set1param(Tech, OMperUnitSize)
-CapCostSlope = set2param(Tech, Seg, CapCostSlope)
-CapCostYInt = set2param(Tech, Seg, CapCostYInt)
-CapCostX = set2param(Tech, Points, CapCostX)
-ProdIncentRate = set2param(Tech, Load, ProdIncentRate)
-MaxProdIncent = set1param(Tech, MaxProdIncent)
-MaxSizeForProdIncent = set1param(Tech, MaxSizeForProdIncent)
+pwf_prod_incent = parameter(Tech, pwf_prod_incent)
+LevelizationFactor = parameter(Tech, LevelizationFactor)
+LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
+StorageCostPerKW = parameter(BattLevel, [StorageCostPerKW])
+StorageCostPerKWH = parameter(BattLevel, [StorageCostPerKWH])
+OMperUnitSize = parameter(Tech, OMperUnitSize)
+CapCostSlope = parameter((Tech, Seg), CapCostSlope)
+CapCostYInt = parameter((Tech, Seg), CapCostYInt)
+CapCostX = parameter((Tech, Points), CapCostX)
+ProdIncentRate = parameter((Tech, Load), ProdIncentRate)
+MaxProdIncent = parameter(Tech, MaxProdIncent)
+MaxSizeForProdIncent = parameter(Tech, MaxSizeForProdIncent)
 #two_party_factor
 #analysis_years
 
@@ -73,65 +73,65 @@ MaxSizeForProdIncent = set1param(Tech, MaxSizeForProdIncent)
 #AnnualElecLoad
 
 #initializations from DAT4
-LoadProfile = set2param(Load, TimeStep, LoadProfile)
+LoadProfile = parameter((Load, TimeStep), LoadProfile)
 
 #initializations from DAT5 ! GIS
-ProdFactor = set3param(Tech, Load, TimeStep, ProdFactor)
+ProdFactor = parameter((Tech, Load, TimeStep), ProdFactor)
 
 #initializations from DAT6 ! storage <--NEED A BAU VERSION WITH EMPTY PARAMS?
 #StorageMinChargePcent
-EtaStorIn = set2param(Tech, Load, EtaStorIn)
-EtaStorOut = set1param(Load, EtaStorOut)
-BattLevelCoef = set2param(BattLevel, 1:2, BattLevelCoef)
+EtaStorIn = parameter((Tech, Load), EtaStorIn)
+EtaStorOut = parameter(Load, EtaStorOut)
+BattLevelCoef = parameter((BattLevel, 1:2), BattLevelCoef)
 #InitSOC
 
 #initializations from DAT7 ! maxsizes
-MaxSize = set1param(Tech, MaxSize)
+MaxSize = parameter(Tech, MaxSize)
 #MinStorageSizeKW
 #MaxStorageSizeKW
 #MinStorageSizeKWH
 #MaxStorageSizeKWH
-TechClassMinSize = set1param(TechClass, TechClassMinSize)
-MinTurndown = set1param(Tech, MinTurndown)
+TechClassMinSize = parameter(TechClass, TechClassMinSize)
+MinTurndown = parameter(Tech, MinTurndown)
 
 #initializations from DAT8
-#TimeStepRatchets = set1param(Ratchets, TimeStepRatchets) #not populated
+#TimeStepRatchets = parameter(Ratchets, TimeStepRatchets) #not populated
 
 #initializations from DAT9
-#DemandRates = set2param(Ratchets, DemandBin, DemandRates) #not populated
+#DemandRates = parameter(Ratchets, DemandBin, DemandRates) #not populated
 
 #initializations from DAT10 ! FuelCost
-FuelRate = set3param(Tech, FuelBin, TimeStep, FuelRate)
-FuelAvail = set2param(Tech, FuelBin, FuelAvail)
+FuelRate = parameter((Tech, FuelBin, TimeStep), FuelRate)
+FuelAvail = parameter((Tech, FuelBin), FuelAvail)
 #FixedMonthlyCharge
 #AnnualMinCharge
 #MonthlyMinCharge
 
 #initializations from DAT11
-ExportRates = set3param(Tech, Load, TimeStep, ExportRates)
+ExportRates = parameter((Tech, Load, TimeStep), ExportRates)
 
 #initializations from DAT12
-TimeStepRatchetsMonth = set1param(Month, TimeStepRatchetsMonth)
+TimeStepRatchetsMonth = parameter(Month, TimeStepRatchetsMonth)
 
 #initializations from DAT13
-DemandRatesMonth = set2param(Month, DemandMonthsBin, DemandRatesMonth)
+DemandRatesMonth = parameter((Month, DemandMonthsBin), DemandRatesMonth)
 
 #initializations from DAT14 ! LookbackMonthsAndPercent
 #DemandLookbackMonths
 #DemandLookbackPercent
 
 #initializations from DAT15 ! UtilityTiers
-MaxDemandInTier = set1param(DemandBin, MaxDemandInTier)
-MaxDemandMonthsInTier = set1param(DemandMonthsBin, MaxDemandMonthsInTier)
-MaxUsageInTier = set1param(FuelBin, MaxUsageInTier)
+MaxDemandInTier = parameter(DemandBin, MaxDemandInTier)
+MaxDemandMonthsInTier = parameter(DemandMonthsBin, MaxDemandMonthsInTier)
+MaxUsageInTier = parameter(FuelBin, MaxUsageInTier)
 
 #initializations from DAT16
-FuelBurnRateM = set3param(Tech, Load, FuelBin, FuelBurnRateM)
-FuelBurnRateB = set3param(Tech, Load, FuelBin, FuelBurnRateB)
+FuelBurnRateM = parameter((Tech, Load, FuelBin), FuelBurnRateM)
+FuelBurnRateB = parameter((Tech, Load, FuelBin), FuelBurnRateB)
 
 #initializations from DAT17  ! net metering
-NMILLimits = set1param(NMILRegime, NMILLimits)
-TechToNMILMapping = set2param(Tech, NMILRegime, TechToNMILMapping)
+NMILLimits = parameter(NMILRegime, NMILLimits)
+TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
 
 ### Begin Variable Initialization ###
 ######################################
@@ -220,6 +220,7 @@ end
 #     sum(ts in TimeStep, LD in Load)
 #     	binTechIsOnInTS(t,ts) * FuelBurnRateB(t,LD,fb) * TimeStepScaling * FuelRate(t,fb,ts) * pwf_e = dvFuelCost(t,fb)
 #end-do
+
     [t in Tech, fb in FuelBin],
     sum(ProdFactor[t, LD, ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
         for ts in TimeStep, LD in Load, s in Seg) +
@@ -806,27 +807,27 @@ end)
 #
 #
 
-@objective(REopt, Min,
-           # Capital Costs
-           #TotalTechCapCosts + TotalStorageCapCosts #+
-
-           # Fixed O&M, tax deductible for owner
-           TotalOMCosts * r_tax_fraction_owner #+
-
-           # Utility Bill, tax deductible for offtaker
-           #(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker #-
-
-           # Subtract Incentives, which are taxable
-           #TotalProductionIncentive * r_tax_fraction_owner
-           )
+#@objective(REopt, Min,
+#           # Capital Costs
+#           TotalTechCapCosts + TotalStorageCapCosts #+
+#
+#           # Fixed O&M, tax deductible for owner
+#           #TotalOMCosts * r_tax_fraction_owner +
+#
+#           # Utility Bill, tax deductible for offtaker
+#           #(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
+#
+#           # Subtract Incentives, which are taxable
+#           #TotalProductionIncentive * r_tax_fraction_owner
+#           )
 
 
 # Prototype Objective Function
-#cost = set1param(Tech, [50, 100, 75])
-#
-#@objective(REopt, Min,
-#            sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
-#                for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+cost = set1param(Tech, [50, 100, 75])
+
+@objective(REopt, Min,
+            sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
+                for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
 
 println("Model built, moving on to optimizer...")
 optimize!(REopt)
