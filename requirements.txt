@@ -14,6 +14,7 @@ Django==1.8
 django-celery-results==1.0.1
 django-picklefield==0.3.2
 django-tastypie==0.13.3
+django-extensions
 docopt==0.6.2
 enum34==1.1.6
 et-xmlfile==1.0.1
