@@ -153,7 +153,10 @@ CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_URL = '/static/'
+if os.environ.get('BUILD_TYPE') == 'jenkins':
+    STATIC_URL = '/static/'
+else:
+    STATIC_URL = '/'
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.dev_settings")
 django.setup()
