@@ -155,7 +155,10 @@ class DatFileManager:
         self.command_line_args.append("ScenarioNum=" + str(run_id))
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
 
-    def add_load(self, load):
+    def get_paths(self):
+        return self.paths
+
+    def add_load(self, load): 
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
@@ -459,24 +462,21 @@ class DatFileManager:
                             if not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
-                                                    u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                 switch_rebate = True
                             ya = yp - (p * yp + u_cap)
                         elif (p * yp) >= p_cap and (u * xp) < u_cap:
                             if not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
-                                                    p_cap)
+                                        insert_p_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u, p_cap)
                                 switch_percentage = True
                             ya = yp - (p_cap + xp * u)
                         elif p * yp >= p_cap and u * xp >= u_cap:
                             if not switch_rebate and not switch_percentage:
                                 if p_xbp == u_xbp:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
-                                                    u_cap)
+                                        insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_percentage = True
                                     switch_rebate = True
                                 elif p_xbp < u_xbp:
@@ -487,34 +487,29 @@ class DatFileManager:
                                     switch_percentage = True
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp,
-                                                                u_ybp,
+                                            insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
                                                                 p, p_cap, u_cap)
                                     switch_rebate = True
                                 else:
                                     if u * xp != u_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
-                                                        u_cap)
+                                            insert_u_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p, u_cap)
                                     switch_rebate = True
                                     if p * yp != p_cap:
                                         xp_array_incent, yp_array_incent = \
-                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp,
-                                                                p_ybp,
+                                            insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
                                                                 u, u_cap, p_cap)
                                     switch_percentage = True
                             elif switch_rebate and not switch_percentage:
                                 if p * yp != p_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp,
-                                                            u,
+                                        insert_p_after_u_bp(xp_array_incent, yp_array_incent, next_region, p_xbp, p_ybp, u,
                                                             u_cap, p_cap)
                                 switch_percentage = True
                             elif switch_percentage and not switch_rebate:
                                 if u * xp != u_cap:
                                     xp_array_incent, yp_array_incent = \
-                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp,
-                                                            p,
+                                        insert_u_after_p_bp(xp_array_incent, yp_array_incent, next_region, u_xbp, u_ybp, p,
                                                             p_cap, u_cap)
                                 switch_rebate = True
 
@@ -541,7 +536,7 @@ class DatFileManager:
                     tmp_slope = round((cost_curve_bp_y[seg] - cost_curve_bp_y[seg - 1]) /
                                       (cost_curve_bp_x[seg] - cost_curve_bp_x[seg - 1]), 0)
                     tmp_y_int = round(cost_curve_bp_y[seg] - tmp_slope * cost_curve_bp_x[seg], 0)
-
+        
                     tmp_cap_cost_slope.append(tmp_slope)
                     tmp_cap_cost_yint.append(tmp_y_int)
 
@@ -560,8 +555,7 @@ class DatFileManager:
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,
-                                                                 # input tech cost with incentives, but no ITC
+                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
                                                                  0,
                                                                  sf.analysis_years,
                                                                  sf.owner_discount_pct,
@@ -569,8 +563,7 @@ class DatFileManager:
                                                                  itc,
                                                                  eval('self.' + tech + '.incentives.macrs_schedule'),
                                                                  eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                 eval(
-                                                                     'self.' + tech + '.incentives.macrs_itc_reduction'))
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
 
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
@@ -578,7 +571,7 @@ class DatFileManager:
 
                 for p in range(1, n_segments + 1):
                     cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \
-                                         (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
+                                                                  (cost_curve_bp_x[p] - cost_curve_bp_x[p - 1])
                     updated_y_intercept.append(cost_curve_bp_y[p] - updated_cap_cost_slope[p - 1] * cost_curve_bp_x[p])
 
                 tmp_cap_cost_slope = updated_cap_cost_slope
@@ -590,6 +583,7 @@ class DatFileManager:
                 - first X "breakpoint" and y-intercept must ALWAYS be zero (to be compatible with REopt constraints and
                     costing formulation.
                 - if existing_kw > 0, then the first slope must also be zero (cannot be negative!).
+
                 Steps:
                     1. find the segment for existing_kw
                     2. find the y-value for existing_kw (which is an x-value)
@@ -600,8 +594,7 @@ class DatFileManager:
                 if existing_kw > 0:
 
                     # find the first index in cost_curve_bp_x that is larger than existing_kw, then reset cost curve
-                    for i, bp in enumerate(
-                            cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
                         if bp <= existing_kw:
                             continue
                         else:
@@ -614,12 +607,10 @@ class DatFileManager:
 
                 elif existing_kw_flag:
 
-                    for i, bp in enumerate(
-                            cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
-                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [
-                            1]  # adding 1 as the slope for wind's second segment
-                        tmp_cap_cost_yint = [0] + [big_number]
-                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i + 1]] + [cost_curve_bp_x[-1] + 1]
+                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0] + [big_number]    
+                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
                         n_segments = len(tmp_cap_cost_slope)
                         break
 
@@ -734,7 +725,6 @@ class DatFileManager:
 
     def _get_REopt_tech_classes(self, techs):
         """
-
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
@@ -833,13 +823,11 @@ class DatFileManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         self.command_line_args.append("CapCostSegCount=" + str(n_segments))
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(
-            self.bau_techs)
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
 
         sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,
-                                                        # use full cost as basis
+        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
                                                         self.storage.replace_cost_us_dollars_per_kw,
                                                         self.storage.inverter_replacement_year,
                                                         sf.owner_discount_pct,
@@ -849,8 +837,7 @@ class DatFileManager:
                                                         self.storage.incentives.macrs_bonus_pct,
                                                         self.storage.incentives.macrs_itc_reduction)
         StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,
-                                                         # there are no cash incentives for kwh
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
                                                          self.storage.replace_cost_us_dollars_per_kwh,
                                                          self.storage.battery_replacement_year,
                                                          sf.owner_discount_pct,
@@ -953,8 +940,7 @@ class DatFileManager:
 
         # economics.dat
         write_to_dat(self.file_economics, levelization_factor, 'LevelizationFactor')
-        write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent',
-                     mode='a')
+        write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent', mode='a')
         write_to_dat(self.file_economics, pwf_e, 'pwf_e', mode='a')
         write_to_dat(self.file_economics, pwf_om, 'pwf_om', mode='a')
         write_to_dat(self.file_economics, two_party_factor, 'two_party_factor', mode='a')
@@ -992,8 +978,7 @@ class DatFileManager:
                                 "analysis_years": sf.analysis_years})
 
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
-        write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau,
-                     'LevelizationFactorProdIncent', mode='a')
+        write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau, 'LevelizationFactorProdIncent', mode='a')
         write_to_dat(self.file_economics_bau, pwf_e_bau, 'pwf_e', mode='a')
         write_to_dat(self.file_economics_bau, pwf_om_bau, 'pwf_om', mode='a')
         write_to_dat(self.file_economics_bau, two_party_factor_bau, 'two_party_factor', mode='a')

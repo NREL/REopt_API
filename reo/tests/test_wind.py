@@ -9,7 +9,7 @@ from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
-from reo.src.wind import WindSAMSDK
+from reo.src.wind import WindSAMSDK, combine_wind_files
 
 
 wind_post = {"Scenario": {"Site": {
@@ -59,7 +59,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("HSDS wind api barely works")
+
     def test_wind_size_class(self):
         """
         Validation to ensure that max_kw of wind is set to size_class
@@ -94,7 +94,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
-    @skip("HSDS wind api barely works")
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
@@ -134,25 +133,26 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         :return
         """
 
-        resource_data = os.path.join('reo', 'tests', 'wind_data.csv')
+        # First test passing in data in memory directly
+        path_inputs = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'wind_resource')
+        resource_data = os.path.join(path_inputs, 'wind_data.csv')
         df = pd.read_csv(resource_data, header=0)
 
         # By default, the weather data available for download as a .srw file through WindTookit website only gives 100 m
         # hub height, which is what was used for SAM comparison. SAM won't let you simulate a hub height that differs
         # from the resource by more than 35m, so we'll use 80m for validation
-
-        hub_height_meters = 80
         kwargs = dict()
+        kwargs['hub_height_meters'] = 80
         kwargs['longitude'] = -105.2348
         kwargs['latitude'] = 39.91065
         kwargs['size_class'] = 'medium'
-
+        kwargs['path_inputs'] = path_inputs
         kwargs['temperature_celsius'] = df["temperature"].tolist()
         kwargs['pressure_atmospheres'] = df["pressure_100m"].tolist()
         kwargs['wind_meters_per_sec'] = df["windspeed"].tolist()
         kwargs['wind_direction_degrees'] = df["winddirection"].tolist()
 
-        sam_wind = WindSAMSDK(hub_height_meters, **kwargs)
+        sam_wind = WindSAMSDK(**kwargs)
         prod_factor = sam_wind.wind_prod_factor()
 
         prod_factor = [round(x, 2) for x in prod_factor]
@@ -160,15 +160,41 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         expected_prod_factor = [round(x, 2) for x in expected_prod_factor]
         self.assertListEqual(prod_factor, expected_prod_factor)
 
+        # Second test passing in resource file
+        kwargs2 = dict()
+        kwargs2['hub_height_meters'] = 50
+        kwargs['longitude'] = -105.2348
+        kwargs['latitude'] = 39.91065
+        kwargs['size_class'] = 'medium'
+        kwargs2['file_resource_full'] = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
+
+        sam_wind2 = WindSAMSDK(**kwargs2)
+        prod_factor2 = sam_wind2.wind_prod_factor()
+        self.assertEqual(len(prod_factor2), 8760)
+
+    def test_combine_wind(self):
+
+        path_inputs = os.path.join('reo', 'tests', 'wind_resource')
+
+        file1 = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m.srw")
+        file2 = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_60m.srw")
+        file_out = os.path.join(path_inputs, "39.91065_-105.2348_windtoolkit_2012_60min_40m_60m.srw")
+
+        file_resource_heights = {40: file1, 60: file2}
+
+        if os.path.isfile(file_out):
+            os.remove(file_out)
+        self.assertTrue(combine_wind_files(file_resource_heights, file_out))
+
     @skip("HSDS wind api barely works")
-    def test_wind_toolkit_api(self):
-        from reo.src.wind_resource import get_wind_resource
+    def test_wind_hsds_api(self):
+        from reo.src.wind_resource import get_wind_resource_hsds
 
         latitude, longitude = 39.7555, -105.2211
 
-        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
+        wind_data = get_wind_resource_hsds(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
         self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760*4)
-        wind_data = get_wind_resource(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
+        wind_data = get_wind_resource_hsds(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
         self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
     def test_location_outside_wind_toolkit_dataset(self):

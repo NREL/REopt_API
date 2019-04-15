@@ -6,6 +6,7 @@ from tastypie.api import Api
 from reo import views
 from proforma.views import proforma
 
+
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
 
@@ -31,6 +32,7 @@ urlpatterns = [
     url(r'^v1/annual_kwh/?$', views.annual_kwh, name='annual_kwh'),
     url(r'^v1/simulated_load/?$', views.simulated_load, name='simulated_load'),
     url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
+    url(r'^errors/(?P<page_uuid>.*)', views.errors, name='errors'),
     url(r'', include(v1_api.urls), name='job'),
     url(r'(.*)', page_not_found, name='404'),
     ]
