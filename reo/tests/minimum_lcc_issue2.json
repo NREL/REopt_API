@@ -6,7 +6,7 @@
       {"PV":
         {"pbi_years": 1.0,
           "macrs_bonus_pct": 0.0,
-          "max_kw": 100000.0,
+          "max_kw": 15000.0,
           "pbi_max_us_dollars": 1000000000.0,
           "radius": 0.0,
           "state_ibi_pct": 0.0,
@@ -53,8 +53,8 @@
           "outage_start_hour": null,
           "outage_is_major_event": true,
           "critical_loads_kw": [],
-          "doe_reference_name": "Hospital",
-          "annual_kwh": 500000.0},
+          "doe_reference_name": "MidriseApartment",
+          "annual_kwh": 24000.0},
       "roof_squarefeet": null,
       "Storage":
         {"max_kwh": 0.0,
@@ -80,18 +80,9 @@
           "inverter_replacement_year": 10},
       "land_acres": null,
       "ElectricTariff":
-        {"add_blended_rates_to_urdb_rate": false,
-          "wholesale_rate_us_dollars_per_kwh": 5.0,
-          "net_metering_limit_kw": 0.0,
-          "interconnection_limit_kw": 100000000.0,
-          "blended_monthly_demand_charges_us_dollars_per_kw": [15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0, 15.0],
-          "urdb_utility_name": "",
-          "urdb_label": "",
-          "urdb_rate_name": "",
-          "urdb_response": null,
-          "blended_annual_demand_charges_us_dollars_per_kw": 0.0,
-          "blended_annual_rates_us_dollars_per_kwh": 0.0,
-          "blended_monthly_rates_us_dollars_per_kwh": [0.1, 0.1, 0.1, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.1, 0.1]},
+        {"urdb_response": {
+          "sector": "Residential", "startdate": 1433116800, "fixedmonthlycharge": 7.57, "minmonthlycharge'": 50, "enddate": 1440975600, "name": "RS-1 Residential Service", "source": "https://www.fpl.com/rates/pdf/electric-tariff-section8.pdf", "supersedes": "53a455f05257a3ff4a8d8cf2", "uri": "https://openei.org/apps/USURDB/rate/view/5550d6fd5457a3187e8b4567", "label": "5550d6fd5457a3187e8b4567", "eiaid": 6452, "sourceparent": "https://www.fpl.com/rates.html", "energyratestructure": [[{"max": 1000, "rate": 0.07531, "adj": 0.0119, "unit": "kWh"}, {"rate": 0.09613, "adj": 0.0119, "unit": "kWh"}]], "energyweekendschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "energyweekdayschedule": [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], "phasewiring": "Single Phase", "revisions": [1431339677, 1431340059, 1431528978, 1431529815, 1431530443, 1448395688], "energycomments": "Adjustment: Environmental, Storm Charge, Conservation, Capacity\r\nRate: Base rate and fuel", "utility": "Florida Power & Light Co."
+        }},
       "longitude": -104.990251,
       "address": "Denver CO USA",
       "latitude": 39.7392358,
