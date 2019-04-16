@@ -43,6 +43,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'reo',
+    'summary',
     'tastypie',
     'proforma',
     'resilience_stats',
