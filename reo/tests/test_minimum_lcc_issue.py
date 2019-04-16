@@ -59,11 +59,11 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
     def test_positive_lcc(self):
         """
         Case with site exports more than the cost of energy+demand+fixed charges.
-        Utility imposes a total minimum charge.
+        Utility imposes a total minimum monthly charge as well fixed monthly charge.
         Expected outcome:
         - lcc for both the cases positive
         ...
-        - MinChargeAdder variable in the optimization formulation is exptected to become positive
+        - MinChargeAdder variable in the optimization formulation is expected to become positive
         :return:
         """
         test_post = os.path.join('reo', 'tests', 'minimum_lcc_issue2.json')
