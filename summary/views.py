@@ -5,6 +5,7 @@ from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, Stor
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 import uuid
+from summary.models import UserUnlinkedRuns
 
 
 def add_user_uuid(request):
@@ -54,6 +55,55 @@ def add_user_uuid(request):
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)
 
+def unlink(request, user_uuid, run_uuid):
+    """
+    Retrieve a summary of scenarios for given user_uuid
+    :param request:
+    :param user_uuid:
+    :return 
+        True, bool
+    """
+    content = {'user_uuid':user_uuid, 'run_uuid':run_uuid}
+    for name, check_id in content.items():
+        try:
+            uuid.UUID(check_id)  # raises ValueError if not valid uuid
+
+        except ValueError as e:
+            if e.message == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.message) }, status=400)
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                if name == 'user_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=check_id)
+                if name == 'run_uuid':
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', run_uuid=check_id)
+                err.save_to_db()
+                return JsonResponse({"Error": str(err.message)}, status=400)
+
+    try:
+        
+        if not ScenarioModel.objects.filter(user_uuid=user_uuid).exists():
+            return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=500)
+
+        if not ScenarioModel.objects.filter(run_uuid=run_uuid).exists():
+            return JsonResponse({"Error":"Run {} does not exist".format(run_uuid)}, status=500)
+
+        runs = ScenarioModel.objects.filter(run_uuid=run_uuid)
+        if runs.exists():
+            if runs[0].user_uuid != user_uuid:
+                return JsonResponse({"Error":"Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=500)
+
+        if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
+            UserUnlinkedRuns.create(**content)
+
+        return JsonResponse({"Success":True}, status=500)
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
+        err.save_to_db()
+        return JsonResponse({"Error": err.message}, status=500)
+
+
 def summary(request, user_uuid):
     """
     Retrieve a summary of scenarios for given user_uuid
@@ -97,6 +147,9 @@ def summary(request, user_uuid):
 
     try:
         scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
+        unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
+        scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
+
         json = {"user_uuid": user_uuid, "scenarios": []}
 
         if len(scenarios) == 0:
