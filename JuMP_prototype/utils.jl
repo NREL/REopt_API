@@ -46,103 +46,34 @@ function jsonToVariable(path)
     end
 end
 
+function paramDataFormatter(setTup::Tuple, data)
+    reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
+    shapedData = reshape(data, reverseTupleAxis)
+    reverseDataAxis = [length(setTup)+1 - n for n in 1:length(setTup)]
+    shapedDataT = permutedims(shapedData, reverseDataAxis)
+    return AxisArray(shapedDataT, setTup)
+end
 
 function parameter(setTup::Tuple, data)
-    shapedData = reshape(data, Tuple([length(set) for set in setTup]))
-    return AxisArray(shapedData, setTup)
+    try
+        formattedParam = paramDataFormatter(setTup, data)
+        return formattedParam
+    catch
+        let x = 1
+            for set in setTup
+                x = x * length(set)
+            end
+            numZeros = x - length(data)
+            for zero in 1:numZeros
+                append!(data, 0)
+            end
+            formattedParam = paramDataFormatter(setTup, data)
+            return formattedParam
+        end
+    end
 end
 
 function parameter(set, data)
     shapedData = reshape(data, length(set))
     return AxisArray(shapedData, set)
-end
-
-function set1param(set1, data)
-    tmp1 = []
-
-    for elem1 in set1
-        push!(tmp1, elem1)
-    end
-
-    return I.ndsparse((tmp1), data)
-end
-
-function set2param(set1, set2, data)
-    tmp1 = []
-    tmp2 = []
-
-    for elem1 in set1
-        for elem2 in set2
-            push!(tmp1, elem1)
-            push!(tmp2, elem2)
-        end
-    end
-
-    return I.ndsparse((tmp1, tmp2), data)
-end
-
-function set3param(set1, set2, set3, data)
-    tmp1 = []
-    tmp2 = []
-    tmp3 = []
-
-    for elem1 in set1
-        for elem2 in set2
-            for elem3 in set3
-                push!(tmp1, elem1)
-                push!(tmp2, elem2)
-                push!(tmp3, elem3)
-            end
-        end
-    end
-
-    return I.ndsparse((tmp1, tmp2, tmp3), data)
-end
-
-function set4param(set1, set2, set3, set4, data)
-    tmp1 = []
-    tmp2 = []
-    tmp3 = []
-    tmp4 = []
-
-    for elem1 in set1
-        for elem2 in set2
-            for elem3 in set3
-                for elem4 in set4
-                    push!(tmp1, elem1)
-                    push!(tmp2, elem2)
-                    push!(tmp3, elem3)
-                    push!(tmp4, elem4)
-                end
-            end
-        end
-    end
-
-    return I.ndsparse((tmp1, tmp2, tmp3, tmp4), data)
-end
-
-function set5param(set1, set2, set3, set4, set5, data)
-    tmp1 = []
-    tmp2 = []
-    tmp3 = []
-    tmp4 = []
-    tmp5 = []
-
-    for elem1 in set1
-        for elem2 in set2
-            for elem3 in set3
-                for elem4 in set4
-                    for elem5 in set5
-                        push!(tmp1, elem1)
-                        push!(tmp2, elem2)
-                        push!(tmp3, elem3)
-                        push!(tmp4, elem4)
-                        push!(tmp5, elem5)
-                    end
-                end
-            end
-        end
-    end
-
-    return I.ndsparse((tmp1, tmp2, tmp3, tmp4, tmp5), data)
 end
