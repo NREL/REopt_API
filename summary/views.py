@@ -150,16 +150,6 @@ def summary(request, user_uuid):
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
 
-        json = {"user_uuid": user_uuid, "scenarios": []}
-
-        if len(scenarios) == 0:
-            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
-            return response
-        
-        scenario_run_uuids =  [s.run_uuid for s in scenarios]
-        
-        #saving time by only calling each table once
-        scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
         json_response = {"user_uuid": user_uuid, "scenarios": []}
 
         if len(scenarios) == 0:
