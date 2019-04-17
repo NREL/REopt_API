@@ -159,24 +159,34 @@ def summary(request, user_uuid):
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
         
         #saving time by only calling each table once
+        scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
+        json_response = {"user_uuid": user_uuid, "scenarios": []}
+
+        if len(scenarios) == 0:
+            response = JsonResponse({"Error": "No scenarios found for user '{}'".format(user_uuid)}, content_type='application/json', status=404)
+            return response
+        
+        scenario_run_uuids =  [s.run_uuid for s in scenarios]
+        
+        #saving time by only calling each table once
         def dbToDict(db_results):
             result = {}
             for r in db_results:
                 if r in result.keys():
-                    result[r.run_uuid] = result[r.run_uuid] + [r]
+                    result[r['run_uuid']] = result[r['run_uuid']] + [r]
                 else:
-                    result[r.run_uuid] = r
+                    result[r['run_uuid']] = r
             return result
 
-        messages = dbToDict(MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        sites = dbToDict(SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        loads = dbToDict(LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).all())
-        
+        messages = dbToDict(MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message'))
+        sites = dbToDict(SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address'))
+        loads = dbToDict(LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name'))
+        batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh'))
+        pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
+        winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
+        financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs'))
+        tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars'))
+
         for scenario in scenarios:
             results = {}
             
@@ -194,7 +204,7 @@ def summary(request, user_uuid):
             # Messages
             results['messages'] = {}
             for message in message_set:
-                results['messages'][message.message_type] = message.message
+                results['messages'][message['message_type']] = message['message']
             
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
@@ -211,72 +221,74 @@ def summary(request, user_uuid):
                 results['description'] = scenario.description
 
                 # Focus
-                if load.outage_start_hour:
+                if load['outage_start_hour']:
                     results['focus'] = "Resilience"
                 else:
                     results['focus'] = "Financial"
 
                 # Address
-                results['address'] = site.address
+                results['address'] = site['address']
 
                 # Utility Tariff
-                if tariff.urdb_rate_name:
-                    results['urdb_rate_name'] = tariff.urdb_rate_name
+                if tariff['urdb_rate_name']:
+                    results['urdb_rate_name'] = tariff['urdb_rate_name']
                 else:
                     results['urdb_rate_name'] = "Custom"
 
                 # Load Profile
-                if load.loads_kw:
+                if load['loads_kw']:
                     results['doe_reference_name'] = "Custom"
                 else:
-                    results['doe_reference_name'] = load.doe_reference_name
+                    results['doe_reference_name'] = load['doe_reference_name']
 
                 # NPV
-                results['npv_us_dollars'] = financial.npv_us_dollars
+                results['npv_us_dollars'] = financial['npv_us_dollars']
 
                 # DG System Cost
-                results['net_capital_costs'] = financial.net_capital_costs
+                results['net_capital_costs'] = financial['net_capital_costs']
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
-                    tariff.year_one_energy_cost_us_dollars,
-                    tariff.year_one_demand_cost_us_dollars,
-                    tariff.year_one_fixed_cost_us_dollars,
-                    tariff.year_one_min_charge_adder_us_dollars,
-                    tariff.year_one_bill_us_dollars
+                    tariff['year_one_energy_cost_us_dollars'],
+                    tariff['year_one_demand_cost_us_dollars'],
+                    tariff['year_one_fixed_cost_us_dollars'],
+                    tariff['year_one_min_charge_adder_us_dollars'],
+                    tariff['year_one_bill_us_dollars']
                     ]))
+                
                 year_one_costs_bau = sum(filter(None, [
-                    tariff.year_one_energy_cost_bau_us_dollars,
-                    tariff.year_one_demand_cost_bau_us_dollars,
-                    tariff.year_one_fixed_cost_bau_us_dollars,
-                    tariff.year_one_min_charge_adder_bau_us_dollars,
-                    tariff.year_one_bill_bau_us_dollars
+                    tariff['year_one_energy_cost_bau_us_dollars'],
+                    tariff['year_one_demand_cost_bau_us_dollars'],
+                    tariff['year_one_fixed_cost_bau_us_dollars'],
+                    tariff['year_one_min_charge_adder_bau_us_dollars'],
+                    tariff['year_one_bill_bau_us_dollars']
                     ]))
+                
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
                 # PV Size
-                if pv.max_kw > 0:
-                    results['pv_kw'] = pv.size_kw
+                if pv['max_kw'] > 0:
+                    results['pv_kw'] = pv['size_kw']
                 else:
                     results['pv_kw'] = 'not evaluated'
 
                 # Wind Size
-                if wind.max_kw > 0:
-                    results['wind_kw'] = wind.size_kw
+                if wind['max_kw'] > 0:
+                    results['wind_kw'] = wind['size_kw']
                 else:
                     results['wind_kw'] = 'not evaluated'
 
                 # Battery Size
-                if batt.max_kw > 0:
-                    results['batt_kw'] = batt.size_kw
-                    results['batt_kwh'] = batt.size_kwh
+                if batt['max_kw'] > 0:
+                    results['batt_kw'] = batt['size_kw']
+                    results['batt_kwh'] = batt['size_kwh']
                 else:
                     results['batt_kw'] = 'not evaluated'
                     results['batt_kwh'] = 'not evaluated'
 
 
-            json['scenarios'].append(results)
-        response = JsonResponse(json)
+            json_response['scenarios'].append(results)
+        response = JsonResponse(json_response)
         return response
 
     except Exception as e:
