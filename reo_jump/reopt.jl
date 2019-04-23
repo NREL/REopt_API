@@ -33,4 +33,6 @@ load = StaticLoadReo("load1", Int8(0), PowerSystems.Bus(),
 TimeSeries.TimeArray(Dates.today(), ones(1)),
 50000.0, nothing)
 
+tcreo = TechClassReo([0.2,225.0], [0,1,0,1])
+
 println(pv)

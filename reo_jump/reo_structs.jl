@@ -9,6 +9,8 @@ import PowerSystems
 using TimeSeries
 # fieldnames(PowerSystem)
 
+
+#### GENERATION MODELING
 #struct TechReo <: PowerSystems.TechnicalParams
 struct TechReo
    activepowerlimits::NamedTuple{(:min, :max),Tuple{Float64,Float64}}
@@ -106,6 +108,7 @@ struct ThermalGenReo <: PowerSystems.ThermalGen
 end
 
 
+#### STORAGE MODELING
 struct EconBattReo
     storagecostperkw::Float64
     storagecostperkwh::Float64
@@ -144,7 +147,7 @@ struct GenericBatteryReo <: PowerSystems.Storage
     end
 end
 
-
+### LOAD MODELING
 struct StaticLoadReo <: PowerSystems.ElectricLoad
     name::Union{String, Nothing}
     available::Union{Int8, Nothing}
@@ -183,4 +186,19 @@ function StaticLoadReoPF(name="init",
     power_factor=1.0)
     return StaticLoadReo(name, available, bus, activepowerloadseries,
     annualelecload, reactivepowerloadseries)
+end
+
+
+### Following concrete types are NOT subtyped from PowerSystems.jl
+### Reo specific abstract types is defined here:
+abstract type Reo end
+
+struct TechClassReo <: Reo
+    techclassminsize::Array{Float64, 1}
+    techtotechclassmatrix::Array{Int8, 1}
+
+    function TechClassReo(techclassminsize=[0],
+        techtotechclassmatrix=Int8.([0,1]))
+        new(techclassminsize, techtotechclassmatrix)
+    end
 end
