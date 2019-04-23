@@ -35,4 +35,7 @@ TimeSeries.TimeArray(Dates.today(), ones(1)),
 
 tcreo = TechClassReo([0.2,225.0], [0,1,0,1])
 
+genecon = GeneralEconReo(20, [0.0,0.2],[0.0,0.1],[0.1,0.3],[1.0,20.6],
+0.9, 12.3, 1.2, [1,10.2], 0.3, 2.3,["a","b","c"])
+
 println(pv)

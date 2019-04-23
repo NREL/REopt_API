@@ -202,3 +202,31 @@ struct TechClassReo <: Reo
         new(techclassminsize, techtotechclassmatrix)
     end
 end
+
+
+struct GeneralEconReo <: Reo
+    analysisyears::Float64
+    maxprodincentive::Array{Float64, 1}
+    levelizationfactor::Array{Float64, 1}
+    levelizationfactor_prodincent::Array{Float64, 1}
+    prodincentrate::Array{Float64,1}
+    pwf_e::Float64
+    pwf_om::Float64
+    twopartyfactor::Float64
+    pwf_prod_incent::Array{Float64,1}
+    r_tax_offtaker::Float64
+    r_tax_owner::Float64
+    nmil_regime::Array{String, 1}
+
+    function GeneralEconReo(analysis_years=20, maxprodincentive=[0.0,0.2],
+        levelizationfactor=[0.0,0.1],levelizationfactor_prodincent=[0.1,0.3],
+        prodincentrate=[1.0,20.6], pwf_e=0.9, pwf_om=12.3, twopartyfactor=1.2,
+        pwf_prod_incent=[1,10.2], r_tax_offtaker=0.3, r_tax_owner=2.3,
+        nmil_regime=["a","b","c"])
+
+        new(analysis_years, maxprodincentive, levelizationfactor,
+        levelizationfactor_prodincent, prodincentrate, pwf_e, pwf_om,
+        twopartyfactor, pwf_prod_incent, r_tax_offtaker, r_tax_owner,
+        nmil_regime)
+    end
+end
