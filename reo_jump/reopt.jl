@@ -14,12 +14,19 @@ jsonToVariable("./all_data_new.json")
 
 pv = RenewableGenReo("PV", "PV", Int8(0), Int8(1), PowerSystems.Bus(),
 TimeSeries.TimeArray(Dates.today(), ones(1)),
+250.0, Int8.([1,1,1,1]), Int8.([0,1,0]),
 TechReo((min=25.0, max=200.0),nothing,nothing,nothing),
-250.0, Int8.([1,1,1,1]), Int8.([0,1,0]))
+EconGenReo([0.0], [0.0], [0.0], [(0.0,0.1)], nothing))
 
 
-util =ThermalGenReo("UTIL", "UTIL", false, true, PowerSystems.Bus(),
-TimeSeries.TimeArray(Dates.today(), ones(1)), 999,55,[1,1,1,1], [0,1,0],
-0.96,[1,0.6,1.1,0.98],[1,0.6,1.1,0.98], [100000],[1,2,3],0)
+util =ThermalGenReo("UTIL", "UTIL", Int8(0), Int8(1), PowerSystems.Bus(),
+TimeSeries.TimeArray(Dates.today(), ones(1)),[1,1,1,1], [0,1,0],0.96,
+[1,0.6,1.1,0.98],[1,0.6,1.1,0.98], [100000],[1,2,3],0,
+TechReo((min=25.0, max=200.0),nothing,nothing,nothing),
+EconGenReo([0.0], [0.0], [0.0], [(0.0,0.1)], nothing))
+
+batt= GenericBatteryReo("batt", Int8(0), PowerSystems.Bus(),
+(min=0.0, max=0.9),(min=0.0, max=0.9), Float16(0.1), Float32(0.2), Float32(0.2),
+Float16.([0.1,0.2]), Float16.([0.0,0.1]), EconBattReo(25.0,32.0))
 
 println(pv)
