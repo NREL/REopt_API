@@ -17,7 +17,7 @@ struct TechReo
    powerfactor::Union{Float64,Nothing} # [-1. -1]
 end
 
-
+# outer constructor
 function TechReo(activepowerlimits=(min=25.0, max=200.0),
     installedcapacity=nothing, reactivepowerlimits=nothing,
     powerfactor=nothing)
@@ -34,7 +34,7 @@ struct EconGenReo
     fixedcost::Union{Float64, Nothing} #[$/h]
 end
 
-
+#outer constructor
 function EconGenReo(capcostslope=[0.0], capcostx=[0.0], capcostyint=[0.0],
     variablecost= [(0.0,0.1)], fixedcost=0.0)
     EconGenReo(capcostslope, capcostx, capcostyint,variablecost, fixedcost)
@@ -142,4 +142,45 @@ struct GenericBatteryReo <: PowerSystems.Storage
         new(name, available, bus,energycapacity, powercapacity, initsoc,
         storageminchargepcent, battlevelcoef, etastorout, etastorin, econ)
     end
+end
+
+
+struct StaticLoadReo <: PowerSystems.ElectricLoad
+    name::Union{String, Nothing}
+    available::Union{Int8, Nothing}
+    bus::PowerSystems.Bus
+    activepowerloadseries::TimeSeries.TimeArray #originally named as LoadProfile
+    annualelecload::Float64
+    reactivepowerloadseries::Union{TimeSeries.TimeArray, Nothing}
+end
+
+
+#multiple dispatch
+function StaticLoadReoPF(name::Union{String, Nothing},
+    available::Union{Int8, Nothing}, bus::PowerSystems.Bus,
+    activepowerloadseries::TimeSeries.TimeArray, annualelecload::Float64,
+    power_factor::Float64)
+    reactivepowerloadseries = activepowerloadseries.*sin(acos(power_factor))
+    return PowerLoad(name, available, bus, activepowerloadseries,
+    annualelecload, reactivepowerloadseries)
+end
+
+#outer constructor
+function StaticLoadReo(name="init",
+    available=Int8(0), bus=PowerSystems.Bus(),
+    activepowerloadseries=TimeSeries.TimeArray(Dates.today(), ones(1)),
+    annualelecload=0.0,
+    reactivepowerloadseries=nothing)
+    return StaticLoadReo(name, available, bus, activepowerloadseries,
+    annualelecload, reactivepowerloadseries)
+end
+
+#outer constructor of the multiple dispatched struct
+function StaticLoadReoPF(name="init",
+    available=Int8(0), bus=PowerSystems.Bus(),
+    activepowerloadseries=TimeSeries.TimeArray(Dates.today(), ones(1)),
+    annualelecload=0.0,
+    power_factor=1.0)
+    return StaticLoadReo(name, available, bus, activepowerloadseries,
+    annualelecload, reactivepowerloadseries)
 end

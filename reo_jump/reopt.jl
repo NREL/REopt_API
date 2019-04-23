@@ -29,4 +29,8 @@ batt= GenericBatteryReo("batt", Int8(0), PowerSystems.Bus(),
 (min=0.0, max=0.9),(min=0.0, max=0.9), Float16(0.1), Float32(0.2), Float32(0.2),
 Float16.([0.1,0.2]), Float16.([0.0,0.1]), EconBattReo(25.0,32.0))
 
+load = StaticLoadReo("load1", Int8(0), PowerSystems.Bus(),
+TimeSeries.TimeArray(Dates.today(), ones(1)),
+50000.0, nothing)
+
 println(pv)
