@@ -30,6 +30,7 @@ class PVWatts:
                  tilt=None,
                  time_steps_per_hour=1,
                  offline=False,
+                 verify=True,
                  **kwargs):
 
         self.url_base = url_base
@@ -50,6 +51,7 @@ class PVWatts:
         self.tilt = tilt
         self.time_steps_per_hour = time_steps_per_hour
         self.offline = offline  # used for testing
+        self.verify = verify # used for testing
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -66,7 +68,7 @@ class PVWatts:
 
     @property
     def data(self):
-        resp = requests.get(self.url, verify=True)
+        resp = requests.get(self.url, verify=self.verify)
 
         if not resp.ok:
 
@@ -77,7 +79,7 @@ class PVWatts:
                 if intl_warning in warning:
                     self.dataset = "intl"
                     self.radius = 200 # bump up search radius, since there aren't many sites
-                    resp = requests.get(self.url, verify=True)
+                    resp = requests.get(self.url, verify=self.verify)
                     break
 
             if not resp.ok:
