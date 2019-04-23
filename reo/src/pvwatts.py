@@ -12,7 +12,7 @@ from reo.log_levels import log
 class PVWatts:
 
     def __init__(self,
-                 url_base="https://developer.nrel.gov/api/pvwatts/v5.json",
+                 url_base="https://developer.nrel.gov/api/pvwatts/v6.json",
                  key=keys.developer_nrel_gov_key,
                  azimuth=180,
                  system_capacity=1,
@@ -23,8 +23,8 @@ class PVWatts:
                  gcr=0.4,
                  dc_ac_ratio=1.1,
                  inv_eff=0.96,
-                 radius=0,
-                 dataset="tmy3",
+                 radius=100,
+                 dataset="nsrdb",
                  latitude=None,
                  longitude=None,
                  tilt=None,
@@ -69,10 +69,22 @@ class PVWatts:
         resp = requests.get(self.url, verify=True)
 
         if not resp.ok:
-            log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-            raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-        log.info("PVWatts API query successful.")
 
+            # check for international location
+            data = json.loads(resp.text)
+            intl_warning = "This location appears to be outside the US"
+            for warning in data["warnings"]:
+                if intl_warning in warning:
+                    self.dataset = "intl"
+                    self.radius = 200 # bump up search radius, since there aren't many sites
+                    resp = requests.get(self.url, verify=True)
+                    break
+
+            if not resp.ok:
+                log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+
+        log.info("PVWatts API query successful.")
         data = json.loads(resp.text)
         return data
 
