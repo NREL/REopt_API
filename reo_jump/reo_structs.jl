@@ -230,3 +230,28 @@ struct GeneralEconReo <: Reo
         nmil_regime)
     end
 end
+
+struct UtilTariffReo <: Reo
+    fixedmonthlycharge::Float64
+    annualmincharge::Float64
+    monthlymincharge::Float64
+    demandlookbackpercent::Float32
+    demandlookbackmonths::Array{Int32, 1}
+    nmil_limits::Array{Float64, 1}
+    exportrates::TimeSeries.TimeArray
+    timestep_ratchets::Array{Float64, 1}
+    timestep_ratchetsmonths::Array{Array{Int64,1}}
+
+    function UtilTariffReo(fixedmonthlycharge=0.0, annualmincharge=0.0,
+        monthlymincharge=0.0, demandlookbackpercent=0.5,
+        demandlookbackmonths=[1,2,3,4,5,6,7,8,9,10,11,12],
+        nmil_limits=[1000,1500,100000],
+        exportrates=TimeSeries.TimeArray(Dates.today(), ones(1)),
+        timestep_ratchets=[1,2,3],
+        timestep_ratchetsmonths=[[2,8,112],[596,12,36],[74,86,12],[38,45,1296]])
+
+        new(fixedmonthlycharge, annualmincharge, monthlymincharge,
+        demandlookbackpercent, demandlookbackmonths, nmil_limits, exportrates,
+        timestep_ratchets, timestep_ratchetsmonths)
+    end
+end
