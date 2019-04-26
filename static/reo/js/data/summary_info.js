@@ -1,1 +1,1 @@
-var summary_info = {"count_all_posts": 48, "last_updated": 1556293468, "count_bad_posts": 0}
+var summary_info = {"count_all_posts": 1294233, "last_updated": 1556299250, "count_bad_posts": 776}
