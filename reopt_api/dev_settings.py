@@ -157,7 +157,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 if os.environ.get('BUILD_TYPE') == 'jenkins':
     STATIC_URL = '/static/'
 else:
-    STATIC_URL = '/'
+    STATIC_URL = '/static/'
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.dev_settings")
 django.setup()

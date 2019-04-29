@@ -389,13 +389,46 @@ def combine_urdb_summaries(urdb_rates):
 								result[rate] += rate_stats
 	return result
 
+def process_scenario_set(scenario_set):
+	result = {}
+	for s in scenario_set:
+		s_created = int(round((s[0] - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+		day = datetime.datetime.utcfromtimestamp(s_created)
+		day = day.replace(tzinfo=pytz.utc)
+		day = int(round((datetime.datetime(*day.timetuple()[:3],tzinfo=pytz.utc) - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds())) + (7*60*60)
+		if day not in result.keys():
+			result[day] = {'count':0,'run_uuids':[]}
+		result[day]['count'] += 1
+		# result[day]['run_uuids'] += [str(s[1])]
+	return result
+
+def combine_scenarios(results_new, existing_results):
+	output = copy.deepcopy(existing_results)
+	for r_set in results_new:
+		for k,v in r_set.items():
+			if k not in output.keys():
+				output[k] = v
+			else:
+				output[k]['count'] += v['count']
+				# output[k]['run_uuids'] += v['run_uuids']
+	return output
+
 def run(*args):
 	CORES = 6
 	
 	if 'pull_data' not in globals().values():
 		p = mp.Pool(processes=CORES)	
 
-		total_t = ElectricTariffModel.objects.all().count()
+		total_runs = ScenarioModel.objects.all().count()
+		scenario_results = {}
+		for r in range(0,int(total_runs/10000.0)+1):
+			start = r*10000
+			end = min((r+1)*10000,total_runs)
+			print start, end, total_runs
+			tmp = np.array_split(np.array(ScenarioModel.objects.values_list("created","run_uuid",).all()[start:end]),CORES)			
+			scenario_results = combine_scenarios(p.map(process_scenario_set, tmp), scenario_results)
+	
+		# total_t = ElectricTariffModel.objects.all().count()
 		urdb_results = {}
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
@@ -417,6 +450,8 @@ def run(*args):
 						'count_bad_posts':BadPost.objects.all().count(),
 						'last_updated': now,
 						}
+		with open('reo/static/reo/js/data/scenario_results.js','w+') as output_file:
+			output_file.write("var scenario_results = " +  json.dumps(scenario_results))
 
 		with open('reo/static/reo/js/data/summary_info.js','w+') as output_file:
 			output_file.write("var summary_info = " +  json.dumps(summary_info))

@@ -37,25 +37,44 @@ function number_format(number, decimals, dec_point, thousands_sep) {
 // Bar Chart Example
 var ctx = document.getElementById("dailyErrorCounts");
 
-var totalDays = Object.keys(error_results['daily_count']).length
-var data_points = Object.entries(sortObject(error_results['daily_count']))
-var barchart_labels = []
-var barchart_data = []
-for (var entry in data_points){
-  barchart_labels.push(moment.unix(data_points[entry][0]).format("MM-DD-YYYY")) 
-  barchart_data.push(data_points[entry][1].length)
+
+var totalDays = Object.keys(scenario_results).length
+var daily_data_points = Object.entries(sortObject(scenario_results))
+var daily_barchart_labels = []
+var daily_barchart_data = []
+var error_barchart_data = []
+var error_data_points = []
+
+for (var entry in daily_data_points){
+  daily_barchart_labels.push(moment.unix(daily_data_points[entry][0]).format("MM-DD-YYYY")) 
+  daily_barchart_data.push(daily_data_points[entry][1]['count'])
+  var daily_errors = error_results['daily_count'][parseInt(daily_data_points[entry][0])]
+  if (daily_errors===undefined){
+    error_data_points.push(undefined)
+    error_barchart_data.push(0)
+  } else {
+    error_data_points.push(daily_errors)
+    error_barchart_data.push(  daily_errors.length)
+  }
 }
 
 var dailyErrorCount = new Chart(ctx, {
   type: 'bar',
   data: {
-    labels: barchart_labels,
+    labels: daily_barchart_labels,
     datasets: [{
       label: "Tracebacks",
-      backgroundColor: "#4e73df",
-      hoverBackgroundColor: "#2e59d9",
+      backgroundColor: "#e74a3b",
+      hoverBackgroundColor: "#e74a3b",
       borderColor: "#4e73df",
-      data: barchart_data,
+      data: error_barchart_data,
+    },
+    {
+      label: "Total Runs",
+      backgroundColor: "#1cc88a",
+      hoverBackgroundColor: "#1cc88a",
+      borderColor: "#4e73df",
+      data: daily_barchart_data,
     }],
   },
   options: {
@@ -65,7 +84,7 @@ var dailyErrorCount = new Chart(ctx, {
       enabled: true,
       mode: 'x',
       rangeMin: {y:0},
-      rangeMax: {y:Math.max.apply(Math, barchart_data)*1.2}
+      rangeMax: {y:Math.max.apply(Math, daily_barchart_data)*1.2}
     },
     zoom: {
       enabled: true,
@@ -74,9 +93,8 @@ var dailyErrorCount = new Chart(ctx, {
       speed: 10,
       threshold: 10,
       rangeMin: {y:0,x:'02-01-2018'},
-      rangeMax: {y:Math.max.apply(Math, barchart_data)*1.2},
+      rangeMax: {y:Math.max.apply(Math, daily_barchart_data)*1.2},
       onZoom: function() { 
-        debugger
        }
 
     },
@@ -90,7 +108,7 @@ var dailyErrorCount = new Chart(ctx, {
     },
     scales: {
       xAxes: [{
-
+        stacked: true,
         type: 'time',
        time: {
           
@@ -112,11 +130,12 @@ var dailyErrorCount = new Chart(ctx, {
         maxBarThickness: 25,
       }],
       yAxes: [{
+        stacked: false,
         type: 'logarithmic',
         min:0,
         ticks: {
           min: 0,
-          max:  Math.max.apply(Math, barchart_data)*1.2,
+          max:  Math.max.apply(Math, daily_barchart_data)*1.2,
           maxTicksLimit: 5,
           padding: 10,
           // Include a dollar sign in the ticks
@@ -152,10 +171,13 @@ var dailyErrorCount = new Chart(ctx, {
       caretPadding: 10,
       callbacks: {
         label: function(tooltipItem, chart) {
-          var datasetLabel = chart.datasets[tooltipItem.datasetIndex].label || '';
           var label = {}
-          for (var i = 0; i < data_points[tooltipItem.index][1].length; i++){
-            var key = data_points[tooltipItem.index][1][i][0]
+          if (error_data_points[tooltipItem.index]===undefined){
+            return 'Total Runs: ' + daily_data_points[tooltipItem.index][1]['count']
+          } else {
+
+          for (var i = 0; i < error_data_points[tooltipItem.index].length; i++){
+            var key = error_data_points[tooltipItem.index][i][0]
             
             if (Object.keys(label).indexOf(key.toString()) === -1){
               label[key] = 1
@@ -165,9 +187,10 @@ var dailyErrorCount = new Chart(ctx, {
           } 
           var label_text = []
           for (entry in  Object.entries(label)){
-              label_text.push( ' #' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
+              label_text.push( '   #' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
           }
-          return datasetLabel + ' : ' + label_text.join('\n');
+          return 'Total Runs: ' + daily_data_points[tooltipItem.index][1]['count'] +  '  Errors: '+ error_data_points[tooltipItem.index].length +' {' + label_text.join('\n') + " }";
+          }
         }
       }
     },
