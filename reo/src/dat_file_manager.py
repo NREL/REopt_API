@@ -10,34 +10,8 @@ max_incentive = 1e10
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
 
-dat1a_constant = dict()
-dat1b_constant = dict()
-dat2a_economics = dict()
-dat2b_economics = dict()
-dat3a_LoadSize = dict()
-dat3b_LoadSize = dict()
-dat4a_Load8760 = dict()
-dat4b_Load8760 = dict()
-dat5a_GIS = dict()
-dat5b_GIS = dict()
-dat6a_storage = dict()
-dat6b_storage = dict()
-dat7a_maxsizes = dict()
-dat7b_maxsizes = dict()
-dat8a_util_TimeStepsDemand = dict()
-dat9a_util_DemandRate = dict()
-dat10a_util_FuelCost = dict()
-dat10b_util_FuelCostBase = dict()
-dat11a_util_ExportRates = dict()
-dat11b_util_ExportRatesBase = dict()
-dat12_util_TimeStepRatchetsMonth = dict()
-dat13_util_DemandRatesMonth = dict()
-dat14_util_LookbackMonthsAndPercent = dict()
-dat15_util_UtilityTiers = dict()
-dat16a_util_FuelBurnRate = dict()
-dat16b_util_FuelBurnRate = dict()
-dat17a_NEM = dict()
-dat17b_NEM = dict()
+bau_data = dict()
+wtch_data = dict()
 
 
 def _write_var(f, var, dat_var):
@@ -153,7 +127,10 @@ class DatFileManager:
         self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
 
         self.command_line_args.append("ScenarioNum=" + str(run_id))
+        wtch_data.update({"ScenarioNum": str(run_id)})
+
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
+        bau_data.update({"ScenarioNum": str(run_id)})
 
     def get_paths(self):
         return self.paths
@@ -167,14 +144,13 @@ class DatFileManager:
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
-        dat3a_LoadSize.update({"AnnualElecLoad": load.annual_kwh})
-        dat4a_Load8760.update({"LoadProfile": load.load_list})
+        wtch_data.update({"AnnualElecLoad": load.annual_kwh, "LoadProfile": load.load_list})
 
         write_to_dat(self.file_load_profile_bau, load.bau_load_list, "LoadProfile")
         write_to_dat(self.file_load_size_bau, load.bau_annual_kwh, "AnnualElecLoad")
 
-        dat3b_LoadSize.update({"AnnualElecLoad": load.bau_annual_kwh})
-        dat4b_Load8760.update({"LoadProfile": load.bau_load_list})
+        bau_data.update({"AnnualElecLoad": load.annual_kwh, "LoadProfile": load.load_list})
+
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -217,10 +193,12 @@ class DatFileManager:
                      'NMILLimits')
         write_to_dat(self.file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
 
-        dat17a_NEM.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
-                           "TechToNMILMapping": TechToNMILMapping})
-        dat17b_NEM.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+
+        bau_data.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
                            "TechToNMILMapping": TechToNMILMapping_bau})
+        wtch_data.update({"NMILLimits": [net_metering_limit, interconnection_limit, interconnection_limit * 10],
+                           "TechToNMILMapping": TechToNMILMapping})
+
 
     def add_storage(self, storage):
         self.storage = storage
@@ -241,13 +219,13 @@ class DatFileManager:
         write_to_dat(self.file_storage, storage.soc_init_pct, 'InitSOC', mode='a')
         write_to_dat(self.file_storage_bau, storage.soc_init_pct, 'InitSOC', mode='a')
 
-        dat6a_storage.update({"BattLevelCoef": batt_level_coef,
+        bau_data.update({"BattLevelCoef": batt_level_coef,
                               "StorageMinChargePcent": storage.soc_min_pct,
                               "InitSOC": storage.soc_init_pct})
 
-        dat6b_storage.update({"BattLevelCoef": batt_level_coef,
-                              "StorageMinChargePcent": storage.soc_min_pct,
-                              "InitSOC": storage.soc_init_pct})
+        wtch_data.update({"BattLevelCoef": batt_level_coef,
+                         "StorageMinChargePcent": storage.soc_min_pct,
+                         "InitSOC": storage.soc_init_pct})
 
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
@@ -823,8 +801,11 @@ class DatFileManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         self.command_line_args.append("CapCostSegCount=" + str(n_segments))
+        wtch_data.update({"CapCostSegCount": str(n_segments)})
+
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
+        bau_data.update({"CapCostSegCount": str(n_segments_bau)})
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -857,7 +838,7 @@ class DatFileManager:
         write_to_dat(self.file_constant, derate, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
 
-        dat1a_constant.update({'Tech': reopt_techs,
+        wtch_data.update({'Tech': reopt_techs,
                                'TechIsGrid': tech_is_grid,
                                'load': load_list,
                                'TechToLoadMatrix': tech_to_load,
@@ -876,7 +857,8 @@ class DatFileManager:
         write_to_dat(self.file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
 
-        dat1b_constant.update({'Tech': reopt_techs_bau,
+
+        bau_data.update({'Tech': reopt_techs_bau,
                                'TechIsGrid': tech_is_grid_bau,
                                'load': load_list,
                                'TechToLoadMatrix': tech_to_load_bau,
@@ -890,8 +872,9 @@ class DatFileManager:
         write_to_dat(self.file_gis, prod_factor, "ProdFactor")
         write_to_dat(self.file_gis_bau, prod_factor_bau, "ProdFactor")
 
-        dat5a_GIS.update({"ProdFactor": prod_factor})
-        dat5b_GIS.update({"ProdFactor": prod_factor_bau})
+        wtch_data.update({"ProdFactor": prod_factor})
+
+        bau_data.update({"ProdFactor": prod_factor_bau})
 
         # storage.dat
         write_to_dat(self.file_storage, eta_storage_in, 'EtaStorIn', mode='a')
@@ -899,10 +882,11 @@ class DatFileManager:
         write_to_dat(self.file_storage_bau, eta_storage_in_bau, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_out_bau, 'EtaStorOut', mode='a')
 
-        dat6a_storage.update({"EtaStorIn": eta_storage_in,
+
+        wtch_data.update({"EtaStorIn": eta_storage_in,
                               "EtaStorOut": eta_storage_out})
 
-        dat6b_storage.update({"EtaStorIn": eta_storage_in,
+        bau_data.update({"EtaStorIn": eta_storage_in,
                               "EtaStorOut": eta_storage_out})
 
         # maxsizes.dat
@@ -914,7 +898,7 @@ class DatFileManager:
         write_to_dat(self.file_max_size, tech_class_min_size, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size, min_turn_down, 'MinTurndown', mode='a')
 
-        dat7a_maxsizes.update({"MaxSize": max_sizes,
+        wtch_data.update({"MaxSize": max_sizes,
                                "MinStorageSizeKW": self.storage.min_kw,
                                "MaxStorageSizeKW": self.storage.max_kw,
                                "MinStorageSizeKWH": self.storage.min_kwh,
@@ -930,7 +914,7 @@ class DatFileManager:
         write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size_bau, min_turn_down_bau, 'MinTurndown', mode='a')
 
-        dat7b_maxsizes.update({"MaxSize": max_sizes_bau,
+        bau_data.update({"MaxSize": max_sizes_bau,
                                "MinStorageSizeKW": 0,
                                "MaxStorageSizeKW": 0,
                                "MinStorageSizeKWH": 0,
@@ -958,7 +942,8 @@ class DatFileManager:
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
-        dat2a_economics.update({"LevelizationFactor": levelization_factor,
+
+        wtch_data.update({"LevelizationFactor": levelization_factor,
                                 "LevelizationFactorProdIncent": production_incentive_levelization_factor,
                                 "pwf_e": pwf_e,
                                 "pwf_om": pwf_om,
@@ -996,7 +981,8 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
 
-        dat2b_economics.update({"LevelizationFactor": levelization_factor_bau,
+
+        bau_data.update({"LevelizationFactor": levelization_factor_bau,
                                 "LevelizationFactorProdIncent": production_incentive_levelization_factor_bau,
                                 "pwf_e": pwf_e_bau,
                                 "pwf_om": pwf_om_bau,
@@ -1028,10 +1014,20 @@ class DatFileManager:
         self.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
         self.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
+        wtch_data.update({"NumRatchets":str(tariff_args.demand_num_ratchets),
+                          "FuelBinCount":str(tariff_args.energy_tiers_num),
+                          "DemandBinCount":str(tariff_args.demand_tiers_num),
+                          "DemandMonthsBinCount": str(tariff_args.demand_month_tiers_num)})
+
         self.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         self.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         self.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
         self.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
+
+        bau_data.update({"NumRatchets":str(tariff_args.demand_num_ratchets),
+                         "FuelBinCount":str(tariff_args.energy_tiers_num),
+                         "DemandBinCount":str(tariff_args.demand_tiers_num),
+                         "DemandMonthsBinCount":str(tariff_args.demand_month_tiers_num)})
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
@@ -1064,83 +1060,76 @@ class DatFileManager:
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB', 'a')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB', 'a')
 
-        dat8a_util_TimeStepsDemand.update({"TimeStepRatchets": ta.demand_ratchets_tou})
-        dat9a_util_DemandRate.update({"DemandRates": ta.demand_rates_tou})
+        wtch_data.update({"TimeStepRatchets": ta.demand_ratchets_tou})
+        bau_data.update({"TimeStepRatchets": ta.demand_ratchets_tou})
 
-        dat10a_util_FuelCost.update({"FuelRate": ta.energy_rates,
+        wtch_data.update({"DemandRates": ta.demand_rates_tou})
+        bau_data.update({"DemandRates": ta.demand_rates_tou})
+
+        wtch_data.update({"FuelRate": ta.energy_rates,
                                      "FuelAvail": ta.energy_avail,
                                      "FixedMonthlyCharge": ta.fixed_monthly_charge,
                                      "AnnualMinCharge": ta.annual_min_charge,
                                      "MonthlyMinCharge": ta.min_monthly_charge})
 
-        dat10b_util_FuelCostBase.update({"FuelRate": ta.energy_rates_bau,
+
+        bau_data.update({"FuelRate": ta.energy_rates_bau,
                                          "FuelAvail": ta.energy_avail_bau,
                                          "FixedMonthlyCharge": ta.fixed_monthly_charge,
                                          "AnnualMinCharge": ta.annual_min_charge,
                                          "MonthlyMinCharge": ta.min_monthly_charge})
 
-        dat11a_util_ExportRates.update({"ExportRates": ta.export_rates})
 
-        dat11b_util_ExportRatesBase.update({"ExportRates": ta.export_rates_bau})
+        wtch_data.update({"ExportRates": ta.export_rates})
 
-        dat12_util_TimeStepRatchetsMonth.update({"TimeStepRatchetsMonth": ta.demand_ratchets_monthly})
+        bau_data.update({"ExportRates": ta.export_rates_bau})
 
-        dat13_util_DemandRatesMonth.update({"DemandRatesMonth": ta.demand_rates_monthly})
 
-        dat14_util_LookbackMonthsAndPercent.update({"DemandLookbackMonths": ta.demand_lookback_months,
+        wtch_data.update({"TimeStepRatchetsMonth": ta.demand_ratchets_monthly})
+        bau_data.update({"TimeStepRatchetsMonth": ta.demand_ratchets_monthly})
+
+
+        wtch_data.update({"DemandRatesMonth": ta.demand_rates_monthly})
+        bau_data.update({"DemandRatesMonth": ta.demand_rates_monthly})
+
+
+        wtch_data.update({"DemandLookbackMonths": ta.demand_lookback_months,
                                                     "DemandLookbackPercent": ta.demand_lookback_percent})
+        bau_data.update({"DemandLookbackMonths": ta.demand_lookback_months,
+                          "DemandLookbackPercent": ta.demand_lookback_percent})
 
-        dat15_util_UtilityTiers.update({"MaxDemandInTier": ta.demand_max_in_tiers,
+
+        wtch_data.update({"MaxDemandInTier": ta.demand_max_in_tiers,
                                         "MaxUsageInTier": ta.energy_max_in_tiers,
                                         "MaxDemandMonthsInTier": ta.demand_month_max_in_tiers})
+        bau_data.update({"MaxDemandInTier": ta.demand_max_in_tiers,
+                          "MaxUsageInTier": ta.energy_max_in_tiers,
+                          "MaxDemandMonthsInTier": ta.demand_month_max_in_tiers})
 
-        dat16a_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate,
+
+        wtch_data.update({"FuelBurnRateM": ta.energy_burn_rate,
                                          "FuelBurnRateB": ta.energy_burn_intercept})
 
-        dat16b_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate_bau,
+        bau_data.update({"FuelBurnRateM": ta.energy_burn_rate_bau,
                                          "FuelBurnRateB": ta.energy_burn_intercept_bau})
+
 
         # time_steps_per_hour
         self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
+        wtch_data.update({"TimeStepCount":str(self.n_timesteps),
+                          "TimeStepScaling":str(8760.0 / self.n_timesteps)})
+
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
-        """
-        big_dict = {"command_line_args": self.command_line_args,
-                            "command_line_args_bau": self.command_line_args_bau,
-                            "dat1a_constant": dat1a_constant,
-                            "dat1b_constant": dat1b_constant,
-                            "dat2a_economics":dat2a_economics,
-                            "dat2b_economics":dat2b_economics,
-                            "dat3a_LoadSize":dat3a_LoadSize,
-                            "dat3b_LoadSize":dat3b_LoadSize,
-                            "dat4a_Load8760":dat4a_Load8760,
-                            "dat4b_Load8760":dat4b_Load8760,
-                            "dat5a_GIS":dat5a_GIS,
-                            "dat5b_GIS":dat5b_GIS,
-                            "dat6a_storage":dat6a_storage,
-                            "dat6b_storage":dat6b_storage,
-                            "dat7a_maxsizes":dat7a_maxsizes,
-                            "dat7b_maxsizes":dat7b_maxsizes,
-                            "dat8a_util_TimeStepsDemand":dat8a_util_TimeStepsDemand,
-                            "dat9a_util_DemandRate":dat9a_util_DemandRate,
-                            "dat10a_util_FuelCost": dat10a_util_FuelCost,
-                            "dat10b_util_FuelCostBase":dat10b_util_FuelCostBase,
-                            "dat11a_util_ExportRates":dat11a_util_ExportRates,
-                            "dat11b_util_ExportRatesBase":dat11b_util_ExportRatesBase,
-                            "dat12_util_TimeStepRatchetsMonth":dat12_util_TimeStepRatchetsMonth,
-                            "dat13_util_DemandRatesMonth":dat13_util_DemandRatesMonth,
-                            "dat14_util_LookbackMonthsAndPercent":dat14_util_LookbackMonthsAndPercent,
-                            "dat15_util_UtilityTiers":dat15_util_UtilityTiers,
-                            "dat16a_util_FuelBurnRate":dat16a_util_FuelBurnRate,
-                            "dat16b_util_FuelBurnRate":dat16b_util_FuelBurnRate,
-                            "dat17a_NEM":dat17a_NEM,
-                            "dat17b_NEM":dat17b_NEM
-                            }
-        with open('all_data.json', 'w') as fout:
-            json.dump(big_dict, fout)
+        bau_data.update({"TimeStepCount": str(self.n_timesteps),
+                          "TimeStepScaling": str(8760.0 / self.n_timesteps)})
 
-                results = ReoptApiPyomo(self.command_line_args, self.command_line_args_bau, dat1a_constant=dat1a_constant, dat1b_constant=dat1b_constant,dat2a_economics=dat2a_economics, dat2b_economics=dat2b_economics, dat3a_LoadSize=dat3a_LoadSize, dat3b_LoadSize=dat3b_LoadSize, dat4a_Load8760=dat4a_Load8760, dat4b_Load8760=dat4b_Load8760, dat5a_GIS=dat5a_GIS, dat5b_GIS=dat5b_GIS, dat6a_storage=dat6a_storage, dat6b_storage=dat6b_storage,dat7a_maxsizes=dat7a_maxsizes, dat7b_maxsizes=dat7b_maxsizes, dat8a_util_TimeStepsDemand=dat8a_util_TimeStepsDemand, dat9a_util_DemandRate=dat9a_util_DemandRate, dat10a_util_FuelCost= dat10a_util_FuelCost, dat10b_util_FuelCostBase=dat10b_util_FuelCostBase, dat11a_util_ExportRates=dat11a_util_ExportRates, dat11b_util_ExportRatesBase=dat11b_util_ExportRatesBase, dat12_util_TimeStepRatchetsMonth=dat12_util_TimeStepRatchetsMonth, dat13_util_DemandRatesMonth=dat13_util_DemandRatesMonth, dat14_util_LookbackMonthsAndPercent=dat14_util_LookbackMonthsAndPercent, dat15_util_UtilityTiers=dat15_util_UtilityTiers,dat16a_util_FuelBurnRate=dat16a_util_FuelBurnRate, dat16b_util_FuelBurnRate=dat16b_util_FuelBurnRate, dat17a_NEM=dat17a_NEM, dat17b_NEM=dat17b_NEM)
-        """
+        with open('bau_data.json', 'w') as f_bau:
+            json.dump(bau_data, f_bau)
+
+        with open('wtch_data.json', 'w') as f_wtch:
+            json.dump(wtch_data, f_wtch)
+

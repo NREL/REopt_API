@@ -7,16 +7,21 @@ reo_structs:
 
 import PowerSystems
 using TimeSeries
+using D3TypeTrees
+
+# DisplayTypeTree(PowerSystems.ThermalGen, browser="firefox")
+# DisplayTypeTree(Reo, browser="firefox")
 # fieldnames(PowerSystem)
 
 
 #### GENERATION MODELING
 #struct TechReo <: PowerSystems.TechnicalParams
 struct TechReo
-   activepowerlimits::NamedTuple{(:min, :max),Tuple{Float64,Float64}}
-   installedcapacity::Union{Float64,Nothing} # [kW]
-   reactivepowerlimits::Union{NamedTuple{(:min, :max),Tuple{Float64,Float64}},Nothing} # [kVar]
-   powerfactor::Union{Float64,Nothing} # [-1. -1]
+    # min and max technology size are called activepowerlimits here
+    activepowerlimits::NamedTuple{(:min, :max),Tuple{Float64,Float64}}
+    installedcapacity::Union{Float64,Nothing} # [kW]
+    reactivepowerlimits::Union{NamedTuple{(:min, :max),Tuple{Float64,Float64}},Nothing} # [kVar]
+    powerfactor::Union{Float64,Nothing} # [-1. -1]
 end
 
 # outer constructor
@@ -190,7 +195,7 @@ end
 
 
 ### Following concrete types are NOT subtyped from PowerSystems.jl
-### Reo specific abstract types is defined here:
+### Reo specific abstract types are defined here:
 abstract type Reo end
 
 struct TechClassReo <: Reo
