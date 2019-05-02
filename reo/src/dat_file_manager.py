@@ -801,11 +801,11 @@ class DatFileManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         self.command_line_args.append("CapCostSegCount=" + str(n_segments))
-        wtch_data.update({"CapCostSegCount": str(n_segments)})
+        wtch_data.update({"CapCostSegCount":n_segments})
 
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
-        bau_data.update({"CapCostSegCount": str(n_segments_bau)})
+        bau_data.update({"CapCostSegCount": n_segments_bau})
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -1014,20 +1014,20 @@ class DatFileManager:
         self.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
         self.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
-        wtch_data.update({"NumRatchets":str(tariff_args.demand_num_ratchets),
-                          "FuelBinCount":str(tariff_args.energy_tiers_num),
-                          "DemandBinCount":str(tariff_args.demand_tiers_num),
-                          "DemandMonthsBinCount": str(tariff_args.demand_month_tiers_num)})
+        wtch_data.update({"NumRatchets":tariff_args.demand_num_ratchets,
+                          "FuelBinCount":tariff_args.energy_tiers_num,
+                          "DemandBinCount":tariff_args.demand_tiers_num,
+                          "DemandMonthsBinCount":tariff_args.demand_month_tiers_num})
 
         self.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
         self.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
         self.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
         self.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
 
-        bau_data.update({"NumRatchets":str(tariff_args.demand_num_ratchets),
-                         "FuelBinCount":str(tariff_args.energy_tiers_num),
-                         "DemandBinCount":str(tariff_args.demand_tiers_num),
-                         "DemandMonthsBinCount":str(tariff_args.demand_month_tiers_num)})
+        bau_data.update({"NumRatchets":tariff_args.demand_num_ratchets,
+                         "FuelBinCount":tariff_args.energy_tiers_num,
+                         "DemandBinCount":tariff_args.demand_tiers_num,
+                         "DemandMonthsBinCount":tariff_args.demand_month_tiers_num})
 
         ta = tariff_args
         write_to_dat(self.file_demand_rates_monthly, ta.demand_rates_monthly, 'DemandRatesMonth')
@@ -1118,14 +1118,14 @@ class DatFileManager:
         self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
-        wtch_data.update({"TimeStepCount":str(self.n_timesteps),
-                          "TimeStepScaling":str(8760.0 / self.n_timesteps)})
+        wtch_data.update({"TimeStepCount":self.n_timesteps,
+                          "TimeStepScaling":(8760.0 / self.n_timesteps)})
 
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
-        bau_data.update({"TimeStepCount": str(self.n_timesteps),
-                          "TimeStepScaling": str(8760.0 / self.n_timesteps)})
+        bau_data.update({"TimeStepCount": self.n_timesteps,
+                          "TimeStepScaling":(8760.0 / self.n_timesteps)})
 
         with open('bau_data.json', 'w') as f_bau:
             json.dump(bau_data, f_bau)
