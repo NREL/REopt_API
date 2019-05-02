@@ -17,7 +17,7 @@ using D3TypeTrees
 #### GENERATION MODELING
 #struct TechReo <: PowerSystems.TechnicalParams
 struct TechReo
-    # min and max technology size are called activepowerlimits here
+    # reo's min and max technology size are called activepowerlimits here
     activepowerlimits::NamedTuple{(:min, :max),Tuple{Float64,Float64}}
     installedcapacity::Union{Float64,Nothing} # [kW]
     reactivepowerlimits::Union{NamedTuple{(:min, :max),Tuple{Float64,Float64}},Nothing} # [kVar]
