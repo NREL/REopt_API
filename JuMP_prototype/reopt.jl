@@ -8,11 +8,12 @@ jsonToVariable("all_data_2.json")
 # Optimization
 using JuMP
 using Xpress
-using IndexedTables
+using CPLEX
+#using IndexedTables
 using MathOptInterface
-using MathOptFormat
+#using MathOptFormat
 const MOI = MathOptInterface
-const MOF = MathOptFormat
+#const MOF = MathOptFormat
 
 REopt = Model()
 
@@ -39,6 +40,12 @@ DemandMonthsBin = 1:DemandMonthsBinCount
 BattLevel=1:BattLevelCount
 TimeStep=1:TimeStepCount
 TimeStepBat=0:TimeStepCount
+
+## TAILORED BIG M
+MaxDemandMonthsInTier = [AnnualElecLoad]
+MaxDemandInTier = [AnnualElecLoad]
+#MaxSize[3] = [AnnualElecLoad]
+MaxUsageInTier = [AnnualElecLoad]
 
 ##### Sets and Parameter #####
 ##############################
@@ -201,7 +208,7 @@ end
 @constraints(REopt, begin
 
     # To account for exist formatting
-    [t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] ==0],
+    [t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] == 0],
     dvRatedProd[t, LD, ts, s, fb] == 0
 
 #!!!! Fuel tracking
@@ -855,7 +862,7 @@ println("Model built, moving on to optimizer...")
 #MOI.copy_to(mps_model, JuMP.backend(REopt))
 #MOI.write_to_file(mps_model, "reopt.mps")
 #
-#optimize!(REopt, with_optimizer(Xpress.Optimizer))
+#optimize!(REopt, with_optimizer(CPLEX.Optimizer))
 #
 #
 #println("Status: ", JuMP.termination_status(REopt))
