@@ -1122,7 +1122,6 @@ class DatFileManager:
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
 
-        """
         big_dict = {"command_line_args": self.command_line_args,
                             "command_line_args_bau": self.command_line_args_bau,
                             "dat1a_constant": dat1a_constant,
@@ -1157,5 +1156,4 @@ class DatFileManager:
         with open('all_data.json', 'w') as fout:
             json.dump(big_dict, fout)
 
-                results = ReoptApiPyomo(self.command_line_args, self.command_line_args_bau, dat1a_constant=dat1a_constant, dat1b_constant=dat1b_constant,dat2a_economics=dat2a_economics, dat2b_economics=dat2b_economics, dat3a_LoadSize=dat3a_LoadSize, dat3b_LoadSize=dat3b_LoadSize, dat4a_Load8760=dat4a_Load8760, dat4b_Load8760=dat4b_Load8760, dat5a_GIS=dat5a_GIS, dat5b_GIS=dat5b_GIS, dat6a_storage=dat6a_storage, dat6b_storage=dat6b_storage,dat7a_maxsizes=dat7a_maxsizes, dat7b_maxsizes=dat7b_maxsizes, dat8a_util_TimeStepsDemand=dat8a_util_TimeStepsDemand, dat9a_util_DemandRate=dat9a_util_DemandRate, dat10a_util_FuelCost= dat10a_util_FuelCost, dat10b_util_FuelCostBase=dat10b_util_FuelCostBase, dat11a_util_ExportRates=dat11a_util_ExportRates, dat11b_util_ExportRatesBase=dat11b_util_ExportRatesBase, dat12_util_TimeStepRatchetsMonth=dat12_util_TimeStepRatchetsMonth, dat13_util_DemandRatesMonth=dat13_util_DemandRatesMonth, dat14_util_LookbackMonthsAndPercent=dat14_util_LookbackMonthsAndPercent, dat15_util_UtilityTiers=dat15_util_UtilityTiers,dat16a_util_FuelBurnRate=dat16a_util_FuelBurnRate, dat16b_util_FuelBurnRate=dat16b_util_FuelBurnRate, dat17a_NEM=dat17a_NEM, dat17b_NEM=dat17b_NEM)
-        """
+                #results = ReoptApiPyomo(self.command_line_args, self.command_line_args_bau, dat1a_constant=dat1a_constant, dat1b_constant=dat1b_constant,dat2a_economics=dat2a_economics, dat2b_economics=dat2b_economics, dat3a_LoadSize=dat3a_LoadSize, dat3b_LoadSize=dat3b_LoadSize, dat4a_Load8760=dat4a_Load8760, dat4b_Load8760=dat4b_Load8760, dat5a_GIS=dat5a_GIS, dat5b_GIS=dat5b_GIS, dat6a_storage=dat6a_storage, dat6b_storage=dat6b_storage,dat7a_maxsizes=dat7a_maxsizes, dat7b_maxsizes=dat7b_maxsizes, dat8a_util_TimeStepsDemand=dat8a_util_TimeStepsDemand, dat9a_util_DemandRate=dat9a_util_DemandRate, dat10a_util_FuelCost= dat10a_util_FuelCost, dat10b_util_FuelCostBase=dat10b_util_FuelCostBase, dat11a_util_ExportRates=dat11a_util_ExportRates, dat11b_util_ExportRatesBase=dat11b_util_ExportRatesBase, dat12_util_TimeStepRatchetsMonth=dat12_util_TimeStepRatchetsMonth, dat13_util_DemandRatesMonth=dat13_util_DemandRatesMonth, dat14_util_LookbackMonthsAndPercent=dat14_util_LookbackMonthsAndPercent, dat15_util_UtilityTiers=dat15_util_UtilityTiers,dat16a_util_FuelBurnRate=dat16a_util_FuelBurnRate, dat16b_util_FuelBurnRate=dat16b_util_FuelBurnRate, dat17a_NEM=dat17a_NEM, dat17b_NEM=dat17b_NEM)

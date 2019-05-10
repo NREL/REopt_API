@@ -8,11 +8,10 @@ jsonToVariable("all_data_2.json")
 # Optimization
 using JuMP
 using Xpress
-using IndexedTables
 using MathOptInterface
-using MathOptFormat
+#using MathOptFormat
 const MOI = MathOptInterface
-const MOF = MathOptFormat
+#const MOF = MathOptFormat
 
 REopt = Model()
 

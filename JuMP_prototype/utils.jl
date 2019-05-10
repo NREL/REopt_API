@@ -1,7 +1,5 @@
-import JSON
-import IndexedTables
+using JSON
 using AxisArrays
-const I = IndexedTables
 
 function importDict(path)
     open(path) do file
