@@ -108,4 +108,4 @@ static/files/*
 # Redis
 *.rdb
 
-all_data*
+#all_data*
