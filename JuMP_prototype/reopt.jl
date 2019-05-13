@@ -2,13 +2,13 @@
 
 # Data
 include("utils.jl")
-jsonToVariable("all_data_2.json")
+jsonToVariable("all_data_3.json")
 #allData = importDict("all_data.json")
 
 # Optimization
 using JuMP
 using Xpress
-using CPLEX
+#using CPLEX
 #using IndexedTables
 using MathOptInterface
 #using MathOptFormat
@@ -24,7 +24,7 @@ DemandBinCount = 1
 DemandMonthsBinCount = 1
 BattLevelCount = 1
 TimeStepScaling = 1.0
-TimeStepCount =8760
+TimeStepCount = 35040
 Obj = 5
 REoptTol = 5e-5
 NumRatchets = 20
@@ -46,6 +46,9 @@ MaxDemandMonthsInTier = [AnnualElecLoad]
 MaxDemandInTier = [AnnualElecLoad]
 #MaxSize[3] = [AnnualElecLoad]
 MaxUsageInTier = [AnnualElecLoad]
+
+## Data modification for prototyping
+LoadProfile = LoadProfile[1:8760*4]
 
 ##### Sets and Parameter #####
 ##############################
@@ -106,7 +109,7 @@ TechClassMinSize = parameter(TechClass, TechClassMinSize)
 MinTurndown = parameter(Tech, MinTurndown)
 
 #initializations from DAT8
-#TimeStepRatchets = parameter(Ratchets, TimeStepRatchets) #not populated
+##TimeStepRatchets = parameter(Ratchets, TimeStepRatchets) #not populated
 
 #initializations from DAT9
 #DemandRates = parameter(Ratchets, DemandBin, DemandRates) #not populated
@@ -638,14 +641,14 @@ end
 
 
 ###### NEED UPDATED JSON FOR THESE
-    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-	dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin)
-
-    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-   	dvPeakDemandE[r,db] >= 0
-
-    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-   	dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#	dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin)
+#
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#   	dvPeakDemandE[r,db] >= 0
+#
+#    [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+#   	dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback
 
 #! Compute tiered monthly demand rates
 #forall (dbm in DemandMonthsBin, m in Month) do
@@ -760,8 +763,9 @@ end
                               for t in Tech, fb in FuelBin)
 
     #NEED UPDATED JSON
-    DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
-                            for r in Ratchets, db in DemandBin)
+#    DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
+#                            for r in Ratchets, db in DemandBin)
+    DemandTOUCharges == 0
 
     DemandFlatCharges == sum(dvPeakDemandEMonth[m, dbm] * DemandRatesMonth[m, dbm] * pwf_e
                              for m in Month, dbm in DemandMonthsBin)

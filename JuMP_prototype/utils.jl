@@ -59,14 +59,21 @@ function parameter(setTup::Tuple, data)
         formattedParam = paramDataFormatter(setTup, data)
         return formattedParam
     catch
-        let x = 1
-            for set in setTup
-                x = x * length(set)
+        correctLength = prod([length(x) for x in setTup])
+        if length(data) < correctLength
+            let x = 1
+                for set in setTup
+                    x = x * length(set)
+                end
+                numZeros = x - length(data)
+                for zero in 1:numZeros
+                    append!(data, 0)
+                end
+                formattedParam = paramDataFormatter(setTup, data)
+                return formattedParam
             end
-            numZeros = x - length(data)
-            for zero in 1:numZeros
-                append!(data, 0)
-            end
+        else
+            data = data[1:correctLength]
             formattedParam = paramDataFormatter(setTup, data)
             return formattedParam
         end
