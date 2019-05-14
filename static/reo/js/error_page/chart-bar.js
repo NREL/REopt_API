@@ -38,44 +38,57 @@ function number_format(number, decimals, dec_point, thousands_sep) {
 var ctx = document.getElementById("dailyErrorCounts");
 
 
-var totalDays = Object.keys(scenario_results).length
-var daily_data_points = Object.entries(sortObject(scenario_results))
+var totalDays = Object.keys(scenario_results.data).length - 2
+var daily_data_points = Object.entries(sortObject(scenario_results.data))
 var daily_barchart_labels = []
 var daily_barchart_data = []
+var resilience_data = []
 var error_barchart_data = []
 var error_data_points = []
 
 for (var entry in daily_data_points){
-  daily_barchart_labels.push(moment.unix(daily_data_points[entry][0]).format("MM-DD-YYYY")) 
-  daily_barchart_data.push(daily_data_points[entry][1]['count'])
-  var daily_errors = error_results['daily_count'][parseInt(daily_data_points[entry][0])]
-  if (daily_errors===undefined){
-    error_data_points.push(undefined)
-    error_barchart_data.push(0)
-  } else {
-    error_data_points.push(daily_errors)
-    error_barchart_data.push(  daily_errors.length)
+  
+  if (daily_data_points[entry][0].substring(0,5)!="count"){  
+    daily_barchart_labels.push(moment.unix(daily_data_points[entry][0]).format("MM-DD-YYYY")) 
+    daily_barchart_data.push(daily_data_points[entry][1]['count'])
+    resilience_data.push(daily_data_points[entry][1]['count_resilience'])
+    var daily_errors = error_results.data['daily_count'][parseInt(daily_data_points[entry][0])]
+    if (daily_errors===undefined){
+      error_data_points.push(undefined)
+      error_barchart_data.push(0)
+    } else {
+      error_data_points.push(daily_errors)
+      error_barchart_data.push(  daily_errors.length)
+    }
   }
-}
+  }
 
 var dailyErrorCount = new Chart(ctx, {
   type: 'bar',
   data: {
     labels: daily_barchart_labels,
     datasets: [{
-      label: "Tracebacks",
-      backgroundColor: "#e74a3b",
-      hoverBackgroundColor: "#e74a3b",
-      borderColor: "#4e73df",
+      label: "Total Errors",
+      fillColor: "rgba(220,220,220,0)",
+      hoverBackgroundColor: "#D3D3D3",
+      borderColor: "#e74a3b",
+      borderWidth:2,
       data: error_barchart_data,
+    }, {
+      label: "Resilience Runs",
+      backgroundColor: "#0000ff",
+      hoverBackgroundColor: "#D3D3D3",
+      borderColor: "#4e73df",
+      data: resilience_data,
     },
     {
-      label: "Total Runs",
+      label: "Finacial Runs",
       backgroundColor: "#1cc88a",
-      hoverBackgroundColor: "#1cc88a",
+      hoverBackgroundColor: "#D3D3D3",
       borderColor: "#4e73df",
       data: daily_barchart_data,
-    }],
+    },
+   ],
   },
   options: {
     responsive: true,
@@ -155,7 +168,7 @@ var dailyErrorCount = new Chart(ctx, {
     },
 
     legend: {
-      display: false
+      display: true
     },
     tooltips: {
       titleMarginBottom: 10,
@@ -173,7 +186,7 @@ var dailyErrorCount = new Chart(ctx, {
         label: function(tooltipItem, chart) {
           var label = {}
           if (error_data_points[tooltipItem.index]===undefined){
-            return 'Total Runs: ' + daily_data_points[tooltipItem.index][1]['count']
+            return 'Total Runs: ' + daily_data_points[tooltipItem.index][1]['count'] +'  Resilience Runs: ' + (resilience_data[tooltipItem.index]) +'  Errors: 0 '
           } else {
 
           for (var i = 0; i < error_data_points[tooltipItem.index].length; i++){
@@ -187,9 +200,9 @@ var dailyErrorCount = new Chart(ctx, {
           } 
           var label_text = []
           for (entry in  Object.entries(label)){
-              label_text.push( '   #' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
+              label_text.push( '#' + Object.entries(label)[entry][0] + ": " + Object.entries(label)[entry][1] + " case(s)\n" )
           }
-          return 'Total Runs: ' + daily_data_points[tooltipItem.index][1]['count'] +  '  Errors: '+ error_data_points[tooltipItem.index].length +' {' + label_text.join('\n') + " }";
+          return 'Total Runs: ' + (daily_data_points[tooltipItem.index][1]['count']) +'  Resilience Runs: ' + (resilience_data[tooltipItem.index]) +  '  Errors: '+ error_data_points[tooltipItem.index].length +' {' + label_text + "}";
           }
         }
       }
@@ -199,9 +212,9 @@ var dailyErrorCount = new Chart(ctx, {
 
 
 var ctx2 = document.getElementById("URDBBreakdown");
-var notURDB = urdb_results["count_blended_monthly"] + urdb_results["count_urdb_plus_blended"] + urdb_results["count_blended_annual"]
+var notURDB = urdb_results.data["count_blended_monthly"] + urdb_results.data["count_urdb_plus_blended"] + urdb_results.data["count_blended_annual"]
 var URDBbarchart_labels = ["URDB Rate", "Blended Monthly", "Blended Monthly + URDB", "Blended Annual"]
-var URDBbarchart_data = [urdb_results["count_total_uses"] - notURDB,urdb_results["count_blended_monthly"],urdb_results["count_urdb_plus_blended"],urdb_results["count_blended_annual"]]
+var URDBbarchart_data = [urdb_results.data["count_total_uses"] - notURDB,urdb_results.data["count_blended_monthly"],urdb_results.data["count_urdb_plus_blended"],urdb_results.data["count_blended_annual"]]
 var yAxisType 
 if (Math.max.apply(Math, URDBbarchart_data)*1.2 > 10000){
   yAxisType = 'logarithmic' 
