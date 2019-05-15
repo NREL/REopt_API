@@ -133,7 +133,6 @@
 					badPostcontent.append(create_generic_popup('...(see full)', 'Error', bad_posts_entries[entry][0],"badPostPopUp"+entry.toString()))
 				}
 				badPostdetail.append($('<td>').html(badPostcontent))
-				debugger
 				badPostdetail.append($('<td>').html(create_run_uuid_popup(bad_posts_entries[entry][1]['run_uuids'],[])))
 				badPostdetail.append($('<td>').html(bad_posts_entries[entry][1]['count'] ))
 				$('#tableBody_BadPost').append(badPostdetail)			       
