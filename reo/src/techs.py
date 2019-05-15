@@ -84,6 +84,7 @@ class PV(Tech):
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
 
+        self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
         if self.max_kw < self.existing_kw:
             self.max_kw = self.existing_kw
 
@@ -93,9 +94,15 @@ class PV(Tech):
     def prod_factor(self):
 
         if self.pvwatts_prod_factor is None:
-            pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
-            self.pvwatts_prod_factor = pvwatts.pv_prod_factor
+            self.pvwatts_prod_factor = self.pvwatts.pv_prod_factor
         return self.pvwatts_prod_factor
+
+    @property
+    def station_location(self):
+        station = (self.pvwatts.response['station_info']['latitude'],
+                   self.pvwatts.response['station_info']['longitude'],
+                   self.pvwatts.response['station_info']['distance']/1000)
+        return station
 
 
 class Wind(Tech):

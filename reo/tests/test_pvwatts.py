@@ -18,6 +18,8 @@ class TestPVWatts(ResourceTestCaseMixin, TestCase):
         denver_data = self.pvwatts_denver.data
         self.assertAlmostEqual(denver_data['outputs']['ac_annual'], 1677, places=0)
         self.assertEquals(len(denver_data['outputs']['ac']), 8760)
+        self.assertEquals(denver_data['station_info']['solar_resource_file'], 'W10498N3973.csv')
+        self.assertEquals(denver_data['station_info']['distance'], 1335)
 
         zimbabwe_data = self.pvwatts_zimbabwe.data
         self.assertAlmostEqual(zimbabwe_data['outputs']['ac_annual'], 1319, places=0)

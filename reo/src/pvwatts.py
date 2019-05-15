@@ -52,6 +52,7 @@ class PVWatts:
         self.time_steps_per_hour = time_steps_per_hour
         self.offline = offline  # used for testing
         self.verify = verify # used for testing
+        self.response = None # store response so don't hit API multiple times
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -68,27 +69,31 @@ class PVWatts:
 
     @property
     def data(self):
-        resp = requests.get(self.url, verify=self.verify)
 
-        if not resp.ok:
-
-            # check for international location
-            data = json.loads(resp.text)
-            intl_warning = "This location appears to be outside the US"
-            for warning in data["warnings"]:
-                if intl_warning in warning:
-                    self.dataset = "intl"
-                    self.radius = 200 # bump up search radius, since there aren't many sites
-                    resp = requests.get(self.url, verify=self.verify)
-                    break
+        if self.response is not None:
+            resp = requests.get(self.url, verify=self.verify)
 
             if not resp.ok:
-                log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-                raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
 
-        log.info("PVWatts API query successful.")
-        data = json.loads(resp.text)
-        return data
+                # check for international location
+                data = json.loads(resp.text)
+                intl_warning = "This location appears to be outside the US"
+                for warning in data["warnings"]:
+                    if intl_warning in warning:
+                        self.dataset = "intl"
+                        self.radius = 200 # bump up search radius, since there aren't many sites
+                        resp = requests.get(self.url, verify=self.verify)
+                        break
+
+                if not resp.ok:
+                    log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                    raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+
+            log.info("PVWatts API query successful.")
+            data = json.loads(resp.text)
+            self.response = data
+
+        return self.response
 
     @property
     def pv_prod_factor(self):

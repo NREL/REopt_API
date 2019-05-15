@@ -154,6 +154,21 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Lifetime O&M cost for existing PV system.",
                   "units": "$"
+                },
+                "station_latitude": {
+                  "type": float,
+                  "description": "The latitude of the station used for weather resource data",
+                  "units": "degrees"
+                },
+                "station_longitude": {
+                  "type": float,
+                  "description": "The longitude of the station used for weather resource data",
+                  "units": "degrees"
+                },
+                "station_distance_km": {
+                  "type": float,
+                  "description": "The distance from the weather resource station from the input site",
+                  "units": "km"
                 }
               },
 
