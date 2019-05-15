@@ -51,8 +51,8 @@ $(document).ready(function() {
     }
 });
   error_results_lookup = []
-  for (var i = 0; i < Object.entries(error_results['daily_count']).length; i++){
-  	error_results_lookup.push(moment.unix(Object.entries(error_results['daily_count'])[i][0]).format('YYYY-MM-DD'))
+  for (var i = 0; i < Object.entries(error_results.data['daily_count']).length; i++){
+  	error_results_lookup.push(moment.unix(Object.entries(error_results.data['daily_count'])[i][0]).format('YYYY-MM-DD'))
   }  
   $('[data-toggle="popover"]').popover();
   $.fn.dataTable.moment( "MM-DD-YYYY HH:mm:ss" )
@@ -74,7 +74,7 @@ $(document).ready(function() {
 		
 		var ts = error_results_lookup.indexOf(moment($('#errorQueryByDate').val()).format('YYYY-MM-DD'))
 		
-		var tracebacks = Object.entries(error_results['daily_count'])[ts][1]
+		var tracebacks = Object.entries(error_results.data['daily_count'])[ts][1]
 		
 		if (tracebacks !== undefined){
 			
@@ -101,7 +101,7 @@ $(document).ready(function() {
 	          for (entry in  Object.entries(label)){
 	          		
 
-	          		var tb_text = common_lookup[Object.entries(label)[entry][0]] || ''
+	          		var tb_text = common_lookup.data[Object.entries(label)[entry][0]] || ''
 	          		if ( tb_text.length > 249 ){
 	          			tb_text = tb_text.substring(0,249) + create_generic_popup('...see full','Traceback', tb_text, 'queryTB'+ entry.toString())
 	          		}
@@ -131,7 +131,7 @@ $(document).ready(function() {
 		
 		var tb_id = parseInt($('#errorQueryByID').val())
 		
-		var day_entries = Object.entries(error_results['daily_count'])
+		var day_entries = Object.entries(error_results.data['daily_count'])
 		
 		for (var i = 0; i < day_entries.length; i++){
 				var tracebacks = []
@@ -161,7 +161,7 @@ $(document).ready(function() {
 			            } 
 			          } 
 
-	          		var tb_text = common_lookup[tb_id]
+	          		var tb_text = common_lookup.data[tb_id]
 	          		if ( tb_text.length > 249 ){
 	          			tb_text = tb_text.substring(0,249) + create_generic_popup('...see full','Traceback', tb_text, 'queryTB'+ entry.toString())
 	          		}
