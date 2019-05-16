@@ -84,9 +84,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
             station = pv.station_location
 
             # update data inputs to reflect the pvwatts station data locations
-            data['inputs']['Scenario']["Site"]["PV"]["station_latitude"] = station[0]
-            data['inputs']['Scenario']["Site"]["PV"]["station_longitude"] = station[1]
-            data['inputs']['Scenario']["Site"]["PV"]["station_distance_km"] = station[2]
+            tmp = dict()
+            tmp['station_latitude'] = station[0]
+            tmp['station_longitude'] = station[1]
+            tmp['station_distance_km'] =station[2]
+            ModelManager.updateModel('PVModel', tmp, run_uuid)
+
 
         else:
             pv = None
