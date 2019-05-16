@@ -192,6 +192,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
+                    self.nested_outputs['Scenario']["Site"][name]["station_latitude"] = data['inputs']['Scenario']["Site"]["PV"]["station_latitude"]
+                    self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = data['inputs']['Scenario']["Site"]["PV"]["station_longitude"]
+                    self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = data['inputs']['Scenario']["Site"]["PV"]["station_distance_km"]
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_wind_energy_produced")

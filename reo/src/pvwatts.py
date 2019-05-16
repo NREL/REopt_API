@@ -51,8 +51,9 @@ class PVWatts:
         self.tilt = tilt
         self.time_steps_per_hour = time_steps_per_hour
         self.offline = offline  # used for testing
-        self.verify = verify # used for testing
-        self.response = None # store response so don't hit API multiple times
+        self.verify = verify  # used for testing
+        self.response = None
+        self.response = self.data  # store response so don't hit API multiple times
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -70,7 +71,7 @@ class PVWatts:
     @property
     def data(self):
 
-        if self.response is not None:
+        if self.response is None:
             resp = requests.get(self.url, verify=self.verify)
 
             if not resp.ok:
@@ -100,7 +101,7 @@ class PVWatts:
 
         if not self.offline:
 
-            outputs = self.data['outputs']
+            outputs = self.response['outputs']
             ac_hourly = outputs.get('ac')
 
             if ac_hourly is None:

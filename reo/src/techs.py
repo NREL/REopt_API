@@ -99,9 +99,9 @@ class PV(Tech):
 
     @property
     def station_location(self):
-        station = (self.pvwatts.response['station_info']['latitude'],
-                   self.pvwatts.response['station_info']['longitude'],
-                   self.pvwatts.response['station_info']['distance']/1000)
+        station = (self.pvwatts.response['station_info']['lat'],
+                   self.pvwatts.response['station_info']['lon'],
+                   round(self.pvwatts.response['station_info']['distance']/1000,1))
         return station
 
 
