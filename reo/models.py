@@ -330,14 +330,31 @@ class StorageModel(models.Model):
 class GeneratorModel(models.Model):
         # Inputs
         run_uuid = models.UUIDField(unique=True)
-        size_kw = models.FloatField()
+        existing_kw = models.FloatField()
+        min_kw = models.FloatField()
+        max_kw = models.FloatField()
+        installed_cost_us_dollars_per_kw = models.FloatField()
+        om_cost_us_dollars_per_kw = models.FloatField()
+        om_cost_us_dollars_per_kwh = models.FloatField()
+        diesel_fuel_cost_us_dollars_per_gallon = models.FloatField()
         fuel_slope_gal_per_kwh = models.FloatField()
         fuel_intercept_gal_per_hr = models.FloatField()
         fuel_avail_gal = models.FloatField()
         min_turn_down_pct = models.FloatField()
+        generator_only_runs_during_grid_outage = models.BooleanField()
+
         # Outputs
         fuel_used_gal = models.FloatField(null=True, blank=True)
+        size_kw = models.FloatField(null=True, blank=True)
+        average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+        average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
+        year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+        year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                         blank=True)
+        year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+        year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+        existing_gen_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):

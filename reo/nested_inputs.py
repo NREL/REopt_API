@@ -348,7 +348,7 @@ nested_input_definitions = {
           "min": 0,
           "max": 1e3,
           "default": 35,
-          "description": "Total annual operations and maintenance costs"
+          "description": "Total annual operations and maintenance costs for wind"
         },
         "macrs_option_years": {
           "type": "int",
@@ -781,12 +781,54 @@ nested_input_definitions = {
         },
 
       "Generator": {
-        "size_kw": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e5,
+          "default": 0,
+          "description": "Existing diesel generator size"
+        },
+        "min_kw": {
           "type": "float",
           "min": 0,
           "max": 1e9,
           "default": 0,
-          "description": "Existing on-site generator capacity in kW."
+          "description": "Minimum diesel generator size constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 1e9,
+          "description": "Maximum diesel generator size constraint for optimization. Set to zero to disable gen"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e5,
+          "default": 2500,
+          "description": "Installed diesel generator cost in $/kW"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 50,
+          "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 20,
+          "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
+        },
+        "diesel_fuel_cost_us_dollars_per_gallon": {
+          "type": "float",
+          "min": 0,
+          "max": 1e2,
+          "default": 20,
+          "description": "diesel cost in $/gallon"
         },
         "fuel_slope_gal_per_kwh": {
           "type": "float",
@@ -815,6 +857,11 @@ nested_input_definitions = {
           "max": 1,
           "default": 0.3,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_only_runs_during_grid_outage": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
         }
       }
     }
