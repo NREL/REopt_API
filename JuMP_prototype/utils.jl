@@ -1,8 +1,7 @@
 import JSON
-#import IndexedTables
 using AxisArrays
-#const I = IndexedTables
 
+# Helper Functions
 function importDict(path)
     open(path) do file
         JSON.parse(read(file, String))
@@ -25,6 +24,7 @@ function globalInit(variable, value)
         )
 end
 
+# Build Scenario from JSON
 function jsonToVariable(path)
     JSON = importDict(path)
     for (dat, dic) in JSON
@@ -46,6 +46,67 @@ function jsonToVariable(path)
     end
 end
 
+# Build Scenario from Dat Files
+function buildPairs(datfile)
+    let pairs = []
+        let var = "nothing"
+        let data = []
+            for line in readlines(datfile)
+                if occursin(":", line)
+                    splitLine = split(line, ":")
+                    var = splitLine[1]
+                elseif !occursin("]", line)
+                    push!(data, line)
+                end
+                if occursin("]", line)
+                    pair = [var, data]
+                    push!(pairs, pair)
+                    var = "nothing"
+                    data = []
+                end
+            end
+        end
+        end
+    return pairs
+    end
+end
+
+
+function loadPairs(pairs)
+    for (strvar, data) in pairs
+        var = Symbol(strvar)
+        try
+            if data[1] isa Number || data[1] isa Array
+                #println(var)
+                globalInit(var, data)
+            elseif data[1] isa String
+                data = strToSym(data)
+                globalInit(var, data)
+            end
+        catch y
+            println(y)
+            println(var, " ", data)
+        end
+    end
+end
+
+
+function datToVariable(scenarioPath)
+    for (root, dirs, files) in walkdir(scenarioPath)
+        #if root  == scenarioPath
+            for f in files
+                if !occursin("bau", f) && occursin(".dat", f)
+                    filePath = joinpath(root, f)
+                    pairArray = buildPairs(filePath)
+                    loadPairs(pairArray)
+                    println("Loaded Dat File: ", filePath, "\n")
+                end
+            end
+        #end
+    end
+end
+
+# Format Parameters to be called like variables
 function paramDataFormatter(setTup::Tuple, data)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
     shapedData = reshape(data, reverseTupleAxis)
