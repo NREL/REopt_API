@@ -219,6 +219,9 @@ class PVModel(models.Model):
 
     #Outputs
     size_kw = models.FloatField(null=True, blank=True)
+    station_latitude = models.FloatField(null=True, blank=True)
+    station_longitude = models.FloatField(null=True, blank=True)
+    station_distance_km = models.FloatField(null=True, blank=True)
     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)

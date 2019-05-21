@@ -12,7 +12,7 @@ from reo.log_levels import log
 class PVWatts:
 
     def __init__(self,
-                 url_base="https://developer.nrel.gov/api/pvwatts/v5.json",
+                 url_base="https://developer.nrel.gov/api/pvwatts/v6.json",
                  key=keys.developer_nrel_gov_key,
                  azimuth=180,
                  system_capacity=1,
@@ -23,13 +23,14 @@ class PVWatts:
                  gcr=0.4,
                  dc_ac_ratio=1.1,
                  inv_eff=0.96,
-                 radius=0,
-                 dataset="tmy3",
+                 radius=100,
+                 dataset="nsrdb",
                  latitude=None,
                  longitude=None,
                  tilt=None,
                  time_steps_per_hour=1,
                  offline=False,
+                 verify=True,
                  **kwargs):
 
         self.url_base = url_base
@@ -50,6 +51,9 @@ class PVWatts:
         self.tilt = tilt
         self.time_steps_per_hour = time_steps_per_hour
         self.offline = offline  # used for testing
+        self.verify = verify  # used for testing
+        self.response = None
+        self.response = self.data  # store response so don't hit API multiple times
 
         if self.tilt is None:
             self.tilt = self.latitude
@@ -66,22 +70,38 @@ class PVWatts:
 
     @property
     def data(self):
-        resp = requests.get(self.url, verify=True)
 
-        if not resp.ok:
-            log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-            raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-        log.info("PVWatts API query successful.")
+        if self.response is None:
+            resp = requests.get(self.url, verify=self.verify)
 
-        data = json.loads(resp.text)
-        return data
+            if not resp.ok:
+
+                # check for international location
+                data = json.loads(resp.text)
+                intl_warning = "This location appears to be outside the US"
+                for warning in data["warnings"]:
+                    if intl_warning in warning:
+                        self.dataset = "intl"
+                        self.radius = 200 # bump up search radius, since there aren't many sites
+                        resp = requests.get(self.url, verify=self.verify)
+                        break
+
+                if not resp.ok:
+                    log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                    raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+
+            log.info("PVWatts API query successful.")
+            data = json.loads(resp.text)
+            self.response = data
+
+        return self.response
 
     @property
     def pv_prod_factor(self):
 
         if not self.offline:
 
-            outputs = self.data['outputs']
+            outputs = self.response['outputs']
             ac_hourly = outputs.get('ac')
 
             if ac_hourly is None:

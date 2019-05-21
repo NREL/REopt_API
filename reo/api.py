@@ -70,7 +70,6 @@ class Job(ModelResource):
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)
         log.info('Beginning run setup')
-        
 
         def set_status(d, status):
             d["outputs"]["Scenario"]["status"] = status
@@ -78,7 +77,6 @@ class Job(ModelResource):
         data = dict()
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-        
 
         if not input_validator.isValid:  # 400 Bad Request
             log.debug("input_validator not valid")
