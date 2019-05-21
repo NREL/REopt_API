@@ -98,6 +98,7 @@ class PV(Tech):
                 self.tilt = kwargs.get('latitude')
             else:
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
+        self.kwargs['tilt']  = self.tilt
 
         # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
         if self.max_kw < self.existing_kw:
