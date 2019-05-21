@@ -84,10 +84,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
             station = pv.station_location
 
             # update data inputs to reflect the pvwatts station data locations
+            # must propagate array_type_to_tilt default assignment back to database
+            data['inputs']['Scenario']["Site"]["PV"]["tilt"] = pv.tilt
             tmp = dict()
             tmp['station_latitude'] = station[0]
             tmp['station_longitude'] = station[1]
             tmp['station_distance_km'] =station[2]
+            tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
             ModelManager.updateModel('PVModel', tmp, run_uuid)
 
 
