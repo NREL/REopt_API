@@ -862,6 +862,11 @@ nested_input_definitions = {
           "default": True,
           "type": "bool",
           "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "generator_sells_energy_back_to_grid": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
         }
       }
     }
