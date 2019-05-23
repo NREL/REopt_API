@@ -56,7 +56,40 @@ function buildPairs(datfile)
                     splitLine = split(line, ":")
                     var = splitLine[1]
                 elseif !occursin("]", line)
-                    push!(data, line)
+                    try
+                        floatLine = parse(Float64, line)
+                        push!(data, floatLine)
+                    catch
+                        #println("can't parse ", line, " into Float")
+                        push!(data, line)
+                    end
+                end
+                if occursin("]", line)
+                    pair = [var, data]
+                    push!(pairs, pair)
+                    var = "nothing"
+                    data = []
+                end
+            end
+        end
+        end
+    return pairs
+    end
+end
+
+function buildPairsArray(datfile)
+    let pairs = []
+        let var = "nothing"
+        let data = []
+            for line in readlines(datfile)
+                if occursin(":", line)
+                    splitLine = split(line, ":")
+                    var = splitLine[1]
+                elseif occursin("]", line) && occursin("[", line)
+                    arrayCons = [parse(Int64, s) for s in
+                                 split(replace(replace(line, "[" => ""), "]" => ""))]
+                    push!(data, arrayCons)
+                    continue
                 end
                 if occursin("]", line)
                     pair = [var, data]
@@ -84,8 +117,9 @@ function loadPairs(pairs)
                 globalInit(var, data)
             end
         catch y
-            println(y)
-            println(var, " ", data)
+            println("\n", y, ": for variable name '", var, "'",
+                    "\n Initializing as empty array\n")
+                globalInit(var, [])
         end
     end
 end
@@ -93,16 +127,24 @@ end
 
 function datToVariable(scenarioPath)
     for (root, dirs, files) in walkdir(scenarioPath)
-        #if root  == scenarioPath
-            for f in files
-                if !occursin("bau", f) && occursin(".dat", f)
-                    filePath = joinpath(root, f)
+        for f in files
+            if !occursin("bau", f) && occursin(".dat", f)
+                filePath = joinpath(root, f)
+                contents = readlines(filePath)
+                if occursin("=", contents[1])
+                    eval(Meta.parse(readline(filePath)))
+                elseif occursin("[", contents[2])
+                    pairArrayArray = buildPairsArray(filePath)
+                    loadPairs(pairArrayArray)
+                elseif occursin(":", contents[1])
                     pairArray = buildPairs(filePath)
                     loadPairs(pairArray)
-                    println("Loaded Dat File: ", filePath, "\n")
+                else
+                    println("Case not accounted for in dat to var")
                 end
+                println("Loaded Dat File: ", filePath)
             end
-        #end
+        end
     end
 end
 

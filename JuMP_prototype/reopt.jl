@@ -4,7 +4,7 @@
 include("utils.jl")
 #jsonToVariable("all_data_3.json")
 #allData = importDict("all_data.json")
-datToVariable("test_run/Inputs/")
+datToVariable("data/sakshi_data/Inputs/")
 
 # Optimization
 using JuMP
