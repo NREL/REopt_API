@@ -23,7 +23,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         For this scenario, the diesel generator has enough fuel to meet the critical load during outage.
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'generatorPOST.json')
         nested_data = json.load(open(test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = False
         resp = self.get_response(data=nested_data)
@@ -64,7 +64,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         For this scenario, the diesel generator *does not* have enough fuel to meet the critical load during outage.
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'generatorPOST.json')
         nested_data = json.load(open(test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 40
         resp = self.get_response(data=nested_data)

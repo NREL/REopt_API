@@ -24,7 +24,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     @property
     def complete_valid_nestedpost(self):
-        return json.load(open('reo/tests/nestedPOST.json'))
+        return json.load(open('reo/tests/posts/nestedPOST.json'))
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
