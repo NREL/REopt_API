@@ -24,6 +24,16 @@ function globalInit(variable, value)
         )
 end
 
+function initWrapper(var, v)
+    if v[1] isa Number || v[1] isa Array
+        #println(var)
+        globalInit(var, v)
+    elseif v[1] isa String
+        v = strToSym(v)
+        globalInit(var, v)
+    end
+end
+
 # Build Scenario from JSON
 function jsonToVariable(path)
     JSON = importDict(path)
@@ -31,13 +41,7 @@ function jsonToVariable(path)
         for (k,v) in dic
             var = Symbol(k)
             try
-                if v[1] isa Number || v[1] isa Array
-                    #println(var)
-                    globalInit(var, v)
-                elseif v[1] isa String
-                    v = strToSym(v)
-                    globalInit(var, v)
-                end
+                initWrapper(var, v)
             catch y
                 #println(y)
                 #println(var, " ", v)
@@ -57,11 +61,16 @@ function buildPairs(datfile)
                     var = splitLine[1]
                 elseif !occursin("]", line)
                     try
-                        floatLine = parse(Float64, line)
-                        push!(data, floatLine)
+                        intLine = parse(Int64, line)
+                        push!(data, intLine)
                     catch
-                        #println("can't parse ", line, " into Float")
-                        push!(data, line)
+                        try
+                            floatLine = parse(Float64, line)
+                            push!(data, floatLine)
+                        catch
+                            #println("can't parse ", line, " into Float")
+                            push!(data, line)
+                        end
                     end
                 end
                 if occursin("]", line)
@@ -109,12 +118,10 @@ function loadPairs(pairs)
     for (strvar, data) in pairs
         var = Symbol(strvar)
         try
-            if data[1] isa Number || data[1] isa Array
-                #println(var)
-                globalInit(var, data)
-            elseif data[1] isa String
-                data = strToSym(data)
-                globalInit(var, data)
+            if length(data) == 1
+                initWrapper(var, data[1])
+            else
+                initWrapper(var, data)
             end
         catch y
             println("\n", y, ": for variable name '", var, "'",
@@ -147,6 +154,20 @@ function datToVariable(scenarioPath)
         end
     end
 end
+
+# Parse variables in mosel command
+function readCmd(path)
+    println("\nParameters read from mosel command:\n")
+    for char in split(readline(path))
+        if occursin("=", char) && !occursin("'", char) && !occursin("-", char)
+            parseLine = Meta.parse(char)
+            eval(parseLine)
+            println(parseLine)
+        end
+    end
+end
+
+
 
 # Format Parameters to be called like variables
 function paramDataFormatter(setTup::Tuple, data)
@@ -181,6 +202,10 @@ function parameter(setTup::Tuple, data)
             return formattedParam
         end
     end
+end
+
+function parameter(set::UnitRange{Int64}, data::Float64)
+    return [data]
 end
 
 function parameter(set, data)
