@@ -419,10 +419,11 @@ end
 #   dvSystemSize (t,s) >= CapCostX (t,s-1) * binSegChosen (t,s)
 #end-do
 
+# Had to modify b/c AxisArrays doesn't do well with range 0:2
 @constraint(REopt, [t in Tech, s in Seg],
-            dvSystemSize[t,s] <= CapCostX[t,s] * binSegChosen[t,s])
-@constraint(REopt, [t in Tech, s in Seg; s > 1],
-            dvSystemSize[t,s] >= CapCostX[t,s-1] * binSegChosen[t,s])
+            dvSystemSize[t,s] <= CapCostX[t,s+1] * binSegChosen[t,s])
+@constraint(REopt, [t in Tech, s in Seg],
+            dvSystemSize[t,s] >= CapCostX[t,s] * binSegChosen[t,s])
 
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End CapCost constraints
@@ -647,14 +648,14 @@ end
 
 
 ###### NEED UPDATED JSON FOR THESE
-#    @constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-#	dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin)
-#
-#    @constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-#   	dvPeakDemandE[r,db] >= 0
-#
-#    @constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-#   	dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback
+@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+	        dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin))
+
+@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+   	        dvPeakDemandE[r,db] >= 0)
+
+@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+   	        dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback)
 
 #! Compute tiered monthly demand rates
 #forall (dbm in DemandMonthsBin, m in Month) do
@@ -674,14 +675,14 @@ end
 
 #forall ( dbm in DemandMonthsBin | dbm >= 2, m in Month) do
 #	binDemandMonthsTier(m, dbm) - binDemandMonthsTier(m, dbm-1) <= 0
-#	binDemandMonthsTier(m, dbm)*MaxDemandMonthsInTier(dbm-1) <= dvPeakDemandEMonth(m, dbm-1) ! enforces full bins
+#	binDemandMonthsTier(m, dbm)*Min(dbm-1) <= dvPeakDemandEMonth(m, dbm-1) ! enforces full bins
 #end-do
 
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month; dbm >= 2],
 	        binDemandMonthsTier[m, dbm] - binDemandMonthsTier[m, dbm-1] <= 0)
 
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month; dbm >= 2],
-	        binDemandMonthsTier[m, dbm] * MaxDemandMonthsInTier[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
+	        binDemandMonthsTier[m, dbm] * Min[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
 
 #forall ( dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth(m))  do
 #	dvPeakDemandEMonth(m, dbm) >=  sum(LD in Load, db in DemandBin, fb in FuelBin) dvGrid(LD,ts,db,fb,dbm) ! validate
@@ -697,8 +698,8 @@ end
 #end-do
 
 ###NEED UPDATED JSON
-#    @constraint(REopt, [LD in Load, lbm in DemandLookbackMonths],
-#	dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in DemandMonthsBin)
+@constraint(REopt, [LD in Load, lbm in DemandLookbackMonths],
+            dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in DemandMonthsBin))
 
 #!! 1/2/13  TS  Sum of Electric R and W must be less than the Site Load for the year.
 #!! Once site load is met, excess electricity goes into X bin with lower sellback rate
@@ -722,6 +723,10 @@ end
 #forall (t in Tech,  b in TechClass) do
 #   indicator(-1, binSingleBasicTech (t,b), sum (s in Seg) dvSystemSize (t, s) * TechToTechClassMatrix(t,b) <=  0)
 #end-do
+
+#Added, but has awful bounds
+@constraint(REopt, [t in Tech, b in TechClass],
+            sum(dvSystemSize[t, s] * TechToTechClassMatrix[t, b] for s in Seg) <= MaxSize[t] * binSingleBasicTech[t, b])
 
 #!Curtailment 91212 added by TS written by Helwig.  Corrected by TS 91612.
 #!This prevents PV and wind from 'turning down'.  They always produce at max.
@@ -768,9 +773,8 @@ end
 @constraint(REopt, TotalEnergyCharges == sum(dvFuelCost[t,fb]
                                              for t in Tech, fb in FuelBin))
 
-    #NEED UPDATED JSON
-#    DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
-#                            for r in Ratchets, db in DemandBin)
+@constraint(REopt, DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
+                                           for r in Ratchets, db in DemandBin))
 @constraint(REopt, DemandTOUCharges == 0)
 
 @constraint(REopt, DemandFlatCharges == sum(dvPeakDemandEMonth[m, dbm] * DemandRatesMonth[m, dbm] * pwf_e
@@ -802,10 +806,14 @@ end
 #! Utility min charges
 #if AnnualMinCharge > 12 * MonthlyMinCharge
 #then TotalMinCharge := AnnualMinCharge * pwf_e
-@constraint(REopt, TotalMinCharge == 0)
 #else TotalMinCharge := 12 * MonthlyMinCharge * pwf_e
 #end-if
 
+if AnnualMinCharge > 12 * MonthlyMinCharge
+    @constraint(REopt, TotalMinCharge == AnnualMinCharge * pwf_e)
+else
+    @constraint(REopt, TotalMinCharge == 12 * MonthlyMinCharge * pwf_e)
+end
 
 
 #MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
@@ -883,3 +891,215 @@ println("Model built.")
 #    end
 #end
 
+
+
+#outputs
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!  Output Module
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#
+#ExportedElecPV := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | (TechToTechClassMatrix (t, "PV") = 1 and (LD = "1W" or LD = "1X" )))
+#                dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
+#
+
+#ExportedElecPVArray = []
+#
+#value(sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] *  TimeStepScaling
+#                           for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin if (TechToTechClassMatrix (t, "PV") == 1 && LD == Symbol("1W") || LD = Symbol("1X"))))
+                
+
+#ExportedElecWIND := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | (TechToTechClassMatrix (t, "WIND") = 1 and (LD = "1W" or LD = "1X" )))
+#                dvRatedProd(t,LD,ts,s,fb) * ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling
+#
+#ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
+#                    dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * ExportRates(t,LD,ts)
+#
+#Year1EnergyCost := TotalEnergyCharges / pwf_e
+#Year1DemandCost := TotalDemandCharges / pwf_e
+#Year1DemandTOUCost := DemandTOUCharges / pwf_e
+#Year1DemandFlatCost := DemandFlatCharges / pwf_e
+#Year1FixedCharges := TotalFixedCharges / pwf_e
+#Year1MinCharges := MinChargeAdder / pwf_e
+#Year1Bill := Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
+#
+#
+#Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
+#                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts) * TimeStepScaling
+#
+#
+#
+#GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
+#
+#!************************** Writing to files ************************************
+#
+#
+#!Time series dispatch output
+#
+#if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > REoptTol then
+#
+#    fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1S", ts, s, fb)) * ProdFactor("UTIL1", "1S", ts) * LevelizationFactor("UTIL1"))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    fopen(OutputDir + "\\ElecToStore.csv",F_OUTPUT)
+#        forall (ts in TimeStep )     do
+#           writeln (     getsol (dvElecToStor (ts)))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    !Time series dispatch output
+#    fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
+#        forall (ts in TimeStep )     do
+#           writeln (    getsol (dvElecFromStor (ts)))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
+#        forall (ts in TimeStep )     do
+#           writeln (   getsol (dvStoredEnergy (ts)))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
+#
+#        fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
+#            forall (ts in TimeStep) do
+#               writeln (sum (s in Seg, fb in FuelBin)  getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
+#            end-do
+#        fclose(F_OUTPUT)
+#
+#    end-do
+#
+#    forall (t in Tech | (TechToTechClassMatrix (t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+#
+#        fopen(OutputDir + "\\WINDtoBatt.csv", F_OUTPUT)
+#            forall (ts in TimeStep) do
+#               writeln (sum (s in Seg, fb in FuelBin)  getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
+#            end-do
+#        fclose(F_OUTPUT)
+#
+#    end-do
+#
+#end-if
+#
+#forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
+#
+#    fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    fopen(OutputDir + "\\PVtoGrid.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
+#                    sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#end-do
+#
+#forall (t in Tech | (TechToTechClassMatrix (t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+#
+#    fopen(OutputDir + "\\WINDtoLoad.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#    fopen(OutputDir + "\\WINDtoGrid.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
+#                    sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#end-do
+#
+#forall (t in Tech | (TechToTechClassMatrix (t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
+#
+#    fopen(OutputDir + "\\GENERATORtoLoad.csv", F_OUTPUT)
+#        forall (ts in TimeStep) do
+#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
+#        end-do
+#    fclose(F_OUTPUT)
+#
+#end-do
+#
+#fopen(OutputDir + "\\GridToLoad.csv", F_OUTPUT)
+#    forall (ts in TimeStep) do
+#       writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1R", ts, s, fb)) * ProdFactor("UTIL1", "1R", ts) * LevelizationFactor("UTIL1"))
+#    end-do
+#fclose(F_OUTPUT)
+#
+#fopen(OutputDir + "\\Load.csv",F_OUTPUT)
+#    forall (ts in TimeStep )     do
+#       writeln (   getsol (LoadProfile("1R",ts)))
+#    end-do
+#fclose(F_OUTPUT)
+#
+#
+#fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
+#    writeln ("Ratchet,DemandTier,PeakDemand")
+#    forall  ( r in Ratchets, db in DemandBin)  do
+#       writeln (r, ",", db, ",", getsol(dvPeakDemandE(r,db)),",")
+#    end-do
+#    writeln(",")
+#    writeln("Month,Peak_Demand")
+#    forall  ( m in Month, dbm in DemandMonthsBin)  do
+#       writeln (m, ",", getsol(dvPeakDemandEMonth(m, dbm)),",")
+#    end-do
+#fclose(F_OUTPUT)
+#
+#
+#! write outputs in JSON for post processing
+#
+#    Root:=addnode(out_json, 0, XML_ELT, "jsv")
+#
+#    Node:=addnode(out_json, Root, "status", status)
+#    Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts) + 0.001*getsol(MinChargeAdder), 10, 0))
+#
+#    forall  (b in BattLevel)  do
+#        Node:=addnode(out_json, Root, "batt_kwh", getsol (dvStorageSizeKWH(b)))
+#    end-do
+#
+#    forall  (b in BattLevel)  do
+#        Node:=addnode(out_json, Root, "batt_kw", getsol (dvStorageSizeKW(b)))
+#    end-do
+#
+#    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
+#        Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
+#    end-do
+#
+#    forall (t in Tech  | TechToTechClassMatrix(t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+#        Node:=addnode(out_json, Root, "wind_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
+#    end-do
+#
+#    Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (Year1UtilityEnergy) , 10, 4))
+#    Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))
+#    Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
+#    Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
+#    Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))
+#    Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
+#    Node:=addnode(out_json, Root, "year_one_fixed_cost", strfmt(getsol(Year1FixedCharges), 10, 0))
+#    Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
+#    Node:=addnode(out_json, Root, "year_one_bill", strfmt(getsol(Year1Bill), 10, 2))
+#    !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
+#    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
+#    Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
+#    Node:=addnode(out_json, Root, "total_fixed_cost", strfmt(getsol(TotalFixedCharges) * r_tax_fraction_offtaker, 10, 2))
+#    Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
+#    Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
+#    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
+#    Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
+#    Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
+#    Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
+#    Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
+#    Node:=addnode(out_json, Root, "year_one_wind_energy_produced", strfmt(getsol(Year1WindProd), 10, 0))
+#    Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElecPV), 10, 0))
+#    Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
+#    Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
+#
+#jsonsave(out_json, OutputDir + "\\REopt_results.json")

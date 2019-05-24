@@ -765,7 +765,7 @@ case getprobstat of
   else status:="???"
 end-case
 writeln(status)
-exportprob(EP_MAX, "explout", RECosts)
+#exportprob(EP_MAX, "explout", RECosts)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!  Output Module
