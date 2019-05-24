@@ -351,7 +351,6 @@ class DatFileManager:
                         tech_incentives[region]['rebate'] = 0
                         tech_incentives[region]['rebate_max'] = 0
 
-
                         # Intermediate Cost curve
                 xp_array_incent = dict()
                 xp_array_incent['utility'] = [0.0, tech_to_size]  #kW
@@ -509,28 +508,26 @@ class DatFileManager:
 
                 for s in range(n_segments):
                     
-                    if tech not in ['generator']:
+                    if cost_curve_bp_x[s + 1] > 0:
+                        # Remove federal incentives for ITC basis and tax benefit calculations
+                        itc = eval('self.' + tech + '.incentives.federal.itc')
+                        rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
+                        itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
-                        if cost_curve_bp_x[s + 1] > 0:
-                            # Remove federal incentives for ITC basis and tax benefit calculations
-                            itc = eval('self.' + tech + '.incentives.federal.itc')
-                            rebate_federal = eval('self.' + tech + '.incentives.federal.rebate')
-                            itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
+                    sf = self.site.financial
+                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
+                                                                 0,
+                                                                 sf.analysis_years,
+                                                                 sf.owner_discount_pct,
+                                                                 sf.owner_tax_pct,
+                                                                 itc,
+                                                                 eval('self.' + tech + '.incentives.macrs_schedule'),
+                                                                 eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
 
-                        sf = self.site.financial
-                        updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
-                                                                     0,
-                                                                     sf.analysis_years,
-                                                                     sf.owner_discount_pct,
-                                                                     sf.owner_tax_pct,
-                                                                     itc,
-                                                                     eval('self.' + tech + '.incentives.macrs_schedule'),
-                                                                     eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                     eval('self.' + tech + '.incentives.macrs_itc_reduction'))
-
-                        # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
-                        updated_slope -= rebate_federal
-                        updated_cap_cost_slope.append(updated_slope)
+                    # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
+                    updated_slope -= rebate_federal
+                    updated_cap_cost_slope.append(updated_slope)
 
                 for p in range(1, n_segments + 1):
                     cost_curve_bp_y[p] = cost_curve_bp_y[p - 1] + updated_cap_cost_slope[p - 1] * \

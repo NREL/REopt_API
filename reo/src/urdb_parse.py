@@ -138,6 +138,8 @@ class UrdbParse:
             self.generator_fuel_slope = gen.fuel_slope
             self.generator_fuel_intercept = gen.fuel_intercept
             self.generator_fuel_avail = gen.fuel_avail
+            self.diesel_fuel_cost_us_dollars_per_gallon = gen.diesel_fuel_cost_us_dollars_per_gallon
+            self.diesel_cost_array = [self.diesel_fuel_cost_us_dollars_per_gallon] * self.ts_per_year
         else:
             self.generator_fuel_slope = 0
             self.generator_fuel_intercept = 0
@@ -373,10 +375,10 @@ class UrdbParse:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'generator':
                         # generator fuel is free for now since we are only modeling existing generators
-                        energy_rates = operator.add(energy_rates, self.zero_array)
+                        energy_rates = operator.add(energy_rates, self.diesel_cost_array)
                         energy_avail.append(self.generator_fuel_avail)
                     else:
-                        # all other techs (PV, PVNM) have zero fuel and zero fuel cost
+                        # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
                         energy_rates = operator.add(energy_rates, self.zero_array)
                         energy_avail.append(0)
 

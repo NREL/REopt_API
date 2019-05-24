@@ -867,6 +867,124 @@ nested_input_definitions = {
           "default": False,
           "type": "bool",
           "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility rebates"
+        },
+        "pbi_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Production-based incentive value"
+        },
+        "pbi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility production-based incentives"
+        },
+        "pbi_years": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Duration of production-based incentives from installation date"
+        },
+        "pbi_system_max_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Maximum system size for which production-based incentives apply"
         }
       }
     }

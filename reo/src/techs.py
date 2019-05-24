@@ -227,8 +227,10 @@ class Generator(Tech):
         self.reopt_class = 'GENERATOR'
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
+        self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
         self.derate = 0
         self.loads_served = ['retail', 'storage']
+        self.incentives = Incentives(**kwargs)
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
