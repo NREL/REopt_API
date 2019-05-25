@@ -940,6 +940,10 @@ fclose(F_OUTPUT)
     forall (t in Tech  | TechToTechClassMatrix(t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
         Node:=addnode(out_json, Root, "wind_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
+    
+    forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+        Node:=addnode(out_json, Root, "generator_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
+    end-do
 
     Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (Year1UtilityEnergy) , 10, 4))
     Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))

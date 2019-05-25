@@ -114,6 +114,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             if results_dict.get("wind_kw") is None:
                 results_dict['wind_kw'] = 0
 
+            # if generator is zero then no value is written to REopt results.json
+            if results_dict.get("generator_kw") is None:
+                results_dict['generator_kw'] = 0
+
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
             # dispatch
@@ -241,6 +245,12 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]
+                    self.nested_outputs["Scenario"]["Site"][name]
+                    self.nested_outputs["Scenario"]["Site"][name]
+                    self.nested_outputs["Scenario"]["Site"][name]
+
 
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
@@ -289,5 +299,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("Results.py raise unexpected error")
+        log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
