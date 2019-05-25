@@ -881,7 +881,7 @@ class DatFileManager:
         write_to_dat(self.file_economics, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
-        write_to_dat(self.file_economics, om_cost_us_dollars_per_kwh, 'OMperUnitProd', mode='a')
+        write_to_dat(self.file_economics, om_cost_us_dollars_per_kwh, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
@@ -901,7 +901,7 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
-        write_to_dat(self.file_economics_bau, om_dollars_per_kwh_bau, 'OMperUnitProd', mode='a')
+        write_to_dat(self.file_economics_bau, om_dollars_per_kwh_bau, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
 
         # elec_tariff args
