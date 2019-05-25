@@ -243,13 +243,28 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
                 elif name == "Generator":
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]
-                    self.nested_outputs["Scenario"]["Site"][name]
-                    self.nested_outputs["Scenario"]["Site"][name]
-                    self.nested_outputs["Scenario"]["Site"][name]
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "average_yearly_energy_produced_kwh"] = self.results_dict.get(
+                        "average_yearly_gen_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "average_yearly_energy_exported_kwh"] = self.results_dict.get(
+                        "average_annual_energy_exported_gen")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_energy_produced_kwh"] = self.results_dict.get(
+                        "year_one_gen_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_battery_series_kw"] = self.po.get_gen_to_batt()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_grid_series_kw"] = self.po.get_gen_to_grid()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_power_production_series_kw"] = self.compute_total_power(name)
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
 
 
             self.profiler.profileEnd()

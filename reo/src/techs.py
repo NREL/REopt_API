@@ -244,6 +244,7 @@ class Generator(Tech):
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if kwargs['generator_sells_energy_back_to_grid']:
             self.loads_served.append('wholesale')
+            self.loads_served.append('export')
 
 
         default_slope, default_intercept = self.default_fuel_burn_rate(self.min_kw)
