@@ -75,7 +75,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
-            "net_capital_costs_plus_om"
+            "net_capital_costs_plus_om",
+            "pv_net_om_costs",
+            "gen_net_om_costs"
         ]
 
         def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
@@ -196,7 +198,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_pv_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
-                    self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("pv_net_om_costs_bau")
                     self.nested_outputs['Scenario']["Site"][name]["station_latitude"] = pv_model.station_latitude
                     self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
                     self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
@@ -264,7 +266,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
+                        "existing_gen_om_cost_us_dollars"] = self.results_dict.get("gen_net_om_costs_bau")
 
 
             self.profiler.profileEnd()

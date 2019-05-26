@@ -11,9 +11,9 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "0e664ddd-2445-4090-b7b9-f436c4b5bf2a"
-  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Inputs"
-  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Outputs"
+  ScenarioNum = "8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1"
+  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1\\Inputs"
+  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1\\Outputs"
   BaseString = ""
 
   CapCostSegCount = 2
@@ -27,7 +27,7 @@ parameters
   REoptTol = 5e-5
 
   ! Utility info
-  NumRatchets = 12
+  NumRatchets = 24
 
   DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
   DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
@@ -998,6 +998,8 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
     Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "pv_net_om_costs", strfmt(getsol(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "gen_net_om_costs", strfmt((getsol(GenPerUnitSizeOMCosts)+ getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AveragePvProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
