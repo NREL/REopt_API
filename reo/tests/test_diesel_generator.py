@@ -39,7 +39,11 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['pv_kw'] = 0
         d_expected['batt_kw'] = 2.85178
         d_expected['batt_kwh'] = 4.73317
-        d_expected['fuel_used_gal'] = 1.53
+        # The expected fuel consumption of the geneartor for this test case has changed with the "diesel generator
+        # sizing" capability additon. This is because the generator is now allowing to charge the battery as well.
+        # So, for hour 11 and 12 (when outage happens), generator is now charging battery with 3.00845 and 0.986111 kWh,
+        # along with serving the load, Thereby increasing its fuel consumption.
+        d_expected['fuel_used_gal'] = 1.79 # 1.53
         d_expected['avoided_outage_costs_us_dollars'] = 235303.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
