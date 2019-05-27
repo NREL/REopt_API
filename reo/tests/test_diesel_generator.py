@@ -81,7 +81,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         d_expected['lcc'] = 246481.0
         d_expected['npv'] = -17377.0
-        d_expected['pv_kw'] = 8.50489
+        d_expected['pv_kw'] = 8.62598 #8.50489
         d_expected['batt_kw'] = 15.2994
         d_expected['batt_kwh'] = 69.0182
         d_expected['fuel_used_gal'] = 25.0
