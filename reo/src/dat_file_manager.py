@@ -161,7 +161,11 @@ class DatFileManager:
         self.generator = generator
 
         if self.generator.existing_kw > 0:
-            self.bau_techs.append('generator')
+            # following if-clause is to avoid appending generator twice in the bau_techs list
+            # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
+            # bau_techs will never have more than 1 entry for 'generator'
+            if 'generator' not in self.bau_techs:
+                self.bau_techs.append('generator')
 
     def add_site(self, site):
         self.site = site
