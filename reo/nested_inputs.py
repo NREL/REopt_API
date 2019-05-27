@@ -1104,6 +1104,35 @@ def flat_to_nested(i):
                         "pbi_system_max_kw": i.get("wind_pbi_system_max"),
                  },
 
+              "Generator":
+                {
+                  "min_kw": i.get("gen_kw_min"),
+                  "max_kw": i.get("gen_kw_max"),
+                  "existing_kw": i.get("gen_existing_kw"),
+                  "installed_cost_us_dollars_per_kw": i.get("gen_cost"),
+                  "om_cost_us_dollars_per_kw": i.get("gen_om_kw"),
+                  "om_cost_us_dollars_per_kwh": i.get("gen_om_kwh"),
+                  "generator_only_runs_during_grid_outage": i.get("gen_during_grid_outage"),
+                  "generator_sells_energy_back_to_grid": i.get("gen_sells_energy_to_grid"),
+                  "macrs_option_years": i.get("gen_macrs_schedule"),
+                  "macrs_bonus_pct": i.get("gen_macrs_bonus_fraction"),
+                  "macrs_itc_reduction": i.get("gen_macrs_itc_reduction"),
+                  "federal_itc_pct": i.get("gen_itc_federal"),
+                  "state_ibi_pct": i.get("gen_ibi_state"),
+                  "state_ibi_max_us_dollars": i.get("gen_ibi_state_max"),
+                  "utility_ibi_pct": i.get("gen_ibi_utility"),
+                  "utility_ibi_max_us_dollars": i.get("gen_ibi_utility_max"),
+                  "federal_rebate_us_dollars_per_kw": i.get("gen_rebate_federal"),
+                  "state_rebate_us_dollars_per_kw": i.get("gen_rebate_state"),
+                  "state_rebate_max_us_dollars": i.get("gen_rebate_state_max"),
+                  "utility_rebate_us_dollars_per_kw": i.get("gen_rebate_utility"),
+                  "utility_rebate_max_us_dollars": i.get("gen_rebate_utility_max"),
+                  "pbi_us_dollars_per_kwh": i.get("gen_pbi"),
+                  "pbi_max_us_dollars": i.get("gen_pbi_max"),
+                  "pbi_years": i.get("gen_pbi_years"),
+                  "pbi_system_max_kw": i.get("gen_pbi_system_max"),
+                },
+
                 "Storage":
                     {
                     "min_kw": i.get("batt_kw_min"),
