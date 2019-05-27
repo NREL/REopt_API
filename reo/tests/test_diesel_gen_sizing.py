@@ -33,13 +33,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
+
         d_expected = dict()
         d_expected['lcc'] = 228519
         d_expected['npv'] = 758
         d_expected['pv_kw'] = 0
         d_expected['batt_kw'] = 2.85178
         d_expected['batt_kwh'] = 4.73317
-        d_expected['fuel_used_gal'] = 1.53
+        d_expected['fuel_used_gal'] = 1.79
         d_expected['avoided_outage_costs_us_dollars'] = 235303.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
