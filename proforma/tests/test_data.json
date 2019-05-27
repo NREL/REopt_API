@@ -36,6 +36,7 @@
       },
       "land_acres": null,
       "latitude": 34.5794343,
+      "outage_start_hour": null,
       "outage_end_hour": null,
       "roof_squarefeet": null,
       "PV": {
@@ -77,7 +78,6 @@
         "macrs_bonus_pct": null,
         "om_cost_us_dollars_per_kw": null,
         "utility_rebate_us_dollars_per_kw": null,
-        "min_kw": null,
         "pbi_years": null,
         "max_kw": 5,
         "min_kw": 4,
@@ -94,6 +94,9 @@
         "utility_ibi_pct": null,
         "state_ibi_max_us_dollars": null,
         "utility_ibi_max_us_dollars": null
+      },
+      "Generator": {
+        "max_kw": 0
       },
       "Financial": {
         "om_cost_escalation_pct": null,
@@ -1131,8 +1134,7 @@
         "urdb_rate_name": null,
         "wholesale_rate_us_dollars_per_kwh": null,
         "urdb_utility_name": null
-      },
-      "outage_start_hour": null
+      }
     }
   }
 }

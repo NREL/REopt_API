@@ -146,7 +146,8 @@ class DatFileManager:
         self.pvnm.nmil_regime = 'NMtoIL'
 
         if self.pv.existing_kw > 0:
-            self.bau_techs.extend(['pv', 'pvnm'])
+            tmp_tech = ['pv', 'pvnm']
+            self.bau_techs = tmp_tech+self.bau_techs
 
     def add_wind(self, wind):
         self.wind = wind
