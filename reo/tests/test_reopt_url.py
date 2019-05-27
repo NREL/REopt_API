@@ -127,6 +127,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                             "max_kw": 10000,
                                             "existing_kw": 100
                                          },
+                                         "Generator": {
+                                           "max_kw": 0,
+                                            "existing_kw": 0
+                                         },
                                          "LoadProfile": {
                                             "year": 2018,
                                             "critical_load_pct": critical_load_pct,
