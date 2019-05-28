@@ -127,7 +127,7 @@ class UrdbParse:
         self.zero_array = [0] * self.ts_per_year
         self.net_metering = elec_tariff.net_metering
         self.wholesale_rate = elec_tariff.wholesale_rate
-        self.excess_rate = excess_rate
+        self.excess_rate = elec_tariff.wholesale_rate
         self.max_demand_rate = 0
         self.big_number = big_number
         self.reopt_args = REoptArgs(big_number)

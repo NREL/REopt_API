@@ -28,7 +28,12 @@ class WholesaleTests(ResourceTestCaseMixin, TestCase):
         filepath = os.path.dirname(os.path.abspath(__file__))
         post = json.load(open(os.path.join(filepath, 'posts', 'wholesalePOST.json')))
 
-        post["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
+        resp = self.get_response(data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
         """
 
         d_expected = dict()
