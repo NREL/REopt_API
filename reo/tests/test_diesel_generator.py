@@ -3,7 +3,7 @@ import os
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
-#from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+#from unittest import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -69,7 +69,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         For this scenario, the diesel generator *does not* have enough fuel to meet the critical load during outage.
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
+        test_post = os.path.join('reo', 'tests', 'generatorPOST_part2.json')
         nested_data = json.load(open(test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 40
         resp = self.get_response(data=nested_data)
@@ -80,14 +80,14 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 246481.0
-        d_expected['npv'] = -17377.0
-        d_expected['pv_kw'] = 8.62598 #8.50489
-        d_expected['batt_kw'] = 15.2994
-        d_expected['batt_kwh'] = 69.0182
-        d_expected['fuel_used_gal'] = 25.0
-        d_expected['avoided_outage_costs_us_dollars'] = 24772.59
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 14086.8
+        d_expected['lcc'] = 555448.0
+        d_expected['npv'] = 101631.0
+        d_expected['pv_kw'] = 92.365
+        d_expected['batt_kw'] = 3.48388
+        d_expected['batt_kwh'] = 13.0645
+        d_expected['fuel_used_gal'] = 24.16
+        d_expected['avoided_outage_costs_us_dollars'] = 28258.02
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 26306.7
 
         try:
             check_common_outputs(self, c, d_expected)
