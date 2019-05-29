@@ -80,14 +80,14 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 555448.0
-        d_expected['npv'] = 101631.0
-        d_expected['pv_kw'] = 92.365
-        d_expected['batt_kw'] = 3.48388
-        d_expected['batt_kwh'] = 13.0645
-        d_expected['fuel_used_gal'] = 24.16
-        d_expected['avoided_outage_costs_us_dollars'] = 28258.02
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 26306.7
+        d_expected['lcc'] = 765138.0
+        d_expected['npv'] = 221621.0
+        d_expected['pv_kw'] = 178.643
+        d_expected['batt_kw'] = 22.7006
+        d_expected['batt_kwh'] = 116.564
+        d_expected['fuel_used_gal'] = 13.99
+        d_expected['avoided_outage_costs_us_dollars'] = 40676.44
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 65580.3
 
         try:
             check_common_outputs(self, c, d_expected)
