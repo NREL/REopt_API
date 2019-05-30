@@ -374,7 +374,7 @@ class UrdbParse:
                 # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'generator':
-                        # generator fuel is free for now since we are only modeling existing generators
+                        # generator fuel is not free anymore since generator is also a design variable
                         energy_rates = operator.add(energy_rates, self.diesel_cost_array)
                         energy_avail.append(self.generator_fuel_avail)
                     else:
