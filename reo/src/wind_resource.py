@@ -90,7 +90,7 @@ def get_data(url, filename):
         The filename where data should be written
     """
     n_tries = 0
-    n_max_tries = 10
+    n_max_tries = 5
     success = False
     
     while n_tries < n_max_tries:
