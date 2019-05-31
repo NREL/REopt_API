@@ -92,29 +92,25 @@ def get_data(url, filename):
     n_tries = 0
     n_max_tries = 5
     success = False
+    
     while n_tries < n_max_tries:
-        try:
-            r = requests.get(url)
-            if r and not r.status_code == requests.codes.ok:
-                time.sleep(0.2)
-                n_tries += 1
-                if n_tries == n_max_tries:
-                    log.error("Wind Toolkit returned invalid data, HTTP " + str(r.status_code))
-                    raise ValueError('Wind Toolkit returned invalid data, HTTP ' + str(r.status_code))
-            elif r and r.status_code == requests.codes.ok:
-                localfile = open(filename, mode='w+')
-                localfile.write(r.text)
-                if os.path.isfile(filename):
-                    success = True
-                    break
-        except requests.exceptions.Timeout:
-            time.sleep(0.2)
-            n_tries += 1
-            if n_tries == n_max_tries:
-                log.error("Wind data download timed out " + str(n_max_tries) + "times")
-                raise ValueError('Wind Dataset Timed Out')
-
-    return success
+        time.sleep(0.2)
+        r = requests.get(url)
+        if r and r.status_code != requests.codes.ok:
+            log.error("Wind Toolkit returned invalid data, HTTP " + str(r.status_code))
+            raise ValueError('Wind Toolkit returned invalid data, HTTP ' + str(r.status_code))
+            n_tries = n_max_tries
+        elif r and r.status_code == requests.codes.ok:
+            localfile = open(filename, mode='w+')
+            localfile.write(r.text)
+            n_tries = n_max_tries
+        n_tries += 1
+    
+    if os.path.isfile(filename):
+        return True
+    else:     
+        log.error("Wind data download timed out " + str(n_max_tries) + "times")
+        raise ValueError('Wind Dataset Timed Out')
 
 
 def get_wind_resource_developer_api(filename, year, latitude, longitude, hub_height_meters):
