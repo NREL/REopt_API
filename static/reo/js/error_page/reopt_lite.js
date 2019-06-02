@@ -9,9 +9,10 @@
 	var goodPosts = (100-(summary_info['count_bad_posts'] *100 / summary_info['count_all_posts'])).toFixed(1)
 	$("#pctCorrectlyFormatted").html(goodPosts + '%')
 	// $('$progressbar_CorrectlyFormatted').attr({'valuenow':goodPosts})
-	$("#recentErrors").html(numberWithCommas(error_results['count_new_errors']))
-	$("#uniqueURDB").html(numberWithCommas(Object.keys(urdb_results).length - 8))
+	$("#recentErrors").html(numberWithCommas(error_results.data['count_new_errors']))
+	$("#uniqueURDB").html(numberWithCommas(Object.keys(urdb_results.data).length - 8))
 	$("#last_updated").html(moment.unix(summary_info['last_updated']).format('MM-DD-YYYY HH:mm:ss'))
+	$("#resilience_count").html(numberWithCommas(scenario_results['data']['count_resilience']) +  " ("+(scenario_results['data']['count_resilience']*100/scenario_results['data']['count']).toFixed(1) + "%)")
 
 
 	function task_content(tasks){
@@ -84,7 +85,7 @@
 	}
 	
 	
-	var urdb_entries = Object.entries(urdb_results)
+	var urdb_entries = Object.entries(urdb_results.data)
 
 	for (var entry in urdb_entries){
 		if (urdb_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && urdb_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
@@ -100,16 +101,16 @@
 
 	}
 
-	var error_entries = Object.entries(error_results['traceback'])
+	var error_entries = Object.entries(error_results.data['traceback'])
 
 	for (var entry in error_entries){
 		
 		if (error_entries[entry][0].substring(0,5).toLocaleLowerCase() != 'count' && error_entries[entry][0].substring(0,4).toLocaleLowerCase() != 'most') {	
 				var errordetail= $('<tr>')
 				var errorcontent = $('<div>')
-				var errorcontent_text = common_lookup[error_entries[entry][0]].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")  
+				var errorcontent_text = common_lookup.data[error_entries[entry][0]].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")  
 				errorcontent.html("<b>(#" +error_entries[entry][0]+ ")</b> " + errorcontent_text.substring(0,225))
-				if (common_lookup[error_entries[entry][0]].length > 224){
+				if (common_lookup.data[error_entries[entry][0]].length > 224){
 					errorcontent.append(create_generic_popup('...(see full)', 'Traceback', errorcontent_text,"errorPopUp"+entry.toString()))
 				}
 				errordetail.append($('<td>').html(errorcontent.html() + message_content(error_entries[entry][1]['message'])  + task_content(error_entries[entry][1]['task']) ))
@@ -133,7 +134,6 @@
 					badPostcontent.append(create_generic_popup('...(see full)', 'Error', bad_posts_entries[entry][0],"badPostPopUp"+entry.toString()))
 				}
 				badPostdetail.append($('<td>').html(badPostcontent))
-				debugger
 				badPostdetail.append($('<td>').html(create_run_uuid_popup(bad_posts_entries[entry][1]['run_uuids'],[])))
 				badPostdetail.append($('<td>').html(bad_posts_entries[entry][1]['count'] ))
 				$('#tableBody_BadPost').append(badPostdetail)			       

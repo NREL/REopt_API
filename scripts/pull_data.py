@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from reo.models import ErrorModel, BadPost, MessageModel, ElectricTariffModel,ScenarioModel
+from reo.models import ErrorModel, BadPost, MessageModel, ElectricTariffModel,ScenarioModel,LoadProfileModel
 import datetime
 import pytz
 import copy
@@ -389,13 +389,79 @@ def combine_urdb_summaries(urdb_rates):
 								result[rate] += rate_stats
 	return result
 
+def process_scenario_set(scenario_set):
+	result = {'count':0,'count_resilience':0}
+	for s in scenario_set:
+		result['count']+=1
+	
+		s_created = int(round((s[0] - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+		day = datetime.datetime.utcfromtimestamp(s_created)
+		day = day.replace(tzinfo=pytz.utc)
+		day = int(round((datetime.datetime(*day.timetuple()[:3],tzinfo=pytz.utc) - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds())) + (7*60*60)
+		
+		lp = LoadProfileModel.objects.filter(run_uuid=s[1]).values_list('outage_start_hour','outage_end_hour')
+
+		if day not in result.keys():
+			result[day] = {'count':0,'count_resilience':0}
+		try:
+			if lp[0][0] is not None and lp[0][1] is not None:
+				result['count_resilience']+=1
+				result[day]['count_resilience'] += 1
+		except:
+			pass
+		result[day]['count'] += 1
+		# result[day]['run_uuids'] += [str(s[1])]
+	return result
+
+def combine_scenarios(results_new, existing_results):
+	output = copy.deepcopy(existing_results)
+	for r_set in results_new:
+		for k,v in r_set.items():
+			if str(k).startswith('count'):
+				if k not in output.keys():
+					output[k] = v
+				else:
+					output[k]+=v
+			else:
+				if k not in output.keys():
+					output[k] = v
+				else:
+					output[k]['count'] += v['count']
+					output[k]['count_resilience'] += v['count_resilience']
+				
+	return output
+
 def run(*args):
 	CORES = 6
 	
 	if 'pull_data' not in globals().values():
 		p = mp.Pool(processes=CORES)	
 
-		total_t = ElectricTariffModel.objects.all().count()
+		now = datetime.datetime.utcnow()
+		now = now.replace(tzinfo=pytz.utc)
+		now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+		
+		total_runs = ScenarioModel.objects.all().count()
+		scenario_results = {}
+		for r in range(0,int(total_runs/10000.0)+1):
+			start = r*10000
+			end = min((r+1)*10000,total_runs)
+			print start, end, total_runs
+			tmp = np.array_split(np.array(ScenarioModel.objects.values_list("created","run_uuid",).all()[start:end]),CORES)			
+			scenario_results = combine_scenarios(p.map(process_scenario_set, tmp), scenario_results)
+	
+		final_scenario_results = {}
+		final_scenario_results['data'] = scenario_results
+		final_scenario_results['last_updated'] =  now
+
+		with open('reo/static/reo/js/data/scenario_results.js','w+') as output_file:
+			output_file.write("var scenario_results = " +  json.dumps(final_scenario_results))
+
+		now = datetime.datetime.utcnow()
+		now = now.replace(tzinfo=pytz.utc)
+		now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+
+	 	total_t = ElectricTariffModel.objects.all().count()
 		urdb_results = {}
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
@@ -406,12 +472,30 @@ def run(*args):
 		
 		error_sets = np.array_split(np.array(ErrorModel.objects.all()),CORES)
 		error_results = combine_error_summaries(p.map(process_error_set, error_sets))
-		
-		urdb_results,error_results, common_lookup = harmonize_traceback_lookups(urdb_results,error_results)
 
-		now = datetime.datetime.utcnow()
-		now = now.replace(tzinfo=pytz.utc)
-		now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
+		urdb_results,error_results, common_lookup = harmonize_traceback_lookups(urdb_results,error_results)
+		final_urdb_results = {}
+		final_urdb_results['data'] = urdb_results
+		final_urdb_results['last_updated'] =  now
+		
+		final_error_results = {}
+		final_error_results['data'] = error_results
+		final_error_results['last_updated'] =  now
+
+		final_common_lookup = {}
+		final_common_lookup['data'] = common_lookup
+		final_common_lookup['last_updated'] =  now
+
+		common_lookup['last_updated'] =  now
+		
+		with open('reo/static/reo/js/data/urdb_results.js','w+') as output_file:
+			output_file.write("var urdb_results = " +  json.dumps(final_urdb_results))
+
+		with open('reo/static/reo/js/data/error_results.js','w+') as output_file:
+			output_file.write("var error_results = " + json.dumps(final_error_results))
+
+		with open('reo/static/reo/js/data/common_lookup.js','w+') as output_file:
+			output_file.write("var common_lookup = " +  json.dumps(final_common_lookup))
 
 		summary_info ={	'count_all_posts':ScenarioModel.objects.all().count(),
 						'count_bad_posts':BadPost.objects.all().count(),
@@ -420,15 +504,6 @@ def run(*args):
 
 		with open('reo/static/reo/js/data/summary_info.js','w+') as output_file:
 			output_file.write("var summary_info = " +  json.dumps(summary_info))
-
-		with open('reo/static/reo/js/data/urdb_results.js','w+') as output_file:
-			output_file.write("var urdb_results = " +  json.dumps(urdb_results))
-
-		with open('reo/static/reo/js/data/error_results.js','w+') as output_file:
-			output_file.write("var error_results = " + json.dumps(error_results))
-
-		with open('reo/static/reo/js/data/common_lookup.js','w+') as output_file:
-			output_file.write("var common_lookup = " +  json.dumps(common_lookup))
 
 		badpost_sets = np.array_split(np.array(BadPost.objects.all()),CORES)
 		bad_post_results = combine_bad_post_summaries(p.map(process_bad_post_set, badpost_sets))

@@ -362,8 +362,9 @@ class ValidateNestedInput:
             if self.input_dict['Scenario'].get('user_uuid') is not None:
                 self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
             if self.input_dict['Scenario'].get('description') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['description'], pattern = r'^[-0-9a-zA-Z.  $:;)(*&#!@]*$',
-                          err_msg = "description must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
+                self.validate_text_fields(str = self.input_dict['Scenario']['description'],
+                                          pattern = r'^[-0-9a-zA-Z.  $:;)(*&#_!@]*$',
+                          err_msg = "description can include enlisted special characters: [-0-9a-zA-Z.  $:;)(*&#_!@] and can have 0-9, a-z, A-Z, periods, and spaces.")
             if self.input_dict['Scenario']['Site'].get('address') is not None:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
