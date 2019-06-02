@@ -8,13 +8,13 @@
 1. `PROJECT_PATH` - The location where you clone the REopt code, i.e, `/local/workspace/`
 2. `REOPT_PATH` - The location of the REopt_API code, i.e, `$PROJECT_PATH/reopt_api`
 3. `CONDA_PATH` - The location of your miniconda installation, i.e, `$PROJECT_PATH/miniconda`
-4. `JULIA_PATH` - The location of your Julia 1.03 installation, i.e, `$PROJECT_PATH/julia-1.0.3`
+4. `JULIA_PATH` - The location of your Julia 1.1.1 installation, i.e, `$PROJECT_PATH/julia-1.1.1`
 
 If you want to use these paths symbolically, you may add them to `$HOME/.bashrc`, replacing the paths with relevent locations:
 `export PROJECT_PATH=/path/to/workpace`  
 `export REOPT_PATH=$PROJECT_PATH/reopt_api`  
 `export CONDA_PATH=$PROJECT_PATH/miniconda`  
-`export JULIA_PATH=$PROJECT_PATH/julia-1.0.3`  
+`export JULIA_PATH=$PROJECT_PATH/julia-1.1.3`  
 
 If you do not define these as environment variables, then just replace instances of `$PROJECT_PATH` (and the other paths), with the actual path in instructions below.
 
@@ -60,9 +60,9 @@ If you do not define these as environment variables, then just replace instances
 - Navigate to installation location
 - Linux users: Either download from <a href="https://julialang.org/downloads" target="blank">here</a> or:  
 
-     `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.0.3-linux-x86_64.tar.gz`
+     `wget https://julialang-s3.julialang.org/bin/linux/x64/1.0/julia-1.1.1-linux-x86_64.tar.gz`
 
-    `tar xvzf julia-1.0.3-linux-x86_64.tar.gz`
+    `tar xvzf julia-1.1.1-linux-x86_64.tar.gz`
 - Mac users: Go to <a href="https://julialang.org/downloads" target="blank">here</a> 
     - download .dmg 
     - manually run
@@ -138,6 +138,7 @@ If you do not define these as environment variables, then just replace instances
      *_(env)_*>  `add GLPK`  
      *_(env)_*>  `add MathOptInterface`  
      *_(env)_*>   `add Interact`  
+     *_(env)_*>   `add PowerSystems#dev`
 
 
   #### Step 5.2: Setting up project interpreter for running Julia file inside PyCharm
