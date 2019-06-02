@@ -14,7 +14,7 @@ If you want to use these paths symbolically, you may add them to `$HOME/.bashrc`
 `export PROJECT_PATH=/path/to/workpace`  
 `export REOPT_PATH=$PROJECT_PATH/reopt_api`  
 `export CONDA_PATH=$PROJECT_PATH/miniconda`  
-`export JULIA_PATH=$PROJECT_PATH/julia-1.1.3`  
+`export JULIA_PATH=$PROJECT_PATH/julia-1.1.1`  
 
 If you do not define these as environment variables, then just replace instances of `$PROJECT_PATH` (and the other paths), with the actual path in instructions below.
 
