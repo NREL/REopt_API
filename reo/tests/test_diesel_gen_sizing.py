@@ -18,6 +18,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    def outage_tech_to_load(self, list_to_load, outage_start, outage_end):
+        tech_to_load = list()
+        for tech in list_to_load:
+            if tech is not None:
+                tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
+        return tech_to_load
+
     @skip("Yet to benckmark with REopt Desktop")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
@@ -44,14 +51,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = "get from REopt Desktop"
-        d_expected['npv'] = "get from REopt Desktop"
-        d_expected['pv_kw'] = "get from REopt Desktop"
-        d_expected['batt_kw'] = "get from REopt Desktop"
-        d_expected['batt_kwh'] = "get from REopt Desktop"
-        d_expected['fuel_used_gal'] = "get from REopt Desktop"
-        d_expected['avoided_outage_costs_us_dollars'] = "get from REopt Desktop"
-        d_expected['microgrid_upgrade_cost_us_dollars'] = "get from REopt Desktop"
+        d_expected['lcc'] = 232070.0
+        d_expected['npv'] = -2793.0
+        d_expected['pv_kw'] = 0.0
+        d_expected['batt_kw'] = 11.3707
+        d_expected['batt_kwh'] = 29.887
+        d_expected['fuel_used_gal'] = 0.0
+        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -62,10 +69,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
-        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+        list_to_load = [generator_to_load, storage_to_load]
+        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
+        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
 
@@ -95,14 +105,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = "get from REopt Desktop"
-        d_expected['npv'] = "get from REopt Desktop"
-        d_expected['pv_kw'] = "get from REopt Desktop"
-        d_expected['batt_kw'] = "get from REopt Desktop"
-        d_expected['batt_kwh'] = "get from REopt Desktop"
-        d_expected['fuel_used_gal'] = "get from REopt Desktop"
-        d_expected['avoided_outage_costs_us_dollars'] = "get from REopt Desktop"
-        d_expected['microgrid_upgrade_cost_us_dollars'] = "get from REopt Desktop"
+        d_expected['lcc'] = 264665.0
+        d_expected['npv'] = 572.0
+        d_expected['pv_kw'] = 0.0
+        d_expected['batt_kw'] = 3.03774
+        d_expected['batt_kwh'] = 5.22362
+        d_expected['fuel_used_gal'] = 1.27
+        d_expected['avoided_outage_costs_us_dollars'] = 101696.3
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1347.9
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -113,11 +123,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
-        # may have to disable this check if the generator is charging battery during the outage hours
-        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+        list_to_load = [generator_to_load, storage_to_load]
+        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
+        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
 
@@ -150,17 +162,17 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = "get from REopt Desktop"
-        d_expected['npv'] = "get from REopt Desktop"
-        d_expected['pv_kw'] = "get from REopt Desktop"
-        d_expected['batt_kw'] = "get from REopt Desktop"
-        d_expected['batt_kwh'] = "get from REopt Desktop"
-        d_expected['fuel_used_gal'] = "get from REopt Desktop"
-        d_expected['avoided_outage_costs_us_dollars'] = "get from REopt Desktop"
-        d_expected['microgrid_upgrade_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_gen_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_pv_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = "get from REopt Desktop"
+        d_expected['lcc'] = 232070.0
+        d_expected['npv'] = -2793.0
+        d_expected['pv_kw'] = 0.0
+        d_expected['batt_kw'] = 11.3707
+        d_expected['batt_kwh'] = 29.887
+        d_expected['fuel_used_gal'] = 0.0
+        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
+        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
+        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
+        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -171,10 +183,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
+        pv_to_load = d['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw']
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
-        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+        list_to_load = [generator_to_load, storage_to_load, pv_to_load]
+        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
+        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
 
@@ -205,17 +221,17 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = "get from REopt Desktop"
-        d_expected['npv'] = "get from REopt Desktop"
-        d_expected['pv_kw'] = "get from REopt Desktop"
-        d_expected['batt_kw'] = "get from REopt Desktop"
-        d_expected['batt_kwh'] = "get from REopt Desktop"
-        d_expected['fuel_used_gal'] = "get from REopt Desktop"
-        d_expected['avoided_outage_costs_us_dollars'] = "get from REopt Desktop"
-        d_expected['microgrid_upgrade_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_gen_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_pv_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = "get from REopt Desktop"
+        d_expected['lcc'] = 246685.0
+        d_expected['npv'] = 572.0
+        d_expected['pv_kw'] = 0.0
+        d_expected['batt_kw'] = 3.03774
+        d_expected['batt_kwh'] = 5.22362
+        d_expected['fuel_used_gal'] = 1.27
+        d_expected['avoided_outage_costs_us_dollars'] = 172610.09
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1347.9
+        d_expected['existing_gen_om_cost_us_dollars'] = 17980.0
+        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
+        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -226,11 +242,15 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
+        pv_to_load = d['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw']
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
+        list_to_load = [generator_to_load, storage_to_load, pv_to_load]
+        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
         # may have to disable this check if the generator is charging battery during the outage hours
-        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
 
@@ -261,17 +281,17 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = "get from REopt Desktop"
-        d_expected['npv'] = "get from REopt Desktop"
-        d_expected['pv_kw'] = "get from REopt Desktop"
-        d_expected['batt_kw'] = "get from REopt Desktop"
-        d_expected['batt_kwh'] = "get from REopt Desktop"
-        d_expected['fuel_used_gal'] = "get from REopt Desktop"
-        d_expected['avoided_outage_costs_us_dollars'] = "get from REopt Desktop"
-        d_expected['microgrid_upgrade_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_gen_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['existing_pv_om_cost_us_dollars'] = "get from REopt Desktop"
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = "get from REopt Desktop"
+        d_expected['lcc'] = 232070.0
+        d_expected['npv'] = -2793.0
+        d_expected['pv_kw'] = 0.0
+        d_expected['batt_kw'] = 11.3707
+        d_expected['batt_kwh'] = 29.887
+        d_expected['fuel_used_gal'] = 0.0
+        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
+        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
+        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
+        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -282,9 +302,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
+        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
+        pv_to_load = d['outputs']['Scenario']['Site']['PV']['year_one_to_load_series_kw']
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
+        list_to_load = [generator_to_load, storage_to_load, pv_to_load]
+        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
+
         # may have to disable this check if the generator is charging battery during the outage hours
-        for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
+        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
