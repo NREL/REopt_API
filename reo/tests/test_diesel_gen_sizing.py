@@ -19,13 +19,21 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
     def outage_tech_to_load(self, list_to_load, outage_start, outage_end):
+        """
+        To resolve indexing empty list when checking critical_load=generator_to_load,
+        define a function that sums up all technologies_to_load and skip if the tech is empty
+        @param list_to_load:
+        @param outage_start:
+        @param outage_end:
+        @return:
+        """
         tech_to_load = list()
         for tech in list_to_load:
             if tech is not None:
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    @skip("Yet to benckmark with REopt Desktop")
+    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpatef")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
         Test scenario with
@@ -73,13 +81,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
+        # critical load during outage is served by both generator and storage
         list_to_load = [generator_to_load, storage_to_load]
         tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    @skip("Yet to benckmark with REopt Desktop")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -134,7 +143,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("Yet to benckmark with REopt Desktop")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -194,7 +203,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    @skip("Yet to benckmark with REopt Desktop")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen_and_pv(self):
         """
         Test scenario with
@@ -247,6 +256,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
         outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
 
+        # when both existing gen and pv are present, the critical load during outage is
+        # served by generator + pv + storage
         list_to_load = [generator_to_load, storage_to_load, pv_to_load]
         tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
         # may have to disable this check if the generator is charging battery during the outage hours
@@ -255,7 +266,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("Yet to benckmark with REopt Desktop")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_when_allowed_to_operatre_year_long(self):
         """
         Test scenario with
