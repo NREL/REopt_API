@@ -1,7 +1,7 @@
 import requests
 import json
 import sys, traceback
-from keys import developer_nrel_gov_key
+from keys import ashrae_tmy_key
 from reo.log_levels import log
 
 
@@ -10,7 +10,7 @@ class DeveloperREOapi:
     def __init__(self,
                  lat, lon,
                  url_base="https://developer.nrel.gov/api/reo/v3.json",
-                 api_key=developer_nrel_gov_key,
+                 api_key=ashrae_tmy_key,
                  search_radius=25,
                  output_fields="ashrae_tmy",
                  ):
