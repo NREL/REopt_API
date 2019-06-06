@@ -4,8 +4,11 @@ from pyproj import Proj
 import numpy as np
 import pandas as pd
 import os
+import requests
 import json
-from reo.log_levels import log 
+
+from keys import developer_nrel_gov_key
+from reo.log_levels import log
 """
 References: 
 - https://www.nrel.gov/grid/wind-toolkit.html
@@ -76,7 +79,50 @@ def get_conic_coords(lat, lng):
         raise ValueError("Latitude/Longitude is outside of wind resource dataset bounds.")
     return y,x
 
-def get_wind_resource(latitude, longitude, hub_height_meters, time_steps_per_hour=1):
+
+def get_data(url, filename):
+    """
+    Parameters
+    ---------
+    url: string
+        The API endpoint to return data from
+    filename: string
+        The filename where data should be written
+    """
+    n_tries = 0
+    n_max_tries = 5
+    success = False
+    
+    while n_tries < n_max_tries:
+        time.sleep(0.2)
+        r = requests.get(url)
+        if r and r.status_code != requests.codes.ok:
+            log.error("Wind Toolkit returned invalid data, HTTP " + str(r.status_code))
+            raise ValueError('Wind Toolkit returned invalid data, HTTP ' + str(r.status_code))
+            n_tries = n_max_tries
+        elif r and r.status_code == requests.codes.ok:
+            localfile = open(filename, mode='w+')
+            localfile.write(r.text)
+            n_tries = n_max_tries
+        n_tries += 1
+    
+    if os.path.isfile(filename):
+        return True
+    else:     
+        log.error("Wind data download timed out " + str(n_max_tries) + "times")
+        raise ValueError('Wind Dataset Timed Out')
+
+
+def get_wind_resource_developer_api(filename, year, latitude, longitude, hub_height_meters):
+
+    url = 'http://developer.nrel.gov/api/wind-toolkit/wind/wtk_srw_download?year={year}&lat={lat}&lon={lon}&hubheight={hubheight}&api_key={api_key}'.format(
+        year=year, lat=latitude, lon=longitude, hubheight=hub_height_meters, api_key=developer_nrel_gov_key)
+
+    success = get_data(url, filename=filename)
+    return success
+
+
+def get_wind_resource_hsds(latitude, longitude, hub_height_meters, time_steps_per_hour=1):
     """
     Download hourly wind speeds for location and hub height, and resample if time_steps_per_hour != 1
     :param latitude:

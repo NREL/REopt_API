@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, ProfileModel
+from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -183,6 +183,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                         self.results_dict.get("net_capital_costs") \
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
+                    pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
@@ -192,6 +193,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
+                    self.nested_outputs['Scenario']["Site"][name]["station_latitude"] = pv_model.station_latitude
+                    self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
+                    self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_wind_energy_produced")

@@ -11,9 +11,9 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "6fdd78b4-2262-4cf1-9b5c-7c27bee27485"
-  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run6fdd78b4-2262-4cf1-9b5c-7c27bee27485\\Inputs"
-  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run6fdd78b4-2262-4cf1-9b5c-7c27bee27485\\Outputs"
+  ScenarioNum = "0e664ddd-2445-4090-b7b9-f436c4b5bf2a"
+  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Inputs"
+  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Outputs"
   BaseString = ""
 
   CapCostSegCount = 2
@@ -707,8 +707,11 @@ then TotalMinCharge := AnnualMinCharge * pwf_e
 else TotalMinCharge := 12 * MonthlyMinCharge * pwf_e
 end-if
 
-MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
-MinChargeAdder >= 0
+if TotalMinCharge > 0 then
+	MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+	MinChargeAdder >= 0
+	else MinChargeAdder = 0
+end-if
 
 ! Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 !       it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).

@@ -9,7 +9,7 @@ using JuMP
 using Cbc
 using GLPK
 using MathOptInterface
-using Interact
+#using Interact
 
 const MOI = MathOptInterface
 

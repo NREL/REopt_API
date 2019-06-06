@@ -44,6 +44,7 @@ namespace :app do
       within release_path do
         with "PATH" => "#{release_path}/env/bin:$PATH", "VIRTUAL_ENV" => "#{release_path}/env", "DJANGO_SETTINGS_MODULE" => fetch(:django_settings_module) do
           execute "./env/bin/python", "manage.py", "migrate", "--noinput"
+          execute "./env/bin/python", "manage.py", "collectstatic", "--noinput"
         end
       end
     end

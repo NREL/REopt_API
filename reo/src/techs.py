@@ -68,6 +68,13 @@ class Util(Tech):
 
 
 class PV(Tech):
+    array_type_to_tilt_angle = {
+        0: 0, # ground-mount fixed array type's tilt should be equal to the latitude
+        1: 10,
+        2: 0,
+        3: 0,
+        4:0
+    }
 
     def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
         super(PV, self).__init__(**kwargs)
@@ -79,13 +86,25 @@ class PV(Tech):
         self.kw_per_square_foot = kw_per_square_foot
         self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
+        self.tilt = kwargs['tilt']
 
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
 
+        # if user hasn't entered the tilt, tilt value gets assigned based on array_type
+        if self.tilt == 0.537:
+            if kwargs.get('array_type') == 0:
+                self.tilt = kwargs.get('latitude')
+            else:
+                self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
+        self.kwargs['tilt']  = self.tilt
+
+        # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
         if self.max_kw < self.existing_kw:
             self.max_kw = self.existing_kw
+
+        self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
 
         dfm.add_pv(self)
 
@@ -93,9 +112,15 @@ class PV(Tech):
     def prod_factor(self):
 
         if self.pvwatts_prod_factor is None:
-            pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
-            self.pvwatts_prod_factor = pvwatts.pv_prod_factor
+            self.pvwatts_prod_factor = self.pvwatts.pv_prod_factor
         return self.pvwatts_prod_factor
+
+    @property
+    def station_location(self):
+        station = (self.pvwatts.response['station_info']['lat'],
+                   self.pvwatts.response['station_info']['lon'],
+                   round(self.pvwatts.response['station_info']['distance']/1000,1))
+        return station
 
 
 class Wind(Tech):
@@ -123,6 +148,7 @@ class Wind(Tech):
     def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
+        self.path_inputs = dfm.get_paths()['inputs']
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
@@ -171,7 +197,8 @@ class Wind(Tech):
         """
         if self.sam_prod_factor is None:
             
-            sam = WindSAMSDK(self.hub_height_meters, time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
+            sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
+                             time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
 
         # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test

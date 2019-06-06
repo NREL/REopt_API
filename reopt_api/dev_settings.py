@@ -28,7 +28,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = secret_key_
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -43,10 +43,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'reo',
+    'summary',
     'tastypie',
     'proforma',
     'resilience_stats',
-    'django_celery_results'
+    'django_celery_results',
+    'django_extensions'
     )
 
 MIDDLEWARE_CLASSES = (
@@ -145,9 +147,9 @@ CELERY_IMPORTS = (
     'reo.results',
 )
 
-#if 'test' in sys.argv:
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
+if 'test' in sys.argv:
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

@@ -43,10 +43,12 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'reo',
+    'summary',
     'tastypie',
     'proforma',
     'resilience_stats',
-    'django_celery_results'
+    'django_celery_results',
+    'django_extensions'
     )
 
 MIDDLEWARE_CLASSES = (
