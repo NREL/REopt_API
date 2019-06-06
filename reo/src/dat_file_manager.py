@@ -296,7 +296,7 @@ class DatFileManager:
         cap_cost_yint = list()
         n_segments_out = 0
         n_segments = None
-        tech_to_size = float(big_number/1e4)  # sized such that default max incentives will not create breakpoint
+        tech_to_size = float(big_number)  # There are challeges with breakpoint creation, but may want to support large systems (100MW scale)
 
         # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
         existing_kw_flag = False
