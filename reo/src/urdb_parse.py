@@ -393,8 +393,8 @@ class UrdbParse:
                     if load == 'wholesale':
                         if self.net_metering:
                             export_rates = operator.add(export_rates, negative_energy_costs)
-                        # else:
-                        #     export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
+                        else:
+                            export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
