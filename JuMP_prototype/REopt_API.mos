@@ -765,6 +765,7 @@ case getprobstat of
   else status:="???"
 end-case
 writeln(status)
+writeln(FuelBurnRateM("UTIL1", "1R", 1))
 #exportprob(EP_MAX, "explout", RECosts)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

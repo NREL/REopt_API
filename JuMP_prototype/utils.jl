@@ -1,4 +1,7 @@
 import JSON
+import Base.length
+import Base.reshape
+import AxisArrays.AxisArray
 using AxisArrays
 
 # Helper Functions
@@ -208,7 +211,62 @@ function parameter(set::UnitRange{Int64}, data::Float64)
     return [data]
 end
 
+function parameter(setTup::Tuple{Array{Symbol,1},UnitRange{Int64}}, data::Number)
+    newTup = ([setTup[1][1], :FAKE], 1:2)
+    return AxisArray(fill(data, 2, 2), newTup)
+end
+
+function parameter(set::Symbol, data::Int64)
+    return AxisArray([data], set)
+end
+
 function parameter(set, data)
     shapedData = reshape(data, length(set))
     return AxisArray(shapedData, set)
+end
+
+function parameter(set, data)
+    shapedData = reshape(data, length(set))
+    return AxisArray(shapedData, set)
+end
+
+
+
+# Additional dispatches to make things easier
+function length(::Symbol)
+    return 1
+end
+
+function reshape(data::Number, axes::Int64)
+    return data
+end
+
+function AxisArray(data::Number, index::Array{Symbol, 1})
+    return Dict(index[1] => data)
+end
+
+# Output Benchmarking
+
+function testOutput()
+    ExportedElecPV = AffExpr(0)
+    
+    for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
+        if TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1W") || LD == Symbol("1X"))
+            y = AffExpr(0, dvRatedProd[t,LD,ts,s,fb] => ProdFactor[t,LD,ts] * LevelizationFactor[t] *  TimeStepScaling)
+            add_to_expression!(ExportedElecPV, y)
+        end
+    end
+    return value(ExportedElecPV)
+end
+
+
+function testOutput2()
+    ExportedElecPV = 0
+    
+    for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
+        if TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1W") || LD == Symbol("1X"))
+            ExportedElecPV += value(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] *  TimeStepScaling)
+        end
+    end
+    return ExportedElecPV
 end
