@@ -1,0 +1,2 @@
+#!/usr/bin/zsh
+mosel exec -g  '/u/eu/an/jpohl/reopt_api/JuMP_prototype/REopt_API.mos' ScenarioNum=0fcd1f4c-7ea1-4b36-b641-1d937fdf3633 CapCostSegCount=2 NumRatchets=12 FuelBinCount=1 DemandBinCount=1 DemandMonthsBinCount=1 TimeStepCount=8760 TimeStepScaling=1.0 ScenarioPath='/u/eu/an/jpohl/reopt_api/JuMP_prototype/data/test_run/Inputs' BaseString='' OutputDir='/u/eu/an/jpohl/reopt_api/JuMP_prototype/output'
