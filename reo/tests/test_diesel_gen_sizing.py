@@ -65,7 +65,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 11.3707
         d_expected['batt_kwh'] = 29.887
         d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['avoided_outage_costs_us_dollars'] = 928.36
         d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
 
         try:
@@ -88,7 +88,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -143,7 +143,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -177,7 +177,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 11.3707
         d_expected['batt_kwh'] = 29.887
         d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['avoided_outage_costs_us_dollars'] = 928.36
         d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
         d_expected['existing_gen_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 0.0
@@ -203,7 +203,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen_and_pv(self):
         """
         Test scenario with
@@ -266,7 +266,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_when_allowed_to_operatre_year_long(self):
         """
         Test scenario with
@@ -298,7 +298,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 11.3707
         d_expected['batt_kwh'] = 29.887
         d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 912.07
+        d_expected['avoided_outage_costs_us_dollars'] = 928.36
         d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
         d_expected['existing_gen_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 0.0
