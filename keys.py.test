@@ -1,5 +1,7 @@
-pvwatts_api_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
-developer_nrel_gov_key = 'uaz52dr5KTT5Qs5U72rS70hw3IYeHVEyAaDUFQvo'
+pvwatts_api_key = 'lsEanynMGwsxRZ91B9EMxH3wudOmNe9e6vY5Eu27'
+developer_nrel_gov_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
+ashrae_tmy_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
+
 
 secret_key_='secret_key_test'
 
