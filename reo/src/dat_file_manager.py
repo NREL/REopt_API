@@ -183,7 +183,8 @@ class DatFileManager:
         self.pvnm.nmil_regime = 'NMtoIL'
 
         if self.pv.existing_kw > 0:
-            self.bau_techs = ['pv', 'pvnm', 'util']
+            tmp_tech = ['pv', 'pvnm']
+            self.bau_techs = tmp_tech+self.bau_techs
 
     def add_wind(self, wind):
         self.wind = wind
@@ -195,6 +196,13 @@ class DatFileManager:
 
     def add_generator(self, generator):
         self.generator = generator
+
+        if self.generator.existing_kw > 0:
+            # following if-clause is to avoid appending generator twice in the bau_techs list
+            # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
+            # bau_techs will never have more than 1 entry for 'generator'
+            if 'generator' not in self.bau_techs:
+                self.bau_techs.append('generator')
 
     def add_site(self, site):
         self.site = site
@@ -352,7 +360,7 @@ class DatFileManager:
         existing_kw_flag = False
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
+            if eval('self.' + tech) is not None and tech not in ['util']:
 
                 existing_kw = 0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -361,7 +369,7 @@ class DatFileManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util', 'generator']:
+            if eval('self.' + tech) is not None and tech not in ['util']:
 
                 existing_kw = 0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -374,24 +382,31 @@ class DatFileManager:
                 for region in regions[:-1]:
                     tech_incentives[region] = dict()
 
-                    if region == 'federal' or region == 'total':
-                        tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
-                        tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
-                    else:  # region == 'state' or region == 'utility'
-                        tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
-                        tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
+                    if tech not in ['generator']:
 
-                    tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
-                    tech_incentives[region]['rebate_max'] = eval(
-                        'self.' + tech + '.incentives.' + region + '.rebate_max')
+                        if region == 'federal' or region == 'total':
+                            tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
+                        else: # region == 'state' or region == 'utility'
+                            tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
+                            tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
 
-                    # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
-                    if tech_incentives[region]['%_max'] == max_incentive:
+                        tech_incentives[region]['rebate'] = eval('self.' + tech + '.incentives.' + region + '.rebate')
+                        tech_incentives[region]['rebate_max'] = eval('self.' + tech + '.incentives.' + region + '.rebate_max')
+
+                        # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
+                        if tech_incentives[region]['%_max'] == max_incentive:
+                            tech_incentives[region]['%_max'] = 0
+                        if tech_incentives[region]['rebate_max'] == max_incentive:
+                            tech_incentives[region]['rebate_max'] = 0
+
+                    else: # for generator there are no incentives
+                        tech_incentives[region]['%'] = 0
                         tech_incentives[region]['%_max'] = 0
-                    if tech_incentives[region]['rebate_max'] == max_incentive:
+                        tech_incentives[region]['rebate'] = 0
                         tech_incentives[region]['rebate_max'] = 0
 
-                # Intermediate Cost curve
+                        # Intermediate Cost curve
                 xp_array_incent = dict()
                 xp_array_incent['utility'] = [0.0, tech_to_size]  # kW
                 yp_array_incent = dict()
@@ -623,7 +638,7 @@ class DatFileManager:
                 # Have to take n_segments as the maximum number across all technologies
                 n_segments_out = max(n_segments, n_segments_out)
 
-            elif eval('self.' + tech) is not None and tech in ['util', 'generator']:
+            elif eval('self.' + tech) is not None and tech in ['util']:
 
                 if n_segments is None:  # only util in techs (usually BAU case)
                     n_segments = 1
@@ -672,6 +687,7 @@ class DatFileManager:
         eta_storage_in = list()
         eta_storage_out = list()
         om_cost_us_dollars_per_kw = list()
+        om_cost_us_dollars_per_kwh = list()
 
         for tech in techs:
 
@@ -680,6 +696,12 @@ class DatFileManager:
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
                 om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
+
+                # only generator tech has variable o&m cost
+                if eval('self.' + tech) is 'generator':
+                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.om_cost_us_dollars_per_kwh'))
+                else:
+                    om_cost_us_dollars_per_kwh.append(0)
 
                 for load in self.available_loads:
 
@@ -712,7 +734,8 @@ class DatFileManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw
+        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -802,11 +825,10 @@ class DatFileManager:
         tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
         tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
 
-        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw = \
-            self._get_REopt_array_tech_load(self.available_techs)
+        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+            om_cost_us_dollars_per_kwh= self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
-        om_dollars_per_kw_bau = \
-            self._get_REopt_array_tech_load(self.bau_techs)
+            om_dollars_per_kw_bau, om_dollars_per_kwh_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -956,6 +978,7 @@ class DatFileManager:
         write_to_dat(self.file_economics, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kw, 'OMperUnitSize', mode='a')
+        write_to_dat(self.file_economics, om_cost_us_dollars_per_kwh, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
         dat2a_economics.update({"LevelizationFactor": levelization_factor,
@@ -994,6 +1017,7 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, StorageCostPerKW, 'StorageCostPerKW', mode='a')
         write_to_dat(self.file_economics_bau, StorageCostPerKWH, 'StorageCostPerKWH', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
+        write_to_dat(self.file_economics_bau, om_dollars_per_kwh_bau, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
 
         dat2b_economics.update({"LevelizationFactor": levelization_factor_bau,

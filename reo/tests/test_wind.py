@@ -25,6 +25,9 @@ wind_post = {"Scenario": {"Site": {
     "PV": {
         "max_kw": 0
     },
+    "Generator": {
+        "max_kw": 0
+    },
     "Wind": {
         "macrs_bonus_pct": 0.0,
         "max_kw": 10,
