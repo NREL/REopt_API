@@ -210,25 +210,48 @@ class Wind(Tech):
 
 class Generator(Tech):
 
-    def __init__(self, dfm, run_uuid, size_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
-                 outage_start_hour=None, outage_end_hour=None, **kwargs):
-        super(Generator, self).__init__(min_kw=size_kw, max_kw=size_kw, installed_cost_us_dollars_per_kw=0)
+    def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr, fuel_avail_gal, min_turn_down_pct,
+                 outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1, **kwargs):
+        super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
-        Note unique super class init for generator: we do not allow users to define min/max sizes;
-        rather users must define size_kw for "existing" generator. Also, generator is assumed to be a sunk cost.
+        super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
+        and include diesel generator's size as optimization decision variable.
+        
+        For assigning the default_slope and default_intercept, the size_kw is being replaced by min_kw.
         """
 
         self.fuel_slope = fuel_slope_gal_per_kwh
         self.fuel_intercept = fuel_intercept_gal_per_hr
         self.fuel_avail = fuel_avail_gal
         self.min_turn_down = min_turn_down_pct
-        self.loads_served = ['retail']
         self.reopt_class = 'GENERATOR'
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
+        self.time_steps_per_hour = time_steps_per_hour
+        self.generator_only_runs_during_grid_outage = kwargs['generator_only_runs_during_grid_outage']
+        self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
+        self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
         self.derate = 0
+        self.loads_served = ['retail', 'storage']
+        self.incentives = Incentives(**kwargs)
+        self.min_kw = min_kw
+        self.max_kw = max_kw
+        self.existing_kw = existing_kw
+        self.min_kw += self.existing_kw
+        GeneratorModel.objects.filter(run_uuid=run_uuid).update(min_kw=self.min_kw)
 
-        default_slope, default_intercept = self.default_fuel_burn_rate(size_kw)
+        # if user has entered the max_kw for new gen to be less than the user-specified exiting_gen, max_kw is reset
+        # in this case existing_kw = max_kw = min_kw, fixing the gen-size decision variable as a constant
+        if self.max_kw < self.existing_kw:
+            self.max_kw = self.existing_kw
+            GeneratorModel.objects.filter(run_uuid=run_uuid).update(max_kw=self.max_kw)
+
+        # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
+        if self.generator_sells_energy_back_to_grid:
+            self.loads_served.append('wholesale')
+
+
+        default_slope, default_intercept = self.default_fuel_burn_rate(self.min_kw)
         if self.fuel_slope == 0:  # default is zero
             self.fuel_slope = default_slope
             GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_slope_gal_per_kwh=self.fuel_slope)
@@ -240,10 +263,15 @@ class Generator(Tech):
 
     @property
     def prod_factor(self):
-        gen_prod_factor = [0.0 for _ in range(8760)]
+        gen_prod_factor = [0.0 for _ in range(8760*self.time_steps_per_hour)]
 
-        if self.outage_start_hour is not None and self.outage_end_hour is not None:  # generator only available during outage
-            gen_prod_factor[self.outage_start_hour:self.outage_end_hour] = [1]*(self.outage_end_hour - self.outage_start_hour)
+        if self.generator_only_runs_during_grid_outage:
+            if self.outage_start_hour is not None and self.outage_end_hour is not None:
+                gen_prod_factor[self.outage_start_hour:self.outage_end_hour] \
+                    = [1]*(self.outage_end_hour - self.outage_start_hour)
+
+        else:
+            gen_prod_factor = [1] * len(gen_prod_factor)
 
         return gen_prod_factor
 

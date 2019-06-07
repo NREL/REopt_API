@@ -20,6 +20,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     site_outputs = data['outputs']['Scenario']['Site']
     pv = site_outputs['PV']
     wind = site_outputs['Wind']
+    generator = site_outputs['Generator']
     load_profile = site_inputs['LoadProfile']
     batt_roundtrip_efficiency = site_inputs['Storage']['internal_efficiency_pct'] \
                                 * site_inputs['Storage']['inverter_efficiency_pct'] \
@@ -34,7 +35,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         init_soc=site_outputs['Storage'].get('year_one_soc_series_pct'),
         critical_loads_kw=critical_load,
         batt_roundtrip_efficiency=batt_roundtrip_efficiency,
-        diesel_kw=site_inputs['Generator']['size_kw'],
+        diesel_kw=generator['size_kw'],
         fuel_available=site_inputs['Generator']['fuel_avail_gal'],
         b=site_inputs['Generator']['fuel_intercept_gal_per_hr'],
         m=site_inputs['Generator']['fuel_slope_gal_per_kwh'],

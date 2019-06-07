@@ -75,7 +75,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
-            "net_capital_costs_plus_om"
+            "net_capital_costs_plus_om",
+            "pv_net_om_costs",
+            "gen_net_om_costs"
         ]
 
         def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
@@ -113,6 +115,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # if wind is zero then no value is written to REopt results.json
             if results_dict.get("wind_kw") is None:
                 results_dict['wind_kw'] = 0
+
+            # if generator is zero then no value is written to REopt results.json
+            if results_dict.get("generator_kw") is None:
+                results_dict['generator_kw'] = 0
 
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
@@ -192,7 +198,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_pv_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
-                    self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om_bau")
+                    self.nested_outputs["Scenario"]["Site"][name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("pv_net_om_costs_bau")
                     self.nested_outputs['Scenario']["Site"][name]["station_latitude"] = pv_model.station_latitude
                     self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
                     self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
@@ -239,8 +245,29 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
                 elif name == "Generator":
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw")
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "average_yearly_energy_produced_kwh"] = self.results_dict.get(
+                        "average_yearly_gen_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "average_yearly_energy_exported_kwh"] = self.results_dict.get(
+                        "average_annual_energy_exported_gen")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_energy_produced_kwh"] = self.results_dict.get(
+                        "year_one_gen_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_battery_series_kw"] = self.po.get_gen_to_batt()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_grid_series_kw"] = self.po.get_gen_to_grid()
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_power_production_series_kw"] = self.compute_total_power(name)
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_om_cost_us_dollars"] = self.results_dict.get("gen_net_om_costs_bau")
+
 
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
@@ -289,5 +316,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log("Results.py raise unexpected error")
+        log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
         raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
