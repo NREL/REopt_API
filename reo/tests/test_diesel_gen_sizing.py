@@ -33,7 +33,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpatef")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpatef")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
         Test scenario with
@@ -88,7 +88,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -143,7 +143,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -266,7 +266,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_when_allowed_to_operatre_year_long(self):
         """
         Test scenario with
