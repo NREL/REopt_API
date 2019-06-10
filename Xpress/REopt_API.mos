@@ -970,11 +970,11 @@ fclose(F_OUTPUT)
     end-do
 
     forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
-        Node:=addnode(out_json, Root, "pv_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 0))
+        Node:=addnode(out_json, Root, "pv_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
     end-do
 
     forall (t in Tech  | TechToTechClassMatrix(t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
-        Node:=addnode(out_json, Root, "wind_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 0))
+        Node:=addnode(out_json, Root, "wind_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
     end-do
 
  forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
