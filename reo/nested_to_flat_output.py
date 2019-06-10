@@ -60,6 +60,7 @@ def nested_to_flat(nested_output):
         'total_payments_to_third_party_owner': None,
 
         'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
+        'existing_gen_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator']['existing_gen_om_cost_us_dollars']
     }
     if nested_output['Scenario']['Site'].get('Wind') is not None:
         base.update({

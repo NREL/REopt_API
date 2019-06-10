@@ -1,8 +1,9 @@
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
+from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+#from unittest import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -39,7 +40,11 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['pv_kw'] = 0
         d_expected['batt_kw'] = 2.85178
         d_expected['batt_kwh'] = 4.73317
-        d_expected['fuel_used_gal'] = 1.53
+        # The expected fuel consumption of the geneartor for this test case has changed with the "diesel generator
+        # sizing" capability additon. This is because the generator is now allowing to charge the battery as well.
+        # So, for hour 11 and 12 (when outage happens), generator is now charging battery with 3.00845 and 0.986111 kWh,
+        # along with serving the load, Thereby increasing its fuel consumption.
+        d_expected['fuel_used_gal'] = 1.79 # 1.53
         d_expected['avoided_outage_costs_us_dollars'] = 235303.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
@@ -75,14 +80,14 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 246481.0
-        d_expected['npv'] = -17377.0
-        d_expected['pv_kw'] = 8.50489
-        d_expected['batt_kw'] = 15.2994
-        d_expected['batt_kwh'] = 69.0182
-        d_expected['fuel_used_gal'] = 25.0
-        d_expected['avoided_outage_costs_us_dollars'] = 24772.59
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 14086.8
+        d_expected['lcc'] = 765138.0
+        d_expected['npv'] = 221621.0
+        d_expected['pv_kw'] = 178.643
+        d_expected['batt_kw'] = 22.7006
+        d_expected['batt_kwh'] = 116.564
+        d_expected['fuel_used_gal'] = 13.99
+        d_expected['avoided_outage_costs_us_dollars'] = 40676.44
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 65580.3
 
         try:
             check_common_outputs(self, c, d_expected)

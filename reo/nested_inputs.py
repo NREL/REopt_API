@@ -354,7 +354,7 @@ nested_input_definitions = {
           "min": 0,
           "max": 1e3,
           "default": 35,
-          "description": "Total annual operations and maintenance costs"
+          "description": "Total annual operations and maintenance costs for wind"
         },
         "macrs_option_years": {
           "type": "int",
@@ -787,12 +787,54 @@ nested_input_definitions = {
         },
 
       "Generator": {
-        "size_kw": {
+        "existing_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e5,
+          "default": 0,
+          "description": "Existing diesel generator size"
+        },
+        "min_kw": {
           "type": "float",
           "min": 0,
           "max": 1e9,
           "default": 0,
-          "description": "Existing on-site generator capacity in kW."
+          "description": "Minimum diesel generator size constraint for optimization"
+        },
+        "max_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 1e9,
+          "description": "Maximum diesel generator size constraint for optimization. Set to zero to disable gen"
+        },
+        "installed_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e5,
+          "default": 2500,
+          "description": "Installed diesel generator cost in $/kW"
+        },
+        "om_cost_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 50,
+          "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
+        },
+        "om_cost_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e3,
+          "default": 20,
+          "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
+        },
+        "diesel_fuel_cost_us_dollars_per_gallon": {
+          "type": "float",
+          "min": 0,
+          "max": 1e2,
+          "default": 20,
+          "description": "diesel cost in $/gallon"
         },
         "fuel_slope_gal_per_kwh": {
           "type": "float",
@@ -821,6 +863,134 @@ nested_input_definitions = {
           "max": 1,
           "default": 0.3,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
+        },
+        "generator_only_runs_during_grid_outage": {
+          "default": True,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "generator_sells_energy_back_to_grid": {
+          "default": False,
+          "type": "bool",
+          "description": "If there is existing diesel generator, must specify whether it should run only during grid outage or all the time in the bau case."
+        },
+        "macrs_option_years": {
+          "type": "int",
+          "restrict_to": macrs_schedules,
+          "default": 0,
+          "description": "MACRS schedule for financial analysis. Set to zero to disable"
+        },
+        "macrs_bonus_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to depreciate under MACRS"
+        },
+        "macrs_itc_reduction": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of the full ITC that depreciable basis is reduced by"
+        },
+        "federal_itc_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent federal capital cost incentive"
+        },
+        "state_ibi_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to discount under state investment based incentives"
+        },
+        "state_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under state investment based incentives"
+        },
+        "utility_ibi_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0,
+          "description": "Percent of upfront project costs to discount under utility investment based incentives"
+        },
+        "utility_ibi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility investment based incentives"
+        },
+        "federal_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Federal rebate based on installed capacity"
+        },
+        "state_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "State rebates based on installed capacity"
+        },
+        "state_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under state rebates"
+        },
+        "utility_rebate_us_dollars_per_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Utility rebates based on installed capacity"
+        },
+        "utility_rebate_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e10,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility rebates"
+        },
+        "pbi_us_dollars_per_kwh": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Production-based incentive value"
+        },
+        "pbi_max_us_dollars": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Maximum rebate allowed under utility production-based incentives"
+        },
+        "pbi_years": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Duration of production-based incentives from installation date"
+        },
+        "pbi_system_max_kw": {
+          "type": "float",
+          "min": 0,
+          "max": 1e9,
+          "default": 0,
+          "description": "Maximum system size for which production-based incentives apply"
         }
       }
     }
@@ -939,6 +1109,35 @@ def flat_to_nested(i):
                         "pbi_years": i.get("wind_pbi_years"),
                         "pbi_system_max_kw": i.get("wind_pbi_system_max"),
                  },
+
+              "Generator":
+                {
+                  "min_kw": i.get("gen_kw_min"),
+                  "max_kw": i.get("gen_kw_max"),
+                  "existing_kw": i.get("gen_existing_kw"),
+                  "installed_cost_us_dollars_per_kw": i.get("gen_cost"),
+                  "om_cost_us_dollars_per_kw": i.get("gen_om_kw"),
+                  "om_cost_us_dollars_per_kwh": i.get("gen_om_kwh"),
+                  "generator_only_runs_during_grid_outage": i.get("gen_during_grid_outage"),
+                  "generator_sells_energy_back_to_grid": i.get("gen_sells_energy_to_grid"),
+                  "macrs_option_years": i.get("gen_macrs_schedule"),
+                  "macrs_bonus_pct": i.get("gen_macrs_bonus_fraction"),
+                  "macrs_itc_reduction": i.get("gen_macrs_itc_reduction"),
+                  "federal_itc_pct": i.get("gen_itc_federal"),
+                  "state_ibi_pct": i.get("gen_ibi_state"),
+                  "state_ibi_max_us_dollars": i.get("gen_ibi_state_max"),
+                  "utility_ibi_pct": i.get("gen_ibi_utility"),
+                  "utility_ibi_max_us_dollars": i.get("gen_ibi_utility_max"),
+                  "federal_rebate_us_dollars_per_kw": i.get("gen_rebate_federal"),
+                  "state_rebate_us_dollars_per_kw": i.get("gen_rebate_state"),
+                  "state_rebate_max_us_dollars": i.get("gen_rebate_state_max"),
+                  "utility_rebate_us_dollars_per_kw": i.get("gen_rebate_utility"),
+                  "utility_rebate_max_us_dollars": i.get("gen_rebate_utility_max"),
+                  "pbi_us_dollars_per_kwh": i.get("gen_pbi"),
+                  "pbi_max_us_dollars": i.get("gen_pbi_max"),
+                  "pbi_years": i.get("gen_pbi_years"),
+                  "pbi_system_max_kw": i.get("gen_pbi_system_max"),
+                },
 
                 "Storage":
                     {

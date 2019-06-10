@@ -1,8 +1,8 @@
 {
   "Scenario": {
     "Site": {
-      "latitude": 35.2468,
-      "longitude": -91.7337,
+      "latitude": 25.761680,
+      "longitude": -80.191790,
 
       "LoadProfile": {
         "doe_reference_name": "MidriseApartment",
@@ -13,7 +13,9 @@
       },
 
       "ElectricTariff": {
-        "urdb_label": "5a592c995457a3371c423a7d"
+        "urdb_rate_name": "custom",
+                    "blended_monthly_rates_us_dollars_per_kwh": [0.20, 0.30, 0.28, 0.29, 0.37, 0.31, 0.26, 0.39, 0.33, 0.29, 0.29,0.28],
+                    "blended_monthly_demand_charges_us_dollars_per_kw": [0.25, 0.35, 15, 15, 0.35, 0.34, 0.29, 0.26, 13, 12, 11, 9]
       },
       "Financial": {
         "offtaker_tax_pct": 0.4
@@ -22,7 +24,7 @@
         "existing_kw": 100,
         "fuel_slope_gal_per_kwh": 0.0656,
         "fuel_intercept_gal_per_hr": 0.0048,
-        "fuel_avail_gal": 25,
+        "fuel_avail_gal": 14.02,
         "om_cost_us_dollars_per_kw": 0,
         "om_cost_us_dollars_per_kwh": 0,
         "diesel_fuel_cost_us_dollars_per_gallon": 0

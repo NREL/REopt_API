@@ -3,7 +3,7 @@ import os
 
 from reo.models import ModelManager
 from tastypie.test import ResourceTestCaseMixin
-from unittest import TestCase
+from unittest import TestCase, skip
 from reo.nested_to_flat_output import nested_to_flat
 from reo.utilities import check_common_outputs
 
