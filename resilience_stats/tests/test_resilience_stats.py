@@ -168,9 +168,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
             resp_dict = json.loads(resp.content)
 
-            self.assertEqual(resp_dict["probs_of_surviving"],
-                             [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
-                              0.0011])
+            expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                              0.0011]
+            for idx, p in enumerate(resp_dict["probs_of_surviving"]):
+                self.assertAlmostEqual(p, expected_probs[idx], places=2)
             self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
             self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
             self.assertEqual(resp_dict["resilience_hours_min"], 0)

@@ -11,9 +11,9 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "0e664ddd-2445-4090-b7b9-f436c4b5bf2a"
-  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Inputs"
-  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\Debugging\\Run0e664ddd-2445-4090-b7b9-f436c4b5bf2a\\Outputs"
+  ScenarioNum = "0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1"
+  ScenarioPath = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Inputs"
+  OutputDir = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Outputs"
   BaseString = ""
 
   CapCostSegCount = 2
@@ -27,7 +27,7 @@ parameters
   REoptTol = 5e-5
 
   ! Utility info
-  NumRatchets = 12
+  NumRatchets = 24
 
   DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
   DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
@@ -692,17 +692,17 @@ TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPe
 
 ! O&M Costs
 TotalPerUnitSizeOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
-TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts))
+TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
 
 PVPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "PV") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "GENERATOR") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
-GenPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | (exists (dvRatedProd(t,LD,ts,s,fb))) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts))
+GenPerUnitProdOMCosts := sum(t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
 
-! Utility and Taxable Costs
+! Utility and Taxable Costs 
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) 
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
