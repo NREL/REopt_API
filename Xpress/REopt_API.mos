@@ -11,9 +11,9 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1"
-  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1\\Inputs"
-  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run8b0b1e82-e2fe-48c5-a8fb-f9c9d681c8f1\\Outputs"
+  ScenarioNum = "0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1"
+  ScenarioPath = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Inputs"
+  OutputDir = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Outputs"
   BaseString = ""
 
   CapCostSegCount = 2
@@ -692,17 +692,17 @@ TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPe
 
 ! O&M Costs
 TotalPerUnitSizeOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
-TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t,LD,ts))
+TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
 
 PVPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "PV") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "GENERATOR") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
-GenPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | (exists (dvRatedProd(t,LD,ts,s,fb))) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t,LD,ts))
-						
-! Utility and Taxable Costs
+GenPerUnitProdOMCosts := sum(t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
+
+! Utility and Taxable Costs 
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) 
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
@@ -711,7 +711,7 @@ TotalFixedCharges := FixedMonthlyCharge * 12 * pwf_e
 
 ! Incentives
 TotalEnergyExports := (sum (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
-					dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e
+					dvRatedProd (t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t, LD, ts) * LevelizationFactor(t) *   ExportRates(t,LD,ts)) * pwf_e
 TotalProductionIncentive := sum(t in Tech ) dvProdIncent (t)
 
 ! Tax benefit to system owner
@@ -962,22 +962,22 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts) + 0.001*getsol(MinChargeAdder), 10, 0))
 
     forall  (b in BattLevel)  do
-        Node:=addnode(out_json, Root, "batt_kwh", getsol (dvStorageSizeKWH(b)))
+        Node:=addnode(out_json, Root, "batt_kwh", strfmt(getsol (dvStorageSizeKWH(b)), 10, 4))
     end-do
 
     forall  (b in BattLevel)  do
-        Node:=addnode(out_json, Root, "batt_kw", getsol (dvStorageSizeKW(b)))
+        Node:=addnode(out_json, Root, "batt_kw", strfmt(getsol (dvStorageSizeKW(b)), 10, 4))
     end-do
 
     forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
-        Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
+        Node:=addnode(out_json, Root, "pv_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
     end-do
 
     forall (t in Tech  | TechToTechClassMatrix(t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
-        Node:=addnode(out_json, Root, "wind_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
+        Node:=addnode(out_json, Root, "wind_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
     end-do
-    
-    forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+
+ forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
         Node:=addnode(out_json, Root, "generator_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
 
@@ -986,7 +986,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))
-    Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
+    Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(-getsol(ExportBenefitYr1), 10, 0))
     Node:=addnode(out_json, Root, "year_one_fixed_cost", strfmt(getsol(Year1FixedCharges), 10, 0))
     Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
     Node:=addnode(out_json, Root, "year_one_bill", strfmt(getsol(Year1Bill), 10, 2))

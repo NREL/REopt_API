@@ -14,6 +14,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
     def setUp(self):
         super(GeneratorSizingTests, self).setUp()
         self.reopt_base = '/v1/job/'
+        self.test_post = os.path.join('reo', 'tests', 'posts', 'generatorSizingPost.json')
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
@@ -45,8 +46,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         .
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorSizingPost.json')
-        nested_data = json.load(open(test_post, 'rb'))
+        nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
@@ -100,8 +100,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         .
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorSizingPost.json')
-        nested_data = json.load(open(test_post, 'rb'))
+        nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 100
@@ -156,8 +155,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         .
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorSizingPost.json')
-        nested_data = json.load(open(test_post, 'rb'))
+        nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
@@ -216,8 +214,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         .
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorSizingPost.json')
-        nested_data = json.load(open(test_post, 'rb'))
+        nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 50
@@ -277,8 +274,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         .
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorSizingPost.json')
-        nested_data = json.load(open(test_post, 'rb'))
+        nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
