@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from django.test import TestCase
+from unittest import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator import simulate_outage
 
@@ -162,7 +162,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        for _ in range(2):  # test twice to make sure that try/except in resilience_stats/views is working
+        for _ in range(2):
             resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
             self.assertEqual(resp.status_code, 200)
 
