@@ -11,11 +11,11 @@ const MOI = MathOptInterface
 
 # Data
 include("utils.jl")
-dataPath = "data/test_run/"
+dataPath = "data/Run76168a37-a78b-4ef3-bdb8-a2f8b213430b"
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
-Tech = [:UTIL1]
+#Tech = [:UTIL1]
 
 REopt = Model()
 
@@ -33,6 +33,7 @@ NumRatchets = 20
 
 readCmd(dataPath * "/Inputs/cmd.log")
 
+#FuelRate = [0 for x in 1:105120]
 
 Seg = 1:CapCostSegCount
 Points = 0:CapCostSegCount
@@ -172,7 +173,6 @@ TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     #Exist formatting, causes difficulty writing constraints
     #dvRatedProd[t in Tech, LD in Load, ts in TimeStep, Seg, FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] !=0 ] >= 0
 
-
 @variables REopt begin
     binNMLorIL[NMILRegime], Bin
     binSegChosen[Tech, Seg], Bin
@@ -269,7 +269,7 @@ end
 @constraint(REopt, [t in Tech, fb in FuelBin],
             sum(ProdFactor[t, LD, ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
                 for ts in TimeStep, LD in Load, s in Seg) +
-            sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
+           sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
                 for ts in TimeStep, LD in Load) == dvFuelCost[t,fb])
 
 #!! The following 2 constraints define binTechIsOnInTS to be the binary corollary to dvRatedProd,
@@ -675,7 +675,7 @@ end
 #end-do
 
 
-###### NEED UPDATED JSON FOR THESE
+##### NEED UPDATED JSON FOR THESE
 #@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
 #	        dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin))
 #
@@ -903,7 +903,6 @@ r_tax_fraction_offtaker = (1 - r_tax_offtaker)
            # Subtract Incentives, which are taxable
            TotalProductionIncentive * r_tax_fraction_owner
            )
-
 
 # Prototype Objective Function
 #cost = set1param(Tech, [50, 100, 75])

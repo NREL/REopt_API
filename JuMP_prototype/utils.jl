@@ -138,7 +138,10 @@ end
 function datToVariable(scenarioPath)
     for (root, dirs, files) in walkdir(scenarioPath)
         for f in files
-            if !occursin("bau", f) && occursin(".dat", f)
+            if !occursin("bau", f) && occursin(".dat", f) && 
+               !occursin("FuelBurnRateBase", f) &&
+               !occursin("ExportRatesBase", f) #&&
+               #!occursin("FuelCostBase", f)
                 filePath = joinpath(root, f)
                 contents = readlines(filePath)
                 if occursin("=", contents[1])
