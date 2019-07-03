@@ -23,6 +23,7 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
 
     n_timesteps = len(critical_loads_kw)
     n_steps_per_hour = n_timesteps / 8760  # type: int
+
     r = [0] * n_timesteps
 
     # NOTE: not making hourly load assumptions: a kW is not equivalent to a kWh!!!
@@ -54,17 +55,17 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
             self.min_turndown = diesel_min_turndown
             self.genmin = self.min_turndown * self.kw
         
-        def genavail(self, n_steps_per_hour):
+        def genavail(self, n_steps_per_hour):  # kW
             if self.fuel_available - self.b > 0:
-                return min((self.fuel_available - self.b / n_steps_per_hour) / self.m, self.kw)
+                return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
             else:
                 return 0
 
-        def fuelConsume(self, gen_output, n_steps_per_hour):
+        def fuelConsume(self, gen_output, n_steps_per_hour):  # kW
             if self.genavail(n_steps_per_hour) >= self.genmin and gen_output > 0:
                 gen_output = max(self.genmin, min(gen_output, self.genavail(n_steps_per_hour)))
-                fuelConsume = self.b / n_steps_per_hour + self.m * gen_output
-                self.fuel_available -= min(self.fuel_available, fuelConsume)
+                fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour 
+                self.fuel_available -= min(self.fuel_available, fuel_consume)
             else:
                 gen_output = 0
             return gen_output
@@ -76,17 +77,17 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
             self.soc = soc
             self.roundtrip_efficiency = batt_roundtrip_efficiency
 
-        def battavail(self, n_steps_per_hour):
+        def battavail(self, n_steps_per_hour):  # kW
             return min(self.size * self.soc * n_steps_per_hour, self.kw)
 
-        def battDischarge(self, discharge, n_steps_per_hour):
+        def battDischarge(self, discharge, n_steps_per_hour):  # kW
             discharge = min(self.battavail(n_steps_per_hour), discharge)
             self.soc -= min(discharge / self.size / n_steps_per_hour, self.soc)
             return discharge
 
-        def battCharge(self, charge, n_steps_per_hour):
-            room = (1 - self.soc) * n_steps_per_hour   # if there's room in the battery
-            charge = min(room * self.size / self.roundtrip_efficiency, charge, self.kw / self.roundtrip_efficiency)
+        def battCharge(self, charge, n_steps_per_hour):  # kw
+            room = (1 - self.soc)   # if there's room in the battery
+            charge = min(room * n_steps_per_hour * self.size / self.roundtrip_efficiency, charge, self.kw / self.roundtrip_efficiency)
             chargesoc = charge * self.roundtrip_efficiency / self.size / n_steps_per_hour
             self.soc += chargesoc
             return charge
@@ -97,7 +98,7 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
         """
 
         # distributed generation minus load is the burden on battery
-        unmatch = (critical_load - pv - wind) * n_steps_per_hour
+        unmatch = (critical_load - pv - wind)  # kw
         discharge = 0
         gen_output = 0
         charge = 0
@@ -147,12 +148,12 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
                         critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
             if unmatch > 0:  # cannot survive
-                r[time_step] = i / n_steps_per_hour
+                r[time_step] = float(i) / float(n_steps_per_hour)
                 break
 
     r_min = min(r)
     r_max = max(r)
-    r_avg = round((float(sum(r)) / float(len(r))/n_steps_per_hour), 2)
+    r_avg = round((float(sum(r)) / float(len(r))), 2)
 
     x_vals = range(1, int(floor(r_max)+1))
     y_vals = list()
