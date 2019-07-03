@@ -330,7 +330,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         resp = simulate_outage(**self.inputs)
 
     def test_no_resilience(self):
-        self.inputs.update(pv_kw_ac_hourly=[], batt_kw=0)
+        self.inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0)
 
         resp = simulate_outage(**self.inputs)
 
