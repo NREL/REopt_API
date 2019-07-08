@@ -22,7 +22,7 @@ class CustomRateTests(ResourceTestCaseMixin, TestCase):
         Using customRatePOST.json to reproduce the error
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'customRatePOST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'customRatePOST.json')
         nested_data = json.load(open(test_post, 'rb'))
         # comment out  the following line if want to reproduce the error
         nested_data['Scenario']['Site']['LoadProfile']['doe_reference_name'] = 'MediumOffice'

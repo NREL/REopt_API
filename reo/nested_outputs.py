@@ -372,15 +372,55 @@ nested_output_definitions = {
               },
 
               "Generator": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Optimal diesel generator system size",
+                  "units": "kW"
+                },
                 "fuel_used_gal": {
                   "type": float,
                   "description": "Generator fuel used to meet critical load during grid outage.",
                   "units": "US gallons"
                 },
+                "average_yearly_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Average annual energy produced by the diesel generator over one year",
+                  "units": "kWh"
+                },
+                "average_yearly_energy_exported_kwh": {
+                  "type": float,
+                  "description": "Average annual energy exported by the diesel generator",
+                  "units": "kWh"
+                },
+                "year_one_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Year one energy produced by the diesel generator",
+                  "units": "kWh"
+                },
+                "year_one_power_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one diesel generator power production time series",
+                  "units": "kW"
+                },
+                "year_one_to_battery_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of diesel generator charging",
+                  "units": "kW"
+                },
                 "year_one_to_load_series_kw": {
                   "type": list_of_float,
                   "description": "Year one generator to load time series.",
                   "units": "kW"
+                },
+                "year_one_to_grid_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of diesel generator exporting to grid",
+                  "units": "kW"
+                },
+                "existing_gen_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Lifetime O&M cost for existing diesel generator system.",
+                  "units": "$"
                 }
               }
             }

@@ -96,12 +96,12 @@ def unlink(request, user_uuid, run_uuid):
         if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
             UserUnlinkedRuns.create(**content)
 
-        return JsonResponse({"Success":True}, status=500)
+        return JsonResponse({"Success":True}, status=204)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
         err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+        return JsonResponse({"Error": err.message}, status=404)
 
 
 def summary(request, user_uuid):
@@ -138,14 +138,15 @@ def summary(request, user_uuid):
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.message)}, status=400)
+            return JsonResponse({"Error": str(e.message)}, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
             err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=400)
+            return JsonResponse({"Error": str(err.message)}, status=404)
 
     try:
+        
         scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
@@ -257,32 +258,41 @@ def summary(request, user_uuid):
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
                 # PV Size
-                if pv['max_kw'] > 0:
-                    results['pv_kw'] = pv['size_kw']
+                if pv is not None:
+                    if pv['max_kw'] > 0:
+                        results['pv_kw'] = pv['size_kw']
+                    else:
+                        results['pv_kw'] = 'not evaluated'
                 else:
                     results['pv_kw'] = 'not evaluated'
 
                 # Wind Size
-                if wind['max_kw'] > 0:
-                    results['wind_kw'] = wind['size_kw']
+                if wind is not None:
+                    if wind.get('max_kw',-1) > 0:
+                        results['wind_kw'] = wind['size_kw']
+                    else:
+                        results['wind_kw'] = 'not evaluated'
                 else:
                     results['wind_kw'] = 'not evaluated'
 
                 # Battery Size
-                if batt['max_kw'] > 0:
-                    results['batt_kw'] = batt['size_kw']
-                    results['batt_kwh'] = batt['size_kwh']
+                if batt is not None:
+                    if batt.get('max_kw',-1) > 0:
+                        results['batt_kw'] = batt['size_kw']
+                        results['batt_kwh'] = batt['size_kwh']
+                    else:
+                        results['batt_kw'] = 'not evaluated'
+                        results['batt_kwh'] = 'not evaluated'
                 else:
                     results['batt_kw'] = 'not evaluated'
                     results['batt_kwh'] = 'not evaluated'
 
-
             json_response['scenarios'].append(results)
-        response = JsonResponse(json_response)
+        response = JsonResponse(json_response, status=200)
         return response
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
         err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+        return JsonResponse({"Error": err.message}, status=404)

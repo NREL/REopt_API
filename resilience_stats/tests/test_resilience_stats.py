@@ -1,7 +1,7 @@
 import json
 import os
 import uuid
-from django.test import TestCase
+from unittest import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator import simulate_outage
 
@@ -162,15 +162,17 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        for _ in range(2):  # test twice to make sure that try/except in resilience_stats/views is working
+        for _ in range(2):
             resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
+            
             self.assertEqual(resp.status_code, 200)
 
             resp_dict = json.loads(resp.content)
 
-            self.assertEqual(resp_dict["probs_of_surviving"],
-                             [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
-                              0.0011])
+            expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                              0.0011]
+            for idx, p in enumerate(resp_dict["probs_of_surviving"]):
+                self.assertAlmostEqual(p, expected_probs[idx], places=2)
             self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
             self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
             self.assertEqual(resp_dict["resilience_hours_min"], 0)

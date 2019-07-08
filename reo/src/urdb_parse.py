@@ -118,7 +118,7 @@ class UrdbParse:
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, excess_rate=0.0, gen=None):
+    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -127,7 +127,7 @@ class UrdbParse:
         self.zero_array = [0] * self.ts_per_year
         self.net_metering = elec_tariff.net_metering
         self.wholesale_rate = elec_tariff.wholesale_rate
-        self.excess_rate = excess_rate
+        self.excess_rate = elec_tariff.wholesale_rate_above_site_load
         self.max_demand_rate = 0
         self.big_number = big_number
         self.reopt_args = REoptArgs(big_number)
@@ -138,6 +138,8 @@ class UrdbParse:
             self.generator_fuel_slope = gen.fuel_slope
             self.generator_fuel_intercept = gen.fuel_intercept
             self.generator_fuel_avail = gen.fuel_avail
+            self.diesel_fuel_cost_us_dollars_per_gallon = gen.diesel_fuel_cost_us_dollars_per_gallon
+            self.diesel_cost_array = [self.diesel_fuel_cost_us_dollars_per_gallon] * self.ts_per_year
         else:
             self.generator_fuel_slope = 0
             self.generator_fuel_intercept = 0
@@ -372,11 +374,11 @@ class UrdbParse:
                 # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'generator':
-                        # generator fuel is free for now since we are only modeling existing generators
-                        energy_rates = operator.add(energy_rates, self.zero_array)
+                        # generator fuel is not free anymore since generator is also a design variable
+                        energy_rates = operator.add(energy_rates, self.diesel_cost_array)
                         energy_avail.append(self.generator_fuel_avail)
                     else:
-                        # all other techs (PV, PVNM) have zero fuel and zero fuel cost
+                        # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
                         energy_rates = operator.add(energy_rates, self.zero_array)
                         energy_avail.append(0)
 
@@ -393,8 +395,8 @@ class UrdbParse:
                     if load == 'wholesale':
                         if self.net_metering:
                             export_rates = operator.add(export_rates, negative_energy_costs)
-                        # else:
-                        #     export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
+                        else:
+                            export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
