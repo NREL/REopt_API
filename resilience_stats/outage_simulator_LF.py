@@ -108,12 +108,14 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
             charge = battery.battCharge(-unmatch, n_steps_per_hour)
             unmatch = 0 
 
-        elif 0 < generator.genmin <= generator.genavail(n_steps_per_hour):
+        elif generator.genmin <= generator.genavail(n_steps_per_hour) and 0 < generator.kw:
             gen_output = generator.fuelConsume(unmatch, n_steps_per_hour)
+            # charge battery with excess energy if unmatch < genmin
             charge = battery.battCharge(max(gen_output-unmatch, 0), n_steps_per_hour)  # prevent negative charge
             discharge = battery.battDischarge(max(unmatch-gen_output, 0), n_steps_per_hour)  # prevent negative discharge
             unmatch -= (gen_output + discharge - charge)
 
+            # unmatch > genavail & (unmatch - genavail) <= battavail
             if unmatch <= generator.genavail(n_steps_per_hour):   # diesel can meet balance
                 unmatch = 0
 

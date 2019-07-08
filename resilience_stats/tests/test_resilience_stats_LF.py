@@ -69,15 +69,13 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def test_outage_sim_no_diesel(self):
         """
-        Use self.inputs to test the outage simulator for expected outputs.
-        :return: None
+        For the case that no diesel generator is on site, outage simulation with load following strategy should have the
+        same results as existing simulation's results.
         """
         inputs = self.inputs
-        inputs['diesel_kw'] = 0
-        inputs['fuel_available'] = 0
-        inputs['m'] = 0
-        inputs['b'] = 0
+        inputs.update(diesel_kw=0, fuel_available=0, m=0, b=0)
 
+        # Output parse from existing simulation
         expected = {
             'resilience_hours_min': 0,
             'resilience_hours_max': 78,
@@ -173,166 +171,160 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
     def test_outage_sim(self):
         """
-        Use self.inputs to test the outage simulator for expected outputs.
-        :return: None
+        With diesel + PV + storage
         """
         expected = {
-            'resilience_hours_min': 27,
-            'resilience_hours_max': 143,
-            'resilience_hours_avg': 67.9,
-            "outage_durations": range(1, 144),
+            'resilience_hours_min': 24,
+            'resilience_hours_max': 131,
+            'resilience_hours_avg': 57.86,
+            "outage_durations": range(1, 132),
             "probs_of_surviving":[
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                1.0,
-                0.9999,
-                0.999,
-                0.9982,
-                0.9962,
-                0.9942,
-                0.9926,
-                0.9911,
-                0.9893,
-                0.9865,
-                0.9822,
-                0.9772,
-                0.9697,
-                0.9626,
-                0.9538,
-                0.9445,
-                0.9347,
-                0.9242,
-                0.9126,
-                0.8998,
-                0.8854,
-                0.8676,
-                0.8485,
-                0.8301,
-                0.807,
-                0.7837,
-                0.7629,
-                0.743,
-                0.7234,
-                0.7042,
-                0.6862,
-                0.6697,
-                0.6533,
-                0.6361,
-                0.62,
-                0.6009,
-                0.5811,
-                0.5607,
-                0.5405,
-                0.5195,
-                0.4985,
-                0.4779,
-                0.4582,
-                0.438,
-                0.4172,
-                0.3973,
-                0.378,
-                0.3605,
-                0.3443,
-                0.3277,
-                0.3119,
-                0.2961,
-                0.2803,
-                0.265,
-                0.2499,
-                0.2358,
-                0.2213,
-                0.2062,
-                0.1916,
-                0.1788,
-                0.1668,
-                0.1545,
-                0.1429,
-                0.1315,
-                0.1208,
-                0.111,
-                0.1013,
-                0.0924,
-                0.0847,
-                0.0779,
-                0.0718,
-                0.0668,
-                0.0622,
-                0.0579,
-                0.0534,
-                0.049,
-                0.0444,
-                0.04,
-                0.0357,
-                0.0315,
-                0.0276,
-                0.0241,
-                0.021,
-                0.0187,
-                0.0169,
-                0.0154,
-                0.014,
-                0.0128,
-                0.0115,
-                0.0103,
-                0.009,
-                0.0078,
-                0.0065,
-                0.0056,
-                0.0048,
-                0.0042,
-                0.0038,
-                0.0034,
-                0.0031,
-                0.0027,
-                0.0024,
-                0.0022,
-                0.0019,
-                0.0017,
-                0.0015,
-                0.0014,
-                0.0013,
-                0.0011,
-                0.001,
-                0.0009,
-                0.0008,
-                0.0007,
-                0.0006,
-                0.0005,
-                0.0003,
-                0.0002,
-                0.0001
-            ]
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   1.0,
+                                   0.9999,
+                                   0.9981,
+                                   0.9954,
+                                   0.9933,
+                                   0.9893,
+                                   0.986,
+                                   0.9826,
+                                   0.9774,
+                                   0.9711,
+                                   0.9634,
+                                   0.9539,
+                                   0.9432,
+                                   0.9293,
+                                   0.9121,
+                                   0.8929,
+                                   0.8733,
+                                   0.8531,
+                                   0.8316,
+                                   0.8087,
+                                   0.785,
+                                   0.7587,
+                                   0.7309,
+                                   0.7005,
+                                   0.674,
+                                   0.6481,
+                                   0.6218,
+                                   0.5974,
+                                   0.5751,
+                                   0.5533,
+                                   0.5323,
+                                   0.5103,
+                                   0.4876,
+                                   0.4651,
+                                   0.4432,
+                                   0.4216,
+                                   0.4007,
+                                   0.3804,
+                                   0.3604,
+                                   0.3401,
+                                   0.3212,
+                                   0.3025,
+                                   0.2839,
+                                   0.2671,
+                                   0.2524,
+                                   0.2388,
+                                   0.2261,
+                                   0.2154,
+                                   0.2058,
+                                   0.1961,
+                                   0.1865,
+                                   0.1775,
+                                   0.1685,
+                                   0.1592,
+                                   0.1497,
+                                   0.1398,
+                                   0.13,
+                                   0.1204,
+                                   0.1108,
+                                   0.1019,
+                                   0.0938,
+                                   0.0866,
+                                   0.0803,
+                                   0.0745,
+                                   0.0695,
+                                   0.0652,
+                                   0.0611,
+                                   0.057,
+                                   0.0529,
+                                   0.0489,
+                                   0.0449,
+                                   0.0409,
+                                   0.037,
+                                   0.0332,
+                                   0.0296,
+                                   0.0259,
+                                   0.0223,
+                                   0.0189,
+                                   0.0158,
+                                   0.013,
+                                   0.0108,
+                                   0.009,
+                                   0.0075,
+                                   0.0067,
+                                   0.0062,
+                                   0.0057,
+                                   0.0054,
+                                   0.005,
+                                   0.0047,
+                                   0.0043,
+                                   0.004,
+                                   0.0037,
+                                   0.0033,
+                                   0.003,
+                                   0.0026,
+                                   0.0023,
+                                   0.0019,
+                                   0.0017,
+                                   0.0015,
+                                   0.0013,
+                                   0.001,
+                                   0.0008,
+                                   0.0007,
+                                   0.0006,
+                                   0.0005,
+                                   0.0003,
+                                   0.0002,
+                                   0.0001
+                                ]
         }
         resp = simulate_outage(**self.inputs)
 
-    def test_no_resilience(self):
-        self.inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0)
+        self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=3)
+        self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=3)
+        self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=3)
+        self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=3)
+        for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
+            self.assertAlmostEquals(x, y, places=3)
 
-        resp = simulate_outage(**self.inputs)
+    def test_no_resilience(self):
+        inputs = self.inputs
+        inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0)
+        resp = simulate_outage(**inputs)
 
         self.assertEqual(0, resp['resilience_hours_min'])
         self.assertEqual(0, resp['resilience_hours_max'])
@@ -342,18 +334,14 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         
     def test_flexible_timesteps(self):
         """
-        Use self.inputs to flexible timesteps
-        :return: None
+        Same input with different timesteps-per-hour should have almost equal results.
         """
         resp1 = simulate_outage(**self.inputs1)
         resp2 = simulate_outage(**self.inputs2)
-        
-        prob2 = [sum(resp2['probs_of_surviving'][i:i+2])/2.0 for i in range(0,8760*2,2)]
 
-        self.assertAlmostEqual(resp1['resilience_hours_max'], resp2['resilience_hours_max'], places=0)
-        self.assertAlmostEqual(resp1['resilience_hours_avg'], resp2['resilience_hours_avg'], places=-1)
-        
-        # self.assertAlmostEqual(resp1['resilience_hours_min'], resp2['resilience_hours_min'], places=0)
-        # self.assertAlmostEqual(resp1['outage_durations'], resp2['outage_durations'], places=3)
-        # for x, y in zip(resp1['probs_of_surviving'], prob2):
-        #     self.assertAlmostEquals(x, y, places=1)
+        self.assertAlmostEqual(1, resp2['resilience_hours_max']/resp1['resilience_hours_max'], places=1)
+        self.assertAlmostEqual(1, resp2['resilience_hours_min'] / resp1['resilience_hours_min'], places=1)
+        self.assertAlmostEqual(1, resp2['resilience_hours_avg'] / resp1['resilience_hours_avg'], places=1)
+
+        for x, y in zip(resp1['probs_of_surviving'], resp2['probs_of_surviving']):
+            self.assertAlmostEquals(x, y, places=1)
