@@ -3,7 +3,7 @@
 using JuMP
 using Xpress
 using MathOptInterface
-using Cbc
+#using Cbc
 const MOI = MathOptInterface
 #using CPLEX
 #using MathOptFormat
@@ -935,8 +935,8 @@ r_tax_fraction_offtaker = (1 - r_tax_offtaker)
 
 println("Model built. Moving on to optimization...")
 
-#optimize!(REopt, with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
-optimize!(REopt, with_optimizer(Cbc.Optimizer))
+optimize!(REopt, with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
+#optimize!(REopt, with_optimizer(Cbc.Optimizer, logLevel=3))
 
 #mps_model = MathOptFormat.MPS.Model()
 #MOI.copy_to(mps_model, JuMP.backend(REopt))
