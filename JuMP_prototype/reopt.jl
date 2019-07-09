@@ -3,6 +3,7 @@
 using JuMP
 using Xpress
 using MathOptInterface
+using Cbc
 const MOI = MathOptInterface
 #using CPLEX
 #using MathOptFormat
@@ -11,7 +12,8 @@ const MOI = MathOptInterface
 
 # Data
 include("utils.jl")
-dataPath = "data/Run76168a37-a78b-4ef3-bdb8-a2f8b213430b"
+#dataPath = "data/Run76168a37-a78b-4ef3-bdb8-a2f8b213430b"
+dataPath = "data/Runebfc3ee6-42d6-4a70-accb-15908e8ac2bf"
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
@@ -33,7 +35,12 @@ NumRatchets = 20
 
 readCmd(dataPath * "/Inputs/cmd.log")
 
-#FuelRate = [0 for x in 1:105120]
+# edits to get a solution
+#TimeStepCount = 300
+#FuelRate = [1 for x in 1:105120]
+FuelAvail = [1.0e10 for x in 1:3]
+#sca = Int(TimeStepCount/12)
+#TimeStepRatchetsMonth = [[z + (y*sca) for z in 1:sca] for y in 0:11]
 
 Seg = 1:CapCostSegCount
 Points = 0:CapCostSegCount
@@ -47,10 +54,10 @@ TimeStep=1:TimeStepCount
 TimeStepBat=0:TimeStepCount
 
 ## TAILORED BIG M
-#MaxDemandMonthsInTier = [AnnualElecLoad]
-#MaxDemandInTier = [AnnualElecLoad]
+MaxDemandMonthsInTier = [AnnualElecLoad]
+MaxDemandInTier = [AnnualElecLoad]
 #MaxSize[3] = [AnnualElecLoad]
-#MaxUsageInTier = [AnnualElecLoad]
+MaxUsageInTier = [AnnualElecLoad]
 
 ## Data modification for prototyping
 #LoadProfile = LoadProfile[1:8760*4]
@@ -131,7 +138,7 @@ DemandRates = parameter((Ratchets, DemandBin), DemandRates)
 FuelRate = parameter((Tech, FuelBin, TimeStep), FuelRate)
 
 # MAY NEED TO CHANGE to (Tech, FuelBin)
-FuelAvail = parameter(FuelBin, FuelAvail)
+FuelAvail = parameter((Tech, FuelBin), FuelAvail)
 #FixedMonthlyCharge
 #AnnualMinCharge
 #MonthlyMinCharge
@@ -255,7 +262,7 @@ end
             sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling
                 for ts in TimeStep, LD in Load) == dvFuelUsed[t,fb])
 
-@constraint(REopt, [t in Tech, fb in FuelBin],
+@constraint(REopt, FuelCont[t in Tech, fb in FuelBin],
             dvFuelUsed[t,fb] <= FuelAvail[fb])
 
 #! FuelUsed * FuelRate = FuelCost.  Since FuelRate can vary by timestep, cannot use dvFuelUsed in the following definition
@@ -732,6 +739,7 @@ end
 #!!41513 TS.  Excluding Grid.
 #
 #   sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (LD="1R" or LD="1W" or LD="1S") and TechIsGrid(t) = 0)
+# 		(dvRatedProd (t,LD,ts,s,fb)*ProdFactor(t, LD, ts) * LevelizationFactor(t) *  TimeStepScaling)  <=  AnnualElecLoad
 
 @constraint(REopt, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] *  TimeStepScaling
                        for t in Tech, LD in [Symbol("1R"), Symbol("1W"), Symbol("1S")],
@@ -911,9 +919,24 @@ r_tax_fraction_offtaker = (1 - r_tax_offtaker)
 #         sum(cost[t] * dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
 #             for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
 
+#outputs used for troubleshooting
+
+@expression(REopt, powerto1R, 
+            sum(ProdFactor[t, Symbol("1R"), ts]*dvRatedProd[t, Symbol("1R"), ts, 1, 1] 
+                for t in Tech, ts in TimeStep));
+
+@expression(REopt, powerfromPVNM, 
+            sum(ProdFactor[:PVNM, Symbol("1R"), ts]*dvRatedProd[:PVNM, Symbol("1R"), ts, 1, 1] 
+                for ts in TimeStep));
+
+@expression(REopt, powerfromUTIL1, 
+            sum(ProdFactor[:UTIL1, Symbol("1R"), ts]*dvRatedProd[:UTIL1, Symbol("1R"), ts, 1, 1] 
+                for ts in TimeStep));
+
 println("Model built. Moving on to optimization...")
 
-optimize!(REopt, with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
+#optimize!(REopt, with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
+optimize!(REopt, with_optimizer(Cbc.Optimizer))
 
 #mps_model = MathOptFormat.MPS.Model()
 #MOI.copy_to(mps_model, JuMP.backend(REopt))
@@ -991,16 +1014,25 @@ Year1FixedCharges = value(TotalFixedCharges / pwf_e)
 Year1MinCharges = value(MinChargeAdder / pwf_e)
 Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
+println("Year1EnergyCost: ", Year1EnergyCost)
+println("Year1DemandCost: ", Year1DemandCost)
+println("Year1DemandTOUCost: ", Year1DemandTOUCost)
+println("Year1DemandFlatCost: ", Year1DemandFlatCost)
+println("Year1FixedCharges: ", Year1FixedCharges)
+println("Year1MinCharges: ", Year1MinCharges)
+println("Year1Bill: ", Year1Bill)
+
+
 #
 #Year1UtilityEnergy := sum(LD in Load, ts in TimeStep, s in Seg, fb in FuelBin)
 #                      dvRatedProd("UTIL1", LD, ts, s, fb) * ProdFactor("UTIL1", LD, ts) * TimeStepScaling
 
-Year1UtilityEnergy = AffExpr(0)
-
-for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
-    y = AffExpr(0, dvRatedProd[:UTIL1,LD,ts,s,fb] => TimeStepScaling * ProdFactor[:UTIL1, LD, ts])
-    add_to_expression!(Year1UtilityEnergy, y)
-end
+#Year1UtilityEnergy = AffExpr(0)
+#
+#for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
+#    y = AffExpr(0, dvRatedProd[:UTIL1,LD,ts,s,fb] => TimeStepScaling * ProdFactor[:UTIL1, LD, ts])
+#    add_to_expression!(Year1UtilityEnergy, y)
+#end
 
 #
 #GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)

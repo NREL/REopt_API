@@ -140,8 +140,8 @@ function datToVariable(scenarioPath)
         for f in files
             if !occursin("bau", f) && occursin(".dat", f) && 
                !occursin("FuelBurnRateBase", f) &&
-               !occursin("ExportRatesBase", f) #&&
-               #!occursin("FuelCostBase", f)
+               !occursin("ExportRatesBase", f) &&
+               !occursin("FuelCostBase", f)
                 filePath = joinpath(root, f)
                 contents = readlines(filePath)
                 if occursin("=", contents[1])
