@@ -77,7 +77,8 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-
+        print(d)
+        print(c)
         lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
         lcc = round(d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
         messages = d['messages']

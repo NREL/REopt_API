@@ -5,7 +5,8 @@
     "Site":
       {"Wind":{
         "max_kw": 0,
-      },"PV":
+        },
+        "PV":
         {"pbi_years": 1.0,
           "macrs_bonus_pct": 0.0,
           "max_kw": 1500000.0,
