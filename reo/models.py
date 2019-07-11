@@ -114,6 +114,7 @@ class LoadProfileModel(models.Model):
     outage_end_hour = models.IntegerField(null=True, blank=True)
     critical_load_pct = models.FloatField()
     outage_is_major_event = models.BooleanField(default=True)
+    # unmet_critical_load_from_generator_kwh = models.FloatField
 
     #Outputs
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])

@@ -259,6 +259,16 @@ class Generator(Tech):
             self.fuel_intercept = default_intercept
             GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_intercept_gal_per_hr=self.fuel_intercept)
 
+        # conditional
+        # if self.generator_only_runs_during_grid_outage is True:
+        # start filling in the critical load list with the generator output (may be in a while loop)
+
+        # else:
+        # use the assumed fuel level (which is coming from the input) and based calculations off of that
+
+        # calculate the current stored energy in the existing generator based on the fuel availability
+        self.current_stored_energy_kwh = 5
+
         dfm.add_generator(self)
 
     @property
