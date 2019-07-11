@@ -102,9 +102,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
-                            **inputs_dict["Site"]["Generator"]
-
-                            )
+                            **inputs_dict["Site"]["Generator"])
 
 
         try:
@@ -115,12 +113,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              pv=pv,
                              analysis_years=site.financial.analysis_years,
                              time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                             gen_energy_at_start_of_outage_kwh = gen.gen_energy_at_start_of_outage_kwh,
+                             fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
+                             gen_existing_kw=gen.existing_kw,
+                             gen_min_turn_down=gen.min_turn_down,
+                             fuel_slope=gen.fuel_slope,
+                             fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
             tmp = dict()
-            tmp['gen_energy_at_start_of_outage_kwh'] = gen.gen_energy_at_start_of_outage_kwh
-            tmp['unmet_critical_load_from_generator_kwh'] = lp.unmet_critical_load_from_generator_kwh
+            tmp['fuel_avail_before_outage_pct'] = gen.fuel_avail_before_outage_pct
+            tmp['resilience_check_flag'] = lp.resilience_check_flag
+            # tmp['unmet_critical_load_from_generator_kwh'] = lp.unmet_critical_load_from_generator_kwh
             ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)

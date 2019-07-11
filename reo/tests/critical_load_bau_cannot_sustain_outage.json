@@ -1,0 +1,47 @@
+{
+  "Scenario": {
+    "Site": {
+      "latitude": 33.4483,
+      "longitude": -112.074036,
+
+      "LoadProfile": {
+        "doe_reference_name": "Warehouse",
+        "year": 2017,
+        "outage_start_hour": 16,
+        "outage_end_hour": 22,
+        "critical_load_pct": 0.5,
+        "loads_kw_is_net": false
+      },
+
+      "ElectricTariff": {
+        "urdb_label": "5a592c995457a3371c423a7d"
+      },
+      "Financial": {
+        "offtaker_tax_pct": 0.4
+      },
+      "Generator": {
+        "existing_kw": 20,
+        "max_kw": 500,
+        "min_kw": 0,
+        "fuel_slope_gal_per_kwh": 0.068,
+        "fuel_intercept_gal_per_hr": 0.0125,
+        "fuel_avail_gal": 5,
+        "generator_sells_energy_back_to_grid": 0
+      },
+      "Wind": {
+        "max_kw": 0
+      },
+      "PV": {
+        "existing_kw": 3,
+        "max_kw": 10000,
+        "macrs_bonus_pct": 0.4,
+        "array_type": 0,
+        "tilt": 35.2468
+      },
+      "Storage": {
+        "max_kw": 10000,
+        "macrs_bonus_pct": 0.4
+      }
+    }
+  }
+}
