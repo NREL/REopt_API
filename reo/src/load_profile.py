@@ -503,10 +503,11 @@ class LoadProfile(BuiltInProfile):
 
     def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
-                 analysis_years=1, time_steps_per_hour=1, **kwargs):
+                 analysis_years=1, time_steps_per_hour=1, current_stored_energy_kwh=0, **kwargs):
 
         self.time_steps_per_hour = time_steps_per_hour
         self.n_timesteps = self.time_steps_per_hour*8760
+        self.current_stored_energy_kwh = current_stored_energy_kwh
 
         if user_profile:
             self.load_list = user_profile
@@ -558,6 +559,16 @@ class LoadProfile(BuiltInProfile):
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
                 [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+
+
+
+            # start filling in the critical load list with the generator output (may be in a while loop)
+
+            # fill in with zeros when we run out of generation kwh
+
+            # create new attribute - remianing unmet load during outage
+
+
 
         elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:  # use native_load * critical_load_pct
 
