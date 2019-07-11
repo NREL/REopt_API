@@ -77,15 +77,13 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-        print(d)
-        print(c)
+        
         lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
         lcc = round(d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
         messages = d['messages']
 
         try:
-            print(lcc_bau)
-            print(bau)
+
             self.assertGreater(lcc_bau, 0,
                              "BAU Life Cycle Cost is less than zero. This is not correct.")
 
@@ -94,9 +92,14 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
                              )
 
         except Exception as e:
+            
             error_msg = None
             if hasattr(messages, "error"):
                 error_msg = messages.error
             print("test_existing_pv API error message: {}".format(error_msg))
             print("Run uuid: {}".format(d['outputs']['Scenario']['run_uuid']))
+            print(d)
+            print(c)
+            print(lcc_bau)
+            print(bau)
             raise e
