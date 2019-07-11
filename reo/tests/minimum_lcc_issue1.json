@@ -4,7 +4,7 @@
     "user_uuid": null,
     "Site":
       {"Wind":{
-        "max_kw": 0,
+        "max_kw": 0
       },
         "PV":
         {"pbi_years": 1.0,
