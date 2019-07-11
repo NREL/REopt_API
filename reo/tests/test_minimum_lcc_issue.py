@@ -38,8 +38,7 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
-        print(lcc_bau)
-        lcc = d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
+        lcc = round(['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
         messages = d['messages']
 
         try:
@@ -80,11 +79,13 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
-        lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
-        lcc = d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
+        lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
+        lcc = round(d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
         messages = d['messages']
 
         try:
+            print(lcc_bau)
+            print(bau)
             self.assertGreater(lcc_bau, 0,
                              "BAU Life Cycle Cost is less than zero. This is not correct.")
 
