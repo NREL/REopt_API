@@ -77,7 +77,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
 
-        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
+        if inputs_dict["Site"]["PV"]["max_kw"] > 0 or inputs_dict["Site"]["PV"]["existing_kw"] > 0:
             pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
                     longitude=inputs_dict['Site'].get('longitude'), time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                     **inputs_dict["Site"]["PV"])
