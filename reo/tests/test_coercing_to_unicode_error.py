@@ -30,6 +30,6 @@ class UnicodeErrorTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
+        run_uuid = r.get('run_uuid')        
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])

@@ -53,7 +53,6 @@ class TestEnergyTiers(ResourceTestCaseMixin, TestCase):
         uuid = json.loads(initial_post.content)['run_uuid']
 
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
-
     # # the following is not needed b/c we test the app with Celery tasks in "eager" mode
     # # i.e. asynchronously. If we move to testing the API, then the while loop is needed
     # status = response['outputs']['Scenario']['status']
