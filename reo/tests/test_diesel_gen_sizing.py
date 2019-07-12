@@ -1,4 +1,3 @@
-import time
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
@@ -56,7 +55,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -110,7 +108,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
         c = nested_to_flat(d['outputs'])
 
 

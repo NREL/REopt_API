@@ -42,7 +42,7 @@
         "fuel_intercept_gal_per_hr": 0,
         "existing_kw": 0,
         "fuel_slope_gal_per_kwh": 0,
-        "fuel_avail_gal": 0,
+        "fuel_avail_gal": 0
       },
       "LoadProfile": {
         "critical_loads_kw_is_net": false,

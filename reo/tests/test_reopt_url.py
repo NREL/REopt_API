@@ -1,4 +1,3 @@
-import time
 import json
 import pickle
 from tastypie.test import ResourceTestCaseMixin

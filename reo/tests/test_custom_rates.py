@@ -1,4 +1,3 @@
-import time
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin

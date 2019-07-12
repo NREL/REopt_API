@@ -1,6 +1,6 @@
 import json
 import os
-import time
+
 from reo.models import ModelManager
 from tastypie.test import ResourceTestCaseMixin
 from unittest import TestCase, skip

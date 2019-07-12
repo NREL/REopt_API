@@ -1,4 +1,3 @@
-import time
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
@@ -36,8 +35,6 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
-
         c = nested_to_flat(d['outputs'])
 
         lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
@@ -79,7 +76,6 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
         c = nested_to_flat(d['outputs'])
         
         lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
