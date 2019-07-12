@@ -165,6 +165,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_1 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_1)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -192,6 +194,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_2 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_2)
+        
+
         c = nested_to_flat(d['outputs'])
         try:
             check_common_outputs(self, c, d_expected)
@@ -286,6 +290,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -316,6 +322,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -359,4 +366,5 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])

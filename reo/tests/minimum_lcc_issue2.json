@@ -3,7 +3,10 @@
     "time_steps_per_hour": 1,
     "user_uuid": null,
     "Site":
-      {"PV":
+      {"Wind":{
+        "max_kw": 0
+        },
+        "PV":
         {"pbi_years": 1.0,
           "macrs_bonus_pct": 0.0,
           "max_kw": 1500000.0,
