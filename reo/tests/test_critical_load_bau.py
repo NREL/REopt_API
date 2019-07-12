@@ -21,12 +21,11 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     def test_critical_load_bau_cannot_sustain_outage(self):
         """
         Test scenario with
-        - 50 kW existing diesel generator
-        - 50 kW existing PV
-        - New PV and Wind disabled
-        - Unlimited max storage
-        - generator doesn't sell energy to grid
-        - generator is only allowed to operate during outage hours
+        - outage_start_hour: 16
+        - outage_end_hour: 30
+        - existing diesel generator 20 kW
+        - existing PV 3 kW
+        - available fuel 5 gallons
         .
         :return:
         """
@@ -75,12 +74,11 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     def test_critical_load_bau_can_sustain_outage(self):
         """
         Test scenario with
-        - 50 kW existing diesel generator
-        - 50 kW existing PV
-        - New PV and Wind disabled
-        - Unlimited max storage
-        - generator doesn't sell energy to grid
-        - generator is only allowed to operate during outage hours
+        - outage_start_hour: 16
+        - outage_end_hour: 20
+        - existing diesel generator 20 kW
+        - existing PV 3 kW
+        - available fuel 50 gallons
         .
         :return:
         """
