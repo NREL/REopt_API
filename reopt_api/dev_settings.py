@@ -103,7 +103,7 @@ elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'reopt_lite',
+            'NAME': 'reopt',
             'USER': 'reopt',
             'PASSWORD': 'reopt',
             'HOST': 'localhost',
