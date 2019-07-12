@@ -26,7 +26,7 @@ class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def unlink_record(self):
       unlink_response = self.get_unlink(self.test_user_uuid, self.test_run_uuid)
-      self.assertTrue("Success" in unlink_response.content)
+      self.assertTrue(unlink_response.status_code==204)
       summary_response = self.get_summary()
       self.assertFalse(self.test_run_uuid in summary_response.content)
 
