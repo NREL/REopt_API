@@ -37,8 +37,8 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
-        lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
-        lcc = round(d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
+        lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
+        lcc = d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         messages = d['messages']
 
         try:
@@ -78,8 +78,8 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
         
-        lcc_bau = round(d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],2)
-        lcc = round(d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars'],2)
+        lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
+        lcc = d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         messages = d['messages']
 
         try:
@@ -98,8 +98,4 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
                 error_msg = messages.error
             print("test_positive_lcc API error message: {}".format(error_msg))
             print("Run uuid: {}".format(d['outputs']['Scenario']['run_uuid']))
-            print(d)
-            print(c)
-            print(lcc_bau)
-            print(bau)
             raise e

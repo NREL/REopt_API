@@ -1,3 +1,4 @@
+import uuid
 from keys import *
 import sys
 """
@@ -91,7 +92,7 @@ if os.environ.get('BUILD_TYPE') == 'jenkins':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ.get('DB_USERNAME'),
+            'NAME': os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4()),
             'USER': os.environ.get('DB_USERNAME'),
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOSTNAME'),
@@ -102,7 +103,7 @@ elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': 'reopt',
+            'NAME': 'reopt_lite',
             'USER': 'reopt',
             'PASSWORD': 'reopt',
             'HOST': 'localhost',
@@ -114,7 +115,7 @@ else:
          'default': {
              'ENGINE': 'django.db.backends.postgresql_psycopg2',
              'HOST': 'reopt-dev-db1.nrel.gov',
-             'NAME': 'reopt_development',
+             'NAME': os.environ.get('DB_TEST_NAME'),
              'OPTIONS': {
                  'options': '-c search_path=reopt_api'
              },

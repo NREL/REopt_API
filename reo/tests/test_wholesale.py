@@ -34,6 +34,7 @@ class WholesaleTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         d_expected = dict()
         d_expected['pv_kw'] = 0
         c = nested_to_flat(d['outputs'])
@@ -56,6 +57,7 @@ class WholesaleTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         d_expected = dict()
         d_expected['pv_kw'] = post['Scenario']['Site']['ElectricTariff']['interconnection_limit_kw']
         d_expected['lcc'] = -54076295428

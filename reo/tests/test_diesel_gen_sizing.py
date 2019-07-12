@@ -57,7 +57,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
-
         d_expected = dict()
         d_expected['lcc'] = 232070.0
         d_expected['npv'] = -2793.0
@@ -285,6 +284,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
