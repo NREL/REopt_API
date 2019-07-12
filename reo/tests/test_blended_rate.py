@@ -1,3 +1,4 @@
+import time
 import json
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
@@ -57,7 +58,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         uuid = json.loads(initial_post.content)['run_uuid']
 
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
-
+        
         return response
 
 

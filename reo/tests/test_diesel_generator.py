@@ -1,3 +1,4 @@
+import time
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
@@ -32,6 +33,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -71,23 +73,23 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         """
         test_post = os.path.join('reo', 'tests', 'posts', 'generatorPOST_part2.json')
         nested_data = json.load(open(test_post, 'rb'))
-        nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 40
+        nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 64
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
-        d = ModelManager.make_response(run_uuid=run_uuid)
+        d = ModelManager.make_response(run_uuid=run_uuid)        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 765138.0
-        d_expected['npv'] = 221621.0
-        d_expected['pv_kw'] = 178.643
-        d_expected['batt_kw'] = 22.7006
-        d_expected['batt_kwh'] = 116.564
-        d_expected['fuel_used_gal'] = 14.02
-        d_expected['avoided_outage_costs_us_dollars'] = 40676.44
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 65580.3
+        d_expected['lcc'] = 768489.0
+        d_expected['npv'] = 217226.0
+        d_expected['pv_kw'] = 215.1007
+        d_expected['batt_kw'] = 39.7699
+        d_expected['batt_kwh'] = 269.1067
+        d_expected['fuel_used_gal'] = 2.0
+        d_expected['avoided_outage_costs_us_dollars'] = 178253.52
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 97291.8
 
         try:
             check_common_outputs(self, c, d_expected)

@@ -135,7 +135,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
-                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),                            **inputs_dict["Site"]["Generator"]
+                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),**inputs_dict["Site"]["Generator"]
                             )
 
         util = Util(dfm=dfm,

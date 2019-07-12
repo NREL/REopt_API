@@ -10,7 +10,12 @@ pipeline {
     DB_HOSTNAME = "localhost"
     DB_PORT = "5496"
     DB_USERNAME = "postgres"
-    DB_PASSWORD = "postgres"  
+    DB_PASSWORD = "postgres"
+    DB_TEST_NAME = "reopt_lite_${BRANCH_NAME.replaceAll(/[^\w]+/, '_')}"  
+  }
+
+  options {
+    disableConcurrentBuilds()
   }
 
   stages{
