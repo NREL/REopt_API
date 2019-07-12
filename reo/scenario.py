@@ -106,6 +106,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              analysis_years=site.financial.analysis_years,
                              time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                              **inputs_dict['Site']['LoadProfile'])
+            
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
@@ -129,12 +130,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
             ModelManager.updateModel('WindModel', tmp, run_uuid)
 
+        
         if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
-                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
-                            **inputs_dict["Site"]["Generator"]
+                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),**inputs_dict["Site"]["Generator"]
                             )
 
         util = Util(dfm=dfm,
