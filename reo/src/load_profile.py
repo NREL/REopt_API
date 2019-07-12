@@ -573,7 +573,7 @@ class LoadProfile(BuiltInProfile):
 
                             return resilience_check_flag, sustain_hours
 
-                sustain_hours = i
+                sustain_hours = i + 1
                 return resilience_check_flag, sustain_hours
 
             return False, 0
@@ -601,6 +601,8 @@ class LoadProfile(BuiltInProfile):
             self.bau_load_list[outage_start_hour:outage_start_hour+sustain_hours] = critical_loads_kw[outage_start_hour:outage_start_hour+sustain_hours]
 
         elif None not in [critical_load_pct, outage_start_hour, outage_end_hour]:  # use native_load * critical_load_pct
+            if existing_pv_kw_list in [None, []]:
+                existing_pv_kw_list = [0] * len(self.load_list)
 
             critical_loads_kw = [ld * critical_load_pct for ld in self.load_list]
             # Note: existing PV accounted for in load_list
@@ -615,7 +617,7 @@ class LoadProfile(BuiltInProfile):
                                                                    existing_pv_kw_list[outage_start_hour:outage_end_hour],
                                                                    gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept)
-            print sustain_hours
+
             self.bau_load_list[outage_start_hour:outage_start_hour+sustain_hours] = critical_loads_kw[outage_start_hour:outage_start_hour+sustain_hours]
 
         else:
