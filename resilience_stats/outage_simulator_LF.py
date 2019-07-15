@@ -1,6 +1,7 @@
 #!usr/bin/python
 import copy
 from math import floor
+import pandas as pd
 
 
 def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads_kw, wind_kw_ac_hourly=None,
@@ -39,6 +40,8 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
                     "resilience_hours_avg": 0,
                     "outage_durations": None,
                     "probs_of_surviving": None,
+                    "probs_of_surviving_by_month": None,
+                    "probs_of_surviving_by_hour_of_the_day": None,
                     }
 
     if pv_kw_ac_hourly in [None, []]:
@@ -50,7 +53,7 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
         def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
             self.kw = diesel_kw
             self.fuel_available = fuel_available if self.kw > 0 else 0
-            self.b = b * self.kw
+            self.b = b  # input b: fuel curve intercept
             self.m = m
             self.min_turndown = diesel_min_turndown
             self.genmin = self.min_turndown * self.kw
@@ -157,11 +160,28 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
     r_max = max(r)
     r_avg = round((float(sum(r)) / float(len(r))), 2)
 
+    # Create a time series of 8760*n_steps_per_hour elements starting on 1/1/2017
+    time = pd.date_range('1/1/2017', periods=8760*n_steps_per_hour, freq='{}min'.format(n_steps_per_hour*60))
+    r_series = pd.Series(r, index=time)
+
+    r_group_month = r_series.groupby(r_series.index.month)
+    r_group_hour = r_series.groupby(r_series.index.hour)
+
     x_vals = range(1, int(floor(r_max)+1))
     y_vals = list()
+    y_vals_group_month = {str(i): list() for i in range(1, 13)}
+    y_vals_group_hour = {str(i): list() for i in range(24)}
 
     for hrs in x_vals:
         y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
+
+    for k, v in r_group_month:
+        for hrs in range(int(v.max())+1):
+            y_vals_group_month[str(k)].append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+
+    for k, v in r_group_hour:
+        for hrs in range(int(v.max())+1):
+            y_vals_group_hour[str(k)].append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
 
     return {"resilience_by_timestep": r,
             "resilience_hours_min": r_min,
@@ -169,4 +189,6 @@ def simulate_outage(batt_kwh, batt_kw, pv_kw_ac_hourly, init_soc, critical_loads
             "resilience_hours_avg": r_avg,
             "outage_durations": x_vals,
             "probs_of_surviving": y_vals,
+            "probs_of_surviving_by_month": y_vals_group_month,
+            "probs_of_surviving_by_hour_of_the_day": y_vals_group_hour,
             }
