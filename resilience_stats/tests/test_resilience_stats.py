@@ -164,6 +164,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         for _ in range(2):
             resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
+            
             self.assertEqual(resp.status_code, 200)
 
             resp_dict = json.loads(resp.content)

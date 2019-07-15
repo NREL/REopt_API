@@ -40,7 +40,7 @@
       "Generator": {
         "min_turn_down_pct": 0.3,
         "fuel_intercept_gal_per_hr": 0,
-        "size_kw": 0,
+        "existing_kw": 0,
         "fuel_slope_gal_per_kwh": 0,
         "fuel_avail_gal": 0
       },
