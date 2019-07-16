@@ -15,10 +15,30 @@ include("utils.jl")
 #dataPath = "data/Run76168a37-a78b-4ef3-bdb8-a2f8b213430b"
 #dataPath = "data/Runebfc3ee6-42d6-4a70-accb-15908e8ac2bf"
 dataPath = "data/Runeda919d6-1481-4bf9-a531-a1b3397c8c67"
+
+try 
+    dataPath = "data/Run$uuid"
+    
+catch e
+    if isa(e, UndefVarError)
+        println("\nusing default uuid\n")
+    else
+        rethrow
+    end
+end
+
+# if length(ARGS) >= 1
+#     println("\nusing input uuid\n")
+#     uuid = ARGS[1]
+#     dataPath = "data/Run$uuid"
+# else
+#     println("\nusing default uuid\n")
+# end
+
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
-#Tech = [:UTIL1]
+# Tech = [:UTIL1]
 
 REopt = Model()
 
