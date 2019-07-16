@@ -651,8 +651,8 @@ class DatFileManager:
                 om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
                 # only generator tech has variable o&m cost
-                if eval('self.' + tech) is 'generator':
-                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.om_cost_us_dollars_per_kwh'))
+                if tech.lower() == 'generator':
+                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]'))
                 else:
                     om_cost_us_dollars_per_kwh.append(0)
 
