@@ -157,7 +157,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        for _ in range(2):
+        for _ in range(1):
             resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
             self.assertEqual(resp.status_code, 200)
 
@@ -171,3 +171,79 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
             self.assertEqual(resp_dict["resilience_hours_min"], 0)
             self.assertEqual(resp_dict["resilience_hours_max"], 12)
+
+    def test_financial_resil_check_endpoint(self):
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
+        r = self.api_client.post(self.submit_url, format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        uuid = reopt_resp['run_uuid']
+
+        for _ in range(1):
+            resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid)+"financial_outage_sim/")
+            self.assertEqual(resp.status_code, 200)
+
+    def test_financial_resil_check(self):
+        # same input but different type (float and int)
+        resilience_run_site_result = {"pv_size_kw": 100,
+                                        "storage_size_kw": 100,
+                                        "storage_size_kwh": 300,
+                                        "gen_size_kw": 20,
+                                        "wind_size_kw": 0}
+        financial_run_site_result = {"pv_size_kw": 100.0,
+                                        "storage_size_kw": 100.0,
+                                        "storage_size_kwh": 300.0,
+                                        "gen_size_kw": 20.0,
+                                        "wind_size_kw": 0.0
+                                     }
+        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+                               resilience_run_site_result=resilience_run_site_result,
+                               financial_run_site_result=financial_run_site_result)
+        self.assertTrue(resp)
+
+        # different input
+        resilience_run_site_result = {"pv_size_kw": 100,
+                                      "storage_size_kw": 100,
+                                      "storage_size_kwh": 300,
+                                      "gen_size_kw": 20,
+                                      "wind_size_kw": 0}
+        financial_run_site_result = {"pv_size_kw": 50.0,
+                                     "storage_size_kw": 100.0,
+                                     "storage_size_kwh": 300.0,
+                                     "gen_size_kw": 20.0,
+                                     "wind_size_kw": 0.0
+                                     }
+        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+                               resilience_run_site_result=resilience_run_site_result,
+                               financial_run_site_result=financial_run_site_result)
+        self.assertFalse(resp)
+
+        # different input fields
+        resilience_run_site_result = {"pv_size_kw": 100,
+                                      "storage_size_kw": 100,
+                                      "storage_size_kwh": 300,
+                                      "gen_size_kw": 20,
+                                      "wind_size_kw": 0}
+        financial_run_site_result = {"pv_size_kw": 50.0,
+                                     "storage_size_kw": 100.0,
+                                     "storage_size_kwh": 300.0,
+                                     }
+        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+                               resilience_run_site_result=resilience_run_site_result,
+                               financial_run_site_result=financial_run_site_result)
+        self.assertFalse(resp)
+
+        # different input fields
+        resilience_run_site_result = {"pv_size_kw": 100,
+                                      "storage_size_kw": 100,
+                                      "storage_size_kwh": 300
+                                      }
+        financial_run_site_result = {"pv_size_kw": 50.0,
+                                     "storage_size_kw": 100.0,
+                                     "storage_size_kwh": 300.0,
+                                     "gen_size_kw": 20,
+                                     "wind_size_kw": 0
+                                     }
+        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+                               resilience_run_site_result=resilience_run_site_result,
+                               financial_run_site_result=financial_run_site_result)
+        self.assertFalse(resp)
