@@ -17,7 +17,7 @@ class ScenarioErrored(Exception):
     pass
 
 
-def resilience_stats(request, run_uuid):
+def resilience_stats(request, run_uuid, financial_outage_sim=None):
     """
     Run outage simulator for given run_uuid
     :param request:
@@ -81,7 +81,8 @@ def resilience_stats(request, run_uuid):
                 fuel_available=gen.fuel_avail_gal,
                 b=gen.fuel_intercept_gal_per_hr,
                 m=gen.fuel_slope_gal_per_kwh,
-                diesel_min_turndown=gen.min_turn_down_pct
+                diesel_min_turndown=gen.min_turn_down_pct,
+                financial_outage_sim=financial_outage_sim
             )
 
             """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
