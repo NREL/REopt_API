@@ -17,7 +17,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             results = json.loads(open(os.path.join(test_path, 'REopt_results.json')).read())
             pv_kw = results['PVNM']
             pv_kw_ac_hourly = list()
-            
+
             with open(os.path.join(test_path, 'offline_pv_prod_factor.txt'), 'r') as f:
                 for line in f:
                     pv_kw_ac_hourly.append(pv_kw * float(line.strip('\n')))
@@ -28,11 +28,11 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             with open(os.path.join(test_path, 'Load.txt'), 'r') as f:
                 for line in f:
                     load.append(float(line.strip('\n')))
-            
+
             stored_energy = list()
             with open(os.path.join(test_path, 'StoredEnergy.txt'), 'r') as f:
                 for line in f:
-                    stored_energy.append(float(line.strip('\n'))*timesteps_per_hr)
+                    stored_energy.append(float(line.strip('\n')) * timesteps_per_hr)
 
             batt_kwh = results['Battery Capacity (kWh)']
             batt_kw = results['Battery Power (kW)']
@@ -62,10 +62,9 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.inputs2 = inputDict2
 
         # self.test_path = test_path
-        
+
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/resilience_stats/'
-        
 
     def test_outage_sim_no_diesel(self):
         """
@@ -81,7 +80,14 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             'resilience_hours_max': 78,
             'resilience_hours_avg': 10.26,
             "outage_durations": range(1, 79),
-            "probs_of_surviving": [],
+            "probs_of_surviving": [0.8486, 0.7963, 0.7373, 0.6624, 0.59, 0.5194, 0.4533, 0.4007, 0.3583, 0.3231, 0.2934,
+                                   0.2692, 0.2473, 0.2298, 0.2152, 0.2017, 0.1901, 0.1795, 0.1703, 0.1618, 0.1539,
+                                   0.1465, 0.139, 0.1322, 0.126, 0.1195, 0.1134, 0.1076, 0.1024, 0.0979, 0.0938, 0.0898,
+                                   0.0858, 0.0818, 0.0779, 0.0739, 0.0699, 0.066, 0.0619, 0.0572, 0.0524, 0.0477,
+                                   0.0429, 0.038, 0.0331, 0.0282, 0.0233, 0.0184, 0.015, 0.012, 0.0099, 0.0083, 0.0073,
+                                   0.0068, 0.0064, 0.0062, 0.0059, 0.0057, 0.0055, 0.0053, 0.005, 0.0048, 0.0046,
+                                   0.0043, 0.0041, 0.0037, 0.0032, 0.0027, 0.0023, 0.0018, 0.0014, 0.0009, 0.0007,
+                                   0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
         }
         resp = simulate_outage(**inputs)
 
@@ -102,18 +108,26 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             'resilience_hours_avg': 69.63,
             "outage_durations": range(1, 146),
             "probs_of_surviving": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0,
-                                  1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9998, 0.9993, 0.9987, 0.9971,
-                                  0.9955, 0.9943, 0.993, 0.991, 0.9888, 0.9844, 0.9792, 0.9729, 0.9664, 0.9583, 0.9494,
-                                  0.94, 0.9298, 0.9189, 0.905, 0.8926, 0.8755, 0.8588, 0.842, 0.8233, 0.8031, 0.7834,
-                                  0.7639, 0.7449, 0.7264, 0.7082, 0.692, 0.6737, 0.6543, 0.6363, 0.6182, 0.5983, 0.5782,
-                                  0.5583, 0.537, 0.5159, 0.4952, 0.4749, 0.4533, 0.4322, 0.4116, 0.3925, 0.3752, 0.3579,
-                                  0.3402, 0.3224, 0.3049, 0.2884, 0.2721, 0.2562, 0.2403, 0.2243, 0.2088, 0.1949, 0.1813,
-                                  0.1683, 0.1559, 0.1443, 0.1333, 0.1228, 0.1129, 0.1037, 0.0959, 0.0886, 0.0821, 0.0766,
-                                  0.0716, 0.0668, 0.0621, 0.0575, 0.0531, 0.0486, 0.0442, 0.04, 0.0357, 0.032, 0.0284,
-                                  0.0252, 0.0229, 0.021, 0.0193, 0.0177, 0.0161, 0.0145, 0.0129, 0.0113, 0.0097, 0.0082,
-                                  0.0068, 0.0057, 0.0049, 0.0043, 0.0038, 0.0034, 0.0031, 0.0027, 0.0024, 0.0021, 0.0018,
-                                  0.0016, 0.0015, 0.0014, 0.0013, 0.0011, 0.001, 0.0009, 0.0008, 0.0007, 0.0006, 0.0005,
-                                  0.0003, 0.0002, 0.0001]
+                                   1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.9998, 0.9993, 0.9987,
+                                   0.9971,
+                                   0.9955, 0.9943, 0.993, 0.991, 0.9888, 0.9844, 0.9792, 0.9729, 0.9664, 0.9583, 0.9494,
+                                   0.94, 0.9298, 0.9189, 0.905, 0.8926, 0.8755, 0.8588, 0.842, 0.8233, 0.8031, 0.7834,
+                                   0.7639, 0.7449, 0.7264, 0.7082, 0.692, 0.6737, 0.6543, 0.6363, 0.6182, 0.5983,
+                                   0.5782,
+                                   0.5583, 0.537, 0.5159, 0.4952, 0.4749, 0.4533, 0.4322, 0.4116, 0.3925, 0.3752,
+                                   0.3579,
+                                   0.3402, 0.3224, 0.3049, 0.2884, 0.2721, 0.2562, 0.2403, 0.2243, 0.2088, 0.1949,
+                                   0.1813,
+                                   0.1683, 0.1559, 0.1443, 0.1333, 0.1228, 0.1129, 0.1037, 0.0959, 0.0886, 0.0821,
+                                   0.0766,
+                                   0.0716, 0.0668, 0.0621, 0.0575, 0.0531, 0.0486, 0.0442, 0.04, 0.0357, 0.032, 0.0284,
+                                   0.0252, 0.0229, 0.021, 0.0193, 0.0177, 0.0161, 0.0145, 0.0129, 0.0113, 0.0097,
+                                   0.0082,
+                                   0.0068, 0.0057, 0.0049, 0.0043, 0.0038, 0.0034, 0.0031, 0.0027, 0.0024, 0.0021,
+                                   0.0018,
+                                   0.0016, 0.0015, 0.0014, 0.0013, 0.0011, 0.001, 0.0009, 0.0008, 0.0007, 0.0006,
+                                   0.0005,
+                                   0.0003, 0.0002, 0.0001]
         }
         resp = simulate_outage(**self.inputs)
 
@@ -136,7 +150,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(None, resp['probs_of_surviving'])
         self.assertEqual(None, resp['probs_of_surviving_by_month'])
         self.assertEqual(None, resp['probs_of_surviving_by_hour_of_the_day'])
-        
+
     def test_flexible_timesteps(self):
         """
         Same input with different timesteps-per-hour should have almost equal results.
@@ -150,6 +164,47 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         for x, y in zip(resp1['probs_of_surviving'], resp2['probs_of_surviving']):
             self.assertAlmostEquals(x, y, places=1)
+
+    def test_grouped_probs_of_surviving(self):
+        inputs = self.inputs
+        inputs.update(diesel_kw=0, fuel_available=0, m=0, b=0)
+
+        # Output parse from existing simulation
+        expected = {
+            "probs_of_surviving_by_month": {
+                "1": [1, 0.7688, 0.7003, 0.6277, 0.5511, 0.4785, 0.4005, 0.3266, 0.2769, 0.2312, 0.1989, 0.1774, 0.168,
+                      0.1586, 0.1519, 0.1452, 0.1358, 0.1263, 0.1169, 0.1075, 0.0981, 0.0887, 0.0793, 0.0672, 0.0591,
+                      0.0538, 0.0484, 0.043, 0.0376, 0.0323, 0.0309, 0.0296, 0.0282, 0.0269, 0.0255, 0.0242, 0.0228,
+                      0.0215, 0.0202, 0.0188, 0.0175, 0.0161, 0.0148, 0.0134, 0.0121, 0.0108, 0.0094, 0.0081, 0.0067,
+                      0.0054, 0.004, 0.0027, 0.0013],
+                "12": [1, 0.7796, 0.7124, 0.6465, 0.5685, 0.4946, 0.4207, 0.3441, 0.2957, 0.2487, 0.2137, 0.1989,
+                       0.1855, 0.1747, 0.168, 0.1613, 0.1505, 0.1398, 0.129, 0.1183, 0.1075, 0.0968, 0.086, 0.0753,
+                       0.0659, 0.0591, 0.0524, 0.0457, 0.039, 0.0336, 0.0309, 0.0296, 0.0282, 0.0269, 0.0255, 0.0242,
+                       0.0228, 0.0215, 0.0202, 0.0188, 0.0175, 0.0161, 0.0148, 0.0134, 0.0121, 0.0108, 0.0094, 0.0081,
+                       0.0067, 0.0054, 0.004, 0.0027, 0.0013]
+            },
+            "probs_of_surviving_by_hour_of_the_day": {
+                "0": [1, 1, 1, 0.9863, 0.8986, 0.8, 0.5233, 0.2247, 0.1671, 0.1644, 0.1644, 0.1644, 0.1644, 0.1644,
+                      0.1616, 0.1616, 0.1616, 0.1534, 0.1425, 0.1068, 0.1068, 0.1068, 0.1068, 0.1068, 0.1068, 0.1068,
+                      0.1068, 0.1068, 0.1068, 0.1068, 0.0795, 0.0438, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082,
+                      0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0082,
+                      0.0082, 0.0082, 0.0082, 0.0082, 0.0082, 0.0027],
+                "23": [1, 1, 1, 0.9863, 0.8932, 0.8, 0.6685, 0.411, 0.1836, 0.1507, 0.1479, 0.1479, 0.1479, 0.1479,
+                       0.1479, 0.1479, 0.1479, 0.1479, 0.1397, 0.1315, 0.1014, 0.1014, 0.1014, 0.1014, 0.1014, 0.1014,
+                       0.1014, 0.1014, 0.1014, 0.1014, 0.1014, 0.074, 0.0411, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055,
+                       0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055,
+                       0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0027]}
+        }
+        resp = simulate_outage(**inputs)
+
+        for k in expected['probs_of_surviving_by_month']:
+            for x, y in zip(expected['probs_of_surviving_by_month'][k], resp['probs_of_surviving_by_month'][k]):
+                self.assertAlmostEquals(x, y, places=3)
+
+        for k in expected['probs_of_surviving_by_hour_of_the_day']:
+            for x, y in zip(expected['probs_of_surviving_by_hour_of_the_day'][k],
+                            resp['probs_of_surviving_by_hour_of_the_day'][k]):
+                self.assertAlmostEquals(x, y, places=3)
 
     def test_resil_endpoint(self):
         post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
@@ -179,21 +234,21 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         uuid = reopt_resp['run_uuid']
 
         for _ in range(1):
-            resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid)+"financial_outage_sim/")
+            resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/")
             self.assertEqual(resp.status_code, 200)
 
     def test_financial_resil_check(self):
         # same input but different type (float and int)
         resilience_run_site_result = {"pv_size_kw": 100,
-                                        "storage_size_kw": 100,
-                                        "storage_size_kwh": 300,
-                                        "gen_size_kw": 20,
-                                        "wind_size_kw": 0}
+                                      "storage_size_kw": 100,
+                                      "storage_size_kwh": 300,
+                                      "gen_size_kw": 20,
+                                      "wind_size_kw": 0}
         financial_run_site_result = {"pv_size_kw": 100.0,
-                                        "storage_size_kw": 100.0,
-                                        "storage_size_kwh": 300.0,
-                                        "gen_size_kw": 20.0,
-                                        "wind_size_kw": 0.0
+                                     "storage_size_kw": 100.0,
+                                     "storage_size_kwh": 300.0,
+                                     "gen_size_kw": 20.0,
+                                     "wind_size_kw": 0.0
                                      }
         resp = simulate_outage(financial_outage_sim="financial_outage_sim",
                                resilience_run_site_result=resilience_run_site_result,
