@@ -35,16 +35,16 @@ tableArray = tableArray[2:4, 2:end]
 if length(ARGS) < 2
     println("\nnot enough input arguments")
     println("julia runTest.jl <vlaue> <type>")
-    value = "1"
-    type = "no"
+    input_value = "1"
+    input_type = "no"
 else
-    value = ARGS[1]
-    type = ARGS[2]
+    input_value = ARGS[1]
+    input_type = ARGS[2]
 end
 
-if type != "uuid"
-    rowidx = findall(x->x==type, colName)[1]
-    colidx = findall(x->x==value, tableArray[rowidx, :])[1]
+if input_type != "uuid"
+    rowidx = findall(x->x==input_type, colName)[1]
+    colidx = findall(x->x==input_value, tableArray[rowidx, :])[1]
     uuid = tableArray[3, colidx]
 end
 

@@ -17,8 +17,8 @@ include("utils.jl")
 dataPath = "data/Runeda919d6-1481-4bf9-a531-a1b3397c8c67"
 
 try 
+    global dataPath
     dataPath = "data/Run$uuid"
-    
 catch e
     if isa(e, UndefVarError)
         println("\nusing default uuid\n")
@@ -26,14 +26,6 @@ catch e
         rethrow
     end
 end
-
-# if length(ARGS) >= 1
-#     println("\nusing input uuid\n")
-#     uuid = ARGS[1]
-#     dataPath = "data/Run$uuid"
-# else
-#     println("\nusing default uuid\n")
-# end
 
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
