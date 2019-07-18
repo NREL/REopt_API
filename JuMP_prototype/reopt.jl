@@ -20,10 +20,10 @@ try
     global dataPath
     dataPath = "data/Run$uuid"
 catch e
-    if isa(e, UndefVarError)
+    if isa(e, UndefVarError) || isa(e, ArgumentError)
         println("\nusing default uuid\n")
     else
-        rethrow
+        @warn e
     end
 end
 
