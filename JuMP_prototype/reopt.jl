@@ -30,7 +30,7 @@ end
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
-# Tech = [:UTIL1]
+Tech = [:UTIL1]
 
 REopt = Model()
 
@@ -327,6 +327,7 @@ end
 #	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW
 #	sum(b in BattLevel) dvStorageSizeKW(b) >= MinStorageSizeKW
 
+@constraint(REopt, dvStoredEnergy[0] == InitSOC * sum(dvStorageSizeKWH[b] for b in BattLevel) / TimeStepScaling)
 @constraint(REopt, MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in BattLevel) <=  MaxStorageSizeKWH)
 @constraint(REopt, MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in BattLevel) <=  MaxStorageSizeKW)
 
