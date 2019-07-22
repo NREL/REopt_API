@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel
+from reo.models import ModelManager, PVModel, LoadProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -176,9 +176,12 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
 
                 if name == "LoadProfile":
+                    load_model = LoadProfileModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.po.get_crit_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.po.get_annual_kwh()
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = load_model.resilience_check_flag
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = load_model.sustain_hours
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")

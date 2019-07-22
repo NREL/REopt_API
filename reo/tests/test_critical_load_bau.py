@@ -46,6 +46,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         # check first 100 hours
         c['laod_bau'] = laod_bau[:100]
         c['status'] = d['outputs']['Scenario']['status']
+        c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
+        c['sustain_hours'] = d['outputs']['Scenario']['Site']['LoadProfile']['sustain_hours']
 
         load_bau_expected = [19.5635, 18.9651, 20.3557, 19.0925, 20.2735, 19.0383, 20.3317, 13.6065, 9.20435, 7.3294,
                              7.14286, 5.62887, 5.20491, 4.40816, 4.21774, 4.21774, 2.13005, 6.20206, 8.43682, 8.63245,
@@ -63,6 +65,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         d_expected['status'] = 'optimal'
         d_expected['total_energy_cost_bau'] = 54552.75
         d_expected['year_one_energy_cost_bau'] = 7520.49
+        d_expected['resilience_check_flag'] = False
+        d_expected['sustain_hours'] = 8
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -99,6 +103,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         # check first 100 hours
         c['laod_bau'] = laod_bau[:100]
         c['status'] = d['outputs']['Scenario']['status']
+        c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
+        c['sustain_hours'] = d['outputs']['Scenario']['Site']['LoadProfile']['sustain_hours']
 
         load_bau_expected = [19.5635, 18.9651, 20.3557, 19.0925, 20.2735, 19.0383, 20.3317, 13.6065, 9.20435, 7.3294,
                              7.14286, 5.62887, 5.20491, 4.40816, 4.21774, 4.21774, 2.13005, 6.20206, 8.43682, 8.63245,
@@ -116,6 +122,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         d_expected['status'] = 'optimal'
         d_expected['total_energy_cost_bau'] = 54201.86
         d_expected['year_one_energy_cost_bau'] = 7472.12
+        d_expected['resilience_check_flag'] = True
+        d_expected['sustain_hours'] = 4
 
         try:
             check_common_outputs(self, c, d_expected)

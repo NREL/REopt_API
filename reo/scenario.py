@@ -120,8 +120,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_intercept=gen.fuel_intercept,
                                  **inputs_dict['Site']['LoadProfile'])
                 tmp = dict()
-                tmp['fuel_avail_before_outage_pct'] = gen.fuel_avail_before_outage_pct
                 tmp['resilience_check_flag'] = lp.resilience_check_flag
+                tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
             else:
                 lp = LoadProfile(dfm=dfm,
@@ -138,8 +138,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_intercept=0,
                                  **inputs_dict['Site']['LoadProfile'])
                 tmp = dict()
-                tmp['fuel_avail_before_outage_pct'] = 0
                 tmp['resilience_check_flag'] = lp.resilience_check_flag
+                tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
 
