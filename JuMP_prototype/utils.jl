@@ -12,7 +12,7 @@ function importDict(path)
 end
 
 function strToSym(list)
-    symList = []
+    symList = Array{Symbol}(undef, 0)
     for str in list
         push!(symList, Symbol(str))
     end
@@ -28,7 +28,10 @@ function globalInit(variable, value)
 end
 
 function initWrapper(var, v)
-    if v[1] isa Number || v[1] isa Array
+    if v isa String
+        v = strToSym([v])
+        globalInit(var, v)
+    elseif v[1] isa Number || v[1] isa Array
         #println(var)
         globalInit(var, v)
     elseif v[1] isa String

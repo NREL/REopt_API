@@ -187,7 +187,7 @@ TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
 ### Begin Variable Initialization ###
 ######################################
 
- #!"exist" formatting
+#!"exist" formatting
 #forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (t,LD,ts))
 #	create (dvRatedProd (t,LD,ts,s,fb))   dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin] >= 0
     #Exist formatting, causes difficulty writing constraints
