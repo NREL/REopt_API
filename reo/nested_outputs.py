@@ -70,6 +70,15 @@ nested_output_definitions = {
                   "description": "Annual energy consumption calculated by summing up 8760 load profile",
                   "units": "kWh"
                 },
+                "resilience_check_flag": {
+                  "type": "boolean",
+                  "description": "BAU resilience check status for existing system"
+                },
+                "sustain_hours": {
+                  "type": int,
+                  "description": "Number of hours the existing system can sustain with resilience check",
+                  "units": "hours"
+                }
               },
 
               "Financial": {
