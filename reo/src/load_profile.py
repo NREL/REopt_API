@@ -559,7 +559,7 @@ class LoadProfile(BuiltInProfile):
 
             elif gen_existing_kw > 0:
                 if existing_pv_kw_list in [None, []]:
-                    existing_pv_kw_list = [0] * len(gen_existing_kw)
+                    existing_pv_kw_list = [0] * len(critical_loads_kw)
 
                 for i, (load, pv) in enumerate(zip(critical_loads_kw, existing_pv_kw_list)):
                     unmet = load - pv
