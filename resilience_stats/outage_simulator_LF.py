@@ -3,6 +3,53 @@ import copy
 from math import floor
 import pandas as pd
 
+class Generator():
+    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
+        self.kw = diesel_kw
+        self.fuel_available = fuel_available if self.kw > 0 else 0
+        self.b = b  # input b: fuel curve intercept
+        self.m = m
+        self.min_turndown = diesel_min_turndown
+        self.genmin = self.min_turndown * self.kw
+
+    def gen_avail(self, n_steps_per_hour):  # kW
+        if self.fuel_available - self.b > 0:
+            return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
+        else:
+            return 0
+
+    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
+        if self.gen_avail(n_steps_per_hour) >= self.genmin and gen_output > 0:
+            gen_output = max(self.genmin, min(gen_output, self.gen_avail(n_steps_per_hour)))
+            fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
+            self.fuel_available -= min(self.fuel_available, fuel_consume)
+        else:
+            gen_output = 0
+        return gen_output
+
+
+class Battery():
+    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
+        self.kw = batt_kw
+        self.size = batt_kwh if self.kw > 0 else 0
+        self.soc = soc
+        self.roundtrip_efficiency = batt_roundtrip_efficiency
+
+    def batt_avail(self, n_steps_per_hour):  # kW
+        return min(self.size * self.soc * n_steps_per_hour, self.kw)
+
+    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
+        discharge = min(self.batt_avail(n_steps_per_hour), discharge)
+        self.soc -= min(discharge / self.size / n_steps_per_hour, self.soc) if self.size > 0 else 0
+        return discharge
+
+    def batt_charge(self, charge, n_steps_per_hour):  # kw
+        room = (1 - self.soc)  # if there's room in the battery
+        charge = min(room * n_steps_per_hour * self.size / self.roundtrip_efficiency, charge,
+                     self.kw / self.roundtrip_efficiency)
+        chargesoc = charge * self.roundtrip_efficiency / self.size / n_steps_per_hour if self.size > 0 else 0
+        self.soc += chargesoc
+        return charge
 
 def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=0, wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
@@ -73,53 +120,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         if wind_kw_ac_hourly in [None, []]:
             wind_kw_ac_hourly = [0] * n_timesteps
 
-        class generator():
-            def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
-                self.kw = diesel_kw
-                self.fuel_available = fuel_available if self.kw > 0 else 0
-                self.b = b  # input b: fuel curve intercept
-                self.m = m
-                self.min_turndown = diesel_min_turndown
-                self.genmin = self.min_turndown * self.kw
-
-            def genavail(self, n_steps_per_hour):  # kW
-                if self.fuel_available - self.b > 0:
-                    return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
-                else:
-                    return 0
-
-            def fuelConsume(self, gen_output, n_steps_per_hour):  # kW
-                if self.genavail(n_steps_per_hour) >= self.genmin and gen_output > 0:
-                    gen_output = max(self.genmin, min(gen_output, self.genavail(n_steps_per_hour)))
-                    fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
-                    self.fuel_available -= min(self.fuel_available, fuel_consume)
-                else:
-                    gen_output = 0
-                return gen_output
-
-        class battery():
-            def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
-                self.kw = batt_kw
-                self.size = batt_kwh if self.kw > 0 else 0
-                self.soc = soc
-                self.roundtrip_efficiency = batt_roundtrip_efficiency
-
-            def battavail(self, n_steps_per_hour):  # kW
-                return min(self.size * self.soc * n_steps_per_hour, self.kw)
-
-            def battDischarge(self, discharge, n_steps_per_hour):  # kW
-                discharge = min(self.battavail(n_steps_per_hour), discharge)
-                self.soc -= min(discharge / self.size / n_steps_per_hour, self.soc)
-                return discharge
-
-            def battCharge(self, charge, n_steps_per_hour):  # kw
-                room = (1 - self.soc)   # if there's room in the battery
-                charge = min(room * n_steps_per_hour * self.size / self.roundtrip_efficiency, charge, self.kw / self.roundtrip_efficiency)
-                chargesoc = charge * self.roundtrip_efficiency / self.size / n_steps_per_hour
-                self.soc += chargesoc
-                return charge
-
-        def loadFollowing(critical_load, pv, wind, generator, battery, n_steps_per_hour):
+        def load_following(critical_load, pv, wind, generator, battery, n_steps_per_hour):
             """
             Dispatch strategy for one time step
             """
@@ -132,22 +133,22 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
             if unmatch < 0:    # pv + wind> critical_load
                 # excess PV power to charge battery
-                charge = battery.battCharge(-unmatch, n_steps_per_hour)
+                charge = battery.batt_charge(-unmatch, n_steps_per_hour)
                 unmatch = 0
 
-            elif generator.genmin <= generator.genavail(n_steps_per_hour) and 0 < generator.kw:
-                gen_output = generator.fuelConsume(unmatch, n_steps_per_hour)
+            elif generator.genmin <= generator.gen_avail(n_steps_per_hour) and 0 < generator.kw:
+                gen_output = generator.fuel_consume(unmatch, n_steps_per_hour)
                 # charge battery with excess energy if unmatch < genmin
-                charge = battery.battCharge(max(gen_output-unmatch, 0), n_steps_per_hour)  # prevent negative charge
-                discharge = battery.battDischarge(max(unmatch-gen_output, 0), n_steps_per_hour)  # prevent negative discharge
+                charge = battery.batt_charge(max(gen_output - unmatch, 0), n_steps_per_hour)  # prevent negative charge
+                discharge = battery.batt_discharge(max(unmatch - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
                 unmatch -= (gen_output + discharge - charge)
 
                 # unmatch > genavail & (unmatch - genavail) <= battavail
-                if unmatch <= generator.genavail(n_steps_per_hour):   # diesel can meet balance
+                if unmatch <= generator.gen_avail(n_steps_per_hour):   # diesel can meet balance
                     unmatch = 0
 
-            elif unmatch <= battery.battavail(n_steps_per_hour):   # battery can carry balance
-                discharge = battery.battDischarge(unmatch, n_steps_per_hour)
+            elif unmatch <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
+                discharge = battery.batt_discharge(unmatch, n_steps_per_hour)
                 unmatch = 0
 
             # else: battery + generator cannot survive outage --> unmatch > 0
@@ -159,8 +160,8 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         '''
         Simulation starts here
         '''
-        GEN = generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-        BATT = battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
+        GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
+        BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
 
         for time_step in range(n_timesteps):
             gen = copy.deepcopy(GEN)
@@ -173,8 +174,8 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 # break inner loop if can not survive
                 t = (time_step + i) % n_timesteps
 
-                unmatch, stat, gen, batt = loadFollowing(
-                            critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
+                unmatch, stat, gen, batt = load_following(
+                    critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
                 if unmatch > 0:  # cannot survive
                     r[time_step] = float(i) / float(n_steps_per_hour)
@@ -193,19 +194,41 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
         x_vals = range(1, int(floor(r_max)+1))
         y_vals = list()
-        y_vals_group_month = {str(i): list() for i in range(1, 13)}
-        y_vals_group_hour = {str(i): list() for i in range(24)}
+        # y_vals_group_month = {str(i): list() for i in range(1, 13)}
+        # y_vals_group_hour = {str(i): list() for i in range(24)}
+        y_vals_group_month = list()
+        y_vals_group_hour = list()
 
         for hrs in x_vals:
             y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
 
+        width = 0
         for k, v in r_group_month:
-            for hrs in range(int(v.max())+1):
-                y_vals_group_month[str(k)].append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            tmp = list()
+            max_hr = int(v.max()) + 1
+            for hrs in range(max_hr):
+                tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            y_vals_group_month.append(tmp)
+            if max_hr > width:
+                width = max_hr
 
+        # PostgreSQL requires that the arrays are rectangular
+        for i, v in enumerate(y_vals_group_month):
+            y_vals_group_month[i] = v + [0] * (width - len(v))
+
+        width = 0
         for k, v in r_group_hour:
-            for hrs in range(int(v.max())+1):
-                y_vals_group_hour[str(k)].append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            tmp = list()
+            max_hr = int(v.max()) + 1
+            for hrs in range(max_hr):
+                tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            y_vals_group_hour.append(tmp)
+            if max_hr > width:
+                width = max_hr
+
+        # PostgreSQL requires that the arrays are rectangular
+        for i, v in enumerate(y_vals_group_hour):
+            y_vals_group_hour[i] = v + [0] * (width - len(v))
 
         return {"resilience_by_timestep": r,
                 "resilience_hours_min": r_min,

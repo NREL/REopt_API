@@ -3,7 +3,7 @@ import sys
 from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from models import ResilienceModel
-from outage_simulator import simulate_outage
+from outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
@@ -101,7 +101,10 @@ def resilience_stats(request, run_uuid, financial_outage_sim=None):
                 present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
                                                financial.offtaker_discount_pct)
 
-            results.update({"present_worth_factor": present_worth_factor,
+            if financial_outage_sim == "financial_outage_sim":
+                results = {"survives_specified_outage": results}
+            else:
+                results.update({"present_worth_factor": present_worth_factor,
                             "avg_critical_load": avg_critical_load,
                             })
 
