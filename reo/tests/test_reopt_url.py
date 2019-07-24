@@ -24,7 +24,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     @property
     def complete_valid_nestedpost(self):
-        return json.load(open('reo/tests/nestedPOST.json'))
+        return json.load(open('reo/tests/posts/nestedPOST.json'))
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
@@ -165,6 +165,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_1 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_1)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -192,6 +194,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_2 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_2)
+        
+
         c = nested_to_flat(d['outputs'])
         try:
             check_common_outputs(self, c, d_expected)
@@ -286,6 +290,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -316,6 +322,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -330,7 +337,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(c['messages']))
+            print("Error message: {}".format(d['messages']))
             raise
 
     def test_not_optimal_solution(self):
@@ -359,4 +366,5 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])

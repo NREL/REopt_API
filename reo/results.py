@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel
+from reo.models import ModelManager, PVModel, LoadProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -176,9 +176,12 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
 
                 if name == "LoadProfile":
+                    load_model = LoadProfileModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.po.get_crit_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.po.get_annual_kwh()
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = load_model.resilience_check_flag
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = load_model.sustain_hours
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
@@ -190,7 +193,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
                     pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
@@ -203,7 +206,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
                     self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
                 elif name == "Wind":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_wind_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_wind")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_wind_energy_produced")
@@ -212,8 +215,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_wind_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
                 elif name == "Storage":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw",0)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh",0)
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_batt_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_batt_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = self.po.get_soc(self.results_dict.get('batt_kwh'))
@@ -245,7 +248,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
                 elif name == "Generator":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
                     self.nested_outputs["Scenario"]["Site"][name][

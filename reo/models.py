@@ -119,6 +119,8 @@ class LoadProfileModel(models.Model):
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
+    sustain_hours = models.IntegerField(null=True, blank=True)
+    resilience_check_flag = models.BooleanField(default=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -142,6 +144,7 @@ class ElectricTariffModel(models.Model):
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
     wholesale_rate_us_dollars_per_kwh = models.FloatField()
+    wholesale_rate_above_site_load_us_dollars_per_kwh = models.FloatField(default=0)
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
 
@@ -591,9 +594,9 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
+        
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
-
 
         wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
 

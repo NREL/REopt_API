@@ -7,7 +7,7 @@ from reo.validators import ValidateNestedInput
 class InputValidatorTests(TestCase):
 
     def setUp(self):
-        post_file = os.path.join('reo', 'tests', 'nestedPOST.json')
+        post_file = os.path.join('reo', 'tests', 'posts', 'nestedPOST.json')
         self.post = json.load(open(post_file, 'r'))
 
 

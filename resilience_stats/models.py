@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
+from django.contrib.postgres.fields import ArrayField, HStoreField
 from reo.models import ScenarioModel
 
 
@@ -20,8 +20,11 @@ class ResilienceModel(models.Model):
     resilience_hours_avg = models.FloatField(null=True)
     outage_durations = ArrayField(models.FloatField(null=True), null=True)
     probs_of_surviving = ArrayField(models.FloatField(null=True), null=True)
+    probs_of_surviving_by_month = ArrayField(ArrayField(models.FloatField(null=True), null=True), null=True)
+    probs_of_surviving_by_hour_of_the_day = ArrayField(ArrayField(models.FloatField(null=True), null=True), null=True)
     present_worth_factor = models.FloatField(null=True)
     avg_critical_load = models.FloatField(null=True)
+    survives_specified_outage = models.NullBooleanField()
 
     @classmethod
     def create(cls, scenariomodel, **kwargs):

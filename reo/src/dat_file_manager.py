@@ -73,27 +73,29 @@ class DatFileManager:
     """
     writes dat files and creates command line strings for dat file paths
     """
-    pv = None
-    pvnm = None
-    wind = None
-    windnm = None
-    generator = None
-    util = None
-    storage = None
-    site = None
-    elec_tariff = None
-
-    available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
-    available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
-    available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
-    bau_techs = ['util']
-    NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-
+    
     def __init__(self, run_id, paths, n_timesteps=8760):
+        self.pv = None
+        self.pvnm = None
+        self.wind = None
+        self.windnm = None
+        self.generator = None
+        self.util = None
+        self.storage = None
+        self.site = None
+        self.elec_tariff = None
+
+        self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
+        self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
+        self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
+        self.bau_techs = ['util']
+        self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
+        
         self.run_id = run_id
         self.paths = paths
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
+        
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
@@ -196,7 +198,7 @@ class DatFileManager:
 
     def add_generator(self, generator):
         self.generator = generator
-
+        
         if self.generator.existing_kw > 0:
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
@@ -354,7 +356,9 @@ class DatFileManager:
         cap_cost_yint = list()
         n_segments_out = 0
         n_segments = None
-        tech_to_size = float(big_number / 1e4)  # sized such that default max incentives will not create breakpoint
+
+        tech_to_size = float(big_number)  # There are challeges with breakpoint creation, but may want to support large systems (100MW scale)
+
 
         # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
         existing_kw_flag = False
@@ -698,8 +702,8 @@ class DatFileManager:
                 om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
                 # only generator tech has variable o&m cost
-                if eval('self.' + tech) is 'generator':
-                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.om_cost_us_dollars_per_kwh'))
+                if tech.lower() == 'generator':
+                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]'))
                 else:
                     om_cost_us_dollars_per_kwh.append(0)
 

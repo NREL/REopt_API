@@ -3,7 +3,7 @@ import sys
 from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from models import ResilienceModel
-from outage_simulator import simulate_outage
+from outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
@@ -17,7 +17,7 @@ class ScenarioErrored(Exception):
     pass
 
 
-def resilience_stats(request, run_uuid):
+def resilience_stats(request, run_uuid, financial_outage_sim=None):
     """
     Run outage simulator for given run_uuid
     :param request:
@@ -81,7 +81,8 @@ def resilience_stats(request, run_uuid):
                 fuel_available=gen.fuel_avail_gal,
                 b=gen.fuel_intercept_gal_per_hr,
                 m=gen.fuel_slope_gal_per_kwh,
-                diesel_min_turndown=gen.min_turn_down_pct
+                diesel_min_turndown=gen.min_turn_down_pct,
+                financial_outage_sim=financial_outage_sim
             )
 
             """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
@@ -100,7 +101,10 @@ def resilience_stats(request, run_uuid):
                 present_worth_factor = annuity(financial.analysis_years, financial.escalation_pct,
                                                financial.offtaker_discount_pct)
 
-            results.update({"present_worth_factor": present_worth_factor,
+            if financial_outage_sim == "financial_outage_sim":
+                results = {"survives_specified_outage": results}
+            else:
+                results.update({"present_worth_factor": present_worth_factor,
                             "avg_critical_load": avg_critical_load,
                             })
 
