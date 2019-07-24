@@ -34,7 +34,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpatef")
+    @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
         Test scenario with
@@ -262,7 +262,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_when_allowed_to_operatre_year_long(self):
         """
         Test scenario with
