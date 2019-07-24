@@ -51,7 +51,7 @@ class Battery():
         self.soc += chargesoc
         return charge
 
-class noGenerator():
+class NoGenerator():
     def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
         self.kw = 0
         self.fuel_available = 0
@@ -63,7 +63,7 @@ class noGenerator():
     def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
         return 0
 
-class noBattery():
+class NoBattery():
     def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
         self.kw = 0
         self.size = 0
