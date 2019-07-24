@@ -176,12 +176,12 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         Simulation starts here
         '''
         if diesel_kw == 0 or fuel_available == 0:
-            GEN = noGenerator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
+            GEN = NoGenerator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
         else:
             GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
 
         if batt_kw == 0 or batt_kwh == 0:
-            BATT = noBattery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
+            BATT = NoBattery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
         else:
             BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
 
