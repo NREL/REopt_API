@@ -51,7 +51,33 @@ class Battery():
         self.soc += chargesoc
         return charge
 
-def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=0, wind_kw_ac_hourly=None,
+class noGenerator():
+    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
+        self.kw = 0
+        self.fuel_available = 0
+        self.genmin = 0
+
+    def gen_avail(self, n_steps_per_hour):  # kW
+        return 0
+
+    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
+        return 0
+
+class noBattery():
+    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
+        self.kw = 0
+        self.size = 0
+
+    def batt_avail(self, n_steps_per_hour):  # kW
+        return 0
+
+    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
+        return 0
+
+    def batt_charge(self, charge, n_steps_per_hour):  # kw
+        return 0
+
+def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
                     financial_outage_sim=None, resilience_run_site_result={}, financial_run_site_result={}):
     """
@@ -127,9 +153,6 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
             # distributed generation minus load is the burden on battery
             unmatch = (critical_load - pv - wind)  # kw
-            discharge = 0
-            gen_output = 0
-            charge = 0
 
             if unmatch < 0:    # pv + wind> critical_load
                 # excess PV power to charge battery
@@ -143,25 +166,24 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 discharge = battery.batt_discharge(max(unmatch - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
                 unmatch -= (gen_output + discharge - charge)
 
-                # unmatch > genavail & (unmatch - genavail) <= battavail
-                if unmatch <= generator.gen_avail(n_steps_per_hour):   # diesel can meet balance
-                    unmatch = 0
-
             elif unmatch <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
                 discharge = battery.batt_discharge(unmatch, n_steps_per_hour)
                 unmatch = 0
 
-            # else: battery + generator cannot survive outage --> unmatch > 0
-
-            stat = (gen_output, discharge, charge)
-
-            return unmatch, stat, generator, battery
+            return unmatch, generator, battery
 
         '''
         Simulation starts here
         '''
-        GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-        BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
+        if diesel_kw == 0 or fuel_available == 0:
+            GEN = noGenerator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
+        else:
+            GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
+
+        if batt_kw == 0 or batt_kwh == 0:
+            BATT = noBattery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
+        else:
+            BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
 
         for time_step in range(n_timesteps):
             gen = copy.deepcopy(GEN)
@@ -174,10 +196,10 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 # break inner loop if can not survive
                 t = (time_step + i) % n_timesteps
 
-                unmatch, stat, gen, batt = load_following(
+                unmatch, gen, batt = load_following(
                     critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
-                if unmatch > 0:  # cannot survive
+                if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
                     r[time_step] = float(i) / float(n_steps_per_hour)
                     break
 
@@ -194,8 +216,6 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
         x_vals = range(1, int(floor(r_max)+1))
         y_vals = list()
-        # y_vals_group_month = {str(i): list() for i in range(1, 13)}
-        # y_vals_group_hour = {str(i): list() for i in range(24)}
         y_vals_group_month = list()
         y_vals_group_hour = list()
 
