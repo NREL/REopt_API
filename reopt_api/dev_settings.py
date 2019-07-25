@@ -98,9 +98,6 @@ if os.environ.get('BUILD_TYPE') == 'jenkins':
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
             'NAME': db_name,
             'USER': os.environ.get('DB_USERNAME'),
-            'OPTIONS': {
-                 'options': '-c search_path=reopt_api'
-             },
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOSTNAME'),
             'PORT': os.environ.get('DB_PORT'),
