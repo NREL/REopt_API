@@ -96,7 +96,7 @@ if os.environ.get('BUILD_TYPE') == 'jenkins':
             'USER': os.environ.get('DB_USERNAME'),
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'OPTIONS': {
-                 'options': '-c search_path=public'
+                 'options': '-c search_path=django'
              },
             'HOST': os.environ.get('DB_HOSTNAME'),
             'PORT': os.environ.get('DB_PORT'),
