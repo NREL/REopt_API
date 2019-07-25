@@ -73,11 +73,17 @@ class Job(ModelResource):
             log.info('Beginning run setup')
 
             def set_status(d, status):
+                if 'outputs' not in d.keys():
+                    d["outputs"] = {"Scenario":{"status":status}}
                 d["outputs"]["Scenario"]["status"] = status
 
             data = dict()
             data["inputs"] = input_validator.input_dict
             data["messages"] = input_validator.messages
+            data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
+                                            'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
+                                                        'reopt_seconds': 0, 'reopt_bau_seconds': 0,
+                                                        'parse_run_outputs_seconds': 0}}}
 
             if not input_validator.isValid:  # 400 Bad Request
                 log.debug("input_validator not valid")
@@ -92,12 +98,7 @@ class Job(ModelResource):
 
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
-                                                         status=400))
-
-            data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
-                                            'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
-                                                        'reopt_seconds': 0, 'reopt_bau_seconds': 0,
-                                                        'parse_run_outputs_seconds': 0}}}
+                                                         status=400))            
 
             log.info('Entering ModelManager')
             model_manager = ModelManager()
@@ -123,6 +124,8 @@ class Job(ModelResource):
                     err.save_to_db()
 
                     set_status(data, 'Internal Server Error. See messages for more.')
+                    if 'messages' not in data.keys():
+                        data['messages'] = {}
                     data['messages']['error'] = err.message
                     log.error("Internal Server error: " + err.message)
                     raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
@@ -136,6 +139,8 @@ class Job(ModelResource):
             err.save_to_db()
 
             set_status(data, 'Internal Server Error. See messages for more.')
+            if 'messages' not in data.keys():
+                data['messages'] = {}
             data['messages']['error'] = err.message
             log.error("Internal Server error: " + err.message)
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
