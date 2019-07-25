@@ -95,6 +95,9 @@ if os.environ.get('BUILD_TYPE') == 'jenkins':
             'NAME': os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4()),
             'USER': os.environ.get('DB_USERNAME'),
             'PASSWORD': os.environ.get('DB_PASSWORD'),
+            'OPTIONS': {
+                 'options': '-c search_path=public'
+             },
             'HOST': os.environ.get('DB_HOSTNAME'),
             'PORT': os.environ.get('DB_PORT'),
         }
