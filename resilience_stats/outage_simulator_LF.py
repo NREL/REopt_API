@@ -116,6 +116,8 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                     if (v - financial_run_site_result[k]) / max(v, 1) > 1.0e-3:
                         return False
             return True
+        else:
+            return False
 
     else:
         # Do outage simulator
