@@ -89,14 +89,10 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 
 
 if os.environ.get('BUILD_TYPE') == 'jenkins':
-    if os.environ.get('BRANCH_NAME') == 'develop':
-        db_name = "reopt_development"
-    else:
-        db_name = os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4())
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': db_name,
+            'NAME': os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4()),
             'USER': os.environ.get('DB_USERNAME'),
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOSTNAME'),
@@ -119,7 +115,7 @@ else:
          'default': {
              'ENGINE': 'django.db.backends.postgresql_psycopg2',
              'HOST': 'reopt-dev-db1.nrel.gov',
-             'NAME': os.environ.get('DB_TEST_NAME'),
+             'NAME': 'reopt_development',
              'OPTIONS': {
                  'options': '-c search_path=reopt_api'
              },
