@@ -111,7 +111,8 @@ def resilience_stats(request, run_uuid, financial_outage_sim=None):
             rm = ResilienceModel.create(scenariomodel=scenario)
             ResilienceModel.objects.filter(id=rm.id).update(**results)
 
-        results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
+        if financial_outage_sim != "financial_outage_sim":
+            results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
                         })
 
         response = JsonResponse(results)
