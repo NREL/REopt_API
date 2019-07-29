@@ -113,7 +113,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         if resilience_run_site_result.viewkeys() == financial_run_site_result.viewkeys():
             for k, v in resilience_run_site_result.items():
                 if k in financial_run_site_result:
-                    if (v - financial_run_site_result[k]) / max(v, 1) > 1.0e-3:
+                    if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
                         return False
             return True
         else:
