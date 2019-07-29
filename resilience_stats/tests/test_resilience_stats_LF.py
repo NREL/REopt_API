@@ -4,7 +4,8 @@ import uuid
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator_LF import simulate_outage
-
+import time
+from unittest import skip
 
 class TestResilStats(ResourceTestCaseMixin, TestCase):
 
@@ -220,13 +221,20 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 12)
 
+    @skip("")
     def test_financial_resil_check_endpoint(self):
         post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
         r = self.api_client.post(self.submit_url, format='json', data=post)
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/")
+        uuids = {
+            "financial_uuid": uuid,
+            "resilience_uuid": uuid
+        }
+        time.sleep(10)
+        resp = self.api_client.post(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/",
+                                    format='json', data=uuids)
         self.assertEqual(resp.status_code, 200)
 
     def test_financial_resil_check(self):
