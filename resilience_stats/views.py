@@ -7,7 +7,7 @@ from outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
-import requests
+# import requests
 import json
 
 class ScenarioOptimizing(Exception):
@@ -84,25 +84,23 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
                                         * batt.rectifier_efficiency_pct
 
             if financial_outage_sim == "financial_outage_sim":
-                # from IPython import embed
-                # # embed()
-                # import pdb
-                #
-                # pdb.set_trace()
-
                 body = json.loads(request.body)
-                host = request.get_host()
-                result_url_resilience = "http://{}/v1/job/{}/results/".format(host, body["resilience_uuid"])
-                result_url_financial = "http://{}/v1/job/{}/results/".format(host, body["financial_uuid"])
 
-                resp_resilience = requests.get(url=result_url_resilience)
-                resp_financial = requests.get(url=result_url_financial)
+                ## get results at financial_check endpoint
+                # host = request.get_host()
+                # result_url_resilience = "http://{}/v1/job/{}/results/".format(host, body["resilience_uuid"])
+                # result_url_financial = "http://{}/v1/job/{}/results/".format(host, body["financial_uuid"])
+                #
+                # resp_resilience = requests.get(url=result_url_resilience)
+                # resp_financial = requests.get(url=result_url_financial)
+                #
+                # resilience_run_result = resp_resilience.json()
+                # financial_run_result = resp_financial.json()
+                #
 
-                resilience_run_result = resp_resilience.json()
-                financial_run_result = resp_financial.json()
-
-                resilience_size = parse_system_sizes(resilience_run_result["outputs"]["Scenario"]["Site"])
-                financial_size = parse_system_sizes(financial_run_result["outputs"]["Scenario"]["Site"])
+                ## post json results
+                resilience_size = parse_system_sizes(body["resilience_site"])
+                financial_size = parse_system_sizes(body["financial_site"])
 
                 results = simulate_outage(
                     resilience_run_site_result=resilience_size,

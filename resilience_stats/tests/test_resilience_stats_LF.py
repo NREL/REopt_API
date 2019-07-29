@@ -221,20 +221,46 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 12)
 
-    @skip("")
     def test_financial_resil_check_endpoint(self):
         post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
         r = self.api_client.post(self.submit_url, format='json', data=post)
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        uuids = {
-            "financial_uuid": uuid,
-            "resilience_uuid": uuid
+        sites = {
+            "resilience_site": {
+                "Generator": {
+                    "size_kw": 100
+                },
+                "Storage": {
+                    "size_kw": 100,
+                    "size_kwh": 100
+                },
+                "PV": {
+                    "size_kw": 100
+                },
+                "Wind": {
+                    "size_kw": 100
+                }
+            },
+            "financial_site": {
+                "Generator": {
+                    "size_kw": 100
+                },
+                "Storage": {
+                    "size_kw": 100,
+                    "size_kwh": 100
+                },
+                "PV": {
+                    "size_kw": 100
+                },
+                "Wind": {
+                    "size_kw": 100
+                }
+            }
         }
-        time.sleep(10)
         resp = self.api_client.post(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/",
-                                    format='json', data=uuids)
+                                    format='json', data=sites)
         self.assertEqual(resp.status_code, 200)
 
     def test_financial_resil_check(self):
