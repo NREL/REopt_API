@@ -4,7 +4,8 @@ import uuid
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator_LF import simulate_outage
-
+import time
+from unittest import skip
 
 class TestResilStats(ResourceTestCaseMixin, TestCase):
 
@@ -226,7 +227,40 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/")
+        sites = {
+            "resilience_site": {
+                "Generator": {
+                    "size_kw": 100
+                },
+                "Storage": {
+                    "size_kw": 100,
+                    "size_kwh": 100
+                },
+                "PV": {
+                    "size_kw": 100
+                },
+                "Wind": {
+                    "size_kw": 100
+                }
+            },
+            "financial_site": {
+                "Generator": {
+                    "size_kw": 100
+                },
+                "Storage": {
+                    "size_kw": 100,
+                    "size_kwh": 100
+                },
+                "PV": {
+                    "size_kw": 100
+                },
+                "Wind": {
+                    "size_kw": 100
+                }
+            }
+        }
+        resp = self.api_client.post(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/",
+                                    format='json', data=sites)
         self.assertEqual(resp.status_code, 200)
 
     def test_financial_resil_check(self):
