@@ -227,41 +227,13 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        sites = {
-            "resilience_site": {
-                "Generator": {
-                    "size_kw": 100
-                },
-                "Storage": {
-                    "size_kw": 100,
-                    "size_kwh": 100
-                },
-                "PV": {
-                    "size_kw": 100
-                },
-                "Wind": {
-                    "size_kw": 100
-                }
-            },
-            "financial_site": {
-                "Generator": {
-                    "size_kw": 100
-                },
-                "Storage": {
-                    "size_kw": 100,
-                    "size_kwh": 100
-                },
-                "PV": {
-                    "size_kw": 100
-                },
-                "Wind": {
-                    "size_kw": 100
-                }
-            }
-        }
-        resp = self.api_client.post(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/",
-                                    format='json', data=sites)
+        resp = self.api_client.get(
+                self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/?financial_uuid=" + uuid,
+                format='json')
+
         self.assertEqual(resp.status_code, 200)
+        c = eval(resp.content.replace("true", "True"))
+        self.assertTrue(c["survives_specified_outage"])
 
     def test_financial_resil_check(self):
         # same input but different type (float and int)
