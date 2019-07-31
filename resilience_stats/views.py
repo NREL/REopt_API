@@ -7,6 +7,7 @@ from outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
+from reo.models import ModelManager
 # import requests
 import json
 
@@ -67,11 +68,24 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
             raise ScenarioErrored
 
         if financial_outage_sim == "financial_outage_sim":
+            query = request.GET
+            financial_uuid = query['financial_uuid']
+
+            scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
+            if scenario.status == "Optimizing...":
+                raise ScenarioOptimizing
+            elif "error" in scenario.status.lower():
+                raise ScenarioErrored
+
             body = json.loads(request.body)
 
+            ## retrieve sizes from db
+            resilience_result = ModelManager.make_response(run_uuid)
+            financial_result = ModelManager.make_response(financial_uuid)
+
             ## post json results
-            resilience_size = parse_system_sizes(body["resilience_site"])
-            financial_size = parse_system_sizes(body["financial_site"])
+            resilience_size = parse_system_sizes(resilience_result["outputs"]["Scenario"]["Site"])
+            financial_size = parse_system_sizes(financial_result["outputs"]["Scenario"]["Site"])
 
             results = simulate_outage(
                 resilience_run_site_result=resilience_size,
