@@ -4,8 +4,7 @@ import uuid
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator_LF import simulate_outage
-import time
-from unittest import skip
+
 
 class TestResilStats(ResourceTestCaseMixin, TestCase):
 
@@ -221,47 +220,43 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 12)
 
+        self.assertFalse("resilience_hours_max_bau" in resp_dict)
+
+    def test_resil_endpoint_bau(self):
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
+        r = self.api_client.post(self.submit_url, format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        uuid = reopt_resp['run_uuid']
+
+        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "/?bau=True")
+        self.assertEqual(resp.status_code, 200)
+
+        resp_dict = json.loads(resp.content)
+
+        expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                          0.0011]
+        for idx, p in enumerate(resp_dict["probs_of_surviving"]):
+            self.assertAlmostEqual(p, expected_probs[idx], places=2)
+        self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
+        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+        self.assertEqual(resp_dict["resilience_hours_min"], 0)
+        self.assertEqual(resp_dict["resilience_hours_max"], 12)
+
+        self.assertTrue("resilience_hours_max_bau" in resp_dict)
+
     def test_financial_resil_check_endpoint(self):
         post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
         r = self.api_client.post(self.submit_url, format='json', data=post)
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        sites = {
-            "resilience_site": {
-                "Generator": {
-                    "size_kw": 100
-                },
-                "Storage": {
-                    "size_kw": 100,
-                    "size_kwh": 100
-                },
-                "PV": {
-                    "size_kw": 100
-                },
-                "Wind": {
-                    "size_kw": 100
-                }
-            },
-            "financial_site": {
-                "Generator": {
-                    "size_kw": 100
-                },
-                "Storage": {
-                    "size_kw": 100,
-                    "size_kwh": 100
-                },
-                "PV": {
-                    "size_kw": 100
-                },
-                "Wind": {
-                    "size_kw": 100
-                }
-            }
-        }
-        resp = self.api_client.post(self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/",
-                                    format='json', data=sites)
+        resp = self.api_client.get(
+                self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/?financial_uuid=" + uuid,
+                format='json')
+
         self.assertEqual(resp.status_code, 200)
+        c = eval(resp.content.replace("true", "True"))
+        self.assertTrue(c["survives_specified_outage"])
 
     def test_financial_resil_check(self):
         # same input but different type (float and int)
