@@ -228,7 +228,8 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         reopt_resp = json.loads(r.content)
         uuid = reopt_resp['run_uuid']
 
-        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "/?bau=True")
+        print(self.results_url.replace('<run_uuid>', uuid) + "?bau=True")
+        resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid) + "?bau=True")
         self.assertEqual(resp.status_code, 200)
 
         resp_dict = json.loads(resp.content)
