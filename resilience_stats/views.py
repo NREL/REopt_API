@@ -44,6 +44,8 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
               "probs_of_surviving",
              }
     """
+    import pdb
+    pdb.set_trace()
 
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
@@ -64,52 +66,42 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
         elif "error" in scenario.status.lower():
             raise ScenarioErrored
 
-        try:  # see if ResilienceModel already created
-            rm = ResilienceModel.objects.get(scenariomodel=scenario)
-            results = model_to_dict(rm)
-            # remove items that user does not need
-            del results['scenariomodel']
-            del results['id']
+        if financial_outage_sim == "financial_outage_sim":
+            body = json.loads(request.body)
 
-        except:
-            load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            gen = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
+            ## post json results
+            resilience_size = parse_system_sizes(body["resilience_site"])
+            financial_size = parse_system_sizes(body["financial_site"])
 
-            batt_roundtrip_efficiency = batt.internal_efficiency_pct \
-                                        * batt.inverter_efficiency_pct \
-                                        * batt.rectifier_efficiency_pct
+            results = simulate_outage(
+                resilience_run_site_result=resilience_size,
+                financial_run_site_result=financial_size,
+                financial_outage_sim=financial_outage_sim
+            )
 
-            if financial_outage_sim == "financial_outage_sim":
-                body = json.loads(request.body)
+            results = {"survives_specified_outage": results}
 
-                ## get results at financial_check endpoint
-                # host = request.get_host()
-                # result_url_resilience = "http://{}/v1/job/{}/results/".format(host, body["resilience_uuid"])
-                # result_url_financial = "http://{}/v1/job/{}/results/".format(host, body["financial_uuid"])
-                #
-                # resp_resilience = requests.get(url=result_url_resilience)
-                # resp_financial = requests.get(url=result_url_financial)
-                #
-                # resilience_run_result = resp_resilience.json()
-                # financial_run_result = resp_financial.json()
-                #
+        else:
 
-                ## post json results
-                resilience_size = parse_system_sizes(body["resilience_site"])
-                financial_size = parse_system_sizes(body["financial_site"])
+            try:  # see if ResilienceModel already created
+                rm = ResilienceModel.objects.get(scenariomodel=scenario)
+                results = model_to_dict(rm)
+                # remove items that user does not need
+                del results['scenariomodel']
+                del results['id']
 
-                results = simulate_outage(
-                    resilience_run_site_result=resilience_size,
-                    financial_run_site_result=financial_size,
-                    financial_outage_sim=financial_outage_sim
-                )
+            except:
+                load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                gen = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
-                results = {"survives_specified_outage": results}
-            else:
+                batt_roundtrip_efficiency = batt.internal_efficiency_pct \
+                                            * batt.inverter_efficiency_pct \
+                                            * batt.rectifier_efficiency_pct
+
                 results = simulate_outage(
                     batt_kwh=batt.size_kwh or 0,
                     batt_kw=batt.size_kw or 0,
