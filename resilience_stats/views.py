@@ -33,7 +33,7 @@ def parse_system_sizes(site):
         size_dict["PV"] = site["PV"]["size_kw"]
     return size_dict
 
-def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
+def resilience_stats(request, run_uuid=None, financial_check=None):
     """
     Run outage simulator for given run_uuid
     :param request:
@@ -66,7 +66,7 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
         elif "error" in scenario.status.lower():
             raise ScenarioErrored
 
-        if financial_outage_sim == "financial_outage_sim":
+        if financial_check == "financial_check":
             query = request.GET
             financial_uuid = query['financial_uuid']
 
@@ -86,7 +86,7 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
             results = simulate_outage(
                 resilience_run_site_result=resilience_size,
                 financial_run_site_result=financial_size,
-                financial_outage_sim=financial_outage_sim
+                financial_check=financial_check
             )
 
             results = {"survives_specified_outage": results}

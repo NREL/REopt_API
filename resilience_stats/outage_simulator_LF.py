@@ -79,7 +79,7 @@ class NoBattery():
 
 def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
-                    financial_outage_sim=None, resilience_run_site_result={}, financial_run_site_result={}):
+                    financial_check=None, resilience_run_site_result={}, financial_run_site_result={}):
     """
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
@@ -93,7 +93,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
     :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
-    :param financial_outage_sim: string, check financial and resilience system size if equal "financial_outage_sim"
+    :param financial_check: string, check financial and resilience system size if equal "financial_check"
     :param resilience_run_site_result: dict, resilience run results{ "pv_size_kw": float,
                                                                     "storage_size_kw": float,
                                                                     "storage_size_kwh": float,
@@ -108,7 +108,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :return: boolean, survives_specified_outage
     """
 
-    if financial_outage_sim == "financial_outage_sim":
+    if financial_check == "financial_check":
         # Do financial check
         if resilience_run_site_result.viewkeys() == financial_run_site_result.viewkeys():
             for k, v in resilience_run_site_result.items():
