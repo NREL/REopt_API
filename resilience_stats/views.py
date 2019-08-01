@@ -7,8 +7,10 @@ from outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
-# import requests
-import json
+from reo.models import ModelManager
+from django.db import IntegrityError
+from multiprocessing import Pool
+
 
 class ScenarioOptimizing(Exception):
     pass
@@ -64,67 +66,115 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
         elif "error" in scenario.status.lower():
             raise ScenarioErrored
 
-        try:  # see if ResilienceModel already created
-            rm = ResilienceModel.objects.get(scenariomodel=scenario)
-            results = model_to_dict(rm)
-            # remove items that user does not need
-            del results['scenariomodel']
-            del results['id']
+        if financial_outage_sim == "financial_outage_sim":
+            query = request.GET
+            financial_uuid = query['financial_uuid']
 
-        except:
-            load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            gen = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-            wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
+            scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
+            if scenario.status == "Optimizing...":
+                raise ScenarioOptimizing
+            elif "error" in scenario.status.lower():
+                raise ScenarioErrored
 
-            batt_roundtrip_efficiency = batt.internal_efficiency_pct \
-                                        * batt.inverter_efficiency_pct \
-                                        * batt.rectifier_efficiency_pct
+            ## retrieve sizes from db
+            resilience_result = ModelManager.make_response(run_uuid)
+            financial_result = ModelManager.make_response(financial_uuid)
 
-            if financial_outage_sim == "financial_outage_sim":
-                body = json.loads(request.body)
+            resilience_size = parse_system_sizes(resilience_result["outputs"]["Scenario"]["Site"])
+            financial_size = parse_system_sizes(financial_result["outputs"]["Scenario"]["Site"])
 
-                ## get results at financial_check endpoint
-                # host = request.get_host()
-                # result_url_resilience = "http://{}/v1/job/{}/results/".format(host, body["resilience_uuid"])
-                # result_url_financial = "http://{}/v1/job/{}/results/".format(host, body["financial_uuid"])
-                #
-                # resp_resilience = requests.get(url=result_url_resilience)
-                # resp_financial = requests.get(url=result_url_financial)
-                #
-                # resilience_run_result = resp_resilience.json()
-                # financial_run_result = resp_financial.json()
-                #
+            results = simulate_outage(
+                resilience_run_site_result=resilience_size,
+                financial_run_site_result=financial_size,
+                financial_outage_sim=financial_outage_sim
+            )
 
-                ## post json results
-                resilience_size = parse_system_sizes(body["resilience_site"])
-                financial_size = parse_system_sizes(body["financial_site"])
+            results = {"survives_specified_outage": results}
 
-                results = simulate_outage(
-                    resilience_run_site_result=resilience_size,
-                    financial_run_site_result=financial_size,
-                    financial_outage_sim=financial_outage_sim
-                )
+        else:
+            try:
+                query = request.GET
+                bau = query['bau'] in ["True", "true", "1"]
+            except:
+                bau = False
 
-                results = {"survives_specified_outage": results}
-            else:
-                results = simulate_outage(
-                    batt_kwh=batt.size_kwh or 0,
-                    batt_kw=batt.size_kw or 0,
-                    pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
-                    wind_kw_ac_hourly=wind.year_one_power_production_series_kw,
-                    init_soc=batt.year_one_soc_series_pct,
-                    critical_loads_kw=load_profile.critical_load_series_kw,
-                    batt_roundtrip_efficiency=batt_roundtrip_efficiency,
-                    diesel_kw=gen.size_kw,
-                    fuel_available=gen.fuel_avail_gal,
-                    b=gen.fuel_intercept_gal_per_hr,
-                    m=gen.fuel_slope_gal_per_kwh,
-                    diesel_min_turndown=gen.min_turn_down_pct,
-                    financial_outage_sim=financial_outage_sim
-                )
+            wtch = True
+            try:  # see if ResilienceModel already created
+                rm = ResilienceModel.objects.get(scenariomodel=scenario)
+                results = model_to_dict(rm)
+
+                if bau and "probs_of_surviving_bau" not in results:
+                    wtch = False
+                    raise Exception('no resilience_stat_bau in database')
+
+                if not bau:
+                    for k, v in results.items():
+                        if k[-4:] == "_bau":
+                            results.pop(k)
+
+                # remove items that user does not need
+                del results['scenariomodel']
+                del results['id']
+
+            except:
+                load_profile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                gen = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+                wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
+
+                batt_roundtrip_efficiency = batt.internal_efficiency_pct \
+                                            * batt.inverter_efficiency_pct \
+                                            * batt.rectifier_efficiency_pct
+                results = dict()
+                kwargs_dict = dict()
+                # if wtch and bau:
+                pool = Pool(processes=2 if wtch and bau else 1)
+                # else:
+                #     pool = Pool(processes=1)
+
+                if wtch:
+                    kwargs = {
+                        "batt_kwh": batt.size_kwh or 0,
+                        "batt_kw": batt.size_kw or 0,
+                        "pv_kw_ac_hourly": pv.year_one_power_production_series_kw,
+                        "wind_kw_ac_hourly": wind.year_one_power_production_series_kw,
+                        "init_soc": batt.year_one_soc_series_pct,
+                        "critical_loads_kw": load_profile.critical_load_series_kw,
+                        "batt_roundtrip_efficiency": batt_roundtrip_efficiency,
+                        "diesel_kw": gen.size_kw,
+                        "fuel_available": gen.fuel_avail_gal,
+                        "b": gen.fuel_intercept_gal_per_hr,
+                        "m": gen.fuel_slope_gal_per_kwh,
+                        "diesel_min_turndown": gen.min_turn_down_pct
+                    }
+                    kwargs_dict["wtch"] = kwargs
+
+                if bau:
+                    # only PV and diesel generator may have existing size
+                    kwargs = {
+                        "batt_kwh": 0,
+                        "batt_kw": 0,
+                        "pv_kw_ac_hourly": [p*pv.size_kw*pv.existing_kw for p in pv.year_one_power_production_series_kw],
+                        "critical_loads_kw": load_profile.critical_load_series_kw,
+                        "diesel_kw": gen.existing_kw,
+                        "fuel_available": gen.fuel_avail_gal,
+                        "b": gen.fuel_intercept_gal_per_hr,
+                        "m": gen.fuel_slope_gal_per_kwh,
+                        "diesel_min_turndown": gen.min_turn_down_pct
+                    }
+                    kwargs_dict["bau"] = kwargs
+
+                p = {k: pool.apply_async(simulate_outage, tuple(), v) for k, v in kwargs_dict.items()}
+                pool.close()
+                pool.join()
+
+                for k, v in p.items():
+                    if k == 'wtch':
+                        results.update(v.get())
+                    if k == 'bau':
+                        results.update({key+'_bau': val for key, val in v.get().items()})
 
                 """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
                         avoided_outage_costs_us_dollars = resilience_hours_avg * 
@@ -146,8 +196,21 @@ def resilience_stats(request, run_uuid=None, financial_outage_sim=None):
                             "avg_critical_load": avg_critical_load,
                             })
 
-                rm = ResilienceModel.create(scenariomodel=scenario)
-                ResilienceModel.objects.filter(id=rm.id).update(**results)
+                try:
+                    # new model
+                    rm = ResilienceModel.create(scenariomodel=scenario)
+                    ResilienceModel.objects.filter(id=rm.id).update(**results)
+
+                except IntegrityError:
+                    # have run resiliense_stat & bau=false
+                    # return both w/tech and bau
+                    ResilienceModel.objects.filter(id=rm.id).update(**results)
+                    rm = ResilienceModel.objects.get(scenariomodel=scenario)
+                    results = model_to_dict(rm)
+
+                    # remove items that user does not need
+                    del results['scenariomodel']
+                    del results['id']
 
                 results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
                             })
