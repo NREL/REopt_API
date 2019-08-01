@@ -252,7 +252,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         uuid = reopt_resp['run_uuid']
 
         resp = self.api_client.get(
-                self.results_url.replace('<run_uuid>', uuid) + "financial_outage_sim/?financial_uuid=" + uuid,
+                self.results_url.replace('<run_uuid>', uuid) + "financial_check/?financial_uuid=" + uuid,
                 format='json')
 
         self.assertEqual(resp.status_code, 200)
@@ -272,7 +272,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                      "gen_size_kw": 20.0,
                                      "wind_size_kw": 0.0
                                      }
-        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+        resp = simulate_outage(financial_check="financial_check",
                                resilience_run_site_result=resilience_run_site_result,
                                financial_run_site_result=financial_run_site_result)
         self.assertTrue(resp)
@@ -289,7 +289,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                      "gen_size_kw": 20.0,
                                      "wind_size_kw": 0.0
                                      }
-        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+        resp = simulate_outage(financial_check="financial_check",
                                resilience_run_site_result=resilience_run_site_result,
                                financial_run_site_result=financial_run_site_result)
         self.assertFalse(resp)
@@ -304,7 +304,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                      "storage_size_kw": 100.0,
                                      "storage_size_kwh": 300.0,
                                      }
-        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+        resp = simulate_outage(financial_check="financial_check",
                                resilience_run_site_result=resilience_run_site_result,
                                financial_run_site_result=financial_run_site_result)
         self.assertFalse(resp)
@@ -320,7 +320,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                      "gen_size_kw": 20,
                                      "wind_size_kw": 0
                                      }
-        resp = simulate_outage(financial_outage_sim="financial_outage_sim",
+        resp = simulate_outage(financial_check="financial_check",
                                resilience_run_site_result=resilience_run_site_result,
                                financial_run_site_result=financial_run_site_result)
         self.assertFalse(resp)
