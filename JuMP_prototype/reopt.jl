@@ -30,7 +30,7 @@ end
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
-Tech = [:UTIL1]
+# Tech = [:UTIL1]
 
 REopt = Model()
 
