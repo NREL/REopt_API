@@ -29,13 +29,8 @@ function readDataTable(v::String, t::String)
 
     tableArray = tableArray[2:4, 2:end]
 
-    if length(ARGS) == 2
-        input_value = ARGS[1]
-        input_type = ARGS[2]
-    else
-        input_value = v
-        input_type = t
-    end
+    input_value = v
+    input_type = t
 
     if input_type != "uuid"
         rowidx = findall(x->x==input_type, colName)[1]
@@ -47,6 +42,39 @@ function readDataTable(v::String, t::String)
     return uuid
 end
 
+"""
+    runTest(v::String, t::String)
+
+Compare JuMP results with Mosel results.
+Argument options are in JuMP_prototype/data/data_table
+
+# Examples
+```julia-repl
+julia> runTest("1", "no")
+using 76168a37-a78b-4ef3-bdb8-a2f8b213430b
+    .
+    . test continues
+    .
+```
+```julia-repl
+julia> runTest("PV+storage", "name")
+using 8ff29780-4e1b-4aca-b079-1342ea21bde2
+    .
+    . test continues
+    .
+```
+```julia-repl
+julia> runTest("PV + storage", "name")
+ERROR: remove spaces from <v> input_value
+```
+```julia-repl
+julia> runTest("eda919d6-1481-4bf9-a531-a1b3397c8c67", "uuid")
+using eda919d6-1481-4bf9-a531-a1b3397c8c67
+    .
+    . test continues
+    .
+```
+"""
 function runTest(v::String, t::String)
     uuid = readDataTable(v::String, t::String)
     global uuid

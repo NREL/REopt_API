@@ -187,7 +187,7 @@ TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
 ### Begin Variable Initialization ###
 ######################################
 
- #!"exist" formatting
+#!"exist" formatting
 #forall (t in Tech,LD in Load,ts in TimeStep, s in Seg, fb in FuelBin | MaxSize(t)* LoadProfile(LD,ts) *  TechToLoadMatrix(t, LD) <> 0)  !* ceil( max(Loc, TimeStep) ProdFactor (t,LD,ts))
 #	create (dvRatedProd (t,LD,ts,s,fb))   dvGrid[Load, TimeStep, DemandBin, FuelBin, DemandMonthsBin] >= 0
     #Exist formatting, causes difficulty writing constraints
@@ -329,6 +329,7 @@ end
 #	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW
 #	sum(b in BattLevel) dvStorageSizeKW(b) >= MinStorageSizeKW
 
+@constraint(REopt, dvStoredEnergy[0] == InitSOC * sum(dvStorageSizeKWH[b] for b in BattLevel) / TimeStepScaling)
 @constraint(REopt, MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in BattLevel) <=  MaxStorageSizeKWH)
 @constraint(REopt, MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in BattLevel) <=  MaxStorageSizeKW)
 
