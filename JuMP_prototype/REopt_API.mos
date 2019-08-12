@@ -920,6 +920,13 @@ fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
     end-do
 fclose(F_OUTPUT)
 
+fopen(OutputDir + "\\ElecToBatt.csv",F_OUTPUT)
+    writeln ("Tech,ElecToBatt")
+    forall  ( t in Tech )  do
+       writeln (t, ",", getsol(ElecToBatt(t)),",")
+    end-do
+fclose(F_OUTPUT)
+
 
 ! write outputs in JSON for post processing
 
@@ -946,6 +953,7 @@ fclose(F_OUTPUT)
 
     Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (Year1UtilityEnergy) , 10, 4))
     Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))
+    Node:=addnode(out_json, Root, "year_one_energy_charges", strfmt(getsol(TotalEnergyCharges), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
     Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))

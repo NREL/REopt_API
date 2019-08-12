@@ -30,7 +30,7 @@ end
 datToVariable(dataPath * "/Inputs/")
 #jsonToVariable("all_data_3.json")
 # NEED this for some reason...
-# Tech = [:UTIL1]
+#Tech = [:UTIL1]
 
 REopt = Model()
 
@@ -51,7 +51,7 @@ readCmd(dataPath * "/Inputs/cmd.log")
 # edits to get a solution
 #TimeStepCount = 300
 #FuelRate = [1 for x in 1:105120]
-FuelAvail = [1.0e10 for x in 1:3]
+FuelAvail = [1.0e10 for x in 1:length(Tech)]
 #sca = Int(TimeStepCount/12)
 #TimeStepRatchetsMonth = [[z + (y*sca) for z in 1:sca] for y in 0:11]
 
@@ -67,10 +67,10 @@ TimeStep=1:TimeStepCount
 TimeStepBat=0:TimeStepCount
 
 ## TAILORED BIG M
-#MaxDemandMonthsInTier = [AnnualElecLoad]
-#MaxDemandInTier = [AnnualElecLoad]
-#MaxSize[3] = [AnnualElecLoad]
-#MaxUsageInTier = [AnnualElecLoad]
+MaxDemandMonthsInTier = [AnnualElecLoad]
+MaxDemandInTier = [AnnualElecLoad]
+#MaxSize[CapCostSegCount] = [AnnualElecLoad]
+MaxUsageInTier = [AnnualElecLoad]
 
 ## Data modification for prototyping
 #LoadProfile = LoadProfile[1:8760*4]
@@ -258,7 +258,9 @@ end
 @constraint(REopt, [t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin; MaxSize[t] * LoadProfile[LD, ts] * TechToLoadMatrix[t, LD] == 0],
             dvRatedProd[t, LD, ts, s, fb] == 0)
 
-#@constraint(REopt, [fb in FuelBin], dvSystemSize[:WIND, fb]==10)
+#@constraint(REopt, [fb in FuelBin], dvSystemSize[:PV, fb] + dvSystemSize[:PVNM, fb] ==104.12)
+#@constraint(REopt, sum(dvStorageSizeKWH[b] for b in BattLevel) == 161.533)
+#@constraint(REopt, sum(dvStorageSizeKW[b] for b in BattLevel) == 23.1349)
 
 #!!!! Fuel tracking
 #! Define dvFuelUsed by each tech by summing over timesteps.  Constrain it to be less than FuelAvail.
@@ -351,8 +353,6 @@ end
 	        dvElecFromStor[ts] / EtaStorOut[Symbol("1S")] <=  dvStoredEnergy[ts-1])
 @constraint(REopt, [ts in TimeStep],
 	        dvStoredEnergy[ts] >=  StorageMinChargePcent * sum(dvStorageSizeKWH[b] / TimeStepScaling for b in BattLevel))
-@constraint(REopt, [ts in TimeStep],
-	        dvElecFromStor[ts] >= 0)
 
 #forall ( ts in TimeStep )  do
 #	sum(b in BattLevel) dvStorageSizeKW(b) >=  dvElecToStor( ts)
@@ -582,8 +582,8 @@ end
 #end-do
 
 @constraint(REopt, [LD in Load, ts in TimeStep; LD == Symbol("1R")],
-            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] + dvElecFromStor[ts]
-                for t in Tech, s in Seg, fb in FuelBin) >= LoadProfile[LD,ts])
+            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t]
+                for t in Tech, s in Seg, fb in FuelBin) + dvElecFromStor[ts] >= LoadProfile[LD,ts])
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #!! End system size and production constraints
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1032,8 +1032,6 @@ end
 
 #Stuff to troubleshoot Wind
 
-
-
 Year1EnergyCost = value(TotalEnergyCharges / pwf_e)
 Year1DemandCost = value(TotalDemandCharges / pwf_e)
 Year1DemandTOUCost = value(DemandTOUCharges / pwf_e)
@@ -1061,7 +1059,43 @@ println("Year1Bill: ", Year1Bill)
 #    y = AffExpr(0, dvRatedProd[:UTIL1,LD,ts,s,fb] => TimeStepScaling * ProdFactor[:UTIL1, LD, ts])
 #    add_to_expression!(Year1UtilityEnergy, y)
 #end
-
+#
+#@expression(REopt, Year1UtilityEnergy, 
+#            sum(dvRatedProd[:UTIL1,LD,ts,s,fb] * TimeStepScaling * ProdFactor[:UTIL1, LD, ts] 
+#                for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, Year1Utilityto1R, 
+#            sum(dvRatedProd[:UTIL1,LD,ts,s,fb] *TimeStepScaling 
+#                for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, Year1Load, 
+#            sum(dvRatedProd[t,LD,ts,s,fb] *TimeStepScaling * ProdFactor[t, LD, ts] 
+#                for t in Tech, LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, Year1PVNMto1R, 
+#            sum(dvRatedProd[:PVNM,LD,ts,s,fb] *TimeStepScaling * ProdFactor[:PVNM, LD, ts] 
+#                for LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, Year1Loadwbat, 
+#            sum(dvRatedProd[t,LD,ts,s,fb] * LevelizationFactor[t] * ProdFactor[t, LD, ts] + dvElecFromStor[ts] 
+#                for t in Tech, LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, R1[t in Tech], 
+#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
+#@expression(REopt, S1[t in Tech], 
+#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for LD in [Symbol("1S")], ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, PV[LD in Load], 
+#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:PV], LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
+#@expression(REopt, PVNM[LD in Load], 
+#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:PVNM], ts in TimeStep, s in Seg, fb in FuelBin))
+#@expression(REopt, UTIL1[LD in Load], 
+#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:UTIL1], ts in TimeStep, s in Seg, fb in FuelBin))
+#
+#@expression(REopt, loadsattech[ts in TimeStep, t in Tech], 
+#            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] + dvElecFromStor[ts] 
+#                for LD in [Symbol("1R")], s in Seg, fb in FuelBin))
+#
 #
 #GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
 #
@@ -1238,7 +1272,13 @@ println("Year1Bill: ", Year1Bill)
 #    Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
 #    Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
 #    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
+
+net_capital_costs_plus_om  = value(TotalTechCapCosts) + value(TotalStorageCapCosts) + value(TotalOMCosts) * r_tax_fraction_owner
+
 #    Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
+
+net_capital_costs  = value(TotalTechCapCosts) + value(TotalStorageCapCosts)
+
 #    Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
 #    Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
 #    Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
