@@ -30,7 +30,7 @@ REopt = Model()
 CapCostSegCount = 5
 FuelBinCount = 1
 DemandBinCount = 1
-DemandMonthsBinCount = 1
+demandMonthsBinCount = 1
 BattLevelCount = 1
 TimeStepScaling = 1.0
 TimeStepCount = 35040
@@ -124,7 +124,7 @@ function tsr(Ratchets, TimeStepRatchets)
     try
         return parameter(Ratchets, TimeStepRatchets)
     catch
-        return parameter(Ratchets, fill))
+        return []
     end
 end
 
@@ -375,10 +375,13 @@ end
             binDemandTier[r, db] - binDemandTier[r, db-1] <= 0)
 @constraint(REopt, [db in DemandBin, r in Ratchets; db >= 2],
             binDemandTier[r, db]*MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0)
-@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-            dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin))
-@constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
-            dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback)
+
+if !isempty(TimeStepRatchets)
+    @constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+                dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, fb in FuelBin, dbm in DemandMonthsBin))
+    @constraint(REopt, [db in DemandBin, r in Ratchets, ts in TimeStepRatchets[r]],
+                dvPeakDemandE[r,db] >= DemandLookbackPercent * dvPeakDemandELookback)
+end
 
 ### Peak Demand Energy Rachets
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month; dbm < DemandMonthsBinCount],
