@@ -1,4 +1,4 @@
-from resilience_stats.outage_simulator import simulate_outage
+from resilience_stats.outage_simulator_LF import simulate_outage
 
 
 def calc_avoided_outage_costs(data, present_worth_factor):

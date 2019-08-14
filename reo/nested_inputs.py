@@ -833,7 +833,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e2,
-          "default": 20,
+          "default": 4,
           "description": "diesel cost in $/gallon"
         },
         "fuel_slope_gal_per_kwh": {

@@ -337,7 +337,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(c['messages']))
+            print("Error message: {}".format(d['messages']))
             raise
 
     def test_not_optimal_solution(self):

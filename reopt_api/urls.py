@@ -23,7 +23,7 @@ def page_not_found(request, url):
 
 urlpatterns = [
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', include('resilience_stats.urls'), name='resilience_stats'),
+    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?(?:(?P<financial_check>[a-u_]+)/?)?$', include('resilience_stats.urls'), name='resilience_stats'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results, name='results'),
     url(r'^v1/user/?', include('summary.urls'), name='summary'),
     url(r'^v1/load_builder/?$', include('load_builder.urls'), name='load_builder'),

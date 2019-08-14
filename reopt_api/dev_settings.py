@@ -115,7 +115,7 @@ else:
          'default': {
              'ENGINE': 'django.db.backends.postgresql_psycopg2',
              'HOST': 'reopt-dev-db1.nrel.gov',
-             'NAME': os.environ.get('DB_TEST_NAME'),
+             'NAME': 'reopt_development',
              'OPTIONS': {
                  'options': '-c search_path=reopt_api'
              },
