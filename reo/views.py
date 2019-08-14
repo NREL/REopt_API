@@ -33,7 +33,6 @@ def help(request):
 
     try:
         response = copy.deepcopy(nested_input_definitions)
-        del response['Scenario']['Site']['Wind']
         return JsonResponse(response)
 
     except Exception:
