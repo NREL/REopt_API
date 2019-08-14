@@ -436,9 +436,6 @@ def run(*args):
 	
 	if 'pull_data' not in globals().values():
 		
-		from IPython import embed
-		embed()
-
 		p = mp.Pool(processes=CORES)	
 
 		now = datetime.datetime.utcnow()
