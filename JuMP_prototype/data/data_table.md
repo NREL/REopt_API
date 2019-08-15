@@ -9,6 +9,9 @@
 | 7  | PV + storage + wind | c8d51686-b991-43cd-bab7-68e03f8872d1 | pass                                 | B&B tree search gap not converged... 79.67% after 1.5 hrs     |
 | 8  | PV + wind           | b5e895b8-a851-49c0-9650-2072408d1b89 | pass                                 |                                                               |
 | 9  | storage + wind      | 7605344c-964c-4e17-9c14-688d6e9fbfb6 | pass                                 | B&B tree search gap not converged... 44.83% after 1.5 hrs     |
-| 10 | tiered PV           | 5b75684a-232d-4e95-8bf1-3fcb47b07a46 |                                      |                                                               |
-| 11 | PV + gen            |                                      |                                      |                                                               |
+| 10 | tiered PV           | 5b75684a-232d-4e95-8bf1-3fcb47b07a46 | pass                                 |                                                               |
+| 11 | tiered PV + BESS    | dc647e7a-be89-4044-ab40-e500a5f90e6b |                                      |                                                               |
+| 12 | TOU PV              | 02bd7144-c484-4e42-b7e4-9ea077bfbc34 |                                      |                                                               |
+| 13 | TOU PV + BESS       | 6c15335f-4d77-4ade-a6f8-a4fd486488d1 |                                      |                                                               |
+|    |                     |                                      |                                      |                                                               |
 |    |                     |                                      |                                      |                                                               |
