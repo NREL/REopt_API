@@ -1,5 +1,6 @@
 import JSON
 using DelimitedFiles
+using JuMP
 
 function readDataTable(v::String, t::String)
     f = open("data/data_table.md")
@@ -87,14 +88,16 @@ function runTest(v::String, t::String)
 
     # Compare JuMP and Mosel
     tolerance = 1.0e-3
+    bigtol = 0.05
 
     try
-        @assert (resultDict["year_one_energy_cost"] - Year1EnergyCost) / max(Year1EnergyCost, 1) < tolerance
-        @assert (resultDict["year_one_demand_cost"] - Year1DemandCost) / max(Year1DemandCost, 1) < tolerance
-        @assert (resultDict["year_one_demand_tou_cost"] - Year1DemandTOUCost) / max(Year1DemandTOUCost, 1) < tolerance
-        @assert (resultDict["year_one_demand_flat_cost"] - Year1DemandFlatCost) / max(Year1DemandFlatCost, 1) < tolerance
-        @assert (resultDict["year_one_fixed_cost"] - Year1FixedCharges) / max(Year1FixedCharges, 1) < tolerance
-        @assert (resultDict["year_one_bill"] - Year1Bill) / max(Year1Bill, 1) < tolerance
+        @assert (resultDict["lcc"] - ojv) / max(ojv, 1) < tolerance
+        @assert (resultDict["year_one_energy_cost"] - Year1EnergyCost) / max(Year1EnergyCost, 1) < bigtol
+        @assert (resultDict["year_one_demand_cost"] - Year1DemandCost) / max(Year1DemandCost, 1) < bigtol
+        @assert (resultDict["year_one_demand_tou_cost"] - Year1DemandTOUCost) / max(Year1DemandTOUCost, 1) < bigtol
+        @assert (resultDict["year_one_demand_flat_cost"] - Year1DemandFlatCost) / max(Year1DemandFlatCost, 1) < bigtol
+        @assert (resultDict["year_one_fixed_cost"] - Year1FixedCharges) / max(Year1FixedCharges, 1) < bigtol
+        @assert (resultDict["year_one_bill"] - Year1Bill) / max(Year1Bill, 1) < bigtol
         
         println("\nOK")
         uuid = nothing

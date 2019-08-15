@@ -55,10 +55,10 @@ TimeStep=1:TimeStepCount
 TimeStepBat=0:TimeStepCount
 
 ## TAILORED BIG M
-MaxDemandMonthsInTier = [AnnualElecLoad]
-MaxDemandInTier = [AnnualElecLoad]
-#MaxSize[CapCostSegCount] = [AnnualElecLoad]
-MaxUsageInTier = [AnnualElecLoad]
+#MaxDemandMonthsInTier = [AnnualElecLoad]
+#MaxDemandInTier = [AnnualElecLoad]
+##MaxSize[CapCostSegCount] = [AnnualElecLoad]
+#MaxUsageInTier = [AnnualElecLoad]
 
 
 ##### Sets and Parameter #####
@@ -389,7 +389,7 @@ end
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month; dbm >= 2],
 	        binDemandMonthsTier[m, dbm] - binDemandMonthsTier[m, dbm-1] <= 0)
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month; dbm >= 2],
-	        binDemandMonthsTier[m, dbm] * Min[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
+	        binDemandMonthsTier[m, dbm] * MaxDemandMonthsInTier[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
 @constraint(REopt, [dbm in DemandMonthsBin, m in Month, ts in TimeStepRatchetsMonth[m]],
 	        dvPeakDemandEMonth[m, dbm] >=  sum(dvGrid[LD,ts,db,fb,dbm] for LD in Load, db in DemandBin, fb in FuelBin))
 @constraint(REopt, [LD in Load, lbm in DemandLookbackMonths],
@@ -506,6 +506,7 @@ println("\n\nPreparing outputs...\n\n")
                 for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
 
 
+ojv = JuMP.objective_value(REopt)
 Year1EnergyCost = value(TotalEnergyCharges / pwf_e)
 Year1DemandCost = value(TotalDemandCharges / pwf_e)
 Year1DemandTOUCost = value(DemandTOUCharges / pwf_e)
@@ -514,6 +515,7 @@ Year1FixedCharges = value(TotalFixedCharges / pwf_e)
 Year1MinCharges = value(MinChargeAdder / pwf_e)
 Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
+println("Objective Value: ", ojv)
 println("Year1EnergyCost: ", Year1EnergyCost)
 println("Year1DemandCost: ", Year1DemandCost)
 println("Year1DemandTOUCost: ", Year1DemandTOUCost)
