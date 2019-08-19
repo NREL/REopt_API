@@ -87,7 +87,7 @@ function runTest(v::String, t::String)
     resultDict = JSON.parsefile(resultPath)
 
     # Compare JuMP and Mosel
-    tolerance = 1.0e-3
+    tolerance = 0.01
     bigtol = 0.05
 
     try

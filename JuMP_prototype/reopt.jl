@@ -434,7 +434,7 @@ end
                                              for t in Tech, fb in FuelBin))
 @constraint(REopt, DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
                                            for r in Ratchets, db in DemandBin))
-@constraint(REopt, DemandTOUCharges == 0)
+#@constraint(REopt, DemandTOUCharges == 0)
 @constraint(REopt, DemandFlatCharges == sum(dvPeakDemandEMonth[m, dbm] * DemandRatesMonth[m, dbm] * pwf_e
                                             for m in Month, dbm in DemandMonthsBin))
 @constraint(REopt, TotalDemandCharges ==  DemandTOUCharges + DemandFlatCharges)
