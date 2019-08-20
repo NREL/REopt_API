@@ -169,12 +169,12 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             resp_dict = json.loads(resp.content)
 
             self.assertEqual(resp_dict["probs_of_surviving"],
-                             [0.599, 0.2418, 0.1943, 0.1562, 0.1202, 0.087, 0.0567, 0.0323, 0.0168, 0.0087, 0.0043,
-                              0.0013, 0.0001])
-            self.assertEqual(resp_dict["resilience_hours_avg"], 1.52)
-            self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13])
+                             [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                              0.0011])
+            self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
+            self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
             self.assertEqual(resp_dict["resilience_hours_min"], 0)
-            self.assertEqual(resp_dict["resilience_hours_max"], 13)
+            self.assertEqual(resp_dict["resilience_hours_max"], 12)
 
     def test_bad_uuid(self):
         run_uuid = "5"

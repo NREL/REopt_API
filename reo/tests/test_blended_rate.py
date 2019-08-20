@@ -16,6 +16,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {"Scenario": {
             "time_steps_per_hour": 1,
+            "description": "name_with_underscore",
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
@@ -73,6 +74,11 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         messages = ClassAttributes(response['messages'])
+
+        self.assertEqual(pv_out.station_distance_km, 0.0)
+        self.assertEqual(pv_out.station_latitude, 35.25)
+        self.assertAlmostEqual(pv_out.station_longitude, -91.74, 1)
+
 
     def test_blended_annual_rate(self):
 

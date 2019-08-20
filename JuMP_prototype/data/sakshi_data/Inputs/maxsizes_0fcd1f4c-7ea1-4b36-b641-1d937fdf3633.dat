@@ -1,0 +1,32 @@
+MaxSize: [
+1000000000.0
+1000000000.0
+1000000000.0
+1000000000.0
+12000000
+]
+MinStorageSizeKW: [
+100.0
+]
+MaxStorageSizeKW: [
+1000000.0
+]
+MinStorageSizeKWH: [
+100.0
+]
+MaxStorageSizeKWH: [
+1000000.0
+]
+TechClassMinSize: [
+100.0
+0
+0
+0
+]
+MinTurndown: [
+0
+0
+0
+0
+0
+]
