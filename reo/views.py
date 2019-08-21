@@ -22,6 +22,13 @@ from django.template import  loader
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
 
+def make_error_resp(msg):
+        resp = dict()
+        resp['messages'] = {'error': msg}
+        resp['outputs'] = dict()
+        resp['outputs']['Scenario'] = dict()
+        resp['outputs']['Scenario']['status'] = 'error'
+        return resp
 
 def errors(request, page_uuid):
     
@@ -92,15 +99,22 @@ def annual_kwh(request):
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
 
 
-def results(request, run_uuid):
+def remove(request, run_uuid):
+    try:
+        ModelManager.remove(run_uuid)  # ModelManager has some internal exception handling
+        return JsonResponse({"Success":True}, status=204)
 
-    def make_error_resp(msg):
-        resp = dict()
-        resp['messages'] = {'error': msg}
-        resp['outputs'] = dict()
-        resp['outputs']['Scenario'] = dict()
-        resp['outputs']['Scenario']['status'] = 'error'
-        return resp
+    except Exception:
+        from IPython import embed
+        embed()
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err.save_to_db()
+        resp = make_error_resp(err.message)
+        return JsonResponse(resp)
+
+def results(request, run_uuid):
 
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
