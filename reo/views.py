@@ -105,9 +105,6 @@ def remove(request, run_uuid):
         return JsonResponse({"Success":True}, status=204)
 
     except Exception:
-        from IPython import embed
-        embed()
-
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
