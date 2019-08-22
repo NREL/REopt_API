@@ -35,6 +35,8 @@ class ScenarioModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
     user_uuid = models.TextField(null=True, blank=True)
+    ip_addr = models.TextField(null=True, blank=True)
+    job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
@@ -583,8 +585,10 @@ class ModelManager(object):
                 return resp
             else:
                 raise Exception
-
-        resp['outputs']['Scenario'] = remove_ids(model_to_dict(scenario_model))
+        scenario_data = remove_ids(model_to_dict(scenario_model))
+        del scenario_data['job_type']
+        del scenario_data['ip_addr']
+        resp['outputs']['Scenario'] = scenario_data
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))

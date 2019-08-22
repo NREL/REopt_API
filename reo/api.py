@@ -17,6 +17,7 @@ from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
+from internal_ips import internal_ips
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -61,6 +62,8 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         try:
+
+            ip_addr = bundle.request.META.get('REMOTE_ADDR','')
             input_validator = ValidateNestedInput(bundle.data)
             run_uuid = str(uuid.uuid4())
 
@@ -78,12 +81,15 @@ class Job(ModelResource):
                 d["outputs"]["Scenario"]["status"] = status
 
             data = dict()
+            
+            
             data["inputs"] = input_validator.input_dict
             data["messages"] = input_validator.messages
             data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
                                             'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
-                                                        'parse_run_outputs_seconds': 0}}}
+                                                        'parse_run_outputs_seconds': 0},                                            
+                                }}
 
             if not input_validator.isValid:  # 400 Bad Request
                 log.debug("input_validator not valid")
@@ -107,7 +113,14 @@ class Job(ModelResource):
             if saveToDb:
                 set_status(data, 'Optimizing...')
                 data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
+                data['outputs']['Scenario']['ip_addr'] = str(ip_addr)
+                if ip_addr in internal_ips.keys():
+                    data['outputs']['Scenario']['job_type'] = internal_ips[ip_addr]
+                else:
+                    data['outputs']['Scenario']['job_type'] = 'Inside NREL Use'
+                
                 model_manager.create_and_save(data)
+            
             setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
             call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
