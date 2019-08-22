@@ -479,6 +479,26 @@ class ModelManager(object):
         eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
 
     @staticmethod
+    def remove(run_uuid):
+        """
+        remove Scenario from database
+        :param run_uuid: id of Scenario
+        :return: None
+        """
+        ScenarioModel.objects.filter(run_uuid=run_uuid).delete()
+        ProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        SiteModel.objects.filter(run_uuid=run_uuid).delete()
+        FinancialModel.objects.filter(run_uuid=run_uuid).delete()
+        LoadProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        ElectricTariffModel.objects.filter(run_uuid=run_uuid).delete()
+        PVModel.objects.filter(run_uuid=run_uuid).delete()
+        WindModel.objects.filter(run_uuid=run_uuid).delete()
+        StorageModel.objects.filter(run_uuid=run_uuid).delete()
+        GeneratorModel.objects.filter(run_uuid=run_uuid).delete()
+        MessageModel.objects.filter(run_uuid=run_uuid).delete()
+        ErrorModel.objects.filter(run_uuid=run_uuid).delete()
+
+    @staticmethod
     def update(data, run_uuid):
         """
         save Scenario results in database
