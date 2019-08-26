@@ -61,8 +61,6 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         try:
-
-            
             input_validator = ValidateNestedInput(bundle.data)
             run_uuid = str(uuid.uuid4())
 
