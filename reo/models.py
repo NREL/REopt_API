@@ -34,8 +34,7 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_uuid = models.TextField(null=True, blank=True)
-    ip_addr = models.TextField(null=True, blank=True)
+    user_uuid = models.TextField(null=True, blank=True) 
     job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
@@ -587,7 +586,6 @@ class ModelManager(object):
                 raise Exception
         scenario_data = remove_ids(model_to_dict(scenario_model))
         del scenario_data['job_type']
-        del scenario_data['ip_addr']
         resp['outputs']['Scenario'] = scenario_data
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
@@ -610,17 +608,14 @@ class ModelManager(object):
 
 
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
-
             resp['messages'][m['message_type']] = m['message']
             
         for scenario_key in nested_input_definitions['Scenario'].iterkeys():
-
             if scenario_key.islower():
                 resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
                 del resp['outputs']['Scenario'][scenario_key]
 
         for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
-
             if site_key.islower():
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]

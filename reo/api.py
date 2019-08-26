@@ -17,7 +17,6 @@ from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
-from internal_ips import internal_ips
 
 api_version = "version 1.0.0"
 saveToDb = True
@@ -63,7 +62,7 @@ class Job(ModelResource):
     def obj_create(self, bundle, **kwargs):
         try:
 
-            ip_addr = bundle.request.META.get('REMOTE_ADDR','')
+            
             input_validator = ValidateNestedInput(bundle.data)
             run_uuid = str(uuid.uuid4())
 
@@ -113,13 +112,16 @@ class Job(ModelResource):
             if saveToDb:
                 set_status(data, 'Optimizing...')
                 data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
-                data['outputs']['Scenario']['ip_addr'] = str(ip_addr)
-                if ip_addr in internal_ips.keys():
-                    data['outputs']['Scenario']['job_type'] = internal_ips[ip_addr]
-                elif 'api_key' not in bundle.request.META.get('QUERY_STRING',''):
-                    data['outputs']['Scenario']['job_type'] = 'Inside NREL Use'
+                if bundle.request.META.get('X-Api-User-Id',False):
+                    if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
+                        data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
+                    else:
+                        data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
                 else:
-                    data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
+                    data['outputs']['Scenario']['job_type'] = 'Internal NREL'
+
+                if bundle.request.META.get('User-Agent','').startswith('check_http/'):
+                    data['outputs']['Scenario']['job_type'] = 'Monitoring'
                 
                 model_manager.create_and_save(data)
             
