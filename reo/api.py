@@ -116,8 +116,10 @@ class Job(ModelResource):
                 data['outputs']['Scenario']['ip_addr'] = str(ip_addr)
                 if ip_addr in internal_ips.keys():
                     data['outputs']['Scenario']['job_type'] = internal_ips[ip_addr]
-                else:
+                elif 'api_key' not in bundle.request.META.get('QUERY_STRING',''):
                     data['outputs']['Scenario']['job_type'] = 'Inside NREL Use'
+                else:
+                    data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
                 
                 model_manager.create_and_save(data)
             
