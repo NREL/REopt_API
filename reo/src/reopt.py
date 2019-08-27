@@ -87,7 +87,8 @@ def reopt(self, dfm, data, run_uuid, bau=False):
     name = 'reopt' if not bau else 'reopt-bau'
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
-
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    
     timeout = data['inputs']['Scenario']['timeout_seconds']
     xpress_model = "REopt_API.mos"
 
@@ -113,26 +114,26 @@ def reopt(self, dfm, data, run_uuid, bau=False):
         msg = "REopt failed to start."
         debug_msg = "REopt failed to start. Error code {}.\n{}".format(e.returncode, e.output)
         log.error(debug_msg)
-        raise REoptFailedToStartError(task=name, run_uuid=self.run_uuid, message=msg, traceback=debug_msg)
+        aise REoptFailedToStartError(task=name, run_uuid=self.run_uuid, message=msg, traceback=debug_msg, user_uuid=self.user_uuid)
 
     except sp.TimeoutExpired:
         msg = "Optimization exceeded timeout: {} seconds.".format(timeout)
         log.error(msg)
         exc_traceback = sys.exc_info()[2]
         raise SubprocessTimeout(task=name, message=msg, run_uuid=self.run_uuid,
-                                traceback=traceback.format_tb(exc_traceback, limit=1))
+                                traceback=traceback.format_tb(exc_traceback, limit=1),user_uuid=self.user_uuid))
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
-        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=name, run_uuid=self.run_uuid)
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=name, run_uuid=self.run_uuid,user_uuid=self.user_uuid))
 
     else:
         log.info("REopt run successful. Status {}".format(status))
 
         if status.strip() != 'optimal':
             log.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip())
+            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(),user_uuid=self.user_uuid)
 
     self.profiler.profileEnd()
     tmp = dict()

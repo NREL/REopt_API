@@ -293,7 +293,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
-
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
@@ -320,4 +321,4 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid)
+        raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=self.run_uuid,,user_uuid=self.user_uuid) )
