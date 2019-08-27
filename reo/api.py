@@ -61,7 +61,6 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         try:
-
             input_validator = ValidateNestedInput(bundle.data)
             run_uuid = str(uuid.uuid4())
 
@@ -79,12 +78,15 @@ class Job(ModelResource):
                 d["outputs"]["Scenario"]["status"] = status
 
             data = dict()
+            
+            
             data["inputs"] = input_validator.input_dict
             data["messages"] = input_validator.messages
             data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
                                             'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
-                                                        'parse_run_outputs_seconds': 0}}}
+                                                        'parse_run_outputs_seconds': 0},                                            
+                                }}
 
             if not input_validator.isValid:  # 400 Bad Request
                 log.debug("input_validator not valid")
@@ -108,7 +110,19 @@ class Job(ModelResource):
             if saveToDb:
                 set_status(data, 'Optimizing...')
                 data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
+                if bundle.request.META.get('X-Api-User-Id',False):
+                    if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
+                        data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
+                    else:
+                        data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
+                else:
+                    data['outputs']['Scenario']['job_type'] = 'Internal NREL'
+
+                if bundle.request.META.get('User-Agent','').startswith('check_http/'):
+                    data['outputs']['Scenario']['job_type'] = 'Monitoring'
+                
                 model_manager.create_and_save(data)
+            
             setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
             call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
 
