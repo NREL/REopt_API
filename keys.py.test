@@ -1,3 +1,5 @@
+rollbar_access_token = 'test'
+
 pvwatts_api_key = 'lsEanynMGwsxRZ91B9EMxH3wudOmNe9e6vY5Eu27'
 developer_nrel_gov_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
 ashrae_tmy_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'

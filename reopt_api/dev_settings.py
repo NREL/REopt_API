@@ -94,8 +94,7 @@ ROLLBAR = {
     'root': BASE_DIR,
     'enabled':True
 }
- 
- 
+
 if os.environ.get('BUILD_TYPE') == 'jenkins':
     ROLLBAR['branch'] = os.environ.get('BRANCH_NAME')
     if not os.environ.get('DB_TEST_NAME') == 'reopt_development':
