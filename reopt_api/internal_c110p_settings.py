@@ -55,6 +55,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -131,6 +132,14 @@ if 'test' in sys.argv:
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
+ROLLBAR = {
+    'access_token': rollbar_access_token,
+    'environment': 'internal_c110p',
+    'root': BASE_DIR,
+    'branch': os.environ.get('BRANCH_NAME')
+}
 
+import rollbar
+rollbar.init(**ROLLBAR)
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.internal_c110p_settings")
 django.setup()

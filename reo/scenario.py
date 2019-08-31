@@ -146,7 +146,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
-            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
+            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -199,15 +199,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception as e:
-        if hasattr(e, 'message'):
+        if isinstance(e, LoadProfileError):
+                raise e
+        
+        elif hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
-                raise WindDownloadError(task=self.name, run_uuid=run_uuid)
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
             else:
                 log.error(e.message)
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
 
-        if isinstance(e, REoptError):
+        elif isinstance(e, REoptError):
             pass
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -217,4 +220,4 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     pass
             else:
                 log.error("Scenario.py raising error: " + exc_value)
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
