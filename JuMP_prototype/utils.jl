@@ -4,6 +4,8 @@ import Base.reshape
 import AxisArrays.AxisArray
 using AxisArrays
 
+jumpex(m::JuMP.AbstractModel) = JuMP.GenericAffExpr{Float64, JuMP.variable_type(m)}()
+
 # Helper Functions
 function importDict(path)
     open(path) do file

@@ -41,7 +41,7 @@ NumRatchets = 20
 readCmd(dataPath * "/Inputs/cmd.log")
 
 #NEED to figure out new way of doing FuelAvail
-FuelAvail = [1.0e10 for x in 1:length(Tech)]
+#FuelAvail = [1.0e10 for x in 1:length(Tech)]
 
 Seg = 1:CapCostSegCount
 Points = 0:CapCostSegCount
@@ -243,7 +243,7 @@ end
             sum(binTechIsOnInTS[t,ts] * FuelBurnRateB[t,LD,fb] * TimeStepScaling
                 for ts in TimeStep, LD in Load) == dvFuelUsed[t,fb])
 @constraint(REopt, FuelCont[t in Tech, fb in FuelBin],
-            dvFuelUsed[t,fb] <= FuelAvail[fb])
+            dvFuelUsed[t,fb] <= FuelAvail[t,fb])
 @constraint(REopt, [t in Tech, fb in FuelBin],
             sum(ProdFactor[t, LD, ts] * LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * FuelBurnRateM[t,LD,fb] * TimeStepScaling * FuelRate[t,fb,ts] * pwf_e
                 for ts in TimeStep, LD in Load, s in Seg) +
