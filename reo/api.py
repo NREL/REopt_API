@@ -68,27 +68,26 @@ class Job(ModelResource):
                 d["outputs"]["Scenario"]["status"] = status
 
         data = dict()
-
-        try:
-            input_validator = ValidateNestedInput(bundle.data)
-            
-            # Setup and start profile
-            profiler = Profiler()
-
-            # Setup log to include UUID of run
-            uuidFilter = UUIDFilter(run_uuid)
-            log.addFilter(uuidFilter)
-            log.info('Beginning run setup')
-
-                        
-            data["inputs"] = input_validator.input_dict
-            data["messages"] = input_validator.messages
-            data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
+        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
                                             'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
                                                         'parse_run_outputs_seconds': 0},                                            
                                 }}
 
+        uuidFilter = UUIDFilter(run_uuid)
+        log.addFilter(uuidFilter)
+        log.info('Beginning run setup')
+
+        try:
+            input_validator = ValidateNestedInput(bundle.data)
+            data["inputs"] = input_validator.input_dict
+            data["messages"] = input_validator.messages
+            
+            # Setup and start profile
+            profiler = Profiler()
+
+            # Setup log to include UUID of run
+            
             if not input_validator.isValid:  # 400 Bad Request
                 log.debug("input_validator not valid")
                 log.debug(json.dumps(data))
