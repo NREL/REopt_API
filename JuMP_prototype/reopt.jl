@@ -7,7 +7,7 @@ const MOI = MathOptInterface
 
 # Data
 include("utils.jl")
-#dataPath = "data/Runeda919d6-1481-4bf9-a531-a1b3397c8c67"
+dataPath = "data/Runeda919d6-1481-4bf9-a531-a1b3397c8c67"
 
 try 
     global dataPath
