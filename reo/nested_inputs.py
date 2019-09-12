@@ -854,7 +854,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e9,
-          "default": 100,
+          "default": 1e9,
           "description": "On-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
