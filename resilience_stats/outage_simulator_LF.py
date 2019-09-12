@@ -131,16 +131,20 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         if batt_kw == 0 or batt_kwh == 0:
             init_soc = [0] * n_timesteps  # default is None
 
-            if pv_kw_ac_hourly in [None, []] and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
+            if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
 
+                months = 12
+                hours = 24
+                probs_of_surviving_by_month = [[0] for _ in range(months)]
+                probs_of_surviving_by_hour_of_the_day = [[0] for _ in range(hours)]
                 return {"resilience_by_timestep": r,
                         "resilience_hours_min": 0,
                         "resilience_hours_max": 0,
                         "resilience_hours_avg": 0,
-                        "outage_durations": None,
-                        "probs_of_surviving": None,
-                        "probs_of_surviving_by_month": None,
-                        "probs_of_surviving_by_hour_of_the_day": None,
+                        "outage_durations": [],
+                        "probs_of_surviving": [],
+                        "probs_of_surviving_by_month": probs_of_surviving_by_month,
+                        "probs_of_surviving_by_hour_of_the_day": probs_of_surviving_by_hour_of_the_day,
                         }
 
         if pv_kw_ac_hourly in [None, []]:
