@@ -2,6 +2,7 @@ import JSON
 import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
+using JuMP
 using AxisArrays
 
 jumpex(m::JuMP.AbstractModel) = JuMP.GenericAffExpr{Float64, JuMP.variable_type(m)}()
@@ -19,6 +20,11 @@ function strToSym(list)
         push!(symList, Symbol(str))
     end
     return symList
+end
+
+macro globalInit(variable, value)
+    e=Expr(:(=), variable, Meta.parse(value))
+    return esc(e)
 end
 
 function globalInit(variable, value)
@@ -181,7 +187,30 @@ end
 
 
 # Format Parameters to be called like variables
-function paramDataFormatter(setTup::Tuple, data)
+
+function retype(dataAr::AbstractArray)
+    x = typeof(dataAr[1])
+    if x == Int64
+        typed = Array{Float64}(undef,0)
+        for elem in dataAr
+            push!(typed, elem)
+        end
+        return typed
+    else
+        typed = Array{x}(undef,0)
+        for elem in dataAr
+            push!(typed, elem)
+        end
+        return typed
+    end
+end
+
+function retype(val::Union{Float64,Int})
+    return val
+end
+
+
+function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
     shapedData = reshape(data, reverseTupleAxis)
     reverseDataAxis = [length(setTup)+1 - n for n in 1:length(setTup)]
@@ -189,7 +218,8 @@ function paramDataFormatter(setTup::Tuple, data)
     return AxisArray(shapedDataT, setTup)
 end
 
-function parameter(setTup::Tuple, data)
+function parameter(setTup::Tuple, nondata::AbstractArray)
+    data = retype(nondata)
     try
         formattedParam = paramDataFormatter(setTup, data)
         return formattedParam
@@ -226,11 +256,6 @@ end
 
 function parameter(set::Symbol, data::Int64)
     return AxisArray([data], set)
-end
-
-function parameter(set, data)
-    shapedData = reshape(data, length(set))
-    return AxisArray(shapedData, set)
 end
 
 function parameter(set, data)
