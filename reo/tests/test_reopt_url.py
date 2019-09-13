@@ -358,6 +358,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     },
                     "Wind": {
                         "max_kw": 0
+                    },
+                    "Generator":{
+                        "max_kw":0
                     }
                 }
             }
