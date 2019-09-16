@@ -128,39 +128,26 @@ class Job(ModelResource):
 
             # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
             log.info("Starting celery chain")
-            try:
-                chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
-            except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
-                if isinstance(e, REoptError):
-                    pass  # handled in each task
-                else:
-                    exc_type, exc_value, exc_traceback = sys.exc_info()
-                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
-                    err.save_to_db()
-
-                    set_status(data, 'Internal Server Error. See messages for more.')
-                    if 'messages' not in data.keys():
-                        data['messages'] = {}
-                    data['messages']['error'] = err.message
-                    log.error("Internal Server error: " + err.message)
-                    raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                             content_type='application/json',
-                                                             status=500))  # internal server error
+            
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
+                
         except Exception as e:
+            if isinstance(e, REoptError):
+                pass  # handled in each task
+            else:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
 
-            exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
+                err.save_to_db()
 
-            err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
-            err.save_to_db()
-
-            set_status(data, 'Internal Server Error. See messages for more.')
-            if 'messages' not in data.keys():
-                data['messages'] = {}
-            data['messages']['error'] = err.message
-            log.error("Internal Server error: " + err.message)
-            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                     content_type='application/json',
-                                                     status=500))  # internal server error
+                set_status(data, 'Internal Server Error. See messages for more.')
+                if 'messages' not in data.keys():
+                    data['messages'] = {}
+                data['messages']['error'] = err.message
+                log.error("Internal Server error: " + err.message)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
         log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
