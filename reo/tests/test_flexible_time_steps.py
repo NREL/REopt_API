@@ -6,6 +6,9 @@ from reo.nested_to_flat_output import nested_to_flat
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
+load_list_1 = [50]*8760
+load_list_2 = [50]*35040
+
 fts_post_1 = {"Scenario": {
             "time_steps_per_hour": 1,
             "Site": {
@@ -13,9 +16,7 @@ fts_post_1 = {"Scenario": {
                 "longitude": -91.7337,
 
                 "LoadProfile": {
-                    "doe_reference_name": "MidriseApartment",
-                    "annual_kwh": 229671,
-                    "year": 2017,
+                    "loads_kw": load_list_1,
                 },
 
                 "ElectricTariff": {
@@ -44,14 +45,13 @@ fts_post_1 = {"Scenario": {
 
 fts_post_2 = {"Scenario": {
             "time_steps_per_hour": 4,
+            "flexible_time_steps":True,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
 
                 "LoadProfile": {
-                    "doe_reference_name": "MidriseApartment",
-                    "annual_kwh": 229671,
-                    "year": 2017,
+                    "loads_kw": load_list_2,
                 },
 
                 "ElectricTariff": {

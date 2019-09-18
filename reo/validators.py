@@ -376,7 +376,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['flexible_time_steps'])
 
                 elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
                     counter -= 1
@@ -393,16 +393,16 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec")
+                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['flexible_time_steps'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees")
+                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['flexible_time_steps'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius")
+                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['flexible_time_steps'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres")
+                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['flexible_time_steps'])
                 else:
                     self.validate_wind_resource()
 
@@ -468,7 +468,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['flexible_time_steps'])
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
@@ -880,11 +880,16 @@ class ValidateNestedInput:
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
-        def validate_8760(self, attr, obj_name, attr_name):
+        def validate_8760(self, attr, obj_name, attr_name, flex_time_step):
 
             n = len(attr)
+            length_list = [8760, 17520, 35040]
 
-            if n == 8760:
+            if flex_time_step:
+                if n in length_list:
+                    pass
+
+            elif n == 8760:
                 pass
 
             elif n == 17520:  # downsample 30 minute data

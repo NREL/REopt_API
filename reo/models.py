@@ -41,6 +41,7 @@ class ScenarioModel(models.Model):
     status = models.TextField(null=True, blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
+    flexible_time_steps = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
 
     @classmethod
