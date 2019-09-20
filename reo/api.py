@@ -137,7 +137,7 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                     content_type='application/json',
                     status=400))            
-            if isinstance(e, REoptError):
+            elif isinstance(e, REoptError):
                 pass  # handled in each task
             else:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
