@@ -15,7 +15,7 @@ from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
-from reo.exceptions import REoptError, UnexpectedError
+from reo.exceptions import REoptError, UnexpectedError, BadPostError
 from celery import group, chain
 
 api_version = "version 1.0.0"
@@ -97,11 +97,12 @@ class Job(ModelResource):
 
                 if saveToDb:
                     badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
-                    badpost.save()
+                    try:
+                        badpost.save()
+                    except:
+                        log.debug('Could not save BadPost {} to database: \n {}'.format(run_uuid, json.dumps(bundle.data)))
 
-                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                         content_type='application/json',
-                                                         status=400))            
+                    raise BadPostError(run_uuid=run_uuid)
 
             log.info('Entering ModelManager')
             model_manager = ModelManager()
@@ -132,6 +133,10 @@ class Job(ModelResource):
             chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
                 
         except Exception as e:
+            if isinstance(e, BadPostError):
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                    content_type='application/json',
+                    status=400))            
             if isinstance(e, REoptError):
                 pass  # handled in each task
             else:
@@ -139,15 +144,14 @@ class Job(ModelResource):
 
                 err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
-
                 set_status(data, 'Internal Server Error. See messages for more.')
                 if 'messages' not in data.keys():
                     data['messages'] = {}
                 data['messages']['error'] = err.message
                 log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                         content_type='application/json',
-                                                         status=500))  # internal server error
+                                                     content_type='application/json',
+                                                     status=500))  # internal server error
 
         log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),

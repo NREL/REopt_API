@@ -2,6 +2,7 @@ import traceback as tb
 from reo.models import ErrorModel
 from reo.log_levels import log
 import rollbar
+import warnings
 
 class REoptError(Exception):
     """
@@ -48,14 +49,18 @@ class REoptError(Exception):
             message = models.TextField(blank=True, default='')
             traceback = models.TextField(blank=True, default='')
         """
+        try:
+            extra_data = {'task':self.task, 'name':self.name, 'run_uuid':self.run_uuid, 'user_uuid':self.user_uuid, 'message':self.message, 'traceback':self.traceback}
 
-        extra_data = {'task':self.task, 'name':self.name, 'run_uuid':self.run_uuid, 'user_uuid':self.user_uuid, 'message':self.message, 'traceback':self.traceback}
-
-        rollbar.report_message(self.name, 'error', extra_data=extra_data)        
+            rollbar.report_message(self.name, 'error', extra_data=extra_data)        
         
-        em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '', user_uuid=self.user_uuid or '', message=self.message or '',
+            em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '', user_uuid=self.user_uuid or '', message=self.message or '',
                         traceback=self.traceback or '')
-        em.save()
+            em.save()
+        except:
+            message = 'Could not save UnexpectedError for run_uuid {} to database: \n {}'.format(self.run_uuid, self.traceback)
+            log.debug(message)
+            warnings.warn(message)
 
 
 class SubprocessTimeout(REoptError):
@@ -176,3 +181,16 @@ class LoadProfileError(REoptError):
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                               message=message, traceback=debug_msg)
 
+class BadPostError(REoptError):
+    """
+    REopt catch-all exception class
+
+    Attributes:
+        message - explanation of the error
+    """
+
+    __name__ = 'BadPostError'
+
+    def __init__(self, run_uuid='', user_uuid=''):
+        message = "Bad Incoming Request"
+        super(BadPostError, self).__init__(name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid)

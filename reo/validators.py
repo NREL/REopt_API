@@ -79,7 +79,8 @@ class URDB_RateValidator:
         self.validate()                              #Validate attributes
 
         if _log_errors:
-            log_urdb_errors(self.label, self.errors, self.warnings)
+            if len(self.errors + self.warnings) > 0:
+                log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
          
@@ -873,12 +874,12 @@ class ValidateNestedInput:
             if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name') is None:
                 self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], 'urdb_rate_name', urdb_response.get('name'))
 
-            try:
-                rate_checker = URDB_RateValidator(**urdb_response)
-                if rate_checker.errors:
-                    self.urdb_errors.append(rate_checker.errors)
-            except:
-                self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
+            #try:
+            rate_checker = URDB_RateValidator(**urdb_response)
+            if rate_checker.errors:
+                self.urdb_errors.append(rate_checker.errors)
+            #except:
+            #    self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
         def validate_8760(self, attr, obj_name, attr_name):
 

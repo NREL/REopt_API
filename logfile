@@ -1,0 +1,22 @@
+2019-09-19 15:07:36.225 MDT [26843] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2019-09-19 15:07:36.226 MDT [26843] LOG:  listening on IPv6 address "::1", port 5432
+2019-09-19 15:07:36.310 MDT [26843] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2019-09-19 15:07:36.486 MDT [26844] LOG:  database system was shut down at 2019-04-12 16:11:08 MDT
+2019-09-19 15:07:36.733 MDT [26843] LOG:  database system is ready to accept connections
+2019-09-19 15:08:07.745 MDT [26882] FATAL:  role "reopt" does not exist
+2019-09-19 15:08:24.158 MDT [26894] FATAL:  role "reopt" does not exist
+2019-09-19 15:09:51.783 MDT [26961] FATAL:  role "reopt" does not exist
+2019-09-19 15:10:53.493 MDT [27009] FATAL:  role "postgres" does not exist
+2019-09-19 15:11:15.097 MDT [27038] FATAL:  role "reopt" does not exist
+2019-09-19 15:11:15.581 MDT [27043] FATAL:  role "reopt" does not exist
+2019-09-19 15:12:52.534 MDT [27097] FATAL:  role "postgres" does not exist
+2019-09-19 15:13:48.519 MDT [27118] FATAL:  role "reopt" does not exist
+2019-09-19 15:13:59.624 MDT [27135] FATAL:  role "postgres" does not exist
+2019-09-19 15:15:07.549 MDT [27172] FATAL:  database "reopt" does not exist
+2019-09-19 15:16:47.533 MDT [26843] LOG:  received fast shutdown request
+2019-09-19 15:16:47.533 MDT [26843] LOG:  aborting any active transactions
+2019-09-19 15:16:47.534 MDT [27178] FATAL:  terminating connection due to administrator command
+2019-09-19 15:16:47.534 MDT [27259] FATAL:  terminating connection due to administrator command
+2019-09-19 15:16:47.535 MDT [26843] LOG:  background worker "logical replication launcher" (PID 26850) exited with exit code 1
+2019-09-19 15:16:47.536 MDT [26845] LOG:  shutting down
+2019-09-19 15:16:47.632 MDT [26843] LOG:  database system is shut down
