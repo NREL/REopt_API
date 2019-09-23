@@ -68,11 +68,6 @@ nested_input_definitions = {
       "default": 1,
       "description": "The number of time steps per hour in the REopt simulation"
     },
-    "flexible_time_steps": {
-      "default": False,
-      "type": "bool",
-      "description": "When flexible_time_steps is set to true, load profile is not down-sampled"
-    },
 
     "Site": {
       "latitude": {
@@ -1011,7 +1006,7 @@ def flat_to_nested(i):
             "user_uuid": i.get("user_uuid"),
             "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
-            "flexible_time_steps":i.get("flexible_time_steps"),
+
 
             "Site": {
                 "latitude": i.get("latitude"),

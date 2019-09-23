@@ -45,7 +45,6 @@ fts_post_1 = {"Scenario": {
 
 fts_post_2 = {"Scenario": {
             "time_steps_per_hour": 4,
-            "flexible_time_steps":True,
             "Site": {
                 "latitude": 35.2468,
                 "longitude": -91.7337,
