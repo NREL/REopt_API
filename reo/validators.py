@@ -881,11 +881,22 @@ class ValidateNestedInput:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
         def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour):
+            """
+            This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
+            resolution, but wants to run an hourly REopt model. If time_steps_per_hour = 1 then we downsample the user's
+            time-series to an 8760. If time_steps_per_hour != 1 then we do nothing since the resolution of time-series
+            relative to time_steps_per_hour is handled within each time-series' implementation.
+            :param attr: list of floats
+            :param obj_name: str, parent object name from nested_inputs (eg. "LoadProfile")
+            :param attr_name: str, name of time-series (eg. "critical_loads_kw")
+            :param time_steps_per_hour: int, [1, 2, 4]
+            :return: None
+            """
 
             n = len(attr)
             length_list = [8760, 17520, 35040]
 
-            if time_steps_per_hour >1:
+            if time_steps_per_hour != 1:
                 if n in length_list:
                     pass
 
