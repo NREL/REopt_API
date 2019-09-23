@@ -239,7 +239,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 1.16
         d_expected['avoided_outage_costs_us_dollars'] = 248073.92
         d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
-        d_expected['existing_gen_om_cost_us_dollars'] = 17980.0
+        d_expected['existing_gen_om_cost_us_dollars'] = 18185.0
         d_expected['existing_pv_om_cost_us_dollars'] = 5754.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
 
