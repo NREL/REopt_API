@@ -124,12 +124,12 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         del c2['avoided_outage_costs_us_dollars']
 
 
-        # try:
-        #     check_common_outputs(self, c1, c2)
-        #     print("Test Successful!")
-        # except:
-        #     print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
-        #     #print("Error message with ts=1: {}".format(d1['messages']))
-        #     print("Error message with ts=4: {}") #.format(d2['messages']
-        #     raise
+        try:
+            check_common_outputs(self, c1, c2)
+            print("Test Successful!")
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
+            #print("Error message with ts=1: {}".format(d1['messages']))
+            print("Error message with ts=4: {}") #.format(d2['messages']
+            raise
 
