@@ -897,8 +897,10 @@ class ValidateNestedInput:
             length_list = [8760, 17520, 35040]
 
             if time_steps_per_hour != 1:
-                if n in length_list:
-                    pass
+                if n not in length_list:
+                    self.input_data_errors.append(
+                        "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name)
+                    )
 
             elif n == 8760:
                 pass
