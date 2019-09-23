@@ -376,7 +376,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
 
                 elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
                     counter -= 1
@@ -393,16 +393,16 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec")
+                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees")
+                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius")
+                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres")
+                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
                 else:
                     self.validate_wind_resource()
 
@@ -468,7 +468,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
@@ -880,11 +880,29 @@ class ValidateNestedInput:
             except:
                 self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
-        def validate_8760(self, attr, obj_name, attr_name):
+        def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour):
+            """
+            This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
+            resolution, but wants to run an hourly REopt model. If time_steps_per_hour = 1 then we downsample the user's
+            time-series to an 8760. If time_steps_per_hour != 1 then we do nothing since the resolution of time-series
+            relative to time_steps_per_hour is handled within each time-series' implementation.
+            :param attr: list of floats
+            :param obj_name: str, parent object name from nested_inputs (eg. "LoadProfile")
+            :param attr_name: str, name of time-series (eg. "critical_loads_kw")
+            :param time_steps_per_hour: int, [1, 2, 4]
+            :return: None
+            """
 
             n = len(attr)
+            length_list = [8760, 17520, 35040]
 
-            if n == 8760:
+            if time_steps_per_hour != 1:
+                if n not in length_list:
+                    self.input_data_errors.append(
+                        "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name)
+                    )
+
+            elif n == 8760:
                 pass
 
             elif n == 17520:  # downsample 30 minute data
