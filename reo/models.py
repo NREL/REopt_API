@@ -175,6 +175,7 @@ class ElectricTariffModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
