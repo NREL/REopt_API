@@ -861,7 +861,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.3,
+          "default": 0,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
         },
         "generator_only_runs_during_grid_outage": {
