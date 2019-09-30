@@ -246,6 +246,7 @@ class Generator(Tech):
         # in this case existing_kw = max_kw = min_kw, fixing the gen-size decision variable as a constant
         if self.max_kw < self.existing_kw:
             self.max_kw = self.existing_kw
+            self.min_kw = self.existing_kw
             #GeneratorModel.objects.filter(run_uuid=run_uuid).update(max_kw=self.max_kw)
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
