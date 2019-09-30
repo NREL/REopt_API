@@ -396,6 +396,11 @@ nested_output_definitions = {
                   "description": "Generator fuel used to meet critical load during grid outage.",
                   "units": "US gallons"
                 },
+                "fuel_used_gal_bau": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage in bau case.",
+                  "units": "US gallons"
+                },
                 "average_yearly_energy_produced_kwh": {
                   "type": float,
                   "description": "Average annual energy produced by the diesel generator over one year",

@@ -371,6 +371,7 @@ class GeneratorModel(models.Model):
 
         # Outputs
         fuel_used_gal = models.FloatField(null=True, blank=True)
+        fuel_used_gal_bau = models.FloatField(null=True, blank=True)
         size_kw = models.FloatField(null=True, blank=True)
         average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
         average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)

@@ -66,6 +66,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         bau_attributes = [
             "lcc",
+            "fuel_used_gal",
             "year_one_energy_cost",
             "year_one_demand_cost",
             "year_one_fixed_cost",
@@ -255,6 +256,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     generator_model = GeneratorModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
+                    self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] = self.results_dict.get("fuel_used_gal_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
                     self.nested_outputs["Scenario"]["Site"][name][
                         "average_yearly_energy_produced_kwh"] = self.results_dict.get(
