@@ -380,7 +380,9 @@ class GeneratorModel(models.Model):
         year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        existing_gen_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_fixed_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        existing_gen_variable_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        gen_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):

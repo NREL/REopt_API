@@ -431,9 +431,19 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of diesel generator exporting to grid",
                   "units": "kW"
                 },
-                "existing_gen_om_cost_us_dollars": {
+                "existing_gen_fixed_om_cost_us_dollars_bau": {
                   "type": float,
-                  "description": "Lifetime O&M cost for existing diesel generator system.",
+                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
+                  "units": "$"
+                },
+                "existing_gen_variable_om_cost_us_dollars_bau": {
+                  "type": float,
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system in bau case.",
+                  "units": "$"
+                },
+                "gen_variable_om_cost_us_dollars":{
+                  "type": float,
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
                   "units": "$"
                 }
               }
