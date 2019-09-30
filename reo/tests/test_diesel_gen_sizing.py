@@ -66,7 +66,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kwh'] = 0.1014
         d_expected['gen_kw'] = 11.2938
         d_expected['fuel_used_gal'] = 1.52
-        d_expected['avoided_outage_costs_us_dollars'] = 1449.55  #1465.83
+        d_expected['avoided_outage_costs_us_dollars'] =   1449.55 #1465.83
         d_expected['microgrid_upgrade_cost_us_dollars'] = 8552.1
 
         try:
@@ -89,7 +89,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -180,7 +180,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 0.78
         d_expected['avoided_outage_costs_us_dollars'] = 2982.63
         d_expected['microgrid_upgrade_cost_us_dollars'] = 4456.8
-        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
+        d_expected['gen_variable_om_cost_us_dollars'] = 136.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
@@ -239,7 +239,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 1.16
         d_expected['avoided_outage_costs_us_dollars'] = 309552.85
         d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
-        d_expected['existing_gen_om_cost_us_dollars'] = 18185.0
+        d_expected['gen_variable_om_cost_us_dollars'] = 205.0
         d_expected['existing_pv_om_cost_us_dollars'] = 5754.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
 
@@ -302,7 +302,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 1.52
         d_expected['avoided_outage_costs_us_dollars'] = 1465.83 #1449.55
         d_expected['microgrid_upgrade_cost_us_dollars'] = 8552.1
-        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
+        d_expected['gen_variable_om_cost_us_dollars'] = 271.0
         d_expected['existing_pv_om_cost_us_dollars'] = 0.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
