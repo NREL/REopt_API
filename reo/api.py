@@ -15,11 +15,17 @@ from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
 from reo.results import parse_run_outputs
-from reo.exceptions import REoptError, UnexpectedError, BadPostError
+from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
 
 api_version = "version 1.0.0"
 saveToDb = True
+
+
+def set_status(d, status):
+    if 'outputs' not in d.keys():
+        d["outputs"] = {"Scenario": {"status": status}}
+    d["outputs"]["Scenario"]["status"] = status
 
 
 class UUIDFilter(logging.Filter):
@@ -61,87 +67,74 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = str(uuid.uuid4())
-
-        def set_status(d, status):
-                if 'outputs' not in d.keys():
-                    d["outputs"] = {"Scenario":{"status":status}}
-                d["outputs"]["Scenario"]["status"] = status
-
         data = dict()
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
                                             'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
                                                         'parse_run_outputs_seconds': 0},                                            
-                                }}
-
+                                       }
+                           }
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)
         log.info('Beginning run setup')
 
         try:
             input_validator = ValidateNestedInput(bundle.data)
-            data["inputs"] = input_validator.input_dict
-            data["messages"] = input_validator.messages
+        except Exception as e:
+            pass # internal server error, immediate http response
+
+        data["inputs"] = input_validator.input_dict
+        data["messages"] = input_validator.messages
             
-            # Setup and start profile
-            profiler = Profiler()
+        # Setup and start profile
+        profiler = Profiler()
 
-            # Setup log to include UUID of run
-            
-            if not input_validator.isValid:  # 400 Bad Request
-                log.debug("input_validator not valid")
-                log.debug(json.dumps(data))
+        if not input_validator.isValid:  # 400 Bad Request
+            log.debug("input_validator not valid")
+            log.debug(json.dumps(data))
 
-                data['run_uuid'] = 'Error. See messages for more information. ' \
-                                   'Note that inputs have default values filled in.'
-
-                if saveToDb:
-                    badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
-                    try:
-                        badpost.save()
-                    except:
-                        log.debug('Could not save BadPost {} to database: \n {}'.format(run_uuid, json.dumps(bundle.data)))
-
-                    raise BadPostError(run_uuid=run_uuid)
-
-            log.info('Entering ModelManager')
-            model_manager = ModelManager()
-            profiler.profileEnd()
+            data['run_uuid'] = 'Error. See messages for more information. ' \
+                               'Note that inputs have default values filled in.'
 
             if saveToDb:
-                set_status(data, 'Optimizing...')
-                data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
-                if bundle.request.META.get('X-Api-User-Id',False):
-                    if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
-                        data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
-                    else:
-                        data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
+                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
+                badpost.save()
+
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                     content_type='application/json',
+                                                     status=400))
+
+        log.info('Entering ModelManager')
+        model_manager = ModelManager()
+        profiler.profileEnd()
+
+        if saveToDb:
+            set_status(data, 'Optimizing...')
+            data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
+            if bundle.request.META.get('X-Api-User-Id',False):
+                if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
+                    data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
                 else:
-                    data['outputs']['Scenario']['job_type'] = 'Internal NREL'
-
-                if bundle.request.META.get('User-Agent','').startswith('check_http/'):
-                    data['outputs']['Scenario']['job_type'] = 'Monitoring'
-                
-                model_manager.create_and_save(data)
-            
-            setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
-            call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
-
-            # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-            log.info("Starting celery chain")
-            
-            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
-                
-        except Exception as e:
-            if isinstance(e, BadPostError):
-                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                    content_type='application/json',
-                    status=400))            
-            elif isinstance(e, REoptError):
-                pass  # handled in each task
+                    data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
             else:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
+                data['outputs']['Scenario']['job_type'] = 'Internal NREL'
 
+            if bundle.request.META.get('User-Agent','').startswith('check_http/'):
+                data['outputs']['Scenario']['job_type'] = 'Monitoring'
+
+            model_manager.create_and_save(data)
+            
+        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
+        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+        # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
+        log.info("Starting celery chain")
+        try:
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
+        except Exception as e:
+            if isinstance(e, REoptError):
+                pass  # handled in each task
+            else:  # for every other kind of exception
+                exc_type, exc_value, exc_traceback = sys.exc_info()
                 err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, 'Internal Server Error. See messages for more.')

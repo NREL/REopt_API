@@ -4,6 +4,7 @@ from reo.log_levels import log
 import rollbar
 import warnings
 
+
 class REoptError(Exception):
     """
     Base class for exceptions in reo app.
@@ -149,6 +150,7 @@ class UnexpectedError(REoptError):
         super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
                                               traceback=debug_msg)
 
+
 class WindDownloadError(REoptError):
     """
     REopt catch-all exception class
@@ -180,17 +182,3 @@ class LoadProfileError(REoptError):
         message = "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                               message=message, traceback=debug_msg)
-
-class BadPostError(REoptError):
-    """
-    REopt catch-all exception class
-
-    Attributes:
-        message - explanation of the error
-    """
-
-    __name__ = 'BadPostError'
-
-    def __init__(self, run_uuid='', user_uuid=''):
-        message = "Bad Incoming Request"
-        super(BadPostError, self).__init__(name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid)
