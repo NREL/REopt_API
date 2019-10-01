@@ -81,7 +81,17 @@ class Job(ModelResource):
         try:
             input_validator = ValidateNestedInput(bundle.data)
         except Exception as e:
-            pass # internal server error, immediate http response
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
+            err.save_to_db()
+            set_status(data, 'Internal Server Error during input validation. Please check your POST for bad values.')
+            if 'messages' not in data.keys():
+                data['messages'] = {}
+            data['messages']['error'] = err.message  # "Unexpected Error."
+            log.error("Internal Server error: " + err.message)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                     content_type='application/json',
+                                                     status=500))  # internal server error
 
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
@@ -143,8 +153,8 @@ class Job(ModelResource):
                 data['messages']['error'] = err.message
                 log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                     content_type='application/json',
-                                                     status=500))  # internal server error
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
         log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),
