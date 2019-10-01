@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel, LoadProfileModel, GeneratorModel
+from reo.models import ModelManager, PVModel, LoadProfileModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -253,7 +253,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
                 elif name == "Generator":
-                    generator_model = GeneratorModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] = self.results_dict.get("fuel_used_gal_bau")
@@ -283,13 +282,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "gen_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs")
-
-                    # for existing generator case, the updated fuel curve parameters need to stored in the data dict
-                    # m and b are used in the outage simulator fo
-                    data['inputs']['Scenario']['Site']['Generator'][
-                        'fuel_intercept_gal_per_hr'] = generator_model.fuel_intercept_gal_per_hr
-                    data['inputs']['Scenario']['Site']['Generator'][
-                        'fuel_slope_gal_per_kwh'] = generator_model.fuel_slope_gal_per_kwh
 
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
