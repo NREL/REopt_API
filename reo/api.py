@@ -22,6 +22,12 @@ api_version = "version 1.0.0"
 saveToDb = True
 
 
+def set_status(d, status):
+    if 'outputs' not in d.keys():
+        d["outputs"] = {"Scenario": {"status": status}}
+    d["outputs"]["Scenario"]["status"] = status
+
+
 class UUIDFilter(logging.Filter):
 
     def __init__(self, uuidstr):
@@ -61,8 +67,10 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
         try:
-            input_validator = ValidateNestedInput(bundle.data)
             run_uuid = str(uuid.uuid4())
+
+            data = dict()
+            input_validator = ValidateNestedInput(bundle.data)
 
             # Setup and start profile
             profiler = Profiler()
@@ -72,14 +80,6 @@ class Job(ModelResource):
             log.addFilter(uuidFilter)
             log.info('Beginning run setup')
 
-            def set_status(d, status):
-                if 'outputs' not in d.keys():
-                    d["outputs"] = {"Scenario":{"status":status}}
-                d["outputs"]["Scenario"]["status"] = status
-
-            data = dict()
-            
-            
             data["inputs"] = input_validator.input_dict
             data["messages"] = input_validator.messages
             data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
@@ -135,7 +135,7 @@ class Job(ModelResource):
                     pass  # handled in each task
                 else:
                     exc_type, exc_value, exc_traceback = sys.exc_info()
-                    err = UnexpectedError(exc_type, exc_value, traceback.format_exc(), task='api.py', run_uuid=run_uuid)
+                    err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
                     err.save_to_db()
 
                     set_status(data, 'Internal Server Error. See messages for more.')
