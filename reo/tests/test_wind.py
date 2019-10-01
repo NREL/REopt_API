@@ -63,7 +63,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-
     def test_wind_size_class(self):
         """
         Validation to ensure that max_kw of wind is set to size_class
@@ -99,7 +98,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
-    @skip
+    @skip("not sure why this test is skipped, was commented out in commit affd9c108b674f97ddc47990c6cb4ab399f1e296")
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
@@ -107,7 +106,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         Note no tax, no ITC, no MACRS.
         :return:
         """
-
         d_expected = dict()
         d_expected['lcc'] = 8551172
         d_expected['npv'] = 16159608

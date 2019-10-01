@@ -3,7 +3,7 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
-from reo.models import GeneratorModel
+
 
 class Tech(object):
     """
