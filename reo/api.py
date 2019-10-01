@@ -82,7 +82,7 @@ class Job(ModelResource):
             input_validator = ValidateNestedInput(bundle.data)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.message,  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
             err.save_to_db()
             set_status(data, 'Internal Server Error during input validation. Please check your POST for bad values.')
             if 'messages' not in data.keys():
@@ -145,7 +145,7 @@ class Job(ModelResource):
                 pass  # handled in each task
             else:  # for every other kind of exception
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
+                err = UnexpectedError(exc_type, exc_value.message,  exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, 'Internal Server Error. See messages for more.')
                 if 'messages' not in data.keys():

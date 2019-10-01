@@ -153,8 +153,8 @@ class UnexpectedError(REoptError):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
         if message is None:
             message = "Unexpected Error."
-        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
-                                              traceback=debug_msg)
+        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                              message=message, traceback=debug_msg)
 
 
 class WindDownloadError(REoptError):
@@ -169,8 +169,8 @@ class WindDownloadError(REoptError):
 
     def __init__(self, task='', run_uuid='', user_uuid=''):
         message = "Wind Dataset Timed Out"
-        super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
-                                              traceback='')
+        super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                                message=message, traceback='')
 
 
 class LoadProfileError(REoptError):
@@ -181,7 +181,7 @@ class LoadProfileError(REoptError):
     __name__ = 'LoadProfileError'
 
     def __init__(self, exc_value, exc_traceback, task='', run_uuid='', user_uuid=''):
-        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value,tb.format_tb(exc_traceback))
+        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value, tb.format_tb(exc_traceback))
         message = "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                message=message, traceback=debug_msg)
