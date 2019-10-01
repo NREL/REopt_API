@@ -175,11 +175,8 @@ class WindDownloadError(REoptError):
 
 class LoadProfileError(REoptError):
     """
-        REopt catch-all exception class
-
-        Attributes:
-            message - explanation of the error
-        """
+    Exception class for errors that occur during LoadProfile class instantiation in reo.scenario
+    """
 
     __name__ = 'LoadProfileError'
 
@@ -187,4 +184,4 @@ class LoadProfileError(REoptError):
         debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value,tb.format_tb(exc_traceback))
         message = "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
-                                              message=message, traceback=debug_msg)
+                                               message=message, traceback=debug_msg)

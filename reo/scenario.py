@@ -152,11 +152,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
-
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
-            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error = LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error.save_to_db()
+            raise lp_error
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
