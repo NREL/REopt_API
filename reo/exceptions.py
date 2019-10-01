@@ -50,16 +50,22 @@ class REoptError(Exception):
             message = models.TextField(blank=True, default='')
             traceback = models.TextField(blank=True, default='')
         """
-        try:
-            extra_data = {'task':self.task, 'name':self.name, 'run_uuid':self.run_uuid, 'user_uuid':self.user_uuid, 'message':self.message, 'traceback':self.traceback}
+        extra_data = {'task': self.task,
+                      'name': self.name,
+                      'run_uuid': self.run_uuid,
+                      'user_uuid': self.user_uuid,
+                      'message': self.message,
+                      'traceback': self.traceback,
+                      }
 
-            rollbar.report_message(self.name, 'error', extra_data=extra_data)        
+        rollbar.report_message(self.name, 'error', extra_data=extra_data)
+        try:
         
-            em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '', user_uuid=self.user_uuid or '', message=self.message or '',
-                        traceback=self.traceback or '')
+            em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '',
+                            user_uuid=self.user_uuid or '', message=self.message or '', traceback=self.traceback or '')
             em.save()
         except:
-            message = 'Could not save UnexpectedError for run_uuid {} to database: \n {}'.format(self.run_uuid, self.traceback)
+            message = 'Could not save {} for run_uuid {} to database: \n {}'.format(self.__name__, self.run_uuid, self.traceback)
             log.debug(message)
             warnings.warn(message)
 
