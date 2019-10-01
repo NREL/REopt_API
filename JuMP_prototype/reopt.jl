@@ -24,7 +24,7 @@ datToVariable(dataPath * "/Inputs/")
 # NEED this when there is only one tech
 #Tech = [:UTIL1]
 
-REopt = Model()
+REopt = Model(with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
 
 # Counting Sets
 CapCostSegCount = 5
@@ -484,7 +484,7 @@ r_tax_fraction_offtaker = (1 - r_tax_offtaker)
 
 println("Model built. Moving on to optimization...")
 
-optimize!(REopt, with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
+optimize!(REopt)
 
 
 ### Output Module
