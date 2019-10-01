@@ -247,7 +247,9 @@ class Generator(Tech):
         if self.max_kw < self.existing_kw:
             self.max_kw = self.existing_kw
             self.min_kw = self.existing_kw
-            #GeneratorModel.objects.filter(run_uuid=run_uuid).update(max_kw=self.max_kw)
+
+        if self.max_kw < self.min_kw:
+            self.min_kw = self.max_kw
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:
