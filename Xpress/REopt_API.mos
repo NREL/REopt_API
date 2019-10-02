@@ -20,7 +20,6 @@ parameters
   FuelBinCount = 1
   DemandBinCount = 1
   DemandMonthsBinCount = 1
-  BattLevelCount = 1
   TimeStepScaling = 1.0 !.25! !how much actual time does each timestep represent.
   TimeStepCount =8760 !35040
   Obj = 5  !1 for minimize LCC, 5 for min LCC AND high mean SOC
@@ -60,7 +59,6 @@ declarations
   FuelBin = 1..FuelBinCount
   DemandBin = 1..DemandBinCount
   DemandMonthsBin = 1..DemandMonthsBinCount
-  BattLevel=1..BattLevelCount
 
   StartTime: real
   EndTime: real
@@ -123,8 +121,8 @@ declarations
   dvElecToStor: array( TimeStep) of mpvar  !Electricity going to the storage system during each timestep
   dvElecFromStor: array ( TimeStep) of mpvar  !Electricity coming from the storage system during each timestep
   dvStoredEnergy: array( 0..TimeStepCount) of mpvar  !State of charge of the storage system
-  dvStorageSizeKWH: array( BattLevel) of mpvar   !Physical size of the storage system
-  dvStorageSizeKW: array( BattLevel) of mpvar  !maximum amount of energy charging / discharging storage.  Basically the size of the inverter.
+  dvStorageSizeKWH: mpvar   !Physical size of the storage system
+  dvStorageSizeKW: mpvar  !maximum amount of energy charging / discharging storage.  Basically the size of the inverter.
   dvMeanSOC:  mpvar
   binBattCharge: array( TimeStep) of mpvar
   binBattDischarge: array( TimeStep) of mpvar
@@ -135,8 +133,8 @@ declarations
   MinStorageSizeKWH: real !the min size of storage
   MaxStorageSizeKW:  real !the max size of the charge / discharge per time step, basically the inverter
   MinStorageSizeKW: real
-  StorageCostPerKWH: array(BattLevel) of real !Storage cost per KWH
-  StorageCostPerKW: array( BattLevel) of real !Storage cost per KW.  Cost of inverter.
+  StorageCostPerKWH: real !Storage cost per KWH
+  StorageCostPerKW: real !Storage cost per KW.  Cost of inverter.
   StorageMinChargePcent: real !Min charge on the storage device as a percent of the total
   InitSOC: real  ! initial state of charge of battery
 
@@ -165,8 +163,6 @@ declarations
   DemandLookbackPercent:  real
   dvPeakDemandELookback: mpvar
   DemandLookbackMonths: set of integer
-  binBattLevel: array(BattLevel) of mpvar
-  BattLevelCoef: array(BattLevel,1..2) of real
 
   analysis_years: integer
 
@@ -261,7 +257,6 @@ initializations from DAT6 ! storage <--NEED A BAU VERSION WITH EMPTY PARAMS?
 	StorageMinChargePcent
 	EtaStorIn
 	EtaStorOut
-	BattLevelCoef
 	InitSOC
 end-initializations
 
@@ -370,12 +365,12 @@ end-do
 !the state of the storage system at the beginning is 0
 
 	! boundary condition.  State of charge must begin and end the same.
-	dvStoredEnergy(0) = InitSOC * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling !SOCt0(l) !dvStoredEnergy(TimeStepCount)
+	dvStoredEnergy(0) = InitSOC * dvStorageSizeKWH / TimeStepScaling !SOCt0(l) !dvStoredEnergy(TimeStepCount)
 	!next to lines set the SOC of the battery at time of GridOutage
-	sum(b in BattLevel) dvStorageSizeKWH(b) <=  MaxStorageSizeKWH
-	sum(b in BattLevel) dvStorageSizeKWH(b) >=  MinStorageSizeKWH
-	sum(b in BattLevel) dvStorageSizeKW(b) <=  MaxStorageSizeKW
-	sum(b in BattLevel) dvStorageSizeKW(b) >= MinStorageSizeKW
+	dvStorageSizeKWH <=  MaxStorageSizeKWH
+	dvStorageSizeKWH >=  MinStorageSizeKWH
+	dvStorageSizeKW <=  MaxStorageSizeKW
+	dvStorageSizeKW >= MinStorageSizeKW
 
 
 forall ( ts in TimeStep) do
@@ -386,20 +381,20 @@ forall ( ts in TimeStep) do
 	! energy coming out of the storage system cannot be greater than the current state of charge
 	dvElecFromStor(ts) / EtaStorOut("1S") <=  dvStoredEnergy(ts-1)
 	! the state of charge always has to be greater than 0
-	dvStoredEnergy(ts) >=  StorageMinChargePcent * sum(b in BattLevel) dvStorageSizeKWH(b) / TimeStepScaling  ! / TimeStepScaling
+	dvStoredEnergy(ts) >=  StorageMinChargePcent * dvStorageSizeKWH / TimeStepScaling
 	dvElecFromStor( ts) >= 0
 end-do
 
 forall ( ts in TimeStep )  do
-	sum(b in BattLevel) dvStorageSizeKW(b) >=  dvElecToStor( ts)
-	sum(b in BattLevel) dvStorageSizeKW(b) >=  dvElecFromStor( ts)
+	dvStorageSizeKW >=  dvElecToStor(ts)
+	dvStorageSizeKW >=  dvElecFromStor(ts)
 end-do
 
 dvMeanSOC = sum(ts in TimeStep) dvStoredEnergy(ts) / TimeStepCount
 
 ! the physical size of the storage system is the max amount of charge at any timestep.
-forall (  ts in TimeStep) do
-	sum(b in BattLevel) dvStorageSizeKWH(b) >=  dvStoredEnergy(ts) * TimeStepScaling
+forall (ts in TimeStep) do
+	dvStorageSizeKWH >=  dvStoredEnergy(ts) * TimeStepScaling
 end-do
 
 !Prevent storage from charging and discharging within same timestep
@@ -411,14 +406,6 @@ forall ( ts in TimeStep) do
   binBattDischarge (ts) is_binary
 end-do
 
-forall ( t in Tech) do
-	ElecToBatt(t) := sum(ts in TimeStep,  s in Seg, fb in FuelBin) dvRatedProd(t,"1S",ts,s,fb) * ProdFactor(t,"1S",ts) * LevelizationFactor(t)
-end-do
-
-forall ( b in BattLevel) do
-	BattLevelCoef(b,1)*sum(t in Tech | TechIsGrid(t)=1) ElecToBatt(t)-sum(t in Tech | TechIsGrid(t)<>1)BattLevelCoef(b,2)*ElecToBatt(t)   <= (1-binBattLevel(b)) *MaxStorageSizeKWH/TimeStepScaling*365*2  !assume that the maximum size battery can make 2 complete cycles per day.  May need to bump this up in select situations
-	binBattLevel(b) is_binary
-end-do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This section is declaring binary variables and constraining them
@@ -444,12 +431,11 @@ forall ( t in Tech, ts in TimeStep) binTechIsOnInTS(t,ts) is_binary
 !! End declaring binary variables and constraining them
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-forall (b in BattLevel) do
-   dvStorageSizeKWH(b) <= MaxStorageSizeKWH* binBattLevel(b)
-   dvStorageSizeKW(b) <= MaxStorageSizeKW* binBattLevel(b)
-end-do
 
-sum(b in BattLevel) binBattLevel(b) = 1
+dvStorageSizeKWH <= MaxStorageSizeKWH
+dvStorageSizeKW <= MaxStorageSizeKW
+
+
 
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -506,8 +492,8 @@ end-do
  !CONSTRAINT 27
 forall (t in Tech,s in Seg)   dvSystemSize (t,s) <=  MaxSize (t)
 
-forall (b in TechClass) do
-    sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,b) >= TechClassMinSize(b)
+forall (tc in TechClass) do
+    sum (t in Tech, s in Seg) dvSystemSize(t, s) * TechToTechClassMatrix(t,tc) >= TechClassMinSize(tc)
 end-do
 
 !!dvRatedProduction must be >= 0, or if MinTurndown is > 0, use semi-continuous variable
@@ -688,7 +674,7 @@ AverageGenProd := sum( t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in
 
 ! Capital Costs
 TotalTechCapCosts := sum(t in Tech, s in Seg) (CapCostSlope(t, s) * dvSystemSize(t, s) + CapCostYInt(t,s) * binSegChosen(t,s))
-TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPerKWH(b) + sum( b in BattLevel) dvStorageSizeKW(b) *  StorageCostPerKW(b)
+TotalStorageCapCosts := dvStorageSizeKWH * StorageCostPerKWH + dvStorageSizeKW * StorageCostPerKW
 
 ! O&M Costs
 TotalPerUnitSizeOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
@@ -822,7 +808,7 @@ GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "G
 
 !Time series dispatch output
 
-if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > REoptTol then
+if getsol(dvStorageSizeKWH) > REoptTol then
 
     fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
         forall (ts in TimeStep) do
@@ -962,14 +948,8 @@ fclose(F_OUTPUT)
 
     Node:=addnode(out_json, Root, "status", status)
     Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts) + 0.001*getsol(MinChargeAdder), 10, 0))
-
-    forall  (b in BattLevel)  do
-        Node:=addnode(out_json, Root, "batt_kwh", strfmt(getsol (dvStorageSizeKWH(b)), 10, 4))
-    end-do
-
-    forall  (b in BattLevel)  do
-        Node:=addnode(out_json, Root, "batt_kw", strfmt(getsol (dvStorageSizeKW(b)), 10, 4))
-    end-do
+    Node:=addnode(out_json, Root, "batt_kwh", strfmt(getsol (dvStorageSizeKWH), 10, 4))
+    Node:=addnode(out_json, Root, "batt_kw", strfmt(getsol (dvStorageSizeKW), 10, 4))
 
     forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
         Node:=addnode(out_json, Root, "pv_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
@@ -979,7 +959,7 @@ fclose(F_OUTPUT)
         Node:=addnode(out_json, Root, "wind_kw", strfmt(sum(s in Seg) getsol (dvSystemSize(t,s)), 10, 4))
     end-do
 
- forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
+    forall (t in Tech  | TechToTechClassMatrix(t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
         Node:=addnode(out_json, Root, "generator_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
     end-do
 
