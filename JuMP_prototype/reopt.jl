@@ -362,7 +362,7 @@ end
 	        UsageInTier[m, fb] ==  sum(dvRatedProd[t,LD,ts,s,fb] for LD in Load, ts in TimeStepRatchetsMonth[m], s in Seg))
 
 ### Fuel Bins
-@constraint(REopt, [m in Month, fb in FuelBin; fb < FuelBinCount],
+@constraint(REopt, [m in Month, fb in FuelBin],
             UsageInTier[m, fb] <= binUsageTier[m, fb] * MaxUsageInTier[fb])
 @constraint(REopt, [fb in FuelBin, m in Month; fb >= 2],
 	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
