@@ -7,7 +7,7 @@ const MOI = MathOptInterface
 
 # Data
 include("utils.jl")
-dataPath = "data/Runeda919d6-1481-4bf9-a531-a1b3397c8c67"
+dataPath = "data/Run5b75684a-232d-4e95-8bf1-3fcb47b07a46"
 
 try 
     global dataPath
@@ -120,18 +120,19 @@ TechClassMinSize = parameter(TechClass, TechClassMinSize)
 MinTurndown = parameter(Tech, MinTurndown)
 
 #initializations from DAT8
-function tsr(Ratchets, TimeStepRatchets)
+function emptySetException(sets, values)
     try
-        return parameter(Ratchets, TimeStepRatchets)
+        return parameter(sets, values)
     catch
         return []
     end
 end
 
-TimeStepRatchets = tsr(Ratchets, TimeStepRatchets)
+TimeStepRatchets = emptySetException(Ratchets, TimeStepRatchets)
 
 #initializations from DAT9
-DemandRates = parameter((Ratchets, DemandBin), DemandRates)
+#DemandRates = parameter((Ratchets, DemandBin), DemandRates)
+DemandRates = emptySetException((Ratchets, DemandBin), DemandRates)
 
 #initializations from DAT10 ! FuelCost
 FuelRate = parameter((Tech, FuelBin, TimeStep), FuelRate)
@@ -404,7 +405,7 @@ end
 #Added, but has awful bounds
 @constraint(REopt, [t in Tech, b in TechClass],
             sum(dvSystemSize[t, s] * TechToTechClassMatrix[t, b] for s in Seg) <= MaxSize[t] * binSingleBasicTech[t, b])
-@constraint(REopt, NONDISPATCH[t in Tech, ts in TimeStep, s in Seg; TechToTechClassMatrix[t, :PV] == 1 || TechToTechClassMatrix[t, :WIND] == 1],
+@constraint(REopt, [t in Tech, ts in TimeStep, s in Seg; TechToTechClassMatrix[t, :PV] == 1 || TechToTechClassMatrix[t, :WIND] == 1],
 	        sum(dvRatedProd[t,LD,ts,s,fb] for fb in FuelBin,
                 LD in [Symbol("1R"), Symbol("1W"), Symbol("1X"), Symbol("1S")]) ==  dvSystemSize[t, s])
 
@@ -432,9 +433,14 @@ end
 ### Aggregates of definitions
 @constraint(REopt, TotalEnergyCharges == sum(dvFuelCost[t,fb]
                                              for t in Tech, fb in FuelBin))
-@constraint(REopt, DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
-                                           for r in Ratchets, db in DemandBin))
-#@constraint(REopt, DemandTOUCharges == 0)
+
+if isempty(DemandRates)
+    @constraint(REopt, DemandTOUCharges == 0)
+else
+    @constraint(REopt, DemandTOUCharges == sum(dvPeakDemandE[r, db] * DemandRates[r,db] * pwf_e
+                                               for r in Ratchets, db in DemandBin))
+end
+
 @constraint(REopt, DemandFlatCharges == sum(dvPeakDemandEMonth[m, dbm] * DemandRatesMonth[m, dbm] * pwf_e
                                             for m in Month, dbm in DemandMonthsBin))
 @constraint(REopt, TotalDemandCharges ==  DemandTOUCharges + DemandFlatCharges)
