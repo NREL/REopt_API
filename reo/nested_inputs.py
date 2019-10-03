@@ -812,21 +812,21 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2500,
+          "default": 600,
           "description": "Installed diesel generator cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 50,
+          "default": 10,
           "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
         },
         "om_cost_us_dollars_per_kwh": {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 20,
+          "default": 0.01,
           "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
