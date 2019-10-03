@@ -240,13 +240,13 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
         self.min_kw += self.existing_kw
+        self.max_kw += self.existing_kw
         #GeneratorModel.objects.filter(run_uuid=run_uuid).update(min_kw=self.min_kw)
 
-        # if user has entered the max_kw for new gen to be less than the user-specified exiting_gen, max_kw is reset
-        # in this case existing_kw = max_kw = min_kw, fixing the gen-size decision variable as a constant
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
-            self.min_kw = self.existing_kw
+        # the following logic is redundant since existing_kw is being added to max_kw now
+        # if self.max_kw < self.existing_kw:
+        #     self.max_kw = self.existing_kw
+        #     self.min_kw = self.existing_kw
 
         if self.max_kw < self.min_kw:
             self.min_kw = self.max_kw
