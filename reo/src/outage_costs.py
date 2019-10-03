@@ -37,7 +37,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         batt_roundtrip_efficiency=batt_roundtrip_efficiency,
         diesel_kw=generator['size_kw'],
         #fuel_available=site_inputs['Generator']['fuel_avail_gal'],
-        fuel_available=500,
+        fuel_available=660,
         b=site_inputs['Generator']['fuel_intercept_gal_per_hr'],
         m=site_inputs['Generator']['fuel_slope_gal_per_kwh'],
         diesel_min_turndown=site_inputs['Generator']['min_turn_down_pct']
