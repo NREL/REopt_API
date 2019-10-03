@@ -84,9 +84,9 @@ class Job(ModelResource):
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value.message,  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
             err.save_to_db()
-            set_status(data, 'Internal Server Error during input validation. Please check your POST for bad values.')
-            if 'messages' not in data.keys():
-                data['messages'] = {}
+            set_status(data, 'Internal Server Error during input validation. No optimization task has been created. Please check your POST for bad values.')
+            data['inputs'] = bundle.data
+            data['messages'] = {}
             data['messages']['error'] = err.message  # "Unexpected Error."
             log.error("Internal Server error: " + err.message)
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
@@ -103,12 +103,14 @@ class Job(ModelResource):
             log.debug("input_validator not valid")
             log.debug(json.dumps(data))
 
-            data['run_uuid'] = 'Error. See messages for more information. ' \
-                               'Note that inputs have default values filled in.'
-
+            set_status(data, 'Error. No optimization task has been created. See messages for more information. ' \
+                               'Note that inputs have default values filled in.')
             if saveToDb:
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
-                badpost.save()
+                try:
+                    badpost.save()
+                except:
+                    log.debug("Could not save BadPost run_uuid {}\n Messages: {}\n Data: {}".format(run_uuid, str(data['messages']), json.dumps(bundle.data)))
 
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
@@ -131,9 +133,21 @@ class Job(ModelResource):
 
             if bundle.request.META.get('User-Agent','').startswith('check_http/'):
                 data['outputs']['Scenario']['job_type'] = 'Monitoring'
+            try:
+                model_manager.create_and_save(data)
+            except Exception as e:
+                log.error("Could not create and save run_uuid: {}\n Data: {}".format(run_uuid,data))
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='ModelManager.create_and_save',
+                                      run_uuid=run_uuid)
+                err.save_to_db()
+                set_status(data,"Internal Server Error during saving of inputs. Please see messages.")
+                data['messages']['error'] = err.message  # "Unexpected Error."
+                log.error("Internal Server error: " + err.message)
+                raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                         content_type='application/json',
+                                                         status=500))  # internal server error
 
-            model_manager.create_and_save(data)
-            
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
