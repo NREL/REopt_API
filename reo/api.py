@@ -107,10 +107,7 @@ class Job(ModelResource):
                                'Note that inputs have default values filled in.')
             if saveToDb:
                 badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
-                try:
-                    badpost.save()
-                except:
-                    log.debug("Could not save BadPost run_uuid {}\n Messages: {}\n Data: {}".format(run_uuid, str(data['messages']), json.dumps(bundle.data)))
+                badpost.save()
 
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
@@ -141,7 +138,7 @@ class Job(ModelResource):
                 err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='ModelManager.create_and_save',
                                       run_uuid=run_uuid)
                 err.save_to_db()
-                set_status(data,"Internal Server Error during saving of inputs. Please see messages.")
+                set_status(data, "Internal Server Error during saving of inputs. Please see messages.")
                 data['messages']['error'] = err.message  # "Unexpected Error."
                 log.error("Internal Server error: " + err.message)
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),

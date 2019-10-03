@@ -429,6 +429,13 @@ class BadPost(models.Model):
     post = models.TextField()
     errors = models.TextField()
 
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        try:
+            super(BadPost, self).save()
+        except Exception as e:
+            log.info("Database saving error: {}".format(e.message))
+
 
 def attribute_inputs(inputs):
     return {k:v for k,v in inputs.items() if k[0]==k[0].lower() and v is not None}
