@@ -13,7 +13,7 @@ class Generator():
         self.genmin = self.min_turndown * self.kw
 
         if self.fuel_available == 1e9:
-                self.fuel_available = 660ggit 
+                self.fuel_available = 660
 
     def gen_avail(self, n_steps_per_hour):  # kW
         if self.fuel_available - self.b > 0:
