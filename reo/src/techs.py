@@ -87,7 +87,7 @@ class PV(Tech):
         self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
         self.tilt = kwargs['tilt']
-
+        self.azimuth = kwargs['azimuth']
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
@@ -96,6 +96,11 @@ class PV(Tech):
         if self.tilt == 0.537:
             if kwargs.get('array_type') == 0:
                 self.tilt = kwargs.get('latitude')
+                if kwargs.get('latitude') < 0:
+                    self.tilt = -1 * self.tilt
+                    self.azimuth = 0
+                    kwargs['tilt'] = self.tilt
+                    kwargs['azimuth'] = 0
             else:
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
         self.kwargs['tilt']  = self.tilt
