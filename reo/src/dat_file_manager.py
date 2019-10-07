@@ -651,8 +651,8 @@ class DatFileManager:
                 om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
                 # only generator tech has variable o&m cost
-                if eval('self.' + tech) is 'generator':
-                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.om_cost_us_dollars_per_kwh'))
+                if tech.lower() == 'generator':
+                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]'))
                 else:
                     om_cost_us_dollars_per_kwh.append(0)
 
@@ -700,7 +700,7 @@ class DatFileManager:
 
         return reopt_techs
 
-    def _get_REopt_tech_classes(self, techs):
+    def _get_REopt_tech_classes(self, techs, bau):
         """
         
         :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
@@ -712,7 +712,10 @@ class DatFileManager:
         for tc in self.available_tech_classes:
 
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
-                tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
+                if bau and hasattr(eval('self.' + tc.lower()), 'existing_kw'):
+                    tech_class_min_size.append(eval('self.' + tc.lower() + '.existing_kw'))
+                else:
+                    tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
             else:
                 tech_class_min_size.append(0)
 
@@ -777,8 +780,8 @@ class DatFileManager:
 
         load_list = ['1R', '1W', '1X', '1S']  # same for BAU
 
-        tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs)
-        tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs)
+        tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs, False)
+        tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh= self._get_REopt_array_tech_load(self.available_techs)

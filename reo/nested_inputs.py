@@ -339,7 +339,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e9,
-          "default":1e9,
+          "default":0,
           "description": "Maximum wind power capacity constraint for optimization. Set to zero to disable Wind. Enabled by default"
         },
         "installed_cost_us_dollars_per_kw": {
@@ -812,28 +812,28 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2500,
+          "default": 600,
           "description": "Installed diesel generator cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 50,
+          "default": 10,
           "description": "Annual diesel generator fixed operations and maintenance costs in $/kW"
         },
         "om_cost_us_dollars_per_kwh": {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 20,
+          "default": 0.01,
           "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
           "type": "float",
           "min": 0,
           "max": 1e2,
-          "default": 20,
+          "default": 4,
           "description": "diesel cost in $/gallon"
         },
         "fuel_slope_gal_per_kwh": {
@@ -854,14 +854,14 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e9,
-          "default": 0,
+          "default": 1e9,
           "description": "On-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.3,
+          "default": 0,
           "description": "Minimum generator loading in percent of capacity (size_kw)."
         },
         "generator_only_runs_during_grid_outage": {
@@ -1006,6 +1006,7 @@ def flat_to_nested(i):
             "user_uuid": i.get("user_uuid"),
             "description": i.get("description"),
             "time_steps_per_hour": i.get("time_steps_per_hour"),
+
 
             "Site": {
                 "latitude": i.get("latitude"),

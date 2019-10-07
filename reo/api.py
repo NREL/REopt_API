@@ -61,73 +61,107 @@ class Job(ModelResource):
 
     def obj_create(self, bundle, **kwargs):
 
-        input_validator = ValidateNestedInput(bundle.data)
-        run_uuid = str(uuid.uuid4())
-
-        # Setup and start profile
-        profiler = Profiler()
-
-        # Setup log to include UUID of run
-        uuidFilter = UUIDFilter(run_uuid)
-        log.addFilter(uuidFilter)
-        log.info('Beginning run setup')
-
-        def set_status(d, status):
-            d["outputs"]["Scenario"]["status"] = status
-
-        data = dict()
-        data["inputs"] = input_validator.input_dict
-        data["messages"] = input_validator.messages
-
-        if not input_validator.isValid:  # 400 Bad Request
-            log.debug("input_validator not valid")
-            log.debug(json.dumps(data))
-
-            data['run_uuid'] = 'Error. See messages for more information. ' \
-                               'Note that inputs have default values filled in.'
-
-            if saveToDb:
-                badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
-                badpost.save()
-
-            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
-                                                     content_type='application/json',
-                                                     status=400))
-
-        data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
-                                        'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
-                                                    'reopt_seconds': 0, 'reopt_bau_seconds': 0,
-                                                    'parse_run_outputs_seconds': 0}}}
-
-        log.info('Entering ModelManager')
-        model_manager = ModelManager()
-        profiler.profileEnd()
-
-        if saveToDb:
-            set_status(data, 'Optimizing...')
-            data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
-            model_manager.create_and_save(data)
-        setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
-        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
-
-        # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-        log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
-        except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
-            if isinstance(e, REoptError):
-                pass  # handled in each task
-            else:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value, exc_traceback, task='api.py', run_uuid=run_uuid)
-                err.save_to_db()
+            input_validator = ValidateNestedInput(bundle.data)
+            run_uuid = str(uuid.uuid4())
 
-                set_status(data, 'Internal Server Error. See messages for more.')
-                data['messages']['error'] = err.message
-                log.error("Internal Server error: " + err.message)
+            # Setup and start profile
+            profiler = Profiler()
+
+            # Setup log to include UUID of run
+            uuidFilter = UUIDFilter(run_uuid)
+            log.addFilter(uuidFilter)
+            log.info('Beginning run setup')
+
+            def set_status(d, status):
+                if 'outputs' not in d.keys():
+                    d["outputs"] = {"Scenario":{"status":status}}
+                d["outputs"]["Scenario"]["status"] = status
+
+            data = dict()
+            
+            
+            data["inputs"] = input_validator.input_dict
+            data["messages"] = input_validator.messages
+            data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
+                                            'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
+                                                        'reopt_seconds': 0, 'reopt_bau_seconds': 0,
+                                                        'parse_run_outputs_seconds': 0},                                            
+                                }}
+
+            if not input_validator.isValid:  # 400 Bad Request
+                log.debug("input_validator not valid")
+                log.debug(json.dumps(data))
+
+                data['run_uuid'] = 'Error. See messages for more information. ' \
+                                   'Note that inputs have default values filled in.'
+
+                if saveToDb:
+                    badpost = BadPost(run_uuid=run_uuid, post=json.dumps(bundle.data), errors=str(data['messages']))
+                    badpost.save()
+
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
-                                                         status=500))  # internal server error
+                                                         status=400))            
+
+            log.info('Entering ModelManager')
+            model_manager = ModelManager()
+            profiler.profileEnd()
+
+            if saveToDb:
+                set_status(data, 'Optimizing...')
+                data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
+                if bundle.request.META.get('X-Api-User-Id',False):
+                    if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
+                        data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
+                    else:
+                        data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
+                else:
+                    data['outputs']['Scenario']['job_type'] = 'Internal NREL'
+
+                if bundle.request.META.get('User-Agent','').startswith('check_http/'):
+                    data['outputs']['Scenario']['job_type'] = 'Monitoring'
+                
+                model_manager.create_and_save(data)
+            
+            setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
+            call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+
+            # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
+            log.info("Starting celery chain")
+            try:
+                chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
+            except Exception as e:  # this is necessary for tests that intentionally raise Exceptions. See NOTES 1 below.
+                if isinstance(e, REoptError):
+                    pass  # handled in each task
+                else:
+                    exc_type, exc_value, exc_traceback = sys.exc_info()
+                    err = UnexpectedError(exc_type, exc_value, traceback.format_exc(), task='api.py', run_uuid=run_uuid)
+                    err.save_to_db()
+
+                    set_status(data, 'Internal Server Error. See messages for more.')
+                    if 'messages' not in data.keys():
+                        data['messages'] = {}
+                    data['messages']['error'] = err.message
+                    log.error("Internal Server error: " + err.message)
+                    raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                             content_type='application/json',
+                                                             status=500))  # internal server error
+        except Exception as e:
+
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+
+            err = UnexpectedError(exc_type, exc_value,  exc_traceback, task='api.py', run_uuid=run_uuid)
+            err.save_to_db()
+
+            set_status(data, 'Internal Server Error. See messages for more.')
+            if 'messages' not in data.keys():
+                data['messages'] = {}
+            data['messages']['error'] = err.message
+            log.error("Internal Server error: " + err.message)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
+                                                     content_type='application/json',
+                                                     status=500))  # internal server error
 
         log.info("Returning with HTTP 201")
         raise ImmediateHttpResponse(HttpResponse(json.dumps({'run_uuid': run_uuid}),

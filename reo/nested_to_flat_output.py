@@ -57,10 +57,7 @@ def nested_to_flat(nested_output):
         'year_one_demand_cost_series': nested_output['Scenario']['Site']['ElectricTariff']['year_one_demand_cost_series_us_dollars_per_kw'],
         'year_one_utility_kwh': nested_output['Scenario']['Site']['ElectricTariff']['year_one_energy_supplied_kwh'],
         'year_one_payments_to_third_party_owner': None,
-        'total_payments_to_third_party_owner': None,
-
-        'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
-        'existing_gen_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator']['existing_gen_om_cost_us_dollars']
+        'total_payments_to_third_party_owner': None
     }
     if nested_output['Scenario']['Site'].get('Wind') is not None:
         base.update({
@@ -70,6 +67,21 @@ def nested_to_flat(nested_output):
             'year_one_wind_to_battery_series': nested_output['Scenario']['Site']['Wind']['year_one_to_battery_series_kw'],
             'year_one_wind_to_load_series': nested_output['Scenario']['Site']['Wind']['year_one_to_load_series_kw'],
             'year_one_wind_to_grid_series': nested_output['Scenario']['Site']['Wind']['year_one_to_grid_series_kw']
+       })
+    if nested_output['Scenario']['Site'].get('Generator') is not None:
+        base.update({
+            'gen_kw':nested_output['Scenario']['Site']['Generator']['size_kw'],
+            'average_yearly_gen_energy_produced':nested_output['Scenario']['Site']['Generator']['average_yearly_energy_produced_kwh'],
+            'average_annual_energy_exported_wind': nested_output['Scenario']['Site']['Generator']['average_yearly_energy_exported_kwh'],
+            'year_one_gen_to_battery_series': nested_output['Scenario']['Site']['Generator']['year_one_to_battery_series_kw'],
+            'year_one_gen_to_load_series': nested_output['Scenario']['Site']['Generator']['year_one_to_load_series_kw'],
+            'year_one_gen_to_grid_series': nested_output['Scenario']['Site']['Generator']['year_one_to_grid_series_kw'],
+            'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
+            'existing_gen_fixed_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator']['existing_gen_fixed_om_cost_us_dollars_bau'],
+            'existing_gen_variable_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator'][
+                'existing_gen_variable_om_cost_us_dollars_bau'],
+            'gen_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'gen_variable_om_cost_us_dollars']
        })
     return base
 

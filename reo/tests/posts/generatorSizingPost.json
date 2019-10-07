@@ -36,7 +36,9 @@
         "tilt": 35.2468
       },
       "Storage": {
-        "macrs_bonus_pct": 0.4
+        "macrs_bonus_pct": 0.4,
+        "installed_cost_us_dollars_per_kw": 3000,
+        "installed_cost_us_dollars_per_kwh": 1500
       }
     }
   }

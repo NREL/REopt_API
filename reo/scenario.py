@@ -77,7 +77,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
 
-        if inputs_dict["Site"]["PV"]["max_kw"] > 0:
+        if inputs_dict["Site"]["PV"]["max_kw"] > 0 or inputs_dict["Site"]["PV"]["existing_kw"] > 0:
             pv = PV(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
                     longitude=inputs_dict['Site'].get('longitude'), time_steps_per_hour=inputs_dict['time_steps_per_hour'],
                     **inputs_dict["Site"]["PV"])
@@ -92,26 +92,72 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['station_distance_km'] =station[2]
             tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
             tmp['azimuth'] = pv.azimuth
+            tmp['max_kw'] = pv.max_kw
+            tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
 
 
         else:
             pv = None
 
+
+        if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
+            gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                            **inputs_dict["Site"]["Generator"])
+
+            tmp = dict()
+            tmp['fuel_slope_gal_per_kwh'] = gen.fuel_slope
+            tmp['fuel_intercept_gal_per_hr'] = gen.fuel_intercept
+            tmp['max_kw'] = gen.max_kw
+            tmp['min_kw'] = gen.min_kw
+            ModelManager.updateModel('GeneratorModel', tmp, run_uuid)
+
         try:
-            lp = LoadProfile(dfm=dfm,
-                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                             latitude=inputs_dict['Site'].get('latitude'),
-                             longitude=inputs_dict['Site'].get('longitude'),
-                             pv=pv,
-                             analysis_years=site.financial.analysis_years,
-                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                             **inputs_dict['Site']['LoadProfile'])
-            
+            if 'gen' in locals():
+                lp = LoadProfile(dfm=dfm,
+                                 user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                                 latitude=inputs_dict['Site'].get('latitude'),
+                                 longitude=inputs_dict['Site'].get('longitude'),
+                                 pv=pv,
+                                 analysis_years=site.financial.analysis_years,
+                                 time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                                 fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
+                                 gen_existing_kw=gen.existing_kw,
+                                 gen_min_turn_down=gen.min_turn_down,
+                                 fuel_slope=gen.fuel_slope,
+                                 fuel_intercept=gen.fuel_intercept,
+                                 **inputs_dict['Site']['LoadProfile'])
+                tmp = dict()
+                tmp['resilience_check_flag'] = lp.resilience_check_flag
+                tmp['sustain_hours'] = lp.sustain_hours
+                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+            else:
+                lp = LoadProfile(dfm=dfm,
+                                 user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                                 latitude=inputs_dict['Site'].get('latitude'),
+                                 longitude=inputs_dict['Site'].get('longitude'),
+                                 pv=pv,
+                                 analysis_years=site.financial.analysis_years,
+                                 time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                                 fuel_avail_before_outage=0,
+                                 gen_existing_kw=0,
+                                 gen_min_turn_down=0,
+                                 fuel_slope=0,
+                                 fuel_intercept=0,
+                                 **inputs_dict['Site']['LoadProfile'])
+                tmp = dict()
+                tmp['resilience_check_flag'] = lp.resilience_check_flag
+                tmp['sustain_hours'] = lp.sustain_hours
+                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+
+
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
-            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
+            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -131,13 +177,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
             ModelManager.updateModel('WindModel', tmp, run_uuid)
 
-        
-        if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-            gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
-                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),**inputs_dict["Site"]["Generator"]
-                            )
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -164,15 +203,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception as e:
-        if hasattr(e, 'message'):
+        if isinstance(e, LoadProfileError):
+                raise e
+        
+        elif hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
-                raise WindDownloadError(task=self.name, run_uuid=run_uuid)
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
             else:
                 log.error(e.message)
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
 
-        if isinstance(e, REoptError):
+        elif isinstance(e, REoptError):
             pass
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -182,4 +224,4 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     pass
             else:
                 log.error("Scenario.py raising error: " + exc_value)
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

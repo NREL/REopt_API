@@ -11,9 +11,9 @@ uses "mmxml"    ! for JSON output
 
 parameters
 
-  ScenarioNum = "0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1"
-  ScenarioPath = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Inputs"
-  OutputDir = "C:\\Users\\ndiorio\\Documents\\VirtualBoxShare\\reopt\\Run0d76dddd-4aab-4a3d-8bca-b3dbb07d6ec1\\Outputs"
+  ScenarioNum = "1f444af0-3651-4085-bdc9-a75bec564bf2"
+  ScenarioPath = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run1f444af0-3651-4085-bdc9-a75bec564bf2\\Inputs"
+  OutputDir = "C:\\Users\\SMISHRA\\Documents\\VirtualBoxShare\\REopt_debugging\\Run1f444af0-3651-4085-bdc9-a75bec564bf2\\Outputs"
   BaseString = ""
 
   CapCostSegCount = 2
@@ -27,7 +27,7 @@ parameters
   REoptTol = 5e-5
 
   ! Utility info
-  NumRatchets = 24
+  NumRatchets = 20
 
   DAT1 = ScenarioPath + "/constant_" + ScenarioNum + ".dat"
   DAT2 = ScenarioPath + "/economics_" + ScenarioNum + ".dat"
@@ -92,7 +92,7 @@ declarations
   CapCostX: array (Tech, Points) of real
   ProdFactor: array (Tech,Load,TimeStep) of real  !Production Factor.  Combination of resource, efficiency, availability
   OMperUnitSize: array (Tech) of real  !O&M per unit of system size.  $10 / KW for example.
-  OMcostPerUnitProd: array (Tech,Load,TimeStep) of real  !O&M per unit of energy produced
+  OMcostPerUnitProd: array (Tech) of real  !O&M per unit of energy produced
   ExportRates: array (Tech,Load,TimeStep) of real  !retail / wholesale rate for all electricity / fuels
   LoadProfile: array (Load,TimeStep) of real       !electricity / fuel load profile by TimeStep
 
@@ -693,17 +693,19 @@ TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPe
 ! O&M Costs
 TotalPerUnitSizeOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t)+ExportRates(t, LD, ts))
 
 PVPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "PV") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "GENERATOR") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitProdOMCosts := sum(t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t,LD, ts)+ExportRates(t, LD, ts))
+	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t)+ExportRates(t, LD, ts))
 
 ! Utility and Taxable Costs 
-TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb) 
+TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)
+TotalEnergyChargesUtil := sum(fb in FuelBin) dvFuelCost("UTIL1",fb) !explicitly calling out 'UTIL1' tech since only utility costs are desired
+TotalGenFuelCharges := sum( t in Tech, fb in FuelBin|(TechToTechClassMatrix (t, "GENERATOR") = 1)) dvFuelCost(t,fb)
 DemandTOUCharges := sum( r in Ratchets, db in DemandBin) dvPeakDemandE( r, db) * DemandRates(r,db) * pwf_e
 DemandFlatCharges := sum( m in Month, dbm in DemandMonthsBin) dvPeakDemandEMonth( m, dbm) * DemandRatesMonth( m, dbm) * pwf_e
 TotalDemandCharges :=  DemandTOUCharges + DemandFlatCharges
@@ -725,7 +727,7 @@ else TotalMinCharge := 12 * MonthlyMinCharge * pwf_e
 end-if
 
 if TotalMinCharge > 0 then
-	MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+	MinChargeAdder >= TotalMinCharge - (TotalEnergyChargesUtil + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 	MinChargeAdder >= 0
 	else MinChargeAdder = 0
 end-if
@@ -799,7 +801,7 @@ ExportedElecGEN := sum(t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in Fu
 ExportBenefitYr1 := sum (t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)))
                     dvRatedProd (t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t, LD, ts) * LevelizationFactor(t)* ExportRates(t,LD,ts) !Needs levelization factor
 
-Year1EnergyCost := TotalEnergyCharges / pwf_e
+Year1EnergyCost := TotalEnergyChargesUtil / pwf_e
 Year1DemandCost := TotalDemandCharges / pwf_e
 Year1DemandTOUCost := DemandTOUCharges / pwf_e
 Year1DemandFlatCost := DemandFlatCharges / pwf_e
@@ -991,15 +993,16 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
     Node:=addnode(out_json, Root, "year_one_bill", strfmt(getsol(Year1Bill), 10, 2))
     !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
-    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyChargesUtil) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_fixed_cost", strfmt(getsol(TotalFixedCharges) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_export_benefit", strfmt(getsol(TotalEnergyExports) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
     Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
-    Node:=addnode(out_json, Root, "pv_net_om_costs", strfmt(getsol(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
-    Node:=addnode(out_json, Root, "gen_net_om_costs", strfmt((getsol(GenPerUnitSizeOMCosts)+ getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "pv_net_fixed_om_costs", strfmt(getsol(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "gen_net_fixed_om_costs", strfmt((getsol(GenPerUnitSizeOMCosts)) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "gen_net_variable_om_costs", strfmt((getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AveragePvProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))

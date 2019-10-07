@@ -34,7 +34,8 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpatef")
+      
+    @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
         Test scenario with
@@ -58,14 +59,15 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 232070.0
-        d_expected['npv'] = -2793.0
+        d_expected['lcc'] = 236962.0
+        d_expected['npv'] = -7685.0
         d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 11.3707
-        d_expected['batt_kwh'] = 29.887
-        d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 928.36
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 11.2938
+        d_expected['fuel_used_gal'] = 1.52
+        d_expected['avoided_outage_costs_us_dollars'] = 1449.55 #1465.83
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -87,7 +89,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -112,14 +114,15 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = 264665.0
-        d_expected['npv'] = 572.0
+        d_expected['lcc'] = 236514.0
+        d_expected['npv'] = 0.0
         d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 3.03774
-        d_expected['batt_kwh'] = 5.22362
-        d_expected['fuel_used_gal'] = 1.27
-        d_expected['avoided_outage_costs_us_dollars'] = 101696.3
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 1347.9
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 100.0
+        d_expected['fuel_used_gal'] = 1.53
+        d_expected['avoided_outage_costs_us_dollars'] = 1036556.
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -141,7 +144,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    #@skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -168,16 +171,17 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = 232070.0
-        d_expected['npv'] = -2793.0
-        d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 11.3707
-        d_expected['batt_kwh'] = 29.887
-        d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 928.36
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
-        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
-        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
+        d_expected['lcc'] = 244743.0
+        d_expected['npv'] = -3959.0
+        d_expected['pv_kw'] = 100.0
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 5.85713
+        d_expected['fuel_used_gal'] = 0.79
+        d_expected['avoided_outage_costs_us_dollars'] = 2982.63
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1054.2
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
+        d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
         try:
@@ -200,7 +204,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
             self.assertAlmostEquals(x, y, places=3)
 
 
-    # @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen_and_pv(self):
         """
         Test scenario with
@@ -226,16 +230,17 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 246685.0
-        d_expected['npv'] = 572.0
-        d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 3.03774
-        d_expected['batt_kwh'] = 5.22362
-        d_expected['fuel_used_gal'] = 1.27
-        d_expected['avoided_outage_costs_us_dollars'] = 172610.09
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 1347.9
-        d_expected['existing_gen_om_cost_us_dollars'] = 17980.0
-        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
+        d_expected['lcc'] = 238661.0
+        d_expected['npv'] = 0.0
+        d_expected['pv_kw'] = 50.0
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 50.0
+        d_expected['fuel_used_gal'] = 1.16
+        d_expected['avoided_outage_costs_us_dollars'] = 1627557.77
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
+        d_expected['existing_pv_om_cost_us_dollars'] = 5754.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
 
         try:
@@ -262,7 +267,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
 
-    @skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
+    #@skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_when_allowed_to_operatre_year_long(self):
         """
         Test scenario with
@@ -288,15 +293,16 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 232070.0
-        d_expected['npv'] = -2793.0
+        d_expected['lcc'] = 236962.0
+        d_expected['npv'] = -7685.0
         d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 11.3707
-        d_expected['batt_kwh'] = 29.887
-        d_expected['fuel_used_gal'] = 0.0
-        d_expected['avoided_outage_costs_us_dollars'] = 928.36
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 6278.7
-        d_expected['existing_gen_om_cost_us_dollars'] = 0.0
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 11.2938
+        d_expected['fuel_used_gal'] = 1.52
+        d_expected['avoided_outage_costs_us_dollars'] = 1465.83 #1449.55
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 0.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 

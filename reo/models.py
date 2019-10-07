@@ -34,7 +34,8 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_uuid = models.TextField(null=True, blank=True)
+    user_uuid = models.TextField(null=True, blank=True) 
+    job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
@@ -119,6 +120,8 @@ class LoadProfileModel(models.Model):
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
+    sustain_hours = models.IntegerField(null=True, blank=True)
+    resilience_check_flag = models.BooleanField(default=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -172,6 +175,7 @@ class ElectricTariffModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -367,6 +371,7 @@ class GeneratorModel(models.Model):
 
         # Outputs
         fuel_used_gal = models.FloatField(null=True, blank=True)
+        fuel_used_gal_bau = models.FloatField(null=True, blank=True)
         size_kw = models.FloatField(null=True, blank=True)
         average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
         average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
@@ -376,7 +381,9 @@ class GeneratorModel(models.Model):
         year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        existing_gen_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_fixed_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        existing_gen_variable_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        gen_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):
@@ -475,6 +482,26 @@ class ModelManager(object):
     @staticmethod
     def updateModel(modelName, modelData, run_uuid):
         eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+
+    @staticmethod
+    def remove(run_uuid):
+        """
+        remove Scenario from database
+        :param run_uuid: id of Scenario
+        :return: None
+        """
+        ScenarioModel.objects.filter(run_uuid=run_uuid).delete()
+        ProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        SiteModel.objects.filter(run_uuid=run_uuid).delete()
+        FinancialModel.objects.filter(run_uuid=run_uuid).delete()
+        LoadProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        ElectricTariffModel.objects.filter(run_uuid=run_uuid).delete()
+        PVModel.objects.filter(run_uuid=run_uuid).delete()
+        WindModel.objects.filter(run_uuid=run_uuid).delete()
+        StorageModel.objects.filter(run_uuid=run_uuid).delete()
+        GeneratorModel.objects.filter(run_uuid=run_uuid).delete()
+        MessageModel.objects.filter(run_uuid=run_uuid).delete()
+        ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
     @staticmethod
     def update(data, run_uuid):
@@ -581,8 +608,9 @@ class ModelManager(object):
                 return resp
             else:
                 raise Exception
-
-        resp['outputs']['Scenario'] = remove_ids(model_to_dict(scenario_model))
+        scenario_data = remove_ids(model_to_dict(scenario_model))
+        del scenario_data['job_type']
+        resp['outputs']['Scenario'] = scenario_data
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))
@@ -604,17 +632,14 @@ class ModelManager(object):
 
 
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
-
             resp['messages'][m['message_type']] = m['message']
             
         for scenario_key in nested_input_definitions['Scenario'].iterkeys():
-
             if scenario_key.islower():
                 resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
                 del resp['outputs']['Scenario'][scenario_key]
 
         for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
-
             if site_key.islower():
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]
