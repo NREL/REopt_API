@@ -56,7 +56,11 @@ class PVWatts:
         self.response = self.data  # store response so don't hit API multiple times
 
         if self.tilt is None:
-            self.tilt = self.latitude
+            if self.latitude < 0:
+                self.tilt = self.latitude * -1
+                self.azimuth = 0
+            else:
+                self.tilt = self.latitude
 
     @property
     def url(self):
