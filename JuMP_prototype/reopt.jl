@@ -3,6 +3,7 @@
 using JuMP
 using Xpress
 using MathOptInterface
+using JSON
 const MOI = MathOptInterface
 
 # Data
@@ -24,7 +25,8 @@ datToVariable(dataPath * "/Inputs/")
 # NEED this when there is only one tech
 #Tech = [:UTIL1]
 
-REopt = Model(with_optimizer(Xpress.Optimizer, OUTPUTLOG=1, LPLOG=1, MIPLOG=-10))
+optimizer = Xpress.Optimizer(OUTPUTLOG=1, LPLOG=1, MIPLOG=-10)
+REopt = direct_model(optimizer)
 
 # Counting Sets
 CapCostSegCount = 5
@@ -262,8 +264,10 @@ end
 
 ### Boundary Conditions and Size Limits
 @constraint(REopt, dvStoredEnergy[0] == InitSOC * sum(dvStorageSizeKWH[b] for b in BattLevel) / TimeStepScaling)
-@constraint(REopt, MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in BattLevel) <=  MaxStorageSizeKWH)
-@constraint(REopt, MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in BattLevel) <=  MaxStorageSizeKW)
+@constraint(REopt, MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in BattLevel))
+@constraint(REopt, sum(dvStorageSizeKWH[b] for b in BattLevel) <=  MaxStorageSizeKWH)
+@constraint(REopt, MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in BattLevel))
+@constraint(REopt, sum(dvStorageSizeKW[b] for b in BattLevel) <=  MaxStorageSizeKW)
 
 
 ### Battery Operations
@@ -504,7 +508,7 @@ println("\n\nPreparing outputs...\n\n")
             sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] * TimeStepScaling
                 for t in Tech, LD in [Symbol("1W"), Symbol("1X")], ts in TimeStep, s in Seg, fb in FuelBin 
                 if TechToTechClassMatrix[t, :WIND] == 1))
-@expression(REopt, ExportedBenefitYr1,
+@expression(REopt, ExportBenefitYr1,
             sum(dvRatedProd[t,LD,ts,s,fb] * TimeStepScaling * ProdFactor[t, LD, ts] * ExportRates[t,LD,ts] 
                 for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin ))
 @expression(REopt, Year1UtilityEnergy, 
@@ -512,26 +516,89 @@ println("\n\nPreparing outputs...\n\n")
                 for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
 
 
-ojv = JuMP.objective_value(REopt)
-Year1EnergyCost = value(TotalEnergyCharges / pwf_e)
-Year1DemandCost = value(TotalDemandCharges / pwf_e)
-Year1DemandTOUCost = value(DemandTOUCharges / pwf_e)
-Year1DemandFlatCost = value(DemandFlatCharges / pwf_e)
-Year1FixedCharges = value(TotalFixedCharges / pwf_e)
-Year1MinCharges = value(MinChargeAdder / pwf_e)
+ojv = JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder)
+Year1EnergyCost = TotalEnergyCharges / pwf_e
+Year1DemandCost = TotalDemandCharges / pwf_e
+Year1DemandTOUCost = DemandTOUCharges / pwf_e
+Year1DemandFlatCost = DemandFlatCharges / pwf_e
+Year1FixedCharges = TotalFixedCharges / pwf_e
+Year1MinCharges = MinChargeAdder / pwf_e
 Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
-println("Objective Value: ", ojv)
-println("Year1EnergyCost: ", Year1EnergyCost)
-println("Year1DemandCost: ", Year1DemandCost)
-println("Year1DemandTOUCost: ", Year1DemandTOUCost)
-println("Year1DemandFlatCost: ", Year1DemandFlatCost)
-println("Year1FixedCharges: ", Year1FixedCharges)
-println("Year1MinCharges: ", Year1MinCharges)
-println("Year1Bill: ", Year1Bill)
+results_JSON = Dict("lcc" => ojv)
 
+for b in BattLevel
+    results_JSON["batt_kwh"] = value(dvStorageSizeKWH[b])
+    results_JSON["batt_kw"] = value(dvStorageSizeKW[b])
+end
 
+for t in Tech
+    if TechToTechClassMatrix[t, :PV] == 1
+        results_JSON["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg))
+    end
+end
 
+for t in Tech
+    if TechToTechClassMatrix[t, :WIND] == 1
+        results_JSON["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg))
+    end
+end
+
+function JuMP.value(::Val{false})
+    return 0.0
+end
+
+push!(results_JSON, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
+                         "year_one_energy_cost" => value(Year1EnergyCost),
+                         "year_one_demand_cost" => value(Year1DemandCost),
+                         "year_one_demand_tou_cost" => value(Year1DemandTOUCost),
+                         "year_one_demand_flat_cost" => value(Year1DemandFlatCost),
+                         "year_one_export_benefit" => value(ExportBenefitYr1),
+                         "year_one_fixed_cost" => value(Year1FixedCharges),
+                         "year_one_min_charge_adder" => value(Year1MinCharges),
+                         "year_one_bill" => value(Year1Bill),
+                         "year_one_payments_to_third_party_owner" => value(TotalDemandCharges / pwf_e),
+                         "total_energy_cost" => value(TotalEnergyCharges * r_tax_fraction_offtaker),
+                         "total_demand_cost" => value(TotalDemandCharges * r_tax_fraction_offtaker),
+                         "total_fixed_cost" => value(TotalFixedCharges * r_tax_fraction_offtaker),
+                         "total_min_charge_adder" => value(MinChargeAdder * r_tax_fraction_offtaker),
+                         "net_capital_costs_plus_om" => value(TotalTechCapCosts + TotalStorageCapCosts + TotalOMCosts * r_tax_fraction_owner),
+                         "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts),
+                         "average_yearly_pv_energy_produced" => value(AverageElecProd),
+                         "average_wind_energy_produced" => value(AverageWindProd),
+                         "year_one_energy_produced" => value(Year1ElecProd),
+                         "year_one_wind_energy_produced" => value(Year1WindProd),
+                         "average_annual_energy_exported" => value(ExportedElecPV),
+                         "average_annual_energy_exported_wind" => value(ExportedElecWIND))...)
+
+try @show results_JSON["batt_kwh"] catch end
+try @show results_JSON["batt_kw"] catch end
+try @show results_JSON["pv_kw"] catch end
+try @show results_JSON["wind_kw"] catch end
+@show results_JSON["year_one_utility_kwh"]
+@show results_JSON["year_one_energy_cost"]
+@show results_JSON["year_one_demand_cost"]
+@show results_JSON["year_one_demand_tou_cost"]
+@show results_JSON["year_one_demand_flat_cost"]
+@show results_JSON["year_one_export_benefit"]
+@show results_JSON["year_one_fixed_cost"]
+@show results_JSON["year_one_min_charge_adder"]
+@show results_JSON["year_one_bill"]
+@show results_JSON["year_one_payments_to_third_party_owner"]
+@show results_JSON["total_energy_cost"]
+@show results_JSON["total_demand_cost"]
+@show results_JSON["total_fixed_cost"]
+@show results_JSON["total_min_charge_adder"]
+@show results_JSON["net_capital_costs_plus_om"]
+@show results_JSON["net_capital_costs"]
+@show results_JSON["average_yearly_pv_energy_produced"]
+@show results_JSON["average_wind_energy_produced"]
+@show results_JSON["year_one_energy_produced"]
+@show results_JSON["year_one_wind_energy_produced"]
+@show results_JSON["average_annual_energy_exported"]
+@show results_JSON["average_annual_energy_exported_wind"];
+
+#println("Objective Value: ", ojv)
 
 ### Stuff to add
 #
