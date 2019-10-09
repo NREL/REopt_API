@@ -45,7 +45,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         # So, for hour 11 and 12 (when outage happens), generator is now charging battery with 3.00845 and 0.986111 kWh,
         # along with serving the load, Thereby increasing its fuel consumption.
         d_expected['fuel_used_gal'] = 1.79 # 1.53
-        d_expected['avoided_outage_costs_us_dollars'] = 472773.94
+        d_expected['avoided_outage_costs_us_dollars'] = 12535499.61
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
         try:
@@ -86,7 +86,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 39.7699
         d_expected['batt_kwh'] = 269.1067
         d_expected['fuel_used_gal'] = 2.0
-        d_expected['avoided_outage_costs_us_dollars'] = 195499.16
+        d_expected['avoided_outage_costs_us_dollars'] = 231906.64
         d_expected['microgrid_upgrade_cost_us_dollars'] = 97291.8
 
         try:

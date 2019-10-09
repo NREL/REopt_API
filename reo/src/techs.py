@@ -239,6 +239,13 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
+        
+        # existing_kw is added to both min_kw and max_kw model
+        self.min_kw += self.existing_kw
+        self.max_kw += self.existing_kw
+
+        if self.max_kw < self.min_kw:
+            self.min_kw = self.max_kw
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:
