@@ -89,12 +89,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['station_latitude'] = station[0]
             tmp['station_longitude'] = station[1]
-            tmp['station_distance_km'] =station[2]
+            tmp['station_distance_km'] = station[2]
             tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
             tmp['max_kw'] = pv.max_kw
             tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
-
 
         else:
             pv = None
@@ -106,13 +105,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
-
-            tmp = dict()
-            tmp['fuel_slope_gal_per_kwh'] = gen.fuel_slope
-            tmp['fuel_intercept_gal_per_hr'] = gen.fuel_intercept
-            tmp['max_kw'] = gen.max_kw
-            tmp['min_kw'] = gen.min_kw
-            ModelManager.updateModel('GeneratorModel', tmp, run_uuid)
 
         try:
             if 'gen' in locals():

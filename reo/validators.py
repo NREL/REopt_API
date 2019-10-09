@@ -9,6 +9,7 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
+from reo.src.techs import Generator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -442,7 +443,6 @@ class ValidateNestedInput:
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
-
             if electric_tariff['add_blended_rates_to_urdb_rate']:
                 monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
                 monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
@@ -469,6 +469,25 @@ class ValidateNestedInput:
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
                                        "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+
+            if self.isValid:
+                if self.input_dict['Scenario']["Site"]["Generator"]["max_kw"] > 0 or \
+                        self.input_dict['Scenario']["Site"]["Generator"]["existing_kw"] > 0:
+                    # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
+                    # REopt (which need to be in place before data is saved and passed on to celery tasks)
+                    gen = self.input_dict['Scenario']["Site"]["Generator"]
+                    gen["min_kw"] += gen["existing_kw"]
+                    gen["max_kw"] += gen["existing_kw"]
+
+                    if gen["max_kw"] < gen["min_kw"]:
+                        gen["min_kw"] = gen["max_kw"]
+
+                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
+                    if gen["fuel_slope_gal_per_kwh"] == 0:
+                        gen["fuel_slope_gal_per_kwh"] = m
+                    if gen["fuel_intercept_gal_per_hr"] == 0:
+                        gen["fuel_intercept_gal_per_hr"] = b
+
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
