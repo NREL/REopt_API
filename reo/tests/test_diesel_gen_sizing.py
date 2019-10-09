@@ -59,15 +59,15 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 261748.0
-        d_expected['npv'] = -32471.0
+        d_expected['lcc'] = 236962.0
+        d_expected['npv'] = -7685.0
         d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 0.0769
-        d_expected['batt_kwh'] = 0.1014
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
         d_expected['gen_kw'] = 11.2938
         d_expected['fuel_used_gal'] = 1.52
-        d_expected['avoided_outage_costs_us_dollars'] =   1449.55 #1465.83
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 8552.1
+        d_expected['avoided_outage_costs_us_dollars'] = 1449.55 #1465.83
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -114,14 +114,14 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = 264665.0
+        d_expected['lcc'] = 236514.0
         d_expected['npv'] = 0.0
         d_expected['pv_kw'] = 0.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
         d_expected['gen_kw'] = 100.0
         d_expected['fuel_used_gal'] = 1.53
-        d_expected['avoided_outage_costs_us_dollars'] = 196470.6
+        d_expected['avoided_outage_costs_us_dollars'] = 1036556.
         d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
 
         try:
@@ -171,16 +171,16 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
 
 
         d_expected = dict()
-        d_expected['lcc'] = 257318.0
-        d_expected['npv'] = -16534.0
+        d_expected['lcc'] = 244743.0
+        d_expected['npv'] = -3959.0
         d_expected['pv_kw'] = 100.0
-        d_expected['batt_kw'] = 0.2057
-        d_expected['batt_kwh'] = 0.2712
-        d_expected['gen_kw'] = 5.65146
-        d_expected['fuel_used_gal'] = 0.78
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
+        d_expected['gen_kw'] = 5.85713
+        d_expected['fuel_used_gal'] = 0.79
         d_expected['avoided_outage_costs_us_dollars'] = 2982.63
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 4456.8
-        d_expected['gen_variable_om_cost_us_dollars'] = 136.0
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 1054.2
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 
@@ -230,16 +230,16 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 253044.0
+        d_expected['lcc'] = 238661.0
         d_expected['npv'] = 0.0
         d_expected['pv_kw'] = 50.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
         d_expected['gen_kw'] = 50.0
         d_expected['fuel_used_gal'] = 1.16
-        d_expected['avoided_outage_costs_us_dollars'] = 309552.85
+        d_expected['avoided_outage_costs_us_dollars'] = 1627557.77
         d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
-        d_expected['gen_variable_om_cost_us_dollars'] = 205.0
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 5754.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
 
@@ -293,16 +293,16 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 261748.0
-        d_expected['npv'] = -32471.0
+        d_expected['lcc'] = 236962.0
+        d_expected['npv'] = -7685.0
         d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 0.0769
-        d_expected['batt_kwh'] = 0.1014
+        d_expected['batt_kw'] = 0.0
+        d_expected['batt_kwh'] = 0.0
         d_expected['gen_kw'] = 11.2938
         d_expected['fuel_used_gal'] = 1.52
         d_expected['avoided_outage_costs_us_dollars'] = 1465.83 #1449.55
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 8552.1
-        d_expected['gen_variable_om_cost_us_dollars'] = 271.0
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
+        d_expected['gen_variable_om_cost_us_dollars'] = 0.0
         d_expected['existing_pv_om_cost_us_dollars'] = 0.0
         d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
 

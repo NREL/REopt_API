@@ -12,6 +12,9 @@ class Generator():
         self.min_turndown = diesel_min_turndown
         self.genmin = self.min_turndown * self.kw
 
+        if self.fuel_available == 1e9:
+                self.fuel_available = 660
+
     def gen_avail(self, n_steps_per_hour):  # kW
         if self.fuel_available - self.b > 0:
             return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)

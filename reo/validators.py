@@ -481,7 +481,7 @@ class ValidateNestedInput:
 
                     if gen["max_kw"] < gen["min_kw"]:
                         gen["min_kw"] = gen["max_kw"]
-                        
+
                     m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
                     if gen["fuel_slope_gal_per_kwh"] == 0:
                         gen["fuel_slope_gal_per_kwh"] = m
