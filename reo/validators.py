@@ -477,11 +477,11 @@ class ValidateNestedInput:
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
                     gen = self.input_dict['Scenario']["Site"]["Generator"]
                     gen["min_kw"] += gen["existing_kw"]
-                    if gen["max_kw"] < gen["existing_kw"]:  # default max_kw = 0
-                        gen["max_kw"] = gen["existing_kw"]
-                        gen["min_kw"] = gen["existing_kw"]
+                    gen["max_kw"] += gen["existing_kw"]
+
                     if gen["max_kw"] < gen["min_kw"]:
                         gen["min_kw"] = gen["max_kw"]
+                        
                     m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
                     if gen["fuel_slope_gal_per_kwh"] == 0:
                         gen["fuel_slope_gal_per_kwh"] = m
