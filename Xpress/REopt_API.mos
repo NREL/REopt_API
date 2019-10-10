@@ -693,14 +693,14 @@ TotalStorageCapCosts := sum( b in BattLevel) dvStorageSizeKWH(b) * StorageCostPe
 ! O&M Costs
 TotalPerUnitSizeOMCosts := sum(t in Tech, s in Seg) OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 TotalPerUnitProdOMCosts := sum (t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t)+ExportRates(t, LD, ts))
+	dvRatedProd(t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t,LD,ts) * OMcostPerUnitProd(t) * pwf_om
 
 PVPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "PV") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitSizeOMCosts := sum(t in Tech, s in Seg |(TechToTechClassMatrix (t, "GENERATOR") = 1))
 						OMperUnitSize(t) * pwf_om * dvSystemSize(t, s)
 GenPerUnitProdOMCosts := sum(t in Tech,LD in Load,ts in TimeStep,s in Seg, fb in FuelBin | exists (dvRatedProd(t,LD,ts,s,fb)) and (TechToTechClassMatrix (t, "GENERATOR") = 1))
-	dvRatedProd(t,LD,ts,s,fb)* TimeStepScaling *ProdFactor(t,LD,ts)*  (OMcostPerUnitProd(t)+ExportRates(t, LD, ts))
+	dvRatedProd(t,LD,ts,s,fb) * TimeStepScaling * ProdFactor(t,LD,ts) * OMcostPerUnitProd(t) * pwf_om
 
 ! Utility and Taxable Costs 
 TotalEnergyCharges := sum( t in Tech, fb in FuelBin) dvFuelCost(t,fb)

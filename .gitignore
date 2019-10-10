@@ -107,3 +107,6 @@ static/files/*
 
 # Redis
 *.rdb
+
+# CHP results processing
+results_processing/*
