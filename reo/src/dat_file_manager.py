@@ -192,19 +192,10 @@ class DatFileManager:
 
     def add_storage(self, storage):
         self.storage = storage
-
-        batt_level_coef = list()
-        for batt_level in range(storage.level_count):
-            for coef in storage.level_coefs:
-                batt_level_coef.append(coef)
-
         # storage_bau.dat gets same definitions as storage.dat so that initializations don't fail in bau case
         # however, storage is typically 'turned off' by having max size set to zero in maxsizes_bau.dat
-        write_to_dat(self.file_storage, batt_level_coef, 'BattLevelCoef')
-        write_to_dat(self.file_storage_bau, batt_level_coef, 'BattLevelCoef')
-
-        write_to_dat(self.file_storage, storage.soc_min_pct, 'StorageMinChargePcent', mode='a')
-        write_to_dat(self.file_storage_bau, storage.soc_min_pct, 'StorageMinChargePcent', mode='a')
+        write_to_dat(self.file_storage, storage.soc_min_pct, 'StorageMinChargePcent')
+        write_to_dat(self.file_storage_bau, storage.soc_min_pct, 'StorageMinChargePcent')
 
         write_to_dat(self.file_storage, storage.soc_init_pct, 'InitSOC', mode='a')
         write_to_dat(self.file_storage_bau, storage.soc_init_pct, 'InitSOC', mode='a')

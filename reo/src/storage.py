@@ -64,6 +64,4 @@ class Storage(object):
 
         self.incentives = StorageIncentives(**kwargs)
 
-        self.level_count = 1
-        self.level_coefs = (-1, 0)
         dfm.add_storage(self)
