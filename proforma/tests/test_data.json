@@ -96,7 +96,7 @@
         "utility_ibi_max_us_dollars": null
       },
       "Generator": {
-        "min_kw": 5,
+        "min_kw": 20,
         "existing_kw": 7
       },
       "Financial": {
