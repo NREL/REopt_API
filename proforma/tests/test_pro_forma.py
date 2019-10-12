@@ -41,7 +41,8 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
         return response
 
-    @skip("HSDS wind api barely works")
+    #@skip("HSDS wind api barely works")
+    # unskipping this test by making wind's max_kw = 0
     def test_full_tech_mix(self):
         run_output = self.get_response(self.example_reopt_request_data)
         uuid = run_output['outputs']['Scenario']['run_uuid']
@@ -105,11 +106,13 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
         batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
         wind_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Wind'])
+        generator_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Generator'])
         finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
 
         pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
         batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
         wind_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Wind'])
+        generator_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Generator'])
         tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
         finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
 
