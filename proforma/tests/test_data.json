@@ -48,7 +48,7 @@
         "radius": null,
         "state_ibi_pct": null,
         "utility_rebate_max_us_dollars": null,
-        "installed_cost_us_dollars_per_kw": null,
+        "installed_cost_us_dollars_per_kw": 250,
         "utility_ibi_max_us_dollars": null,
         "tilt": null,
         "gcr": null,
@@ -79,8 +79,8 @@
         "om_cost_us_dollars_per_kw": null,
         "utility_rebate_us_dollars_per_kw": null,
         "pbi_years": null,
-        "max_kw": 5,
-        "min_kw": 4,
+        "max_kw": 0,
+        "min_kw": 0,
         "state_rebate_max_us_dollars": null,
         "state_rebate_us_dollars_per_kw": null,
         "federal_itc_pct": null,
@@ -96,7 +96,9 @@
         "utility_ibi_max_us_dollars": null
       },
       "Generator": {
-        "max_kw": 0
+        "min_kw": 2,
+        "existing_kw": 7,
+        "installed_cost_us_dollars_per_kw": 500
       },
       "Financial": {
         "om_cost_escalation_pct": null,
