@@ -36,10 +36,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         critical_loads_kw=critical_load,
         batt_roundtrip_efficiency=batt_roundtrip_efficiency,
         diesel_kw=generator['size_kw'],
-        # in-case of unlimited fuel the outage simulator slows downs because of 8760 X 8760 iterations
-        # therefore limiting the fuel availability to 660 gallons
-        #fuel_available=site_inputs['Generator']['fuel_avail_gal'],
-        fuel_available=660,
+        fuel_available=site_inputs['Generator']['fuel_avail_gal'],
         b=site_inputs['Generator']['fuel_intercept_gal_per_hr'],
         m=site_inputs['Generator']['fuel_slope_gal_per_kwh'],
         diesel_min_turndown=site_inputs['Generator']['min_turn_down_pct']
