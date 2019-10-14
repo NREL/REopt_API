@@ -3,6 +3,7 @@ from reo.models import ErrorModel
 from reo.log_levels import log
 import rollbar
 
+
 class REoptError(Exception):
     """
     Base class for exceptions in reo app.
@@ -48,14 +49,23 @@ class REoptError(Exception):
             message = models.TextField(blank=True, default='')
             traceback = models.TextField(blank=True, default='')
         """
+        extra_data = {'task': self.task,
+                      'name': self.name,
+                      'run_uuid': self.run_uuid,
+                      'user_uuid': self.user_uuid,
+                      'message': self.message,
+                      'traceback': self.traceback,
+                      }
 
-        extra_data = {'task':self.task, 'name':self.name, 'run_uuid':self.run_uuid, 'user_uuid':self.user_uuid, 'message':self.message, 'traceback':self.traceback}
-
-        rollbar.report_message(self.name, 'error', extra_data=extra_data)        
+        rollbar.report_message(self.name, 'error', extra_data=extra_data)
+        try:
         
-        em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '', user_uuid=self.user_uuid or '', message=self.message or '',
-                        traceback=self.traceback or '')
-        em.save()
+            em = ErrorModel(task=self.task or '', name=self.name or '', run_uuid=self.run_uuid or '',
+                            user_uuid=self.user_uuid or '', message=self.message or '', traceback=self.traceback or '')
+            em.save()
+        except:
+            message = 'Could not save {} for run_uuid {} to database: \n {}'.format(self.__name__, self.run_uuid, self.traceback)
+            log.debug(message)
 
 
 class SubprocessTimeout(REoptError):
@@ -141,8 +151,9 @@ class UnexpectedError(REoptError):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
         if message is None:
             message = "Unexpected Error."
-        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
-                                              traceback=debug_msg)
+        super(UnexpectedError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                              message=message, traceback=debug_msg)
+
 
 class WindDownloadError(REoptError):
     """
@@ -156,23 +167,19 @@ class WindDownloadError(REoptError):
 
     def __init__(self, task='', run_uuid='', user_uuid=''):
         message = "Wind Dataset Timed Out"
-        super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid, message=message,
-                                              traceback='')
+        super(WindDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                                message=message, traceback='')
 
 
 class LoadProfileError(REoptError):
     """
-        REopt catch-all exception class
-
-        Attributes:
-            message - explanation of the error
-        """
+    Exception class for errors that occur during LoadProfile class instantiation in reo.scenario
+    """
 
     __name__ = 'LoadProfileError'
 
     def __init__(self, exc_value, exc_traceback, task='', run_uuid='', user_uuid=''):
-        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value,tb.format_tb(exc_traceback))
+        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value, tb.format_tb(exc_traceback))
         message = "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
-                                              message=message, traceback=debug_msg)
-
+                                               message=message, traceback=debug_msg)

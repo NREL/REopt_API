@@ -70,10 +70,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
-
             self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
             self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
-    
+
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
