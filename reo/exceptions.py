@@ -2,7 +2,6 @@ import traceback as tb
 from reo.models import ErrorModel
 from reo.log_levels import log
 import rollbar
-import warnings
 
 
 class REoptError(Exception):
@@ -67,7 +66,6 @@ class REoptError(Exception):
         except:
             message = 'Could not save {} for run_uuid {} to database: \n {}'.format(self.__name__, self.run_uuid, self.traceback)
             log.debug(message)
-            warnings.warn(message)
 
 
 class SubprocessTimeout(REoptError):
