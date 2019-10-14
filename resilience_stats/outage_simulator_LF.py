@@ -110,6 +110,11 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
     :return: boolean, survives_specified_outage
     """
+    # capping fuel availability to 660 - default fuel availability is set at 1e9 for the optimization process
+    # for the outage simulator, the fuel availability is capped at 660.
+    if fuel_available == 1e9:
+        fuel_available = 660
+
 
     if financial_check == "financial_check":
         # Do financial check
