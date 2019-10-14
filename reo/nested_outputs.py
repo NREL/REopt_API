@@ -377,6 +377,11 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one hourly time series of power from grid to load",
                   "units": "kWh"
+                },
+"year_one_energy_supplied_kwh_bau": {
+                  "type": float,
+                  "description": "Year one hourly time series of power from grid to load in bau scenario",
+                  "units": "kWh"
                 }
               },
 
@@ -389,6 +394,11 @@ nested_output_definitions = {
                 "fuel_used_gal": {
                   "type": float,
                   "description": "Generator fuel used to meet critical load during grid outage.",
+                  "units": "US gallons"
+                },
+                "fuel_used_gal_bau": {
+                  "type": float,
+                  "description": "Generator fuel used to meet critical load during grid outage in bau case.",
                   "units": "US gallons"
                 },
                 "average_yearly_energy_produced_kwh": {
@@ -426,9 +436,19 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of diesel generator exporting to grid",
                   "units": "kW"
                 },
-                "existing_gen_om_cost_us_dollars": {
+                "existing_gen_fixed_om_cost_us_dollars_bau": {
                   "type": float,
-                  "description": "Lifetime O&M cost for existing diesel generator system.",
+                  "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
+                  "units": "$"
+                },
+                "existing_gen_variable_om_cost_us_dollars_bau": {
+                  "type": float,
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system in bau case.",
+                  "units": "$"
+                },
+                "gen_variable_om_cost_us_dollars":{
+                  "type": float,
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
                   "units": "$"
                 }
               }

@@ -3,6 +3,7 @@ import tzlocal
 import json
 import datetime
 import os
+from collections import defaultdict
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from unittest import skip
@@ -41,7 +42,8 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
         return response
 
-    @skip("HSDS wind api barely works")
+    #@skip("HSDS wind api barely works")
+    # un-skipping this test by making wind's max_kw = 0, testing diesel generator instead
     def test_full_tech_mix(self):
         run_output = self.get_response(self.example_reopt_request_data)
         uuid = run_output['outputs']['Scenario']['run_uuid']
@@ -49,7 +51,7 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
         idx = 0
         for a, b in mapping:
-            msg = "Failed at idx: " + str(idx) + " Value: " + str(a.value) + "!= " + str(b) + " run_uuid: " + str(uuid)
+            msg = "Failed at: " + str(a) + " Value: " + str(a.value) + "!= " + str(b) + " run_uuid: " + str(uuid)
             self.assertAlmostEqual(float(a.value), b, places=2, msg=msg)
             idx += 1
 
@@ -97,93 +99,132 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
         ws = wb.get_sheet_by_name(pf.sheet_io)
 
-        class ClassAttributes:
-            def __init__(self, dictionary):
-                for k, v in dictionary.items():
-                    setattr(self, k, v)
+        # Removed ClassAttributes to allow the use of defaultdict to handle cases
+        # when not all techs are present in the case
+        pv_in = run_output['inputs']['Scenario']['Site'].get('PV', defaultdict(int))
+        batt_in = run_output['inputs']['Scenario']['Site'].get('Storage', defaultdict(int))
+        wind_in = run_output['inputs']['Scenario']['Site'].get('Wind', defaultdict(int))
+        generator_in = run_output['inputs']['Scenario']['Site'].get('Generator', defaultdict(int))
+        finance_in = run_output['inputs']['Scenario']['Site']['Financial']
 
-        pv_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['PV'])
-        batt_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Storage'])
-        wind_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Wind'])
-        finance_in = ClassAttributes(run_output['inputs']['Scenario']['Site']['Financial'])
+        pv_out = run_output['outputs']['Scenario']['Site'].get('PV', defaultdict(int))
+        batt_out = run_output['outputs']['Scenario']['Site'].get('Storage', defaultdict(int))
+        wind_out = run_output['outputs']['Scenario']['Site'].get('Wind', defaultdict(int))
+        generator_out = run_output['outputs']['Scenario']['Site'].get('Generator', defaultdict(int))
+        tariff_out = run_output['outputs']['Scenario']['Site']['ElectricTariff']
+        finance_out = run_output['outputs']['Scenario']['Site']['Financial']
 
-        pv_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['PV'])
-        batt_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Storage'])
-        wind_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Wind'])
-        tariff_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['ElectricTariff'])
-        finance_out = ClassAttributes(run_output['outputs']['Scenario']['Site']['Financial'])
-
-        adjusted_pv_kw =pv_out.size_kw - pv_in.existing_kw
+        adjusted_pv_kw =pv_out["size_kw"] - pv_in["existing_kw"]
+        adjusted_generator_kw = generator_out["size_kw"] - generator_in["existing_kw"]
+        diesel_fuel_used_cost = generator_in["diesel_fuel_cost_us_dollars_per_gallon"] * generator_out["fuel_used_gal"]
 
         # Note, cannot evaluate LCC, LCC_BAU, and NPV, since that would require having openpxl evaluate formulas in excel
         mapping = [
             [ws['B3'], adjusted_pv_kw],
-            [ws['B4'], pv_in.existing_kw],
-            [ws['B5'], pv_in.degradation_pct * 100],
-            [ws['B6'], wind_out.size_kw],
-            [ws['B7'], batt_out.size_kw],
-            [ws['B8'], batt_out.size_kwh],
-            [ws['B11'], tariff_out.year_one_bill_bau_us_dollars],
-            [ws['B12'], tariff_out.year_one_bill_us_dollars],
-            [ws['B13'], tariff_out.year_one_export_benefit_us_dollars],
-            [ws['B14'], pv_out.year_one_energy_produced_kwh],
-            [ws['B15'], wind_out.year_one_energy_produced_kwh],
-            [ws['B16'], pv_out.year_one_energy_produced_kwh + wind_out.year_one_energy_produced_kwh],
+            [ws['B4'], pv_in["existing_kw"]],
+            [ws['B5'], pv_in["degradation_pct"] * 100],
+            [ws['B6'], wind_out["size_kw"]],
+            [ws['B7'], adjusted_generator_kw],
+            [ws['B8'], generator_in["existing_kw"]],
+            [ws['B9'], batt_out["size_kw"]],
+            [ws['B10'], batt_out["size_kwh"]],
+            [ws['B13'], tariff_out["year_one_bill_bau_us_dollars"]],
+            [ws['B14'], tariff_out["year_one_bill_us_dollars"]],
+            [ws['B15'], tariff_out["year_one_export_benefit_us_dollars"]],
+            [ws['B16'], pv_out["year_one_energy_produced_kwh"]],
+            [ws['B17'], wind_out["year_one_energy_produced_kwh"]],
+            [ws['B18'], generator_out["year_one_energy_produced_kwh"]],
+            [ws['B19'], pv_out["year_one_energy_produced_kwh"] + wind_out["year_one_energy_produced_kwh"] + generator_out["year_one_energy_produced_kwh"]],
 
-            [ws['B19'], adjusted_pv_kw * pv_in.installed_cost_us_dollars_per_kw +
-             wind_out.size_kw * wind_in.installed_cost_us_dollars_per_kw +
-             batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
-             batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
-            [ws['B20'], adjusted_pv_kw * pv_in.installed_cost_us_dollars_per_kw],
-            [ws['B21'], wind_out.size_kw * wind_in.installed_cost_us_dollars_per_kw],
-            [ws['B22'], batt_out.size_kw * batt_in.installed_cost_us_dollars_per_kw +
-             batt_out.size_kwh * batt_in.installed_cost_us_dollars_per_kwh],
-            [ws['B24'], pv_in.om_cost_us_dollars_per_kw],
-            [ws['B25'], wind_in.om_cost_us_dollars_per_kw],
-            [ws['B26'], batt_in.replace_cost_us_dollars_per_kw],
-            [ws['B27'], batt_in.inverter_replacement_year],
-            [ws['B28'], batt_in.replace_cost_us_dollars_per_kwh],
-            [ws['B29'], batt_in.battery_replacement_year],
-            [ws['B37'], finance_in.analysis_years],
-            [ws['B38'], finance_in.om_cost_escalation_pct * 100],
-            [ws['B39'], finance_in.escalation_pct * 100],
-            [ws['B40'], finance_in.offtaker_discount_pct * 100],
-            [ws['B43'], finance_in.offtaker_tax_pct * 100],
-            [ws['B48'], pv_in.federal_itc_pct * 100],
-            [ws['B53'], pv_in.state_ibi_pct * 100],
-            [ws['C53'], pv_in.state_ibi_max_us_dollars],
-            [ws['B54'], pv_in.utility_ibi_pct * 100],
-            [ws['C54'], pv_in.utility_ibi_max_us_dollars],
-            [ws['B56'], pv_in.federal_rebate_us_dollars_per_kw * 0.001],
-            [ws['B57'], pv_in.state_rebate_us_dollars_per_kw * 0.001],
-            [ws['C57'], pv_in.state_rebate_max_us_dollars],
-            [ws['B58'], pv_in.utility_rebate_us_dollars_per_kw * 0.001],
-            [ws['C58'], pv_in.utility_rebate_max_us_dollars],
-            [ws['B60'], pv_in.pbi_us_dollars_per_kwh],
-            [ws['C60'], pv_in.pbi_max_us_dollars],
-            [ws['E60'], pv_in.pbi_years],
-            [ws['F60'], pv_in.pbi_system_max_kw],
-            [ws['B65'], wind_in.federal_itc_pct * 100],
-            [ws['B70'], wind_in.state_ibi_pct * 100],
-            [ws['C70'], wind_in.state_ibi_max_us_dollars],
-            [ws['B71'], wind_in.utility_ibi_pct * 100],
-            [ws['C71'], wind_in.utility_ibi_max_us_dollars],
-            [ws['B73'], wind_in.federal_rebate_us_dollars_per_kw * 0.001],
-            [ws['B74'], wind_in.state_rebate_us_dollars_per_kw * 0.001],
-            [ws['C74'], wind_in.state_rebate_max_us_dollars],
-            [ws['B75'], wind_in.utility_rebate_us_dollars_per_kw * 0.001],
-            [ws['C75'], wind_in.utility_rebate_max_us_dollars],
-            [ws['B77'], wind_in.pbi_us_dollars_per_kwh],
-            [ws['C77'], wind_in.pbi_max_us_dollars],
-            [ws['E77'], wind_in.pbi_years],
-            [ws['F77'], wind_in.pbi_system_max_kw],
-            [ws['B82'], batt_in.total_itc_pct * 100],
-            [ws['B90'], batt_in.total_rebate_us_dollars_per_kw * 0.001],
-            [ws['B95'], pv_in.macrs_option_years],
-            [ws['B96'], pv_in.macrs_bonus_pct],
-            [ws['C95'], batt_in.macrs_option_years],
-            [ws['C96'], batt_in.macrs_bonus_pct],
-            [ws['D95'], wind_in.macrs_option_years],
-            [ws['D96'], wind_in.macrs_bonus_pct]
-        ]
+            [ws['B22'], adjusted_pv_kw * pv_in["installed_cost_us_dollars_per_kw"] +
+             wind_out["size_kw"] * wind_in["installed_cost_us_dollars_per_kw"] +
+             batt_out["size_kw"] * batt_in["installed_cost_us_dollars_per_kw"] +
+             batt_out["size_kwh"] * batt_in["installed_cost_us_dollars_per_kwh"] +
+             adjusted_generator_kw * generator_in["installed_cost_us_dollars_per_kw"]],
+            [ws['B23'], adjusted_pv_kw * pv_in["installed_cost_us_dollars_per_kw"]],
+            [ws['B24'], wind_out["size_kw"] * wind_in["installed_cost_us_dollars_per_kw"]],
+            [ws['B25'], adjusted_generator_kw * generator_in["installed_cost_us_dollars_per_kw"]],
+            [ws['B26'], batt_out["size_kw"] * batt_in["installed_cost_us_dollars_per_kw"] +
+             batt_out["size_kwh"] * batt_in["installed_cost_us_dollars_per_kwh"]]]
+
+        if 'PV' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.append([ws['B28'], pv_in["om_cost_us_dollars_per_kw"]])
+        if 'Wind' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.append([ws['B29'], wind_in["om_cost_us_dollars_per_kw"]])
+
+        gen_data = [[ws['B30'], generator_in["om_cost_us_dollars_per_kw"]],
+                    [ws['B31'], generator_in["om_cost_us_dollars_per_kwh"]],
+                    [ws['B32'], diesel_fuel_used_cost]]
+        mapping.extend(gen_data)
+
+        batt_input = [[ws['B33'], batt_in["replace_cost_us_dollars_per_kw"]],
+                      [ws['B34'], batt_in["inverter_replacement_year"]],
+                      [ws['B35'], batt_in["replace_cost_us_dollars_per_kwh"]],
+                      [ws['B36'], batt_in["battery_replacement_year"]]]
+        if 'Storage' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(batt_input)
+
+        finance_inputs = [[ws['B44'], finance_in["analysis_years"]],
+                         [ws['B45'], finance_in["om_cost_escalation_pct"] * 100],
+                         [ws['B46'], finance_in["escalation_pct"] * 100],
+                         [ws['B47'], finance_in["offtaker_discount_pct"] * 100],
+                         [ws['B50'], finance_in["offtaker_tax_pct"] * 100]]
+        mapping.extend(finance_inputs)
+
+        pv_inputs = [[ws['B55'], pv_in["federal_itc_pct"] * 100],
+                     [ws['B60'], pv_in["state_ibi_pct"] * 100],
+                     [ws['C60'], pv_in["state_ibi_max_us_dollars"]],
+                     [ws['B61'], pv_in["utility_ibi_pct"] * 100],
+                     [ws['C61'], pv_in["utility_ibi_max_us_dollars"]],
+                     [ws['B63'], pv_in["federal_rebate_us_dollars_per_kw"] * 0.001],
+                     [ws['B64'], pv_in["state_rebate_us_dollars_per_kw"] * 0.001],
+                     [ws['C64'], pv_in["state_rebate_max_us_dollars"]],
+                     [ws['B65'], pv_in["utility_rebate_us_dollars_per_kw"] * 0.001],
+                     [ws['C65'], pv_in["utility_rebate_max_us_dollars"]],
+                     [ws['B67'], pv_in["pbi_us_dollars_per_kwh"]],
+                     [ws['C67'], pv_in["pbi_max_us_dollars"]],
+                     [ws['E67'], pv_in["pbi_years"]],
+                     [ws['F67'], pv_in["pbi_system_max_kw"]]]
+
+        if 'PV' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(pv_inputs)
+
+        wind_inputs = [[ws['B72'], wind_in["federal_itc_pct"] * 100],
+                       [ws['B77'], wind_in["state_ibi_pct"] * 100],
+                       [ws['C77'], wind_in["state_ibi_max_us_dollars"]],
+                       [ws['B78'], wind_in["utility_ibi_pct"] * 100],
+                       [ws['C78'], wind_in["utility_ibi_max_us_dollars"]],
+                       [ws['B80'], wind_in["federal_rebate_us_dollars_per_kw"] * 0.001],
+                       [ws['B81'], wind_in["state_rebate_us_dollars_per_kw"] * 0.001],
+                       [ws['C81'], wind_in["state_rebate_max_us_dollars"]],
+                       [ws['B82'], wind_in["utility_rebate_us_dollars_per_kw"] * 0.001],
+                       [ws['C82'], wind_in["utility_rebate_max_us_dollars"]],
+                       [ws['B84'], wind_in["pbi_us_dollars_per_kwh"]],
+                       [ws['C84'], wind_in["pbi_max_us_dollars"]],
+                       [ws['E84'], wind_in["pbi_years"]],
+                       [ws['F84'], wind_in["pbi_system_max_kw"]]]
+        if 'Wind' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(wind_inputs)
+
+        batt_inputs = [[ws['B89'], batt_in["total_itc_pct"] * 100],
+                       [ws['B97'], batt_in["total_rebate_us_dollars_per_kw"] * 0.001],
+                       [ws['C102'], batt_in["macrs_option_years"]],
+                       [ws['C103'], batt_in["macrs_bonus_pct"]]]
+
+        if 'Storage' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(batt_inputs)
+
+        pv_inputs = [[ws['B102'], pv_in["macrs_option_years"]],
+                     [ws['B103'], pv_in["macrs_bonus_pct"]]]
+
+        if 'PV' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(pv_inputs)
+
+        wind_inputs = [[ws['D102'], wind_in["macrs_option_years"]],
+                       [ws['D103'], wind_in["macrs_bonus_pct"]]]
+
+        if 'Wind' in run_output['inputs']['Scenario']['Site'].keys():
+            mapping.extend(wind_inputs)
+
+
         return mapping

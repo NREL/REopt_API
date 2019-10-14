@@ -3,7 +3,7 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
-from reo.models import GeneratorModel
+
 
 class Tech(object):
     """
@@ -212,13 +212,13 @@ class Generator(Tech):
 
     def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct = 1, **kwargs):
+                 fuel_avail_before_outage_pct=1, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
         and include diesel generator's size as optimization decision variable.
         
-        For assigning the default_slope and default_intercept, the size_kw is being replaced by min_kw.
+        Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
 
         self.fuel_slope = fuel_slope_gal_per_kwh
@@ -239,27 +239,10 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-        self.min_kw += self.existing_kw
-        #GeneratorModel.objects.filter(run_uuid=run_uuid).update(min_kw=self.min_kw)
-
-        # if user has entered the max_kw for new gen to be less than the user-specified exiting_gen, max_kw is reset
-        # in this case existing_kw = max_kw = min_kw, fixing the gen-size decision variable as a constant
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
-            #GeneratorModel.objects.filter(run_uuid=run_uuid).update(max_kw=self.max_kw)
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:
             self.loads_served.append('wholesale')
-
-
-        default_slope, default_intercept = self.default_fuel_burn_rate(self.min_kw)
-        if self.fuel_slope == 0:  # default is zero
-            self.fuel_slope = default_slope
-            #GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_slope_gal_per_kwh=self.fuel_slope)
-        if self.fuel_intercept == 0:
-            self.fuel_intercept = default_intercept
-            #GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_intercept_gal_per_hr=self.fuel_intercept)
 
         dfm.add_generator(self)
 
