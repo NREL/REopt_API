@@ -5,6 +5,7 @@ from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
 from reo.models import GeneratorModel
 
+
 class Tech(object):
     """
     base class for REopt energy generation technology
@@ -69,14 +70,14 @@ class Util(Tech):
 
 class PV(Tech):
     array_type_to_tilt_angle = {
-        0: 0, # ground-mount fixed array type's tilt should be equal to the latitude
+        0: 0,  # ground-mount fixed array type's tilt should be equal to the latitude
         1: 10,
         2: 0,
         3: 0,
-        4:0
+        4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, tilt=0.537, azimuth=180,**kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, tilt=0.537, azimuth=180, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -86,24 +87,32 @@ class PV(Tech):
         self.kw_per_square_foot = kw_per_square_foot
         self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
-        self.tilt = kwargs.get('tilt',tilt)
-        self.azimuth = kwargs.get('azimuth',azimuth)
+        self.tilt = tilt
+        self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
-            if kwargs.get('array_type') == 0: # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
-                self.tilt = kwargs.get('latitude') # start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the default azimuth of 180 (unless otherwise specified)
-                if kwargs.get('latitude') < 0: # if the site is in the southern hemisphere, now set the tilt to the positive latitude value and change the azimuth to 0. Also update kwargs going forward so they get saved to the database later show up in final results
+            if kwargs.get('array_type') == 0:  # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
+                """
+                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the 
+                default azimuth of 180 (unless otherwise specified)
+                """
+                self.tilt = kwargs.get('latitude')
+                if kwargs.get('latitude') < 0:
+                    """
+                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and 
+                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later 
+                    show up in final results
+                    """
                     self.tilt = -1 * self.tilt
                     self.azimuth = 0
-                    kwargs['tilt'] = self.tilt
-                    kwargs['azimuth'] = 0
-            else: # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
+                    self.kwargs['azimuth'] = 0
+            else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
-        self.kwargs['tilt']  = self.tilt
+        self.kwargs['tilt'] = self.tilt
 
         # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
         if self.max_kw < self.existing_kw:
