@@ -139,10 +139,10 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         self.assertEqual(0, resp['resilience_hours_min'])
         self.assertEqual(0, resp['resilience_hours_max'])
         self.assertEqual(0, resp['resilience_hours_avg'])
-        self.assertEqual(None, resp['outage_durations'])
-        self.assertEqual(None, resp['probs_of_surviving'])
-        self.assertEqual(None, resp['probs_of_surviving_by_month'])
-        self.assertEqual(None, resp['probs_of_surviving_by_hour_of_the_day'])
+        self.assertEqual([], resp['outage_durations'])
+        self.assertEqual([], resp['probs_of_surviving'])
+        self.assertEqual([[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]], resp['probs_of_surviving_by_month'])
+        self.assertEqual([[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]], resp['probs_of_surviving_by_hour_of_the_day'])
 
     def test_flexible_timesteps(self):
         """

@@ -63,8 +63,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         d_expected['laod_bau'] = load_bau_expected
         d_expected['status'] = 'optimal'
-        d_expected['total_energy_cost_bau'] = 54552.75
-        d_expected['year_one_energy_cost_bau'] = 7520.49
+        d_expected['total_energy_cost_bau'] = 53890.95
+        d_expected['year_one_energy_cost_bau'] = 7429.26
         d_expected['resilience_check_flag'] = False
         d_expected['sustain_hours'] = 8
 

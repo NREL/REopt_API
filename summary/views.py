@@ -1,7 +1,7 @@
 import sys
 import json
 from django.http import JsonResponse
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel, MessageModel
+from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, MessageModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 import uuid
@@ -127,6 +127,7 @@ def summary(request, user_uuid):
                   "year_one_savings_us_dollars",# Year 1 Savings ($)
                   "pv_kw",                      # PV Size (kW)
                   "wind_kw",                    # Wind Size (kW)
+                  "gen_kw",                     # Generator Size (kW)
                   "batt_kw",                    # Battery Power (kW)
                   "batt_kwh"                    # Battery Capacity (kWh)
                   ""
@@ -175,6 +176,8 @@ def summary(request, user_uuid):
         batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh'))
         pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
         winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
+        gens = dbToDict(
+            GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw'))
         financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs'))
         tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars'))
 
@@ -189,6 +192,7 @@ def summary(request, user_uuid):
             batt = batts.get(scenario.run_uuid)
             pv = pvs.get(scenario.run_uuid)
             wind = winds.get(scenario.run_uuid)
+            gen = gens.get(scenario.run_uuid)
             financial = financials.get(scenario.run_uuid)
             tariff = tariffs.get(scenario.run_uuid)
             
@@ -274,6 +278,15 @@ def summary(request, user_uuid):
                         results['wind_kw'] = 'not evaluated'
                 else:
                     results['wind_kw'] = 'not evaluated'
+
+                # Generator Size
+                if gen is not None:
+                    if gen.get('max_kw', -1) > 0:
+                        results['gen_kw'] = gen['size_kw']
+                    else:
+                        results['gen_kw'] = 'not evaluated'
+                else:
+                    results['gen_kw'] = 'not evaluated'
 
                 # Battery Size
                 if batt is not None:

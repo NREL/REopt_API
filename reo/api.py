@@ -69,11 +69,15 @@ class Job(ModelResource):
         run_uuid = str(uuid.uuid4())
         data = dict()
         data["outputs"] = {"Scenario": {'run_uuid': run_uuid, 'api_version': api_version,
-                                            'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
+                                        'Profile': {'pre_setup_scenario_seconds': 0, 'setup_scenario_seconds': 0,
                                                         'reopt_seconds': 0, 'reopt_bau_seconds': 0,
                                                         'parse_run_outputs_seconds': 0},                                            
                                        }
                            }
+
+        # Setup and start profile
+        profiler = Profiler()
+
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)
         log.info('Beginning run setup')
@@ -96,8 +100,6 @@ class Job(ModelResource):
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
             
-        # Setup and start profile
-        profiler = Profiler()
 
         if not input_validator.isValid:  # 400 Bad Request
             log.debug("input_validator not valid")

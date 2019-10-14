@@ -506,7 +506,6 @@ class LoadProfile(BuiltInProfile):
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
 
-
         self.time_steps_per_hour = time_steps_per_hour
         self.n_timesteps = self.time_steps_per_hour*8760
 
@@ -519,7 +518,6 @@ class LoadProfile(BuiltInProfile):
             self.load_list_original = copy.deepcopy(self.load_list)
 
             self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
-
 
         self.unmodified_load_list = copy.copy(self.load_list)
         self.bau_load_list = copy.copy(self.load_list)

@@ -9,6 +9,7 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
+from reo.src.techs import Generator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
@@ -377,7 +378,7 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
 
                 elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
                     counter -= 1
@@ -394,16 +395,16 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec")
+                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees")
+                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius")
+                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
                     self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres")
+                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
                 else:
                     self.validate_wind_resource()
 
@@ -443,7 +444,6 @@ class ValidateNestedInput:
                     electric_tariff['urdb_response'] = rate.urdb_dict
                     self.validate_urdb_response()
 
-
             if electric_tariff['add_blended_rates_to_urdb_rate']:
                 monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
                 monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
@@ -469,7 +469,26 @@ class ValidateNestedInput:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
-                                       "LoadProfile", lp)
+                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+
+            if self.isValid:
+                if self.input_dict['Scenario']["Site"]["Generator"]["max_kw"] > 0 or \
+                        self.input_dict['Scenario']["Site"]["Generator"]["existing_kw"] > 0:
+                    # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
+                    # REopt (which need to be in place before data is saved and passed on to celery tasks)
+                    gen = self.input_dict['Scenario']["Site"]["Generator"]
+                    gen["min_kw"] += gen["existing_kw"]
+                    gen["max_kw"] += gen["existing_kw"]
+
+                    if gen["max_kw"] < gen["min_kw"]:
+                        gen["min_kw"] = gen["max_kw"]
+
+                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
+                    if gen["fuel_slope_gal_per_kwh"] == 0:
+                        gen["fuel_slope_gal_per_kwh"] = m
+                    if gen["fuel_intercept_gal_per_hr"] == 0:
+                        gen["fuel_intercept_gal_per_hr"] = b
+
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
@@ -879,11 +898,29 @@ class ValidateNestedInput:
             #except:
             #    self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
-        def validate_8760(self, attr, obj_name, attr_name):
+        def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour):
+            """
+            This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
+            resolution, but wants to run an hourly REopt model. If time_steps_per_hour = 1 then we downsample the user's
+            time-series to an 8760. If time_steps_per_hour != 1 then we do nothing since the resolution of time-series
+            relative to time_steps_per_hour is handled within each time-series' implementation.
+            :param attr: list of floats
+            :param obj_name: str, parent object name from nested_inputs (eg. "LoadProfile")
+            :param attr_name: str, name of time-series (eg. "critical_loads_kw")
+            :param time_steps_per_hour: int, [1, 2, 4]
+            :return: None
+            """
 
             n = len(attr)
+            length_list = [8760, 17520, 35040]
 
-            if n == 8760:
+            if time_steps_per_hour != 1:
+                if n not in length_list:
+                    self.input_data_errors.append(
+                        "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name)
+                    )
+
+            elif n == 8760:
                 pass
 
             elif n == 17520:  # downsample 30 minute data
