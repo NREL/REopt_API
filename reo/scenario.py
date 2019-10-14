@@ -91,6 +91,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['station_longitude'] = station[1]
             tmp['station_distance_km'] = station[2]
             tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
+            tmp['azimuth'] = pv.azimuth
             tmp['max_kw'] = pv.max_kw
             tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
