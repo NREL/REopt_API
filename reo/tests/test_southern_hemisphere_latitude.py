@@ -18,13 +18,12 @@ class NegativeLatitudeTest(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    def test_souther_hemisphere_latitude(self):
+    def test_southern_hemisphere_latitude(self):
         """
-        Case with site exports greater than the cost of energy+demand+fixed charges. Expected outcome:
-        - lcc for with_technology case negative
-        - lcc for bau case positive
-        ...
-        - MinChargeAdder variable in the optimization formulation goes to zero
+        Tests locations in the Southern Hemisphere where the tilt must be set to the latitude (array type 0 - Ground Mount Fixed (Open Rack)).
+        In these cases we need to make the negative latitude positive and set the azimuth to 0.
+
+
         :return:
         """
 
