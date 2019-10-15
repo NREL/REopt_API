@@ -93,7 +93,7 @@ def annual_kwh(request):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
@@ -106,7 +106,7 @@ def remove(request, run_uuid):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -122,7 +122,7 @@ def results(request, run_uuid):
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value, exc_traceback, task='results', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='results', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
@@ -135,7 +135,7 @@ def results(request, run_uuid):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -190,7 +190,7 @@ def simulated_load(request):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
@@ -230,7 +230,7 @@ def generator_efficiency(request):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})

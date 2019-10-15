@@ -91,6 +91,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['station_longitude'] = station[1]
             tmp['station_distance_km'] = station[2]
             tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
+            tmp['azimuth'] = pv.azimuth
             tmp['max_kw'] = pv.max_kw
             tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
@@ -144,11 +145,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
-
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
-            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error = LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error.save_to_db()
+            raise lp_error
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -197,22 +199,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
         if isinstance(e, LoadProfileError):
                 raise e
         
-        elif hasattr(e, 'message'):
+        if hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
-                raise WindDownloadError(task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
-            else:
-                log.error(e.message)
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
 
-        elif isinstance(e, REoptError):
-            pass
-        else:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            if hasattr(exc_value, 'name'):
-                if exc_value.name == 'LoadProfileError':
-                    log.error("Scenario.py raising error: " + exc_value.message)
-                    pass
-            else:
-                log.error("Scenario.py raising error: " + exc_value)
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid,user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("Scenario.py raising error: " + exc_value.message)
+        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=run_uuid,
+                              user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

@@ -4,6 +4,10 @@ from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from reo.nested_inputs import nested_input_definitions
+from reo.log_levels import log
+import sys
+import traceback as tb
+import warnings
 
 
 class URDBError(models.Model):
@@ -11,6 +15,15 @@ class URDBError(models.Model):
     label = models.TextField(blank=True, default='')
     type = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
+
+    def save_to_db(self):
+        try:
+            self.save()
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            message = 'Could not save URDBError {} for label {} error to the database - {} \n\n{}'.format(self.type, self.label,self.message,tb.format_tb(exc_traceback))
+            warnings.warn(message)
+            log.debug(message)
 
 
 class ProfileModel(models.Model):
@@ -419,6 +432,13 @@ class BadPost(models.Model):
     run_uuid = models.UUIDField(unique=True)
     post = models.TextField()
     errors = models.TextField()
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        try:
+            super(BadPost, self).save()
+        except Exception as e:
+            log.info("Database saving error: {}".format(e.message))
 
 
 def attribute_inputs(inputs):
