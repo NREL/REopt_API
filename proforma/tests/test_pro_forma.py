@@ -106,6 +106,7 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         wind_in = run_output['inputs']['Scenario']['Site'].get('Wind', defaultdict(int))
         generator_in = run_output['inputs']['Scenario']['Site'].get('Generator', defaultdict(int))
         finance_in = run_output['inputs']['Scenario']['Site']['Financial']
+        loadprofile_in = run_output['inputs']['Scenario']['Site']['LoadProfile']
 
         pv_out = run_output['outputs']['Scenario']['Site'].get('PV', defaultdict(int))
         batt_out = run_output['outputs']['Scenario']['Site'].get('Storage', defaultdict(int))
@@ -226,5 +227,6 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         if 'Wind' in run_output['inputs']['Scenario']['Site'].keys():
             mapping.extend(wind_inputs)
 
+        mapping.extend([[ws['D117'], int(not loadprofile_in["outage_is_major_event"])]])
 
         return mapping
