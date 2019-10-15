@@ -63,6 +63,7 @@ class ProForma(models.Model):
         generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
         electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
         financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        loadprofile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
         # Open file for reading
         wb = load_workbook(self.file_template, read_only=False, keep_vba=True)
@@ -215,6 +216,11 @@ class ProForma(models.Model):
         elif wind.macrs_option_years == 0:
             ws['D102'] = "None"
             ws['D103'] = 0
+
+        # this value is being introduced in proforma for modeling variable o&m and diesel cost
+        # for back-up generator. Currently in REopt Lite webtool, diesel generator only runs for
+        # outage. This flag is used to determine outage occurrences in the analysis period.
+        ws['D117'] = int(not loadprofile.outage_is_major_event)
 
         # Save
         wb.save(self.output_file)
