@@ -134,7 +134,7 @@ class LoadProfileModel(models.Model):
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
-    resilience_check_flag = models.BooleanField(default=True)
+    resilience_check_flag = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, **kwargs):
