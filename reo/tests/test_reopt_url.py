@@ -18,11 +18,6 @@ def get_by_path(root, items):
     return reduce(operator.getitem, items, root)
 
 
-def set_by_path(root, items, value):
-    """Set a value in a nested object in root by item sequence."""
-    get_by_path(root, items[:-1])[items[-1]] = value
-
-
 def remove_by_path(root, items):
     """Remove a value in a nested object in root by item sequence."""
     del get_by_path(root, items[:-1])[items[-1]]
