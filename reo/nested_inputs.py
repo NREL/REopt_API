@@ -286,7 +286,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit, restricted to total site load"
+          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh."
         },
         "wholesale_rate_above_site_load_us_dollars_per_kwh": {
           "type": "float",
