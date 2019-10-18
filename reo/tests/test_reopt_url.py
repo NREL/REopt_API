@@ -46,7 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def check_data_error_response(self, data, text):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
-
+    @skip('')
     def test_required(self):
         """
         Hit the API with missing required inputs or missing dependencies and verify that the correct message is returned
@@ -94,7 +94,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             err_msg = str(json.loads(response.content)['messages']['input_errors'])
             self.assertTrue(text in err_msg)
             self.assertTrue("(OOPS)" in err_msg)
-    @skip('')
+
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
@@ -102,18 +102,20 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for attribute, test_data in input.test_data('min'):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
-            t = json.loads(response.content)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
         for attribute, test_data in input.test_data('max'):
-                text = "exceeds allowable max"
-                response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            text = "exceeds allowable max"
+            response = self.get_response(test_data)
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
     def test_urdb_rate(self):
 
@@ -296,7 +298,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages'].get('error')))
             raise
-    @skip('')
+
     def test_valid_nested_posts(self):
 
 
