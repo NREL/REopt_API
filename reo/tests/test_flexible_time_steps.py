@@ -126,7 +126,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
 
         try:
             check_common_outputs(self, c1, c2)
-            print("Test Successful!")
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
             #print("Error message with ts=1: {}".format(d1['messages']))
