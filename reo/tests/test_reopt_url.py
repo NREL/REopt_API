@@ -53,9 +53,12 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue(text in response.content)
 
     def test_required(self):
+        """
+        Hit the API with missing required inputs or missing dependencies and verify that the correct message is returned
+        """
+        required, true_false = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
 
-        required, _ = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
-        for r in required:
+        for r in [x for (x,y) in zip(required, true_false) if y is True]:
             test_case = self.complete_valid_nestedpost
             remove_by_path(test_case, r)
             response = self.get_response(test_case)
@@ -75,7 +78,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
         load_profile_cases = [['doe_reference_name', 'annual_kwh', 'monthly_totals_kwh', 'loads_kw'],
-                              ['doe_reference_name', 'loads_kw', 'annual_kwh'],['doe_reference_name', 'loads_kw', 'monthly_totals_kwh']]
+                              ['doe_reference_name', 'loads_kw', 'annual_kwh'],
+                              ['doe_reference_name', 'loads_kw', 'monthly_totals_kwh']]
         for c in load_profile_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -407,7 +411,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])
 
     def get_inputs_with_sub_key_from_nested_dict(self, nested_dict, sub_key, matched_values=None, obj_path=[],
-                                                 dependencies=[]):
+                                                 sub_key_values=[]):
         """
         given a nested dictionary (i.e. nested_inputs_definitions) return all of the keys that contain sub-keys matching
         sub_key
@@ -423,9 +427,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             if k[0].islower() and isinstance(v, dict):  # then k is an input attribute
                 if any(sk == sub_key for sk in nested_dict[k].keys()):
                     matched_values.append(obj_path + [k])
-                    if sub_key == "depends_on":
-                        dependencies.append(nested_dict[k]["depends_on"])
+                    sub_key_values.append(nested_dict[k][sub_key])
             elif isinstance(nested_dict[k], dict):  # then k is an abstract input class, dig deeper in nested_dict
                 self.get_inputs_with_sub_key_from_nested_dict(nested_dict[k], sub_key, matched_values,
                                                               obj_path=obj_path+[k])
-        return matched_values, dependencies
+        return matched_values, sub_key_values
