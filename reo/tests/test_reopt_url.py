@@ -46,7 +46,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
     def check_data_error_response(self, data, text):
         response = self.get_response(data)
         self.assertTrue(text in response.content)
-    @skip('')
+
     def test_required(self):
         """
         Hit the API with missing required inputs or missing dependencies and verify that the correct message is returned

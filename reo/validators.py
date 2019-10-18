@@ -642,6 +642,7 @@ class ValidateNestedInput:
                 :param name: str, input value to replace with bad value, eg. "latitude"
                 :param definition: dict with input parameter validation values, eg. {'type':'float', ... }
                 :param good_val: the good value for the input parameter
+                :param validation_attribute: str, ['min', 'max', 'restrict_to', 'type']
                 :return: None
                 """
                 attribute = definition.get(validation_attribute)
@@ -654,7 +655,7 @@ class ValidateNestedInput:
                     if validation_attribute == 'restrict_to':
                         bad_val = "OOPS"
                     if validation_attribute == 'type':
-                        if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
+                        if any(isinstance(good_val, x) for x in [float, int, dict, bool, list]):
                             bad_val = "OOPS"
 
                     if bad_val is not None:
