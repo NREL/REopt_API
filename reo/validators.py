@@ -510,9 +510,9 @@ class ValidateNestedInput:
 
         def warning_message(self, warnings):
             """
-                   Convert a list of lists into a dictionary
-                   :param warnings: list - item 1 argument, item 2 location
-                   :return: message - 'Scenario>Site: latitude and longitude'
+            Convert a list of lists into a dictionary
+            :param warnings: list - item 1 argument, item 2 location
+            :return: message - 'Scenario>Site: latitude and longitude'
             """
             output = {}
             for arg, path in warnings:
@@ -628,53 +628,46 @@ class ValidateNestedInput:
         def test_data(self, definition_attribute):
             """
             Used only in reo.tests.test_reopt_url. Does not actually validate inputs.
-            :param definition_attribute:
+            :param definition_attribute: str, key for input parameter validation dict, eg. {'type':'float', ... }
             :return: test_data_list is a list of lists, with each sub list a pair of [str, dict],
                 where the str is an input param, dict is an entire post with a bad value for that input param
             """
             test_data_list = []
 
-            if definition_attribute == 'min':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute_min = definition.get('min')
-                    if attribute_min is not None:
-                        new_value = attribute_min - 1
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
+            def swap_logic(object_name_path, name, definition, good_val, validation_attribute):
+                """
+                append `name` and a nested-dict (post) to test_data_list with a bad value inserted into the post for
+                the input at object_name_path: name
+                :param object_name_path: list of str, eg. ["Scenario", "Site", "PV"]
+                :param name: str, input value to replace with bad value, eg. "latitude"
+                :param definition: dict with input parameter validation values, eg. {'type':'float', ... }
+                :param good_val: the good value for the input parameter
+                :return: None
+                """
+                attribute = definition.get(validation_attribute)
+                if attribute is not None:
+                    bad_val = None
+                    if validation_attribute == 'min':
+                        bad_val = attribute - 1
+                    if validation_attribute == 'max':
+                        bad_val = attribute + 1
+                    if validation_attribute == 'restrict_to':
+                        bad_val = "OOPS"
+                    if validation_attribute == 'type':
+                        if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
+                            bad_val = "OOPS"
 
-            if definition_attribute == 'max':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute_max = definition.get('max')
-                    if attribute_max is not None:
-                        new_value = attribute_max + 1
-                        self.update_attribute_value(object_name_path, name, new_value)
+                    if bad_val is not None:
+                        self.update_attribute_value(object_name_path, name, bad_val)
                         test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
-
-            if definition_attribute == 'restrict_to':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute = definition.get('restrict_to')
-                    if attribute is not None:
-                        new_value = "OOPS"
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
-
-            if definition_attribute == 'type':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    if isinstance(current_value, float) or isinstance(current_value, int) or isinstance(current_value, dict) or isinstance(
-                            current_value, bool):
-                        new_value = "OOPS"
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
+                        self.update_attribute_value(object_name_path, name, good_val)
 
             def add_invalid_data(object_name_path, template_values=None, real_values=None):
                 if real_values is not None:
                     for name, value in template_values.items():
                         if self.isAttribute(name):
-                            swap_logic(object_name_path, name, value, real_values.get(name))
+                            swap_logic(object_name_path, name, value, real_values.get(name),
+                                       validation_attribute=definition_attribute)
 
             self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
 
@@ -988,7 +981,6 @@ class ValidateNestedInput:
             :param time_steps_per_hour: int, [1, 2, 4]
             :return: None
             """
-
             n = len(attr)
             length_list = [8760, 17520, 35040]
 
