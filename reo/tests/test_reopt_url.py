@@ -54,16 +54,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_required(self):
 
-        required = ['latitude','longitude']
-
+        required, _ = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
         for r in required:
             test_case = self.complete_valid_nestedpost
-            del test_case['Scenario']['Site'][r]
+            remove_by_path(test_case, r)
             response = self.get_response(test_case)
-            text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            text = "Missing Required for {}: {}".format('>'.join(r[:-1]), r[-1])
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in {}".format(text, err_msg))
 
-        electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
+        electric_tarrif_cases = [['urdb_utility_name', 'urdb_rate_name', 'urdb_response', 'blended_monthly_demand_charges_us_dollars_per_kw'],
+                                 ['urdb_utility_name', 'urdb_rate_name', 'urdb_response', 'blended_monthly_rates_us_dollars_per_kwh'],
+                                 ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw', 'blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -72,7 +74,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site>ElectricTariff"
             self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
-        load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['doe_reference_name','loads_kw','annual_kwh'],['doe_reference_name','loads_kw','monthly_totals_kwh']]
+        load_profile_cases = [['doe_reference_name', 'annual_kwh', 'monthly_totals_kwh', 'loads_kw'],
+                              ['doe_reference_name', 'loads_kw', 'annual_kwh'],['doe_reference_name', 'loads_kw', 'monthly_totals_kwh']]
         for c in load_profile_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -279,6 +282,21 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         c = nested_to_flat(d['outputs'])
 
+        d_expected = dict()
+        d_expected['lcc'] = 10958277
+        d_expected['npv'] = 11257165 - d_expected['lcc']
+        d_expected['pv_kw'] = 216.667
+        d_expected['batt_kw'] = 19.161
+        d_expected['batt_kwh'] = 28.0978
+        d_expected['year_one_utility_kwh'] = 9614689.2606
+
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages'].get('error')))
+            raise
+    @skip('')
     def test_valid_nested_posts(self):
 
 
@@ -387,3 +405,27 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])
+
+    def get_inputs_with_sub_key_from_nested_dict(self, nested_dict, sub_key, matched_values=None, obj_path=[],
+                                                 dependencies=[]):
+        """
+        given a nested dictionary (i.e. nested_inputs_definitions) return all of the keys that contain sub-keys matching
+        sub_key
+        :param nested_dict:
+        :param sub_key:
+        :param matched_values: list of str containing desired keys
+        :param obj:
+        :return:
+        """
+        if matched_values is None:
+            matched_values = []
+        for k, v in nested_dict.items():
+            if k[0].islower() and isinstance(v, dict):  # then k is an input attribute
+                if any(sk == sub_key for sk in nested_dict[k].keys()):
+                    matched_values.append(obj_path + [k])
+                    if sub_key == "depends_on":
+                        dependencies.append(nested_dict[k]["depends_on"])
+            elif isinstance(nested_dict[k], dict):  # then k is an abstract input class, dig deeper in nested_dict
+                self.get_inputs_with_sub_key_from_nested_dict(nested_dict[k], sub_key, matched_values,
+                                                              obj_path=obj_path+[k])
+        return matched_values, dependencies
