@@ -354,12 +354,12 @@ class ValidateNestedInput:
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
 
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
-            self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
+            self.recursively_check_input_dict(self.input_dict, self.remove_nones)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
 
             if self.input_dict['Scenario'].get('user_uuid') is not None:
                 self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
@@ -556,6 +556,11 @@ class ValidateNestedInput:
             return output
 
         def isSingularKey(self, k):
+            """
+            True if the string `k` is upper case and does not end with "s"
+            :param k: str
+            :return: True/False
+            """
             return k[0] == k[0].upper() and k[-1] != 's'
 
         def isPluralKey(self, k):
@@ -564,31 +569,39 @@ class ValidateNestedInput:
         def isAttribute(self, k):
             return k[0] == k[0].lower()
 
-        def recursively_check_input_by_objectnames_and_values(self, nested_template, comparison_function,
-                                                              nested_dictionary_to_check=None, object_name_path=[]):
-            # nested template is the nested dictionary that is read to get the order in which objects are nested in each other
-            # nested_dictionary_to_check contains the values for those objects,
-            # think of it as scrolling through the template to get the name of the object and values you're looking for and
-            # then checking the corresponding value in the nested_dictionary_to_check
-            # the key_value_function tells the algorithm what to do when you have the object name (PV) and the user supplied values ('max_kw':0)
-            # nested_dictionary_to_check can be updated based on the key value function
-
+        def recursively_check_input_dict(self, nested_template, comparison_function, nested_dictionary_to_check=None,
+                                         object_name_path=[]):
+            """
+            Recursively perform comparison_function on nested_dictionary_to_check using nested_template as a guide for
+            the (key: value) pairs to be checked in nested_dictionary_to_check.
+            comparison_function's include
+                - remove_invalid_keys
+                - remove_nones
+                - convert_data_types
+                - fillin_defaults
+                - check_min_max_restrictions
+                - check_required_attributes
+                - add_invalid_data (for testing)
+            :param nested_template: nested dictionary, used as guide for checking nested_dictionary_to_check
+            :param comparison_function: one of the input data validation tasks listed above
+            :param nested_dictionary_to_check: data to be validated; default is self.input_dict
+            :param object_name_path: list of str, used to keep track of keys necessary to access a value to check in the
+                  nested_template / nested_dictionary_to_check
+            :return: None
+            """
             if nested_dictionary_to_check is None:
                 nested_dictionary_to_check = self.input_dict
 
             for template_k, template_values in nested_template.items():
-
                 real_values = nested_dictionary_to_check.get(template_k)
 
-                if self.isSingularKey(template_k):
-
+                if self.isSingularKey(template_k):  # True if template_k is upper case and does not end in "s"
                     comparison_function(object_name_path=object_name_path + [template_k],
                                         template_values=template_values, real_values=real_values)
                     
-                    self.recursively_check_input_by_objectnames_and_values(nested_template[template_k],
-                                                                           comparison_function, real_values or {},
-                                                                           object_name_path=object_name_path + [
-                                                                               template_k])
+                    self.recursively_check_input_dict(nested_template[template_k], comparison_function,
+                                                      real_values or {},
+                                                      object_name_path=object_name_path + [template_k])
 
         def update_attribute_value(self, object_name_path, attribute, value):
 
@@ -663,16 +676,24 @@ class ValidateNestedInput:
                         if self.isAttribute(name):
                             swap_logic(object_name_path, name, value, real_values.get(name))
 
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
+            self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
 
             return test_data_list
 
-#Following functions go into recursively_check_input_by_objectnames_and_values on instantiation and validation to check an object name and set of values
-#    object_name_path is the location of the object name as in ["Scenario", "Site"]
-#    template_values is the reference dictionary for checking as in {'latitude':{'type':'float',...}...} from the nested dictionary
-#    real_values are the values from the input to check and/or modify  like {'latitude':39.345678,...}
-
         def remove_nones(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            remove any `None` values from the input_dict.
+            this step is important to prevent exceptions in later validation steps.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
@@ -681,6 +702,19 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1]])
 
         def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            remove any input values provided by user that are not included in nested_input_definitions.
+            this step is important to protect against sql injections and other similar cyber-attacks.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
@@ -689,6 +723,19 @@ class ValidateNestedInput:
                             self.invalid_inputs.append([name, object_name_path])
         
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            check all min/max constraints for input values defined in nested_input_definitions.
+            create error message if user provided inputs are outside of allowable bounds.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
@@ -718,12 +765,23 @@ class ValidateNestedInput:
                                 name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            try to convert input values to the expected python data type, create error message if conversion fails.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
                         try:
-                            data_validators = template_values[name]
-                            attribute_type = eval(data_validators['type'])
+                            attribute_type = eval(template_values[name]['type'])
                             new_value = attribute_type(value)
                             if not isinstance(new_value, bool):
                                 self.update_attribute_value(object_name_path, name, new_value)
@@ -737,7 +795,18 @@ class ValidateNestedInput:
                             name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
         def fillin_defaults(self, object_name_path, template_values=None, real_values=None):
-            
+            """
+            comparison_function for recursively_check_input_dict.
+            fills in default values for inputs that user does not provide.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is None:
                 real_values = {}
                 self.update_attribute_value(object_name_path[:-1], object_name_path[-1], real_values)
@@ -761,7 +830,18 @@ class ValidateNestedInput:
                         self.defaults_inserted.append([template_key, object_name_path])
 
         def check_required_attributes(self, object_name_path, template_values=None, real_values=None):
-           
+            """
+            comparison_function for recursively_check_input_dict.
+            confirm that required inputs were provided by user. If not, create message to provide to user.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             final_message = ''
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
@@ -878,8 +958,6 @@ class ValidateNestedInput:
                     lng=self.input_dict['Scenario']['Site']['longitude'])
             except Exception as e:
                 self.input_data_errors.append(e.message)
-
-
 
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')
