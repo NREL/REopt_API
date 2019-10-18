@@ -732,12 +732,32 @@ class ValidateNestedInput:
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
-
                         data_validators = template_values[name]
 
-                        try:
-                            value == eval(data_validators['type'])(value)
+                        if "list_of_float" in data_validators['type'] and isinstance(value, list):
+                            if data_validators.get('min') is not None:
+                                if any([v < data_validators['min'] for v in value]):
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds the allowable min of %s' % (
+                                         name, self.object_name_string(object_name_path), data_validators['min']))
 
+                            if data_validators.get('max') is not None:
+                                if any([v < data_validators['max'] for v in value]):
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds the allowable max of %s' % (
+                                         name, self.object_name_string(object_name_path), data_validators['max']))
+                            continue
+                        elif isinstance(data_validators['type'], list):
+                            data_type = float
+                        else:
+                            data_type = eval(data_validators['type'])
+
+                        try:  # to convert input value to restricted type
+                            value = data_type(value)
+                        except:
+                            self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
+                            name, value, self.object_name_string(object_name_path)))
+                        else:
                             if data_validators.get('min') is not None:
                                 if value < data_validators['min']:
                                     self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
@@ -747,10 +767,6 @@ class ValidateNestedInput:
                                 if value > data_validators['max']:
                                     self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
                                     name, value, self.object_name_string(object_name_path), data_validators['max']))
-
-                        except:
-                            self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
-                            name, value, self.object_name_string(object_name_path)))
 
                         if data_validators.get('restrict_to') is not None:
                             if value not in data_validators['restrict_to']:
@@ -773,9 +789,34 @@ class ValidateNestedInput:
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
-                        try:
-                            attribute_type = eval(template_values[name]['type'])
+                        attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
+
+                        if isinstance(attribute_type, list) and \
+                                all([x in attribute_type for x in ['float', 'list_of_float']]):
+                            if isinstance(value, list):
+                                try:
+                                    new_value = list_of_float(value)
+                                except ValueError:
+                                    self.input_data_errors.append(
+                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
+                                                         self.object_name_string(object_name_path))
+                                    )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                else:
+                                    self.update_attribute_value(object_name_path, name, new_value)
+                                    self.validate_8760(attr=new_value, obj_name=object_name_path[-1], attr_name=name,
+                                                       time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
+                                    continue  # ... but python 2.7  does not support continue in finally clauses
+                            else:
+                                attribute_type = 'float'
+
+                        attribute_type = eval(attribute_type)  # convert string to python type
+                        try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
+                        except ValueError or TypeError:  # TypeError occurs when a non-list is passed to list_of_float
+                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
+                                     self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                        else:
                             if not isinstance(new_value, bool):
                                 self.update_attribute_value(object_name_path, name, new_value)
                             else:
@@ -783,9 +824,6 @@ class ValidateNestedInput:
                                     self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
                                     name, value, self.object_name_string(object_name_path),
                                     str(attribute_type).split(' ')[1]))
-                        except:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
-                            name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
         def fillin_defaults(self, object_name_path, template_values=None, real_values=None):
             """

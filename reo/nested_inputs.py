@@ -283,13 +283,13 @@ nested_input_definitions = {
           "description": "Limit on system capacity size that can be interconnected to the grid"
         },
         "wholesale_rate_us_dollars_per_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
           "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh."
         },
         "wholesale_rate_above_site_load_us_dollars_per_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
           "description": "Price of electricity sold back to the grid above the site load, regardless of net metering"
