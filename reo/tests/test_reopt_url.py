@@ -32,17 +32,18 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
 
-    def setUp(self):
-        super(EntryResourceTest, self).setUp()
-
-        self.data_definitions = nested_input_definitions
-        self.reopt_base = '/v1/job/'
-        self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
-        self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+    @classmethod
+    def setUpClass(cls):
+        super(EntryResourceTest, cls).setUpClass()
+        cls.data_definitions = nested_input_definitions
+        cls.reopt_base = '/v1/job/'
+        cls.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
+        cls.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+        cls.nested_post = json.load(open('reo/tests/posts/nestedPOST.json'))
 
     @property
     def complete_valid_nestedpost(self):
-        return json.load(open('reo/tests/posts/nestedPOST.json'))
+        return copy.deepcopy(self.nested_post)
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
