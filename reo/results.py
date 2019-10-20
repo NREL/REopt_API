@@ -143,12 +143,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
             return output_dict
 
-        def is_system(self):
-            system = False
-            if self.results_dict['pv_kw'] > 0 or self.results_dict['batt_kw'] > 0:
-                system = True
-            return system
-
         @staticmethod
         def setup_nested():
             """
@@ -323,7 +317,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
-
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
 
@@ -333,4 +326,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=self.run_uuid,user_uuid=self.user_uuid)
+        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=self.run_uuid,
+                              user_uuid=self.user_uuid)
