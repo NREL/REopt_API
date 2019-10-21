@@ -4,6 +4,10 @@ from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from reo.nested_inputs import nested_input_definitions
+from reo.log_levels import log
+import sys
+import traceback as tb
+import warnings
 
 
 class URDBError(models.Model):
@@ -11,6 +15,15 @@ class URDBError(models.Model):
     label = models.TextField(blank=True, default='')
     type = models.TextField(blank=True, default='')
     message = models.TextField(blank=True, default='')
+
+    def save_to_db(self):
+        try:
+            self.save()
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            message = 'Could not save URDBError {} for label {} error to the database - {} \n\n{}'.format(self.type, self.label,self.message,tb.format_tb(exc_traceback))
+            warnings.warn(message)
+            log.debug(message)
 
 
 class ProfileModel(models.Model):
@@ -34,7 +47,8 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_uuid = models.TextField(null=True, blank=True)
+    user_uuid = models.TextField(null=True, blank=True) 
+    job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
     status = models.TextField(null=True, blank=True)
@@ -120,7 +134,7 @@ class LoadProfileModel(models.Model):
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
-    resilience_check_flag = models.BooleanField(default=True)
+    resilience_check_flag = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, **kwargs):
@@ -174,6 +188,7 @@ class ElectricTariffModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -369,6 +384,7 @@ class GeneratorModel(models.Model):
 
         # Outputs
         fuel_used_gal = models.FloatField(null=True, blank=True)
+        fuel_used_gal_bau = models.FloatField(null=True, blank=True)
         size_kw = models.FloatField(null=True, blank=True)
         average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
         average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
@@ -378,7 +394,9 @@ class GeneratorModel(models.Model):
         year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        existing_gen_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_fixed_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        existing_gen_variable_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
+        gen_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):
@@ -414,6 +432,13 @@ class BadPost(models.Model):
     run_uuid = models.UUIDField(unique=True)
     post = models.TextField()
     errors = models.TextField()
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        try:
+            super(BadPost, self).save()
+        except Exception as e:
+            log.info("Database saving error: {}".format(e.message))
 
 
 def attribute_inputs(inputs):
@@ -477,6 +502,26 @@ class ModelManager(object):
     @staticmethod
     def updateModel(modelName, modelData, run_uuid):
         eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+
+    @staticmethod
+    def remove(run_uuid):
+        """
+        remove Scenario from database
+        :param run_uuid: id of Scenario
+        :return: None
+        """
+        ScenarioModel.objects.filter(run_uuid=run_uuid).delete()
+        ProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        SiteModel.objects.filter(run_uuid=run_uuid).delete()
+        FinancialModel.objects.filter(run_uuid=run_uuid).delete()
+        LoadProfileModel.objects.filter(run_uuid=run_uuid).delete()
+        ElectricTariffModel.objects.filter(run_uuid=run_uuid).delete()
+        PVModel.objects.filter(run_uuid=run_uuid).delete()
+        WindModel.objects.filter(run_uuid=run_uuid).delete()
+        StorageModel.objects.filter(run_uuid=run_uuid).delete()
+        GeneratorModel.objects.filter(run_uuid=run_uuid).delete()
+        MessageModel.objects.filter(run_uuid=run_uuid).delete()
+        ErrorModel.objects.filter(run_uuid=run_uuid).delete()
 
     @staticmethod
     def update(data, run_uuid):
@@ -561,7 +606,7 @@ class ModelManager(object):
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
         
         # add try/except for get fail / bad run_uuid
-        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator']
+        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator', 'Wind']
         
         resp = dict()
         resp['outputs'] = dict()
@@ -583,8 +628,9 @@ class ModelManager(object):
                 return resp
             else:
                 raise Exception
-
-        resp['outputs']['Scenario'] = remove_ids(model_to_dict(scenario_model))
+        scenario_data = remove_ids(model_to_dict(scenario_model))
+        del scenario_data['job_type']
+        resp['outputs']['Scenario'] = scenario_data
         resp['outputs']['Scenario']['run_uuid'] = str(run_uuid)
         resp['outputs']['Scenario']['Site'] = remove_ids(model_to_dict(SiteModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Financial'] = remove_ids(model_to_dict(FinancialModel.objects.get(run_uuid=run_uuid)))
@@ -593,30 +639,21 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
         
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
 
-        wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
-
-        if wind_dict['max_kw'] > 0:
-            resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
-            site_keys.append('Wind')
-
-
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
-
             resp['messages'][m['message_type']] = m['message']
             
         for scenario_key in nested_input_definitions['Scenario'].iterkeys():
-
             if scenario_key.islower():
                 resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
                 del resp['outputs']['Scenario'][scenario_key]
 
         for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
-
             if site_key.islower():
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]
@@ -626,35 +663,3 @@ class ModelManager(object):
                 move_outs_to_ins(site_key, resp=resp)
 
         return resp
-
-        # if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
-        #     data = remove_wind(data, output_format, model_solved)
-        #     # need to delete wind messages, but intertwined with other messages from validator
-        #
-        # if output_format == 'flat':
-        #     # fill in outputs with inputs
-        #     for arg, defs in flat_inputs(full_list=True).iteritems():
-        #         data[arg] = bundle.data.get(arg) or defs.get("default")
-        #     # backwards compatibility for webtool, copy all "outputs" to top level of response dict
-        #     if model_solved:
-        #         data.update(optimization_results['flat'])
-        #     data.update(scenario_outputs)
-
-
-# def remove_wind(output_dictionary, output_format='nested'):
-#     if output_format == 'nested':
-#         del output_dictionary['inputs']['Scenario']['Site']["Wind"]
-#         del output_dictionary['outputs']['Scenario']['Site']["Wind"]
-#
-#     if output_format == 'flat':
-#         for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
-#                     'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
-#                     'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
-#                     'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
-#                     'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
-#             if key in output_dictionary['inputs'].keys():
-#                 del output_dictionary['inputs'][key]
-#             if key in output_dictionary['outputs'].keys():
-#                 del output_dictionary['outputs'][key]
-#
-#     return output_dictionary

@@ -38,7 +38,7 @@ class DeveloperREOapi:
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
                                                                                 traceback.format_tb(exc_traceback))
             log.warning("Unable to get ASHRAE TMY ID from {}.".format(self.url))
             log.debug(debug_msg)

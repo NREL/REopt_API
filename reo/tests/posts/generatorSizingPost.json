@@ -25,7 +25,8 @@
         "fuel_slope_gal_per_kwh": 0.0656,
         "fuel_intercept_gal_per_hr": 0.0048,
         "fuel_avail_gal": 125,
-        "generator_sells_energy_back_to_grid": 0
+        "generator_sells_energy_back_to_grid": 0,
+        "diesel_fuel_cost_us_dollars_per_gallon": 4
       },
       "Wind": {
         "max_kw": 0

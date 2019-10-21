@@ -6,6 +6,9 @@ from reo.nested_to_flat_output import nested_to_flat
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
+load_list_1 = [50]*8760
+load_list_2 = [50]*35040
+
 fts_post_1 = {"Scenario": {
             "time_steps_per_hour": 1,
             "Site": {
@@ -13,9 +16,7 @@ fts_post_1 = {"Scenario": {
                 "longitude": -91.7337,
 
                 "LoadProfile": {
-                    "doe_reference_name": "MidriseApartment",
-                    "annual_kwh": 229671,
-                    "year": 2017,
+                    "loads_kw": load_list_1,
                 },
 
                 "ElectricTariff": {
@@ -49,9 +50,7 @@ fts_post_2 = {"Scenario": {
                 "longitude": -91.7337,
 
                 "LoadProfile": {
-                    "doe_reference_name": "MidriseApartment",
-                    "annual_kwh": 229671,
-                    "year": 2017,
+                    "loads_kw": load_list_2,
                 },
 
                 "ElectricTariff": {
@@ -125,12 +124,12 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         del c2['avoided_outage_costs_us_dollars']
 
 
-        # try:
-        #     check_common_outputs(self, c1, c2)
-        #     print("Test Successful!")
-        # except:
-        #     print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
-        #     #print("Error message with ts=1: {}".format(d1['messages']))
-        #     print("Error message with ts=4: {}") #.format(d2['messages']
-        #     raise
+        try:
+            check_common_outputs(self, c1, c2)
+            print("Test Successful!")
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
+            #print("Error message with ts=1: {}".format(d1['messages']))
+            print("Error message with ts=4: {}") #.format(d2['messages']
+            raise
 

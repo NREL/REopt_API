@@ -3,7 +3,8 @@ from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
 from reo.src.ventyx import Ventyx
-from reo.models import GeneratorModel
+
+
 
 class Tech(object):
     """
@@ -69,14 +70,14 @@ class Util(Tech):
 
 class PV(Tech):
     array_type_to_tilt_angle = {
-        0: 0, # ground-mount fixed array type's tilt should be equal to the latitude
+        0: 0,  # ground-mount fixed array type's tilt should be equal to the latitude
         1: 10,
         2: 0,
         3: 0,
-        4:0
+        4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, tilt=0.537, azimuth=180, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -86,19 +87,32 @@ class PV(Tech):
         self.kw_per_square_foot = kw_per_square_foot
         self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
-        self.tilt = kwargs['tilt']
-
+        self.tilt = tilt
+        self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
         self.min_kw += existing_kw
 
-        # if user hasn't entered the tilt, tilt value gets assigned based on array_type
+        # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
-            if kwargs.get('array_type') == 0:
+            if kwargs.get('array_type') == 0:  # 0 are Ground Mount Fixed (Open Rack) arrays, we assume an optimal tilt
+                """
+                start assuming the site is in the northern hemisphere, set the tilt to the latitude and leave the 
+                default azimuth of 180 (unless otherwise specified)
+                """
                 self.tilt = kwargs.get('latitude')
-            else:
+                if kwargs.get('latitude') < 0:
+                    """
+                    if the site is in the southern hemisphere, now set the tilt to the positive latitude value and 
+                    change the azimuth to 0. Also update kwargs going forward so they get saved to the database later 
+                    show up in final results
+                    """
+                    self.tilt = -1 * self.tilt
+                    self.azimuth = 0
+                    self.kwargs['azimuth'] = 0
+            else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
-        self.kwargs['tilt']  = self.tilt
+        self.kwargs['tilt'] = self.tilt
 
         # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
         if self.max_kw < self.existing_kw:
@@ -212,13 +226,13 @@ class Generator(Tech):
 
     def __init__(self, dfm, run_uuid, min_kw, max_kw, existing_kw, fuel_slope_gal_per_kwh, fuel_intercept_gal_per_hr,
                  fuel_avail_gal, min_turn_down_pct, outage_start_hour=None, outage_end_hour=None, time_steps_per_hour=1,
-                 fuel_avail_before_outage_pct = 1, **kwargs):
+                 fuel_avail_before_outage_pct=1, **kwargs):
         super(Generator, self).__init__(min_kw=min_kw, max_kw=max_kw, **kwargs)
         """
         super class init for generator is not unique anymore as we are now allowing users to define min/max sizes;
         and include diesel generator's size as optimization decision variable.
         
-        For assigning the default_slope and default_intercept, the size_kw is being replaced by min_kw.
+        Note that default burn rate, slope, and min/max sizes are handled in ValidateNestedInput.
         """
 
         self.fuel_slope = fuel_slope_gal_per_kwh
@@ -239,27 +253,10 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-        self.min_kw += self.existing_kw
-        GeneratorModel.objects.filter(run_uuid=run_uuid).update(min_kw=self.min_kw)
-
-        # if user has entered the max_kw for new gen to be less than the user-specified exiting_gen, max_kw is reset
-        # in this case existing_kw = max_kw = min_kw, fixing the gen-size decision variable as a constant
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
-            GeneratorModel.objects.filter(run_uuid=run_uuid).update(max_kw=self.max_kw)
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:
             self.loads_served.append('wholesale')
-
-
-        default_slope, default_intercept = self.default_fuel_burn_rate(self.min_kw)
-        if self.fuel_slope == 0:  # default is zero
-            self.fuel_slope = default_slope
-            GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_slope_gal_per_kwh=self.fuel_slope)
-        if self.fuel_intercept == 0:
-            self.fuel_intercept = default_intercept
-            GeneratorModel.objects.filter(run_uuid=run_uuid).update(fuel_intercept_gal_per_hr=self.fuel_intercept)
 
         dfm.add_generator(self)
 

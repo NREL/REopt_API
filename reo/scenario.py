@@ -89,10 +89,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['station_latitude'] = station[0]
             tmp['station_longitude'] = station[1]
-            tmp['station_distance_km'] =station[2]
+            tmp['station_distance_km'] = station[2]
             tmp['tilt'] = pv.tilt                  #default tilt assigned within techs.py based on array_type
+            tmp['azimuth'] = pv.azimuth
+            tmp['max_kw'] = pv.max_kw
+            tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
-
 
         else:
             pv = None
@@ -104,6 +106,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
+
         try:
             if 'gen' in locals():
                 lp = LoadProfile(dfm=dfm,
@@ -142,11 +145,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
-
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
-            raise LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid)
+            lp_error = LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error.save_to_db()
+            raise lp_error
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -166,13 +170,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
             ModelManager.updateModel('WindModel', tmp, run_uuid)
 
-        
-        if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-            gen = Generator(dfm=dfm, run_uuid=run_uuid,
-                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
-                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
-                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),**inputs_dict["Site"]["Generator"]
-                            )
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -199,22 +196,14 @@ def setup_scenario(self, run_uuid, data, raw_post):
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception as e:
+        if isinstance(e, LoadProfileError):
+                raise e
+        
         if hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
-                raise WindDownloadError(task=self.name, run_uuid=run_uuid)
-            else:
-                log.error(e.message)
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid, message=e.message)
+                raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
 
-        if isinstance(e, REoptError):
-            pass
-        else:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            if hasattr(exc_value, 'name'):
-                if exc_value.name == 'LoadProfileError':
-                    log.error("Scenario.py raising error: " + exc_value.message)
-                    pass
-            else:
-                log.error("Scenario.py raising error: " + exc_value)
-                raise UnexpectedError(exc_type, exc_value, exc_traceback, task=self.name, run_uuid=run_uuid)
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        log.error("Scenario.py raising error: " + exc_value.message)
+        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=run_uuid,
+                              user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

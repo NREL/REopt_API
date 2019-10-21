@@ -12,6 +12,9 @@ class Generator():
         self.min_turndown = diesel_min_turndown
         self.genmin = self.min_turndown * self.kw
 
+        if self.fuel_available == 1e9:
+                self.fuel_available = 660
+
     def gen_avail(self, n_steps_per_hour):  # kW
         if self.fuel_available - self.b > 0:
             return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
@@ -79,7 +82,7 @@ class NoBattery():
 
 def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
-                    financial_outage_sim=None, resilience_run_site_result={}, financial_run_site_result={}):
+                    financial_check=None, resilience_run_site_result={}, financial_run_site_result={}):
     """
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
@@ -93,7 +96,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
     :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
-    :param financial_outage_sim: string, check financial and resilience system size if equal "financial_outage_sim"
+    :param financial_check: string, check financial and resilience system size if equal "financial_check"
     :param resilience_run_site_result: dict, resilience run results{ "pv_size_kw": float,
                                                                     "storage_size_kw": float,
                                                                     "storage_size_kwh": float,
@@ -107,15 +110,22 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
     :return: boolean, survives_specified_outage
     """
+    # capping fuel availability to 660 - default fuel availability is set at 1e9 for the optimization process
+    # for the outage simulator, the fuel availability is capped at 660.
+    if fuel_available == 1e9:
+        fuel_available = 660
 
-    if financial_outage_sim == "financial_outage_sim":
+
+    if financial_check == "financial_check":
         # Do financial check
         if resilience_run_site_result.viewkeys() == financial_run_site_result.viewkeys():
             for k, v in resilience_run_site_result.items():
                 if k in financial_run_site_result:
-                    if (v - financial_run_site_result[k]) / max(v, 1) > 1.0e-3:
+                    if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
                         return False
             return True
+        else:
+            return False
 
     else:
         # Do outage simulator
@@ -129,16 +139,20 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         if batt_kw == 0 or batt_kwh == 0:
             init_soc = [0] * n_timesteps  # default is None
 
-            if pv_kw_ac_hourly in [None, []] and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
+            if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
 
+                months = 12
+                hours = 24
+                probs_of_surviving_by_month = [[0] for _ in range(months)]
+                probs_of_surviving_by_hour_of_the_day = [[0] for _ in range(hours)]
                 return {"resilience_by_timestep": r,
                         "resilience_hours_min": 0,
                         "resilience_hours_max": 0,
                         "resilience_hours_avg": 0,
-                        "outage_durations": None,
-                        "probs_of_surviving": None,
-                        "probs_of_surviving_by_month": None,
-                        "probs_of_surviving_by_hour_of_the_day": None,
+                        "outage_durations": [],
+                        "probs_of_surviving": [],
+                        "probs_of_surviving_by_month": probs_of_surviving_by_month,
+                        "probs_of_surviving_by_hour_of_the_day": probs_of_surviving_by_hour_of_the_day,
                         }
 
         if pv_kw_ac_hourly in [None, []]:

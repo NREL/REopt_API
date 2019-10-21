@@ -71,6 +71,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -143,6 +144,16 @@ CELERY_IMPORTS = (
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/'
+
+ROLLBAR = {
+    'access_token': rollbar_access_token,
+    'environment': 'production',
+    'root': BASE_DIR,
+    'branch': os.environ.get('BRANCH_NAME')
+}
+
+import rollbar
+rollbar.init(**ROLLBAR)
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "reopt_api.production_settings")
 django.setup()
