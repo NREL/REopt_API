@@ -122,15 +122,15 @@ class Job(ModelResource):
         if saveToDb:
             set_status(data, 'Optimizing...')
             data['outputs']['Scenario']['Profile']['pre_setup_scenario_seconds'] = profiler.getDuration()
-            if bundle.request.META.get('X-Api-User-Id',False):
-                if bundle.request.META.get('X-Api-User-Id','') == '6f09c972-8414-469b-b3e8-a78398874103':
+            if bundle.request.META.get('HTTP_X_API_USER_ID',False):
+                if bundle.request.META.get('HTTP_X_API_USER_ID','') == '6f09c972-8414-469b-b3e8-a78398874103':
                     data['outputs']['Scenario']['job_type'] = 'REopt Lite Web Tool'
                 else:
                     data['outputs']['Scenario']['job_type'] = 'developer.nrel.gov'
             else:
                 data['outputs']['Scenario']['job_type'] = 'Internal NREL'
 
-            if bundle.request.META.get('User-Agent','').startswith('check_http/'):
+            if bundle.request.META.get('HTTP_USER_AGENT','').startswith('check_http/'):
                 data['outputs']['Scenario']['job_type'] = 'Monitoring'
             try:
                 model_manager.create_and_save(data)
