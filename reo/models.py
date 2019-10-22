@@ -47,7 +47,8 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_uuid = models.TextField(null=True, blank=True) 
+    user_uuid = models.TextField(null=True, blank=True)
+    webtool_uuid = models.TextField(null=True, blank=True)
     job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
