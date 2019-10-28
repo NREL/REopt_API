@@ -68,6 +68,10 @@ nested_input_definitions = {
       "default": 1,
       "description": "The number of time steps per hour in the REopt simulation"
     },
+    "webtool_uuid": {
+      "type": "str",
+      "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
+    },
 
     "Site": {
       "latitude": {

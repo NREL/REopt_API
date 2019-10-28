@@ -47,7 +47,8 @@ class ScenarioModel(models.Model):
     # user = models.ForeignKey(User, null=True, blank=True)
     run_uuid = models.UUIDField(unique=True)
     api_version = models.TextField(null=True, blank=True, default='')
-    user_uuid = models.TextField(null=True, blank=True) 
+    user_uuid = models.TextField(null=True, blank=True)
+    webtool_uuid = models.TextField(null=True, blank=True)
     job_type = models.TextField(null=True, blank=True)
     
     description = models.TextField(null=True, blank=True, default='')
@@ -134,7 +135,7 @@ class LoadProfileModel(models.Model):
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
-    resilience_check_flag = models.BooleanField(default=True)
+    resilience_check_flag = models.BooleanField(default=False)
 
     @classmethod
     def create(cls, **kwargs):
@@ -606,7 +607,7 @@ class ModelManager(object):
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
         
         # add try/except for get fail / bad run_uuid
-        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator']
+        site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator', 'Wind']
         
         resp = dict()
         resp['outputs'] = dict()
@@ -639,17 +640,11 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(model_to_dict(GeneratorModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
         
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
-
-        wind_dict = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
-
-        if wind_dict['max_kw'] > 0:
-            resp['outputs']['Scenario']['Site']['Wind'] = wind_dict
-            site_keys.append('Wind')
-
 
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
             resp['messages'][m['message_type']] = m['message']
@@ -669,35 +664,3 @@ class ModelManager(object):
                 move_outs_to_ins(site_key, resp=resp)
 
         return resp
-
-        # if not scenario_inputs['Site']['Wind']['max_kw'] > 0:
-        #     data = remove_wind(data, output_format, model_solved)
-        #     # need to delete wind messages, but intertwined with other messages from validator
-        #
-        # if output_format == 'flat':
-        #     # fill in outputs with inputs
-        #     for arg, defs in flat_inputs(full_list=True).iteritems():
-        #         data[arg] = bundle.data.get(arg) or defs.get("default")
-        #     # backwards compatibility for webtool, copy all "outputs" to top level of response dict
-        #     if model_solved:
-        #         data.update(optimization_results['flat'])
-        #     data.update(scenario_outputs)
-
-
-# def remove_wind(output_dictionary, output_format='nested'):
-#     if output_format == 'nested':
-#         del output_dictionary['inputs']['Scenario']['Site']["Wind"]
-#         del output_dictionary['outputs']['Scenario']['Site']["Wind"]
-#
-#     if output_format == 'flat':
-#         for key in ['wind_cost', 'wind_om', 'wind_kw_max', 'wind_kw_min', 'wind_itc_federal', 'wind_ibi_state',
-#                     'wind_ibi_utility', 'wind_itc_federal_max', 'wind_ibi_state_max', 'wind_ibi_utility_max',
-#                     'wind_rebate_federal', 'wind_rebate_state', 'wind_rebate_utility', 'wind_rebate_federal_max',
-#                     'wind_rebate_state_max', 'wind_rebate_utility_max', 'wind_pbi', 'wind_pbi_max',
-#                     'wind_pbi_years', 'wind_pbi_system_max', 'wind_macrs_schedule', 'wind_macrs_bonus_fraction']:
-#             if key in output_dictionary['inputs'].keys():
-#                 del output_dictionary['inputs'][key]
-#             if key in output_dictionary['outputs'].keys():
-#                 del output_dictionary['outputs'][key]
-#
-#     return output_dictionary
