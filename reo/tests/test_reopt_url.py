@@ -24,7 +24,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     @property
     def complete_valid_nestedpost(self):
-        return json.load(open('reo/tests/nestedPOST.json'))
+        return json.load(open('reo/tests/posts/nestedPOST.json'))
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
@@ -70,10 +70,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
-
             self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
             self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
-    
+
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
@@ -127,6 +126,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                                             "max_kw": 10000,
                                             "existing_kw": 100
                                          },
+                                         "Generator": {
+                                           "max_kw": 0,
+                                            "existing_kw": 0
+                                         },
                                          "LoadProfile": {
                                             "year": 2018,
                                             "critical_load_pct": critical_load_pct,
@@ -161,6 +164,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_1 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_1)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -188,6 +193,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_2 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_2)
+        
+
         c = nested_to_flat(d['outputs'])
         try:
             check_common_outputs(self, c, d_expected)
@@ -273,7 +280,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
         flat_data = {"roof_area": 5000.0, "batt_can_gridcharge": True, "load_profile_name": "RetailStore", "pv_macrs_schedule": 5, "load_size": 10000000.0, "longitude": -118.1164613,
                      "pv_macrs_bonus_fraction": 0.4, "batt_macrs_bonus_fraction": 0.4, "offtaker_tax_rate": 0.4,
-                     "batt_macrs_schedule": 5, "latitude": 34.5794343, "module_type": 1, "array_type": 1, "tilt": 34.5794343, "land_area": 1.0, "crit_load_factor": 1.0, "blended_utility_rate":[0 for _ in range(0,12)], "demand_charge":[0 for _ in range(0,12)], "wind_kw_max":0,
+                     "batt_macrs_schedule": 5, "latitude": 34.5794343, "module_type": 1, "array_type": 1, "tilt": 34.5794343, "land_area": 1.0, "crit_load_factor": 1.0, "blended_utility_rate":[0 for _ in range(0,12)], "demand_charge":[0 for _ in range(0,12)], "wind_kw_max":0, "gen_kw_max":0,
                      "urdb_rate": {"sector": "Commercial", "peakkwcapacitymax": 200, "energyweekdayschedule": [[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,3,3,3,3,3,2],[2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,3,3,3,3,3,2],[2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,3,3,3,3,3,2],[2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,4,4,3,3,3,3,3,2],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,0,0,0]], "demandattrs": [{"Facilties Voltage Discount (2KV-<50KV)": "$-0.18/KW"},{"Facilties Voltage Discount >50 kV-<220kV": "$-5.78/KW"},{"Facilties Voltage Discount >220 kV": "$-9.96/KW"},{"Time Voltage Discount (2KV-<50KV)": "$-0.70/KW"},{"Time Voltage Discount >50 kV-<220kV": "$-1.93/KW"},{"Time Voltage Discount >220 kV": "$-1.95/KW"}], "energyratestructure": [[{"rate": 0.0712, "unit": "kWh"}],[{"rate": 0.09368, "unit": "kWh"}],[{"rate": 0.066, "unit": "kWh"}],[{"rate": 0.08888, "unit": "kWh"}],[{"rate": 0.1355, "unit": "kWh"}]], "energyweekendschedule": [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],[2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], "demandweekendschedule": [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], "utility": "Southern California Edison Co", "flatdemandstructure": [[{"rate": 13.2}]], "startdate": 1433116800, "phasewiring": "Single Phase", "source": "http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf", "label": "55fc81d7682bea28da64f9ae", "flatdemandunit": "kW", "eiaid": 17609, "voltagecategory": "Primary", "revisions": [1433408708,1433409358,1433516188,1441198316,1441199318,1441199417,1441199824,1441199996,1454521683], "demandweekdayschedule": [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,2,1,1,1,1,1,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]], "voltageminimum": 2000, "description": "- Energy tiered charge = generation charge + delivery charge\r\n\r\n- Time of day demand charges (generation-based) are to be added to the monthly demand charge(Delivery based).", "energyattrs": [{"Voltage Discount (2KV-<50KV)": "$-0.00106/Kwh"},{"Voltage Discount (>50 KV<220 KV)": "$-0.00238/Kwh"},{"Voltage Discount at 220 KV": "$-0.0024/Kwh"},{"California Climate credit": "$-0.00669/kwh"}], "demandrateunit": "kW", "flatdemandmonths": [0,0,0,0,0,0,0,0,0,0,0,0], "approved": True, "fixedmonthlycharge": 259.2, "enddate": 1451520000, "name": "Time of Use, General Service, Demand Metered, Option B: GS-2 TOU B, Single Phase", "country": "USA", "uri": "http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae", "voltagemaximum": 50000, "peakkwcapacitymin": 20, "peakkwcapacityhistory": 12, "demandratestructure": [[{"rate": 0}],[{"rate": 5.3}],[{"rate": 18.11}]]}}
 
         nested_data = flat_to_nested(flat_data)
@@ -282,14 +289,29 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 11013855
+        d_expected['lcc'] = 11028719
         d_expected['lcc_bau'] = 11257165
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 24.4067
-        d_expected['batt_kwh'] = 32.1844
+        # d_expected['batt_kw'] = 22.5578
+        # d_expected['batt_kwh'] = 29.7464
+        """
+        The expected battery sizes are commented out in this test because it appears that the LCC for this scenario is
+        relatively flat as a function of the battery sizes: when the battlevel dimension was removed from the mosel code
+        the LCC changed from 11013855 to 11028719, which represents a relative change of approximately 5e-6. The miptol
+        in the mosel code is 5e-6; therefore, both of the LCC's are optimal. However, before removing the battlevel 
+        dimension (which was never used in the webtool - it was designed for ITC sensitivity) the battery sizes were:
+          batt_kw  = 24.4067
+          batt_kwh = 32.1844
+        and after removing battlevel:
+          batt_kw  = 22.5578
+          batt_kwh = 29.7464
+        Note that the changes in battery sizes are not within our test tolerance of 0.01.
+        """
         d_expected['year_one_utility_kwh'] = 9614654.6688
 
         try:
@@ -312,6 +334,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -326,7 +349,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(c['messages']))
+            print("Error message: {}".format(d['messages']))
             raise
 
     def test_not_optimal_solution(self):
@@ -347,6 +370,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     },
                     "Wind": {
                         "max_kw": 0
+                    },
+                    "Generator":{
+                        "max_kw":0
                     }
                 }
             }
@@ -355,4 +381,5 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])

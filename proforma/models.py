@@ -3,7 +3,7 @@ import uuid
 import os
 import datetime, tzlocal
 from openpyxl import load_workbook
-from reo.models import ScenarioModel, SiteModel, PVModel, WindModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
+from reo.models import ScenarioModel, SiteModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
 from reo.src.dat_file_manager import big_number
 from reo.log_levels import log
 
@@ -60,8 +60,10 @@ class ProForma(models.Model):
         batt = StorageModel.objects.filter(run_uuid=scenario.run_uuid).first()
         pv = PVModel.objects.filter(run_uuid=scenario.run_uuid).first()
         wind = WindModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
         electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
         financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+        loadprofile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
         # Open file for reading
         wb = load_workbook(self.file_template, read_only=False, keep_vba=True)
@@ -76,130 +78,149 @@ class ProForma(models.Model):
         batt_size_kw = batt.size_kw or 0
         batt_size_kwh = batt.size_kwh or 0
         wind_installed_kw = wind.size_kw or 0
+        generator_installed_kw = generator.size_kw or 0
+        if generator_installed_kw > 0 and generator.existing_kw > 0:
+            generator_installed_kw -= generator.existing_kw
 
         pv_installed_cost_us_dollars_per_kw = pv.installed_cost_us_dollars_per_kw or 0
         batt_installed_cost_us_dollars_per_kw = batt.installed_cost_us_dollars_per_kw or 0
         batt_installed_cost_us_dollars_per_kwh = batt.installed_cost_us_dollars_per_kwh or 0
         wind_installed_cost_us_dollars_per_kw = wind.installed_cost_us_dollars_per_kw or 0
+        generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
         pv_energy = pv.year_one_energy_produced_kwh or 0
         wind_energy = wind.year_one_energy_produced_kwh or 0
+        generator_energy = generator.year_one_energy_produced_kwh or 0
 
         pv_cost = pv_installed_kw * pv_installed_cost_us_dollars_per_kw
         batt_cost = batt_size_kw * batt_installed_cost_us_dollars_per_kw \
                     + batt_size_kwh * batt_installed_cost_us_dollars_per_kwh
         wind_cost = wind_installed_kw * wind_installed_cost_us_dollars_per_kw
+        generator_cost = generator_installed_kw * generator_installed_cost_us_dollars_per_kw
+        diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * generator.fuel_used_gal
 
         # System Design
         ws['B3'] = pv_installed_kw
         ws['B4'] = pv.existing_kw or 0
         ws['B5'] = pv.degradation_pct * 100
         ws['B6'] = wind_installed_kw
-        ws['B7'] = batt.size_kw or 0
-        ws['B8'] = batt.size_kwh or 0
+        ws['B7'] = generator_installed_kw
+        ws['B8'] = generator.existing_kw or 0
+        ws['B9'] = batt.size_kw or 0
+        ws['B10'] = batt.size_kwh or 0
 
         # Year 1 Results
-        ws['B11'] = electric_tariff.year_one_bill_bau_us_dollars or 0
-        ws['B12'] = electric_tariff.year_one_bill_us_dollars or 0
-        ws['B13'] = electric_tariff.year_one_export_benefit_us_dollars or 0
-        ws['B14'] = pv_energy
-        ws['B15'] = wind_energy
-        ws['B16'] = wind_energy + pv_energy
+        ws['B13'] = electric_tariff.year_one_bill_bau_us_dollars or 0
+        ws['B14'] = electric_tariff.year_one_bill_us_dollars or 0
+        ws['B15'] = electric_tariff.year_one_export_benefit_us_dollars or 0
+        ws['B16'] = pv_energy
+        ws['B17'] = wind_energy
+        ws['B18'] = generator_energy
+        ws['B19'] = wind_energy + pv_energy + generator_energy
 
         # System Costs
-        ws['B19'] = pv_cost + batt_cost + wind_cost
-        ws['B20'] = pv_cost
-        ws['B21'] = wind_cost
-        ws['B22'] = batt_cost
-        ws['B24'] = pv.om_cost_us_dollars_per_kw
-        ws['B25'] = wind.om_cost_us_dollars_per_kw
-        ws['B26'] = batt.replace_cost_us_dollars_per_kw
-        ws['B27'] = batt.inverter_replacement_year
-        ws['B28'] = batt.replace_cost_us_dollars_per_kwh
-        ws['B29'] = batt.battery_replacement_year
+        ws['B22'] = pv_cost + batt_cost + wind_cost + generator_cost
+        ws['B23'] = pv_cost
+        ws['B24'] = wind_cost
+        ws['B25'] = generator_cost
+        ws['B26'] = batt_cost
+        ws['B28'] = pv.om_cost_us_dollars_per_kw
+        ws['B29'] = wind.om_cost_us_dollars_per_kw
+        ws['B30'] = generator.om_cost_us_dollars_per_kw
+        ws['B31'] = generator.om_cost_us_dollars_per_kwh
+        ws['B32'] = diesel_fuel_used_cost
+        ws['B33'] = batt.replace_cost_us_dollars_per_kw
+        ws['B34'] = batt.inverter_replacement_year
+        ws['B35'] = batt.replace_cost_us_dollars_per_kwh
+        ws['B36'] = batt.battery_replacement_year
 
         # Analysis Parameters
-        ws['B37'] = financial.analysis_years
-        ws['B38'] = financial.om_cost_escalation_pct * 100
-        ws['B39'] = financial.escalation_pct * 100
-        ws['B40'] = financial.offtaker_discount_pct * 100
+        ws['B44'] = financial.analysis_years
+        ws['B45'] = financial.om_cost_escalation_pct * 100
+        ws['B46'] = financial.escalation_pct * 100
+        ws['B47'] = financial.offtaker_discount_pct * 100
 
         # Tax rates
-        ws['B43'] = financial.offtaker_tax_pct * 100
+        ws['B50'] = financial.offtaker_tax_pct * 100
 
         # PV Tax Credits and Incentives
-        ws['B48'] = pv.federal_itc_pct * 100
-        ws['C48'] = ''
-        ws['B53'] = pv.state_ibi_pct * 100
-        ws['C53'] = pv.state_ibi_max_us_dollars
-        ws['B54'] = pv.utility_ibi_pct * 100
-        ws['C54'] = pv.utility_ibi_max_us_dollars
-        ws['B56'] = pv.federal_rebate_us_dollars_per_kw * 0.001
-        ws['C56'] = ''
-        ws['B57'] = pv.state_rebate_us_dollars_per_kw * 0.001
-        ws['C57'] = pv.state_rebate_max_us_dollars
-        ws['B58'] = pv.utility_rebate_us_dollars_per_kw * 0.001
-        ws['C58'] = pv.utility_rebate_max_us_dollars
-        ws['B60'] = pv.pbi_us_dollars_per_kwh
-        ws['C60'] = pv.pbi_max_us_dollars
-        ws['E60'] = pv.pbi_years
-        ws['F60'] = pv.pbi_system_max_kw
+        ws['B55'] = pv.federal_itc_pct * 100
+        ws['C55'] = ''
+        ws['B60'] = pv.state_ibi_pct * 100
+        ws['C60'] = pv.state_ibi_max_us_dollars
+        ws['B61'] = pv.utility_ibi_pct * 100
+        ws['C61'] = pv.utility_ibi_max_us_dollars
+        ws['B63'] = pv.federal_rebate_us_dollars_per_kw * 0.001
+        ws['C63'] = ''
+        ws['B64'] = pv.state_rebate_us_dollars_per_kw * 0.001
+        ws['C64'] = pv.state_rebate_max_us_dollars
+        ws['B65'] = pv.utility_rebate_us_dollars_per_kw * 0.001
+        ws['C65'] = pv.utility_rebate_max_us_dollars
+        ws['B67'] = pv.pbi_us_dollars_per_kwh
+        ws['C67'] = pv.pbi_max_us_dollars
+        ws['E67'] = pv.pbi_years
+        ws['F67'] = pv.pbi_system_max_kw
 
         # Wind Tax Credits and Incentives
-        ws['B65'] = wind.federal_itc_pct * 100
-        ws['C65'] = ''
-        ws['B70'] = wind.state_ibi_pct * 100
-        ws['C70'] = wind.state_ibi_max_us_dollars
-        ws['B71'] = wind.utility_ibi_pct * 100
-        ws['C71'] = wind.utility_ibi_max_us_dollars
-        ws['B73'] = wind.federal_rebate_us_dollars_per_kw * 0.001
-        ws['C73'] = ''
-        ws['B74'] = wind.state_rebate_us_dollars_per_kw * 0.001
-        ws['C74'] = wind.state_rebate_max_us_dollars
-        ws['B75'] = wind.utility_rebate_us_dollars_per_kw * 0.001
-        ws['C75'] = wind.utility_rebate_max_us_dollars
-        ws['B77'] = wind.pbi_us_dollars_per_kwh
-        ws['C77'] = wind.pbi_max_us_dollars
-        ws['E77'] = wind.pbi_years
-        ws['F77'] = wind.pbi_system_max_kw
+        ws['B72'] = wind.federal_itc_pct * 100
+        ws['C72'] = ''
+        ws['B77'] = wind.state_ibi_pct * 100
+        ws['C77'] = wind.state_ibi_max_us_dollars
+        ws['B78'] = wind.utility_ibi_pct * 100
+        ws['C78'] = wind.utility_ibi_max_us_dollars
+        ws['B80'] = wind.federal_rebate_us_dollars_per_kw * 0.001
+        ws['C80'] = ''
+        ws['B81'] = wind.state_rebate_us_dollars_per_kw * 0.001
+        ws['C81'] = wind.state_rebate_max_us_dollars
+        ws['B82'] = wind.utility_rebate_us_dollars_per_kw * 0.001
+        ws['C82'] = wind.utility_rebate_max_us_dollars
+        ws['B84'] = wind.pbi_us_dollars_per_kwh
+        ws['C84'] = wind.pbi_max_us_dollars
+        ws['E84'] = wind.pbi_years
+        ws['F84'] = wind.pbi_system_max_kw
 
         # Battery Tax Credits and Incentives
-        ws['B82'] = batt.total_itc_pct * 100
-        ws['C82'] = big_number  # max itc
-        ws['B87'] = 0  # state ITC
-        ws['C87'] = big_number  # state ITC max
-        ws['B88'] = 0  # utility ITC
-        ws['C88'] = big_number  # utility ITC max
-        ws['B90'] = batt.total_rebate_us_dollars_per_kw * 0.001
-        ws['C90'] = big_number  # max rebate
-        ws['B91'] = 0  # state rebate
-        ws['C91'] = big_number  # max state rebate
-        ws['B92'] = 0  # utility rebate
-        ws['C92'] = big_number  # max utility rebate
+        ws['B89'] = batt.total_itc_pct * 100
+        ws['C89'] = big_number  # max itc
+        ws['B94'] = 0  # state ITC
+        ws['C94'] = big_number  # state ITC max
+        ws['B95'] = 0  # utility ITC
+        ws['C95'] = big_number  # utility ITC max
+        ws['B97'] = batt.total_rebate_us_dollars_per_kw * 0.001
+        ws['C97'] = big_number  # max rebate
+        ws['B98'] = 0  # state rebate
+        ws['C98'] = big_number  # max state rebate
+        ws['B99'] = 0  # utility rebate
+        ws['C99'] = big_number  # max utility rebate
 
         # Depreciation
         if pv.macrs_option_years > 0:
-            ws['B95'] = pv.macrs_option_years
-            ws['B96'] = pv.macrs_bonus_pct
+            ws['B102'] = pv.macrs_option_years
+            ws['B103'] = pv.macrs_bonus_pct
         
         elif pv.macrs_option_years == 0:
-            ws['B95'] = "None"
-            ws['B96'] = 0
+            ws['B102'] = "None"
+            ws['B103'] = 0
 
         if batt.macrs_option_years > 0:
-            ws['C95'] = batt.macrs_option_years
-            ws['C96'] = batt.macrs_bonus_pct
+            ws['C102'] = batt.macrs_option_years
+            ws['C103'] = batt.macrs_bonus_pct
         
         elif batt.macrs_option_years == 0:
-            ws['C95'] = "None"
-            ws['C96'] = 0
+            ws['C102'] = "None"
+            ws['C103'] = 0
 
         if wind.macrs_option_years > 0:
-            ws['D95'] = wind.macrs_option_years
-            ws['D96'] = wind.macrs_bonus_pct
+            ws['D102'] = wind.macrs_option_years
+            ws['D103'] = wind.macrs_bonus_pct
 
         elif wind.macrs_option_years == 0:
-            ws['D95'] = "None"
-            ws['D96'] = 0
+            ws['D102'] = "None"
+            ws['D103'] = 0
+
+        # this value is being introduced in proforma for modeling variable o&m and diesel cost
+        # for back-up generator. Currently in REopt Lite webtool, diesel generator only runs for
+        # outage. This flag is used to determine outage occurrences in the analysis period.
+        ws['D117'] = int(not loadprofile.outage_is_major_event)
 
         # Save
         wb.save(self.output_file)

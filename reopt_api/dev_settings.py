@@ -1,3 +1,4 @@
+import uuid
 from keys import *
 import sys
 """
@@ -55,6 +56,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     #'django.middleware.csrf.CsrfViewMiddleware',
+    'rollbar.contrib.django.middleware.RollbarNotifierMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -86,12 +88,22 @@ WSGI_APPLICATION = 'reopt_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
+ROLLBAR = {
+    'access_token': rollbar_access_token,
+    'environment': 'development',
+    'root': BASE_DIR,
+    'enabled':True
+}
 
 if os.environ.get('BUILD_TYPE') == 'jenkins':
+    ROLLBAR['branch'] = os.environ.get('BRANCH_NAME')
+    if not os.environ.get('DB_TEST_NAME') == 'reopt_development':
+        ROLLBAR['enabled'] = False
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ.get('DB_USERNAME'),
+            'NAME': os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4()),
             'USER': os.environ.get('DB_USERNAME'),
             'PASSWORD': os.environ.get('DB_PASSWORD'),
             'HOST': os.environ.get('DB_HOSTNAME'),
@@ -99,6 +111,7 @@ if os.environ.get('BUILD_TYPE') == 'jenkins':
         }
     }
 elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
+    ROLLBAR['enabled'] = False
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -125,6 +138,8 @@ else:
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
+import rollbar
+rollbar.init(**ROLLBAR)
 
 LANGUAGE_CODE = 'en-us'
 

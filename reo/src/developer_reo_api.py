@@ -1,7 +1,7 @@
 import requests
 import json
 import sys, traceback
-from keys import developer_nrel_gov_key
+from keys import ashrae_tmy_key
 from reo.log_levels import log
 
 
@@ -10,7 +10,7 @@ class DeveloperREOapi:
     def __init__(self,
                  lat, lon,
                  url_base="https://developer.nrel.gov/api/reo/v3.json",
-                 api_key=developer_nrel_gov_key,
+                 api_key=ashrae_tmy_key,
                  search_radius=25,
                  output_fields="ashrae_tmy",
                  ):
@@ -38,7 +38,7 @@ class DeveloperREOapi:
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value,
+            debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
                                                                                 traceback.format_tb(exc_traceback))
             log.warning("Unable to get ASHRAE TMY ID from {}.".format(self.url))
             log.debug(debug_msg)

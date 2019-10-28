@@ -30,6 +30,8 @@ class ProcessOutputs:
         self.path_wind_to_batt = os.path.join(path_outputs, "WINDtoBatt.csv")
         self.path_wind_to_grid = os.path.join(path_outputs, "WINDtoGrid.csv")
         self.path_gen_to_load = os.path.join(path_outputs, "GENERATORtoLoad.csv")
+        self.path_gen_to_batt = os.path.join(path_outputs, "GENERATORtoBatt.csv")
+        self.path_gen_to_grid = os.path.join(path_outputs, "GENERATORtoGrid.csv")
         self.path_annual_kwh = os.path.join(path_outputs, "annual_kwh.csv")
         self.year = year
 
@@ -125,6 +127,18 @@ class ProcessOutputs:
 
         if os.path.isfile(self.path_gen_to_load):
             return self._load_csv(self.path_gen_to_load)
+        return None
+
+    def get_gen_to_grid(self):
+
+        if os.path.isfile(self.path_gen_to_grid):
+            return self._load_csv(self.path_gen_to_grid)
+        return None
+
+    def get_gen_to_batt(self):
+
+        if os.path.isfile(self.path_gen_to_batt):
+            return self._load_csv(self.path_gen_to_batt)
         return None
 
     def get_annual_kwh(self):

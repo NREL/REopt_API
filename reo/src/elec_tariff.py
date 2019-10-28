@@ -5,14 +5,16 @@ from reo.log_levels import log
 
 class ElecTariff(object):
 
-    def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, net_metering_limit_kw, load_year,
-                 time_steps_per_hour, urdb_label=None, urdb_utility_name=None, urdb_rate_name=None,
+    def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh,wholesale_rate_above_site_load_us_dollars_per_kwh,
+                 net_metering_limit_kw, load_year, time_steps_per_hour,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
-                 urdb_response=None,add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None, blended_annual_demand_charges_us_dollars_per_kw=None,
+                 urdb_response=None,add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
+                 blended_annual_demand_charges_us_dollars_per_kw=None,
                   **kwargs):
       
         self.run_id = run_id
         self.wholesale_rate = wholesale_rate_us_dollars_per_kwh
+        self.wholesale_rate_above_site_load = wholesale_rate_above_site_load_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
 

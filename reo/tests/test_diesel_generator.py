@@ -1,8 +1,9 @@
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
+from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+#from unittest import TestCase
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -23,7 +24,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         For this scenario, the diesel generator has enough fuel to meet the critical load during outage.
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'generatorPOST.json')
         nested_data = json.load(open(test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = False
         resp = self.get_response(data=nested_data)
@@ -39,8 +40,12 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['pv_kw'] = 0
         d_expected['batt_kw'] = 2.85178
         d_expected['batt_kwh'] = 4.73317
-        d_expected['fuel_used_gal'] = 1.53
-        d_expected['avoided_outage_costs_us_dollars'] = 235303.98
+        # The expected fuel consumption of the geneartor for this test case has changed with the "diesel generator
+        # sizing" capability additon. This is because the generator is now allowing to charge the battery as well.
+        # So, for hour 11 and 12 (when outage happens), generator is now charging battery with 3.00845 and 0.986111 kWh,
+        # along with serving the load, Thereby increasing its fuel consumption.
+        d_expected['fuel_used_gal'] = 1.79 # 1.53
+        d_expected['avoided_outage_costs_us_dollars'] = 472773.94
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
         try:
@@ -64,25 +69,25 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         For this scenario, the diesel generator *does not* have enough fuel to meet the critical load during outage.
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'generatorPOST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'generatorPOST_part2.json')
         nested_data = json.load(open(test_post, 'rb'))
-        nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 40
+        nested_data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 64
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
-        d = ModelManager.make_response(run_uuid=run_uuid)
+        d = ModelManager.make_response(run_uuid=run_uuid)        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 246481.0
-        d_expected['npv'] = -17377.0
-        d_expected['pv_kw'] = 8.50489
-        d_expected['batt_kw'] = 15.2994
-        d_expected['batt_kwh'] = 69.0182
-        d_expected['fuel_used_gal'] = 25.0
-        d_expected['avoided_outage_costs_us_dollars'] = 24772.59
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 14086.8
+        d_expected['lcc'] = 768489.0
+        d_expected['npv'] = 217226.0
+        d_expected['pv_kw'] = 215.1007
+        d_expected['batt_kw'] = 39.7699
+        d_expected['batt_kwh'] = 269.1067
+        d_expected['fuel_used_gal'] = 2.0
+        d_expected['avoided_outage_costs_us_dollars'] = 171825.82
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 97291.8
 
         try:
             check_common_outputs(self, c, d_expected)

@@ -1,8 +1,9 @@
 import json
 import os
 from tastypie.test import ResourceTestCaseMixin
+from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+#from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -52,7 +53,7 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
             error_msg = None
             if hasattr(messages, "error"):
                 error_msg = messages.error
-            print("test_existing_pv API error message: {}".format(error_msg))
+            print("test_negative_lcc API error message: {}".format(error_msg))
             print("Run uuid: {}".format(d['outputs']['Scenario']['run_uuid']))
             raise e
 
@@ -76,12 +77,13 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-
+        
         lcc_bau = d['outputs']['Scenario']['Site']['Financial']['lcc_bau_us_dollars']
         lcc = d['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         messages = d['messages']
 
         try:
+
             self.assertGreater(lcc_bau, 0,
                              "BAU Life Cycle Cost is less than zero. This is not correct.")
 
@@ -90,9 +92,10 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
                              )
 
         except Exception as e:
+            
             error_msg = None
             if hasattr(messages, "error"):
                 error_msg = messages.error
-            print("test_existing_pv API error message: {}".format(error_msg))
+            print("test_positive_lcc API error message: {}".format(error_msg))
             print("Run uuid: {}".format(d['outputs']['Scenario']['run_uuid']))
             raise e

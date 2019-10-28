@@ -1,3 +1,4 @@
+import time
 import json
 import copy
 import os
@@ -23,6 +24,9 @@ wind_post = {"Scenario": {"Site": {
     },
     "latitude": 39.91065, "longitude": -105.2348,
     "PV": {
+        "max_kw": 0
+    },
+    "Generator": {
         "max_kw": 0
     },
     "Wind": {
@@ -59,7 +63,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-
     def test_wind_size_class(self):
         """
         Validation to ensure that max_kw of wind is set to size_class
@@ -85,6 +88,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
+        
         c = nested_to_flat(d['outputs'])
 
         try:
@@ -94,6 +98,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
+    @skip("not sure why this test is skipped, was commented out in commit affd9c108b674f97ddc47990c6cb4ab399f1e296")
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
@@ -101,7 +106,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         Note no tax, no ITC, no MACRS.
         :return:
         """
-
         d_expected = dict()
         d_expected['lcc'] = 8551172
         d_expected['npv'] = 16159608
@@ -114,17 +118,14 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-        print(c.keys())
 
-        """
+        c = nested_to_flat(d['outputs'])
         try:
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
             print("Error message: {}".format(d['messages']))
             raise
-        """
 
     def test_wind_sam_sdk(self):
         """"

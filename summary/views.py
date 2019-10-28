@@ -1,7 +1,7 @@
 import sys
 import json
 from django.http import JsonResponse
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, FinancialModel, ElectricTariffModel, MessageModel
+from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, MessageModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 import uuid
@@ -96,12 +96,12 @@ def unlink(request, user_uuid, run_uuid):
         if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
             UserUnlinkedRuns.create(**content)
 
-        return JsonResponse({"Success":True}, status=500)
+        return JsonResponse({"Success":True}, status=204)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='unlink', user_uuid=user_uuid)
         err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+        return JsonResponse({"Error": err.message}, status=404)
 
 
 def summary(request, user_uuid):
@@ -127,6 +127,7 @@ def summary(request, user_uuid):
                   "year_one_savings_us_dollars",# Year 1 Savings ($)
                   "pv_kw",                      # PV Size (kW)
                   "wind_kw",                    # Wind Size (kW)
+                  "gen_kw",                     # Generator Size (kW)
                   "batt_kw",                    # Battery Power (kW)
                   "batt_kwh"                    # Battery Capacity (kWh)
                   ""
@@ -138,14 +139,15 @@ def summary(request, user_uuid):
 
     except ValueError as e:
         if e.message == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.message)}, status=400)
+            return JsonResponse({"Error": str(e.message)}, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
             err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=400)
+            return JsonResponse({"Error": str(err.message)}, status=404)
 
     try:
+        
         scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
@@ -174,6 +176,8 @@ def summary(request, user_uuid):
         batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh'))
         pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
         winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
+        gens = dbToDict(
+            GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw'))
         financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs'))
         tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars'))
 
@@ -188,6 +192,7 @@ def summary(request, user_uuid):
             batt = batts.get(scenario.run_uuid)
             pv = pvs.get(scenario.run_uuid)
             wind = winds.get(scenario.run_uuid)
+            gen = gens.get(scenario.run_uuid)
             financial = financials.get(scenario.run_uuid)
             tariff = tariffs.get(scenario.run_uuid)
             
@@ -257,32 +262,50 @@ def summary(request, user_uuid):
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 
                 # PV Size
-                if pv['max_kw'] > 0:
-                    results['pv_kw'] = pv['size_kw']
+                if pv is not None:
+                    if pv['max_kw'] > 0:
+                        results['pv_kw'] = pv['size_kw']
+                    else:
+                        results['pv_kw'] = 'not evaluated'
                 else:
                     results['pv_kw'] = 'not evaluated'
 
                 # Wind Size
-                if wind['max_kw'] > 0:
-                    results['wind_kw'] = wind['size_kw']
+                if wind is not None:
+                    if wind.get('max_kw',-1) > 0:
+                        results['wind_kw'] = wind['size_kw']
+                    else:
+                        results['wind_kw'] = 'not evaluated'
                 else:
                     results['wind_kw'] = 'not evaluated'
 
+                # Generator Size
+                if gen is not None:
+                    if gen.get('max_kw', -1) > 0:
+                        results['gen_kw'] = gen['size_kw']
+                    else:
+                        results['gen_kw'] = 'not evaluated'
+                else:
+                    results['gen_kw'] = 'not evaluated'
+
                 # Battery Size
-                if batt['max_kw'] > 0:
-                    results['batt_kw'] = batt['size_kw']
-                    results['batt_kwh'] = batt['size_kwh']
+                if batt is not None:
+                    if batt.get('max_kw',-1) > 0:
+                        results['batt_kw'] = batt['size_kw']
+                        results['batt_kwh'] = batt['size_kwh']
+                    else:
+                        results['batt_kw'] = 'not evaluated'
+                        results['batt_kwh'] = 'not evaluated'
                 else:
                     results['batt_kw'] = 'not evaluated'
                     results['batt_kwh'] = 'not evaluated'
 
-
             json_response['scenarios'].append(results)
-        response = JsonResponse(json_response)
+        response = JsonResponse(json_response, status=200)
         return response
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         err = UnexpectedError(exc_type, exc_value, exc_traceback, task='summary', user_uuid=user_uuid)
         err.save_to_db()
-        return JsonResponse({"Error": err.message}, status=500)
+        return JsonResponse({"Error": err.message}, status=404)

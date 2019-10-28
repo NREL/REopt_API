@@ -22,7 +22,7 @@ class ResilienceTests(ResourceTestCaseMixin, TestCase):
         Using customLoadProfileErrorPOST.json to reproduce the error
         :return:
         """
-        test_post = os.path.join('reo', 'tests', 'resilience_issue_input_POST.json')
+        test_post = os.path.join('reo', 'tests', 'posts', 'resilience_issue_input_POST.json')
         nested_data = json.load(open(test_post, 'rb'))
         # comment out  the following line if want to reproduce the error
         #nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = False

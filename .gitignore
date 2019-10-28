@@ -109,3 +109,6 @@ static/files/*
 *.rdb
 
 all_data*
+=======
+# CHP results processing
+results_processing/*
