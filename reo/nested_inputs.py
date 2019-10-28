@@ -256,13 +256,13 @@ nested_input_definitions = {
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
-          "blended_annual_rates_us_dollars_per_kwh": {
+        "blended_annual_rates_us_dollars_per_kwh": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
               "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
               "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
           },
-          "blended_annual_demand_charges_us_dollars_per_kw": {
+        "blended_annual_demand_charges_us_dollars_per_kw": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
               "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
