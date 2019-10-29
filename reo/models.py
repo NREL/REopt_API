@@ -602,6 +602,12 @@ class ModelManager(object):
 
                 try:
                     resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    # special handling for inputs that can be scalar or array,
+                    # (which we have to make an array in database)
+                    if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
+                        if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
+                            resp['inputs']['Scenario']['Site'][site_key][k] = \
+                                resp['inputs']['Scenario']['Site'][site_key][k][0]
                     del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
