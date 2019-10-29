@@ -1,5 +1,6 @@
 import json
 import os
+import copy
 from django.test import TestCase
 from reo.validators import ValidateNestedInput
 
@@ -18,8 +19,7 @@ class InputValidatorTests(TestCase):
 
     def test_add_blended_to_urdb(self):
         """
-        try setting the add blended to urdb rate without sufficient inpute
-        
+        try setting the add blended to urdb rate without sufficient input
         also confirm that blended fields must be 12 entries long each
         :return: None
         """
@@ -68,8 +68,9 @@ class InputValidatorTests(TestCase):
         bad_lengths = [8759, 17521]
 
         for length in bad_lengths + good_lengths:
-            self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = list(range(length))
-            validator = self.get_validator(self.post)
+            post = copy.deepcopy(self.post)
+            post['Scenario']['Site']['LoadProfile']['loads_kw'] = list(range(length))
+            validator = self.get_validator(post)
 
             if length in good_lengths:
                 self.assertEquals(validator.isValid, True)
@@ -97,8 +98,9 @@ class InputValidatorTests(TestCase):
         bad_lengths = [8759, 17521]
 
         for length in bad_lengths + good_lengths:
-            self.post['Scenario']['Site']['LoadProfile']['critical_loads_kw'] = list(range(length))
-            validator = self.get_validator(self.post)
+            post = copy.deepcopy(self.post)
+            post['Scenario']['Site']['LoadProfile']['critical_loads_kw'] = list(range(length))
+            validator = self.get_validator(post)
 
             if length in good_lengths:
                 self.assertEquals(validator.isValid, True)
