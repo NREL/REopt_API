@@ -516,14 +516,11 @@ class ValidateNestedInput:
             """
             output = {}
             for arg, path in warnings:
-                if 'wind' not in arg.lower():
-                    if 'wind' not in [p.lower() for p in path]:
-                        path = ">".join(path)
-                        if path not in output:
-                            output[path] = arg
-                        else:
-                            output[path] += ' AND ' + arg
-
+                path = ">".join(path)
+                if path not in output:
+                    output[path] = arg
+                else:
+                    output[path] += ' AND ' + arg
             return output
 
         @property
