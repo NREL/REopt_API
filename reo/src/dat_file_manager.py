@@ -95,7 +95,7 @@ class DatFileManager:
         self.paths = paths
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
-        
+
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
@@ -198,7 +198,6 @@ class DatFileManager:
 
     def add_generator(self, generator):
         self.generator = generator
-        
         if self.generator.existing_kw > 0:
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
@@ -234,6 +233,7 @@ class DatFileManager:
 
     def add_storage(self, storage):
         self.storage = storage
+
         # storage_bau.dat gets same definitions as storage.dat so that initializations don't fail in bau case
         # however, storage is typically 'turned off' by having max size set to zero in maxsizes_bau.dat
         write_to_dat(self.file_storage, storage.soc_min_pct, 'StorageMinChargePcent')

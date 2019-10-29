@@ -91,13 +91,13 @@ function runTest(v::String, t::String)
     bigtol = 0.05
 
     try
-        @assert (resultDict["lcc"] - ojv) / max(ojv, 1) < tolerance
-        @assert (resultDict["year_one_energy_cost"] - Year1EnergyCost) / max(Year1EnergyCost, 1) < bigtol
-        @assert (resultDict["year_one_demand_cost"] - Year1DemandCost) / max(Year1DemandCost, 1) < bigtol
-        @assert (resultDict["year_one_demand_tou_cost"] - Year1DemandTOUCost) / max(Year1DemandTOUCost, 1) < bigtol
-        @assert (resultDict["year_one_demand_flat_cost"] - Year1DemandFlatCost) / max(Year1DemandFlatCost, 1) < bigtol
-        @assert (resultDict["year_one_fixed_cost"] - Year1FixedCharges) / max(Year1FixedCharges, 1) < bigtol
-        @assert (resultDict["year_one_bill"] - Year1Bill) / max(Year1Bill, 1) < bigtol
+        @assert (resultDict["lcc"] - result_JSON["lcc"])/ max(result_JSON["lcc"],1) < tolerance
+        @assert (resultDict["year_one_energy_cost"] - result_JSON["year_one_energy_cost"])/ max(result_JSON["year_one_energy_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_cost"] - result_JSON["year_one_demand_cost"])/ max(result_JSON["year_one_demand_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_tou_cost"] - result_JSON["year_one_demand_tou_cost"])/ max(result_JSON["year_one_demand_tou_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_flat_cost"] - result_JSON["year_one_demand_flat_cost"])/ max(result_JSON["year_one_demand_flat_cost"],1) < bigtol
+        @assert (resultDict["year_one_fixed_cost"] - result_JSON["year_one_fixed_cost"])/ max(result_JSON["year_one_fixed_cost"],1) < bigtol
+        @assert (resultDict["year_one_bill"] - result_JSON["year_one_bill"])/ max(result_JSON["year_one_bill"],1) < bigtol
         
         println("\nOK")
         uuid = nothing
