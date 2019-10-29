@@ -78,17 +78,15 @@ fts_post_2 = {"Scenario": {
         }
 
 
-
 class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
-    REopt_tol = 1e-2
 
     def setUp(self):
         super(TestFlexibleTimeSteps, self).setUp()
         self.reopt_base = '/v1/job/'
+        self.REopt_tol = 1e-2
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
-
 
     def test_flexible_time_steps(self):
         """
@@ -97,10 +95,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         - the output csv files dimensions (8760, 35040 etc) must also match time_steps_per_hour given as input
         :return:
         """
-
-        self.REopt_tol = 1e-2
-
-        
         # results for time_steps_per_hour = 1
         resp1 = self.get_response(data=fts_post_1)
         self.assertHttpCreated(resp1)
@@ -108,7 +102,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         run_uuid1 = r1.get('run_uuid')
         d1 = ModelManager.make_response(run_uuid=run_uuid1)
         c1 = nested_to_flat(d1['outputs'])
-
 
         # results for time_steps_per_hour = 4
         response2 = self.get_response(data=fts_post_2)
@@ -123,12 +116,10 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         del c1['avoided_outage_costs_us_dollars']
         del c2['avoided_outage_costs_us_dollars']
 
-
         try:
             check_common_outputs(self, c1, c2)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid2))
-            #print("Error message with ts=1: {}".format(d1['messages']))
-            print("Error message with ts=4: {}") #.format(d2['messages']
+            print("Error message with ts=1: {}".format(d1['messages']))
+            print("Error message with ts=4: {}".format(d2['messages']))
             raise
-
