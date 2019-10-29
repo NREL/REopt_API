@@ -344,9 +344,8 @@ class ValidateNestedInput:
             self.urdb_errors = []
             self.input_as_none = []
             self.invalid_inputs = []
-
+            self.resampled_inputs = []
             self.defaults_inserted = []
-
             self.input_dict = dict()
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
 
@@ -549,6 +548,9 @@ class ValidateNestedInput:
 
             if bool(self.invalid_inputs):
                 output["Following inputs are invalid:"] = self.warning_message(self.invalid_inputs)
+
+            if bool(self.resampled_inputs):
+                output["Following inputs were resampled:"] = self.warning_message(self.resampled_inputs)
 
             return output
 
@@ -1031,17 +1033,43 @@ class ValidateNestedInput:
                     self.input_data_errors.append(
                         "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name)
                     )
+                elif attr_name in ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
+                    if time_steps_per_hour != n/8760:
+                        if time_steps_per_hour == 2 and n/8760 == 4:  # ([name, object_name_path])
+                            self.resampled_inputs.append(
+                                ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
+                            index = pd.date_range('1/1/2000', periods=n, freq='15T')
+                            series = pd.Series(attr, index=index)
+                            series = series.resample('30T').mean()
+                            resampled_val = series.tolist()
+                        elif time_steps_per_hour == 4 and n/8760 == 2:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2]]
+                        elif time_steps_per_hour == 4 and n/8760 == 1:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2, 3, 4]]
+                        else:  # time_steps_per_hour == 2 and n/8760 == 1:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2]]
+                        self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, resampled_val)
 
             elif n == 8760:
-                pass
+                pass  # because n/8760 == time_steps_per_hour ( = 1 )
 
             elif n == 17520:  # downsample 30 minute data
+                self.resampled_inputs.append(
+                    ["Downsampled {} from 30 minute resolution to hourly resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
                 index = pd.date_range('1/1/2000', periods=n, freq='30T')
                 series = pd.Series(attr, index=index)
                 series = series.resample('1H').mean()
                 self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
 
             elif n == 35040:  # downsample 15 minute data
+                self.resampled_inputs.append(
+                    ["Downsampled {} from 15 minute resolution to hourly resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
                 index = pd.date_range('1/1/2000', periods=n, freq='15T')
                 series = pd.Series(attr, index=index)
                 series = series.resample('1H').mean()
