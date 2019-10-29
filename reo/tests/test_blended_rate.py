@@ -48,7 +48,11 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "Wind": {
                     "max_kw": 0,
                     "max_kwh": 0,
-                }
+                },
+
+                "Generator": {
+                    "max_kw": "0",
+                },
             }
         }
         }
@@ -87,3 +91,34 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         response = self.get_response(self.post)
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         self.assertAlmostEqual(financial.lcc_us_dollars, 422437, -1)
+
+    def test_time_of_export_rate(self):
+        """
+        add a time-of-export rate that is greater than retail rate for the month of January,
+        check to see if PV is exported for whole month of January.
+        """
+        jan_rate = self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"][0]
+
+        self.post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_us_dollars_per_kwh"] = \
+            [jan_rate + 0.1] * 31 * 24 + [0.0] * (8760 - 31*24)
+
+        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = [0]*12
+        response = self.get_response(self.post)
+        pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
+        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
+        self.assertTrue(all(x == 0 for x in pv_out.year_one_to_load_series_kw[:744]))
+        self.assertEqual(pv_out.size_kw, 70.2846)
+        self.assertAlmostEqual(financial.lcc_us_dollars, 431483, -1)
+
+        """
+        Test huge export benefit beyond site load, such that PV ends up at limit
+        """
+        self.post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_us_dollars_per_kwh"] = 0
+        self.post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_above_site_load_us_dollars_per_kwh"] = \
+            [1] * 8760
+        response = self.get_response(self.post)
+        pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
+        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
+        self.assertAlmostEqual(financial.lcc_us_dollars, -1510001, -2)
+        self.assertEqual(pv_out.size_kw, 200.0)
+
