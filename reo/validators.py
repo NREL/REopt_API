@@ -1059,22 +1059,15 @@ class ValidateNestedInput:
             elif n == 8760:
                 pass  # because n/8760 == time_steps_per_hour ( = 1 )
 
-            elif n == 17520:  # downsample 30 minute data
+            elif n in [17520, 35040]:
+                resolution_minutes = int(60/(n/8760))
                 self.resampled_inputs.append(
-                    ["Downsampled {} from 30 minute resolution to hourly resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
-                index = pd.date_range('1/1/2000', periods=n, freq='30T')
+                    ["Downsampled {} from {}) minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
+                            attr_name, resolution_minutes), [obj_name]])
+                index = pd.date_range('1/1/2000', periods=n, freq='{}T'.format(resolution_minutes))
                 series = pd.Series(attr, index=index)
                 series = series.resample('1H').mean()
                 self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
-
-            elif n == 35040:  # downsample 15 minute data
-                self.resampled_inputs.append(
-                    ["Downsampled {} from 15 minute resolution to hourly resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
-                index = pd.date_range('1/1/2000', periods=n, freq='15T')
-                series = pd.Series(attr, index=index)
-                series = series.resample('1H').mean()
-                self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
-
             else:
                 self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
 
