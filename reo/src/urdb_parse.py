@@ -358,8 +358,15 @@ class UrdbParse:
         negative_energy_costs = [cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
-        negative_wholesale_rate_costs = self.ts_per_year * [-1 * self.wholesale_rate]
-        negative_excess_rate_costs = self.ts_per_year * [-1 * self.excess_rate]
+        # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
+        if len(self.wholesale_rate) == 1:
+            negative_wholesale_rate_costs = self.ts_per_year * [-1 * self.wholesale_rate[0]]
+        else:
+            negative_wholesale_rate_costs = [-1 * x for x in self.wholesale_rate]
+        if len(self.excess_rate) == 1:
+            negative_excess_rate_costs = self.ts_per_year * [-1 * self.excess_rate[0]]
+        else:
+            negative_excess_rate_costs = [-1 * x for x in self.excess_rate]
 
         # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []

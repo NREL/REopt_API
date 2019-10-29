@@ -4,27 +4,41 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from unittest import TestCase, skip  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
 from reo.nested_inputs import flat_to_nested
 from reo.utilities import check_common_outputs
+from functools import reduce  # forward compatibility for Python 3
+import operator
+import copy
+
+
+def get_by_path(root, items):
+    """Access a nested object in root by item sequence."""
+    return reduce(operator.getitem, items, root)
+
+
+def remove_by_path(root, items):
+    """Remove a value in a nested object in root by item sequence."""
+    del get_by_path(root, items[:-1])[items[-1]]
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     REopt_tol = 1e-2
 
-    def setUp(self):
-        super(EntryResourceTest, self).setUp()
-
-        self.data_definitions = nested_input_definitions
-        self.reopt_base = '/v1/job/'
-        self.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
-        self.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+    @classmethod
+    def setUpClass(cls):
+        super(EntryResourceTest, cls).setUpClass()
+        cls.data_definitions = nested_input_definitions
+        cls.reopt_base = '/v1/job/'
+        cls.missing_rate_urdb = pickle.load(open('reo/tests/missing_rate.p','rb'))
+        cls.missing_schedule_urdb = pickle.load(open('reo/tests/missing_schedule.p','rb'))
+        cls.nested_post = json.load(open('reo/tests/posts/nestedPOST.json'))
 
     @property
     def complete_valid_nestedpost(self):
-        return json.load(open('reo/tests/posts/nestedPOST.json'))
+        return copy.deepcopy(self.nested_post)
 
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
@@ -34,17 +48,22 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue(text in response.content)
 
     def test_required(self):
+        """
+        Hit the API with missing required inputs or missing dependencies and verify that the correct message is returned
+        """
+        required, true_false = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
 
-        required = ['latitude','longitude']
-
-        for r in required:
+        for r in [x for (x,y) in zip(required, true_false) if y is True]:
             test_case = self.complete_valid_nestedpost
-            del test_case['Scenario']['Site'][r]
+            remove_by_path(test_case, r)
             response = self.get_response(test_case)
-            text = "Missing Required for Scenario>Site: " + r
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            text = "Missing Required for {}: {}".format('>'.join(r[:-1]), r[-1])
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in {}".format(text, err_msg))
 
-        electric_tarrif_cases = [['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_demand_charges_us_dollars_per_kw'], ['urdb_utility_name','urdb_rate_name','urdb_response','blended_monthly_rates_us_dollars_per_kwh'], ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']] 
+        electric_tarrif_cases = [['urdb_utility_name', 'urdb_rate_name', 'urdb_response', 'blended_monthly_demand_charges_us_dollars_per_kw'],
+                                 ['urdb_utility_name', 'urdb_rate_name', 'urdb_response', 'blended_monthly_rates_us_dollars_per_kwh'],
+                                 ['urdb_rate_name',"urdb_response",'blended_monthly_demand_charges_us_dollars_per_kw', 'blended_monthly_rates_us_dollars_per_kwh']]
         for c in electric_tarrif_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -53,7 +72,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             text = "Missing Required for Scenario>Site>ElectricTariff"
             self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
 
-        load_profile_cases = [['doe_reference_name','annual_kwh','monthly_totals_kwh','loads_kw'],['doe_reference_name','loads_kw','annual_kwh'],['doe_reference_name','loads_kw','monthly_totals_kwh']]
+        load_profile_cases = [['doe_reference_name', 'annual_kwh', 'monthly_totals_kwh', 'loads_kw'],
+                              ['doe_reference_name', 'loads_kw', 'annual_kwh'],
+                              ['doe_reference_name', 'loads_kw', 'monthly_totals_kwh']]
         for c in load_profile_cases:
             test_case = self.complete_valid_nestedpost
             for r in c:
@@ -64,14 +85,15 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def test_valid_data_types(self):
 
-        input = ValidateNestedInput(self.complete_valid_nestedpost)
+        validator = ValidateNestedInput(self.complete_valid_nestedpost)
 
-        for attribute, test_data in input.test_data('type'):
+        for attribute, test_data in validator.test_data('type'):
 
             response = self.get_response(test_data)
             text = "Could not convert " + attribute
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
-            self.assertTrue("(OOPS)" in str(json.loads(response.content)['messages']['input_errors']))
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg)
+            self.assertTrue("(OOPS)" in err_msg)
 
     def test_valid_data_ranges(self):
 
@@ -80,18 +102,20 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         for attribute, test_data in input.test_data('min'):
             text = "exceeds allowable min"
             response = self.get_response(test_data)
-            t = json.loads(response.content)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
         for attribute, test_data in input.test_data('max'):
-                text = "exceeds allowable max"
-                response = self.get_response(test_data)
-                self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            text = "exceeds allowable max"
+            response = self.get_response(test_data)
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
         for attribute, test_data in input.test_data('restrict_to'):
             text = "not in allowable inputs"
             response = self.get_response(test_data)
-            self.assertTrue(text in str(json.loads(response.content)['messages']['input_errors']))
+            err_msg = str(json.loads(response.content)['messages']['input_errors'])
+            self.assertTrue(text in err_msg, "'{}' not found in '{}'".format(text, err_msg))
 
     def test_urdb_rate(self):
 
@@ -204,76 +228,76 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
-    # def test_complex_incentives(self):
-    #     """
-    #     Tests scenario where: PV has ITC, federal, state, local rebate with maxes, MACRS, bonus, Battery has ITC,
-    #     rebate, MACRS, bonus.
-    #     :return: None
-    #     """
-    #
-    #     data = {'Scenario': {'Site': {'land_acres': 1.0,
-    #                                   'latitude': 34.5794343,
-    #                                   'longitude': -118.1164613,
-    #                                   'roof_squarefeet': 5000.0,
-    #                                   'LoadProfile': {'annual_kwh': 10000000.0,
-    #                                                   'doe_reference_name': 'RetailStore'
-    #                                                   },
-    #                                   "Financial": {
-    #                                       "offtaker_tax_pct": 0.4
-    #                                   },
-    #                                   'Storage': {'total_rebate_us_dollars_per_kw': 100,
-    #                                               'canGridCharge': True,
-    #                                               'macrs_option_years': 5,
-    #                                               'macrs_bonus_pct': 0.4,
-    #                                               },
-    #                                   'PV': {'utility_ibi_max_us_dollars': 10000,
-    #                                          'pbi_system_max_kw': 10,
-    #                                          'utility_ibi_pct': 0.1,
-    #                                          'state_ibi_pct': 0.2,
-    #                                          'state_ibi_max_us_dollars': 10000,
-    #                                          'macrs_option_years': 5,
-    #                                          'macrs_bonus_pct': 0.4,
-    #                                          'federal_itc_pct': 0.3,
-    #                                          'module_type': 1,
-    #                                          'array_type': 1,
-    #                                          'tilt': 34.5794343,
-    #                                          'pbi_us_dollars_per_kwh': 0.0,
-    #                                          'utility_rebate_us_dollars_per_kw': 50,
-    #                                          'federal_rebate_us_dollars_per_kw': 100,
-    #                                          'state_rebate_us_dollars_per_kw': 200,
-    #                                          },
-    #                                   'Wind': {
-    #                                       'max_kw': 0
-    #                                   },
-    #                                   'ElectricTariff': {'net_metering_limit_kw': 0,
-    #                                                      'urdb_response':
-    #                                                          {'sector': 'Commercial', 'voltageminimum': 2000, 'description': '-Energytieredcharge=generationcharge+deliverycharge\r\n\r\n-Timeofdaydemandcharges(generation-based)aretobeaddedtothemonthlydemandcharge(Deliverybased).', 'peakkwcapacitymax': 200, 'energyattrs': [{'VoltageDiscount(2KV-<50KV)': '$-0.00106/Kwh'}, {'VoltageDiscount(>50KV<220KV)': '$-0.00238/Kwh'}, {'VoltageDiscountat220KV': '$-0.0024/Kwh'}, {'CaliforniaClimatecredit': '$-0.00669/kwh'}], 'enddate': 1451520000, 'peakkwcapacityhistory': 12, 'energyratestructure': [[{'rate': 0.0712, 'unit': 'kWh'}], [{'rate': 0.09368, 'unit': 'kWh'}], [{'rate': 0.066, 'unit': 'kWh'}], [{'rate': 0.08888, 'unit': 'kWh'}], [{'rate': 0.1355, 'unit': 'kWh'}]], 'flatdemandmonths': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'energyweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], 'energyweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'demandweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'approved': True, 'utility': 'SouthernCaliforniaEdisonCo', 'flatdemandstructure': [[{'rate': 13.2}]], 'startdate': 1433116800, 'fixedmonthlycharge': 259.2, 'phasewiring': 'SinglePhase', 'name': 'TimeofUse,GeneralService,DemandMetered,OptionB:GS-2TOUB,SinglePhase', 'eiaid': 17609, 'country': 'USA', 'uri': 'http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae', 'voltagemaximum': 50000, 'label': '55fc81d7682bea28da64f9ae', 'flatdemandunit': 'kW', 'source': 'http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf', 'voltagecategory': 'Primary', 'peakkwcapacitymin': 20, 'demandattrs': [{'FaciltiesVoltageDiscount(2KV-<50KV)': '$-0.18/KW'}, {'FaciltiesVoltageDiscount>50kV-<220kV': '$-5.78/KW'}, {'FaciltiesVoltageDiscount>220kV': '$-9.96/KW'}, {'TimeVoltageDiscount(2KV-<50KV)': '$-0.70/KW'}, {'TimeVoltageDiscount>50kV-<220kV': '$-1.93/KW'}, {'TimeVoltageDiscount>220kV': '$-1.95/KW'}], 'demandrateunit': 'kW', 'revisions': [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], 'demandratestructure': [[{'rate': 0}], [{'rate': 5.3}], [{'rate': 18.11}]], 'demandweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}
-    #                                                      },
-    #                                   }
-    #                          }
-    #             }
-    #     resp = self.get_response(data=data)
-    #     self.assertHttpCreated(resp)
-    #     r = json.loads(resp.content)
-    #     run_uuid = r.get('run_uuid')
-    #     d = ModelManager.make_response(run_uuid=run_uuid)
-    #
-    #     c = nested_to_flat(d['outputs'])
-    #
-    #     d_expected = dict()
-    #     d_expected['lcc'] = 10958277
-    #     d_expected['npv'] = 11257165 - d_expected['lcc']
-    #     d_expected['pv_kw'] = 216.667
-    #     d_expected['batt_kw'] = 19.161
-    #     d_expected['batt_kwh'] = 28.0978
-    #     d_expected['year_one_utility_kwh'] = 9614689.2606
-    #
-    #     try:
-    #         check_common_outputs(self, c, d_expected)
-    #     except:
-    #         print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-    #         print("Error message: {}".format(d['messages'].get('error')))
-    #         raise
+    @skip("skipped test_complex_incentives")
+    def test_complex_incentives(self):
+        """
+        Tests scenario where: PV has ITC, federal, state, local rebate with maxes, MACRS, bonus, Battery has ITC,
+        rebate, MACRS, bonus.
+        :return: None
+        """
+        data = {'Scenario': {'Site': {'land_acres': 1.0,
+                                      'latitude': 34.5794343,
+                                      'longitude': -118.1164613,
+                                      'roof_squarefeet': 5000.0,
+                                      'LoadProfile': {'annual_kwh': 10000000.0,
+                                                      'doe_reference_name': 'RetailStore'
+                                                      },
+                                      "Financial": {
+                                          "offtaker_tax_pct": 0.4
+                                      },
+                                      'Storage': {'total_rebate_us_dollars_per_kw': 100,
+                                                  'canGridCharge': True,
+                                                  'macrs_option_years': 5,
+                                                  'macrs_bonus_pct': 0.4,
+                                                  },
+                                      'PV': {'utility_ibi_max_us_dollars': 10000,
+                                             'pbi_system_max_kw': 10,
+                                             'utility_ibi_pct': 0.1,
+                                             'state_ibi_pct': 0.2,
+                                             'state_ibi_max_us_dollars': 10000,
+                                             'macrs_option_years': 5,
+                                             'macrs_bonus_pct': 0.4,
+                                             'federal_itc_pct': 0.3,
+                                             'module_type': 1,
+                                             'array_type': 1,
+                                             'tilt': 34.5794343,
+                                             'pbi_us_dollars_per_kwh': 0.0,
+                                             'utility_rebate_us_dollars_per_kw': 50,
+                                             'federal_rebate_us_dollars_per_kw': 100,
+                                             'state_rebate_us_dollars_per_kw': 200,
+                                             },
+                                      'Wind': {
+                                          'max_kw': 0
+                                      },
+                                      'ElectricTariff': {'net_metering_limit_kw': 0,
+                                                         'urdb_response':
+                                                             {'sector': 'Commercial', 'voltageminimum': 2000, 'description': '-Energytieredcharge=generationcharge+deliverycharge\r\n\r\n-Timeofdaydemandcharges(generation-based)aretobeaddedtothemonthlydemandcharge(Deliverybased).', 'peakkwcapacitymax': 200, 'energyattrs': [{'VoltageDiscount(2KV-<50KV)': '$-0.00106/Kwh'}, {'VoltageDiscount(>50KV<220KV)': '$-0.00238/Kwh'}, {'VoltageDiscountat220KV': '$-0.0024/Kwh'}, {'CaliforniaClimatecredit': '$-0.00669/kwh'}], 'enddate': 1451520000, 'peakkwcapacityhistory': 12, 'energyratestructure': [[{'rate': 0.0712, 'unit': 'kWh'}], [{'rate': 0.09368, 'unit': 'kWh'}], [{'rate': 0.066, 'unit': 'kWh'}], [{'rate': 0.08888, 'unit': 'kWh'}], [{'rate': 0.1355, 'unit': 'kWh'}]], 'flatdemandmonths': [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 'energyweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0]], 'energyweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'demandweekendschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]], 'approved': True, 'utility': 'SouthernCaliforniaEdisonCo', 'flatdemandstructure': [[{'rate': 13.2}]], 'startdate': 1433116800, 'fixedmonthlycharge': 259.2, 'phasewiring': 'SinglePhase', 'name': 'TimeofUse,GeneralService,DemandMetered,OptionB:GS-2TOUB,SinglePhase', 'eiaid': 17609, 'country': 'USA', 'uri': 'http://en.openei.org/apps/IURDB/rate/view/55fc81d7682bea28da64f9ae', 'voltagemaximum': 50000, 'label': '55fc81d7682bea28da64f9ae', 'flatdemandunit': 'kW', 'source': 'http://www.sce.com/NR/sc3/tm2/pdf/ce30-12.pdf', 'voltagecategory': 'Primary', 'peakkwcapacitymin': 20, 'demandattrs': [{'FaciltiesVoltageDiscount(2KV-<50KV)': '$-0.18/KW'}, {'FaciltiesVoltageDiscount>50kV-<220kV': '$-5.78/KW'}, {'FaciltiesVoltageDiscount>220kV': '$-9.96/KW'}, {'TimeVoltageDiscount(2KV-<50KV)': '$-0.70/KW'}, {'TimeVoltageDiscount>50kV-<220kV': '$-1.93/KW'}, {'TimeVoltageDiscount>220kV': '$-1.95/KW'}], 'demandrateunit': 'kW', 'revisions': [1433408708, 1433409358, 1433516188, 1441198316, 1441199318, 1441199417, 1441199824, 1441199996, 1454521683], 'demandratestructure': [[{'rate': 0}], [{'rate': 5.3}], [{'rate': 18.11}]], 'demandweekdayschedule': [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]}
+                                                         },
+                                      }
+                             }
+                }
+        resp = self.get_response(data=data)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        run_uuid = r.get('run_uuid')
+        d = ModelManager.make_response(run_uuid=run_uuid)
+
+        c = nested_to_flat(d['outputs'])
+
+        d_expected = dict()
+        d_expected['lcc'] = 10958277
+        d_expected['npv'] = 11257165 - d_expected['lcc']
+        d_expected['pv_kw'] = 216.667
+        d_expected['batt_kw'] = 19.161
+        d_expected['batt_kwh'] = 28.0978
+        d_expected['year_one_utility_kwh'] = 9614689.2606
+
+        try:
+            check_common_outputs(self, c, d_expected)
+        except:
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Error message: {}".format(d['messages'].get('error')))
+            raise
 
     def test_valid_nested_posts(self):
 
@@ -383,3 +407,26 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])
+
+    def get_inputs_with_sub_key_from_nested_dict(self, nested_dict, sub_key, matched_values=None, obj_path=[],
+                                                 sub_key_values=[]):
+        """
+        given a nested dictionary (i.e. nested_inputs_definitions) return all of the keys that contain sub-keys matching
+        sub_key
+        :param nested_dict:
+        :param sub_key:
+        :param matched_values: list of str containing desired keys
+        :param obj:
+        :return:
+        """
+        if matched_values is None:
+            matched_values = []
+        for k, v in nested_dict.items():
+            if k[0].islower() and isinstance(v, dict):  # then k is an input attribute
+                if any(sk == sub_key for sk in nested_dict[k].keys()):
+                    matched_values.append(obj_path + [k])
+                    sub_key_values.append(nested_dict[k][sub_key])
+            elif isinstance(nested_dict[k], dict):  # then k is an abstract input class, dig deeper in nested_dict
+                self.get_inputs_with_sub_key_from_nested_dict(nested_dict[k], sub_key, matched_values,
+                                                              obj_path=obj_path+[k])
+        return matched_values, sub_key_values

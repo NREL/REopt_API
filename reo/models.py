@@ -158,8 +158,8 @@ class ElectricTariffModel(models.Model):
     blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(blank=True, default=0, null=True)
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
-    wholesale_rate_us_dollars_per_kwh = models.FloatField()
-    wholesale_rate_above_site_load_us_dollars_per_kwh = models.FloatField(default=0)
+    wholesale_rate_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
+    wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
 
@@ -602,6 +602,12 @@ class ModelManager(object):
 
                 try:
                     resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    # special handling for inputs that can be scalar or array,
+                    # (which we have to make an array in database)
+                    if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
+                        if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
+                            resp['inputs']['Scenario']['Site'][site_key][k] = \
+                                resp['inputs']['Scenario']['Site'][site_key][k][0]
                     del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
