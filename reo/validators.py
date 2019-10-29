@@ -738,7 +738,7 @@ class ValidateNestedInput:
                             if data_validators.get('min') is not None:
                                 if any([v < data_validators['min'] for v in value]):
                                     self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds the allowable min of %s' % (
+                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
                                          name, self.object_name_string(object_name_path), data_validators['min']))
 
                             if data_validators.get('max') is not None:
