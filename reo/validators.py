@@ -1035,7 +1035,7 @@ class ValidateNestedInput:
                     )
                 elif attr_name in ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
                     if time_steps_per_hour != n/8760:
-                        if time_steps_per_hour == 2 and n/8760 == 4:  # ([name, object_name_path])
+                        if time_steps_per_hour == 2 and n/8760 == 4:
                             self.resampled_inputs.append(
                                 ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
                             index = pd.date_range('1/1/2000', periods=n, freq='15T')
@@ -1062,7 +1062,7 @@ class ValidateNestedInput:
             elif n in [17520, 35040]:
                 resolution_minutes = int(60/(n/8760))
                 self.resampled_inputs.append(
-                    ["Downsampled {} from {}) minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
+                    ["Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
                             attr_name, resolution_minutes), [obj_name]])
                 index = pd.date_range('1/1/2000', periods=n, freq='{}T'.format(resolution_minutes))
                 series = pd.Series(attr, index=index)
