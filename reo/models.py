@@ -158,8 +158,8 @@ class ElectricTariffModel(models.Model):
     blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(blank=True, default=0, null=True)
     net_metering_limit_kw = models.FloatField()
     interconnection_limit_kw = models.FloatField()
-    wholesale_rate_us_dollars_per_kwh = models.FloatField()
-    wholesale_rate_above_site_load_us_dollars_per_kwh = models.FloatField(default=0)
+    wholesale_rate_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
+    wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
 
