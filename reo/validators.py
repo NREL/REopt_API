@@ -790,8 +790,8 @@ class ValidateNestedInput:
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
+                        make_array = False
                         attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
-
                         if isinstance(attribute_type, list) and \
                                 all([x in attribute_type for x in ['float', 'list_of_float']]):
                             if isinstance(value, list):
@@ -810,6 +810,7 @@ class ValidateNestedInput:
                                     continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
                                 attribute_type = 'float'
+                                make_array = True
 
                         attribute_type = eval(attribute_type)  # convert string to python type
                         try:  # to convert input value to type defined in nested_input_definitions
@@ -819,6 +820,8 @@ class ValidateNestedInput:
                                      self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
                         else:
                             if not isinstance(new_value, bool):
+                                if make_array:
+                                    new_value = [new_value]
                                 self.update_attribute_value(object_name_path, name, new_value)
                             else:
                                 if value not in [True, False, 1, 0]:
@@ -853,6 +856,9 @@ class ValidateNestedInput:
                                 for key in default.split(' '):
                                     d = d.get(key)
                                 default = d
+                        if isinstance(template_value.get('type'), list) and "list_of_float" in template_value.get('type'):
+                            # then input can be float or list_of_float, but for database we have to use only one type
+                            default = [default]
                         self.update_attribute_value(object_name_path, template_key, default)
                         self.defaults_inserted.append([template_key, object_name_path])
 
