@@ -63,10 +63,13 @@ nested_input_definitions = {
     },
     "time_steps_per_hour": {
       "type": "int",
-      "min": 1,
-      "max": 4,
+      "restrict_to": [1, 2, 4],
       "default": 1,
       "description": "The number of time steps per hour in the REopt simulation"
+    },
+    "webtool_uuid": {
+      "type": "str",
+      "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
 
     "Site": {
@@ -256,13 +259,13 @@ nested_input_definitions = {
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
-          "blended_annual_rates_us_dollars_per_kwh": {
+        "blended_annual_rates_us_dollars_per_kwh": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
               "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
               "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
           },
-          "blended_annual_demand_charges_us_dollars_per_kw": {
+        "blended_annual_demand_charges_us_dollars_per_kw": {
               "type": "float",
               "replacement_sets": electric_tariff_possible_sets,
               "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
@@ -283,13 +286,13 @@ nested_input_definitions = {
           "description": "Limit on system capacity size that can be interconnected to the grid"
         },
         "wholesale_rate_us_dollars_per_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit, restricted to total site load"
+          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh."
         },
         "wholesale_rate_above_site_load_us_dollars_per_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
           "description": "Price of electricity sold back to the grid above the site load, regardless of net metering"
