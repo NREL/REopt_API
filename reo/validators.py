@@ -688,7 +688,8 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if value is None:
                             self.delete_attribute(object_name_path, name)
@@ -709,7 +710,8 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
