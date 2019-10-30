@@ -34,7 +34,7 @@ def proforma(request, run_uuid):
         pf.generate_spreadsheet()
         pf.save()
 
-        wrapper = FileWrapper(file(pf.output_file))
+        wrapper = FileWrapper(open(pf.output_file, "rb"))
  
         response = HttpResponse(wrapper, content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
         response['Content-Length'] = os.path.getsize(pf.output_file)
