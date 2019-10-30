@@ -1,6 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 import os
-import subprocess32 as sp
+import subprocess as sp
 import sys
 import traceback
 from shlex import split
