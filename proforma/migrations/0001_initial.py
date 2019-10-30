@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ProForma',
             fields=[
-                ('scenariomodel', models.OneToOneField(primary_key=True, default=0, serialize=False, to='reo.ScenarioModel', blank=True)),
+                ('scenariomodel', models.OneToOneField(primary_key=True, default=0, serialize=False, to='reo.ScenarioModel', blank=True, on_delete=models.CASCADE)),
                 ('uuid', models.UUIDField(default=uuid.uuid4)),
                 ('spreadsheet_created', models.DateTimeField(null=True)),
                 ('created', models.DateTimeField(auto_now_add=True)),
