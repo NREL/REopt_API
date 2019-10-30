@@ -79,7 +79,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             'resilience_hours_min': 0,
             'resilience_hours_max': 78,
             'resilience_hours_avg': 10.26,
-            "outage_durations": range(1, 79),
+            "outage_durations": list(range(1, 79)),
             "probs_of_surviving": [0.8486, 0.7963, 0.7373, 0.6624, 0.59, 0.5194, 0.4533, 0.4007, 0.3583, 0.3231, 0.2934,
                                    0.2692, 0.2473, 0.2298, 0.2152, 0.2017, 0.1901, 0.1795, 0.1703, 0.1618, 0.1539,
                                    0.1465, 0.139, 0.1322, 0.126, 0.1195, 0.1134, 0.1076, 0.1024, 0.0979, 0.0938, 0.0898,
@@ -106,7 +106,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             'resilience_hours_min': 0,
             'resilience_hours_max': 145,
             'resilience_hours_avg': 69.11,
-            "outage_durations": range(1, 146),
+            "outage_durations": list(range(1, 146)),
             "probs_of_surviving": [0.9986, 0.9976, 0.9967, 0.9959, 0.9952, 0.9945, 0.9938, 0.9932, 0.9927, 0.9925,
                                    0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925,
                                    0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9925, 0.9922, 0.9918,
@@ -256,7 +256,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                 format='json')
 
         self.assertEqual(resp.status_code, 200)
-        c = eval(resp.content.replace("true", "True"))
+        c = eval(resp.content.decode("utf-8").replace("true", "True"))
         self.assertTrue(c["survives_specified_outage"])
 
     def test_financial_resil_check(self):

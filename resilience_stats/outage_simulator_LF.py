@@ -228,7 +228,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         r_group_month = r_series.groupby(r_series.index.month)
         r_group_hour = r_series.groupby(r_series.index.hour)
 
-        x_vals = range(1, int(floor(r_max)+1))
+        x_vals = list(range(1, int(floor(r_max)+1)))
         y_vals = list()
         y_vals_group_month = list()
         y_vals_group_hour = list()
