@@ -641,7 +641,7 @@ class LoadProfile(BuiltInProfile):
         self.annual_kwh = sum(self.load_list)
         # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
         fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
-        with open(fp, 'wb') as f:
+        with open(fp, 'w') as f:
             f.write(str(self.annual_kwh))
 
         self.bau_annual_kwh = sum(self.bau_load_list)
@@ -651,7 +651,7 @@ class LoadProfile(BuiltInProfile):
 
         # write csv for critical_load_series_kw. needed for outage sim
         fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
-        with open(fp, 'wb') as f:
+        with open(fp, 'w') as f:
             for ld in critical_loads_kw:
                 f.write((str(ld)+'\n'))
 
