@@ -27,6 +27,7 @@ class URDBError(models.Model):
 
 
 class ProfileModel(models.Model):
+    run_uuid = models.UUIDField(unique=True)
     pre_setup_scenario_seconds = models.FloatField(null=True, blank=True)
     setup_scenario_seconds = models.FloatField(null=True, blank=True)
     reopt_seconds = models.FloatField(null=True, blank=True)

@@ -28,10 +28,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveField(
             model_name='profilemodel',
-            name='run_uuid',
-        ),
-        migrations.RemoveField(
-            model_name='profilemodel',
             name='setup_scenario_seconds',
         ),
     ]
