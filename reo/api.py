@@ -48,6 +48,7 @@ class Job(ModelResource):
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = Validation()
+        object_class = None
         
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
