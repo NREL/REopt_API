@@ -157,7 +157,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # Loop through all sub-site dicts and init
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 nested_outputs["Scenario"]["Site"][name] = dict()
-                for k in d.iterkeys():
+                for k in d.keys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
             return nested_outputs
 

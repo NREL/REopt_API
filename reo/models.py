@@ -496,7 +496,7 @@ class ModelManager(object):
         self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
         self.generatorM = GeneratorModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Generator']))
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
     
@@ -544,7 +544,7 @@ class ModelManager(object):
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
 
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
                 pass
@@ -560,7 +560,7 @@ class ModelManager(object):
         """
         d = data["outputs"]["Scenario"]
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
                 pass
@@ -598,7 +598,7 @@ class ModelManager(object):
 
             resp['inputs']['Scenario']['Site'][site_key] = dict()
 
-            for k in nested_input_definitions['Scenario']['Site'][site_key].iterkeys():
+            for k in nested_input_definitions['Scenario']['Site'][site_key].keys():
 
                 try:
                     resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
@@ -655,12 +655,12 @@ class ModelManager(object):
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
             resp['messages'][m['message_type']] = m['message']
             
-        for scenario_key in nested_input_definitions['Scenario'].iterkeys():
+        for scenario_key in nested_input_definitions['Scenario'].keys():
             if scenario_key.islower():
                 resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
                 del resp['outputs']['Scenario'][scenario_key]
 
-        for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
+        for site_key in nested_input_definitions['Scenario']['Site'].keys():
             if site_key.islower():
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]

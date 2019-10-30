@@ -74,7 +74,7 @@ file_combined: string
 """
 def combine_wind_files(file_resource_heights, file_combined):
     data = [None] * 2
-    for height, f in file_resource_heights.iteritems():
+    for height, f in file_resource_heights.items():
         if os.path.isfile(f):
             with open(f) as file_in:
                 csv_reader = csv.reader(file_in, delimiter=',')
@@ -229,7 +229,7 @@ class WindSAMSDK:
                 file_resource_full += "_" + str(h) + 'm'
             file_resource_full += ".srw"
 
-            for height, f in file_resource_heights.iteritems():
+            for height, f in file_resource_heights.items():
                 success = get_wind_resource_developer_api(
                     filename=f,
                     year=self.year,
