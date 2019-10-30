@@ -439,7 +439,7 @@ class BadPost(models.Model):
         try:
             super(BadPost, self).save()
         except Exception as e:
-            log.info("Database saving error: {}".format(e.message))
+            log.info("Database saving error: {}".format(e.args[0]))
 
 
 def attribute_inputs(inputs):

@@ -51,11 +51,11 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
-            return JsonResponse({"Error": str(e.message)}, status=400)
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            return JsonResponse({"Error": str(e.args[0])}, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='resilience_stats', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
@@ -235,6 +235,6 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
 
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='resilience_stats', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": err.message}, status=500)

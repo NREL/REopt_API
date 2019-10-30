@@ -40,7 +40,7 @@ class ScenarioTask(Task):
         if isinstance(exc, REoptError):
             exc.save_to_db()
 
-        self.data["messages"]["error"] = exc.message
+        self.data["messages"]["error"] = exc.args[0]
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -147,8 +147,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            log.error("Scenario.py raising error: " + exc_value.message)
-            lp_error = LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            log.error("Scenario.py raising error: " + exc_value.args[0])
+            lp_error = LoadProfileError(exc_value.args[0], exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
             lp_error.save_to_db()
             raise lp_error
 
@@ -200,10 +200,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 raise e
         
         if hasattr(e, 'message'):
-            if e.message == 'Wind Dataset Timed Out':
+            if e.args[0] == 'Wind Dataset Timed Out':
                 raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising error: " + exc_value.message)
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=run_uuid,
+        log.error("Scenario.py raising error: " + exc_value.args[0])
+        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=run_uuid,
                               user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

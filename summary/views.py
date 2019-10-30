@@ -69,8 +69,8 @@ def unlink(request, user_uuid, run_uuid):
             uuid.UUID(check_id)  # raises ValueError if not valid uuid
 
         except ValueError as e:
-            if e.message == "badly formed hexadecimal UUID string":
-                return JsonResponse({"Error": "{} {}".format(name, e.message) }, status=400)
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
             else:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 if name == 'user_uuid':
@@ -138,7 +138,7 @@ def summary(request, user_uuid):
         uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
+        if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.message)}, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()

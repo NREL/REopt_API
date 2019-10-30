@@ -14,8 +14,8 @@ def proforma(request, run_uuid):
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
-            resp = {"Error": e.message}
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            resp = {"Error": e.args[0]}
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()

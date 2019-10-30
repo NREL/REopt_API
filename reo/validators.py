@@ -997,7 +997,7 @@ class ValidateNestedInput:
                     lat=self.input_dict['Scenario']['Site']['latitude'],   
                     lng=self.input_dict['Scenario']['Site']['longitude'])
             except Exception as e:
-                self.input_data_errors.append(e.message)
+                self.input_data_errors.append(e.args[0])
 
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')
