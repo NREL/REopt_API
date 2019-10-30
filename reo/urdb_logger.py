@@ -1,5 +1,4 @@
-
-from models import URDBError
+from .models import URDBError
 import subprocess
 from django.conf import settings
 

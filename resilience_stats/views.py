@@ -2,8 +2,8 @@ import uuid
 import sys
 from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
-from models import ResilienceModel
-from outage_simulator_LF import simulate_outage
+from resilience_stats.models import ResilienceModel
+from resilience_stats.outage_simulator_LF import simulate_outage
 from reo.exceptions import UnexpectedError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity

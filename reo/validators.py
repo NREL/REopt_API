@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, list_of_float
+from .urdb_logger import log_urdb_errors
+from .nested_inputs import nested_input_definitions, list_of_float
 #Note: list_of_float is actually needed
 import os
 import csv

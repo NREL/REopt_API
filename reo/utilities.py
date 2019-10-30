@@ -1,5 +1,5 @@
 import os
-from log_levels import log
+from .log_levels import log
 from numpy import npv
 import types
 

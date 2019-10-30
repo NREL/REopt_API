@@ -1,4 +1,4 @@
-from nested_inputs import nested_input_definitions, list_of_float
+from .nested_inputs import nested_input_definitions, list_of_float
 
 
 def list_of_string(input):

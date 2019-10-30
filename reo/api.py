@@ -8,8 +8,8 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
-from validators import ValidateNestedInput
-from scenario import setup_scenario
+from .validators import ValidateNestedInput
+from .scenario import setup_scenario
 from reo.log_levels import log
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler

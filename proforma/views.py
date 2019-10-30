@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 from django.http import JsonResponse
-from models import ProForma, ScenarioModel
+from proforma.models import ProForma, ScenarioModel
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 from reo.exceptions import UnexpectedError

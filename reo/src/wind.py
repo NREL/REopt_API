@@ -1,8 +1,7 @@
 import csv
 import numpy as np
 import os
-
-from sscapi import PySSC
+from .sscapi import PySSC
 
 """
 Generic NREL powercurves for different scales of turbines as defined in SAM as
