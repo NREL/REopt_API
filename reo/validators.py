@@ -344,9 +344,8 @@ class ValidateNestedInput:
             self.urdb_errors = []
             self.input_as_none = []
             self.invalid_inputs = []
-
+            self.resampled_inputs = []
             self.defaults_inserted = []
-
             self.input_dict = dict()
             self.input_dict['Scenario'] = input_dict.get('Scenario') or {}
 
@@ -354,12 +353,12 @@ class ValidateNestedInput:
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
 
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.remove_invalid_keys)
-            self.recursively_check_input_by_objectnames_and_values(self.input_dict, self.remove_nones)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.convert_data_types)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.fillin_defaults)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_min_max_restrictions)
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, self.check_required_attributes)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
+            self.recursively_check_input_dict(self.input_dict, self.remove_nones)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
 
             if self.input_dict['Scenario'].get('user_uuid') is not None:
                 self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
@@ -510,20 +509,17 @@ class ValidateNestedInput:
 
         def warning_message(self, warnings):
             """
-                   Convert a list of lists into a dictionary
-                   :param warnings: list - item 1 argument, item 2 location
-                   :return: message - 'Scenario>Site: latitude and longitude'
+            Convert a list of lists into a dictionary
+            :param warnings: list - item 1 argument, item 2 location
+            :return: message - 'Scenario>Site: latitude and longitude'
             """
             output = {}
             for arg, path in warnings:
-                if 'wind' not in arg.lower():
-                    if 'wind' not in [p.lower() for p in path]:
-                        path = ">".join(path)
-                        if path not in output:
-                            output[path] = arg
-                        else:
-                            output[path] += ' AND ' + arg
-
+                path = ">".join(path)
+                if path not in output:
+                    output[path] = arg
+                else:
+                    output[path] += ' AND ' + arg
             return output
 
         @property
@@ -553,9 +549,17 @@ class ValidateNestedInput:
             if bool(self.invalid_inputs):
                 output["Following inputs are invalid:"] = self.warning_message(self.invalid_inputs)
 
+            if bool(self.resampled_inputs):
+                output["Following inputs were resampled:"] = self.warning_message(self.resampled_inputs)
+
             return output
 
         def isSingularKey(self, k):
+            """
+            True if the string `k` is upper case and does not end with "s"
+            :param k: str
+            :return: True/False
+            """
             return k[0] == k[0].upper() and k[-1] != 's'
 
         def isPluralKey(self, k):
@@ -564,31 +568,39 @@ class ValidateNestedInput:
         def isAttribute(self, k):
             return k[0] == k[0].lower()
 
-        def recursively_check_input_by_objectnames_and_values(self, nested_template, comparison_function,
-                                                              nested_dictionary_to_check=None, object_name_path=[]):
-            # nested template is the nested dictionary that is read to get the order in which objects are nested in each other
-            # nested_dictionary_to_check contains the values for those objects,
-            # think of it as scrolling through the template to get the name of the object and values you're looking for and
-            # then checking the corresponding value in the nested_dictionary_to_check
-            # the key_value_function tells the algorithm what to do when you have the object name (PV) and the user supplied values ('max_kw':0)
-            # nested_dictionary_to_check can be updated based on the key value function
-
+        def recursively_check_input_dict(self, nested_template, comparison_function, nested_dictionary_to_check=None,
+                                         object_name_path=[]):
+            """
+            Recursively perform comparison_function on nested_dictionary_to_check using nested_template as a guide for
+            the (key: value) pairs to be checked in nested_dictionary_to_check.
+            comparison_function's include
+                - remove_invalid_keys
+                - remove_nones
+                - convert_data_types
+                - fillin_defaults
+                - check_min_max_restrictions
+                - check_required_attributes
+                - add_invalid_data (for testing)
+            :param nested_template: nested dictionary, used as guide for checking nested_dictionary_to_check
+            :param comparison_function: one of the input data validation tasks listed above
+            :param nested_dictionary_to_check: data to be validated; default is self.input_dict
+            :param object_name_path: list of str, used to keep track of keys necessary to access a value to check in the
+                  nested_template / nested_dictionary_to_check
+            :return: None
+            """
             if nested_dictionary_to_check is None:
                 nested_dictionary_to_check = self.input_dict
 
             for template_k, template_values in nested_template.items():
-
                 real_values = nested_dictionary_to_check.get(template_k)
 
-                if self.isSingularKey(template_k):
-
+                if self.isSingularKey(template_k):  # True if template_k is upper case and does not end in "s"
                     comparison_function(object_name_path=object_name_path + [template_k],
                                         template_values=template_values, real_values=real_values)
                     
-                    self.recursively_check_input_by_objectnames_and_values(nested_template[template_k],
-                                                                           comparison_function, real_values or {},
-                                                                           object_name_path=object_name_path + [
-                                                                               template_k])
+                    self.recursively_check_input_dict(nested_template[template_k], comparison_function,
+                                                      real_values or {},
+                                                      object_name_path=object_name_path + [template_k])
 
         def update_attribute_value(self, object_name_path, attribute, value):
 
@@ -615,64 +627,66 @@ class ValidateNestedInput:
         def test_data(self, definition_attribute):
             """
             Used only in reo.tests.test_reopt_url. Does not actually validate inputs.
-            :param definition_attribute:
+            :param definition_attribute: str, key for input parameter validation dict, eg. {'type':'float', ... }
             :return: test_data_list is a list of lists, with each sub list a pair of [str, dict],
                 where the str is an input param, dict is an entire post with a bad value for that input param
             """
             test_data_list = []
 
-            if definition_attribute == 'min':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute_min = definition.get('min')
-                    if attribute_min is not None:
-                        new_value = attribute_min - 1
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
+            def swap_logic(object_name_path, name, definition, good_val, validation_attribute):
+                """
+                append `name` and a nested-dict (post) to test_data_list with a bad value inserted into the post for
+                the input at object_name_path: name
+                :param object_name_path: list of str, eg. ["Scenario", "Site", "PV"]
+                :param name: str, input value to replace with bad value, eg. "latitude"
+                :param definition: dict with input parameter validation values, eg. {'type':'float', ... }
+                :param good_val: the good value for the input parameter
+                :param validation_attribute: str, ['min', 'max', 'restrict_to', 'type']
+                :return: None
+                """
+                attribute = definition.get(validation_attribute)
+                if attribute is not None:
+                    bad_val = None
+                    if validation_attribute == 'min':
+                        bad_val = attribute - 1
+                    if validation_attribute == 'max':
+                        bad_val = attribute + 1
+                    if validation_attribute == 'restrict_to':
+                        bad_val = "OOPS"
+                    if validation_attribute == 'type':
+                        if any(isinstance(good_val, x) for x in [float, int, dict, bool, list]):
+                            bad_val = "OOPS"
 
-            if definition_attribute == 'max':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute_max = definition.get('max')
-                    if attribute_max is not None:
-                        new_value = attribute_max + 1
-                        self.update_attribute_value(object_name_path, name, new_value)
+                    if bad_val is not None:
+                        self.update_attribute_value(object_name_path, name, bad_val)
                         test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
-
-            if definition_attribute == 'restrict_to':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    attribute = definition.get('restrict_to')
-                    if attribute is not None:
-                        new_value = "OOPS"
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
-
-            if definition_attribute == 'type':
-                def swap_logic(object_name_path, name, definition, current_value):
-                    if isinstance(current_value, float) or isinstance(current_value, int) or isinstance(current_value, dict) or isinstance(
-                            current_value, bool):
-                        new_value = "OOPS"
-                        self.update_attribute_value(object_name_path, name, new_value)
-                        test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, current_value)
+                        self.update_attribute_value(object_name_path, name, good_val)
 
             def add_invalid_data(object_name_path, template_values=None, real_values=None):
                 if real_values is not None:
                     for name, value in template_values.items():
                         if self.isAttribute(name):
-                            swap_logic(object_name_path, name, value, real_values.get(name))
+                            swap_logic(object_name_path, name, value, real_values.get(name),
+                                       validation_attribute=definition_attribute)
 
-            self.recursively_check_input_by_objectnames_and_values(self.nested_input_definitions, add_invalid_data)
+            self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
 
             return test_data_list
 
-#Following functions go into recursively_check_input_by_objectnames_and_values on instantiation and validation to check an object name and set of values
-#    object_name_path is the location of the object name as in ["Scenario", "Site"]
-#    template_values is the reference dictionary for checking as in {'latitude':{'type':'float',...}...} from the nested dictionary
-#    real_values are the values from the input to check and/or modify  like {'latitude':39.345678,...}
-
         def remove_nones(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            remove any `None` values from the input_dict.
+            this step is important to prevent exceptions in later validation steps.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
@@ -681,6 +695,19 @@ class ValidateNestedInput:
                             self.input_as_none.append([name, object_name_path[-1]])
 
         def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            remove any input values provided by user that are not included in nested_input_definitions.
+            this step is important to protect against sql injections and other similar cyber-attacks.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
@@ -689,15 +716,48 @@ class ValidateNestedInput:
                             self.invalid_inputs.append([name, object_name_path])
         
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            check all min/max constraints for input values defined in nested_input_definitions.
+            create error message if user provided inputs are outside of allowable bounds.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
-
                         data_validators = template_values[name]
 
-                        try:
-                            value == eval(data_validators['type'])(value)
+                        if "list_of_float" in data_validators['type'] and isinstance(value, list):
+                            if data_validators.get('min') is not None:
+                                if any([v < data_validators['min'] for v in value]):
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                         name, self.object_name_string(object_name_path), data_validators['min']))
 
+                            if data_validators.get('max') is not None:
+                                if any([v < data_validators['max'] for v in value]):
+                                    self.input_data_errors.append(
+                                        'At least one value in %s (from %s) exceeds the allowable max of %s' % (
+                                         name, self.object_name_string(object_name_path), data_validators['max']))
+                            continue
+                        elif isinstance(data_validators['type'], list):
+                            data_type = float
+                        else:
+                            data_type = eval(data_validators['type'])
+
+                        try:  # to convert input value to restricted type
+                            value = data_type(value)
+                        except:
+                            self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
+                            name, value, self.object_name_string(object_name_path)))
+                        else:
                             if data_validators.get('min') is not None:
                                 if value < data_validators['min']:
                                     self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
@@ -708,36 +768,79 @@ class ValidateNestedInput:
                                     self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
                                     name, value, self.object_name_string(object_name_path), data_validators['max']))
 
-                        except:
-                            self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
-                            name, value, self.object_name_string(object_name_path)))
-
                         if data_validators.get('restrict_to') is not None:
                             if value not in data_validators['restrict_to']:
                                 self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (
                                 name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None):
+            """
+            comparison_function for recursively_check_input_dict.
+            try to convert input values to the expected python data type, create error message if conversion fails.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is not None:
                 for name, value in real_values.items():
                     if self.isAttribute(name):
-                        try:
-                            data_validators = template_values[name]
-                            attribute_type = eval(data_validators['type'])
+                        make_array = False
+                        attribute_type = template_values[name]['type']  # attribute_type's include list_of_float
+                        if isinstance(attribute_type, list) and \
+                                all([x in attribute_type for x in ['float', 'list_of_float']]):
+                            if isinstance(value, list):
+                                try:
+                                    new_value = list_of_float(value)
+                                except ValueError:
+                                    self.input_data_errors.append(
+                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
+                                                         self.object_name_string(object_name_path))
+                                    )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                else:
+                                    self.update_attribute_value(object_name_path, name, new_value)
+                                    self.validate_8760(attr=new_value, obj_name=object_name_path[-1], attr_name=name,
+                                                       time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
+                                    continue  # ... but python 2.7  does not support continue in finally clauses
+                            else:
+                                attribute_type = 'float'
+                                make_array = True
+
+                        attribute_type = eval(attribute_type)  # convert string to python type
+                        try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
+                        except ValueError or TypeError:  # TypeError occurs when a non-list is passed to list_of_float
+                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
+                                     self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                        else:
                             if not isinstance(new_value, bool):
+                                if make_array:
+                                    new_value = [new_value]
                                 self.update_attribute_value(object_name_path, name, new_value)
                             else:
                                 if value not in [True, False, 1, 0]:
                                     self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
                                     name, value, self.object_name_string(object_name_path),
                                     str(attribute_type).split(' ')[1]))
-                        except:
-                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
-                            name, value, self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
 
         def fillin_defaults(self, object_name_path, template_values=None, real_values=None):
-            
+            """
+            comparison_function for recursively_check_input_dict.
+            fills in default values for inputs that user does not provide.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             if real_values is None:
                 real_values = {}
                 self.update_attribute_value(object_name_path[:-1], object_name_path[-1], real_values)
@@ -752,6 +855,9 @@ class ValidateNestedInput:
                                 for key in default.split(' '):
                                     d = d.get(key)
                                 default = d
+                        if isinstance(template_value.get('type'), list) and "list_of_float" in template_value.get('type'):
+                            # then input can be float or list_of_float, but for database we have to use only one type
+                            default = [default]
                         self.update_attribute_value(object_name_path, template_key, default)
                         self.defaults_inserted.append([template_key, object_name_path])
 
@@ -761,7 +867,18 @@ class ValidateNestedInput:
                         self.defaults_inserted.append([template_key, object_name_path])
 
         def check_required_attributes(self, object_name_path, template_values=None, real_values=None):
-           
+            """
+            comparison_function for recursively_check_input_dict.
+            confirm that required inputs were provided by user. If not, create message to provide to user.
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
             final_message = ''
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
@@ -879,8 +996,6 @@ class ValidateNestedInput:
             except Exception as e:
                 self.input_data_errors.append(e.message)
 
-
-
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')
 
@@ -910,7 +1025,6 @@ class ValidateNestedInput:
             :param time_steps_per_hour: int, [1, 2, 4]
             :return: None
             """
-
             n = len(attr)
             length_list = [8760, 17520, 35040]
 
@@ -919,22 +1033,41 @@ class ValidateNestedInput:
                     self.input_data_errors.append(
                         "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name)
                     )
+                elif attr_name in ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
+                    if time_steps_per_hour != n/8760:
+                        if time_steps_per_hour == 2 and n/8760 == 4:
+                            self.resampled_inputs.append(
+                                ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
+                            index = pd.date_range('1/1/2000', periods=n, freq='15T')
+                            series = pd.Series(attr, index=index)
+                            series = series.resample('30T').mean()
+                            resampled_val = series.tolist()
+                        elif time_steps_per_hour == 4 and n/8760 == 2:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2]]
+                        elif time_steps_per_hour == 4 and n/8760 == 1:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2, 3, 4]]
+                        else:  # time_steps_per_hour == 2 and n/8760 == 1:
+                            self.resampled_inputs.append(
+                                ["Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            resampled_val = [x for x in attr for _ in [1, 2]]
+                        self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, resampled_val)
 
             elif n == 8760:
-                pass
+                pass  # because n/8760 == time_steps_per_hour ( = 1 )
 
-            elif n == 17520:  # downsample 30 minute data
-                index = pd.date_range('1/1/2000', periods=n, freq='30T')
+            elif n in [17520, 35040]:
+                resolution_minutes = int(60/(n/8760))
+                self.resampled_inputs.append(
+                    ["Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
+                            attr_name, resolution_minutes), [obj_name]])
+                index = pd.date_range('1/1/2000', periods=n, freq='{}T'.format(resolution_minutes))
                 series = pd.Series(attr, index=index)
                 series = series.resample('1H').mean()
                 self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
-
-            elif n == 35040:  # downsample 15 minute data
-                index = pd.date_range('1/1/2000', periods=n, freq='15T')
-                series = pd.Series(attr, index=index)
-                series = series.resample('1H').mean()
-                self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
-
             else:
                 self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
 

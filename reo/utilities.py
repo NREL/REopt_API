@@ -54,6 +54,8 @@ def annuity(analysis_period, rate_escalation, rate_discount):
 
 
 def degradation_factor(analysis_period, rate_degradation):
+    if analysis_period == 0:
+        return 0
     factor = 1
     factors = [factor]
     for yr in range(1, int(analysis_period)):
