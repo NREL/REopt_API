@@ -561,7 +561,7 @@ end-do
 
 ! Compute tiered energy rates
 forall (fb in FuelBin, m in Month)  do
-	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb)
+	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) * TimeStepScaling
    	UsageInTier(m, fb) >= 0
 end-do
 
