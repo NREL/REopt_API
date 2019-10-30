@@ -390,22 +390,23 @@ class ValidateNestedInput:
                 self.input_data_errors.append(
                     "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
-            if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
+            if any((isinstance(self.input_dict['Scenario']['Site']['Wind']['max_kw'], x) for x in [float, int])):
+                if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
-                if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
+                    if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
+                                           "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
+                                           "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
+                                           "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
-                else:
-                    self.validate_wind_resource()
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
+                                           "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                    else:
+                        self.validate_wind_resource()
 
             """
             If using URDB, user provides either:
