@@ -2,12 +2,8 @@ import json
 import pickle
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
-from reo.validators import ValidateNestedInput
-from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
-from reo.models import ModelManager, ScenarioModel
-from reo.nested_inputs import flat_to_nested
-from reo.utilities import check_common_outputs
+from reo.models import  ScenarioModel
 
 
 class EntryResourceTest(ResourceTestCaseMixin, TestCase):
@@ -37,7 +33,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         response = self.api_client.get(self.reopt_base + str(run_uuid) + '/remove')
         self.assertEqual(response.status_code, 204)
-        self.assertTrue(len(ScenarioModel.objects.filter(run_uuid=run_uuid))==0)
-
-
-        
+        self.assertTrue(len(ScenarioModel.objects.filter(run_uuid=run_uuid)) == 0)
