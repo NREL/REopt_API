@@ -12,7 +12,7 @@ import uuid
 from reo.src.techs import Generator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
-hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
 
 class URDB_RateValidator:

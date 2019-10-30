@@ -14,13 +14,13 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 from reo.log_levels import log
 from reo.src.techs import Generator
 
-from django.http import HttpResponse,Http404
+from django.http import HttpResponse
 from django.template import  loader
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
-hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
 def make_error_resp(msg):
         resp = dict()
