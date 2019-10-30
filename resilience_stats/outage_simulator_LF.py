@@ -118,7 +118,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
     if financial_check == "financial_check":
         # Do financial check
-        if resilience_run_site_result.viewkeys() == financial_run_site_result.viewkeys():
+        if resilience_run_site_result.keys() == financial_run_site_result.keys():
             for k, v in resilience_run_site_result.items():
                 if k in financial_run_site_result:
                     if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
