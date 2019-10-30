@@ -4,9 +4,7 @@
 #   Author: Aron Dobos @ NREL and Steven Janzou @ NREL
 #
 # #####################################################################
-
-
-import string, sys, struct, os, numpy
+import sys, struct, numpy
 from ctypes import *
 
 c_number = c_float  # must be c_double or c_float depending on how defined in sscapi.h
@@ -26,7 +24,7 @@ class PySSC:
         elif sys.platform == 'linux2':
             self.pdll = CDLL('ssc.so')  # instead of relative path, require user to have on LD_LIBRARY_PATH
         else:
-            print "Platform not supported ", sys.platform
+            print("Platform not supported ", sys.platform)
 
     INVALID = 0
     STRING = 1
@@ -238,23 +236,23 @@ if __name__ == "__main__":
         mod = ssc.module_create("windpower")
         ssc.module_exec_set_print(0);
         if ssc.module_exec(mod, data) == 0:
-            print 'wind power simulation error'
+            print('wind power simulation error')
             idx = 1
             msg = ssc.module_log(mod, 0)
             while (msg != None):
-                print '\t: ' + msg
+                print('\t: ' + msg)
                 msg = ssc.module_log(mod, idx)
                 idx = idx + 1
         else:
             ann = ssc.data_get_number(data, "annual_energy")
-            print 'wind power Simulation ok, annual energy (kwh) =', ann
+            print('wind power Simulation ok, annual energy (kwh) =', ann)
 
         ssc.module_free(mod)
 
 
     def run_test1():
         wf = './WY Southern-Flat Lands.srw';
-        print wf
+        print(wf)
 
         ssc = PySSC()
         dat = ssc.data_create()
@@ -315,16 +313,16 @@ if __name__ == "__main__":
         mod = ssc.module_create("pvwattsv5")
         ssc.module_exec_set_print(0);
         if ssc.module_exec(mod, data) == 0:
-            print 'PVWatts V5 simulation error'
+            print('PVWatts V5 simulation error')
             idx = 1
             msg = ssc.module_log(mod, 0)
             while (msg != None):
-                print '\t: ' + msg
+                print('\t: ' + msg)
                 msg = ssc.module_log(mod, idx)
                 idx = idx + 1
         else:
             ann = ssc.data_get_number(data, "ac_annual")
-            print 'PVWatts V5 Simulation ok, e_net (annual kW)=', ann
+            print('PVWatts V5 Simulation ok, e_net (annual kW)=', ann)
 
         ssc.module_free(mod)
 
@@ -333,7 +331,7 @@ if __name__ == "__main__":
         # wf = 'c:/Users/adobos/Projects/SAMnt/tests/Weather Files/user-germany-potsdam-2011-1-min-samcsv.csv' ;
         wf = './USA NC Greensboro (TMY2).csv';
 
-        print wf
+        print(wf)
 
         ssc = PySSC()
         dat = ssc.data_create()
