@@ -45,7 +45,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
     def check_data_error_response(self, data, text):
         response = self.get_response(data)
-        self.assertTrue(text in response.content)
+        self.assertTrue(text in str(response.content))
 
     def test_required(self):
         """
@@ -145,8 +145,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         """
         outage_start_hour, outage_end_hour = 10, 30
         critical_load_pct = 0.5
-        critical_post = {"Scenario": {"Site": {  
-                                         "PV":{  
+        critical_post = {"Scenario": {"Site": {
+                                         "PV":{
                                             "max_kw": 10000,
                                             "existing_kw": 100
                                          },
@@ -188,7 +188,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_1 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_1)
-        
+
 
         c = nested_to_flat(d['outputs'])
 
@@ -217,7 +217,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid_2 = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid_2)
-        
+
 
         c = nested_to_flat(d['outputs'])
         try:
@@ -313,7 +313,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
+
 
         c = nested_to_flat(d['outputs'])
 
@@ -358,7 +358,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
+
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
@@ -405,7 +405,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         r = json.loads(response.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
+
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])
 
     def get_inputs_with_sub_key_from_nested_dict(self, nested_dict, sub_key, matched_values=None, obj_path=[],
