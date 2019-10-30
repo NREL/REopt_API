@@ -109,6 +109,7 @@ def reopt(self, dfm, data, run_uuid, bau=False):
 
     try:
         status = sp.check_output(split(run_command), stderr=sp.STDOUT, timeout=timeout)  # fails if returncode != 0
+        status = status.decode("utf-8")  # convert bytes to str
 
     except sp.CalledProcessError as e:
         msg = "REopt failed to start."
@@ -133,7 +134,7 @@ def reopt(self, dfm, data, run_uuid, bau=False):
 
         if status.strip() != 'optimal':
             log.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(),user_uuid=self.user_uuid)
+            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
     self.profiler.profileEnd()
     tmp = dict()
