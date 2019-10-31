@@ -983,6 +983,7 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "pv_net_fixed_om_costs", strfmt(getsol(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "gen_net_fixed_om_costs", strfmt((getsol(GenPerUnitSizeOMCosts)) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "gen_net_variable_om_costs", strfmt((getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "gen_year_one_variable_om_costs", strfmt((getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner / pwf_om, 10, 0))
     Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AveragePvProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
@@ -994,6 +995,9 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported_gen", strfmt(getsol(ExportedElecGEN), 10, 0))
     Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
+    Node:=addnode(out_json, Root, "total_gen_fuel_cost", strfmt(getsol(TotalGenFuelCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "year_one_gen_fuel_cost", strfmt(getsol(TotalGenFuelCharges) * r_tax_fraction_offtaker / pwf_e, 10, 2))
+
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 
