@@ -262,7 +262,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
         nested_data['Scenario']['Site']['PV']['existing_kw'] = 0
-        nested_data['Scenario']['Site']['PV']['generator_only_runs_during_grid_outage'] = False
+        nested_data['Scenario']['Site']['Generator']['generator_only_runs_during_grid_outage'] = False
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -271,18 +271,16 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 236962.0
-        d_expected['npv'] = -7685.0
+        d_expected['lcc'] = 221002.0
+        d_expected['npv'] = 8275.0
         d_expected['pv_kw'] = 0.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
-        d_expected['gen_kw'] = 11.2938
-        d_expected['fuel_used_gal'] = 1.52
-        d_expected['avoided_outage_costs_us_dollars'] = 1465.83 #1449.55
+        d_expected['gen_kw'] = 11.3912
+        d_expected['fuel_used_gal'] = 124.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
-        d_expected['gen_variable_om_cost_us_dollars'] = 2.0
-        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
+        d_expected['gen_total_variable_om_cost_us_dollars'] = 128
+        d_expected['net_capital_costs_plus_om'] = 7654.0
 
         try:
             check_common_outputs(self, c, d_expected)
