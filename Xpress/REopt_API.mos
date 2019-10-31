@@ -734,8 +734,8 @@ TotalTechCapCosts + TotalStorageCapCosts +
 ! Fixed O&M, tax deductible for owner
 TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
 
-! Variable O&M (will this be tax deductible for owner?)
-TotalPerUnitProdOMCosts +
+! Variable O&M, tax deductible for owner
+TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
 (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
