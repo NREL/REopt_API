@@ -34,7 +34,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-      
     @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
@@ -44,8 +43,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -88,8 +85,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -98,8 +93,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -142,9 +135,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-
-    #@skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -154,8 +144,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -203,8 +191,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen_and_pv(self):
         """
         Test scenario with
@@ -214,8 +200,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -265,18 +249,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-
-    #@skip("Inconsistent value on Red Hat server and other OS")
-    def test_generator_sizing_when_allowed_to_operatre_year_long(self):
+    def test_generator_sizing_when_allowed_to_operate_year_long(self):
         """
         Test scenario with
         - New PV and Wind disabled
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is allowed to operate for all the hours of the year
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -289,7 +268,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
