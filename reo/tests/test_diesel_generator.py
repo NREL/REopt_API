@@ -86,7 +86,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['batt_kw'] = 39.7699
         d_expected['batt_kwh'] = 269.1067
         d_expected['fuel_used_gal'] = 2.0
-        d_expected['avoided_outage_costs_us_dollars'] = 171825.82
+        d_expected['avoided_outage_costs_us_dollars'] = 174130.09
         d_expected['microgrid_upgrade_cost_us_dollars'] = 97291.8
 
         try:
