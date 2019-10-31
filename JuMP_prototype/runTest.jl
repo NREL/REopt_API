@@ -91,13 +91,13 @@ function runTest(v::String, t::String)
     bigtol = 0.05
 
     try
-        @assert (resultDict["lcc"] - result_JSON["lcc"])/ max(result_JSON["lcc"],1) < tolerance
-        @assert (resultDict["year_one_energy_cost"] - result_JSON["year_one_energy_cost"])/ max(result_JSON["year_one_energy_cost"],1) < bigtol
-        @assert (resultDict["year_one_demand_cost"] - result_JSON["year_one_demand_cost"])/ max(result_JSON["year_one_demand_cost"],1) < bigtol
-        @assert (resultDict["year_one_demand_tou_cost"] - result_JSON["year_one_demand_tou_cost"])/ max(result_JSON["year_one_demand_tou_cost"],1) < bigtol
-        @assert (resultDict["year_one_demand_flat_cost"] - result_JSON["year_one_demand_flat_cost"])/ max(result_JSON["year_one_demand_flat_cost"],1) < bigtol
-        @assert (resultDict["year_one_fixed_cost"] - result_JSON["year_one_fixed_cost"])/ max(result_JSON["year_one_fixed_cost"],1) < bigtol
-        @assert (resultDict["year_one_bill"] - result_JSON["year_one_bill"])/ max(result_JSON["year_one_bill"],1) < bigtol
+        @assert (resultDict["lcc"] - results_JSON["lcc"])/ max(results_JSON["lcc"],1) < tolerance
+        @assert (resultDict["year_one_energy_cost"] - results_JSON["year_one_energy_cost"])/ max(results_JSON["year_one_energy_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_cost"] - results_JSON["year_one_demand_cost"])/ max(results_JSON["year_one_demand_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_tou_cost"] - results_JSON["year_one_demand_tou_cost"])/ max(results_JSON["year_one_demand_tou_cost"],1) < bigtol
+        @assert (resultDict["year_one_demand_flat_cost"] - results_JSON["year_one_demand_flat_cost"])/ max(results_JSON["year_one_demand_flat_cost"],1) < bigtol
+        @assert (resultDict["year_one_fixed_cost"] - results_JSON["year_one_fixed_cost"])/ max(results_JSON["year_one_fixed_cost"],1) < bigtol
+        @assert (resultDict["year_one_bill"] - results_JSON["year_one_bill"])/ max(results_JSON["year_one_bill"],1) < bigtol
         
         println("\nOK")
         uuid = nothing
