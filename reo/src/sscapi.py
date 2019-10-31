@@ -51,11 +51,11 @@ class PySSC:
         self.pdll.ssc_data_clear(c_void_p(p_data))
 
     def data_unassign(self, p_data, name):
-        self.pdll.ssc_data_unassign(c_void_p(p_data), c_char_p(name))
+        self.pdll.ssc_data_unassign(c_void_p(p_data), c_char_p(name.encode('utf-8')))
 
     def data_query(self, p_data, name):
         self.pdll.ssc_data_query.restype = c_int
-        return self.pdll.ssc_data_query(c_void_p(p_data), c_char_p(name))
+        return self.pdll.ssc_data_query(c_void_p(p_data), c_char_p(name.encode('utf-8')))
 
     def data_first(self, p_data):
         self.pdll.ssc_data_first.restype = c_char_p
@@ -66,17 +66,17 @@ class PySSC:
         return self.pdll.ssc_data_next(c_void_p(p_data))
 
     def data_set_string(self, p_data, name, value):
-        self.pdll.ssc_data_set_string(c_void_p(p_data), c_char_p(name), c_char_p(value))
+        self.pdll.ssc_data_set_string(c_void_p(p_data), c_char_p(name.encode('utf-8')), c_char_p(value.encode('utf-8')))
 
     def data_set_number(self, p_data, name, value):
-        self.pdll.ssc_data_set_number(c_void_p(p_data), c_char_p(name), c_number(value))
+        self.pdll.ssc_data_set_number(c_void_p(p_data), c_char_p(name.encode('utf-8')), c_number(value))
 
     def data_set_array(self, p_data, name, parr):
         count = len(parr)
         arr = (c_number * count)()
         arr[:] = parr  # set all at once instead of looping
 
-        return self.pdll.ssc_data_set_array(c_void_p(p_data), c_char_p(name), pointer(arr), c_int(count))
+        return self.pdll.ssc_data_set_array(c_void_p(p_data), c_char_p(name.encode('utf-8')), pointer(arr), c_int(count))
 
     def data_set_matrix(self, p_data, name, mat):
         nrows = len(mat)
@@ -88,24 +88,24 @@ class PySSC:
             for c in range(ncols):
                 arr[idx] = c_number(mat[r][c])
                 idx = idx + 1
-        return self.pdll.ssc_data_set_matrix(c_void_p(p_data), c_char_p(name), pointer(arr), c_int(nrows), c_int(ncols))
+        return self.pdll.ssc_data_set_matrix(c_void_p(p_data), c_char_p(name.encode('utf-8')), pointer(arr), c_int(nrows), c_int(ncols))
 
     def data_set_table(self, p_data, name, tab):
-        return self.pdll.ssc_data_set_table(c_void_p(p_data), c_char_p(name), c_void_p(tab));
+        return self.pdll.ssc_data_set_table(c_void_p(p_data), c_char_p(name.encode('utf-8')), c_void_p(tab));
 
     def data_get_string(self, p_data, name):
         self.pdll.ssc_data_get_string.restype = c_char_p
-        return self.pdll.ssc_data_get_string(c_void_p(p_data), c_char_p(name))
+        return self.pdll.ssc_data_get_string(c_void_p(p_data), c_char_p(name.encode('utf-8')))
 
     def data_get_number(self, p_data, name):
         val = c_number(0)
-        self.pdll.ssc_data_get_number(c_void_p(p_data), c_char_p(name), byref(val))
+        self.pdll.ssc_data_get_number(c_void_p(p_data), c_char_p(name.encode('utf-8')), byref(val))
         return val.value
 
     def data_get_array(self, p_data, name):
         count = c_int()
         self.pdll.ssc_data_get_array.restype = POINTER(c_number)
-        parr = self.pdll.ssc_data_get_array(c_void_p(p_data), c_char_p(name), byref(count))
+        parr = self.pdll.ssc_data_get_array(c_void_p(p_data), c_char_p(name.encode('utf-8')), byref(count))
         arr = parr[0:count.value]  # extract all at once
         return arr
 
@@ -113,7 +113,7 @@ class PySSC:
         nrows = c_int()
         ncols = c_int()
         self.pdll.ssc_data_get_matrix.restype = POINTER(c_number)
-        parr = self.pdll.ssc_data_get_matrix(c_void_p(p_data), c_char_p(name), byref(nrows), byref(ncols))
+        parr = self.pdll.ssc_data_get_matrix(c_void_p(p_data), c_char_p(name.encode('utf-8')), byref(nrows), byref(ncols))
         idx = 0
         mat = []
         for r in range(nrows.value):
@@ -147,7 +147,7 @@ class PySSC:
 
     def module_create(self, name):
         self.pdll.ssc_module_create.restype = c_void_p
-        return self.pdll.ssc_module_create(c_char_p(name))
+        return self.pdll.ssc_module_create(c_char_p(name.encode('utf-8')))
 
     def module_free(self, p_mod):
         self.pdll.ssc_module_free(c_void_p(p_mod))
@@ -193,7 +193,7 @@ class PySSC:
 
     def module_exec_simple_no_thread(self, modname, data):
         self.pdll.ssc_module_exec_simple_nothread.restype = c_char_p;
-        return self.pdll.ssc_module_exec_simple_nothread(c_char_p(modname), c_void_p(data));
+        return self.pdll.ssc_module_exec_simple_nothread(c_char_p(modname.encode('utf-8')), c_void_p(data));
 
     def module_log(self, p_mod, index):
         log_type = c_int()
