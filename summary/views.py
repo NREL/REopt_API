@@ -33,7 +33,6 @@ def add_user_uuid(request):
                         scenario = ScenarioModel.objects.filter(run_uuid=run_uuid).first()
                         print (scenario.user_uuid)
                         if scenario.user_uuid is None:
-                            print ('None')
                             ModelManager.add_user_uuid(user_uuid, run_uuid)
                             response = JsonResponse(
                                 {"Success": "user_uuid for run_uuid {} has been set to {}".format(run_uuid, user_uuid)})
