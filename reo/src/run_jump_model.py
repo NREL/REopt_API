@@ -60,6 +60,7 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     else:
         status = results["outputs"]["Scenario"]["status"]
         logger.info("REopt run successful. Status {}".format(status))
+        dfm['results'] = results  # will be flat dict
 
         if status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
