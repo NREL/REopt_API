@@ -1,6 +1,5 @@
 import os
 import copy
-import json
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
@@ -8,35 +7,6 @@ max_incentive = 1e10
 
 big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
-
-dat1a_constant = dict()
-dat1b_constant = dict()
-dat2a_economics = dict()
-dat2b_economics = dict()
-dat3a_LoadSize = dict()
-dat3b_LoadSize = dict()
-dat4a_Load8760 = dict()
-dat4b_Load8760 = dict()
-dat5a_GIS = dict()
-dat5b_GIS = dict()
-dat6a_storage = dict()
-dat6b_storage = dict()
-dat7a_maxsizes = dict()
-dat7b_maxsizes = dict()
-dat8a_util_TimeStepsDemand = dict()
-dat9a_util_DemandRate = dict()
-dat10a_util_FuelCost = dict()
-dat10b_util_FuelCostBase = dict()
-dat11a_util_ExportRates = dict()
-dat11b_util_ExportRatesBase = dict()
-dat12_util_TimeStepRatchetsMonth = dict()
-dat13_util_DemandRatesMonth = dict()
-dat14_util_LookbackMonthsAndPercent = dict()
-dat15_util_UtilityTiers = dict()
-dat16a_util_FuelBurnRate = dict()
-dat16b_util_FuelBurnRate = dict()
-dat17a_NEM = dict()
-dat17b_NEM = dict()
 
 
 def _write_var(f, var, dat_var):
@@ -83,6 +53,8 @@ class DatFileManager:
         self.storage = None
         self.site = None
         self.elec_tariff = None
+        self.reopt_inputs = None
+        self.reopt_inputs_bau = None
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -94,7 +66,7 @@ class DatFileManager:
         self.paths = paths
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
-
+        
         file_tail = str(run_id) + '.dat'
         file_tail_bau = str(run_id) + '_bau.dat'
 
@@ -135,7 +107,7 @@ class DatFileManager:
         self.file_max_in_tiers = os.path.join(paths['utility'], 'UtilityTiers.dat')
         self.file_export_rates = os.path.join(paths['utility'], 'ExportRates.dat')
         self.file_export_rates_bau = os.path.join(paths['utility'], 'ExportRatesBase.dat')
-
+        
         self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
         self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
         self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
@@ -164,7 +136,7 @@ class DatFileManager:
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
-
+                              
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
 
@@ -191,6 +163,7 @@ class DatFileManager:
 
     def add_generator(self, generator):
         self.generator = generator
+        
         if self.generator.existing_kw > 0:
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
@@ -221,7 +194,6 @@ class DatFileManager:
 
     def add_storage(self, storage):
         self.storage = storage
-
         # storage_bau.dat gets same definitions as storage.dat so that initializations don't fail in bau case
         # however, storage is typically 'turned off' by having max size set to zero in maxsizes_bau.dat
         write_to_dat(self.file_storage, storage.soc_min_pct, 'StorageMinChargePcent')
@@ -602,6 +574,7 @@ class DatFileManager:
                         n_segments = len(tmp_cap_cost_slope)
                         break
 
+
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
                 cap_cost_slope += tmp_cap_cost_slope
@@ -857,16 +830,6 @@ class DatFileManager:
         write_to_dat(self.file_constant, derate, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant, tech_to_tech_class, 'TechToTechClassMatrix', mode='a')
 
-        dat1a_constant.update({'Tech': reopt_techs,
-                               'TechIsGrid': tech_is_grid,
-                               'load': load_list,
-                               'TechToLoadMatrix': tech_to_load,
-                               'TechClass': self.available_tech_classes,
-                               'NMILRegime': self.NMILRegime,
-                               'TurbineDerate': derate,
-                               'TechToTechClassMatrix': tech_to_tech_class
-                               })
-
         write_to_dat(self.file_constant_bau, reopt_techs_bau, 'Tech')
         write_to_dat(self.file_constant_bau, tech_is_grid_bau, 'TechIsGrid', mode='a')
         write_to_dat(self.file_constant_bau, load_list, 'Load', mode='a')
@@ -876,34 +839,15 @@ class DatFileManager:
         write_to_dat(self.file_constant_bau, derate_bau, 'TurbineDerate', mode='a')
         write_to_dat(self.file_constant_bau, tech_to_tech_class_bau, 'TechToTechClassMatrix', mode='a')
 
-        dat1b_constant.update({'Tech': reopt_techs_bau,
-                               'TechIsGrid': tech_is_grid_bau,
-                               'load': load_list,
-                               'TechToLoadMatrix': tech_to_load_bau,
-                               'TechClass': self.available_tech_classes,
-                               'NMILRegime': self.NMILRegime,
-                               'TurbineDerate': derate_bau,
-                               'TechToTechClassMatrix': tech_to_tech_class_bau
-                               })
-
         # ProdFactor stored in GIS.dat
         write_to_dat(self.file_gis, prod_factor, "ProdFactor")
         write_to_dat(self.file_gis_bau, prod_factor_bau, "ProdFactor")
-
-        dat5a_GIS.update({"ProdFactor": prod_factor})
-        dat5b_GIS.update({"ProdFactor": prod_factor_bau})
 
         # storage.dat
         write_to_dat(self.file_storage, eta_storage_in, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage, eta_storage_out, 'EtaStorOut', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_in_bau, 'EtaStorIn', mode='a')
         write_to_dat(self.file_storage_bau, eta_storage_out_bau, 'EtaStorOut', mode='a')
-
-        dat6a_storage.update({"EtaStorIn": eta_storage_in,
-                              "EtaStorOut": eta_storage_out})
-
-        dat6b_storage.update({"EtaStorIn": eta_storage_in,
-                              "EtaStorOut": eta_storage_out})
 
         # maxsizes.dat
         write_to_dat(self.file_max_size, max_sizes, 'MaxSize')
@@ -914,14 +858,6 @@ class DatFileManager:
         write_to_dat(self.file_max_size, tech_class_min_size, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size, min_turn_down, 'MinTurndown', mode='a')
 
-        dat7a_maxsizes.update({"MaxSize": max_sizes,
-                               "MinStorageSizeKW": self.storage.min_kw,
-                               "MaxStorageSizeKW": self.storage.max_kw,
-                               "MinStorageSizeKWH": self.storage.min_kwh,
-                               "MaxStorageSizeKWH": self.storage.max_kwh,
-                               "TechClassMinSize": tech_class_min_size,
-                               "MinTurndown": min_turn_down})
-
         write_to_dat(self.file_max_size_bau, max_sizes_bau, 'MaxSize')
         write_to_dat(self.file_max_size_bau, 0, 'MinStorageSizeKW', mode='a')
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKW', mode='a')
@@ -929,15 +865,7 @@ class DatFileManager:
         write_to_dat(self.file_max_size_bau, 0, 'MaxStorageSizeKWH', mode='a')
         write_to_dat(self.file_max_size_bau, tech_class_min_size_bau, 'TechClassMinSize', mode='a')
         write_to_dat(self.file_max_size_bau, min_turn_down_bau, 'MinTurndown', mode='a')
-
-        dat7b_maxsizes.update({"MaxSize": max_sizes_bau,
-                               "MinStorageSizeKW": 0,
-                               "MaxStorageSizeKW": 0,
-                               "MinStorageSizeKWH": 0,
-                               "MaxStorageSizeKWH": 0,
-                               "TechClassMinSize": tech_class_min_size_bau,
-                               "MinTurndown": min_turn_down_bau})
-
+        
         # economics.dat
         write_to_dat(self.file_economics, levelization_factor, 'LevelizationFactor')
         write_to_dat(self.file_economics, production_incentive_levelization_factor, 'LevelizationFactorProdIncent', mode='a')
@@ -959,25 +887,6 @@ class DatFileManager:
         write_to_dat(self.file_economics, om_cost_us_dollars_per_kwh, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics, sf.analysis_years, 'analysis_years', mode='a')
 
-        dat2a_economics.update({"LevelizationFactor": levelization_factor,
-                                "LevelizationFactorProdIncent": production_incentive_levelization_factor,
-                                "pwf_e": pwf_e,
-                                "pwf_om": pwf_om,
-                                "two_party_factor": two_party_factor,
-                                "pwf_prod_incent": pwf_prod_incent,
-                                "ProdIncentRate": prod_incent_rate,
-                                "MaxProdIncent": max_prod_incent,
-                                "MaxSizeForProdIncent": max_size_for_prod_incent,
-                                "CapCostSlope": cap_cost_slope,
-                                "CapCostX": cap_cost_x,
-                                "CapCostYInt": cap_cost_yint,
-                                "r_tax_owner": sf.owner_tax_pct,
-                                "r_tax_offtaker": sf.offtaker_tax_pct,
-                                "StorageCostPerKW": StorageCostPerKW,
-                                "StorageCostPerKWH": StorageCostPerKWH,
-                                "OMperUnitSize": om_cost_us_dollars_per_kw,
-                                "analysis_years": sf.analysis_years})
-
         write_to_dat(self.file_economics_bau, levelization_factor_bau, 'LevelizationFactor')
         write_to_dat(self.file_economics_bau, production_incentive_levelization_factor_bau, 'LevelizationFactorProdIncent', mode='a')
         write_to_dat(self.file_economics_bau, pwf_e_bau, 'pwf_e', mode='a')
@@ -997,25 +906,6 @@ class DatFileManager:
         write_to_dat(self.file_economics_bau, om_dollars_per_kw_bau, 'OMperUnitSize', mode='a')
         write_to_dat(self.file_economics_bau, om_dollars_per_kwh_bau, 'OMcostPerUnitProd', mode='a')
         write_to_dat(self.file_economics_bau, sf.analysis_years, 'analysis_years', mode='a')
-
-        dat2b_economics.update({"LevelizationFactor": levelization_factor_bau,
-                                "LevelizationFactorProdIncent": production_incentive_levelization_factor_bau,
-                                "pwf_e": pwf_e_bau,
-                                "pwf_om": pwf_om_bau,
-                                "two_party_factor": two_party_factor_bau,
-                                "pwf_prod_incent": pwf_prod_incent_bau,
-                                "ProdIncentRate": prod_incent_rate_bau,
-                                "MaxProdIncent": max_prod_incent_bau,
-                                "MaxSizeForProdIncent": max_size_for_prod_incent_bau,
-                                "CapCostSlope": cap_cost_slope_bau,
-                                "CapCostX": cap_cost_x_bau,
-                                "CapCostYInt": cap_cost_yint_bau,
-                                "r_tax_owner": sf.owner_tax_pct,
-                                "r_tax_offtaker": sf.offtaker_tax_pct,
-                                "StorageCostPerKW": StorageCostPerKW,
-                                "StorageCostPerKWH": StorageCostPerKWH,
-                                "OMperUnitSize": om_dollars_per_kw_bau,
-                                "analysis_years": sf.analysis_years})
 
         # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
@@ -1066,83 +956,136 @@ class DatFileManager:
         write_to_dat(self.file_energy_burn_rate, ta.energy_burn_intercept, 'FuelBurnRateB', 'a')
         write_to_dat(self.file_energy_burn_rate_bau, ta.energy_burn_intercept_bau, 'FuelBurnRateB', 'a')
 
-        dat8a_util_TimeStepsDemand.update({"TimeStepRatchets": ta.demand_ratchets_tou})
-        dat9a_util_DemandRate.update({"DemandRates": ta.demand_rates_tou})
-
-        dat10a_util_FuelCost.update({"FuelRate": ta.energy_rates,
-                                     "FuelAvail": ta.energy_avail,
-                                     "FixedMonthlyCharge": ta.fixed_monthly_charge,
-                                     "AnnualMinCharge": ta.annual_min_charge,
-                                     "MonthlyMinCharge": ta.min_monthly_charge})
-
-        dat10b_util_FuelCostBase.update({"FuelRate": ta.energy_rates_bau,
-                                         "FuelAvail": ta.energy_avail_bau,
-                                         "FixedMonthlyCharge": ta.fixed_monthly_charge,
-                                         "AnnualMinCharge": ta.annual_min_charge,
-                                         "MonthlyMinCharge": ta.min_monthly_charge})
-
-        dat11a_util_ExportRates.update({"ExportRates": ta.export_rates})
-
-        dat11b_util_ExportRatesBase.update({"ExportRates": ta.export_rates_bau})
-
-        dat12_util_TimeStepRatchetsMonth.update({"TimeStepRatchetsMonth": ta.demand_ratchets_monthly})
-
-        dat13_util_DemandRatesMonth.update({"DemandRatesMonth": ta.demand_rates_monthly})
-
-        dat14_util_LookbackMonthsAndPercent.update({"DemandLookbackMonths": ta.demand_lookback_months,
-                                                    "DemandLookbackPercent": ta.demand_lookback_percent})
-
-        dat15_util_UtilityTiers.update({"MaxDemandInTier": ta.demand_max_in_tiers,
-                                        "MaxUsageInTier": ta.energy_max_in_tiers,
-                                        "MaxDemandMonthsInTier": ta.demand_month_max_in_tiers})
-
-        dat16a_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate,
-                                         "FuelBurnRateB": ta.energy_burn_intercept})
-
-        dat16b_util_FuelBurnRate.update({"FuelBurnRateM": ta.energy_burn_rate_bau,
-                                         "FuelBurnRateB": ta.energy_burn_intercept_bau})
-
         # time_steps_per_hour
         self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
 
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
-        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0 / self.n_timesteps))
+        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
 
-        """
-        big_dict = {"command_line_args": self.command_line_args,
-                            "command_line_args_bau": self.command_line_args_bau,
-                            "dat1a_constant": dat1a_constant,
-                            "dat1b_constant": dat1b_constant,
-                            "dat2a_economics":dat2a_economics,
-                            "dat2b_economics":dat2b_economics,
-                            "dat3a_LoadSize":dat3a_LoadSize,
-                            "dat3b_LoadSize":dat3b_LoadSize,
-                            "dat4a_Load8760":dat4a_Load8760,
-                            "dat4b_Load8760":dat4b_Load8760,
-                            "dat5a_GIS":dat5a_GIS,
-                            "dat5b_GIS":dat5b_GIS,
-                            "dat6a_storage":dat6a_storage,
-                            "dat6b_storage":dat6b_storage,
-                            "dat7a_maxsizes":dat7a_maxsizes,
-                            "dat7b_maxsizes":dat7b_maxsizes,
-                            "dat8a_util_TimeStepsDemand":dat8a_util_TimeStepsDemand,
-                            "dat9a_util_DemandRate":dat9a_util_DemandRate,
-                            "dat10a_util_FuelCost": dat10a_util_FuelCost,
-                            "dat10b_util_FuelCostBase":dat10b_util_FuelCostBase,
-                            "dat11a_util_ExportRates":dat11a_util_ExportRates,
-                            "dat11b_util_ExportRatesBase":dat11b_util_ExportRatesBase,
-                            "dat12_util_TimeStepRatchetsMonth":dat12_util_TimeStepRatchetsMonth,
-                            "dat13_util_DemandRatesMonth":dat13_util_DemandRatesMonth,
-                            "dat14_util_LookbackMonthsAndPercent":dat14_util_LookbackMonthsAndPercent,
-                            "dat15_util_UtilityTiers":dat15_util_UtilityTiers,
-                            "dat16a_util_FuelBurnRate":dat16a_util_FuelBurnRate,
-                            "dat16b_util_FuelBurnRate":dat16b_util_FuelBurnRate,
-                            "dat17a_NEM":dat17a_NEM,
-                            "dat17b_NEM":dat17b_NEM
-                            }
-        with open('all_data.json', 'w') as fout:
-            json.dump(big_dict, fout)
-
-                results = ReoptApiPyomo(self.command_line_args, self.command_line_args_bau, dat1a_constant=dat1a_constant, dat1b_constant=dat1b_constant,dat2a_economics=dat2a_economics, dat2b_economics=dat2b_economics, dat3a_LoadSize=dat3a_LoadSize, dat3b_LoadSize=dat3b_LoadSize, dat4a_Load8760=dat4a_Load8760, dat4b_Load8760=dat4b_Load8760, dat5a_GIS=dat5a_GIS, dat5b_GIS=dat5b_GIS, dat6a_storage=dat6a_storage, dat6b_storage=dat6b_storage,dat7a_maxsizes=dat7a_maxsizes, dat7b_maxsizes=dat7b_maxsizes, dat8a_util_TimeStepsDemand=dat8a_util_TimeStepsDemand, dat9a_util_DemandRate=dat9a_util_DemandRate, dat10a_util_FuelCost= dat10a_util_FuelCost, dat10b_util_FuelCostBase=dat10b_util_FuelCostBase, dat11a_util_ExportRates=dat11a_util_ExportRates, dat11b_util_ExportRatesBase=dat11b_util_ExportRatesBase, dat12_util_TimeStepRatchetsMonth=dat12_util_TimeStepRatchetsMonth, dat13_util_DemandRatesMonth=dat13_util_DemandRatesMonth, dat14_util_LookbackMonthsAndPercent=dat14_util_LookbackMonthsAndPercent, dat15_util_UtilityTiers=dat15_util_UtilityTiers,dat16a_util_FuelBurnRate=dat16a_util_FuelBurnRate, dat16b_util_FuelBurnRate=dat16b_util_FuelBurnRate, dat17a_NEM=dat17a_NEM, dat17b_NEM=dat17b_NEM)
-        """
+        self.reopt_inputs = {
+            'Tech': reopt_techs,
+            'TechIsGrid': tech_is_grid,
+            'Load': load_list,
+            'TechToLoadMatrix': tech_to_load,
+            'TechClass': self.available_tech_classes,
+            'NMILRegime': self.NMILRegime,
+            'TurbineDerate': derate,
+            'TechToTechClassMatrix': tech_to_tech_class,
+            'ProdFactor': prod_factor,
+            'EtaStorIn': eta_storage_in,
+            'EtaStorOut': eta_storage_out,
+            'MaxSize': max_sizes,
+            'MinStorageSizeKW': self.storage.min_kw,
+            'MaxStorageSizeKW': self.storage.max_kw,
+            'MinStorageSizeKWH': self.storage.min_kwh,
+            'MaxStorageSizeKWH': self.storage.max_kwh,
+            'TechClassMinSize': tech_class_min_size,
+            'MinTurndown': min_turn_down,
+            'LevelizationFactor': levelization_factor,
+            'LevelizationFactorProdIncent': production_incentive_levelization_factor,
+            'pwf_e': pwf_e,
+            'pwf_om': pwf_om,
+            'two_party_factor': two_party_factor,
+            'pwf_prod_incent': pwf_prod_incent,
+            'ProdIncentRate': prod_incent_rate,
+            'MaxProdIncent': max_prod_incent,
+            'MaxSizeForProdIncent': max_size_for_prod_incent,
+            'CapCostSlope': cap_cost_slope,
+            'CapCostX': cap_cost_x,
+            'CapCostYInt': cap_cost_yint,
+            'r_tax_owner': sf.owner_tax_pct,
+            'r_tax_offtaker': sf.offtaker_tax_pct,
+            'StorageCostPerKW': StorageCostPerKW,
+            'StorageCostPerKWH': StorageCostPerKWH,
+            'OMperUnitSize': om_cost_us_dollars_per_kw,
+            'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
+            'analysis_years': sf.analysis_years,
+            'NumRatchets': tariff_args.demand_num_ratchets,
+            'FuelBinCount': tariff_args.energy_tiers_num,
+            'DemandBinCount': tariff_args.demand_tiers_num,
+            'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
+            'DemandRatesMonth': tariff_args.demand_rates_monthly,
+            'DemandRates': tariff_args.demand_rates_tou,
+            # 'MinDemand': tariff_args.demand_min  # not used in REopt,
+            'TimeStepRatchets': tariff_args.demand_ratchets_tou,
+            'MaxDemandInTier': tariff_args.demand_max_in_tiers,
+            'MaxUsageInTier': tariff_args.energy_max_in_tiers,
+            'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
+            'FuelRate': tariff_args.energy_rates,
+            'FuelAvail': tariff_args.energy_avail,
+            'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
+            'AnnualMinCharge': tariff_args.annual_min_charge,
+            'MonthlyMinCharge': tariff_args.min_monthly_charge,
+            'ExportRates': tariff_args.export_rates,
+            'DemandLookbackMonths': tariff_args.demand_lookback_months,
+            'DemandLookbackPercent': tariff_args.demand_lookback_percent,
+            'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
+            'FuelBurnRateM': tariff_args.energy_burn_rate,
+            'FuelBurnRateB': tariff_args.energy_burn_intercept,
+            'TimeStepCount': self.n_timesteps,
+            'TimeStepScaling': int(8760.0/self.n_timesteps)
+        }
+        self.reopt_inputs_bau = {
+            'Tech': reopt_techs_bau,
+            'TechIsGrid': tech_is_grid_bau,
+            'Load': load_list,
+            'TechToLoadMatrix': tech_to_load_bau,
+            'TechClass': self.available_tech_classes,
+            'NMILRegime': self.NMILRegime,
+            'TurbineDerate': derate_bau,
+            'TechToTechClassMatrix': tech_to_tech_class_bau,
+            'ProdFactor': prod_factor_bau,
+            'EtaStorIn': eta_storage_in_bau,
+            'EtaStorOut': eta_storage_out_bau,
+            'MaxSize': max_sizes_bau,
+            'MinStorageSizeKW': 0,
+            'MaxStorageSizeKW': 0,
+            'MinStorageSizeKWH': 0,
+            'MaxStorageSizeKWH': 0,
+            'TechClassMinSize': tech_class_min_size_bau,
+            'MinTurndown': min_turn_down_bau,
+            'LevelizationFactor': levelization_factor_bau,
+            'LevelizationFactorProdIncent': production_incentive_levelization_factor_bau,
+            'pwf_e': pwf_e_bau,
+            'pwf_om': pwf_om_bau,
+            'two_party_factor': two_party_factor_bau,
+            'pwf_prod_incent': pwf_prod_incent_bau,
+            'ProdIncentRate': prod_incent_rate_bau,
+            'MaxProdIncent': max_prod_incent_bau,
+            'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
+            'CapCostSlope': cap_cost_slope_bau,
+            'CapCostX': cap_cost_x_bau,
+            'CapCostYInt': cap_cost_yint_bau,
+            'r_tax_owner': sf.owner_tax_pct,
+            'r_tax_offtaker': sf.offtaker_tax_pct,
+            'StorageCostPerKW': StorageCostPerKW,
+            'StorageCostPerKWH': StorageCostPerKWH,
+            'OMperUnitSize': om_dollars_per_kw_bau,
+            'OMcostPerUnitProd': om_dollars_per_kwh_bau,
+            'analysis_years': sf.analysis_years,
+            'NumRatchets': tariff_args.demand_num_ratchets,
+            'FuelBinCount': tariff_args.energy_tiers_num,
+            'DemandBinCount': tariff_args.demand_tiers_num,
+            'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
+            'DemandRatesMonth': tariff_args.demand_rates_monthly,
+            'DemandRates': tariff_args.demand_rates_tou,
+            # 'MinDemand': tariff_args.demand_min  # not used in REopt,
+            'TimeStepRatchets': tariff_args.demand_ratchets_tou,
+            'MaxDemandInTier': tariff_args.demand_max_in_tiers,
+            'MaxUsageInTier': tariff_args.energy_max_in_tiers,
+            'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
+            'FuelRate': tariff_args.energy_rates_bau,
+            'FuelAvail': tariff_args.energy_avail_bau,
+            'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
+            'AnnualMinCharge': tariff_args.annual_min_charge,
+            'MonthlyMinCharge': tariff_args.min_monthly_charge,
+            'ExportRates': tariff_args.export_rates_bau,
+            'DemandLookbackMonths': tariff_args.demand_lookback_months,
+            'DemandLookbackPercent': tariff_args.demand_lookback_percent,
+            'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
+            'FuelBurnRateM': tariff_args.energy_burn_rate_bau,
+            'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
+            'TimeStepCount': self.n_timesteps,
+            'TimeStepScaling': int(8760.0/self.n_timesteps)
+        }

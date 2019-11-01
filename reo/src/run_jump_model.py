@@ -40,27 +40,28 @@ class RunJumpModelTask(Task):
 
 @shared_task(bind=True, base=RunJumpModelTask)
 def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
+    # TODO: dfm_list will become just dfm (and should rename dfm since no longer using dat files)
+    dfm = dfm_list[0]
     self.profiler = Profiler()
     name = 'reopt' if not bau else 'reopt_bau'
+    reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
-    reopt_inputs = {
-        "array": [[1, 2, .3], [1, 2, .3]]
-    }
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
         j.include("reo/src/reopt.jl")
         results = j.reopt(data, **reopt_inputs)
     except Exception as e:
+        # TODO: exception handling
         raise e
     else:
         status = results["outputs"]["Scenario"]["status"]
         logger.info("REopt run successful. Status {}".format(status))
 
-        if status.strip() != 'optimal':
+        if status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
@@ -69,6 +70,4 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     tmp[name+'_seconds'] = self.profiler.getDuration()
     ModelManager.updateModel('ProfileModel', tmp, run_uuid)
 
-    if bau:
-        return dfm_list[1]
-    return dfm_list[0]
+    return dfm
