@@ -14,6 +14,7 @@ from reo.log_levels import log
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.src.reopt import reopt
+from reo.src.run_jump_model import run_jump_model
 from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
@@ -99,7 +100,6 @@ class Job(ModelResource):
 
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
-            
 
         if not input_validator.isValid:  # 400 Bad Request
             log.debug("input_validator not valid")
@@ -150,9 +150,11 @@ class Job(ModelResource):
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
+        rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
+        rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | call_back)()
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | group(rjm, rjm_bau) | call_back)()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
