@@ -47,7 +47,7 @@ nested_input_definitions = {
 
   "Scenario": {
     "timeout_seconds": {
-      "type": "float",
+      "type": "int",
       "min": 1,
       "max": 295,
       "default": 295,
