@@ -160,6 +160,7 @@ CELERY_IMPORTS = (
     'reo.api',
     'reo.scenario',
     'reo.results',
+    'reo.run_jump_model',
 )
 
 if 'test' in sys.argv:
