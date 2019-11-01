@@ -26,6 +26,7 @@ honcho==1.0.1
 idna==2.6
 ipython-genutils==0.2.0
 jdcal==1.3
+julia==0.4.1
 kombu==4.1.0
 lxml==3.7.3
 numpy==1.11.0
