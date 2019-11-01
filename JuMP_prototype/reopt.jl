@@ -221,10 +221,10 @@ TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     TotalMinCharge >= 0
 
 # ADDED due to calculations
-    Year1ElecProd
-    AverageElecProd
-    Year1WindProd
-    AverageWindProd
+    #Year1ElecProd
+    #AverageElecProd
+    #Year1WindProd
+    #AverageWindProd
 
 # ADDED for modeling
     binMinTurndown[Tech, TimeStep], Bin
@@ -414,19 +414,33 @@ end
                 LD in [Symbol("1R"), Symbol("1W"), Symbol("1X"), Symbol("1S")]) ==  dvSystemSize[t, s])
 
 
-### Parts of Objective
-@constraint(REopt, Year1ElecProd == sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
+@expression(REopt, Year1ElecProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
                                         for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
                                         (TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
-@constraint(REopt, AverageElecProd == sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
+@expression(REopt, AverageElecProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
                                           for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
                                           (TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
-@constraint(REopt, Year1WindProd == sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
+@expression(REopt, Year1PVProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
+                                        for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
+                                        (TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
+@expression(REopt, AveragePVProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
+                                          for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
+                                          (TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
+@expression(REopt, Year1WindProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
                                         for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
                                         (TechToTechClassMatrix[t, :WIND] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
-@constraint(REopt, AverageWindProd == sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
+@expression(REopt, AverageWindProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
                                           for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
                                           (TechToTechClassMatrix[t, :WIND] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
+@expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling
+                                        for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
+                                        (TechToTechClassMatrix[t, :GENERATOR] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
+@expression(REopt, AverageGenProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
+                                          for t in Tech, s in Seg, fb in FuelBin, ts in TimeStep, LD in Load if 
+                                          (TechToTechClassMatrix[t, :GENERATOR] == 1 && (LD == Symbol("1R") || LD == Symbol("1W") || LD == Symbol("1X") || LD == Symbol("1S")))))
+
+
+### Parts of Objective
 @constraint(REopt, TotalTechCapCosts == sum(CapCostSlope[t, s] * dvSystemSize[t, s] + CapCostYInt[t,s] * binSegChosen[t,s]
                                             for t in Tech, s in Seg))
 @constraint(REopt, TotalStorageCapCosts == sum(dvStorageSizeKWH[b] * StorageCostPerKWH[b] + dvStorageSizeKW[b] *  StorageCostPerKW[b]
@@ -525,24 +539,40 @@ Year1FixedCharges = TotalFixedCharges / pwf_e
 Year1MinCharges = MinChargeAdder / pwf_e
 Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
-results_JSON = Dict("lcc" => ojv)
+results_JSON = Dict{String, Any}("lcc" => ojv)
 
-for b in BattLevel
-    results_JSON["batt_kwh"] = value(dvStorageSizeKWH[b])
-    results_JSON["batt_kw"] = value(dvStorageSizeKW[b])
+results_JSON["batt_kwh"] = value(sum(dvStorageSizeKWH[b] for b in BattLevel))
+results_JSON["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in BattLevel))
+
+if results_JSON["batt_kwh"] != 0
+    results_JSON["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results_JSON["batt_kwh"]
+else
+    results_JSON["year_one_soc_series_pct"] = value.(dvStoredEnergy)
 end
 
-for t in Tech
-    if TechToTechClassMatrix[t, :PV] == 1
-        results_JSON["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg))
-    end
+
+PVClass = filter(t->TechToTechClassMatrix[t, :PV] == 1, Tech)
+if !isempty(PVClass)
+    results_JSON["PV"] = Dict()
+    results_JSON["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVClass))
+    @expression(REopt, PVtoBatt[t in PVClass, ts in TimeStep],
+                sum(dvRatedProd[t, Symbol("1S"), ts, s, fb] * ProdFactor[t, Symbol("1S"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
 end
 
-for t in Tech
-    if TechToTechClassMatrix[t, :WIND] == 1
-        results_JSON["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg))
-    end
+WINDClass = filter(t->TechToTechClassMatrix[t, :WIND] == 1, Tech)
+if !isempty(WINDClass)
+    results_JSON["Wind"] = Dict()
+    results_JSON["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in WINDClass))
+    @expression(REopt, WINDtoBatt[t in WINDClass, ts in TimeStep],
+                sum(dvRatedProd[t, Symbol("1S"), ts, s, fb] * ProdFactor[t, Symbol("1S"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
 end
+    
+GENERATORClass = filter(t->TechToTechClassMatrix[t, :GENERATOR] == 1, Tech)
+#if !isempty(GENERATORClass)
+#    results_JSON["Generator"] = Dict()
+#    results_JSON["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts * r_tax_fraction_owner)
+#    results_JSON["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts * r_tax_fraction_owner)
+#end
 
 function JuMP.value(::Val{false})
     return 0.0
@@ -561,15 +591,16 @@ push!(results_JSON, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
                          "total_energy_cost" => value(TotalEnergyCharges * r_tax_fraction_offtaker),
                          "total_demand_cost" => value(TotalDemandCharges * r_tax_fraction_offtaker),
                          "total_fixed_cost" => value(TotalFixedCharges * r_tax_fraction_offtaker),
+                         "total_export_benefit" => value(TotalEnergyExports * r_tax_fraction_offtaker),
                          "total_min_charge_adder" => value(MinChargeAdder * r_tax_fraction_offtaker),
+                         "total_payments_to_third_party_owner" => 0, 
                          "net_capital_costs_plus_om" => value(TotalTechCapCosts + TotalStorageCapCosts + TotalOMCosts * r_tax_fraction_owner),
-                         "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts),
-                         "average_yearly_pv_energy_produced" => value(AverageElecProd),
+#                         "pv_net_fixed_om_costs" => value(PVPerUnitSizeOMCosts * r_tax_fraction_owner),
                          "average_wind_energy_produced" => value(AverageWindProd),
                          "year_one_energy_produced" => value(Year1ElecProd),
                          "year_one_wind_energy_produced" => value(Year1WindProd),
-                         "average_annual_energy_exported" => value(ExportedElecPV),
-                         "average_annual_energy_exported_wind" => value(ExportedElecWIND))...)
+                         "average_annual_energy_exported_wind" => value(ExportedElecWIND),
+                         "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)
 
 try @show results_JSON["batt_kwh"] catch end
 try @show results_JSON["batt_kw"] catch end
@@ -591,232 +622,151 @@ try @show results_JSON["wind_kw"] catch end
 @show results_JSON["total_min_charge_adder"]
 @show results_JSON["net_capital_costs_plus_om"]
 @show results_JSON["net_capital_costs"]
-@show results_JSON["average_yearly_pv_energy_produced"]
+#@show results_JSON["average_yearly_pv_energy_produced"]
 @show results_JSON["average_wind_energy_produced"]
 @show results_JSON["year_one_energy_produced"]
 @show results_JSON["year_one_wind_energy_produced"]
-@show results_JSON["average_annual_energy_exported"]
-@show results_JSON["average_annual_energy_exported_wind"];
+#@show results_JSON["average_annual_energy_exported"]
+@show results_JSON["average_annual_energy_exported_wind"]
 
-#println("Objective Value: ", ojv)
 
-### Stuff to add
-#
-#@expression(REopt, Year1Utilityto1R, 
-#            sum(dvRatedProd[:UTIL1,LD,ts,s,fb] *TimeStepScaling 
-#                for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, Year1Load, 
-#            sum(dvRatedProd[t,LD,ts,s,fb] *TimeStepScaling * ProdFactor[t, LD, ts] 
-#                for t in Tech, LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, Year1PVNMto1R, 
-#            sum(dvRatedProd[:PVNM,LD,ts,s,fb] *TimeStepScaling * ProdFactor[:PVNM, LD, ts] 
-#                for LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, Year1Loadwbat, 
-#            sum(dvRatedProd[t,LD,ts,s,fb] * LevelizationFactor[t] * ProdFactor[t, LD, ts] + dvElecFromStor[ts] 
-#                for t in Tech, LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, R1[t in Tech], 
-#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for LD in [Symbol("1R")], ts in TimeStep, s in Seg, fb in FuelBin))
-#@expression(REopt, S1[t in Tech], 
-#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for LD in [Symbol("1S")], ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, PV[LD in Load], 
-#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:PV], LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
-#@expression(REopt, PVNM[LD in Load], 
-#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:PVNM], ts in TimeStep, s in Seg, fb in FuelBin))
-#@expression(REopt, UTIL1[LD in Load], 
-#            sum(ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] for t in [:UTIL1], ts in TimeStep, s in Seg, fb in FuelBin))
-#
-#@expression(REopt, loadsattech[ts in TimeStep, t in Tech], 
-#            sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] + dvElecFromStor[ts] 
-#                for LD in [Symbol("1R")], s in Seg, fb in FuelBin))
-#
-#
-#GeneratorFuelUsed := sum(t in Tech, fb in FuelBin | TechToTechClassMatrix (t, "GENERATOR") = 1) dvFuelUsed(t, fb)
-#
 
-#GeneratorFuelUsed = AffExpr(0)
-#
-#for t in Tech, fb in FuelBin 
-#    if TechToTechClassMatrix[t, "GENERATOR"] == 1
-#        y = AffExpr(0, dvFuelUsed[t, fb] => 1)
-#        add_to_expression!(GeneratorFuelUsed, y)
-#    end
-#end
+@expression(REopt, GridToBatt[ts in TimeStep],
+            sum(dvRatedProd[:UTIL1, Symbol("1S"), ts, s, fb] * ProdFactor[:UTIL1, Symbol("1S"), ts] * LevelizationFactor[:UTIL1] for s in Seg, fb in FuelBin))
 
-#!************************** Writing to files ************************************
+@expression(REopt, GENERATORtoBatt[t in GENERATORClass, ts in TimeStep],
+            sum(dvRatedProd[t, Symbol("1S"), ts, s, fb] * ProdFactor[t, Symbol("1S"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, PVtoLoad[t in PVClass, ts in TimeStep],
+            sum(dvRatedProd[t, Symbol("1R"), ts, s, fb] * ProdFactor[t, Symbol("1R"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, PVtoGrid[t in PVClass, ts in TimeStep, LD in [Symbol("1W"), Symbol("1X")]],
+            sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, WINDtoLoad[t in WINDClass, ts in TimeStep],
+            sum(dvRatedProd[t, Symbol("1R"), ts, s, fb] * ProdFactor[t, Symbol("1R"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, WINDtoGrid[t in WINDClass, ts in TimeStep, LD in [Symbol("1W"), Symbol("1X")]],
+            sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, GENERATORtoLoad[t in GENERATORClass, ts in TimeStep],
+            sum(dvRatedProd[t, Symbol("1R"), ts, s, fb] * ProdFactor[t, Symbol("1R"), ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, GENERATORtoGrid[t in GENERATORClass, ts in TimeStep, LD in [Symbol("1W"), Symbol("1X")]],
+            sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+
+@expression(REopt, GridtoLoad[ts in TimeStep],
+            sum(dvRatedProd[:UTIL1, Symbol("1R"), ts, s, fb] * ProdFactor[:UTIL1, Symbol("1R"), ts] * LevelizationFactor[:UTIL1] for s in Seg, fb in FuelBin))
+
+Site_load = LoadProfile[Symbol("1R"), :]
+
+DemandPeaks = value.(dvPeakDemandE)
+MonthlyDemandPeaks = value.(dvPeakDemandEMonth)
+
+results_JSON["GridToBatt"] = value.(GridToBatt)
+results_JSON["GENERATORtoBatt"] = value.(GENERATORtoBatt)
+results_JSON["PVtoLoad"] = value.(PVtoLoad)
+results_JSON["PVtoGrid"] = value.(PVtoGrid)
+results_JSON["WINDtoLoad"] = value.(WINDtoLoad)
+results_JSON["WINDtoGrid"] = value.(WINDtoGrid)
+results_JSON["GENERATORtoLoad"] = value.(GENERATORtoLoad)
+results_JSON["GENERATORtoGrid"] = value.(GENERATORtoGrid)
+results_JSON["GridtoLoad"] = value.(GridtoLoad)
+
+#results_JSON["year_one_to_grid_series_kw"] = value.(GridToBatt)
+#results_JSON["year_one_to_load_series_kw"] = value.(dvElecFromStor)
+#results_JSON["year_one_to_load_series_kw"] = value.(dvElecFromStor)
+#
+#results_JSON["LoadProfile"] = Dict()
+#results_JSON["Financial"] = Dict()
+#results_JSON["Storage"] = Dict()
+#results_JSON["ElectricTariff"] = Dict()
 #
 #
-#!Time series dispatch output
-#
-#if sum(b in BattLevel) getsol(dvStorageSizeKWH(b)) > REoptTol then
-#
-#    fopen(OutputDir + "\\GridToBatt.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1S", ts, s, fb)) * ProdFactor("UTIL1", "1S", ts) * LevelizationFactor("UTIL1"))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    fopen(OutputDir + "\\ElecToStore.csv",F_OUTPUT)
-#        forall (ts in TimeStep )     do
-#           writeln (     getsol (dvElecToStor (ts)))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    !Time series dispatch output
-#    fopen(OutputDir + "\\ElecFromStore.csv",F_OUTPUT)
-#        forall (ts in TimeStep )     do
-#           writeln (    getsol (dvElecFromStor (ts)))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    fopen(OutputDir + "\\StoredEnergy.csv",F_OUTPUT)
-#        forall (ts in TimeStep )     do
-#           writeln (   getsol (dvStoredEnergy (ts)))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
-#
-#        fopen(OutputDir + "\\PVtoBatt.csv", F_OUTPUT)
-#            forall (ts in TimeStep) do
-#               writeln (sum (s in Seg, fb in FuelBin)  getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
-#            end-do
-#        fclose(F_OUTPUT)
-#
-#    end-do
-#
-#    forall (t in Tech | (TechToTechClassMatrix (t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
-#
-#        fopen(OutputDir + "\\WINDtoBatt.csv", F_OUTPUT)
-#            forall (ts in TimeStep) do
-#               writeln (sum (s in Seg, fb in FuelBin)  getsol (dvRatedProd (t, "1S", ts, s, fb)) * ProdFactor(t, "1S", ts) * LevelizationFactor(t))
-#            end-do
-#        fclose(F_OUTPUT)
-#
-#    end-do
-#
-#end-if
-#
-#forall (t in Tech | (TechToTechClassMatrix (t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)) do
-#
-#    fopen(OutputDir + "\\PVtoLoad.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    fopen(OutputDir + "\\PVtoGrid.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
-#                    sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#end-do
-#
-#forall (t in Tech | (TechToTechClassMatrix (t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
-#
-#    fopen(OutputDir + "\\WINDtoLoad.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#    fopen(OutputDir + "\\WINDtoGrid.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1W", ts, s, fb)) * ProdFactor(t, "1W", ts) * LevelizationFactor(t) +
-#                    sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1X", ts, s, fb)) * ProdFactor(t, "1X", ts) * LevelizationFactor(t))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#end-do
-#
-#forall (t in Tech | (TechToTechClassMatrix (t, "GENERATOR") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)) do
-#
-#    fopen(OutputDir + "\\GENERATORtoLoad.csv", F_OUTPUT)
-#        forall (ts in TimeStep) do
-#           writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd (t, "1R", ts, s, fb)) * ProdFactor(t, "1R", ts) * LevelizationFactor(t))
-#        end-do
-#    fclose(F_OUTPUT)
-#
-#end-do
-#
-#fopen(OutputDir + "\\GridToLoad.csv", F_OUTPUT)
-#    forall (ts in TimeStep) do
-#       writeln (sum (s in Seg, fb in FuelBin)   getsol (dvRatedProd ("UTIL1", "1R", ts, s, fb)) * ProdFactor("UTIL1", "1R", ts) * LevelizationFactor("UTIL1"))
-#    end-do
-#fclose(F_OUTPUT)
-#
-#fopen(OutputDir + "\\Load.csv",F_OUTPUT)
-#    forall (ts in TimeStep )     do
-#       writeln (   getsol (LoadProfile("1R",ts)))
-#    end-do
-#fclose(F_OUTPUT)
-#
-#
-#fopen(OutputDir + "\\DemandPeaks.csv",F_OUTPUT)
-#    writeln ("Ratchet,DemandTier,PeakDemand")
-#    forall  ( r in Ratchets, db in DemandBin)  do
-#       writeln (r, ",", db, ",", getsol(dvPeakDemandE(r,db)),",")
-#    end-do
-#    writeln(",")
-#    writeln("Month,Peak_Demand")
-#    forall  ( m in Month, dbm in DemandMonthsBin)  do
-#       writeln (m, ",", getsol(dvPeakDemandEMonth(m, dbm)),",")
-#    end-do
-#fclose(F_OUTPUT)
-#
-#
-#! write outputs in JSON for post processing
-#
-#    Root:=addnode(out_json, 0, XML_ELT, "jsv")
-#
-#    Node:=addnode(out_json, Root, "status", status)
-#    Node:=addnode(out_json, Root, "lcc", strfmt(getsol(RECosts) + 0.001*getsol(MinChargeAdder), 10, 0))
-#
-#    forall  (b in BattLevel)  do
-#        Node:=addnode(out_json, Root, "batt_kwh", getsol (dvStorageSizeKWH(b)))
-#    end-do
-#
-#    forall  (b in BattLevel)  do
-#        Node:=addnode(out_json, Root, "batt_kw", getsol (dvStorageSizeKW(b)))
-#    end-do
-#
-#    forall (t in Tech  | TechToTechClassMatrix(t, "PV") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > REoptTol)  do
-#        Node:=addnode(out_json, Root, "pv_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
-#    end-do
-#
-#    forall (t in Tech  | TechToTechClassMatrix(t, "WIND") = 1 and sum(s in Seg) getsol (dvSystemSize(t,s)) > 0)  do
-#        Node:=addnode(out_json, Root, "wind_kw", sum(s in Seg) getsol (dvSystemSize(t,s)))
-#    end-do
-#
-#    Node:=addnode(out_json, Root, "year_one_utility_kwh", strfmt(getsol (Year1UtilityEnergy) , 10, 4))
-#    Node:=addnode(out_json, Root, "year_one_energy_cost", strfmt(getsol(Year1EnergyCost), 10, 2))
-#    Node:=addnode(out_json, Root, "year_one_demand_cost", strfmt(getsol(Year1DemandCost), 10, 2))
-#    Node:=addnode(out_json, Root, "year_one_demand_tou_cost", strfmt(getsol(Year1DemandTOUCost), 10, 2))
-#    Node:=addnode(out_json, Root, "year_one_demand_flat_cost", strfmt(getsol(Year1DemandFlatCost), 10, 2))
-#    Node:=addnode(out_json, Root, "year_one_export_benefit", strfmt(getsol(ExportBenefitYr1), 10, 0))
-#    Node:=addnode(out_json, Root, "year_one_fixed_cost", strfmt(getsol(Year1FixedCharges), 10, 0))
-#    Node:=addnode(out_json, Root, "year_one_min_charge_adder", strfmt(getsol(Year1MinCharges), 10, 2))
-#    Node:=addnode(out_json, Root, "year_one_bill", strfmt(getsol(Year1Bill), 10, 2))
-#    !Node:=addnode(out_json, Root, "year_one_payments_to_third_party_owner", strfmt(getsol(TotalDemandCharges) / pwf_e, 10, 0))
-#    Node:=addnode(out_json, Root, "total_energy_cost", strfmt(getsol(TotalEnergyCharges) * r_tax_fraction_offtaker, 10, 2))
-#    Node:=addnode(out_json, Root, "total_demand_cost", strfmt(getsol(TotalDemandCharges) * r_tax_fraction_offtaker, 10, 2))
-#    Node:=addnode(out_json, Root, "total_fixed_cost", strfmt(getsol(TotalFixedCharges) * r_tax_fraction_offtaker, 10, 2))
-#    Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
-#    Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
-#    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalOMCosts) * r_tax_fraction_owner, 10, 0))
-#    Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
-#    Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AverageElecProd), 10, 0))
-#    Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
-#    Node:=addnode(out_json, Root, "year_one_energy_produced", strfmt(getsol(Year1ElecProd), 10, 0))
-#    Node:=addnode(out_json, Root, "year_one_wind_energy_produced", strfmt(getsol(Year1WindProd), 10, 0))
-#    Node:=addnode(out_json, Root, "average_annual_energy_exported", strfmt(getsol(ExportedElecPV), 10, 0))
-#    Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
-#    Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
-#
-#jsonsave(out_json, OutputDir + "\\REopt_results.json")
+#for (name, value) in results_JSON:
+#    if name == "LoadProfile":
+#        #load_model = LoadProfileModel.objects.get(run_uuid=meta['run_uuid'])
+#        results_JSON[name]["year_one_electric_load_series_kw"] = LoadProfile[Symbol("1R"), :]
+#        #results_JSON[name]["critical_load_series_kw"] = self.po.get_crit_load_profile()
+#        results_JSON[name]["annual_calculated_kwh"] = AnnualElecLoad
+#        #results_JSON[name]["resilience_check_flag"] = load_model.resilience_check_flag
+#        #results_JSON[name]["sustain_hours"] = load_model.sustain_hours
+#    elseif name == "Financial":
+#        results_JSON[name]["lcc_us_dollars"] = ojv
+#        #results_JSON[name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
+#        #results_JSON[name]["npv_us_dollars"] = self.results_dict.get("npv")
+#        results_JSON[name]["net_capital_costs_plus_om_us_dollars"] = value(TotalTechCapCosts + TotalStorageCapCosts + TotalOMCosts * r_tax_fraction_owner)
+#        results_JSON[name]["net_capital_costs"] = value(TotalTechCapCosts + TotalStorageCapCosts)
+#        #results_JSON[name]["microgrid_upgrade_cost_us_dollars"] = self.results_dict.get("net_capital_costs") * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
+#    elseif name == "PV":
+#        #pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
+#        results_JSON[name]["size_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVClass))
+#        results_JSON[name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
+#        results_JSON[name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
+#        results_JSON[name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
+#        results_JSON[name]["year_one_to_battery_series_kw"] = self.po.get_pv_to_batt()
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_pv_to_load()
+#        results_JSON[name]["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid()
+#        results_JSON[name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
+#        #results_JSON[name]["existing_pv_om_cost_us_dollars"] = self.results_dict.get("pv_net_fixed_om_costs_bau")
+#        results_JSON[name]["station_latitude"] = pv_model.station_latitude
+#        results_JSON[name]["station_longitude"] = pv_model.station_longitude
+#        results_JSON[name]["station_distance_km"] = pv_model.station_distance_km
+#    elseif name == "Wind":
+#        results_JSON[name]["size_kw"] = self.results_dict.get("wind_kw",0)
+#        results_JSON[name]["average_yearly_energy_produced_kwh"] = value(AveragePVProd)
+#        results_JSON[name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_wind")
+#        results_JSON[name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_wind_energy_produced")
+#        results_JSON[name]["year_one_to_battery_series_kw"] = self.po.get_wind_to_batt()
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_wind_to_load()
+#        results_JSON[name]["year_one_to_grid_series_kw"] = self.po.get_wind_to_grid()
+#        results_JSON[name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
+#    elseif name == "Storage":
+#        results_JSON[name]["size_kw"] = self.results_dict.get("batt_kw",0)
+#        results_JSON[name]["size_kwh"] = self.results_dict.get("batt_kwh",0)
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_batt_to_load()
+#        results_JSON[name]["year_one_to_grid_series_kw"] = self.po.get_batt_to_grid()
+#        results_JSON[name]["year_one_soc_series_pct"] = self.po.get_soc(self.results_dict.get('batt_kwh'))
+#    elseif name == "ElectricTariff":
+#        results_JSON[name]["year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+#        results_JSON[name]["year_one_demand_cost_us_dollars"] = self.results_dict.get("year_one_demand_cost")
+#        results_JSON[name]["year_one_fixed_cost_us_dollars"] = self.results_dict.get("year_one_fixed_cost")
+#        results_JSON[name]["year_one_min_charge_adder_us_dollars"] = self.results_dict.get("year_one_min_charge_adder")
+#        #results_JSON[name]["year_one_energy_cost_bau_us_dollars"] = self.results_dict.get("year_one_energy_cost_bau")
+#        results_JSON[name]["year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")
+#        #results_JSON[name]["year_one_demand_cost_bau_us_dollars"] = self.results_dict.get("year_one_demand_cost_bau")
+#        #results_JSON[name]["year_one_fixed_cost_bau_us_dollars"] = self.results_dict.get("year_one_fixed_cost_bau")
+#        #results_JSON[name]["year_one_min_charge_adder_bau_us_dollars"] = self.results_dict.get("year_one_min_charge_adder_bau")
+#        results_JSON[name]["total_energy_cost_us_dollars"] = self.results_dict.get("total_energy_cost")
+#        results_JSON[name]["total_demand_cost_us_dollars"] = self.results_dict.get("total_demand_cost")
+#        results_JSON[name]["total_fixed_cost_us_dollars"] = self.results_dict.get("total_fixed_cost")
+#        results_JSON[name]["total_min_charge_adder_us_dollars"] = self.results_dict.get("total_min_charge_adder")
+#        #results_JSON[name]["total_energy_cost_bau_us_dollars"] = self.results_dict.get("total_energy_cost_bau")
+#        #results_JSON[name]["total_demand_cost_bau_us_dollars"] = self.results_dict.get("total_demand_cost_bau")
+#        #results_JSON[name]["total_fixed_cost_bau_us_dollars"] = self.results_dict.get("total_fixed_cost_bau")
+#        #results_JSON[name]["total_min_charge_adder_bau_us_dollars"] = self.results_dict.get("total_min_charge_adder_bau")
+#        results_JSON[name]["year_one_bill_us_dollars"] = self.results_dict.get("year_one_bill")
+#        #results_JSON[name]["year_one_bill_bau_us_dollars"] = self.results_dict.get("year_one_bill_bau")
+#        results_JSON[name]["year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
+#        results_JSON[name]["total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
+#        results_JSON[name]["year_one_energy_cost_series_us_dollars_per_kwh"] = self.po.get_energy_cost()
+#        results_JSON[name]["year_one_demand_cost_series_us_dollars_per_kw"] = self.po.get_demand_cost()
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_grid_to_load()
+#        results_JSON[name]["year_one_to_battery_series_kw"] = self.po.get_grid_to_batt()
+#        results_JSON[name]["year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
+#        #results_JSON[name]["year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
+#    elseif name == "Generator":
+#        results_JSON[name]["size_kw"] = self.results_dict.get("generator_kw",0)
+#        results_JSON[name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
+#        #results_JSON[name]["fuel_used_gal_bau"] = self.results_dict.get("fuel_used_gal_bau")
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+#        results_JSON[name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_gen_energy_produced")
+#        results_JSON[name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_gen")
+#        results_JSON[name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_gen_energy_produced")
+#        results_JSON[name]["year_one_to_battery_series_kw"] = self.po.get_gen_to_batt()
+#        results_JSON[name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
+#        results_JSON[name]["year_one_to_grid_series_kw"] = self.po.get_gen_to_grid()
+#        results_JSON[name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
+#        #results_JSON[name]["existing_gen_fixed_om_cost_us_dollars_bau"] = self.results_dict.get("gen_net_fixed_om_costs_bau")
+#        #results_JSON[name]["existing_gen_variable_om_cost_us_dollars_bau"] = self.results_dict.get("gen_net_variable_om_costs_bau")
+#        results_JSON[name]["gen_variable_om_cost_us_dollars"] = self.results_dict.get("gen_net_variable_om_costs")
