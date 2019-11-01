@@ -19,7 +19,6 @@ class RunJumpModelTask(Task):
         """
         log a bunch of stuff for debugging
         save message: error and outputs: Scenario: status
-        need to stop rest of chain!?
         :param exc: The exception raised by the task.
         :param task_id: Unique id of the failed task. (not the run_uuid)
         :param args: Original arguments for the task that failed.
@@ -34,22 +33,38 @@ class RunJumpModelTask(Task):
         data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 
-        self.request.chain = None  # stop the chain?
+        self.request.chain = None  # stop the chain
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
 @shared_task(bind=True, base=RunJumpModelTask)
 def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
-
     self.profiler = Profiler()
+    name = 'reopt' if not bau else 'reopt_bau'
+    self.data = data
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
-
     try:
         j = julia.Julia()
+        j.include("reo/src/reopt.jl")
+        results = j.reopt(data)
     except Exception as e:
         raise e
+    else:
+        status = results["outputs"]["Scenario"]["status"]
+        logger.info("REopt run successful. Status {}".format(status))
+
+        if status.strip() != 'optimal':
+            logger.error("REopt status not optimal. Raising NotOptimal Exception.")
+            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
+
+    self.profiler.profileEnd()
+    tmp = dict()
+    tmp[name+'_seconds'] = self.profiler.getDuration()
+    ModelManager.updateModel('ProfileModel', tmp, run_uuid)
 
     if bau:
         return dfm_list[1]
