@@ -108,6 +108,48 @@ class TestJumpModel(ResourceTestCaseMixin, TestCase):
         try:
             check_common_outputs(self, c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(r.get('run_uuid')))
             print("Error message: {}".format(d['messages']))
             raise
+
+    @skip("Won't actually time-out until we solve a real problem")
+    def test_jump_timeout(self):
+        """
+        Initial test for running Julia as Celery Task
+        """
+        post = {"Scenario": {
+                    "timeout_seconds": 1,
+                    "Site": {
+                        "PV": {
+                            "max_kw": 0,
+                        },
+                        "Generator": {
+                            "max_kw": 0,
+                        },
+                        "LoadProfile": {
+                            "year": 2018,
+                            "annual_kwh": 100000.0,
+                            "doe_reference_name": "Hospital"
+                        },
+                        "ElectricTariff": {
+                            "blended_monthly_demand_charges_us_dollars_per_kw": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                            "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
+                        },
+                        "longitude": -118.0,
+                        "latitude": 34.5794343,
+                        "Wind" : {
+                            "max_kw": 0
+                        },
+                        "Storage": {
+                            "max_kw": 0
+                        }
+                    }
+                }
+        }
+        resp = self.get_response(data=post)
+        self.assertHttpCreated(resp)
+        r = json.loads(resp.content)
+        results = ModelManager.make_response(run_uuid=r.get('run_uuid'))
+        self.assertTrue('Optimization exceeded timeout: 1 seconds.' in results['messages']['error'])
+
+
