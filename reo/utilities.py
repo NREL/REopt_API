@@ -206,3 +206,16 @@ def check_common_outputs(Test, d_calculated, d_expected):
                         - float(c['total_fixed_cost_bau']))
                         / float(c['lcc_bau'])) < Test.REopt_tol,
                         "LCC_BAU doesn't add up to sum of utility costs")
+
+
+def load_csv(path):
+    """
+     method for loading dispatch csv's into lists
+    :param path: path to csv file
+    :return: return list of params
+    """
+    l = list()
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            l.append(float(line))
+    return l
