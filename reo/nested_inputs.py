@@ -289,13 +289,13 @@ nested_input_definitions = {
           "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh."
+          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh. Can be a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-sampled using mean values to match the Scenario time_steps_per_hour."
         },
         "wholesale_rate_above_site_load_us_dollars_per_kwh": {
           "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid above the site load, regardless of net metering"
+          "description": "Price of electricity sold back to the grid above the site load, regardless of net metering.  Can be a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-sampled using mean values to match the Scenario time_steps_per_hour."
         },
         "urdb_response": {
           "type": "dict",
