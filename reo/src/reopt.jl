@@ -9,6 +9,7 @@ using Xpress
 
 
 function reopt(data)
+function reopt(data; array)
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
     REopt = direct_model(Xpress.Optimizer(MAXTIME=MAXTIME))
     @objective(REopt, Min, 1)

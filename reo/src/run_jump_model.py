@@ -46,11 +46,14 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
+    reopt_inputs = {
+        "array": [[1, 2, .3], [1, 2, .3]]
+    }
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
         j.include("reo/src/reopt.jl")
-        results = j.reopt(data)
+        results = j.reopt(data, **reopt_inputs)
     except Exception as e:
         raise e
     else:
