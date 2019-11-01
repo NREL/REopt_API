@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel, LoadProfileModel
+from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -83,7 +83,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             "gen_net_variable_om_costs"
         ]
 
-        def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
+        def __init__(self, path_templates, path_output, path_output_bau, path_static, year, dfm):
             """
 
             :param path_templates: path to proForma template
@@ -93,6 +93,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             :param year: load_year
             """
             self.profiler = Profiler()
+            self.dfm = dfm
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
                 results_dict = json.loads(f.read())
@@ -173,12 +174,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
 
                 if name == "LoadProfile":
-                    load_model = LoadProfileModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.po.get_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.po.get_crit_load_profile()
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.po.get_annual_kwh()
-                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = load_model.resilience_check_flag
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = load_model.sustain_hours
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dfm["LoadProfile"]["resilience_check_flag"]
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dfm["LoadProfile"]["sustain_hours"]
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
@@ -311,7 +311,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             raise RuntimeError('REopt', msg)
 
         process_results = Results(paths['templates'], paths['outputs'], paths['outputs_bau'],
-                                  paths['static_outputs'], year)
+                                  paths['static_outputs'], year, dfm_list[0])
         results = process_results.get_output()
 
         data['outputs'].update(results)

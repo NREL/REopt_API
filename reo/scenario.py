@@ -122,10 +122,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_slope=gen.fuel_slope,
                                  fuel_intercept=gen.fuel_intercept,
                                  **inputs_dict['Site']['LoadProfile'])
-                tmp = dict()
-                tmp['resilience_check_flag'] = lp.resilience_check_flag
-                tmp['sustain_hours'] = lp.sustain_hours
-                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
             else:
                 lp = LoadProfile(dfm=dfm,
                                  user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
@@ -140,11 +136,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_slope=0,
                                  fuel_intercept=0,
                                  **inputs_dict['Site']['LoadProfile'])
-                tmp = dict()
-                tmp['resilience_check_flag'] = lp.resilience_check_flag
-                tmp['sustain_hours'] = lp.sustain_hours
-                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
-
+            load_profile_params_to_update = dict()
+            load_profile_params_to_update['resilience_check_flag'] = lp.resilience_check_flag
+            load_profile_params_to_update['sustain_hours'] = lp.sustain_hours
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
@@ -182,7 +176,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
-            # delete python objects, which are not serializable
+        dfm_dict["LoadProfile"] = load_profile_params_to_update
+
+        # delete python objects, which are not serializable
         for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
