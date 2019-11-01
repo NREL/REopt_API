@@ -9,10 +9,15 @@ using Xpress
 
 
 function reopt(data)
-   data["outputs"]["Scenario"]["status"] = "optimal"
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
     REopt = direct_model(Xpress.Optimizer(MAXTIME=MAXTIME))
     @objective(REopt, Min, 1)
     optimize!(REopt)
+    if termination_status(REopt) == MOI.OPTIMAL
+        status = "optimal"
+    else
+        status = "not optimal"
+    end
+    data["outputs"]["Scenario"]["status"] = status
     return data
 end
