@@ -647,15 +647,6 @@ class LoadProfile(BuiltInProfile):
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
-        #self.critical_load_series_kw = critical_loads_kw
-
-        # write csv for critical_load_series_kw. needed for outage sim
-        fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
-        with open(fp, 'wb') as f:
-            for ld in critical_loads_kw:
-                f.write((str(ld)+'\n'))
+        self.critical_load_series_kw = critical_loads_kw
 
         dfm.add_load(self)
-
-
-

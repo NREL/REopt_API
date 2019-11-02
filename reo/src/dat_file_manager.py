@@ -55,6 +55,7 @@ class DatFileManager:
         self.elec_tariff = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
+        self.LoadProfile = {}
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -136,6 +137,9 @@ class DatFileManager:
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
+        self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
+        self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
+        self.LoadProfile["sustain_hours"] = load.sustain_hours
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
