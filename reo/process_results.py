@@ -325,7 +325,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     try:
-        results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results'])
+        results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'])
         results = results_object.get_output()
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
