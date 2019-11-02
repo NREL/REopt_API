@@ -74,4 +74,9 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     tmp[name+'_seconds'] = self.profiler.getDuration()
     ModelManager.updateModel('ProfileModel', tmp, run_uuid)
 
+    # reduce the amount data being transferred between tasks
+    if bau:
+        del dfm['reopt_inputs_bau']
+    else:
+        del dfm['reopt_inputs']
     return dfm
