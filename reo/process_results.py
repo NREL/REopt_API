@@ -1,5 +1,4 @@
 from __future__ import absolute_import, unicode_literals
-import os
 import sys
 from reo.nested_outputs import nested_output_definitions
 from reo.log_levels import log
@@ -8,7 +7,6 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-from reo.utilities import load_csv
 
 
 class ProcessResultsTask(Task):
@@ -53,7 +51,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
-    paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm_bau], one each from the two REopt jobs
 
     class Results:
 
@@ -76,7 +73,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "gen_net_variable_om_costs"
         ]
 
-        def __init__(self, path_output, results_dict, results_dict_bau, dfm):
+        def __init__(self, results_dict, results_dict_bau, dfm):
             """
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
@@ -110,8 +107,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             results_dict['npv'] = results_dict['lcc_bau'] - results_dict['lcc']
 
             self.results_dict = results_dict
-            self.results_dict_bau = results_dict_bau
-            self.path_output = path_output
             self.nested_outputs = self.setup_nested()
 
         def get_output(self):
@@ -143,29 +138,21 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             into the nested output dict.
             :return: None (modifies self.nested_outputs)
             """
+            # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
             SOC = None
             if self.results_dict.get("StoredEnergy") is not None and self.results_dict.get('batt_kwh') is not None:
                 batt_kwh = self.results_dict.get('batt_kwh')
                 SOC = [float(se) / batt_kwh for se in self.results_dict.get("StoredEnergy")]
-            path_crit_load = os.path.join(self.path_output, "critical_load_series_kw.csv")
-            crit_load = None
-            if os.path.isfile(path_crit_load):
-                crit_load = load_csv(path_crit_load)
 
             # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_load_series_kw"] = self.results_dict.get("Load")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "critical_load_series_kw"] = crit_load
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = \
-                        self.results_dict.get("annual_kwh")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "resilience_check_flag"] = self.dfm["LoadProfile"]["resilience_check_flag"]
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "sustain_hours"] = self.dfm["LoadProfile"]["sustain_hours"]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
+                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dfm["LoadProfile"].get("critical_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.results_dict.get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dfm["LoadProfile"].get("resilience_check_flag")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dfm["LoadProfile"].get("sustain_hours")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
@@ -338,8 +325,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     try:
-        results_object = Results(path_output=paths['static_outputs'], results_dict=dfm_list[0]['results'],
-                                 results_dict_bau=dfm_list[1]['results'])
+        results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results'])
         results = results_object.get_output()
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
