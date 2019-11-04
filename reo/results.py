@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel, LoadProfileModel
+from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -55,6 +55,14 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+
+    if len(ScenarioModel.objects.filter(run_uuid=self.run_uuid)) == 0:
+        msg = "Scenario was not found in database. No results will be saved."
+        log.info("Results.py for run_uuid={} raising REoptError: {}".format(self.run_uuid, msg))
+        raise REoptError(task='callback', name='results.py', run_uuid=self.run_uuid, message=msg, traceback='',
+                         user_uuid=self.user_uuid)
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -297,8 +305,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             return power
 
     self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
     
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
