@@ -969,6 +969,9 @@ class DatFileManager:
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
 
+        TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
+        TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechIsGrid': tech_is_grid,
@@ -1035,6 +1038,11 @@ class DatFileManager:
             'CapCostSegCount': int(n_segments),
             'LoadProfile': self.load.load_list,
             'AnnualElecLoad': self.load.annual_kwh,
+            'NMILLimits': [self.elec_tariff.net_metering_limit, self.elec_tariff.interconnection_limit,
+                           self.elec_tariff.interconnection_limit * 10],
+            'TechToNMILMapping': TechToNMILMapping,
+            'StorageMinChargePcent': self.storage.soc_min_pct,
+            'InitSOC': self.storage.soc_init_pct,
         }
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1101,4 +1109,9 @@ class DatFileManager:
             'CapCostSegCount': int(n_segments_bau),
             'LoadProfile': self.load.bau_load_list,
             'AnnualElecLoad': self.load.bau_annual_kwh,
+            'NMILLimits': [self.elec_tariff.net_metering_limit, self.elec_tariff.interconnection_limit,
+                           self.elec_tariff.interconnection_limit * 10],
+            'TechToNMILMapping': TechToNMILMapping,
+            'StorageMinChargePcent': self.storage.soc_min_pct,
+            'InitSOC': self.storage.soc_init_pct,
         }
