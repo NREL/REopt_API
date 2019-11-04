@@ -99,7 +99,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
         else:
             pv = None
 
-
         if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
             gen = Generator(dfm=dfm, run_uuid=run_uuid,
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -136,9 +135,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_slope=0,
                                  fuel_intercept=0,
                                  **inputs_dict['Site']['LoadProfile'])
-            load_profile_params_to_update = dict()
-            load_profile_params_to_update['resilience_check_flag'] = lp.resilience_check_flag
-            load_profile_params_to_update['sustain_hours'] = lp.sustain_hours
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.message)
@@ -176,10 +172,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
-        dfm_dict["LoadProfile"] = load_profile_params_to_update
 
         # delete python objects, which are not serializable
-        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator', 'load']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
