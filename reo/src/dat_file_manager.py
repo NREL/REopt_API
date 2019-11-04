@@ -56,6 +56,8 @@ class DatFileManager:
         self.load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
+        self.net_metering_limit = None
+        self.interconnection_limit = None
         self.LoadProfile = {}
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
@@ -197,6 +199,8 @@ class DatFileManager:
                               [net_metering_limit, interconnection_limit, interconnection_limit*10],
                               'NMILLimits')
         write_to_dat(self.file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
+        self.net_metering_limit = net_metering_limit
+        self.interconnection_limit = interconnection_limit
 
     def add_storage(self, storage):
         self.storage = storage
@@ -1038,8 +1042,7 @@ class DatFileManager:
             'CapCostSegCount': int(n_segments),
             'LoadProfile': self.load.load_list,
             'AnnualElecLoad': self.load.annual_kwh,
-            'NMILLimits': [self.elec_tariff.net_metering_limit, self.elec_tariff.interconnection_limit,
-                           self.elec_tariff.interconnection_limit * 10],
+            'NMILLimits': [self.net_metering_limit, self.interconnection_limit, self.interconnection_limit * 10],
             'TechToNMILMapping': TechToNMILMapping,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
@@ -1109,8 +1112,7 @@ class DatFileManager:
             'CapCostSegCount': int(n_segments_bau),
             'LoadProfile': self.load.bau_load_list,
             'AnnualElecLoad': self.load.bau_annual_kwh,
-            'NMILLimits': [self.elec_tariff.net_metering_limit, self.elec_tariff.interconnection_limit,
-                           self.elec_tariff.interconnection_limit * 10],
+            'NMILLimits': [self.net_metering_limit, self.interconnection_limit, self.interconnection_limit * 10],
             'TechToNMILMapping': TechToNMILMapping,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
