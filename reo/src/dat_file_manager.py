@@ -1037,7 +1037,6 @@ class DatFileManager:
             'FuelBurnRateM': tariff_args.energy_burn_rate,
             'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': int(8760.0/self.n_timesteps)
             'TimeStepScaling': int(8760.0/self.n_timesteps),
             'CapCostSegCount': int(n_segments),
             'LoadProfile': self.load.load_list,
