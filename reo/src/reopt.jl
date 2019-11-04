@@ -70,6 +70,13 @@ function reopt(data;
     FuelBurnRateB,
     TimeStepCount,
     TimeStepScaling,
+    CapCostSegCount,
+    LoadProfile,
+    AnnualElecLoad,
+    NMILLimits,
+    TechToNMILMapping,
+    StorageMinChargePcent,
+    InitSOC,
 )
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
     REopt = direct_model(Xpress.Optimizer(MAXTIME=MAXTIME))
