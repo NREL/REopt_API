@@ -53,6 +53,7 @@ class DatFileManager:
         self.storage = None
         self.site = None
         self.elec_tariff = None
+        self.load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
         self.LoadProfile = {}
@@ -140,6 +141,7 @@ class DatFileManager:
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["sustain_hours"] = load.sustain_hours
+        self.load = load
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
@@ -1029,6 +1031,10 @@ class DatFileManager:
             'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': int(8760.0/self.n_timesteps)
+            'TimeStepScaling': int(8760.0/self.n_timesteps),
+            'CapCostSegCount': int(n_segments),
+            'LoadProfile': self.load.load_list,
+            'AnnualElecLoad': self.load.annual_kwh,
         }
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
@@ -1091,5 +1097,8 @@ class DatFileManager:
             'FuelBurnRateM': tariff_args.energy_burn_rate_bau,
             'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': int(8760.0/self.n_timesteps)
+            'TimeStepScaling': int(8760.0/self.n_timesteps),
+            'CapCostSegCount': int(n_segments_bau),
+            'LoadProfile': self.load.bau_load_list,
+            'AnnualElecLoad': self.load.bau_annual_kwh,
         }
