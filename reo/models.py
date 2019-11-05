@@ -395,9 +395,15 @@ class GeneratorModel(models.Model):
         year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
         year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        existing_gen_fixed_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
-        existing_gen_variable_om_cost_us_dollars_bau = models.FloatField(null=True, blank=True)
-        gen_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+        total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+        existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
         @classmethod
         def create(cls, **kwargs):
@@ -630,7 +636,7 @@ class ModelManager(object):
             if isinstance(e, models.ObjectDoesNotExist):
                 resp['messages']['error'] = "run_uuid {} not in database. "\
                                             "You may have hit the results endpoint too quickly after POST'ing scenario, "\
-                                            "or you may have a typo in your run_uuid.".format(run_uuid)
+                                            "you may have a typo in your run_uuid, or the scenario was deleted.".format(run_uuid)
                 resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
