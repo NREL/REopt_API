@@ -969,13 +969,13 @@ class DatFileManager:
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
-            'TechIsGrid': tech_is_grid,
             'Load': load_list,
-            'TechToLoadMatrix': tech_to_load,
             'TechClass': self.available_tech_classes,
-            'NMILRegime': self.NMILRegime,
+            'TechIsGrid': tech_is_grid,
+            'TechToLoadMatrix': tech_to_load,
             'TurbineDerate': derate,
             'TechToTechClassMatrix': tech_to_tech_class,
+            'NMILRegime': self.NMILRegime,
             'ProdFactor': prod_factor,
             'EtaStorIn': eta_storage_in,
             'EtaStorOut': eta_storage_out,
@@ -1029,6 +1029,25 @@ class DatFileManager:
             'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': int(8760.0/self.n_timesteps)
+            #AnnualElecLoad
+            #LoadProfile
+            #StorageMinChargePcent
+            #BattLevelCoef
+            #InitSOC
+            #NMILLimits
+            #TechToNMILMapping
+            #CapCostSegCount
+            #BattLevelCount
+            #Seg
+            #Points
+            #Month
+            #Ratchets
+            #FuelBin
+            #DemandBin
+            #DemandMonthsBin
+            #BattLevel
+            #TimeStep
+            #TimeStepBat
         }
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
