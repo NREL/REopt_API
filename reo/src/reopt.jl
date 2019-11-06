@@ -103,7 +103,6 @@ function reopt(data;
     TimeStepScaling, 
     args...)
 
-
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
     REopt = direct_model(Xpress.Optimizer(MAXTIME=MAXTIME))
 
@@ -677,8 +676,7 @@ function reopt(data;
         status = "not optimal"
     end
     #println("6")   
-    data["outputs"]["Scenario"]["status"] = status
-    data["outputs"]["Scenario"]["raw"] = results_JSON
+    results_JSON["status"] = status
     #println("7")   
-    return data
+    return results_JSON
 end

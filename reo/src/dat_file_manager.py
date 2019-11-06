@@ -53,11 +53,15 @@ class DatFileManager:
         self.storage = None
         self.site = None
         self.elec_tariff = None
+        self.load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
         self.self = self
         self.self = self
+
+        self.net_metering_limit = None
+        self.interconnection_limit = None
         self.LoadProfile = {}
         #Added for JuMP
         self.load = None
@@ -151,6 +155,7 @@ class DatFileManager:
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["sustain_hours"] = load.sustain_hours
+        self.load = load
                               
         write_to_dat(self.file_load_profile, load.load_list, "LoadProfile")
         write_to_dat(self.file_load_size, load.annual_kwh, "AnnualElecLoad")
@@ -210,6 +215,8 @@ class DatFileManager:
                               [net_metering_limit, interconnection_limit, interconnection_limit*10],
                               'NMILLimits')
         write_to_dat(self.file_NEM_bau, TechToNMILMapping_bau, 'TechToNMILMapping', mode='a')
+        self.net_metering_limit = net_metering_limit
+        self.interconnection_limit = interconnection_limit
 
     def add_storage(self, storage):
         self.storage = storage
@@ -983,6 +990,9 @@ class DatFileManager:
 
         self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
         self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
+
+        TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
+        TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
