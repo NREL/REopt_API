@@ -1138,6 +1138,7 @@ class DatFileManager:
             'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': int(8760.0/self.n_timesteps),
+            'AnnualElecLoad': self.load.annual_kwh,
             'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
