@@ -534,7 +534,7 @@ function reopt(data;
     Year1MinCharges = MinChargeAdder / pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
     
-    results_JSON = Dict("lcc" => ojv)
+    results_JSON = Dict{String, Any}("lcc" => ojv)
     
     results_JSON["batt_kwh"] = value(sum(dvStorageSizeKWH[b] for b in BattLevel))
     results_JSON["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in BattLevel))
