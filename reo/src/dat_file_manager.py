@@ -55,7 +55,17 @@ class DatFileManager:
         self.elec_tariff = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
+
+        self.self = self
+        self.self = self
         self.LoadProfile = {}
+        #Added for JuMP
+        self.load = None
+        self.TechToNMILMapping = None
+        self.TechToNMILMapping_bau = None
+        self.CapCostSegCount = None
+        self.CapCostSegCount_bau = None
+        self.NMILLimits = None
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -132,7 +142,8 @@ class DatFileManager:
     def get_paths(self):
         return self.paths
 
-    def add_load(self, load): 
+    def add_load(self, load):
+        self.load = load
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
@@ -185,6 +196,10 @@ class DatFileManager:
 
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+
+        self.TechToNMILMapping = TechToNMILMapping
+        self.TechToNMILMapping_bau = TechToNMILMapping_bau
+        self.NMILLimits = [net_metering_limit, interconnection_limit, interconnection_limit*10]
 
         write_to_dat(self.file_NEM,
                               [net_metering_limit, interconnection_limit, interconnection_limit*10],
@@ -800,8 +815,10 @@ class DatFileManager:
         
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         self.command_line_args.append("CapCostSegCount=" + str(n_segments))
+        self.CapCostSegCount = n_segments
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
         self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
+        self.CapCostSegCount_bau = n_segments_bau
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -1028,27 +1045,27 @@ class DatFileManager:
             'FuelBurnRateM': tariff_args.energy_burn_rate,
             'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': int(8760.0/self.n_timesteps)
-            #AnnualElecLoad
-            #LoadProfile
-            #StorageMinChargePcent
-            #BattLevelCoef
-            #InitSOC
-            #NMILLimits
-            #TechToNMILMapping
-            #CapCostSegCount
-            #BattLevelCount
-            #Seg
-            #Points
-            #Month
-            #Ratchets
-            #FuelBin
-            #DemandBin
-            #DemandMonthsBin
-            #BattLevel
-            #TimeStep
-            #TimeStepBat
+            'TimeStepScaling': int(8760.0/self.n_timesteps),
+            'AnnualElecLoad': self.load.annual_kwh,
+            'LoadProfile': self.load.load_list,
+            'StorageMinChargePcent': self.storage.soc_min_pct,
+            'InitSOC': self.storage.soc_init_pct,
+            'NMILLimits': self.NMILLimits,
+            'TechToNMILMapping': self.TechToNMILMapping,
+            'CapCostSegCount': self.CapCostSegCount,
+            #'BattLevelCoef':
+            #'BattLevelCount':
+            #'Points':
+            #'Month':
+            #'Ratchets':
+            #'FuelBin':
+            #'DemandBin':
+            #'DemandMonthsBin':
+            #'BattLevel':
+            #'TimeStep':
+            #'TimeStepBat':
         }
+
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
             'TechIsGrid': tech_is_grid_bau,
@@ -1110,5 +1127,11 @@ class DatFileManager:
             'FuelBurnRateM': tariff_args.energy_burn_rate_bau,
             'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': int(8760.0/self.n_timesteps)
+            'TimeStepScaling': int(8760.0/self.n_timesteps),
+            'LoadProfile': self.load.bau_load_list,
+            'StorageMinChargePcent': self.storage.soc_min_pct,
+            'InitSOC': self.storage.soc_init_pct,
+            'NMILLimits': self.NMILLimits,
+            'TechToNMILMapping': self.TechToNMILMapping_bau,
+            'CapCostSegCount': self.CapCostSegCount_bau
         }

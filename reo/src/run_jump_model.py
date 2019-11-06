@@ -50,10 +50,10 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
-    import pdb; pdb.set_trace()
     try:
         j = julia.Julia()
         j.include("reo/src/reopt.jl")
+        import pdb; pdb.set_trace()
         results = j.reopt(data, **reopt_inputs)
     except Exception as e:
         # TODO: exception handling

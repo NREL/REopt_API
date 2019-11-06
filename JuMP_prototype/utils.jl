@@ -2,6 +2,7 @@ import JSON
 import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
+using JLD2
 using JuMP
 using AxisArrays
 
@@ -188,7 +189,15 @@ end
 
 # Format Parameters to be called like variables
 
-function retype(dataAr::AbstractArray)
+function retype(dataAr::AbstractArray, floatbool::Bool=false)
+    if length(dataAr) == 0 
+        if floatbool
+            return Float64[]
+        else
+            return Int64[]
+        end
+    end
+    
     x = typeof(dataAr[1])
     if x == Int64
         typed = Array{Float64}(undef,0)
@@ -264,7 +273,6 @@ function parameter(set, data)
 end
 
 
-
 # Additional dispatches to make things easier
 function length(::Symbol)
     return 1
@@ -275,7 +283,7 @@ function reshape(data::Number, axes::Int64)
 end
 
 function AxisArray(data::Number, index::Array{Symbol, 1})
-    return Dict(index[1] => data)
+    return AxisArray([float(data)], index)
 end
 
 # Output Benchmarking
@@ -302,4 +310,90 @@ function testOutput2()
         end
     end
     return ExportedElecPV
+end
+
+
+function readDataTable(v::String, t::String)
+    f = open("data/data_table.md")
+    lines = readlines(f)
+    tableArray = Array{String}(undef, 0, 7)
+    header = true
+    headLine = false
+
+    for line in lines
+        global colName
+        if header
+            line = replace(line, " " => "")
+            line = split(line, '|')
+            tableArray = line
+            colName = line[2:4]
+            header = false
+            headLine = true
+        elseif headLine
+            headLine = false
+        else
+            line = replace(line, " " => "")
+            line = split(line, '|')
+            tableArray = hcat(tableArray, line)
+        end 
+    end
+
+    tableArray = tableArray[2:4, 2:end]
+
+    input_value = v
+    input_type = t
+
+    if input_type != "uuid"
+        rowidx = findall(x->x==input_type, colName)[1]
+        colidx = findall(x->x==input_value, tableArray[rowidx, :])[1]
+        uuid = tableArray[3, colidx]
+    end
+
+    println("using $uuid")
+    return uuid
+end
+
+# I think this needs to be put in a script by itself or run from the REPL to exploit variable scope
+#for v in 1:13
+#    uuid, _ = readDataTable(string(v), "no")
+#    global uuid
+#    include("datatransfer.jl")
+#end
+
+
+## Helper functions to make JLD2 File work
+
+function fix_TimeStepRatchets(jldPath)
+    try
+        @load(jldPath, TimeStepRatchets)
+        return TimeStepRatchets
+    catch
+        return Float64[]
+    end
+end
+
+function fix_DemandRates(jldPath)
+    try
+        @load(jldPath, DemandRates)
+        return DemandRates
+    catch
+        return Float64[]
+    end
+end
+
+function fix_DemandLookbackMonths(jldPath)
+    try
+        @load(jldPath, DemandLookbackMonths)
+        return DemandLookbackMonths
+    catch
+        return Float64[]
+    end
+end
+
+function tsr(Ratchets, TimeStepRatchets)
+    try
+        return parameter(Ratchets, TimeStepRatchets)
+    catch
+        return Float64[]
+    end
 end

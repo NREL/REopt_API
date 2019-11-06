@@ -227,8 +227,8 @@ end
 
 
 struct Parameter
-    Tech ::Array{Symbol,1}
-    Load ::Array{Symbol,1}
+    Tech::Array{Symbol,1}
+    Load::Array{Symbol,1}
     TechClass::Array{Symbol,1}
     TechIsGrid::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
     TechToLoadMatrix::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
