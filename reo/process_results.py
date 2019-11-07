@@ -7,7 +7,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-
+# TODO: remove PVModel
 
 class ProcessResultsTask(Task):
     """
@@ -39,7 +39,7 @@ class ProcessResultsTask(Task):
         # self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-
+# TODO: register process_results and add to Celery chain
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
     """

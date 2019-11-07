@@ -95,7 +95,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['max_kw'] = pv.max_kw
             tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
-
+            # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
         else:
             pv = None
 
@@ -159,7 +159,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
 
             ModelManager.updateModel('WindModel', tmp, run_uuid)
-
+            # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -183,17 +183,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
         tmp = dict()
         tmp['setup_scenario_seconds'] = self.profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
+        # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
     except Exception as e:
         if isinstance(e, LoadProfileError):
                 raise e
-        
         if hasattr(e, 'message'):
             if e.message == 'Wind Dataset Timed Out':
                 raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
-
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("Scenario.py raising error: " + exc_value.message)
         raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=run_uuid,

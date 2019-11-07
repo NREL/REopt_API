@@ -142,6 +142,7 @@ class DatFileManager:
 
         self.command_line_args.append("ScenarioNum=" + str(run_id))
         self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
+        # TODO: any command_line_args need passed to reopt.jl?
 
     def get_paths(self):
         return self.paths
@@ -195,7 +196,7 @@ class DatFileManager:
         self.site = site
 
     def add_net_metering(self, net_metering_limit, interconnection_limit):
-
+        # TODO this method can be removed once we transition to new process_results.py and JuMP model
         # constant.dat contains NMILRegime
         # NMIL.dat contains NMILLimits and TechToNMILMapping
 
@@ -227,7 +228,8 @@ class DatFileManager:
 
         write_to_dat(self.file_storage, storage.soc_init_pct, 'InitSOC', mode='a')
         write_to_dat(self.file_storage_bau, storage.soc_init_pct, 'InitSOC', mode='a')
-
+        # TODO: remove all write_to_dat's after transition to JuMP model
+        # TODO: save reopt_inputs dictionary?
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
     def add_elec_tariff(self, elec_tariff):
