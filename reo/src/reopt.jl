@@ -534,45 +534,45 @@ function reopt(data;
     Year1MinCharges = MinChargeAdder / pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
     
-    results_JSON = Dict{String, Any}("lcc" => ojv)
+    results = Dict{String, Any}("lcc" => ojv)
     
-    results_JSON["batt_kwh"] = value(sum(dvStorageSizeKWH[b] for b in BattLevel))
-    results_JSON["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in BattLevel))
+    results["batt_kwh"] = value(sum(dvStorageSizeKWH[b] for b in BattLevel))
+    results["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in BattLevel))
     
-    if results_JSON["batt_kwh"] != 0
-        #results_JSON["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results_JSON["batt_kwh"]
+    if results["batt_kwh"] != 0
+        #results["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results["batt_kwh"]
     else
-        #results_JSON["year_one_soc_series_pct"] = value.(dvStoredEnergy)
+        #results["year_one_soc_series_pct"] = value.(dvStoredEnergy)
     end
     
     #println("1")   
  
     PVClass = filter(t->TechToTechClassMatrix[t, "PV"] == 1, Tech)
     if !isempty(PVClass)
-        results_JSON["PV"] = Dict()
-        results_JSON["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVClass))
+        results["PV"] = Dict()
+        results["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVClass))
         @expression(REopt, PVtoBatt[t in PVClass, ts in TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
     
     WINDClass = filter(t->TechToTechClassMatrix[t, "WIND"] == 1, Tech)
     if !isempty(WINDClass)
-        results_JSON["Wind"] = Dict()
-        results_JSON["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in WINDClass))
+        results["Wind"] = Dict()
+        results["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in WINDClass))
         @expression(REopt, WINDtoBatt[t in WINDClass, ts in TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
         
     GENERATORClass = filter(t->TechToTechClassMatrix[t, "GENERATOR"] == 1, Tech)
     #if !isempty(GENERATORClass)
-    #    results_JSON["Generator"] = Dict()
-    #    results_JSON["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts * r_tax_fraction_owner)
-    #    results_JSON["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts * r_tax_fraction_owner)
+    #    results["Generator"] = Dict()
+    #    results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts * r_tax_fraction_owner)
+    #    results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts * r_tax_fraction_owner)
     #end
     
     #println("2")   
     
-    push!(results_JSON, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
+    push!(results, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
                              "year_one_energy_cost" => value(Year1EnergyCost),
                              "year_one_demand_cost" => value(Year1DemandCost),
                              "year_one_demand_tou_cost" => value(Year1DemandTOUCost),
@@ -596,32 +596,32 @@ function reopt(data;
                              "average_annual_energy_exported_wind" => value(ExportedElecWIND),
                              "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)
     
-    #try @show results_JSON["batt_kwh"] catch end
-    #try @show results_JSON["batt_kw"] catch end
-    #try @show results_JSON["pv_kw"] catch end
-    #try @show results_JSON["wind_kw"] catch end
-    #@show results_JSON["year_one_utility_kwh"]
-    #@show results_JSON["year_one_energy_cost"]
-    #@show results_JSON["year_one_demand_cost"]
-    #@show results_JSON["year_one_demand_tou_cost"]
-    #@show results_JSON["year_one_demand_flat_cost"]
-    #@show results_JSON["year_one_export_benefit"]
-    #@show results_JSON["year_one_fixed_cost"]
-    #@show results_JSON["year_one_min_charge_adder"]
-    #@show results_JSON["year_one_bill"]
-    #@show results_JSON["year_one_payments_to_third_party_owner"]
-    #@show results_JSON["total_energy_cost"]
-    #@show results_JSON["total_demand_cost"]
-    #@show results_JSON["total_fixed_cost"]
-    #@show results_JSON["total_min_charge_adder"]
-    #@show results_JSON["net_capital_costs_plus_om"]
-    #@show results_JSON["net_capital_costs"]
-    ##@show results_JSON["average_yearly_pv_energy_produced"]
-    #@show results_JSON["average_wind_energy_produced"]
-    #@show results_JSON["year_one_energy_produced"]
-    #@show results_JSON["year_one_wind_energy_produced"]
-    ##@show results_JSON["average_annual_energy_exported"]
-    #@show results_JSON["average_annual_energy_exported_wind"]
+    #try @show results["batt_kwh"] catch end
+    #try @show results["batt_kw"] catch end
+    #try @show results["pv_kw"] catch end
+    #try @show results["wind_kw"] catch end
+    #@show results["year_one_utility_kwh"]
+    #@show results["year_one_energy_cost"]
+    #@show results["year_one_demand_cost"]
+    #@show results["year_one_demand_tou_cost"]
+    #@show results["year_one_demand_flat_cost"]
+    #@show results["year_one_export_benefit"]
+    #@show results["year_one_fixed_cost"]
+    #@show results["year_one_min_charge_adder"]
+    #@show results["year_one_bill"]
+    #@show results["year_one_payments_to_third_party_owner"]
+    #@show results["total_energy_cost"]
+    #@show results["total_demand_cost"]
+    #@show results["total_fixed_cost"]
+    #@show results["total_min_charge_adder"]
+    #@show results["net_capital_costs_plus_om"]
+    #@show results["net_capital_costs"]
+    ##@show results["average_yearly_pv_energy_produced"]
+    #@show results["average_wind_energy_produced"]
+    #@show results["year_one_energy_produced"]
+    #@show results["year_one_wind_energy_produced"]
+    ##@show results["average_annual_energy_exported"]
+    #@show results["average_annual_energy_exported_wind"]
     
     
     #println("3")   
@@ -650,7 +650,7 @@ function reopt(data;
     @expression(REopt, GENERATORtoGrid[t in GENERATORClass, ts in TimeStep, LD in ["1W", "1X"]],
                 sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, GridtoLoad[ts in TimeStep],
+    @expression(REopt, GridToLoad[ts in TimeStep],
                 sum(dvRatedProd["UTIL1", "1R", ts, s, fb] * ProdFactor["UTIL1", "1R", ts] * LevelizationFactor["UTIL1"] for s in Seg, fb in FuelBin))
     
     Site_load = LoadProfile["1R", :]
@@ -658,25 +658,27 @@ function reopt(data;
     
     #DemandPeaks = value.(dvPeakDemandE)
     #MonthlyDemandPeaks = value.(dvPeakDemandEMonth)
-    #results_JSON["GridToBatt"] = value.(GridToBatt)
-    #results_JSON["GENERATORtoBatt"] = value.(GENERATORtoBatt)
-    #results_JSON["PVtoLoad"] = value.(PVtoLoad)
-    #results_JSON["PVtoGrid"] = value.(PVtoGrid)
-    #results_JSON["WINDtoLoad"] = value.(WINDtoLoad)
-    #results_JSON["WINDtoGrid"] = value.(WINDtoGrid)
-    #results_JSON["GENERATORtoLoad"] = value.(GENERATORtoLoad)
-    #results_JSON["GENERATORtoGrid"] = value.(GENERATORtoGrid)
-    #results_JSON["GridtoLoad"] = value.(GridtoLoad)
+    results["GridToBatt"] = value.(GridToBatt)
+    results["GENERATORtoBatt"] = value.(GENERATORtoBatt)
+    results["PVtoLoad"] = value.(PVtoLoad)
+    results["PVtoGrid"] = value.(PVtoGrid)
+    results["WINDtoLoad"] = value.(WINDtoLoad)
+    results["WINDtoGrid"] = value.(WINDtoGrid)
+    results["GENERATORtoLoad"] = value.(GENERATORtoLoad)
+    results["GENERATORtoGrid"] = value.(GENERATORtoGrid)
+    results["GridToLoad"] = value.(GridToLoad)
 
     #println("5")   
     
     if termination_status(REopt) == MOI.OPTIMAL
         status = "optimal"
+#     elseif termination_status(REopt) == MOI.TIME_LIMIT && has_values(REopt)
+#         error(TimeoutExpired)
     else
         status = "not optimal"
     end
     #println("6")   
-    results_JSON["status"] = status
+    results["status"] = status
     #println("7")   
-    return results_JSON
+    return results
 end
