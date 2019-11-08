@@ -33,8 +33,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-        from IPython import embed
-        embed()
+
         d_expected = dict()
         d_expected['lcc'] = 228519
         d_expected['npv'] = 758
