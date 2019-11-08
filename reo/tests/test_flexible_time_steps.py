@@ -35,7 +35,6 @@ class TestFlexibleTimeSteps(ResourceTestCaseMixin, TestCase):
         resp1 = self.get_response(data=fts_post_1)
         self.assertHttpCreated(resp1)
         r1 = json.loads(resp1.content)
-
         run_uuid1 = r1.get('run_uuid')
         d1 = ModelManager.make_response(run_uuid=run_uuid1)
         c1 = nested_to_flat(d1['outputs'])

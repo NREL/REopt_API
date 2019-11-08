@@ -51,9 +51,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         """
         Hit the API with missing required inputs or missing dependencies and verify that the correct message is returned
         """
-        required, True_False = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
+        required, true_false = self.get_inputs_with_sub_key_from_nested_dict(nested_input_definitions, "required")
 
-        for r in [x for (x,y) in zip(required, True_False) if y is True]:
+        for r in [x for (x,y) in zip(required, true_false) if y is True]:
             test_case = self.complete_valid_nestedpost
             remove_by_path(test_case, r)
             response = self.get_response(test_case)
