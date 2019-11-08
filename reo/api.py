@@ -144,12 +144,12 @@ class Job(ModelResource):
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
         call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-        rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
-        rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+        # rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
+        # rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
 
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | group(rjm, rjm_bau) | call_back)()
+            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True))  | call_back)()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
