@@ -39,9 +39,7 @@ class RunJumpModelTask(Task):
 
 
 @shared_task(bind=True, base=RunJumpModelTask)
-def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
-    # TODO: dfm_list will become just dfm (and should rename dfm since no longer using dat files)
-    dfm = dfm_list[0]
+def run_jump_model(self, dfm, data, run_uuid, bau=False):
     self.profiler = Profiler()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
