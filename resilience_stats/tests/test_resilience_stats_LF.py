@@ -208,7 +208,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         resp = self.api_client.get(self.results_url.replace('<run_uuid>', uuid))
         self.assertEqual(resp.status_code, 200)
-
+ 
         resp_dict = json.loads(resp.content)
 
         expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
