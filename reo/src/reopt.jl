@@ -520,9 +520,9 @@ function reopt(data;
     results["batt_kw"] = value(dvStorageSizeKW)
     
     if results["batt_kwh"] != 0
-        #results["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results["batt_kwh"]
+        results["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results["batt_kwh"]
     else
-        #results["year_one_soc_series_pct"] = value.(dvStoredEnergy)
+        results["year_one_soc_series_pct"] = []
     end
     
     #println("1")   
