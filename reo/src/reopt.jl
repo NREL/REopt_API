@@ -543,8 +543,8 @@ function reopt(data;
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
         
-    GENERATORClass = filter(t->TechToTechClassMatrix[t, "GENERATOR"] == 1, Tech)
-    #if !isempty(GENERATORClass)
+    GeneratorTechs = filter(t->TechToTechClassMatrix[t, "GENERATOR"] == 1, Tech)
+    #if !isempty(GeneratorTechs)
     #    results["Generator"] = Dict()
     #    results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts * r_tax_fraction_owner)
     #    results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts * r_tax_fraction_owner)
@@ -608,11 +608,15 @@ function reopt(data;
     
     @expression(REopt, GridToBatt[ts in TimeStep],
                 sum(dvRatedProd["UTIL1", "1S", ts, s, fb] * ProdFactor["UTIL1", "1S", ts] * LevelizationFactor["UTIL1"] for s in Seg, fb in FuelBin))
-    
-    @expression(REopt, GENERATORtoBatt[t in GENERATORClass, ts in TimeStep],
-                sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
-    
     @expression(REopt, PVtoLoad[t in PVClass, ts in TimeStep],
+
+	if !isempty(GeneratorTechs)
+		@expression(REopt, GENERATORtoBatt[ts in TimeStep],
+					sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for t in GeneratorTechs, s in Seg, fb in FuelBin))
+    	results["GENERATORtoBatt"] = value.(GENERATORtoBatt)
+    else
+    	results["GENERATORtoBatt"] = []
+	end
                 sum(dvRatedProd[t, "1R", ts, s, fb] * ProdFactor[t, "1R", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
     @expression(REopt, PVtoGrid[t in PVClass, ts in TimeStep, LD in ["1W", "1X"]],
@@ -624,10 +628,10 @@ function reopt(data;
     @expression(REopt, WINDtoGrid[t in WINDClass, ts in TimeStep, LD in ["1W", "1X"]],
                 sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, GENERATORtoLoad[t in GENERATORClass, ts in TimeStep],
+    @expression(REopt, GENERATORtoLoad[t in GeneratorTechs, ts in TimeStep],
                 sum(dvRatedProd[t, "1R", ts, s, fb] * ProdFactor[t, "1R", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, GENERATORtoGrid[t in GENERATORClass, ts in TimeStep, LD in ["1W", "1X"]],
+    @expression(REopt, GENERATORtoGrid[t in GeneratorTechs, ts in TimeStep, LD in ["1W", "1X"]],
                 sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
     @expression(REopt, GridToLoad[ts in TimeStep],
@@ -639,7 +643,6 @@ function reopt(data;
     #DemandPeaks = value.(dvPeakDemandE)
     #MonthlyDemandPeaks = value.(dvPeakDemandEMonth)
     results["GridToBatt"] = value.(GridToBatt)
-    results["GENERATORtoBatt"] = value.(GENERATORtoBatt)
     results["PVtoLoad"] = value.(PVtoLoad)
     results["PVtoGrid"] = value.(PVtoGrid)
     results["WINDtoLoad"] = value.(WINDtoLoad)
