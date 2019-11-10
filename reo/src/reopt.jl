@@ -146,8 +146,7 @@ function reopt(data;
     MaxSize = parameter(Tech, MaxSize)
     TechClassMinSize = parameter(TechClass, TechClassMinSize)
     MinTurndown = parameter(Tech, MinTurndown)
-    
-    
+
     TimeStepRatchets = emptySetException(Ratchets, TimeStepRatchets)
     DemandRates = emptySetException((Ratchets, DemandBin), DemandRates)
     FuelRate = parameter((Tech, FuelBin, TimeStep), FuelRate)
@@ -527,19 +526,19 @@ function reopt(data;
     
     #println("1")   
  
-    PVClass = filter(t->TechToTechClassMatrix[t, "PV"] == 1, Tech)
-    if !isempty(PVClass)
+    PVTechs = filter(t->TechToTechClassMatrix[t, "PV"] == 1, Tech)
+    if !isempty(PVTechs)
         results["PV"] = Dict()
-        results["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVClass))
-        @expression(REopt, PVtoBatt[t in PVClass, ts in TimeStep],
+        results["pv_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in PVTechs))
+        @expression(REopt, PVtoBatt[t in PVTechs, ts in TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
     
-    WINDClass = filter(t->TechToTechClassMatrix[t, "WIND"] == 1, Tech)
-    if !isempty(WINDClass)
+    WindTechs = filter(t->TechToTechClassMatrix[t, "WIND"] == 1, Tech)
+    if !isempty(WindTechs)
         results["Wind"] = Dict()
-        results["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in WINDClass))
-        @expression(REopt, WINDtoBatt[t in WINDClass, ts in TimeStep],
+        results["wind_kw"] = value(sum(dvSystemSize[t,s] for s in Seg, t in WindTechs))
+        @expression(REopt, WINDtoBatt[t in WindTechs, ts in TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
         
@@ -608,7 +607,6 @@ function reopt(data;
     
     @expression(REopt, GridToBatt[ts in TimeStep],
                 sum(dvRatedProd["UTIL1", "1S", ts, s, fb] * ProdFactor["UTIL1", "1S", ts] * LevelizationFactor["UTIL1"] for s in Seg, fb in FuelBin))
-    @expression(REopt, PVtoLoad[t in PVClass, ts in TimeStep],
 
 	if !isempty(GeneratorTechs)
 		@expression(REopt, GENERATORtoBatt[ts in TimeStep],
@@ -617,16 +615,17 @@ function reopt(data;
     else
     	results["GENERATORtoBatt"] = []
 	end
+    @expression(REopt, PVtoLoad[t in PVTechs, ts in TimeStep],
                 sum(dvRatedProd[t, "1R", ts, s, fb] * ProdFactor[t, "1R", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, PVtoGrid[t in PVClass, ts in TimeStep, LD in ["1W", "1X"]],
+    @expression(REopt, PVtoGrid[t in PVTechs, ts in TimeStep, LD in ["1W", "1X"]],
                 sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, WINDtoLoad[t in WINDClass, ts in TimeStep],
+    @expression(REopt, WINDtoLoad[t in WindTechs, ts in TimeStep],
                 sum(dvRatedProd[t, "1R", ts, s, fb] * ProdFactor[t, "1R", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     
-    @expression(REopt, WINDtoGrid[t in WINDClass, ts in TimeStep, LD in ["1W", "1X"]],
-                sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
+    @expression(REopt, WINDtoGrid[t in WindTechs, ts in TimeStep],
+                sum(dvRatedProd[t, LD, ts, s, fb] * ProdFactor[t, LD, ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin, LD in ["1W", "1X"]))
     
     @expression(REopt, GENERATORtoLoad[t in GeneratorTechs, ts in TimeStep],
                 sum(dvRatedProd[t, "1R", ts, s, fb] * ProdFactor[t, "1R", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
