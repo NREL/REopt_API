@@ -1,4 +1,3 @@
-import JSON
 import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
@@ -9,12 +8,6 @@ using AxisArrays
 jumpex(m::JuMP.AbstractModel) = JuMP.GenericAffExpr{Float64, JuMP.variable_type(m)}()
 
 # Helper Functions
-function importDict(path)
-    open(path) do file
-        JSON.parse(read(file, String))
-    end
-end
-
 function strToSym(list)
     symList = Array{Symbol}(undef, 0)
     for str in list
@@ -49,144 +42,6 @@ function initWrapper(var, v)
     end
 end
 
-# Build Scenario from JSON
-function jsonToVariable(path)
-    JSON = importDict(path)
-    for (dat, dic) in JSON
-        for (k,v) in dic
-            var = Symbol(k)
-            try
-                initWrapper(var, v)
-            catch y
-                #println(y)
-                #println(var, " ", v)
-            end
-        end
-    end
-end
-
-# Build Scenario from Dat Files
-function buildPairs(datfile)
-    let pairs = []
-        let var = "nothing"
-        let data = []
-            for line in readlines(datfile)
-                if occursin(":", line)
-                    splitLine = split(line, ":")
-                    var = splitLine[1]
-                elseif !occursin("]", line)
-                    try
-                        intLine = parse(Int64, line)
-                        push!(data, intLine)
-                    catch
-                        try
-                            floatLine = parse(Float64, line)
-                            push!(data, floatLine)
-                        catch
-                            #println("can't parse ", line, " into Float")
-                            push!(data, line)
-                        end
-                    end
-                end
-                if occursin("]", line)
-                    pair = [var, data]
-                    push!(pairs, pair)
-                    var = "nothing"
-                    data = []
-                end
-            end
-        end
-        end
-    return pairs
-    end
-end
-
-function buildPairsArray(datfile)
-    let pairs = []
-        let var = "nothing"
-        let data = []
-            for line in readlines(datfile)
-                if occursin(":", line)
-                    splitLine = split(line, ":")
-                    var = splitLine[1]
-                elseif occursin("]", line) && occursin("[", line)
-                    arrayCons = [parse(Int64, s) for s in
-                                 split(replace(replace(line, "[" => ""), "]" => ""))]
-                    push!(data, arrayCons)
-                    continue
-                end
-                if occursin("]", line)
-                    pair = [var, data]
-                    push!(pairs, pair)
-                    var = "nothing"
-                    data = []
-                end
-            end
-        end
-        end
-    return pairs
-    end
-end
-
-
-function loadPairs(pairs)
-    for (strvar, data) in pairs
-        var = Symbol(strvar)
-        try
-            if length(data) == 1
-                initWrapper(var, data[1])
-            else
-                initWrapper(var, data)
-            end
-        catch y
-            println("\n", y, ": for variable name '", var, "'",
-                    "\n Initializing as empty array\n")
-                globalInit(var, [])
-        end
-    end
-end
-
-
-function datToVariable(scenarioPath)
-    for (root, dirs, files) in walkdir(scenarioPath)
-        for f in files
-            if !occursin("bau", f) && occursin(".dat", f) && 
-               !occursin("FuelBurnRateBase", f) &&
-               !occursin("ExportRatesBase", f) &&
-               !occursin("FuelCostBase", f)
-                filePath = joinpath(root, f)
-                contents = readlines(filePath)
-                if occursin("=", contents[1])
-                    eval(Meta.parse(readline(filePath)))
-                elseif occursin("[", contents[2])
-                    pairArrayArray = buildPairsArray(filePath)
-                    loadPairs(pairArrayArray)
-                elseif occursin(":", contents[1])
-                    pairArray = buildPairs(filePath)
-                    loadPairs(pairArray)
-                else
-                    println("Case not accounted for in dat to var")
-                end
-                println("Loaded Dat File: ", filePath)
-            end
-        end
-    end
-end
-
-# Parse variables in mosel command
-function readCmd(path)
-    println("\nParameters read from mosel command:\n")
-    for char in split(readline(path))
-        if occursin("=", char) && !occursin("'", char) && !occursin("-", char)
-            parseLine = Meta.parse(char)
-            eval(parseLine)
-            println(parseLine)
-        end
-    end
-end
-
-
-
 # Format Parameters to be called like variables
 
 function retype(dataAr::AbstractArray, floatbool::Bool=false)
@@ -204,10 +59,10 @@ function retype(dataAr::AbstractArray, floatbool::Bool=false)
         for elem in dataAr
             push!(typed, elem)
         end
-        return typed
+        return typed  # could this return convert(Array{Float64}, dataAr) instead?
     else
         typed = Array{x}(undef,0)
-        for elem in dataAr
+        for elem in dataAr  # do we need the for loops?
             push!(typed, elem)
         end
         return typed
@@ -258,7 +113,7 @@ function parameter(set::UnitRange{Int64}, data::Float64)
     return [data]
 end
 
-function parameter(setTup::Tuple{Array{Symbol,1},UnitRange{Int64}}, data::Number)
+function parameter(setTup::Tuple{Array{Symbol,1}, UnitRange{Int64}}, data::Number)
     newTup = ([setTup[1][1], :FAKE], 1:2)
     return AxisArray(fill(data, 2, 2), newTup)
 end
@@ -310,90 +165,4 @@ function testOutput2()
         end
     end
     return ExportedElecPV
-end
-
-
-function readDataTable(v::String, t::String)
-    f = open("data/data_table.md")
-    lines = readlines(f)
-    tableArray = Array{String}(undef, 0, 7)
-    header = true
-    headLine = false
-
-    for line in lines
-        global colName
-        if header
-            line = replace(line, " " => "")
-            line = split(line, '|')
-            tableArray = line
-            colName = line[2:4]
-            header = false
-            headLine = true
-        elseif headLine
-            headLine = false
-        else
-            line = replace(line, " " => "")
-            line = split(line, '|')
-            tableArray = hcat(tableArray, line)
-        end 
-    end
-
-    tableArray = tableArray[2:4, 2:end]
-
-    input_value = v
-    input_type = t
-
-    if input_type != "uuid"
-        rowidx = findall(x->x==input_type, colName)[1]
-        colidx = findall(x->x==input_value, tableArray[rowidx, :])[1]
-        uuid = tableArray[3, colidx]
-    end
-
-    println("using $uuid")
-    return uuid
-end
-
-# I think this needs to be put in a script by itself or run from the REPL to exploit variable scope
-#for v in 1:13
-#    uuid, _ = readDataTable(string(v), "no")
-#    global uuid
-#    include("datatransfer.jl")
-#end
-
-
-## Helper functions to make JLD2 File work
-
-function fix_TimeStepRatchets(jldPath)
-    try
-        @load(jldPath, TimeStepRatchets)
-        return TimeStepRatchets
-    catch
-        return Float64[]
-    end
-end
-
-function fix_DemandRates(jldPath)
-    try
-        @load(jldPath, DemandRates)
-        return DemandRates
-    catch
-        return Float64[]
-    end
-end
-
-function fix_DemandLookbackMonths(jldPath)
-    try
-        @load(jldPath, DemandLookbackMonths)
-        return DemandLookbackMonths
-    catch
-        return Float64[]
-    end
-end
-
-function tsr(Ratchets, TimeStepRatchets)
-    try
-        return parameter(Ratchets, TimeStepRatchets)
-    catch
-        return Float64[]
-    end
 end
