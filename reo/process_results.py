@@ -70,7 +70,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "net_capital_costs_plus_om",
             "pv_net_fixed_om_costs",
             "gen_net_fixed_om_costs",
-            "gen_net_variable_om_costs"
+            "gen_net_variable_om_costs",
+            "gen_total_fuel_cost",
+            "gen_year_one_fuel_cost",
+            "gen_year_one_variable_om_costs",
         ]
 
         def __init__(self, results_dict, results_dict_bau, dfm):
@@ -293,14 +296,32 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_fixed_om_cost_us_dollars_bau"] = self.results_dict.get(
+                        "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_fixed_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_variable_om_cost_us_dollars_bau"] = self.results_dict.get(
+                        "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "gen_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "existing_gen_year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_total_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_total_fuel_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_fuel_cost_bau")
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
