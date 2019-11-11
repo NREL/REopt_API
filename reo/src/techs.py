@@ -146,10 +146,10 @@ class Wind(Tech):
         'large': 80,
     }
     size_class_to_installed_cost = {
-        'residential': 10792,
-        'commercial': 4989,
-        'medium': 4111,
-        'large': 1874,
+        'residential': 11950,
+        'commercial': 7390,
+        'medium': 4440,
+        'large': 3450,
     }
 
     size_class_to_itc_incentives = {

@@ -7,11 +7,9 @@ from reo.src.pvwatts import PVWatts
 class TestPVWatts(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
-
-        self.pvwatts_denver = PVWatts(latitude=39.7392, longitude=-104.99, tilt=40, verify=False)
-        self.pvwatts_zimbabwe = PVWatts(latitude=-19.0154, longitude=29.1549, tilt=20, verify=False)
-        self.pvwatts_southafrica = PVWatts(latitude=-26.2041, longitude=28.0473, tilt=20, verify=False)
-
+        self.pvwatts_denver = PVWatts(latitude=39.7392, longitude=-104.99, tilt=40)
+        self.pvwatts_zimbabwe = PVWatts(latitude=-19.0154, longitude=29.1549, tilt=20)
+        self.pvwatts_southafrica = PVWatts(latitude=-26.2041, longitude=28.0473, tilt=20)
 
     def test_pvwatts(self):
 
