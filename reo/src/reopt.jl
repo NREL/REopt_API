@@ -502,7 +502,7 @@ function reopt(data;
     @expression(REopt, Year1UtilityEnergy, 
                 sum(dvRatedProd["UTIL1",LD,ts,s,fb] * TimeStepScaling * ProdFactor["UTIL1", LD, ts] 
                     for LD in Load, ts in TimeStep, s in Seg, fb in FuelBin))
-    
+
     
     ojv = JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder)
     Year1EnergyCost = TotalEnergyCharges / pwf_e
@@ -543,11 +543,18 @@ function reopt(data;
     end
         
     GeneratorTechs = filter(t->TechToTechClassMatrix[t, "GENERATOR"] == 1, Tech)
-    #if !isempty(GeneratorTechs)
-    #    results["Generator"] = Dict()
-    #    results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts * r_tax_fraction_owner)
-    #    results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts * r_tax_fraction_owner)
-    #end
+    if !isempty(GeneratorTechs)
+		results["Generator"] = Dict()
+        results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner
+        results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner
+		# TODO: calculate rest of Generator costs
+    else
+    	results["gen_net_fixed_om_costs"] = 0
+        results["gen_net_variable_om_costs"] = 0
+        results["gen_total_fuel_cost"] = 0
+        results["gen_year_one_fuel_cost"] = 0
+		results["gen_year_one_variable_om_costs"] = 0
+    end
     
     #println("2")   
     
@@ -572,7 +579,7 @@ function reopt(data;
 						 "year_one_energy_produced" => value(Year1ElecProd),
 						 "year_one_wind_energy_produced" => value(Year1WindProd),
 						 "average_annual_energy_exported_wind" => value(ExportedElecWIND),
-						 "fuel_used_gal" => [],  # TODO: calculate fuel_used_gal
+						 "fuel_used_gal" => 0,  # TODO: calculate fuel_used_gal
 						 "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)
     
     #try @show results["batt_kwh"] catch end
