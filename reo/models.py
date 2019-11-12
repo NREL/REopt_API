@@ -656,6 +656,7 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
         
+        
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
 
@@ -675,5 +676,8 @@ class ModelManager(object):
             elif site_key in site_keys:
 
                 move_outs_to_ins(site_key, resp=resp)
+
+        if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
+            del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
 
         return resp

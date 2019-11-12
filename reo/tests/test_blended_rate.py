@@ -199,7 +199,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         Test that self.post scenario, with monthly rates, returns the expected LCC and PV station attributes
         """
         response = self.get_response(self.post)
-
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
 
