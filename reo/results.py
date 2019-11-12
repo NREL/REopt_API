@@ -92,6 +92,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             "total_gen_fuel_cost",
             "year_one_gen_fuel_cost",
             "gen_year_one_variable_om_costs",
+            "average_yearly_pv_energy_produced",
         ]
 
         def __init__(self, path_templates, path_output, path_output_bau, path_static, year):
@@ -203,6 +204,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_pv_to_batt()
