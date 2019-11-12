@@ -656,7 +656,6 @@ class ModelManager(object):
         resp['outputs']['Scenario']['Site']['Wind'] = remove_ids(model_to_dict(WindModel.objects.get(run_uuid=run_uuid)))
         profile_data = ProfileModel.objects.filter(run_uuid=run_uuid)
         
-        
         if len(profile_data) > 0:
             resp['outputs']['Scenario']['Profile'] = remove_ids(model_to_dict(profile_data[0]))
 
