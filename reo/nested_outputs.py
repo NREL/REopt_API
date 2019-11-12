@@ -129,6 +129,11 @@ nested_output_definitions = {
                   "description": "Average annual energy produced by the PV system over one year",
                   "units": "kWh"
                 },
+                "average_yearly_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Average annual energy produced by the existing PV system over one year",
+                  "units": "kWh"
+                },
                 "average_yearly_energy_exported_kwh": {
                   "type": float,
                   "description": "Average annual energy exported by the PV system",
