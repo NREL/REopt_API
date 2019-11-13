@@ -561,7 +561,7 @@ end-do
 
 ! Compute tiered energy rates
 forall (fb in FuelBin, m in Month)  do
-	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb)
+	UsageInTier(m, fb) :=  sum(LD in Load, ts in TimeStepRatchetsMonth(m), s in Seg) dvRatedProd("UTIL1",LD,ts,s,fb) * TimeStepScaling
    	UsageInTier(m, fb) >= 0
 end-do
 
@@ -734,8 +734,8 @@ TotalTechCapCosts + TotalStorageCapCosts +
 ! Fixed O&M, tax deductible for owner
 TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
 
-! Variable O&M (will this be tax deductible for owner?)
-TotalPerUnitProdOMCosts +
+! Variable O&M, tax deductible for owner
+TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
 ! Utility Bill, tax deductible for offtaker
 (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
@@ -979,10 +979,14 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "total_export_benefit", strfmt(getsol(TotalEnergyExports) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_min_charge_adder", strfmt(getsol(MinChargeAdder) * r_tax_fraction_offtaker, 10, 2))
     Node:=addnode(out_json, Root, "total_payments_to_third_party_owner", 0)
-    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) + getsol(TotalPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "net_capital_costs_plus_om", strfmt(
+        getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts) +
+        (getsol(TotalPerUnitSizeOMCosts) + getsol(TotalPerUnitProdOMCosts)) * r_tax_fraction_owner +
+        getsol(TotalGenFuelCharges) * r_tax_fraction_offtaker, 10, 0))
     Node:=addnode(out_json, Root, "pv_net_fixed_om_costs", strfmt(getsol(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "gen_net_fixed_om_costs", strfmt((getsol(GenPerUnitSizeOMCosts)) * r_tax_fraction_owner, 10, 0))
     Node:=addnode(out_json, Root, "gen_net_variable_om_costs", strfmt((getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner, 10, 0))
+    Node:=addnode(out_json, Root, "gen_year_one_variable_om_costs", strfmt((getsol(GenPerUnitProdOMCosts)) * r_tax_fraction_owner / pwf_om, 10, 0))
     Node:=addnode(out_json, Root, "net_capital_costs", strfmt(getsol(TotalTechCapCosts) + getsol(TotalStorageCapCosts), 10, 0))
     Node:=addnode(out_json, Root, "average_yearly_pv_energy_produced", strfmt(getsol(AveragePvProd), 10, 0))
     Node:=addnode(out_json, Root, "average_wind_energy_produced", strfmt(getsol(AverageWindProd), 10, 0))
@@ -994,6 +998,9 @@ fclose(F_OUTPUT)
     Node:=addnode(out_json, Root, "average_annual_energy_exported_wind", strfmt(getsol(ExportedElecWIND), 10, 0))
     Node:=addnode(out_json, Root, "average_annual_energy_exported_gen", strfmt(getsol(ExportedElecGEN), 10, 0))
     Node:=addnode(out_json, Root, "fuel_used_gal", strfmt(getsol(GeneratorFuelUsed), 10, 2))
+    Node:=addnode(out_json, Root, "total_gen_fuel_cost", strfmt(getsol(TotalGenFuelCharges) * r_tax_fraction_offtaker, 10, 2))
+    Node:=addnode(out_json, Root, "year_one_gen_fuel_cost", strfmt(getsol(TotalGenFuelCharges) * r_tax_fraction_offtaker / pwf_e, 10, 2))
+
 
 jsonsave(out_json, OutputDir + "\\REopt_results.json")
 

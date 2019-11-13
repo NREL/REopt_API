@@ -129,6 +129,11 @@ nested_output_definitions = {
                   "description": "Average annual energy produced by the PV system over one year",
                   "units": "kWh"
                 },
+                "average_yearly_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Average annual energy produced by the existing PV system over one year",
+                  "units": "kWh"
+                },
                 "average_yearly_energy_exported_kwh": {
                   "type": float,
                   "description": "Average annual energy exported by the PV system",
@@ -436,19 +441,49 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of diesel generator exporting to grid",
                   "units": "kW"
                 },
-                "existing_gen_fixed_om_cost_us_dollars_bau": {
+                "existing_gen_total_fixed_om_cost_us_dollars": {
                   "type": float,
                   "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
                   "units": "$"
                 },
-                "existing_gen_variable_om_cost_us_dollars_bau": {
+                "existing_gen_total_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system in bau case.",
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
                   "units": "$"
                 },
-                "gen_variable_om_cost_us_dollars":{
+                "existing_gen_year_one_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "units": "$"
+                },
+                "total_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
                 }
               }

@@ -77,11 +77,15 @@ def nested_to_flat(nested_output):
             'year_one_gen_to_load_series': nested_output['Scenario']['Site']['Generator']['year_one_to_load_series_kw'],
             'year_one_gen_to_grid_series': nested_output['Scenario']['Site']['Generator']['year_one_to_grid_series_kw'],
             'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
-            'existing_gen_fixed_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator']['existing_gen_fixed_om_cost_us_dollars_bau'],
-            'existing_gen_variable_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator'][
-                'existing_gen_variable_om_cost_us_dollars_bau'],
-            'gen_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
-                'gen_variable_om_cost_us_dollars']
+            'existing_gen_total_fixed_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator']['existing_gen_total_fixed_om_cost_us_dollars'],
+            'existing_gen_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'existing_gen_total_variable_om_cost_us_dollars'],
+            'total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'total_fuel_cost_us_dollars'],
+            'gen_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'total_variable_om_cost_us_dollars'],
+            'existing_gen_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'existing_gen_total_fuel_cost_us_dollars'],
        })
     return base
 
