@@ -4,81 +4,15 @@ reopt:
 - Author: nlaws
 - Date: 2019-11-01
 =#
+
 using JuMP
 using Xpress
 import MathOptInterface
 const MOI = MathOptInterface
-
 include("utils.jl")
 
+
 function fast_reopt(model_inputs)
-
-    println("Tech", ": ", typeof(model_inputs["Tech"]))
-    println("Load", ": ", typeof(model_inputs["Load"]))
-    println("TechClass", ": ", typeof(model_inputs["TechClass"]))
-    println("TechIsGrid", ": ", typeof(model_inputs["TechIsGrid"]))
-    println("TechToLoadMatrix", ": ", typeof(model_inputs["TechToLoadMatrix"]))
-    println("TurbineDerate", ": ", typeof(model_inputs["TurbineDerate"]))
-    println("TechToTechClassMatrix", ": ", typeof(model_inputs["TechToTechClassMatrix"]))
-    println("NMILRegime", ": ", typeof(model_inputs["NMILRegime"]))
-    println("r_tax_owner", ": ", typeof(model_inputs["r_tax_owner"]))
-    println("r_tax_offtaker", ": ", typeof(model_inputs["r_tax_offtaker"]))
-    println("pwf_om", ": ", typeof(model_inputs["pwf_om"]))
-    println("pwf_e", ": ", typeof(model_inputs["pwf_e"]))
-    println("pwf_prod_incent", ": ", typeof(model_inputs["pwf_prod_incent"]))
-    println("LevelizationFactor", ": ", typeof(model_inputs["LevelizationFactor"]))
-    println("LevelizationFactorProdIncent", ": ", typeof(model_inputs["LevelizationFactorProdIncent"]))
-    println("StorageCostPerKW", ": ", typeof(model_inputs["StorageCostPerKW"]))
-    println("StorageCostPerKWH", ": ", typeof(model_inputs["StorageCostPerKWH"]))
-    println("OMperUnitSize", ": ", typeof(model_inputs["OMperUnitSize"]))
-    println("CapCostSlope", ": ", typeof(model_inputs["CapCostSlope"]))
-    println("CapCostYInt", ": ", typeof(model_inputs["CapCostYInt"]))
-    println("CapCostX", ": ", typeof(model_inputs["CapCostX"]))
-    println("ProdIncentRate", ": ", typeof(model_inputs["ProdIncentRate"]))
-    println("MaxProdIncent", ": ", typeof(model_inputs["MaxProdIncent"]))
-    println("MaxSizeForProdIncent", ": ", typeof(model_inputs["MaxSizeForProdIncent"]))
-    println("two_party_factor", ": ", typeof(model_inputs["two_party_factor"]))
-    println("analysis_years", ": ", typeof(model_inputs["analysis_years"]))
-    println("AnnualElecLoad", ": ", typeof(model_inputs["AnnualElecLoad"]))
-    println("LoadProfile", ": ", typeof(model_inputs["LoadProfile"]))
-    println("ProdFactor", ": ", typeof(model_inputs["ProdFactor"]))
-    println("StorageMinChargePcent", ": ", typeof(model_inputs["StorageMinChargePcent"]))
-    println("EtaStorIn", ": ", typeof(model_inputs["EtaStorIn"]))
-    println("EtaStorOut", ": ", typeof(model_inputs["EtaStorOut"]))
-    println("InitSOC", ": ", typeof(model_inputs["InitSOC"]))
-    println("MaxSize", ": ", typeof(model_inputs["MaxSize"]))
-    println("MinStorageSizeKW", ": ", typeof(model_inputs["MinStorageSizeKW"]))
-    println("MaxStorageSizeKW", ": ", typeof(model_inputs["MaxStorageSizeKW"]))
-    println("MinStorageSizeKWH", ": ", typeof(model_inputs["MinStorageSizeKWH"]))
-    println("MaxStorageSizeKWH", ": ", typeof(model_inputs["MaxStorageSizeKWH"]))
-    println("TechClassMinSize", ": ", typeof(model_inputs["TechClassMinSize"]))
-    println("MinTurndown", ": ", typeof(model_inputs["MinTurndown"]))
-    println("FuelRate", ": ", typeof(model_inputs["FuelRate"]))
-    println("FuelAvail", ": ", typeof(model_inputs["FuelAvail"]))
-    println("FixedMonthlyCharge", ": ", typeof(model_inputs["FixedMonthlyCharge"]))
-    println("AnnualMinCharge", ": ", typeof(model_inputs["AnnualMinCharge"]))
-    println("MonthlyMinCharge", ": ", typeof(model_inputs["MonthlyMinCharge"]))
-    println("ExportRates", ": ", typeof(model_inputs["ExportRates"]))
-    println("TimeStepRatchetsMonth", ": ", typeof(model_inputs["TimeStepRatchetsMonth"]))
-    println("DemandRatesMonth", ": ", typeof(model_inputs["DemandRatesMonth"]))
-    println("DemandLookbackPercent", ": ", typeof(model_inputs["DemandLookbackPercent"]))
-    println("MaxDemandInTier", ": ", typeof(model_inputs["MaxDemandInTier"]))
-    println("MaxDemandMonthsInTier", ": ", typeof(model_inputs["MaxDemandMonthsInTier"]))
-    println("MaxUsageInTier", ": ", typeof(model_inputs["MaxUsageInTier"]))
-    println("FuelBurnRateM", ": ", typeof(model_inputs["FuelBurnRateM"]))
-    println("FuelBurnRateB", ": ", typeof(model_inputs["FuelBurnRateB"]))
-    println("NMILLimits", ": ", typeof(model_inputs["NMILLimits"]))
-    println("TechToNMILMapping", ": ", typeof(model_inputs["TechToNMILMapping"]))
-    println("DemandRates", ": ", typeof(model_inputs["DemandRates"]))
-    println("TimeStepRatchets", ": ", typeof(model_inputs["TimeStepRatchets"]))
-    println("DemandLookbackMonths", ": ", typeof(model_inputs["DemandLookbackMonths"]))
-    println("CapCostSegCount", ": ", typeof(model_inputs["CapCostSegCount"]))
-    println("FuelBinCount", ": ", typeof(model_inputs["FuelBinCount"]))
-    println("DemandBinCount",  ": ", typeof(model_inputs["DemandBinCount"]))
-    println("DemandMonthsBinCount", ": ", typeof(model_inputs["DemandMonthsBinCount"]))
-    println("TimeStepCount", ": ", typeof(model_inputs["TimeStepCount"]))
-    println("TimeStepScaling", ": ", typeof(model_inputs["TimeStepScaling"]))
-
 
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
@@ -149,208 +83,6 @@ function fast_reopt(model_inputs)
 
     return reopt_run(p)
 end
-
-
-#function fast_reopt(args...;
-#          Tech,
-#          Load,
-#          TechClass,
-#          TechIsGrid,
-#          TechToLoadMatrix,
-#          TurbineDerate,
-#          TechToTechClassMatrix,
-#          NMILRegime,
-#          r_tax_owner,
-#          r_tax_offtaker,
-#          pwf_om,
-#          pwf_e,
-#          pwf_prod_incent,
-#          LevelizationFactor,
-#          LevelizationFactorProdIncent,
-#          StorageCostPerKW,
-#          StorageCostPerKWH,
-#          OMperUnitSize,
-#          CapCostSlope,
-#          CapCostYInt,
-#          CapCostX,
-#          ProdIncentRate,
-#          MaxProdIncent,
-#          MaxSizeForProdIncent,
-#          two_party_factor,
-#          analysis_years,
-#          AnnualElecLoad,
-#          LoadProfile,
-#          ProdFactor,
-#          StorageMinChargePcent,
-#          EtaStorIn,
-#          EtaStorOut,
-#          InitSOC,
-#          MaxSize,
-#          MinStorageSizeKW,
-#          MaxStorageSizeKW,
-#          MinStorageSizeKWH,
-#          MaxStorageSizeKWH,
-#          TechClassMinSize,
-#          MinTurndown,
-#          FuelRate,
-#          FuelAvail,
-#          FixedMonthlyCharge,
-#          AnnualMinCharge,
-#          MonthlyMinCharge,
-#          ExportRates,
-#          TimeStepRatchetsMonth,
-#          DemandRatesMonth,
-#          DemandLookbackPercent,
-#          MaxDemandInTier,
-#          MaxDemandMonthsInTier,
-#          MaxUsageInTier,
-#          FuelBurnRateM,
-#          FuelBurnRateB,
-#          NMILLimits,
-#          TechToNMILMapping,
-#          DemandRates,
-#          TimeStepRatchets,
-#          DemandLookbackMonths,
-#          CapCostSegCount,
-#          FuelBinCount,
-#          DemandBinCount ,
-#          DemandMonthsBinCount,
-#          TimeStepCount,
-#          NumRatchets,
-#          TimeStepScaling,
-#          kwargs...
-#    )
-#
-#    pBattLevelCount = 1
-#    pSeg = 1:CapCostSegCount
-#    pPoints = 0:CapCostSegCount
-#    pMonth = 1:12
-#    pRatchets = 1:NumRatchets
-#    pFuelBin = 1:FuelBinCount
-#    pDemandBin = 1:DemandBinCount
-#    pDemandMonthsBin = 1:DemandMonthsBinCount
-#    pBattLevel=1:pBattLevelCount
-#    pTimeStep=1:TimeStepCount
-#    pTimeStepBat=0:TimeStepCount
-#    pTechIsGrid = parameter(Tech, TechIsGrid)
-#    pTechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
-#    pTurbineDerate = parameter(Tech, TurbineDerate)
-#    pTechToTechClassMatrix = parameter((Tech, TechClass), TechToTechClassMatrix)
-#    ppwf_prod_incent = parameter(Tech, pwf_prod_incent)
-#    pLevelizationFactor = parameter(Tech, LevelizationFactor)
-#    pLevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
-#    pStorageCostPerKW = parameter(pBattLevel, StorageCostPerKW)
-#    pStorageCostPerKWH = parameter(pBattLevel, StorageCostPerKWH)
-#    pOMperUnitSize = parameter(Tech, OMperUnitSize)
-#    pCapCostSlope = parameter((Tech, pSeg), CapCostSlope)
-#    pCapCostYInt = parameter((Tech, pSeg), CapCostYInt)
-#    pCapCostX = parameter((Tech, pPoints), CapCostX)
-#    pProdIncentRate = parameter((Tech, Load), ProdIncentRate)
-#    pMaxProdIncent = parameter(Tech, MaxProdIncent)
-#    pMaxSizeForProdIncent = parameter(Tech, MaxSizeForProdIncent)
-#    pLoadProfile = parameter((Load, pTimeStep), LoadProfile)
-#    pProdFactor = parameter((Tech, Load, pTimeStep), ProdFactor)
-#    pEtaStorIn = parameter((Tech, Load), EtaStorIn)
-#    pEtaStorOut = parameter(Load, EtaStorOut)
-#    pMaxSize = parameter(Tech, MaxSize)
-#    pTechClassMinSize = parameter(TechClass, TechClassMinSize)
-#    pMinTurndown = parameter(Tech, MinTurndown)
-#    pTimeStepRatchets = emptySetException(pRatchets, TimeStepRatchets)
-#    pDemandRates = emptySetException((pRatchets, pDemandBin), DemandRates, true)
-#    pFuelRate = parameter((Tech, pFuelBin, pTimeStep), FuelRate)
-#    pFuelAvail = parameter((Tech, pFuelBin), FuelAvail)
-#    pExportRates = parameter((Tech, Load, pTimeStep), ExportRates)
-#    pTimeStepRatchetsMonth = parameter(pMonth, TimeStepRatchetsMonth)
-#    pDemandRatesMonth = parameter((pMonth, pDemandMonthsBin), DemandRatesMonth)
-#    pMaxDemandInTier = parameter(pDemandBin, MaxDemandInTier)
-#    pMaxDemandMonthsInTier = parameter(pDemandMonthsBin, MaxDemandMonthsInTier)
-#    pMaxUsageInTier = parameter(pFuelBin, MaxUsageInTier)
-#    pFuelBurnRateM = parameter((Tech, Load, pFuelBin), FuelBurnRateM)
-#    pFuelBurnRateB = parameter((Tech, Load, pFuelBin), FuelBurnRateB)
-#    pNMILLimits = parameter(NMILRegime, NMILLimits)
-#    pTechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
-#
-#    param = Parameter(Tech, 
-#                      Load, 
-#                      TechClass,
-#                      pTechIsGrid,
-#                      pTechToLoadMatrix,
-#                      pTurbineDerate,
-#                      pTechToTechClassMatrix,
-#                      NMILRegime,
-#                      r_tax_owner,
-#                      r_tax_offtaker,
-#                      pwf_om,
-#                      pwf_e,
-#                      pwf_prod_incent,
-#                      pLevelizationFactor,
-#                      pLevelizationFactorProdIncent,
-#                      pStorageCostPerKW,
-#                      pStorageCostPerKWH,
-#                      pOMperUnitSize,
-#                      pCapCostSlope,
-#                      pCapCostYInt,
-#                      pCapCostX,
-#                      pProdIncentRate,
-#                      pMaxProdIncent,
-#                      pMaxSizeForProdIncent,
-#                      two_party_factor,
-#                      analysis_years,
-#                      AnnualElecLoad,
-#                      pLoadProfile,
-#                      pProdFactor,
-#                      StorageMinChargePcent,
-#                      pEtaStorIn,
-#                      pEtaStorOut,
-#                      InitSOC,
-#                      pMaxSize,
-#                      MinStorageSizeKW,
-#                      MaxStorageSizeKW,
-#                      MinStorageSizeKWH,
-#                      MaxStorageSizeKWH,
-#                      pTechClassMinSize,
-#                      MinTurndown,
-#                      pFuelRate,
-#                      pFuelAvail,
-#                      FixedMonthlyCharge,
-#                      AnnualMinCharge,
-#                      MonthlyMinCharge,
-#                      pExportRates,
-#                      pTimeStepRatchetsMonth,
-#                      pDemandRatesMonth,
-#                      DemandLookbackPercent,
-#                      pMaxDemandInTier,
-#                      pMaxDemandMonthsInTier,
-#                      pMaxUsageInTier,
-#                      pFuelBurnRateM,
-#                      pFuelBurnRateB,
-#                      pNMILLimits,
-#                      pTechToNMILMapping,
-#                      pDemandRates,
-#                      pTimeStepRatchets,
-#                      DemandLookbackMonths,
-#                      CapCostSegCount,
-#                      FuelBinCount,
-#                      DemandBinCount ,
-#                      DemandMonthsBinCount,
-#                      pBattLevelCount,
-#                      TimeStepCount,
-#                      pSeg,
-#                      pPoints,
-#                      pMonth,
-#                      pRatchets,
-#                      pFuelBin,
-#                      pDemandBin,
-#                      pDemandMonthsBin,
-#                      pBattLevel,
-#                      pTimeStep,
-#                      pTimeStepBat,
-#                      TimeStepScaling)
-#
-#    return reopt_run(param)    
-#
-#end
-
 
 
 function reopt_run(p::Parameter)
@@ -468,11 +200,11 @@ function reopt_run(p::Parameter)
     ### Battery Operations
     @constraint(REopt, [ts in p.TimeStep],
     	        dvElecToStor[ts] == sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * p.EtaStorIn[t,LD]
-                                        for t in p.Tech, LD in [Symbol("1S")], s in p.Seg, fb in p.FuelBin))
+                                        for t in p.Tech, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + dvElecToStor[ts] - dvElecFromStor[ts] / p.EtaStorOut[Symbol("1S")])
+    	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + dvElecToStor[ts] - dvElecFromStor[ts] / p.EtaStorOut["1S"])
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvElecFromStor[ts] / p.EtaStorOut[Symbol("1S")] <=  dvStoredEnergy[ts-1])
+    	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * sum(dvStorageSizeKWH[b] / p.TimeStepScaling for b in p.BattLevel))
     
@@ -492,7 +224,7 @@ function reopt_run(p::Parameter)
                 binBattDischarge[ts] + binBattCharge[ts] <= 1)
     @constraint(REopt, [t in p.Tech],
     	        ElecToBatt[t] == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
-                                     for ts in p.TimeStep, LD in [Symbol("1S")], s in p.Seg, fb in p.FuelBin))
+                                     for ts in p.TimeStep, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
 
     ### Binary Bookkeeping
     @constraint(REopt, [t in p.Tech],
@@ -547,31 +279,31 @@ function reopt_run(p::Parameter)
 
    
     for LD in p.Load
-        if LD != Symbol("1R") && LD != Symbol("1S")
+        if LD != "1R" && LD != "1S"
             @constraint(REopt, [ts in p.TimeStep],
                         sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb]
                             for t in p.Tech, s in p.Seg, fb in p.FuelBin) <= p.LoadProfile[LD,ts])
         end
     end
 
-    @constraint(REopt, [LD in [Symbol("1R")], ts in p.TimeStep],
+    @constraint(REopt, [LD in ["1R"], ts in p.TimeStep],
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
     
     ###  Net Meter Module
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
     
-    BelowNMset = filter(x->x!=:AboveIL, p.NMILRegime)
+    BelowNMset = filter(x->x!="AboveIL", p.NMILRegime)
     @constraint(REopt, [n in BelowNMset],
                 sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
                     for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
-    @constraint(REopt, sum(p.TechToNMILMapping[t, :AboveIL] * p.TurbineDerate[t] * dvSystemSize[t, s] for t in p.Tech, s in p.Seg) 
-                           <= p.NMILLimits[:AboveIL] * binNMLorIL[:AboveIL])
+    @constraint(REopt, sum(p.TechToNMILMapping[t, "AboveIL"] * p.TurbineDerate[t] * dvSystemSize[t, s] for t in p.Tech, s in p.Seg) 
+                           <= p.NMILLimits["AboveIL"] * binNMLorIL["AboveIL"])
     
     ###  Rate Variable Definitions
-    @constraint(REopt, [t in [Symbol("UTIL1")], LD in p.Load, fb in p.FuelBin, ts in p.TimeStep],
+    @constraint(REopt, [t in ["UTIL1"], LD in p.Load, fb in p.FuelBin, ts in p.TimeStep],
     	        sum(dvRatedProd[t,LD,ts,s,fb] for s in p.Seg) == sum(dvGrid[LD,ts,db,fb,dbm] for db in p.DemandBin, dbm in p.DemandMonthsBin))
-    @constraint(REopt, [t in [Symbol("UTIL1")], fb in p.FuelBin, m in p.Month],
+    @constraint(REopt, [t in ["UTIL1"], fb in p.FuelBin, m in p.Month],
     	        UsageInTier[m, fb] ==  sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, ts in p.TimeStepRatchetsMonth[m], s in p.Seg))
     
     ### Fuel Bins
@@ -621,7 +353,7 @@ function reopt_run(p::Parameter)
     ### Site Load
     TechIsGridSet = filter(t->p.TechIsGrid[t] == 1, p.Tech)
     @constraint(REopt, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *  p.TimeStepScaling
-                           for t in TechIsGridSet, LD in [Symbol("1R"), Symbol("1W"), Symbol("1S")],
+                           for t in TechIsGridSet, LD in ["1R", "1W", "1S"],
                            ts in p.TimeStep, s in p.Seg, fb in p.FuelBin) <=  p.AnnualElecLoad)
     
     ###
@@ -630,25 +362,25 @@ function reopt_run(p::Parameter)
                 sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t, b] for s in p.Seg) <= p.MaxSize[t] * binSingleBasicTech[t, b])
 
     for t in p.Tech
-        if p.TechToTechClassMatrix[t, :PV] == 1 || p.TechToTechClassMatrix[t, :WIND] == 1
+        if p.TechToTechClassMatrix[t, "PV"] == 1 || p.TechToTechClassMatrix[t, "WIND"] == 1
             @constraint(REopt, [ts in p.TimeStep, s in p.Seg],
             	        sum(dvRatedProd[t,LD,ts,s,fb] for fb in p.FuelBin,
-                            LD in [Symbol("1R"), Symbol("1W"), Symbol("1X"), Symbol("1S")]) ==  dvSystemSize[t, s])
+                            LD in ["1R", "1W", "1X", "1S"]) ==  dvSystemSize[t, s])
         end
     end
     
     
     ### Parts of Objective
 
-    ProdLoad = [Symbol("1R"), Symbol("1W"), Symbol("1X"), Symbol("1S")]
+    ProdLoad = ["1R", "1W", "1X", "1S"]
     
-    PVClass = filter(t->p.TechToTechClassMatrix[t, :PV] == 1, p.Tech)
+    PVClass = filter(t->p.TechToTechClassMatrix[t, "PV"] == 1, p.Tech)
     @constraint(REopt, Year1ElecProd == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling
                                             for t in PVClass, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
     @constraint(REopt, AverageElecProd == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
                                               for t in PVClass, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
 
-    WINDClass = filter(t->p.TechToTechClassMatrix[t, :WIND] == 1, p.Tech)
+    WINDClass = filter(t->p.TechToTechClassMatrix[t, "WIND"] == 1, p.Tech)
     @constraint(REopt, Year1WindProd == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling
                                             for t in WINDClass, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
     @constraint(REopt, AverageWindProd == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
@@ -707,10 +439,10 @@ function reopt_run(p::Parameter)
     
     ### Troubleshooting Expressions
     @expression(REopt, powerto1R, 
-                sum(p.ProdFactor[t, Symbol("1R"), ts]*dvRatedProd[t, Symbol("1R"), ts, 1, 1] 
+                sum(p.ProdFactor[t, "1R", ts]*dvRatedProd[t, "1R", ts, 1, 1] 
                     for t in p.Tech, ts in p.TimeStep))
     @expression(REopt, powerfromUTIL1, 
-                sum(p.ProdFactor[:UTIL1, Symbol("1R"), ts]*dvRatedProd[:UTIL1, Symbol("1R"), ts, 1, 1] 
+                sum(p.ProdFactor["UTIL1", "1R", ts]*dvRatedProd["UTIL1", "1R", ts, 1, 1] 
                     for ts in p.TimeStep))
     
     end
@@ -722,15 +454,15 @@ function reopt_run(p::Parameter)
     
     @expression(REopt, ExportedElecPV, 
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
-                    for t in PVClass, LD in [Symbol("1W"), Symbol("1X")], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
+                    for t in PVClass, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @expression(REopt, ExportedElecWIND,
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
-                    for t in WINDClass, LD in [Symbol("1W"), Symbol("1X")], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
+                    for t in WINDClass, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @expression(REopt, ExportBenefitYr1,
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.ExportRates[t,LD,ts] 
                     for t in p.Tech, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @expression(REopt, Year1UtilityEnergy, 
-                sum(dvRatedProd[:UTIL1,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[:UTIL1, LD, ts] 
+                sum(dvRatedProd["UTIL1",LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor["UTIL1", LD, ts] 
                     for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     
     
@@ -751,13 +483,13 @@ function reopt_run(p::Parameter)
     end
     
     for t in p.Tech
-        if p.TechToTechClassMatrix[t, :PV] == 1
+        if p.TechToTechClassMatrix[t, "PV"] == 1
             results_JSON["pv_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg))
         end
     end
     
     for t in p.Tech
-        if p.TechToTechClassMatrix[t, :WIND] == 1
+        if p.TechToTechClassMatrix[t, "WIND"] == 1
             results_JSON["wind_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg))
         end
     end
