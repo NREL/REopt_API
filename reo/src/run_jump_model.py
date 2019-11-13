@@ -1,6 +1,6 @@
 import julia
 from celery import shared_task, Task
-from reo.exceptions import REoptError, SubprocessTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
+from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
@@ -62,6 +62,11 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             dfm['results_bau'] = results  # will be flat dict
         else:
             dfm['results'] = results
+
+        if status.strip().lower() != 'timed-out':
+            msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
+            logger.info(msg)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
         if status.strip().lower() != 'optimal':
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
