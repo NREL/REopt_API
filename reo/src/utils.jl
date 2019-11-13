@@ -1,4 +1,3 @@
-import JSON
 import Base.length
 import Base.reshape
 import Base.convert
@@ -516,22 +515,7 @@ end
 #    return param
 #end
 
-
-# Catching some wonky inputs
-function emptySetException(sets, values)
-    try
-        return parameter(sets, values)
-    catch
-        return []
-    end
-end
-
-function JuMP.value(::Val{false})
-    return 0.0
-end
-
 # Code for paramter() function
-
 function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
     shapedData = reshape(data, reverseTupleAxis)
@@ -571,7 +555,7 @@ function parameter(set::UnitRange{Int64}, data::Float64)
     return [data]
 end
 
-function parameter(setTup::Tuple{Array{Symbol,1},UnitRange{Int64}}, data::Number)
+function parameter(setTup::Tuple{Array{Symbol,1}, UnitRange{Int64}}, data::Number)
     newTup = ([setTup[1][1], :FAKE], 1:2)
     return AxisArray(fill(data, 2, 2), newTup)
 end
@@ -597,4 +581,8 @@ end
 
 function AxisArray(data::Number, index::Array{Symbol, 1})
     return AxisArray([float(data)], index)
+end
+
+function JuMP.value(::Val{false})
+    return 0.0
 end

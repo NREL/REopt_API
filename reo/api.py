@@ -13,9 +13,8 @@ from scenario import setup_scenario
 from reo.log_levels import log
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
-from reo.src.reopt import reopt
+from reo.process_results import process_results
 from reo.src.run_jump_model import run_jump_model
-from reo.results import parse_run_outputs
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
 
@@ -75,10 +74,8 @@ class Job(ModelResource):
                                                         'parse_run_outputs_seconds': 0},                                            
                                        }
                            }
-
         # Setup and start profile
         profiler = Profiler()
-
         uuidFilter = UUIDFilter(run_uuid)
         log.addFilter(uuidFilter)
         log.info('Beginning run setup')
@@ -97,14 +94,12 @@ class Job(ModelResource):
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
                                                      status=500))  # internal server error
-
         data["inputs"] = input_validator.input_dict
         data["messages"] = input_validator.messages
 
         if not input_validator.isValid:  # 400 Bad Request
             log.debug("input_validator not valid")
             log.debug(json.dumps(data))
-
             set_status(data, 'Error. No optimization task has been created. See messages for more information. ' \
                                'Note that inputs have default values filled in.')
             if saveToDb:
@@ -114,7 +109,6 @@ class Job(ModelResource):
             raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                      content_type='application/json',
                                                      status=400))
-
         log.info('Entering ModelManager')
         model_manager = ModelManager()
         profiler.profileEnd()
@@ -146,15 +140,15 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
-
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
-        call_back = parse_run_outputs.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+        call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
         # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
         rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
         rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+
         log.info("Starting celery chain")
         try:
-            chain(setup | group(reopt.s(data=data, run_uuid=run_uuid, bau=False), reopt.s(data=data, run_uuid=run_uuid, bau=True)) | group(rjm, rjm_bau) | call_back)()
+            chain(setup | group(rjm, rjm_bau) | call_back)()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task

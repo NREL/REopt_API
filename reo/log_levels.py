@@ -32,4 +32,3 @@ console_handler.setLevel(logging.DEBUG)
 
 log.addHandler(file_handler)
 log.addHandler(console_handler)
-

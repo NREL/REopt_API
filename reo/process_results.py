@@ -7,7 +7,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-
+# TODO: remove PVModel
 
 class ProcessResultsTask(Task):
     """
@@ -39,7 +39,7 @@ class ProcessResultsTask(Task):
         # self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-
+# TODO: register process_results and add to Celery chain
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
     """
@@ -70,7 +70,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "net_capital_costs_plus_om",
             "pv_net_fixed_om_costs",
             "gen_net_fixed_om_costs",
-            "gen_net_variable_om_costs"
+            "gen_net_variable_om_costs",
+            "gen_total_fuel_cost",
+            "gen_year_one_fuel_cost",
+            "gen_year_one_variable_om_costs",
         ]
 
         def __init__(self, results_dict, results_dict_bau, dfm):
@@ -293,14 +296,32 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_fixed_om_cost_us_dollars_bau"] = self.results_dict.get(
+                        "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_fixed_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_variable_om_cost_us_dollars_bau"] = self.results_dict.get(
+                        "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "gen_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "existing_gen_year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_total_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_total_fuel_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_fuel_cost_bau")
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
@@ -325,7 +346,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     try:
-        results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'])
+        results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'],
+                                 dfm=dfm_list[0])
         results = results_object.get_output()
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
