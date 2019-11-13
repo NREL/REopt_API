@@ -1,223 +1,536 @@
 import JSON
 import Base.length
 import Base.reshape
+import Base.convert
 import AxisArrays.AxisArray
+using PyCall
 using JLD2
 using JuMP
 using AxisArrays
 
-jumpex(m::JuMP.AbstractModel) = JuMP.GenericAffExpr{Float64, JuMP.variable_type(m)}()
-
-# Helper Functions
-function importDict(path)
-    open(path) do file
-        JSON.parse(read(file, String))
-    end
-end
-
-function strToSym(list)
-    symList = Array{Symbol}(undef, 0)
-    for str in list
-        push!(symList, Symbol(str))
-    end
-    return symList
-end
-
-macro globalInit(variable, value)
-    e=Expr(:(=), variable, Meta.parse(value))
-    return esc(e)
-end
-
-function globalInit(variable, value)
-    eval(
-            :(
-              $variable = $value
-             )
-        )
-end
-
-function initWrapper(var, v)
-    if v isa String
-        v = strToSym([v])
-        globalInit(var, v)
-    elseif v[1] isa Number || v[1] isa Array
-        #println(var)
-        globalInit(var, v)
-    elseif v[1] isa String
-        v = strToSym(v)
-        globalInit(var, v)
-    end
-end
-
-# Build Scenario from JSON
-function jsonToVariable(path)
-    JSON = importDict(path)
-    for (dat, dic) in JSON
-        for (k,v) in dic
-            var = Symbol(k)
-            try
-                initWrapper(var, v)
-            catch y
-                #println(y)
-                #println(var, " ", v)
-            end
-        end
-    end
-end
-
-# Build Scenario from Dat Files
-function buildPairs(datfile)
-    let pairs = []
-        let var = "nothing"
-        let data = []
-            for line in readlines(datfile)
-                if occursin(":", line)
-                    splitLine = split(line, ":")
-                    var = splitLine[1]
-                elseif !occursin("]", line)
-                    try
-                        intLine = parse(Int64, line)
-                        push!(data, intLine)
-                    catch
-                        try
-                            floatLine = parse(Float64, line)
-                            push!(data, floatLine)
-                        catch
-                            #println("can't parse ", line, " into Float")
-                            push!(data, line)
-                        end
-                    end
-                end
-                if occursin("]", line)
-                    pair = [var, data]
-                    push!(pairs, pair)
-                    var = "nothing"
-                    data = []
-                end
-            end
-        end
-        end
-    return pairs
-    end
-end
-
-function buildPairsArray(datfile)
-    let pairs = []
-        let var = "nothing"
-        let data = []
-            for line in readlines(datfile)
-                if occursin(":", line)
-                    splitLine = split(line, ":")
-                    var = splitLine[1]
-                elseif occursin("]", line) && occursin("[", line)
-                    arrayCons = [parse(Int64, s) for s in
-                                 split(replace(replace(line, "[" => ""), "]" => ""))]
-                    push!(data, arrayCons)
-                    continue
-                end
-                if occursin("]", line)
-                    pair = [var, data]
-                    push!(pairs, pair)
-                    var = "nothing"
-                    data = []
-                end
-            end
-        end
-        end
-    return pairs
-    end
-end
-
-
-function loadPairs(pairs)
-    for (strvar, data) in pairs
-        var = Symbol(strvar)
-        try
-            if length(data) == 1
-                initWrapper(var, data[1])
-            else
-                initWrapper(var, data)
-            end
-        catch y
-            println("\n", y, ": for variable name '", var, "'",
-                    "\n Initializing as empty array\n")
-                globalInit(var, [])
-        end
-    end
-end
-
-
-function datToVariable(scenarioPath)
-    for (root, dirs, files) in walkdir(scenarioPath)
-        for f in files
-            if !occursin("bau", f) && occursin(".dat", f) && 
-               !occursin("FuelBurnRateBase", f) &&
-               !occursin("ExportRatesBase", f) &&
-               !occursin("FuelCostBase", f)
-                filePath = joinpath(root, f)
-                contents = readlines(filePath)
-                if occursin("=", contents[1])
-                    eval(Meta.parse(readline(filePath)))
-                elseif occursin("[", contents[2])
-                    pairArrayArray = buildPairsArray(filePath)
-                    loadPairs(pairArrayArray)
-                elseif occursin(":", contents[1])
-                    pairArray = buildPairs(filePath)
-                    loadPairs(pairArray)
-                else
-                    println("Case not accounted for in dat to var")
-                end
-                println("Loaded Dat File: ", filePath)
-            end
-        end
-    end
-end
-
-# Parse variables in mosel command
-function readCmd(path)
-    println("\nParameters read from mosel command:\n")
-    for char in split(readline(path))
-        if occursin("=", char) && !occursin("'", char) && !occursin("-", char)
-            parseLine = Meta.parse(char)
-            eval(parseLine)
-            println(parseLine)
-        end
-    end
-end
-
-
-
-# Format Parameters to be called like variables
-
-function retype(dataAr::AbstractArray, floatbool::Bool=false)
-    if length(dataAr) == 0 
+function emptySetException(sets, values, floatbool=false)
+    try
+        return parameter(sets, values)
+    catch
         if floatbool
             return Float64[]
         else
             return Int64[]
         end
     end
-    
-    x = typeof(dataAr[1])
-    if x == Int64
-        typed = Array{Float64}(undef,0)
-        for elem in dataAr
-            push!(typed, elem)
-        end
-        return typed
-    else
-        typed = Array{x}(undef,0)
-        for elem in dataAr
-            push!(typed, elem)
-        end
-        return typed
+end
+
+struct Parameter
+     Tech::Array{String,1}
+     Load::Array{String,1}
+     TechClass::Array{String,1}
+     #TechIsGrid::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
+     #TechToLoadMatrix::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     #TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     TurbineDerate::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
+     #TechToTechClassMatrix::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     NMILRegime::Array{String,1}
+     r_tax_owner::Float64
+     r_tax_offtaker::Float64
+     pwf_om::Float64
+     pwf_e::Float64
+     pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     StorageCostPerKW::Array{Float64,1}
+     StorageCostPerKWH::Array{Float64,1}
+     OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
+     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
+     CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MaxSizeForProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     two_party_factor::Float64
+     analysis_years::Int64
+     AnnualElecLoad::Float64
+     LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
+     StorageMinChargePcent::Float64
+     EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     InitSOC::Float64
+     MaxSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MinStorageSizeKW::Float64
+     MaxStorageSizeKW::Float64
+     MinStorageSizeKWH::Float64
+     MaxStorageSizeKWH::Float64
+     TechClassMinSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MinTurndown::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}
+     FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     FixedMonthlyCharge::Float64
+     AnnualMinCharge::Float64
+     MonthlyMinCharge::Float64
+     ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
+     TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}
+     DemandRatesMonth::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}
+     DemandLookbackPercent::Union{Int64,Float64}
+     MaxDemandInTier::Array{Float64,1}
+     MaxDemandMonthsInTier::Array{Float64,1}
+     MaxUsageInTier::Array{Float64,1}
+     FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
+     FuelBurnRateB::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
+     NMILLimits::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     TechToNMILMapping::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     DemandRates::Union{AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}, AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}
+     TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}
+     DemandLookbackMonths::Array{Int64,1}
+     CapCostSegCount::Int64
+     FuelBinCount::Int64
+     DemandBinCount ::Int64
+     DemandMonthsBinCount::Int64
+     BattLevelCount::Int64
+     TimeStepCount::Int64
+     Seg::UnitRange{Int64}
+     Points::UnitRange{Int64}
+     Month::UnitRange{Int64}
+     Ratchets::UnitRange{Int64}
+     FuelBin::UnitRange{Int64}
+     DemandBin::UnitRange{Int64}
+     DemandMonthsBin::UnitRange{Int64}
+     BattLevel::UnitRange{Int64}
+     TimeStep::UnitRange{Int64}
+     TimeStepBat::UnitRange{Int64}
+     TimeStepScaling::Float64
+end
+
+
+function build_param(args...;
+          Tech,
+          Load,
+          TechClass,
+          TechIsGrid,
+          TechToLoadMatrix,
+          TurbineDerate,
+          TechToTechClassMatrix,
+          NMILRegime,
+          r_tax_owner,
+          r_tax_offtaker,
+          pwf_om,
+          pwf_e,
+          pwf_prod_incent,
+          LevelizationFactor,
+          LevelizationFactorProdIncent,
+          StorageCostPerKW,
+          StorageCostPerKWH,
+          OMperUnitSize,
+          CapCostSlope,
+          CapCostYInt,
+          CapCostX,
+          ProdIncentRate,
+          MaxProdIncent,
+          MaxSizeForProdIncent,
+          two_party_factor,
+          analysis_years,
+          AnnualElecLoad,
+          LoadProfile,
+          ProdFactor,
+          StorageMinChargePcent,
+          EtaStorIn,
+          EtaStorOut,
+          InitSOC,
+          MaxSize,
+          MinStorageSizeKW,
+          MaxStorageSizeKW,
+          MinStorageSizeKWH,
+          MaxStorageSizeKWH,
+          TechClassMinSize,
+          MinTurndown,
+          FuelRate,
+          FuelAvail,
+          FixedMonthlyCharge,
+          AnnualMinCharge,
+          MonthlyMinCharge,
+          ExportRates,
+          TimeStepRatchetsMonth,
+          DemandRatesMonth,
+          DemandLookbackPercent,
+          MaxDemandInTier,
+          MaxDemandMonthsInTier,
+          MaxUsageInTier,
+          FuelBurnRateM,
+          FuelBurnRateB,
+          NMILLimits,
+          TechToNMILMapping,
+          DemandRates,
+          TimeStepRatchets,
+          DemandLookbackMonths,
+          CapCostSegCount,
+          FuelBinCount,
+          DemandBinCount ,
+          DemandMonthsBinCount,
+          TimeStepCount,
+          NumRatchets,
+          TimeStepScaling,
+          kwargs...
+    )
+
+    BattLevelCount = 1
+
+    Seg = 1:CapCostSegCount
+    Points = 0:CapCostSegCount
+    Month = 1:12
+    Ratchets = 1:NumRatchets
+    FuelBin = 1:FuelBinCount
+    DemandBin = 1:DemandBinCount
+    DemandMonthsBin = 1:DemandMonthsBinCount
+    BattLevel=1:BattLevelCount
+    TimeStep=1:TimeStepCount
+    TimeStepBat=0:TimeStepCount
+
+    TechIsGrid = parameter(Tech, TechIsGrid)
+    TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
+    TurbineDerate = parameter(Tech, TurbineDerate)
+    TechToTechClassMatrix = parameter((Tech, TechClass), TechToTechClassMatrix)
+    pwf_prod_incent = parameter(Tech, pwf_prod_incent)
+    LevelizationFactor = parameter(Tech, LevelizationFactor)
+    LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
+    StorageCostPerKW = parameter(BattLevel, StorageCostPerKW)
+    StorageCostPerKWH = parameter(BattLevel, StorageCostPerKWH)
+    OMperUnitSize = parameter(Tech, OMperUnitSize)
+    CapCostSlope = parameter((Tech, Seg), CapCostSlope)
+    CapCostYInt = parameter((Tech, Seg), CapCostYInt)
+    CapCostX = parameter((Tech, Points), CapCostX)
+    ProdIncentRate = parameter((Tech, Load), ProdIncentRate)
+    MaxProdIncent = parameter(Tech, MaxProdIncent)
+    MaxSizeForProdIncent = parameter(Tech, MaxSizeForProdIncent)
+    LoadProfile = parameter((Load, TimeStep), LoadProfile)
+    ProdFactor = parameter((Tech, Load, TimeStep), ProdFactor)
+    EtaStorIn = parameter((Tech, Load), EtaStorIn)
+    EtaStorOut = parameter(Load, EtaStorOut)
+    MaxSize = parameter(Tech, MaxSize)
+    TechClassMinSize = parameter(TechClass, TechClassMinSize)
+    MinTurndown = parameter(Tech, MinTurndown)
+    TimeStepRatchets = emptySetException(Ratchets, TimeStepRatchets)
+    DemandRates = emptySetException((Ratchets, DemandBin), DemandRates, true)
+    FuelRate = parameter((Tech, FuelBin, TimeStep), FuelRate)
+    FuelAvail = parameter((Tech, FuelBin), FuelAvail)
+    ExportRates = parameter((Tech, Load, TimeStep), ExportRates)
+    TimeStepRatchetsMonth = parameter(Month, TimeStepRatchetsMonth)
+    DemandRatesMonth = parameter((Month, DemandMonthsBin), DemandRatesMonth)
+    MaxDemandInTier = parameter(DemandBin, MaxDemandInTier)
+    MaxDemandMonthsInTier = parameter(DemandMonthsBin, MaxDemandMonthsInTier)
+    MaxUsageInTier = parameter(FuelBin, MaxUsageInTier)
+    FuelBurnRateM = parameter((Tech, Load, FuelBin), FuelBurnRateM)
+    FuelBurnRateB = parameter((Tech, Load, FuelBin), FuelBurnRateB)
+    NMILLimits = parameter(NMILRegime, NMILLimits)
+    TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
+
+
+    println("creating param")
+    param = Parameter(Tech, 
+                      Load, 
+                      TechClass,
+                      TechIsGrid,
+                      TechToLoadMatrix,
+                      TurbineDerate,
+                      TechToTechClassMatrix,
+                      NMILRegime,
+                      r_tax_owner,
+                      r_tax_offtaker,
+                      pwf_om,
+                      pwf_e,
+                      pwf_prod_incent,
+                      LevelizationFactor,
+                      LevelizationFactorProdIncent,
+                      StorageCostPerKW,
+                      StorageCostPerKWH,
+                      OMperUnitSize,
+                      CapCostSlope,
+                      CapCostYInt,
+                      CapCostX,
+                      ProdIncentRate,
+                      MaxProdIncent,
+                      MaxSizeForProdIncent,
+                      two_party_factor,
+                      analysis_years,
+                      AnnualElecLoad,
+                      LoadProfile,
+                      ProdFactor,
+                      StorageMinChargePcent,
+                      EtaStorIn,
+                      EtaStorOut,
+                      InitSOC,
+                      MaxSize,
+                      MinStorageSizeKW,
+                      MaxStorageSizeKW,
+                      MinStorageSizeKWH,
+                      MaxStorageSizeKWH,
+                      TechClassMinSize,
+                      MinTurndown,
+                      FuelRate,
+                      FuelAvail,
+                      FixedMonthlyCharge,
+                      AnnualMinCharge,
+                      MonthlyMinCharge,
+                      ExportRates,
+                      TimeStepRatchetsMonth,
+                      DemandRatesMonth,
+                      DemandLookbackPercent,
+                      MaxDemandInTier,
+                      MaxDemandMonthsInTier,
+                      MaxUsageInTier,
+                      FuelBurnRateM,
+                      FuelBurnRateB,
+                      NMILLimits,
+                      TechToNMILMapping,
+                      DemandRates,
+                      TimeStepRatchets,
+                      DemandLookbackMonths,
+                      CapCostSegCount,
+                      FuelBinCount,
+                      DemandBinCount ,
+                      DemandMonthsBinCount,
+                      BattLevelCount,
+                      TimeStepCount,
+                      Seg,
+                      Points,
+                      Month,
+                      Ratchets,
+                      FuelBin,
+                      DemandBin,
+                      DemandMonthsBin,
+                      BattLevel,
+                      TimeStep,
+                      TimeStepBat,
+                      TimeStepScaling)
+    println("finished creating it")
+
+    return param
+
+end
+
+#struct Parameter
+#    Tech#::Array{Symbol,1}
+#    Load#::Array{Symbol,1}
+#    TechClass#::Array{Symbol,1}
+#    TechIsGrid#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    TechToLoadMatrix#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
+#    TurbineDerate#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    TechToTechClassMatrix#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
+#    NMILRegime#::Array{Symbol,1}
+#    r_tax_owner#::Float64
+#    r_tax_offtaker#::Float64
+#    pwf_om#::Float64
+#    pwf_e#::Float64
+#    pwf_prod_incent#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    LevelizationFactor#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    LevelizationFactorProdIncent#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    StorageCostPerKW#::Array{Float64,1}
+#    StorageCostPerKWH#::Array{Float64,1}
+#    OMperUnitSize#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    CapCostSlope#::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}}}
+#    CapCostYInt#::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}}}
+#    CapCostX#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}}
+#    ProdIncentRate#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
+#    MaxProdIncent#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    MaxSizeForProdIncent#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    two_party_factor#::Int64
+#    analysis_years#::Int64
+#    AnnualElecLoad#::Float64
+#    LoadProfile#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}}
+#    ProdFactor#::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}},Axis{:page,UnitRange{Int64}}}}
+#    StorageMinChargePcent#::Float64
+#    EtaStorIn#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
+#    EtaStorOut#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    BattLevelCoef#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}
+#    InitSOC#::Float64
+#    MaxSize#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    MinStorageSizeKW#::Union{Int64,Float64}
+#    MaxStorageSizeKW#::Union{Int64,Float64}
+#    MinStorageSizeKWH#::Union{Int64,Float64}
+#    MaxStorageSizeKWH#::Union{Int64,Float64}
+#    TechClassMinSize#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    MinTurndown#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    FuelRate#::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}
+#    FuelAvail#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,UnitRange{Int64}}}}
+#    FixedMonthlyCharge#::Union{Int64,Float64}
+#    AnnualMinCharge#::Union{Int64,Float64}
+#    MonthlyMinCharge#::Union{Int64,Float64}
+#    ExportRates#::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}},Axis{:page,UnitRange{Int64}}}}
+#    TimeStepRatchetsMonth#::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}
+#    DemandRatesMonth#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}
+#    DemandLookbackPercent#::Union{Int64,Float64}
+#    MaxDemandInTier#::Array{Float64,1}
+#    MaxDemandMonthsInTier#::Array{Float64,1}
+#    MaxUsageInTier#::Array{Float64,1}
+#    FuelBurnRateM#::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}},Axis{:page,UnitRange{Int64}}}}
+#    FuelBurnRateB#::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}},Axis{:page,UnitRange{Int64}}}}
+#    NMILLimits#::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{Symbol,1}}}}
+#    TechToNMILMapping#::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Symbol,1}},Axis{:col,Array{Symbol,1}}}}
+#    DemandRates#::Union{AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}, AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}
+#    TimeStepRatchets#::Union{Array{Int64,1},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}
+#    DemandLookbackMonths#::Array{Int64,1}
+#    CapCostSegCount#::Int64
+#    FuelBinCount#::Int64
+#    DemandBinCount #::Int64
+#    DemandMonthsBinCount#::Int64
+#    TimeStepCount#::Int64
+#    TimeStepScaling#::Float64
+#end
+#
+#function build_params(;
+#    Tech,
+#    Load,
+#    TechClass,
+#    TechIsGrid,
+#    TechToLoadMatrix,
+#    TurbineDerate,
+#    TechToTechClassMatrix,
+#    NMILRegime,
+#    r_tax_owner,
+#    r_tax_offtaker,
+#    pwf_om,
+#    pwf_e,
+#    pwf_prod_incent,
+#    LevelizationFactor,
+#    LevelizationFactorProdIncent,
+#    StorageCostPerKW,
+#    StorageCostPerKWH,
+#    OMperUnitSize,
+#    CapCostSlope,
+#    CapCostYInt,
+#    CapCostX,
+#    ProdIncentRate,
+#    MaxProdIncent,
+#    MaxSizeForProdIncent,
+#    two_party_factor,
+#    analysis_years,
+#    AnnualElecLoad,
+#    LoadProfile,
+#    ProdFactor,
+#    StorageMinChargePcent,
+#    EtaStorIn,
+#    EtaStorOut,
+#    InitSOC,
+#    MaxSize,
+#    MinStorageSizeKW,
+#    MaxStorageSizeKW,
+#    MinStorageSizeKWH,
+#    MaxStorageSizeKWH,
+#    TechClassMinSize,
+#    MinTurndown,
+#    FuelRate,
+#    FuelAvail,
+#    FixedMonthlyCharge,
+#    AnnualMinCharge,
+#    MonthlyMinCharge,
+#    ExportRates,
+#    TimeStepRatchetsMonth,
+#    DemandRatesMonth,
+#    DemandLookbackPercent,
+#    MaxDemandInTier,
+#    MaxDemandMonthsInTier,
+#    MaxUsageInTier,
+#    FuelBurnRateM,
+#    FuelBurnRateB,
+#    NMILLimits,
+#    TechToNMILMapping,
+#    DemandRates,
+#    TimeStepRatchets,
+#    DemandLookbackMonths,
+#    CapCostSegCount,
+#    FuelBinCount,
+#    DemandBinCount ,
+#    DemandMonthsBinCount,
+#    TimeStepCount,
+#    NumRatchets,
+#    TimeStepScaling,
+#    args...)
+#
+#    param = Parameter(Tech, 
+#                      Load, 
+#                      TechClass,
+#                      TechIsGrid,
+#                      TechToLoadMatrix,
+#                      TurbineDerate,
+#                      TechToTechClassMatrix,
+#                      NMILRegime,
+#                      r_tax_owner,
+#                      r_tax_offtaker,
+#                      pwf_om,
+#                      pwf_e,
+#                      pwf_prod_incent,
+#                      LevelizationFactor,
+#                      LevelizationFactorProdIncent,
+#                      StorageCostPerKW,
+#                      StorageCostPerKWH,
+#                      OMperUnitSize,
+#                      CapCostSlope,
+#                      CapCostYInt,
+#                      CapCostX,
+#                      ProdIncentRate,
+#                      MaxProdIncent,
+#                      MaxSizeForProdIncent,
+#                      two_party_factor,
+#                      analysis_years,
+#                      AnnualElecLoad,
+#                      LoadProfile,
+#                      ProdFactor,
+#                      StorageMinChargePcent,
+#                      EtaStorIn,
+#                      EtaStorOut,
+#                      InitSOC,
+#                      MaxSize,
+#                      MinStorageSizeKW,
+#                      MaxStorageSizeKW,
+#                      MinStorageSizeKWH,
+#                      MaxStorageSizeKWH,
+#                      TechClassMinSize,
+#                      MinTurndown,
+#                      FuelRate,
+#                      FuelAvail,
+#                      FixedMonthlyCharge,
+#                      AnnualMinCharge,
+#                      MonthlyMinCharge,
+#                      ExportRates,
+#                      TimeStepRatchetsMonth,
+#                      DemandRatesMonth,
+#                      DemandLookbackPercent,
+#                      MaxDemandInTier,
+#                      MaxDemandMonthsInTier,
+#                      MaxUsageInTier,
+#                      FuelBurnRateM,
+#                      FuelBurnRateB,
+#                      NMILLimits,
+#                      TechToNMILMapping,
+#                      DemandRates,
+#                      TimeStepRatchets,
+#                      DemandLookbackMonths,
+#                      CapCostSegCount,
+#                      FuelBinCount,
+#                      DemandBinCount ,
+#                      DemandMonthsBinCount,
+#                      TimeStepCount,
+#                      TimeStepScaling)
+#
+#    return param
+#end
+
+
+# Catching some wonky inputs
+function emptySetException(sets, values)
+    try
+        return parameter(sets, values)
+    catch
+        return []
     end
 end
 
-function retype(val::Union{Float64,Int})
-    return val
+function JuMP.value(::Val{false})
+    return 0.0
 end
 
+# Code for paramter() function
 
 function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
@@ -227,8 +540,8 @@ function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     return AxisArray(shapedDataT, setTup)
 end
 
-function parameter(setTup::Tuple, nondata::AbstractArray)
-    data = retype(nondata)
+function parameter(setTup::Tuple, data::AbstractArray)
+    #data = retype(nondata)
     try
         formattedParam = paramDataFormatter(setTup, data)
         return formattedParam
@@ -284,116 +597,4 @@ end
 
 function AxisArray(data::Number, index::Array{Symbol, 1})
     return AxisArray([float(data)], index)
-end
-
-# Output Benchmarking
-
-function testOutput()
-    ExportedElecPV = AffExpr(0)
-    
-    for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
-        if TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1W") || LD == Symbol("1X"))
-            y = AffExpr(0, dvRatedProd[t,LD,ts,s,fb] => ProdFactor[t,LD,ts] * LevelizationFactor[t] *  TimeStepScaling)
-            add_to_expression!(ExportedElecPV, y)
-        end
-    end
-    return value(ExportedElecPV)
-end
-
-
-function testOutput2()
-    ExportedElecPV = 0
-    
-    for t in Tech, LD in Load, ts in TimeStep, s in Seg, fb in FuelBin 
-        if TechToTechClassMatrix[t, :PV] == 1 && (LD == Symbol("1W") || LD == Symbol("1X"))
-            ExportedElecPV += value(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t,LD,ts] * LevelizationFactor[t] *  TimeStepScaling)
-        end
-    end
-    return ExportedElecPV
-end
-
-
-function readDataTable(v::String, t::String)
-    f = open("data/data_table.md")
-    lines = readlines(f)
-    tableArray = Array{String}(undef, 0, 7)
-    header = true
-    headLine = false
-
-    for line in lines
-        global colName
-        if header
-            line = replace(line, " " => "")
-            line = split(line, '|')
-            tableArray = line
-            colName = line[2:4]
-            header = false
-            headLine = true
-        elseif headLine
-            headLine = false
-        else
-            line = replace(line, " " => "")
-            line = split(line, '|')
-            tableArray = hcat(tableArray, line)
-        end 
-    end
-
-    tableArray = tableArray[2:4, 2:end]
-
-    input_value = v
-    input_type = t
-
-    if input_type != "uuid"
-        rowidx = findall(x->x==input_type, colName)[1]
-        colidx = findall(x->x==input_value, tableArray[rowidx, :])[1]
-        uuid = tableArray[3, colidx]
-    end
-
-    println("using $uuid")
-    return uuid
-end
-
-# I think this needs to be put in a script by itself or run from the REPL to exploit variable scope
-#for v in 1:13
-#    uuid, _ = readDataTable(string(v), "no")
-#    global uuid
-#    include("datatransfer.jl")
-#end
-
-
-## Helper functions to make JLD2 File work
-
-function fix_TimeStepRatchets(jldPath)
-    try
-        @load(jldPath, TimeStepRatchets)
-        return TimeStepRatchets
-    catch
-        return Float64[]
-    end
-end
-
-function fix_DemandRates(jldPath)
-    try
-        @load(jldPath, DemandRates)
-        return DemandRates
-    catch
-        return Float64[]
-    end
-end
-
-function fix_DemandLookbackMonths(jldPath)
-    try
-        @load(jldPath, DemandLookbackMonths)
-        return DemandLookbackMonths
-    catch
-        return Float64[]
-    end
-end
-
-function tsr(Ratchets, TimeStepRatchets)
-    try
-        return parameter(Ratchets, TimeStepRatchets)
-    catch
-        return Float64[]
-    end
 end

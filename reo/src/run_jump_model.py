@@ -1,4 +1,5 @@
 import julia
+import sys
 from celery import shared_task, Task
 from reo.exceptions import REoptError, SubprocessTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
@@ -50,24 +51,26 @@ def run_jump_model(self, dfm_list, data, run_uuid, bau=False):
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     logger.info("Running JuMP model ...")
-    try:
-        j = julia.Julia()
-        j.include("reo/src/reopt.jl")
-        results = j.reopt(data, **reopt_inputs)
-    except Exception as e:
-        # TODO: exception handling
-        raise e
+    #try:
+    j = julia.Julia()
+    j.include("reo/src/reopt.jl")
+    test = j.fast_reopt(reopt_inputs)
+    results = j.reopt(data, **reopt_inputs)
+    sys.exit(-1)
+    #except Exception as e:
+    #    # TODO: exception handling
+    #    raise e
+    #else:
+    status = results["status"]
+    logger.info("REopt run successful. Status {}".format(status))
+    if bau:
+        dfm['results_bau'] = results  # will be flat dict
     else:
-        status = results["status"]
-        logger.info("REopt run successful. Status {}".format(status))
-        if bau:
-            dfm['results_bau'] = results  # will be flat dict
-        else:
-            dfm['results'] = results
+        dfm['results'] = results
 
-        if status.strip().lower() != 'optimal':
-            logger.error("REopt status not optimal. Raising NotOptimal Exception.")
-            raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
+    if status.strip().lower() != 'optimal':
+        logger.error("REopt status not optimal. Raising NotOptimal Exception.")
+        raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
     self.profiler.profileEnd()
     tmp = dict()

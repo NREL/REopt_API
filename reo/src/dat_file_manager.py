@@ -678,19 +678,19 @@ class DatFileManager:
                 for load in self.available_loads:
 
                     eta_storage_in.append(self.storage.rectifier_efficiency_pct *
-                                          self.storage.internal_efficiency_pct**0.5 if load == 'storage' else 1)
+                                          self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
 
                         for pf in eval('self.' + tech + '.prod_factor'):
-                            prod_factor.append(pf)
+                            prod_factor.append(float(pf))
 
                         tech_to_load.append(1)
 
                     else:
 
                         for _ in range(self.n_timesteps):
-                            prod_factor.append(0)
+                            prod_factor.append(float(0))
 
                         tech_to_load.append(0)
 
@@ -702,7 +702,7 @@ class DatFileManager:
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-                                   if load == 'storage' else 1)
+                                   if load == 'storage' else float(1))
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
@@ -994,44 +994,48 @@ class DatFileManager:
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
 
+
+        def floatlist(x):
+            return [float(y) for y in x]
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'Load': load_list,
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
             'TechToLoadMatrix': tech_to_load,
-            'TurbineDerate': derate,
+            'TurbineDerate': floatlist(derate),
             'TechToTechClassMatrix': tech_to_tech_class,
             'NMILRegime': self.NMILRegime,
             'ProdFactor': prod_factor,
             'EtaStorIn': eta_storage_in,
             'EtaStorOut': eta_storage_out,
             'MaxSize': max_sizes,
-            'MinStorageSizeKW': self.storage.min_kw,
-            'MaxStorageSizeKW': self.storage.max_kw,
-            'MinStorageSizeKWH': self.storage.min_kwh,
-            'MaxStorageSizeKWH': self.storage.max_kwh,
-            'TechClassMinSize': tech_class_min_size,
-            'MinTurndown': min_turn_down,
+            'MinStorageSizeKW': float(self.storage.min_kw),
+            'MaxStorageSizeKW': float(self.storage.max_kw),
+            'MinStorageSizeKWH': float(self.storage.min_kwh),
+            'MaxStorageSizeKWH': float(self.storage.max_kwh),
+            'TechClassMinSize': floatlist(tech_class_min_size),
+            'MinTurndown': floatlist(min_turn_down),
             'LevelizationFactor': levelization_factor,
             'LevelizationFactorProdIncent': production_incentive_levelization_factor,
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
             'two_party_factor': two_party_factor,
-            'pwf_prod_incent': pwf_prod_incent,
-            'ProdIncentRate': prod_incent_rate,
-            'MaxProdIncent': max_prod_incent,
-            'MaxSizeForProdIncent': max_size_for_prod_incent,
-            'CapCostSlope': cap_cost_slope,
-            'CapCostX': cap_cost_x,
-            'CapCostYInt': cap_cost_yint,
+            'pwf_prod_incent': floatlist(pwf_prod_incent),
+            'ProdIncentRate': floatlist(prod_incent_rate),
+            'MaxProdIncent': floatlist(max_prod_incent),
+            'MaxSizeForProdIncent': floatlist(max_size_for_prod_incent),
+            'CapCostSlope': floatlist(cap_cost_slope),
+            'CapCostX': floatlist(cap_cost_x),
+            'CapCostYInt': floatlist(cap_cost_yint),
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
             'OMperUnitSize': om_cost_us_dollars_per_kw,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
-            'analysis_years': sf.analysis_years,
+            'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
             'FuelBinCount': tariff_args.energy_tiers_num,
             'DemandBinCount': tariff_args.demand_tiers_num,
@@ -1045,10 +1049,10 @@ class DatFileManager:
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
             'FuelRate': tariff_args.energy_rates,
             'FuelAvail': tariff_args.energy_avail,
-            'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
-            'AnnualMinCharge': tariff_args.annual_min_charge,
-            'MonthlyMinCharge': tariff_args.min_monthly_charge,
-            'ExportRates': tariff_args.export_rates,
+            'FixedMonthlyCharge': float(tariff_args.fixed_monthly_charge),
+            'AnnualMinCharge': float(tariff_args.annual_min_charge),
+            'MonthlyMinCharge': float(tariff_args.min_monthly_charge),
+            'ExportRates': floatlist(tariff_args.export_rates),
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
@@ -1075,7 +1079,6 @@ class DatFileManager:
             #'TimeStep':
             #'TimeStepBat':
         }
-
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
             'TechIsGrid': tech_is_grid_bau,
@@ -1083,37 +1086,37 @@ class DatFileManager:
             'TechToLoadMatrix': tech_to_load_bau,
             'TechClass': self.available_tech_classes,
             'NMILRegime': self.NMILRegime,
-            'TurbineDerate': derate_bau,
+            'TurbineDerate': floatlist(derate),
             'TechToTechClassMatrix': tech_to_tech_class_bau,
             'ProdFactor': prod_factor_bau,
             'EtaStorIn': eta_storage_in_bau,
             'EtaStorOut': eta_storage_out_bau,
             'MaxSize': max_sizes_bau,
-            'MinStorageSizeKW': 0,
-            'MaxStorageSizeKW': 0,
-            'MinStorageSizeKWH': 0,
-            'MaxStorageSizeKWH': 0,
-            'TechClassMinSize': tech_class_min_size_bau,
-            'MinTurndown': min_turn_down_bau,
+            'MinStorageSizeKW': float(0),
+            'MaxStorageSizeKW': float(0),
+            'MinStorageSizeKWH': float(0),
+            'MaxStorageSizeKWH': float(0),
+            'TechClassMinSize': floatlist(tech_class_min_size_bau),
+            'MinTurndown': floatlist(min_turn_down_bau),
             'LevelizationFactor': levelization_factor_bau,
             'LevelizationFactorProdIncent': production_incentive_levelization_factor_bau,
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
             'two_party_factor': two_party_factor_bau,
-            'pwf_prod_incent': pwf_prod_incent_bau,
-            'ProdIncentRate': prod_incent_rate_bau,
-            'MaxProdIncent': max_prod_incent_bau,
-            'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
-            'CapCostSlope': cap_cost_slope_bau,
-            'CapCostX': cap_cost_x_bau,
-            'CapCostYInt': cap_cost_yint_bau,
+            'pwf_prod_incent': floatlist(pwf_prod_incent_bau),
+            'ProdIncentRate': floatlist(prod_incent_rate_bau),
+            'MaxProdIncent': floatlist(max_prod_incent_bau),
+            'MaxSizeForProdIncent': floatlist(max_size_for_prod_incent_bau),
+            'CapCostSlope': floatlist(cap_cost_slope_bau),
+            'CapCostX': floatlist(cap_cost_x_bau),
+            'CapCostYInt': floatlist(cap_cost_yint_bau),
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
             'OMperUnitSize': om_dollars_per_kw_bau,
             'OMcostPerUnitProd': om_dollars_per_kwh_bau,
-            'analysis_years': sf.analysis_years,
+            'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
             'FuelBinCount': tariff_args.energy_tiers_num,
             'DemandBinCount': tariff_args.demand_tiers_num,
@@ -1127,10 +1130,10 @@ class DatFileManager:
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
             'FuelRate': tariff_args.energy_rates_bau,
             'FuelAvail': tariff_args.energy_avail_bau,
-            'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
-            'AnnualMinCharge': tariff_args.annual_min_charge,
-            'MonthlyMinCharge': tariff_args.min_monthly_charge,
-            'ExportRates': tariff_args.export_rates_bau,
+            'FixedMonthlyCharge': float(tariff_args.fixed_monthly_charge),
+            'AnnualMinCharge': float(tariff_args.annual_min_charge),
+            'MonthlyMinCharge': float(tariff_args.min_monthly_charge),
+            'ExportRates': floatlist(tariff_args.export_rates_bau),
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
