@@ -68,7 +68,7 @@ class REoptError(Exception):
             log.debug(message)
 
 
-class SubprocessTimeout(REoptError):
+class OptimizationTimeout(REoptError):
     """
     Exception raised when a subprocess times out
 
@@ -83,7 +83,7 @@ class SubprocessTimeout(REoptError):
         :param message: message that is sent back to user in messages: errors
         :param traceback: saved to database for debugging
         """
-        super(SubprocessTimeout, self).__init__(task, self.__name__, run_uuid, message, traceback, user_uuid=user_uuid)
+        super(OptimizationTimeout, self).__init__(task, self.__name__, run_uuid, message, traceback, user_uuid=user_uuid)
 
 
 class NotOptimal(REoptError):
