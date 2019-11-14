@@ -101,7 +101,8 @@ function reopt(data;
     args...)
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
-    REopt = direct_model(Xpress.Optimizer(MAXTIME=MAXTIME))
+    REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
+	# TODO: handle different solvers and their respective timeout variable names
 
     # CMD Paramters
     #CapCostSegCount = 5
