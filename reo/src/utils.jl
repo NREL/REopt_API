@@ -1,9 +1,7 @@
 import Base.length
 import Base.reshape
-import Base.convert
 import AxisArrays.AxisArray
-using PyCall
-using JLD2
+import JuMP.value
 using JuMP
 using AxisArrays
 
@@ -221,7 +219,6 @@ function build_param(args...;
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
 
 
-    println("creating param")
     param = Parameter(Tech, 
                       Load, 
                       TechClass,
@@ -298,7 +295,6 @@ function build_param(args...;
                       TimeStep,
                       TimeStepBat,
                       TimeStepScaling)
-    println("finished creating it")
 
     return param
 
