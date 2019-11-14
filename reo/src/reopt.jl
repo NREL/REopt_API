@@ -520,7 +520,8 @@ function reopt(data;
     results["batt_kw"] = value(dvStorageSizeKW)
     
     if results["batt_kwh"] != 0
-        results["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results["batt_kwh"]
+    	@expression(REopt, soc[ts in TimeStep], dvStoredEnergy[ts] / results["batt_kwh"])
+        results["year_one_soc_series_pct"] = value.(soc)
     else
         results["year_one_soc_series_pct"] = []
     end
