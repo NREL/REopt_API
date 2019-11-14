@@ -685,12 +685,10 @@ function reopt(data;
     #MonthlyDemandPeaks = value.(dvPeakDemandEMonth)
     #println("5")
 
-	if  termination_status(REopt) == MOI.TIME_LIMIT
-		status == "timed-out"
+	if termination_status(REopt) == MOI.TIME_LIMIT
+		status = "timed-out"
     elseif termination_status(REopt) == MOI.OPTIMAL
         status = "optimal"
-#     elseif termination_status(REopt) == MOI.TIME_LIMIT && has_values(REopt)
-#         error(TimeoutExpired)
     else
         status = "not optimal"
     end

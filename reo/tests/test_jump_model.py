@@ -110,7 +110,6 @@ class TestJumpModel(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
-    @skip("Won't actually time-out until we solve a real problem")
     def test_jump_timeout(self):
         """
         Initial test for running Julia as Celery Task
@@ -118,9 +117,6 @@ class TestJumpModel(ResourceTestCaseMixin, TestCase):
         post = {"Scenario": {
                     "timeout_seconds": 1,
                     "Site": {
-                        "PV": {
-                            "max_kw": 0,
-                        },
                         "Generator": {
                             "max_kw": 0,
                         },
@@ -130,16 +126,16 @@ class TestJumpModel(ResourceTestCaseMixin, TestCase):
                             "doe_reference_name": "Hospital"
                         },
                         "ElectricTariff": {
-                            "blended_monthly_demand_charges_us_dollars_per_kw": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                            "blended_monthly_demand_charges_us_dollars_per_kw": [50.0, 50.0, 50.0, 20.0, 50.0, 50.0, 20.0, 50.0, 20.0, 50.0, 50.0, 50.0],
                             "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
                         },
                         "longitude": -118.0,
                         "latitude": 34.5794343,
-                        "Wind" : {
+                        "Wind": {
                             "max_kw": 0
                         },
                         "Storage": {
-                            "max_kw": 0
+                            "max_kw": 0  # TODO: with non-zero storage the termination_status is OTHER_ERROR?
                         }
                     }
                 }

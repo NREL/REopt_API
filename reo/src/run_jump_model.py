@@ -63,7 +63,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         else:
             dfm['results'] = results
 
-        if status.strip().lower() != 'timed-out':
+        if status.strip().lower() == 'timed-out':
             msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
             logger.info(msg)
             raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
