@@ -143,10 +143,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
-            SOC = None
-            if self.results_dict.get("StoredEnergy") is not None and self.results_dict.get('batt_kwh') is not None:
-                batt_kwh = self.results_dict.get('batt_kwh')
-                SOC = [float(se) / batt_kwh for se in self.results_dict.get("StoredEnergy")]
 
             # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
@@ -215,7 +211,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_to_load_series_kw"] = self.results_dict.get("ElecFromStore")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = None
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = SOC
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = \
+                        self.results_dict.get("year_one_soc_series_pct")
                 elif name == "ElectricTariff":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_us_dollars"] = self.results_dict.get("year_one_energy_cost")

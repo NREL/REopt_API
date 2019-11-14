@@ -544,7 +544,8 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     results["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in p.BattLevel))
     
     if results["batt_kwh"] != 0
-        results["year_one_soc_series_pct"] = value.(dvStoredEnergy)/results["batt_kwh"]
+    	@expression(REopt, soc[ts in TimeStep], dvStoredEnergy[ts] / results["batt_kwh"])
+        results["year_one_soc_series_pct"] = value.(soc)
     else
         results["year_one_soc_series_pct"] = []
     end
