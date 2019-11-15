@@ -3,9 +3,9 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
-max_incentive = 1e10
+max_incentive = 1.0e10
 
-big_number = 1e10
+big_number = 1.0e10
 squarefeet_to_acre = 2.2957e-5
 
 
@@ -1063,7 +1063,7 @@ class DatFileManager:
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': int(8760.0/self.n_timesteps),
             'AnnualElecLoad': self.load.annual_kwh,
-            'LoadProfile': floatlist(self.load.load_list),
+            'LoadProfile': self.load.load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': floatlist(self.NMILLimits),
@@ -1144,7 +1144,7 @@ class DatFileManager:
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': int(8760.0/self.n_timesteps),
             'AnnualElecLoad': self.load.annual_kwh,
-            'LoadProfile': floatlist(self.load.bau_load_list),
+            'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': floatlist(self.NMILLimits),
