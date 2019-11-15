@@ -734,11 +734,11 @@ class DatFileManager:
 
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
                 if bau and hasattr(eval('self.' + tc.lower()), 'existing_kw'):
-                    tech_class_min_size.append(eval('self.' + tc.lower() + '.existing_kw'))
+                    tech_class_min_size.append(float(eval('self.' + tc.lower() + '.existing_kw')))
                 else:
-                    tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
+                    tech_class_min_size.append(float(eval('self.' + tc.lower() + '.min_kw')))
             else:
-                tech_class_min_size.append(0)
+                tech_class_min_size.append(0.0)
 
         for tech in techs:
 
@@ -759,7 +759,7 @@ class DatFileManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-                existing_kw = 0
+                existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
@@ -996,10 +996,6 @@ class DatFileManager:
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
 
-
-        def floatlist(x):
-            return [float(y) for y in x]
-
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'Load': load_list,
@@ -1017,8 +1013,8 @@ class DatFileManager:
             'MaxStorageSizeKW': self.storage.max_kw,
             'MinStorageSizeKWH': self.storage.min_kwh,
             'MaxStorageSizeKWH': self.storage.max_kwh,
-            'TechClassMinSize': floatlist(tech_class_min_size),
-            'MinTurndown': floatlist(min_turn_down),
+            'TechClassMinSize': tech_class_min_size,
+            'MinTurndown': min_turn_down,
             'LevelizationFactor': levelization_factor,
             'LevelizationFactorProdIncent': production_incentive_levelization_factor,
             'pwf_e': pwf_e,
@@ -1066,7 +1062,7 @@ class DatFileManager:
             'LoadProfile': self.load.load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
-            'NMILLimits': floatlist(self.NMILLimits),
+            'NMILLimits': self.NMILLimits,
             'TechToNMILMapping': self.TechToNMILMapping,
             'CapCostSegCount': self.CapCostSegCount,
             #'BattLevelCoef':
@@ -1098,8 +1094,8 @@ class DatFileManager:
             'MaxStorageSizeKW': 0.0,
             'MinStorageSizeKWH': 0.0,
             'MaxStorageSizeKWH': 0.0,
-            'TechClassMinSize': floatlist(tech_class_min_size_bau),
-            'MinTurndown': floatlist(min_turn_down_bau),
+            'TechClassMinSize': tech_class_min_size_bau,
+            'MinTurndown': min_turn_down_bau,
             'LevelizationFactor': levelization_factor_bau,
             'LevelizationFactorProdIncent': production_incentive_levelization_factor_bau,
             'pwf_e': pwf_e_bau,
@@ -1147,8 +1143,7 @@ class DatFileManager:
             'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
-            'NMILLimits': floatlist(self.NMILLimits),
+            'NMILLimits': self.NMILLimits,
             'TechToNMILMapping': self.TechToNMILMapping_bau,
             'CapCostSegCount': self.CapCostSegCount_bau
         }
-# TODO: convert values when they are created instead of floatlist etc.
