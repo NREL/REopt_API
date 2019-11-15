@@ -364,3 +364,7 @@ end
 function JuMP.value(::Val{false})
     return 0.0
 end
+
+function JuMP.value(x::Float64)
+    return x
+end
