@@ -34,8 +34,8 @@ struct Parameter
      pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     StorageCostPerKW::Array{Float64,1}
-     StorageCostPerKWH::Array{Float64,1}
+     StorageCostPerKW::Float64
+     StorageCostPerKWH::Float64
      OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
      CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
@@ -82,7 +82,6 @@ struct Parameter
      FuelBinCount::Int64
      DemandBinCount ::Int64
      DemandMonthsBinCount::Int64
-     BattLevelCount::Int64
      TimeStepCount::Int64
      Seg::UnitRange{Int64}
      Points::UnitRange{Int64}
@@ -91,7 +90,6 @@ struct Parameter
      FuelBin::UnitRange{Int64}
      DemandBin::UnitRange{Int64}
      DemandMonthsBin::UnitRange{Int64}
-     BattLevel::UnitRange{Int64}
      TimeStep::UnitRange{Int64}
      TimeStepBat::UnitRange{Int64}
      TimeStepScaling::Float64
@@ -168,7 +166,6 @@ function build_param(args...;
           kwargs...
     )
 
-    BattLevelCount = 1
 
     Seg = 1:CapCostSegCount
     Points = 0:CapCostSegCount
@@ -177,7 +174,6 @@ function build_param(args...;
     FuelBin = 1:FuelBinCount
     DemandBin = 1:DemandBinCount
     DemandMonthsBin = 1:DemandMonthsBinCount
-    BattLevel=1:BattLevelCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
 
@@ -188,8 +184,6 @@ function build_param(args...;
     pwf_prod_incent = parameter(Tech, pwf_prod_incent)
     LevelizationFactor = parameter(Tech, LevelizationFactor)
     LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
-    StorageCostPerKW = parameter(BattLevel, StorageCostPerKW)
-    StorageCostPerKWH = parameter(BattLevel, StorageCostPerKWH)
     OMperUnitSize = parameter(Tech, OMperUnitSize)
     CapCostSlope = parameter((Tech, Seg), CapCostSlope)
     CapCostYInt = parameter((Tech, Seg), CapCostYInt)
@@ -283,7 +277,6 @@ function build_param(args...;
                       FuelBinCount,
                       DemandBinCount ,
                       DemandMonthsBinCount,
-                      BattLevelCount,
                       TimeStepCount,
                       Seg,
                       Points,
@@ -292,7 +285,6 @@ function build_param(args...;
                       FuelBin,
                       DemandBin,
                       DemandMonthsBin,
-                      BattLevel,
                       TimeStep,
                       TimeStepBat,
                       TimeStepScaling)

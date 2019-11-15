@@ -169,8 +169,8 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         dvElecToStor[p.TimeStep] >= 0
         dvElecFromStor[p.TimeStep] >= 0
         dvStoredEnergy[p.TimeStepBat] >= 0
-        dvStorageSizeKWH[p.BattLevel] >= 0
-        dvStorageSizeKW[p.BattLevel] >= 0
+        dvStorageSizeKWH >= 0
+        dvStorageSizeKW >= 0
         dvMeanSOC >= 0
         binBattCharge[p.TimeStep], Bin
         binBattDischarge[p.TimeStep], Bin
@@ -182,7 +182,6 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin
         binUsageTier[p.Month, p.FuelBin], Bin
         dvPeakDemandELookback >= 0
-        binBattLevel[p.BattLevel], Bin
     
     # ADDED due to implied types
         ElecToBatt[p.Tech] >= 0
@@ -256,11 +255,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                 p.MaxSize[t] * (1 - binTechIsOnInTS[t, ts]))
     
     ### Boundary Conditions and Size Limits
-    @constraint(REopt, dvStoredEnergy[0] == p.InitSOC * sum(dvStorageSizeKWH[b] for b in p.BattLevel) / p.TimeStepScaling)
-    @constraint(REopt, p.MinStorageSizeKWH <= sum(dvStorageSizeKWH[b] for b in p.BattLevel))
-    @constraint(REopt, sum(dvStorageSizeKWH[b] for b in p.BattLevel) <=  p.MaxStorageSizeKWH)
-    @constraint(REopt, p.MinStorageSizeKW <= sum(dvStorageSizeKW[b] for b in p.BattLevel))
-    @constraint(REopt, sum(dvStorageSizeKW[b] for b in p.BattLevel) <=  p.MaxStorageSizeKW)
+    @constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH / p.TimeStepScaling)
+    @constraint(REopt, p.MinStorageSizeKWH <= dvStorageSizeKWH)
+    @constraint(REopt, dvStorageSizeKWH <=  p.MaxStorageSizeKWH)
+    @constraint(REopt, p.MinStorageSizeKW <= dvStorageSizeKW)
+    @constraint(REopt, dvStorageSizeKW <=  p.MaxStorageSizeKW)
     
     
     ### Battery Operations
@@ -272,16 +271,16 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [ts in p.TimeStep],
     	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * sum(dvStorageSizeKWH[b] / p.TimeStepScaling for b in p.BattLevel))
+    	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH / p.TimeStepScaling)
     
     ### Operational Nuance
     @constraint(REopt, [ts in p.TimeStep],
-    	        sum(dvStorageSizeKW[b] for b in p.BattLevel) >=  dvElecToStor[ts])
+    	        dvStorageSizeKW >=  dvElecToStor[ts])
     @constraint(REopt, [ts in p.TimeStep],
-    	        sum(dvStorageSizeKW[b] for b in p.BattLevel) >=  dvElecFromStor[ts])
+    	        dvStorageSizeKW >=  dvElecFromStor[ts])
     @constraint(REopt, dvMeanSOC == sum(dvStoredEnergy[ts] for ts in p.TimeStep) / p.TimeStepCount)
     @constraint(REopt, [ts in p.TimeStep],
-    	        sum(dvStorageSizeKWH[b] for b in p.BattLevel) >=  dvStoredEnergy[ts] * p.TimeStepScaling)
+    	        dvStorageSizeKWH >=  dvStoredEnergy[ts] * p.TimeStepScaling)
     @constraint(REopt, [ts in p.TimeStep],
                 dvElecToStor[ts] <= p.MaxStorageSizeKW * binBattCharge[ts])
     @constraint(REopt, [ts in p.TimeStep],
@@ -298,15 +297,6 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [b in p.TechClass],
                 sum(binSingleBasicTech[t,b] for t in p.Tech) <= 1)
     
-    ### Battery Level
-    @constraint(REopt, [b in p.BattLevel],
-                dvStorageSizeKWH[b] <= p.MaxStorageSizeKWH * binBattLevel[b])
-    @constraint(REopt, [b in p.BattLevel],
-                dvStorageSizeKW[b] <= p.MaxStorageSizeKW * binBattLevel[b])
-    
-    ###### Not Sure ######
-    @constraint(REopt, sum(binBattLevel[b] for b in p.BattLevel) == 1)
-    ###### Not Sure ######
     
     ### Capital Cost Constraints (NEED Had to modify b/c AxisArrays doesn't do well with range 0:20
     @constraint(REopt, [t in p.Tech, s in p.Seg],
@@ -454,8 +444,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 
     @constraint(REopt, TotalTechCapCosts == sum(p.CapCostSlope[t, s] * dvSystemSize[t, s] + p.CapCostYInt[t,s] * binSegChosen[t,s]
                                                 for t in p.Tech, s in p.Seg))
-    @constraint(REopt, TotalStorageCapCosts == sum(dvStorageSizeKWH[b] * p.StorageCostPerKWH[b] + dvStorageSizeKW[b] *  p.StorageCostPerKW[b]
-                                                   for b in p.BattLevel))
+    @constraint(REopt, TotalStorageCapCosts == dvStorageSizeKWH * p.StorageCostPerKWH + dvStorageSizeKW * p.StorageCostPerKW)
     @constraint(REopt, TotalOMCosts == sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s]
                                            for t in p.Tech, s in p.Seg))
     
@@ -540,8 +529,8 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     
     results = Dict{String, Any}("lcc" => ojv)
     
-    results["batt_kwh"] = value(sum(dvStorageSizeKWH[b] for b in p.BattLevel))
-    results["batt_kw"] = value(sum(dvStorageSizeKW[b] for b in p.BattLevel))
+    results["batt_kwh"] = value(dvStorageSizeKWH)
+    results["batt_kw"] = value(dvStorageSizeKW)
     
     if results["batt_kwh"] != 0
     	@expression(REopt, soc[ts in p.TimeStep], dvStoredEnergy[ts] / results["batt_kwh"])
