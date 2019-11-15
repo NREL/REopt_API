@@ -70,15 +70,13 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
         self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
         self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
 
-        response = self.get_response(self.post)
-        
+        response = self.get_response(self.post)        
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         latitude_input = response['inputs']['Scenario']['Site']['latitude']
         tilt_out = response['inputs']['Scenario']['Site']['PV']['tilt']
         messages = ClassAttributes(response['messages'])
-
         net_load = [a - round(b,3) for a, b in zip(load_out.year_one_electric_load_series_kw, pv_out.year_one_power_production_series_kw)]
         try:
             self.assertEqual(existing_kw, pv_out.size_kw,
