@@ -1,9 +1,7 @@
 import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
-using JLD2
 using JuMP
-using AxisArrays
 
 jumpex(m::JuMP.AbstractModel) = JuMP.GenericAffExpr{Float64, JuMP.variable_type(m)}()
 
