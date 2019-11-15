@@ -582,7 +582,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         
     GeneratorTechs = filter(t->p.TechToTechClassMatrix[t, "GENERATOR"] == 1, p.Tech)
     if !isempty(GeneratorTechs)
-    	if value(sum(dvSystemSize[t,s] for s in Seg, t in GeneratorTechs)) > 0
+    	if value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs)) > 0
 			results["Generator"] = Dict()
 			results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner
 			results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner

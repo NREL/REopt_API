@@ -12,7 +12,7 @@ class Tech(object):
     """
 
     def __init__(self, min_kw=0, max_kw=big_number, installed_cost_us_dollars_per_kw=big_number,
-                 om_cost_us_dollars_per_kw=0, *args, **kwargs):
+                 om_cost_us_dollars_per_kw=0.0, *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
@@ -23,7 +23,7 @@ class Tech(object):
         self.nmil_regime = None
         self.reopt_class = ""
         self.is_grid = False
-        self.derate = 1
+        self.derate = 1.0
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
 
@@ -52,7 +52,7 @@ class Util(Tech):
         self.outage_end_hour = outage_end_hour
         self.loads_served = ['retail', 'storage']
         self.is_grid = True
-        self.derate = 0
+        self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
         dfm.add_util(self)
@@ -77,7 +77,7 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, tilt=0.537, azimuth=180, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -247,7 +247,7 @@ class Generator(Tech):
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
-        self.derate = 0
+        self.derate = 0.0
         self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
         self.min_kw = min_kw

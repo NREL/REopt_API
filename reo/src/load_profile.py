@@ -598,7 +598,7 @@ class LoadProfile(BuiltInProfile):
             # modify loads based on custom critical loads profile
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
@@ -618,7 +618,7 @@ class LoadProfile(BuiltInProfile):
             # modify loads based on percentage
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
