@@ -769,7 +769,7 @@ class DatFileManager:
                 if hasattr(tech, 'min_turn_down'):
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
                 else:
-                    min_turn_down.append(0)
+                    min_turn_down.append(0.0)
                 
                 if eval('self.' + tech + '.acres_per_kw') is not None:
 
@@ -783,9 +783,9 @@ class DatFileManager:
                             site_kw_max = max(roof_max_kw + land_max_kw, existing_kw)
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
-                    max_sizes.append(existing_kw)
+                    max_sizes.append(float(existing_kw))
                 else:
-                    max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
+                    max_sizes.append(float(min(eval('self.' + tech + '.max_kw'), site_kw_max)))
 
         return max_sizes, min_turn_down
 
@@ -1012,7 +1012,7 @@ class DatFileManager:
             'ProdFactor': prod_factor,
             'EtaStorIn': eta_storage_in,
             'EtaStorOut': eta_storage_out,
-            'MaxSize': floatlist(max_sizes),
+            'MaxSize': max_sizes,
             'MinStorageSizeKW': float(self.storage.min_kw),
             'MaxStorageSizeKW': float(self.storage.max_kw),
             'MinStorageSizeKWH': float(self.storage.min_kwh),
@@ -1093,7 +1093,7 @@ class DatFileManager:
             'ProdFactor': prod_factor_bau,
             'EtaStorIn': eta_storage_in_bau,
             'EtaStorOut': eta_storage_out_bau,
-            'MaxSize': floatlist(max_sizes_bau),
+            'MaxSize': max_sizes_bau,
             'MinStorageSizeKW': 0.0,
             'MaxStorageSizeKW': 0.0,
             'MinStorageSizeKWH': 0.0,
