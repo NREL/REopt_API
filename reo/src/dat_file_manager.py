@@ -327,7 +327,7 @@ class DatFileManager:
         cap_cost_yint = list()
         n_segments_out = 0
         n_segments = None
-        tech_to_size = float(big_number)  # There are challeges with breakpoint creation, but may want to support large systems (100MW scale)
+        tech_to_size = big_number  # There are challeges with breakpoint creation, but may want to support large systems (100MW scale)
 
         # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
         existing_kw_flag = False
@@ -335,7 +335,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None and tech not in ['util']:
 
-                existing_kw = 0
+                existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw_flag = True
@@ -344,7 +344,7 @@ class DatFileManager:
 
             if eval('self.' + tech) is not None and tech not in ['util']:
 
-                existing_kw = 0
+                existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
@@ -369,15 +369,15 @@ class DatFileManager:
 
                         # Workaround to consider fact that REopt incentive calculation works best if "unlimited" incentives are entered as 0
                         if tech_incentives[region]['%_max'] == max_incentive:
-                            tech_incentives[region]['%_max'] = 0
+                            tech_incentives[region]['%_max'] = 0.0
                         if tech_incentives[region]['rebate_max'] == max_incentive:
-                            tech_incentives[region]['rebate_max'] = 0
+                            tech_incentives[region]['rebate_max'] = 0.0
 
                     else: # for generator there are no incentives
-                        tech_incentives[region]['%'] = 0
-                        tech_incentives[region]['%_max'] = 0
-                        tech_incentives[region]['rebate'] = 0
-                        tech_incentives[region]['rebate_max'] = 0
+                        tech_incentives[region]['%'] = 0.0
+                        tech_incentives[region]['%_max'] = 0.0
+                        tech_incentives[region]['rebate'] = 0.0
+                        tech_incentives[region]['rebate_max'] = 0.0
 
                         # Intermediate Cost curve
                 xp_array_incent = dict()
@@ -386,8 +386,8 @@ class DatFileManager:
                 yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  #$
 
                 # Final cost curve
-                cost_curve_bp_x = [0]
-                cost_curve_bp_y = [0]
+                cost_curve_bp_x = [0.0]
+                cost_curve_bp_y = [0.0]
 
                 for r in range(len(regions)-1):
 
@@ -395,8 +395,8 @@ class DatFileManager:
                     next_region = regions[r + 1]
 
                     # Apply incentives, initialize first value
-                    xp_array_incent[next_region] = [0]
-                    yp_array_incent[next_region] = [0]
+                    xp_array_incent[next_region] = [0.0]
+                    yp_array_incent[next_region] = [0.0]
         
                     # percentage based incentives
                     p = float(tech_incentives[region]['%'])
@@ -431,10 +431,10 @@ class DatFileManager:
                         ya = yp
         
                         # initialize break points
-                        u_xbp = 0
-                        u_ybp = 0
-                        p_xbp = 0
-                        p_ybp = 0
+                        u_xbp = 0.0
+                        u_ybp = 0.0
+                        p_xbp = 0.0
+                        p_ybp = 0.0
         
                         if not switch_rebate:
                             u_xbp = u_cap / u
@@ -587,18 +587,18 @@ class DatFileManager:
                             continue
                         else:
                             y_shift = -(tmp_cap_cost_slope[i] * existing_kw + tmp_cap_cost_yint[i])
-                            tmp_cap_cost_slope = [0] + tmp_cap_cost_slope[i:]
-                            tmp_cap_cost_yint = [0] + [y + y_shift for y in tmp_cap_cost_yint[i:]]
-                            cost_curve_bp_x = [0, existing_kw] + cost_curve_bp_x[i+1:]
+                            tmp_cap_cost_slope = [0.0] + tmp_cap_cost_slope[i:]
+                            tmp_cap_cost_yint = [0.0] + [y + y_shift for y in tmp_cap_cost_yint[i:]]
+                            cost_curve_bp_x = [0.0, existing_kw] + cost_curve_bp_x[i+1:]
                             n_segments = len(tmp_cap_cost_slope)
                             break
 
                 elif existing_kw_flag:
 
                     for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
-                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
-                        tmp_cap_cost_yint = [0] + [big_number]    
-                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
+                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1.0] # adding 1 as the slope for wind's second segment
+                        tmp_cap_cost_yint = [0.0] + [big_number]
+                        cost_curve_bp_x = [0.0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
                         n_segments = len(tmp_cap_cost_slope)
                         break
 
@@ -618,11 +618,11 @@ class DatFileManager:
                     n_segments = 1
 
                 for seg in range(n_segments):
-                    cap_cost_slope.append(0)
-                    cap_cost_yint.append(0)
+                    cap_cost_slope.append(0.0)
+                    cap_cost_yint.append(0.0)
 
                 for seg in range(n_segments + 1):
-                    x = 0
+                    x = 0.0
                     if len(cap_cost_x) > 0 and cap_cost_x[-1] == 0:
                         x = big_number
                     cap_cost_x.append(x)
@@ -630,7 +630,7 @@ class DatFileManager:
                 # Have to take n_segments as the maximum number across all technologies
                 n_segments_out = max(n_segments, n_segments_out)
 
-        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments_out
+        return cap_cost_slope, [0.0]+cap_cost_x[1:], cap_cost_yint, n_segments_out
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
@@ -1028,9 +1028,9 @@ class DatFileManager:
             'ProdIncentRate': prod_incent_rate,
             'MaxProdIncent': max_prod_incent,
             'MaxSizeForProdIncent': max_size_for_prod_incent,
-            'CapCostSlope': floatlist(cap_cost_slope),
-            'CapCostX': floatlist(cap_cost_x),
-            'CapCostYInt': floatlist(cap_cost_yint),
+            'CapCostSlope': cap_cost_slope,
+            'CapCostX': cap_cost_x,
+            'CapCostYInt': cap_cost_yint,
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
@@ -1109,9 +1109,9 @@ class DatFileManager:
             'ProdIncentRate': prod_incent_rate_bau,
             'MaxProdIncent': max_prod_incent_bau,
             'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
-            'CapCostSlope': floatlist(cap_cost_slope_bau),
-            'CapCostX': floatlist(cap_cost_x_bau),
-            'CapCostYInt': floatlist(cap_cost_yint_bau),
+            'CapCostSlope': cap_cost_slope_bau,
+            'CapCostX': cap_cost_x_bau,
+            'CapCostYInt': cap_cost_yint_bau,
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
