@@ -91,7 +91,6 @@ class PV(Tech):
         self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
-        self.min_kw += existing_kw
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
@@ -250,9 +249,15 @@ class Generator(Tech):
         self.derate = 0
         self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
+        if max_kw < min_kw:
+            min_kw = max_kw
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
+
+        # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
+        if self.max_kw < self.existing_kw:
+            self.max_kw = self.existing_kw
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:

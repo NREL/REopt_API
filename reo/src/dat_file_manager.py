@@ -699,16 +699,18 @@ class DatFileManager:
         """
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
-
         for tc in self.available_tech_classes:
-
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
-                if bau and hasattr(eval('self.' + tc.lower()), 'existing_kw'):
-                    tech_class_min_size.append(eval('self.' + tc.lower() + '.existing_kw'))
+                if hasattr(eval('self.' + tc.lower()), 'existing_kw'):
+                    if bau:
+                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0) 
+                    else:
+                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0) + (eval('self.' + tc.lower() + '.min_kw') or 0)
                 else:
-                    tech_class_min_size.append(eval('self.' + tc.lower() + '.min_kw'))
+                    new_value = (eval('self.' + tc.lower() + '.min_kw') or 0)
+                tech_class_min_size.append(new_value)
             else:
-                tech_class_min_size.append(0)
+                tech_class_min_size.append(0)                            
 
         for tech in techs:
 
@@ -721,6 +723,7 @@ class DatFileManager:
                     else:
                         tech_to_tech_class.append(0)
 
+        
         return tech_class_min_size, tech_to_tech_class
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):

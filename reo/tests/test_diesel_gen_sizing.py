@@ -98,6 +98,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 100
+        
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
