@@ -380,12 +380,12 @@ nested_output_definitions = {
                 },
                 "year_one_energy_supplied_kwh": {
                   "type": float,
-                  "description": "Year one hourly time series of power from grid to load",
+                  "description": "Year one energy supplied from grid to load",
                   "units": "kWh"
                 },
-"year_one_energy_supplied_kwh_bau": {
+                "year_one_energy_supplied_kwh_bau": {
                   "type": float,
-                  "description": "Year one hourly time series of power from grid to load in bau scenario",
+                  "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
                 }
               },
