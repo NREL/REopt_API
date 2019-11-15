@@ -310,12 +310,12 @@ class DatFileManager:
     
                 else:
     
-                    pwf_prod_incent.append(0)
-                    max_prod_incent.append(0)
-                    max_size_for_prod_incent.append(0)
+                    pwf_prod_incent.append(0.0)
+                    max_prod_incent.append(0.0)
+                    max_size_for_prod_incent.append(0.0)
     
                     for load in self.available_loads:
-                        prod_incent_rate.append(0)
+                        prod_incent_rate.append(0.0)
                     
         return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent
         
@@ -1024,10 +1024,10 @@ class DatFileManager:
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
             'two_party_factor': two_party_factor,
-            'pwf_prod_incent': floatlist(pwf_prod_incent),
-            'ProdIncentRate': floatlist(prod_incent_rate),
-            'MaxProdIncent': floatlist(max_prod_incent),
-            'MaxSizeForProdIncent': floatlist(max_size_for_prod_incent),
+            'pwf_prod_incent': pwf_prod_incent,
+            'ProdIncentRate': prod_incent_rate,
+            'MaxProdIncent': max_prod_incent,
+            'MaxSizeForProdIncent': max_size_for_prod_incent,
             'CapCostSlope': floatlist(cap_cost_slope),
             'CapCostX': floatlist(cap_cost_x),
             'CapCostYInt': floatlist(cap_cost_yint),
@@ -1105,10 +1105,10 @@ class DatFileManager:
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
             'two_party_factor': two_party_factor_bau,
-            'pwf_prod_incent': floatlist(pwf_prod_incent_bau),
-            'ProdIncentRate': floatlist(prod_incent_rate_bau),
-            'MaxProdIncent': floatlist(max_prod_incent_bau),
-            'MaxSizeForProdIncent': floatlist(max_size_for_prod_incent_bau),
+            'pwf_prod_incent': pwf_prod_incent_bau,
+            'ProdIncentRate': prod_incent_rate_bau,
+            'MaxProdIncent': max_prod_incent_bau,
+            'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
             'CapCostSlope': floatlist(cap_cost_slope_bau),
             'CapCostX': floatlist(cap_cost_x_bau),
             'CapCostYInt': floatlist(cap_cost_yint_bau),
