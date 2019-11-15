@@ -2,6 +2,7 @@ import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
 import JuMP.value
+using AxisArrays
 using JuMP
 
 function emptySetException(sets, values, floatbool=false)
