@@ -356,7 +356,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 35,
+          "default": 35.0,
           "description": "Total annual operations and maintenance costs for wind"
         },
         "macrs_option_years": {
@@ -512,7 +512,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 16,
+          "default": 16.0,
           "description": "Annual PV operations and maintenance costs in $/kW"
         },
         "macrs_option_years": {

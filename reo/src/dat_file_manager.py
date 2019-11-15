@@ -692,7 +692,7 @@ class DatFileManager:
                     else:
 
                         for _ in range(self.n_timesteps):
-                            prod_factor.append(float(0))
+                            prod_factor.append(float(0.0))
 
                         tech_to_load.append(0)
 
@@ -704,7 +704,7 @@ class DatFileManager:
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-                                   if load == 'storage' else float(1))
+                                   if load == 'storage' else 1.0)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
@@ -1035,7 +1035,7 @@ class DatFileManager:
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
-            'OMperUnitSize': floatlist(om_cost_us_dollars_per_kw),
+            'OMperUnitSize': om_cost_us_dollars_per_kw,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
             'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
@@ -1116,7 +1116,7 @@ class DatFileManager:
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
-            'OMperUnitSize': floatlist(om_dollars_per_kw_bau),
+            'OMperUnitSize': om_dollars_per_kw_bau,
             'OMcostPerUnitProd': om_dollars_per_kwh_bau,
             'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,

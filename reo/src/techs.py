@@ -12,7 +12,7 @@ class Tech(object):
     """
 
     def __init__(self, min_kw=0, max_kw=big_number, installed_cost_us_dollars_per_kw=big_number,
-                 om_cost_us_dollars_per_kw=0, *args, **kwargs):
+                 om_cost_us_dollars_per_kw=0.0, *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
