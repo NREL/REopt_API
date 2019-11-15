@@ -543,19 +543,21 @@ function reopt(data;
         @expression(REopt, WINDtoBatt[t in WindTechs, ts in TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * ProdFactor[t, "1S", ts] * LevelizationFactor[t] for s in Seg, fb in FuelBin))
     end
-        
+
+	results["gen_net_fixed_om_costs"] = 0
+	results["gen_net_variable_om_costs"] = 0
+	results["gen_total_fuel_cost"] = 0
+	results["gen_year_one_fuel_cost"] = 0
+	results["gen_year_one_variable_om_costs"] = 0
+
     GeneratorTechs = filter(t->TechToTechClassMatrix[t, "GENERATOR"] == 1, Tech)
     if !isempty(GeneratorTechs)
-		results["Generator"] = Dict()
-        results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner
-        results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner
-		# TODO: calculate rest of Generator costs
-    else
-    	results["gen_net_fixed_om_costs"] = 0
-        results["gen_net_variable_om_costs"] = 0
-        results["gen_total_fuel_cost"] = 0
-        results["gen_year_one_fuel_cost"] = 0
-		results["gen_year_one_variable_om_costs"] = 0
+    	if value(sum(dvSystemSize[t,s] for s in Seg, t in GeneratorTechs)) > 0
+			results["Generator"] = Dict()
+			results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner
+			results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner
+			# TODO: calculate rest of Generator costs
+		end
     end
     
     #println("2")   
