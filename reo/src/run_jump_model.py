@@ -51,7 +51,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     try:
         j = julia.Julia()
         j.include("reo/src/reopt.jl")
-        results = j.reopt(data, **reopt_inputs)
+        results = j.reopt(data, reopt_inputs)
     except Exception as e:
         # TODO: exception handling
         raise e
