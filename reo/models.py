@@ -676,4 +676,7 @@ class ModelManager(object):
 
                 move_outs_to_ins(site_key, resp=resp)
 
+        if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
+            del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
+
         return resp
