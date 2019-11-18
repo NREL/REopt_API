@@ -113,10 +113,6 @@ class PV(Tech):
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
         self.kwargs['tilt'] = self.tilt
 
-        # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
-
         self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
 
         dfm.add_pv(self)
@@ -254,10 +250,6 @@ class Generator(Tech):
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
-
-        # if user has entered the max_kw for new Generator capacity to be less than the user-specified existing_kw, max_kw is reset
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
 
         # no net-metering for gen so it can only sell in "wholesale" bin (and not "export" bin)
         if self.generator_sells_energy_back_to_grid:

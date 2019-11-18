@@ -65,7 +65,7 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
         flat_load = [pv_size] * 8760
 
         self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
-        self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
+        self.post['Scenario']['Site']['PV']['max_kw'] = 0
         self.post['Scenario']['Site']['PV']['array_type'] = 0
         self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
         self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
