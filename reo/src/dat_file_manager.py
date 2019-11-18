@@ -737,7 +737,8 @@ class DatFileManager:
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
-                site_kw_max = eval('self.' + tech + '.max_kw')
+                site_kw_max = eval('self.' + tech + '.max_kw') + existing_kw
+                original_site_kw_max = site_kw_max
 
                 if hasattr(tech, 'min_turn_down'):
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
@@ -758,7 +759,7 @@ class DatFileManager:
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(existing_kw)
                 else:
-                    max_sizes.append(min(eval('self.' + tech + '.max_kw'), site_kw_max))
+                    max_sizes.append(min(original_site_kw_max, site_kw_max))
 
         return max_sizes, min_turn_down
 
