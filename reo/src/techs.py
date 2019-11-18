@@ -255,7 +255,7 @@ class Generator(Tech):
         self.max_kw = max_kw
         self.existing_kw = existing_kw
 
-        # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
+        # if user has entered the max_kw for new Generator capacity to be less than the user-specified existing_kw, max_kw is reset
         if self.max_kw < self.existing_kw:
             self.max_kw = self.existing_kw
 
