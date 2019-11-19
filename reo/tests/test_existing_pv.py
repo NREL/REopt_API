@@ -65,12 +65,12 @@ class TestExistingPV(ResourceTestCaseMixin, TestCase):
         flat_load = [pv_size] * 8760
 
         self.post['Scenario']['Site']['PV']['existing_kw'] = existing_kw
-        self.post['Scenario']['Site']['PV']['max_kw'] = max_kw
+        self.post['Scenario']['Site']['PV']['max_kw'] = 0
         self.post['Scenario']['Site']['PV']['array_type'] = 0
         self.post['Scenario']['Site']['LoadProfile']['loads_kw_is_net'] = True
         self.post['Scenario']['Site']['LoadProfile']['loads_kw'] = flat_load
 
-        response = self.get_response(self.post)
+        response = self.get_response(self.post)        
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         load_out = ClassAttributes(response['outputs']['Scenario']['Site']['LoadProfile'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
