@@ -4,6 +4,7 @@ from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
 from reo.nested_to_flat_output import nested_to_flat
 #from unittest import TestCase
+from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -63,6 +64,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
             self.assertAlmostEquals(x, y, places=3)
 
+    @skip("Produces same XPRSget_rhs error")
     def test_generator_too_small_for_outage(self):
         """
         Test scenario with interesting rate: high enough demand charges to support battery without PV.

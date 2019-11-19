@@ -93,6 +93,7 @@ struct Parameter
      TimeStep::UnitRange{Int64}
      TimeStepBat::UnitRange{Int64}
      TimeStepScaling::Float64
+     OMcostPerUnitProd::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
 end
 
 
@@ -163,6 +164,7 @@ function build_param(args...;
           TimeStepCount,
           NumRatchets,
           TimeStepScaling,
+          OMcostPerUnitProd,
           kwargs...
     )
 
@@ -212,6 +214,7 @@ function build_param(args...;
     FuelBurnRateB = parameter((Tech, Load, FuelBin), FuelBurnRateB)
     NMILLimits = parameter(NMILRegime, NMILLimits)
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
+    OMcostPerUnitProd = parameter(Tech, OMcostPerUnitProd)
 
 
     param = Parameter(Tech, 
@@ -287,7 +290,8 @@ function build_param(args...;
                       DemandMonthsBin,
                       TimeStep,
                       TimeStepBat,
-                      TimeStepScaling)
+                      TimeStepScaling,
+                      OMcostPerUnitProd)
 
     return param
 

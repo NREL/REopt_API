@@ -669,13 +669,13 @@ class DatFileManager:
 
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
-                om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
+                om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
 
                 # only generator tech has variable o&m cost
                 if tech.lower() == 'generator':
-                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]'))
+                    om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                 else:
-                    om_cost_us_dollars_per_kwh.append(0)
+                    om_cost_us_dollars_per_kwh.append(0.0)
 
                 for load in self.available_loads:
 

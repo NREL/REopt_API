@@ -80,6 +80,7 @@ function reopt(data, model_inputs)
           #println("TimeStepCount: ", typeof(model_inputs["TimeStepCount"]))
           #println("NumRatchets: ", typeof(model_inputs["NumRatchets"]))
           #println("TimeStepScaling: ", typeof(model_inputs["TimeStepScaling"]))
+          #println("OMcostPerUnitProd: ", typeof(model_inputs["OMcostPerUnitProd"]))
 
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
@@ -146,7 +147,8 @@ function reopt(data, model_inputs)
           DemandMonthsBinCount = model_inputs["DemandMonthsBinCount"],
           TimeStepCount = model_inputs["TimeStepCount"],
           NumRatchets = model_inputs["NumRatchets"],
-          TimeStepScaling = model_inputs["TimeStepScaling"])
+          TimeStepScaling = model_inputs["TimeStepScaling"],
+          OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
     return reopt_run(MAXTIME, p)
@@ -442,9 +444,9 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                                               for t in WindTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
 
     GeneratorTechs = filter(t->p.TechToTechClassMatrix[t, "GENERATOR"] == 1, p.Tech)
-    @expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling 
+    @expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling 
                        for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
-    @expression(REopt, AverageGenProd, sum(dvRatedProd[t,LD,ts,s,fb] * ProdFactor[t, LD, ts] * TimeStepScaling * LevelizationFactor[t]
+    @expression(REopt, AverageGenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
                        for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
 
     @expression(REopt, TotalTechCapCosts, sum(p.CapCostSlope[t, s] * dvSystemSize[t, s] + p.CapCostYInt[t,s] * binSegChosen[t,s]
@@ -453,14 +455,14 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @expression(REopt, TotalPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in p.Tech, s in p.Seg))
 
     if !isempty(GeneratorTechs)
-        @expression(REopt, TotalPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
+        @expression(REopt, TotalPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
                                                     for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     else
         @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
     end
 
     @expression(REopt, GenPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in GeneratorTechs, s in p.Seg))
-    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
+    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
                                               for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
 
     
@@ -538,7 +540,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                     for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     
     
-    ojv = JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder)
+    ojv = round(JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
     Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
@@ -584,11 +586,12 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     if !isempty(GeneratorTechs)
     	if value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs)) > 0
 			results["Generator"] = Dict()
+            results["generator_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner
 			results["gen_net_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner
 	        results["gen_total_fuel_cost"] = value(TotalGenFuelCharges) * r_tax_fraction_offtaker
-	        results["gen_year_one_fuel_cost"] = value(TotalGenFuelCharges) * r_tax_fraction_offtaker / pwf_e
-	        results["gen_year_one_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / pwf_om
+	        results["gen_year_one_fuel_cost"] = value(TotalGenFuelCharges) * r_tax_fraction_offtaker / p.pwf_e
+	        results["gen_year_one_variable_om_costs"] = value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om
 		end
     end
    
@@ -617,10 +620,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 						 "year_one_energy_produced" => value(Year1PvProd),
 						 "year_one_wind_energy_produced" => value(Year1WindProd),
 						 "average_annual_energy_exported_wind" => value(ExportedElecWIND),
-						 "fuel_used_gal" => 0,  # TODO: calculate fuel_used_gal
 						 "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)
     
-    
+    @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsed[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
+    results["fuel_used_gal"] = value(GeneratorFuelUsed)
+
     @expression(REopt, GridToBatt[ts in p.TimeStep],
                 sum(dvRatedProd["UTIL1", "1S", ts, s, fb] * p.ProdFactor["UTIL1", "1S", ts] * p.LevelizationFactor["UTIL1"]
 					for s in p.Seg, fb in p.FuelBin))
