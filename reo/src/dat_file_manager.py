@@ -737,29 +737,25 @@ class DatFileManager:
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
-                site_kw_max = eval('self.' + tech + '.max_kw') + existing_kw
-                original_site_kw_max = site_kw_max
-
                 if hasattr(tech, 'min_turn_down'):
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
                 else:
                     min_turn_down.append(0)
-                
+
+                beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')
                 if eval('self.' + tech + '.acres_per_kw') is not None:
-
                     if eval('self.' + tech + '.kw_per_square_foot') is not None:
-
                         if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
                             # don't restrict unless they specify both land_area and roof_area,
                             # otherwise one of them is "unlimited" in UI
                             roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
                             land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
-                            site_kw_max = max(roof_max_kw + land_max_kw, existing_kw)
+                            beyond_existing_cap_kw = min(roof_max_kw + land_max_kw, beyond_existing_cap_kw)
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(existing_kw)
                 else:
-                    max_sizes.append(min(original_site_kw_max, site_kw_max))
+                    max_sizes.append(existing_kw + beyond_existing_cap_kw)
 
         return max_sizes, min_turn_down
 
