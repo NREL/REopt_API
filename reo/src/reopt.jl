@@ -491,10 +491,14 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         TotalMinCharge = 12 * p.MonthlyMinCharge * p.pwf_e
     end
 
-    #if TotalMinCharge > 0 
+    if TotalMinCharge > 0
         @constraint(REopt, MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges))
-    #end
-    
+	else
+		@constraint(REopt, MinChargeAdder == 0)
+    end
+    #= Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
+		0.001*MinChargeAdder is added back into LCC when writing to results.  =#
     
     # Define Rates
     r_tax_fraction_owner = (1 - p.r_tax_owner)
