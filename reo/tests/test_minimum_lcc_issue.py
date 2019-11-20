@@ -20,7 +20,8 @@ class MinimumLccTests(ResourceTestCaseMixin, TestCase):
 
     def test_negative_lcc(self):
         """
-        Case with site exports greater than the cost of energy+demand+fixed charges. Expected outcome:
+        PV system is free (zero capex and O&M), $5/kWh export rate, and so
+        export benefits are greater than the cost of energy+demand+fixed charges. Expected outcome:
         - lcc for with_technology case negative
         - lcc for bau case positive
         ...
