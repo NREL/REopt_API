@@ -622,6 +622,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 						 "net_capital_costs_plus_om" => net_capital_costs_plus_om,
 						 "average_wind_energy_produced" => value(AverageWindProd),
 						 "year_one_energy_produced" => value(Year1PvProd),
+						 "average_annual_energy_exported_pv" => value(ExportedElecPV),
 						 "year_one_wind_energy_produced" => value(Year1WindProd),
 						 "average_annual_energy_exported_wind" => value(ExportedElecWIND),
 						 "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)

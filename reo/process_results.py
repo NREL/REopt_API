@@ -167,11 +167,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "PV":
                     pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw", 0)
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "average_yearly_energy_produced_kwh"] = self.results_dict.get(
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get(
                         "average_yearly_pv_energy_produced")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get(
+                        "average_annual_energy_exported_pv")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name][
