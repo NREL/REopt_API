@@ -602,7 +602,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) + 
                                 value(TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
                                 value(TotalGenFuelCharges) * r_tax_fraction_offtaker
-
+	# TODO: round all of these output values?
     push!(results, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
 						 "year_one_energy_cost" => value(Year1EnergyCost),
 						 "year_one_demand_cost" => value(Year1DemandCost),
@@ -633,28 +633,28 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @expression(REopt, GridToBatt[ts in p.TimeStep],
                 sum(dvRatedProd["UTIL1", "1S", ts, s, fb] * p.ProdFactor["UTIL1", "1S", ts] * p.LevelizationFactor["UTIL1"]
 					for s in p.Seg, fb in p.FuelBin))
-    results["GridToBatt"] = value.(GridToBatt)
+    results["GridToBatt"] = round.(value.(GridToBatt), digits=3)
 
     @expression(REopt, GridToLoad[ts in p.TimeStep],
                 sum(dvRatedProd["UTIL1", "1R", ts, s, fb] * p.ProdFactor["UTIL1", "1R", ts] * p.LevelizationFactor["UTIL1"]
 					for s in p.Seg, fb in p.FuelBin))
-    results["GridToLoad"] = value.(GridToLoad)
+    results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
 	if !isempty(GeneratorTechs)
 		@expression(REopt, GENERATORtoBatt[ts in p.TimeStep],
 					sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t]
 						for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin))
-    	results["GENERATORtoBatt"] = value.(GENERATORtoBatt)
+    	results["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
 
 		@expression(REopt, GENERATORtoGrid[ts in p.TimeStep],
 					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
 						for t in GeneratorTechs, LD in ["1W", "1X"], s in p.Seg, fb in p.FuelBin))
-		results["GENERATORtoGrid"] = value.(GENERATORtoGrid)
+		results["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
 
 		@expression(REopt, GENERATORtoLoad[ts in p.TimeStep],
 					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
 						for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin))
-		results["GENERATORtoLoad"] = value.(GENERATORtoLoad)
+		results["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
     else
     	results["GENERATORtoBatt"] = []
 		results["GENERATORtoGrid"] = []
@@ -665,12 +665,12 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 		@expression(REopt, PVtoLoad[ts in p.TimeStep],
 					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
 						for t in PVTechs, s in p.Seg, fb in p.FuelBin))
-    	results["PVtoLoad"] = value.(PVtoLoad)
+    	results["PVtoLoad"] = round.(value.(PVtoLoad), digits=3)
 
 		@expression(REopt, PVtoGrid[ts in p.TimeStep],
 					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
 						for t in PVTechs, LD in ["1W", "1X"], s in p.Seg, fb in p.FuelBin))
-    	results["PVtoGrid"] = value.(PVtoGrid)
+    	results["PVtoGrid"] = round.(value.(PVtoGrid), digits=3)
 
 		@expression(REopt, PVPerUnitSizeOMCosts,
 					sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in PVTechs, s in p.Seg))
@@ -685,12 +685,12 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 		@expression(REopt, WINDtoLoad[ts in p.TimeStep],
 					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
 						for t in WindTechs, s in p.Seg, fb in p.FuelBin))
-		results["WINDtoLoad"] = value.(WINDtoLoad)
+		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
 		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
 					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
 						for t in WindTechs, s in p.Seg, fb in p.FuelBin, LD in ["1W", "1X"]))
-		results["WINDtoGrid"] = value.(WINDtoGrid)
+		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 	else
 		results["WINDtoLoad"] = []
     	results["WINDtoGrid"] = []
