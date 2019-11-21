@@ -107,7 +107,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         self.assertTrue(all(x == 0 for x in pv_out.year_one_to_load_series_kw[:744]))
-        self.assertEqual(pv_out.size_kw, 70.2846)
+        self.assertAlmostEqual(pv_out.size_kw, 70.2846, places=4)
         self.assertAlmostEqual(financial.lcc_us_dollars, 431483, -1)
 
         """
