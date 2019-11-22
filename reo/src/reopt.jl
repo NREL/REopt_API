@@ -186,7 +186,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin
         binUsageTier[p.Month, p.FuelBin], Bin
         dvPeakDemandELookback >= 0
-    
+
     # ADDED due to implied types
         ElecToBatt[p.Tech] >= 0
         UsageInTier[p.Month, p.FuelBin] >= 0
@@ -403,10 +403,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [LD in p.Load, lbm in p.DemandLookbackMonths],
                 dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in p.DemandMonthsBin))
     
-    ### Site Load
-    TechIsGridSet = filter(t->p.TechIsGrid[t] == 1, p.Tech)
+    #= Annual energy produced by Tech's' (except UTIL) used to meet the 1R, 1W, and 1S loads must
+    be less than the annual site load (in kWh) =#
+    TechIsNotGridSet = filter(t->p.TechIsGrid[t] == 0, p.Tech)
     @constraint(REopt, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *  p.TimeStepScaling
-                           for t in TechIsGridSet, LD in ["1R", "1W", "1S"],
+                           for t in TechIsNotGridSet, LD in ["1R", "1W", "1S"],
                            ts in p.TimeStep, s in p.Seg, fb in p.FuelBin) <=  p.AnnualElecLoad)
     
     ###
