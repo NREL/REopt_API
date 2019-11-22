@@ -108,8 +108,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
-                else:
-                    gen = None
+
 
         elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
             if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
@@ -118,8 +117,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
-            else:
-                gen = None
+
 
         try:
             if 'gen' in locals():
