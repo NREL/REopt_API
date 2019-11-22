@@ -138,7 +138,6 @@ class PV(Tech):
 
 
 class Wind(Tech):
-
     size_class_to_hub_height = {
         'residential': 20,
         'commercial': 40,
@@ -146,10 +145,10 @@ class Wind(Tech):
         'large': 80,
     }
     size_class_to_installed_cost = {
-        'residential': 10792,
-        'commercial': 4989,
-        'medium': 4111,
-        'large': 1874,
+        'residential': 11950,
+        'commercial': 7390,
+        'medium': 4440,
+        'large': 3450,
     }
 
     size_class_to_itc_incentives = {
@@ -159,7 +158,7 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, acres_per_kw=.03, time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.path_inputs = dfm.get_paths()['inputs']
@@ -177,7 +176,7 @@ class Wind(Tech):
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
-                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+            self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
         self.ventyx = None
         self.sam_prod_factor = None
@@ -210,7 +209,6 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-            
             sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
                              time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
