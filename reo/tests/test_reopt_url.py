@@ -5,7 +5,7 @@ from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase, skip  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
-from reo.models import ModelManager
+from reo.models import ModelManager, ScenarioModel
 from reo.nested_inputs import flat_to_nested
 from reo.utilities import check_common_outputs
 from functools import reduce  # forward compatibility for Python 3
@@ -376,7 +376,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             print("Error message: {}".format(d['messages']))
             raise
 
-    def test_not_optimal_solution(self):
+    def test_not_optimal_solution_and_remove_url(self):
         data = {
             "Scenario" :{
                 "Site" :{
@@ -407,6 +407,10 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         
         self.assertTrue('REopt could not find an optimal solution for these inputs.' in d['messages']['error'])
+        # testing "remove" url:
+        response = self.api_client.get(self.reopt_base + str(run_uuid) + '/remove')
+        self.assertEqual(response.status_code, 204)
+        self.assertTrue(len(ScenarioModel.objects.filter(run_uuid=run_uuid)) == 0)
 
     def get_inputs_with_sub_key_from_nested_dict(self, nested_dict, sub_key, matched_values=None, obj_path=[],
                                                  sub_key_values=[]):
