@@ -624,11 +624,15 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 						 "total_min_charge_adder" => round(value(MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
 						 "total_payments_to_third_party_owner" => 0,
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=2),
-						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=2),
 						 "year_one_energy_produced" => round(value(Year1PvProd), digits=2),
+                         "average_yearly_pv_energy_produced" => round(value(AveragePvProd), digits=2),
 						 "average_annual_energy_exported_pv" => round(value(ExportedElecPV), digits=2),
 						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=2),
+						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=2),
 						 "average_annual_energy_exported_wind" => round(value(ExportedElecWIND), digits=2),
+                         "year_one_gen_energy_produced" => round(value(Year1GenProd), digits=2),
+                         "average_yearly_gen_energy_produced" => round(value(AverageGenProd), digits=2),
+                         "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=2),
 						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
     
     @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsed[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
