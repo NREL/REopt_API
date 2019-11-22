@@ -200,13 +200,13 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         #TotalEnergyExports <= 0
         #TotalProductionIncentive >= 0
         #TotalMinCharge >= 0
-    
+
     # ADDED due to calculations
         #Year1ElecProd
         #AverageElecProd
         #Year1WindProd
         #AverageWindProd
-    
+
     # ADDED for modeling
         binMinTurndown[p.Tech, p.TimeStep], Bin
     end
@@ -349,12 +349,9 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     ###  Net Meter Module
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
     
-    BelowNMset = filter(x->x!="AboveIL", p.NMILRegime)
-    @constraint(REopt, [n in BelowNMset],
+    @constraint(REopt, [n in p.NMILRegime],
                 sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
                     for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
-    @constraint(REopt, sum(p.TechToNMILMapping[t, "AboveIL"] * p.TurbineDerate[t] * dvSystemSize[t, s] for t in p.Tech, s in p.Seg) 
-                           <= p.NMILLimits["AboveIL"] * binNMLorIL["AboveIL"])
     
     ###  Rate Variable Definitions
     @constraint(REopt, [t in ["UTIL1"], LD in p.Load, fb in p.FuelBin, ts in p.TimeStep],
