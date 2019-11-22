@@ -187,11 +187,11 @@ nested_input_definitions = {
         "loads_kw": {
           "type": "list_of_float",
           "replacement_sets": load_profile_possible_sets,
-          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All values must be greater than or equal to zero."
         },
         "critical_loads_kw": {
           "type": "list_of_float",
-          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All values must be greater than or equal to zero."
         },
         "loads_kw_is_net": {
           "default": True,

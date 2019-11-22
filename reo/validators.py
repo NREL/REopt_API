@@ -374,6 +374,9 @@ class ValidateNestedInput:
             # 'doe_reference_name is a mandatory input'
             counter = 2
             for lp in ['critical_loads_kw', 'loads_kw']:
+                if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                    if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                        self.input_data_errors.append("Load profile must contain loads greater than or equal to zero.")
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
