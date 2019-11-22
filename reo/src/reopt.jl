@@ -602,30 +602,30 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) + 
                                 value(TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
                                 value(TotalGenFuelCharges) * r_tax_fraction_offtaker
-	# TODO: round all of these output values?
-    push!(results, Dict("year_one_utility_kwh" => value(Year1UtilityEnergy),
-						 "year_one_energy_cost" => value(Year1EnergyCost),
-						 "year_one_demand_cost" => value(Year1DemandCost),
-						 "year_one_demand_tou_cost" => value(Year1DemandTOUCost),
-						 "year_one_demand_flat_cost" => value(Year1DemandFlatCost),
-						 "year_one_export_benefit" => value(ExportBenefitYr1),
-						 "year_one_fixed_cost" => value(Year1FixedCharges),
-						 "year_one_min_charge_adder" => value(Year1MinCharges),
-						 "year_one_bill" => value(Year1Bill),
-						 "year_one_payments_to_third_party_owner" => value(TotalDemandCharges) / p.pwf_e,
-						 "total_energy_cost" => value(TotalEnergyCharges) * r_tax_fraction_offtaker,
-						 "total_demand_cost" => value(TotalDemandCharges) * r_tax_fraction_offtaker,
-						 "total_fixed_cost" => value(TotalFixedCharges) * r_tax_fraction_offtaker,
-						 "total_export_benefit" => value(TotalEnergyExports) * r_tax_fraction_offtaker,
-						 "total_min_charge_adder" => value(MinChargeAdder) * r_tax_fraction_offtaker,
+
+    push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
+						 "year_one_energy_cost" => round(value(Year1EnergyCost), digits=2),
+						 "year_one_demand_cost" => round(value(Year1DemandCost), digits=2),
+						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
+						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
+						 "year_one_export_benefit" => round(value(ExportBenefitYr1), digits=2),
+						 "year_one_fixed_cost" => round(value(Year1FixedCharges), digits=2),
+						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
+						 "year_one_bill" => round(value(Year1Bill), digits=2),
+						 "year_one_payments_to_third_party_owner" => round(value(TotalDemandCharges) / p.pwf_e, digits=2),
+						 "total_energy_cost" => round(value(TotalEnergyCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_demand_cost" => round(value(TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_fixed_cost" => round(value(TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_export_benefit" => round(value(TotalEnergyExports) * r_tax_fraction_offtaker, digits=2),
+						 "total_min_charge_adder" => round(value(MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
 						 "total_payments_to_third_party_owner" => 0,
-						 "net_capital_costs_plus_om" => net_capital_costs_plus_om,
-						 "average_wind_energy_produced" => value(AverageWindProd),
-						 "year_one_energy_produced" => value(Year1PvProd),
-						 "average_annual_energy_exported_pv" => value(ExportedElecPV),
-						 "year_one_wind_energy_produced" => value(Year1WindProd),
-						 "average_annual_energy_exported_wind" => value(ExportedElecWIND),
-						 "net_capital_costs" => value(TotalTechCapCosts + TotalStorageCapCosts))...)
+						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=2),
+						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=2),
+						 "year_one_energy_produced" => round(value(Year1PvProd), digits=2),
+						 "average_annual_energy_exported_pv" => round(value(ExportedElecPV), digits=2),
+						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=2),
+						 "average_annual_energy_exported_wind" => round(value(ExportedElecWIND), digits=2),
+						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
     
     @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsed[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
     results["fuel_used_gal"] = value(GeneratorFuelUsed)
