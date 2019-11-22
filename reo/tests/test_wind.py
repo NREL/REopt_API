@@ -97,6 +97,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
                 "max_kw": 0
             },
             "Wind": {
+                "installed_cost_us_dollars_per_kw": 1874,
+                "om_cost_us_dollars_per_kw": 35,
                 "macrs_bonus_pct": 0.0,
                 "max_kw": 10000,
                 "federal_itc_pct": 0,
@@ -120,8 +122,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         d_expected['lcc'] = 8551172
         d_expected['npv'] = 16159608
-        d_expected['wind_kw'] = 3734.95
-        d_expected['average_annual_energy_exported_wind'] = 5540765
+        d_expected['wind_kw'] = 3735
+        d_expected['average_annual_energy_exported_wind'] = 5844282
         d_expected['net_capital_costs_plus_om'] = 8537480
         resp = self.get_response(data=wind_post)
         self.assertHttpCreated(resp)
