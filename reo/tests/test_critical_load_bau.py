@@ -3,10 +3,9 @@ import os
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase
-from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
-import csv
+
 
 class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
@@ -26,8 +25,6 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 5 gallons
-        .
-        :return:
         """
         test_post = os.path.join('reo', 'tests', 'posts', 'critical_load_bau_cannot_sustain_outage.json')
         nested_data = json.load(open(test_post, 'rb'))
@@ -38,13 +35,10 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-
-        load_bau_file = os.path.join('Xpress', 'Run{}'.format(run_uuid), 'Outputs_bau', 'Load.csv')
-        with open(load_bau_file) as f:
-            laod_bau = [list(map(float, l))[0] for l in csv.reader(f, delimiter=',')]
+        load_bau = d['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
 
         # check first 100 hours
-        c['laod_bau'] = laod_bau[:100]
+        c['load_bau'] = load_bau[:100]
         c['status'] = d['outputs']['Scenario']['status']
         c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
         c['sustain_hours'] = d['outputs']['Scenario']['Site']['LoadProfile']['sustain_hours']
@@ -61,7 +55,7 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
                              16.7046, 16.5464, 17.2186, 16.8851, 17.7358, 17.2112]
 
         d_expected = dict()
-        d_expected['laod_bau'] = load_bau_expected
+        d_expected['load_bau'] = load_bau_expected
         d_expected['status'] = 'optimal'
         d_expected['total_energy_cost_bau'] = 53890.95
         d_expected['year_one_energy_cost_bau'] = 7429.26
@@ -83,8 +77,6 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 50 gallons
-        .
-        :return:
         """
         test_post = os.path.join('reo', 'tests', 'posts', 'critical_load_bau_can_sustain_outage.json')
         nested_data = json.load(open(test_post, 'rb'))
@@ -95,13 +87,10 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
-
-        load_bau_file = os.path.join('Xpress', 'Run{}'.format(run_uuid), 'Outputs_bau', 'Load.csv')
-        with open(load_bau_file) as f:
-            laod_bau = [list(map(float, l))[0] for l in csv.reader(f, delimiter=',')]
+        load_bau = d['outputs']['Scenario']['Site']['LoadProfile']['year_one_electric_load_series_kw']
 
         # check first 100 hours
-        c['laod_bau'] = laod_bau[:100]
+        c['load_bau'] = load_bau[:100]
         c['status'] = d['outputs']['Scenario']['status']
         c['resilience_check_flag'] = d['outputs']['Scenario']['Site']['LoadProfile']['resilience_check_flag']
         c['sustain_hours'] = d['outputs']['Scenario']['Site']['LoadProfile']['sustain_hours']
@@ -118,7 +107,7 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
                              15.1757, 15.3862, 15.8559, 15.9813, 16.7046, 16.5464, 17.2186, 16.8851, 17.7358, 17.2112]
 
         d_expected = dict()
-        d_expected['laod_bau'] = load_bau_expected
+        d_expected['load_bau'] = load_bau_expected
         d_expected['status'] = 'optimal'
         d_expected['total_energy_cost_bau'] = 54201.86
         d_expected['year_one_energy_cost_bau'] = 7472.12
