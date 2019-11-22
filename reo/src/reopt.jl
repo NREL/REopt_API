@@ -157,6 +157,8 @@ end
 function reopt_run(MAXTIME::Int64, p::Parameter)
    
     REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
+    Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
+
     @variables REopt begin
         binNMLorIL[p.NMILRegime], Bin
         binSegChosen[p.Tech, p.Seg], Bin
@@ -208,14 +210,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     # ADDED for modeling
         binMinTurndown[p.Tech, p.TimeStep], Bin
     end
-    
-    
-    
-    ### Begin Constraints###
-    ########################
-    
-    
-    #NEED To account for exist formatting
+
+    ##############################################################################
+	#############  		Constraints									 #############
+	##############################################################################
+    #TODO: account for exist formatting
     for t in p.Tech
         if p.MaxSize == 0
             for LD in p.Load
@@ -505,26 +504,33 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
     
     ### Objective Function
-    @objective(REopt, Min,
-               # Capital Costs
-               TotalTechCapCosts + TotalStorageCapCosts +
-    
-               # Fixed O&M, tax deductible for owner
-               TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
-    
-               # Variable O&M, tax deductible for owner
-               TotalPerUnitProdOMCosts * r_tax_fraction_owner +
-    
-               # Utility Bill, tax deductible for offtaker
-               (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
-    
-               # Subtract Incentives, which are taxable
-               TotalProductionIncentive * r_tax_fraction_owner
-               )
-    
-   
-    optimize!(REopt)
+    @expression(REopt, REcosts,
+		# Capital Costs
+		TotalTechCapCosts + TotalStorageCapCosts +
 
+		# Fixed O&M, tax deductible for owner
+		TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
+
+		# Variable O&M, tax deductible for owner
+		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
+
+		# Utility Bill, tax deductible for offtaker
+		(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
+
+		# Subtract Incentives, which are taxable
+		TotalProductionIncentive * r_tax_fraction_owner
+	)
+    
+    if Obj == 1
+		@objective(REopt, Min, REcosts)
+	elseif Obj == 2  # Keep SOC high
+		@objective(REopt, Min, REcosts - dvMeanSOC)
+	end
+	optimize!(REopt)
+
+    ##############################################################################
+    #############  		Outputs    									 #############
+    ##############################################################################
     @expression(REopt, ExportedElecPV, 
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
                     for t in PVTechs, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
