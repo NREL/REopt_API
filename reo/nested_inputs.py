@@ -116,7 +116,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -1.0,
           "max": 1.0,
-          "default": 0.026,
+          "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
         },
         "offtaker_tax_pct": {
@@ -130,7 +130,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.081,
+          "default": 0.083,
           "description": "Nominal host discount rate"
         },
         "analysis_years": {
@@ -356,7 +356,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 35.0,
+          "default": 40.0,
           "description": "Total annual operations and maintenance costs for wind"
         },
         "macrs_option_years": {
@@ -383,7 +383,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.30,
+          "default": 0.26,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
