@@ -43,6 +43,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
+    @skip("This test is invalid until we re-institute Wind.max_kw setting based on Wind.size_class.")
     def test_wind_size_class(self):
         """
         Validation to ensure that max_kw of wind is set to size_class
@@ -50,7 +51,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         Trying to set min_kw to 1000 should result in min_kw getting reset to max_kw for size_class and wind_kw coming to 100 kW
         :return:
         """
-
         wind_post_updated = wind_post
         wind_post_updated["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
         wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 0
@@ -58,10 +58,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         # For some reason, when running full suite, validators isn't run, and this is not updated
         wind_post_updated["Scenario"]["Site"]["Wind"]["size_class"] = "commercial"
 
-
         d_expected = dict()
         d_expected['wind_kw'] = 100
-
 
         resp = self.get_response(data=wind_post_updated)
         self.assertHttpCreated(resp)
