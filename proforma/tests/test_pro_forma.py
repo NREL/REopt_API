@@ -116,8 +116,12 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         finance_out = run_output['outputs']['Scenario']['Site']['Financial']
 
         adjusted_pv_kw =pv_out["size_kw"] - pv_in["existing_kw"]
-        adjusted_generator_kw = generator_out["size_kw"] - generator_in["existing_kw"]
-        diesel_fuel_used_cost = generator_in["diesel_fuel_cost_us_dollars_per_gallon"] * generator_out["fuel_used_gal"]
+        # with new generator speed up logic, since there is no outage planned in this test-case
+        # generator will not be modeled (even if existing kw is non-zero)
+        #adjusted_generator_kw = generator_out["size_kw"] - generator_in["existing_kw"]
+        adjusted_generator_kw = 0
+        #diesel_fuel_used_cost = generator_in["diesel_fuel_cost_us_dollars_per_gallon"] * generator_out["fuel_used_gal"]
+        diesel_fuel_used_cost = 0
 
         # Note, cannot evaluate LCC, LCC_BAU, and NPV, since that would require having openpxl evaluate formulas in excel
         mapping = [
