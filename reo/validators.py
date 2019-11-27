@@ -339,7 +339,8 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-
+            from IPython import embed
+            embed()
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
@@ -377,7 +378,7 @@ class ValidateNestedInput:
                 if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
                     if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
                         if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
-                            self.input_data_errors.append("Load profile must contain loads greater than or equal to zero.")
+                            self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
