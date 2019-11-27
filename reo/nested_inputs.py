@@ -2,7 +2,7 @@ max_big_number = 1.0e8
 max_incentive = 1.0e10
 max_years = 75
 macrs_schedules = [0, 5, 7]
-analysis_years = 20
+analysis_years = 25
 providers = ['federal', 'state', 'utility']
 default_buildings = ['FastFoodRest',
                      'FullServiceRest',
@@ -99,7 +99,7 @@ nested_input_definitions = {
       },
       "roof_squarefeet": {
         "type": "float",
-          "min": 0.0,
+        "min": 0.0,
         "max": 1.0e9,
         "description": "Area of roof in square feet available for PV siting"
       },
@@ -505,7 +505,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 2000.0,
+          "default": 1600.0,
           "description": "Installed PV cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
@@ -539,7 +539,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.3,
+          "default": 0.26,
           "description": "Percentage of capital costs that are credited towards federal taxes"
         },
         "state_ibi_pct": {
@@ -677,7 +677,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 2,
-          "default": 1.1,
+          "default": 1.2,
           "description": "PV DC-AC ratio"
         },
         "inv_eff": {
@@ -744,19 +744,19 @@ nested_input_definitions = {
             "description": "Flag to set whether the battery can be charged from the grid, or just onsite generation"
           },
           "installed_cost_us_dollars_per_kw": {
-            "type": "float", "min": 0.0, "max": 1.0e4, "default": 1000.0,
+            "type": "float", "min": 0.0, "max": 1.0e4, "default": 840.0,
             "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
           },
           "installed_cost_us_dollars_per_kwh": {
-            "type": "float", "min": 0.0, "max": 1.0e4, "default": 500.0,
+            "type": "float", "min": 0.0, "max": 1.0e4, "default": 420.0,
             "description": "Total upfront battery costs"
           },
           "replace_cost_us_dollars_per_kw": {
-            "type": "float", "min": 0.0, "max": 1.0e4, "default": 460.0,
+            "type": "float", "min": 0.0, "max": 1.0e4, "default": 410.0,
             "description": "Battery power capacity replacement cost at time of replacement year"
           },
           "replace_cost_us_dollars_per_kwh": {
-            "type": "float", "min": 0.0, "max": 1.0e4, "default": 230.0,
+            "type": "float", "min": 0.0, "max": 1.0e4, "default": 200.0,
             "description": "Battery energy capacity replacement cost at time of replacement year"
           },
           "inverter_replacement_year": {
@@ -815,7 +815,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e5,
-          "default": 600.0,
+          "default": 500.0,
           "description": "Installed diesel generator cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
@@ -829,7 +829,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e3,
-          "default": 0.01,
+          "default": 0.00,
           "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
@@ -843,7 +843,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 10,
-          "default": 0.0,
+          "default": 0.076,
           "description": "Generator fuel burn rate in gallons/kWh."
         },
         "fuel_intercept_gal_per_hr": {
@@ -857,7 +857,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 1.0e9,
+          "default": 660.0,
           "description": "On-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {

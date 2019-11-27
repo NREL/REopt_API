@@ -64,7 +64,7 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], generator_to_load[outage_start:outage_end]):
             self.assertAlmostEquals(x, y, places=3)
 
-    @skip("Produces same XPRSget_rhs error")
+    @skip("XPRESSS get_rhs error")
     def test_generator_too_small_for_outage(self):
         """
         Test scenario with interesting rate: high enough demand charges to support battery without PV.

@@ -571,7 +571,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     
     if !isempty(PVTechs)
         results["PV"] = Dict()
-        results["pv_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg, t in PVTechs))
+        results["pv_kw"] = round(value(sum(dvSystemSize[t,s] for s in p.Seg, t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[t in PVTechs, ts in p.TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t] for s in p.Seg, fb in p.FuelBin))
     end
@@ -579,7 +579,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     WindTechs = filter(t->p.TechToTechClassMatrix[t, "WIND"] == 1, p.Tech)
     if !isempty(WindTechs)
         results["Wind"] = Dict()
-        results["wind_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg, t in WindTechs))
+        results["wind_kw"] = round(value(sum(dvSystemSize[t,s] for s in p.Seg, t in WindTechs)), digits=4)
         @expression(REopt, WINDtoBatt[t in WindTechs, ts in p.TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t] for s in p.Seg, fb in p.FuelBin))
     end

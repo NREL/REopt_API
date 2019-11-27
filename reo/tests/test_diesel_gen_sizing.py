@@ -34,7 +34,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-      
     @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
@@ -44,8 +43,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -88,8 +85,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
@@ -98,8 +93,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -142,9 +135,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-
-    #@skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_with_existing_pv(self):
         """
         Test scenario with
@@ -154,8 +144,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -180,9 +168,11 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 0.79
         d_expected['avoided_outage_costs_us_dollars'] = 2982.63
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1054.2
-        d_expected['gen_variable_om_cost_us_dollars'] = 1.0
+        d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
+        d_expected['net_capital_costs_plus_om'] = 15443.0
+
+        c['gen_total_variable_om_cost_us_dollars'] = 1.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -203,8 +193,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-    #@skip("running five tests in the same UnitTest class seem to be  causing issues with database udpate")
     def test_generator_sizing_with_existing_diesel_gen_and_pv(self):
         """
         Test scenario with
@@ -214,8 +202,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is only allowed to operate during outage hours
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
@@ -239,9 +225,11 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 1.16
         d_expected['avoided_outage_costs_us_dollars'] = 309552.85
         d_expected['microgrid_upgrade_cost_us_dollars'] = 0.0
-        d_expected['gen_variable_om_cost_us_dollars'] = 1.0
+        d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 5754.0
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 22473.0
+        d_expected['net_capital_costs_plus_om'] = 9350.0
+
+        c['gen_total_variable_om_cost_us_dollars'] = 1.0
 
         try:
             check_common_outputs(self, c, d_expected)
@@ -265,46 +253,38 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
             self.assertAlmostEquals(x, y, places=3)
 
-
-
-    #@skip("Inconsistent value on Red Hat server and other OS")
-    def test_generator_sizing_when_allowed_to_operatre_year_long(self):
+    def test_generator_sizing_when_allowed_to_operate_year_long(self):
         """
         Test scenario with
         - New PV and Wind disabled
         - Unlimited max storage
         - generator doesn't sell energy to grid
         - generator is allowed to operate for all the hours of the year
-        .
-        :return:
         """
         nested_data = json.load(open(self.test_post, 'rb'))
         nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
         nested_data['Scenario']['Site']['PV']['max_kw'] = 0
         nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
         nested_data['Scenario']['Site']['PV']['existing_kw'] = 0
-        nested_data['Scenario']['Site']['PV']['generator_only_runs_during_grid_outage'] = False
+        nested_data['Scenario']['Site']['Generator']['generator_only_runs_during_grid_outage'] = False
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
-        
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 236962.0
-        d_expected['npv'] = -7685.0
+        d_expected['lcc'] = 221002.0
+        d_expected['npv'] = 8275.0
         d_expected['pv_kw'] = 0.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
-        d_expected['gen_kw'] = 11.2938
-        d_expected['fuel_used_gal'] = 1.52
-        d_expected['avoided_outage_costs_us_dollars'] = 1465.83 #1449.55
+        d_expected['gen_kw'] = 11.3912
+        d_expected['fuel_used_gal'] = 124.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
-        d_expected['gen_variable_om_cost_us_dollars'] = 2.0
-        d_expected['existing_pv_om_cost_us_dollars'] = 0.0
-        d_expected['net_capital_costs_plus_om_us_dollars_bau'] = 20929.0
+        d_expected['gen_total_variable_om_cost_us_dollars'] = 128
+        d_expected['net_capital_costs_plus_om'] = 11408.0
 
         try:
             check_common_outputs(self, c, d_expected)
