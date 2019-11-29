@@ -102,7 +102,7 @@ class TestJumpModel(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=r.get('run_uuid'))
         c = nested_to_flat(d['outputs'])
         d_expected = dict()
-        d_expected['lcc'] = 178929
+        d_expected['lcc'] = 191643.0
         try:
             check_common_outputs(self, c, d_expected)
         except:
