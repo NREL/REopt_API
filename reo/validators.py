@@ -339,8 +339,6 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-            from IPython import embed
-            embed()
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
