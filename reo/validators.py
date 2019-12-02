@@ -790,11 +790,20 @@ class ValidateNestedInput:
                                 all([x in attribute_type for x in ['float', 'list_of_float']]):
                             if isinstance(value, list):
                                 try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
                                     new_value = list_of_float(value)
                                 except ValueError:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s to list of floats' % (name, value,
                                                          self.object_name_string(object_name_path))
+                                    )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    self.input_data_errors.append(
+                                        '%s in %s contains at least one NaN value.' % (name,
+                                        self.object_name_string(object_name_path))
                                     )
                                     continue  # both continue statements should be in a finally clause, ...
                                 else:

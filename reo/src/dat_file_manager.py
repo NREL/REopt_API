@@ -737,7 +737,7 @@ class DatFileManager:
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
-                if hasattr(tech, 'min_turn_down'):
+                if hasattr(eval('self.' + tech), 'min_turn_down'):
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
                 else:
                     min_turn_down.append(0)

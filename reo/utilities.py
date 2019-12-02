@@ -190,7 +190,7 @@ def check_common_outputs(Test, d_calculated, d_expected):
             elif e[key] == 0:
                 Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
-                if isinstance(e[key], types.FloatType):
+                if isinstance(e[key], float) or isinstance(e[key], int):
                     Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
                 else:
                     pass
