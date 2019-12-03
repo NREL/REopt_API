@@ -100,12 +100,24 @@ def setup_scenario(self, run_uuid, data, raw_post):
             pv = None
 
 
-        if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
-            gen = Generator(dfm=dfm, run_uuid=run_uuid,
+        if inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
+            if inputs_dict['Site']['LoadProfile'].has_key('outage_start_hour') and inputs_dict['Site']['LoadProfile'].has_key('outage_end_hour'):
+                if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
+                    gen = Generator(dfm=dfm, run_uuid=run_uuid,
                             outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                             outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                             time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                             **inputs_dict["Site"]["Generator"])
+
+
+        elif not inputs_dict["Site"]["Generator"]["generator_only_runs_during_grid_outage"]:
+            if inputs_dict["Site"]["Generator"]["max_kw"] > 0 or inputs_dict["Site"]["Generator"]["existing_kw"] > 0:
+                gen = Generator(dfm=dfm, run_uuid=run_uuid,
+                            outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
+                            outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
+                            time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                            **inputs_dict["Site"]["Generator"])
+
 
         try:
             if 'gen' in locals():
@@ -144,6 +156,26 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 tmp['resilience_check_flag'] = lp.resilience_check_flag
                 tmp['sustain_hours'] = lp.sustain_hours
                 ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+            
+            # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
+            # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
+            # correct loads falling between the threshold and zero.    
+            
+            #Default tolerance
+            negative_load_tolerance = -0.1
+            
+            #If there is existing PV update the default tolerance based on capacity
+            if pv is not None:
+                if getattr(pv,'existing_kw',0) > 0:
+                    negative_load_tolerance = min(negative_load_tolerance, pv.existing_kw * -0.005) #kw
+
+            #If values in the load profile fall below the tolerance, raise an exception
+            if min(lp.load_list) < negative_load_tolerance:
+                message = "After adding existing generation to the load profile there were still negative electricity loads. Loads (non-net) must be equal to or greater than 0."
+                raise LoadProfileError(message,None, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            
+            #Correct load profile values that fall between the tolerance and 0
+            lp.load_list = [0 if ((x>negative_load_tolerance) and (x<0)) else x for x in lp.load_list]
 
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
