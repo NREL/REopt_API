@@ -104,6 +104,7 @@ class FinancialModel(models.Model):
     avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs = models.FloatField(null=True, blank=True)
+    net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -242,6 +243,7 @@ class PVModel(models.Model):
     station_longitude = models.FloatField(null=True, blank=True)
     station_distance_km = models.FloatField(null=True, blank=True)
     average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -636,7 +638,7 @@ class ModelManager(object):
             if isinstance(e, models.ObjectDoesNotExist):
                 resp['messages']['error'] = "run_uuid {} not in database. "\
                                             "You may have hit the results endpoint too quickly after POST'ing scenario, "\
-                                            "or you may have a typo in your run_uuid.".format(run_uuid)
+                                            "you may have a typo in your run_uuid, or the scenario was deleted.".format(run_uuid)
                 resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
@@ -674,5 +676,8 @@ class ModelManager(object):
             elif site_key in site_keys:
 
                 move_outs_to_ins(site_key, resp=resp)
+
+        if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
+            del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
 
         return resp

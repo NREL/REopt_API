@@ -280,7 +280,7 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['fuel_used_gal'] = 124.98
         d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
         d_expected['gen_total_variable_om_cost_us_dollars'] = 128
-        d_expected['net_capital_costs_plus_om'] = 7654.0
+        d_expected['net_capital_costs_plus_om'] = 11408.0
 
         try:
             check_common_outputs(self, c, d_expected)
