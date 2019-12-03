@@ -21,6 +21,8 @@ class REoptError(Exception):
         """
         if message == "Wind Dataset Timed Out":
             msg_with_email = ". Please try again later or email reopt@nrel.gov for support or un-check the wind option to take wind out of the analysis"
+        elif message.startswith("PV Watts could not locate a dataset station"):
+            msg_with_email = ". Please increase your PV search radius parameter, or choose an alternate location with similar solar irradiance and weather trends."
         elif run_uuid:
             msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
         elif user_uuid:
@@ -183,3 +185,17 @@ class LoadProfileError(REoptError):
         message = "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                message=message, traceback=debug_msg)
+
+class PVWattsDownloadError(REoptError):
+    """
+    Catches case where PVWatts does not return data because the location is too far away from an nsrdb station (100 miles) or intl station (200 miles)
+
+    Attributes:
+        message - explanation of the error
+    """
+
+    __name__ = 'PVWattsDownloadError'
+
+    def __init__(self, task='', run_uuid='', user_uuid='', message='',traceback=''):
+        super(PVWattsDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                                message=message, traceback=traceback)

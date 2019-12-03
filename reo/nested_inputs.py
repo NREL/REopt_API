@@ -690,8 +690,8 @@ nested_input_definitions = {
         "radius": {
           "type": "float",
           "min": 0,
-          "default": 0,
-          "description": "Radius to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
+          "default": 100,
+          "description": "Radius, in miles, to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
         },
         "tilt": {
           "type": "float",

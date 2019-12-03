@@ -8,7 +8,6 @@ import json
 import keys
 from reo.log_levels import log
 
-
 class PVWatts:
 
     def __init__(self,
@@ -77,7 +76,6 @@ class PVWatts:
 
         if self.response is None:
             resp = requests.get(self.url, verify=self.verify)
-
             if not resp.ok:
 
                 # check for international location
@@ -87,7 +85,7 @@ class PVWatts:
                 for warning in data.get("warnings",[]):
                     if intl_warning in warning:
                         self.dataset = "intl"
-                        self.radius = 200 # bump up search radius, since there aren't many sites
+                        self.radius = self.radius * 2 # bump up search radius, since there aren't many sites
                         resp = requests.get(self.url, verify=self.verify)
                         break
 
