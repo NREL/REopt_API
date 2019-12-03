@@ -8,6 +8,7 @@ import json
 import keys
 from reo.log_levels import log
 
+
 class PVWatts:
 
     def __init__(self,
@@ -76,6 +77,7 @@ class PVWatts:
 
         if self.response is None:
             resp = requests.get(self.url, verify=self.verify)
+            
             if not resp.ok:
 
                 # check for international location
