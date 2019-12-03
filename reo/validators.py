@@ -339,7 +339,6 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
@@ -352,7 +351,7 @@ class ValidateNestedInput:
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
-
+                    
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.input_dict, self.remove_nones)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
@@ -374,6 +373,10 @@ class ValidateNestedInput:
             # 'doe_reference_name is a mandatory input'
             counter = 2
             for lp in ['critical_loads_kw', 'loads_kw']:
+                if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                    if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
+                        if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                            self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
@@ -814,11 +817,10 @@ class ValidateNestedInput:
                             else:
                                 attribute_type = 'float'
                                 make_array = True
-
                         attribute_type = eval(attribute_type)  # convert string to python type
                         try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
-                        except ValueError or TypeError:  # TypeError occurs when a non-list is passed to list_of_float
+                        except:  # if fails for any reason record that the conversion failed
                             self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
                                      self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
                         else:
