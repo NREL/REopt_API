@@ -25,6 +25,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 5 gallons
+        .
+        :return:
         """
         test_post = os.path.join('reo', 'tests', 'posts', 'critical_load_bau_cannot_sustain_outage.json')
         nested_data = json.load(open(test_post, 'rb'))
@@ -77,6 +79,8 @@ class CriticalLoadBAUTests(ResourceTestCaseMixin, TestCase):
         - existing diesel generator 20 kW
         - existing PV 3 kW
         - available fuel 50 gallons
+        .
+        :return:
         """
         test_post = os.path.join('reo', 'tests', 'posts', 'critical_load_bau_can_sustain_outage.json')
         nested_data = json.load(open(test_post, 'rb'))
