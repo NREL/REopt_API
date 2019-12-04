@@ -369,30 +369,6 @@ class ValidateNestedInput:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
-            # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
-            # 'doe_reference_name is a mandatory input'
-            counter = 2
-            for lp in ['critical_loads_kw', 'loads_kw']:
-                if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
-                    if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
-                        if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
-                            self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
-
-                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
-                    counter -= 1
-
-                else:  # When using DOE load profile, year must start on Sunday
-                    self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
-
-            # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
-            if counter == 0:
-                self.input_data_errors.append(
-                    "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
-
             if any((isinstance(self.input_dict['Scenario']['Site']['Wind']['max_kw'], x) for x in [float, int])):
                 if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
@@ -467,7 +443,7 @@ class ValidateNestedInput:
                 if electric_tariff.get(blended, False):
                     if len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
-            
+
             for lp in ['critical_loads_kw', 'loads_kw']:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
@@ -486,6 +462,32 @@ class ValidateNestedInput:
                         gen["fuel_slope_gal_per_kwh"] = m
                     if gen["fuel_intercept_gal_per_hr"] == 0:
                         gen["fuel_intercept_gal_per_hr"] = b
+
+                # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
+                # 'doe_reference_name is a mandatory input'
+                counter = 2
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                        if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+
+                    if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                        self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
+                                           "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+
+                    elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and \
+                            self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                        counter -= 1
+
+                    else:  # When using DOE load profile, year must start on Sunday
+                        self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
+                # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
+                if counter == 0:
+                    self.input_data_errors.append(
+                        "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
         @property
         def isValid(self):
