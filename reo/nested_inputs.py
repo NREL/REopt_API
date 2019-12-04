@@ -2,7 +2,7 @@ max_big_number = 1e8
 max_incentive = 1e10
 max_years = 75
 macrs_schedules = [0, 5, 7]
-analysis_years = 20
+analysis_years = 25
 providers = ['federal', 'state', 'utility']
 default_buildings = ['FastFoodRest',
                      'FullServiceRest',
@@ -116,7 +116,7 @@ nested_input_definitions = {
           "type": "float",
           "min": -1,
           "max": 1,
-          "default": 0.026,
+          "default": 0.023,
           "description": "Annual nominal utility electricity cost escalation rate"
         },
         "offtaker_tax_pct": {
@@ -130,7 +130,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.081,
+          "default": 0.083,
           "description": "Nominal host discount rate"
         },
         "analysis_years": {
@@ -187,11 +187,11 @@ nested_input_definitions = {
         "loads_kw": {
           "type": "list_of_float",
           "replacement_sets": load_profile_possible_sets,
-          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "critical_loads_kw": {
           "type": "list_of_float",
-          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "loads_kw_is_net": {
           "default": True,
@@ -289,13 +289,13 @@ nested_input_definitions = {
           "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh."
+          "description": "Price of electricity sold back to the grid in absence of net metering or above net metering limit. The total annual kWh that can be compensated under this rate is restricted to the total annual site-load in kWh. Can be a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-sampled using mean values to match the Scenario time_steps_per_hour."
         },
         "wholesale_rate_above_site_load_us_dollars_per_kwh": {
           "type": ["float", "list_of_float"],
           "min": 0,
           "default": 0,
-          "description": "Price of electricity sold back to the grid above the site load, regardless of net metering"
+          "description": "Price of electricity sold back to the grid above the site load, regardless of net metering.  Can be a scalar value, which applies for all-time, or an array with time-sensitive values. If an array is input then it must have a length of 8760, 17520, or 35040. The inputed array values are up/down-sampled using mean values to match the Scenario time_steps_per_hour."
         },
         "urdb_response": {
           "type": "dict",
@@ -356,7 +356,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 35,
+          "default": 40,
           "description": "Total annual operations and maintenance costs for wind"
         },
         "macrs_option_years": {
@@ -383,7 +383,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.30,
+          "default": 0.26,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
@@ -505,7 +505,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 2000,
+          "default": 1600,
           "description": "Installed PV cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
@@ -539,7 +539,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0.3,
+          "default": 0.26,
           "description": "Percentage of capital costs that are credited towards federal taxes"
         },
         "state_ibi_pct": {
@@ -677,7 +677,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 2,
-          "default": 1.1,
+          "default": 1.2,
           "description": "PV DC-AC ratio"
         },
         "inv_eff": {
@@ -744,19 +744,19 @@ nested_input_definitions = {
             "description": "Flag to set whether the battery can be charged from the grid, or just onsite generation"
           },
           "installed_cost_us_dollars_per_kw": {
-            "type": "float", "min": 0, "max": 1e4, "default": 1000,
+            "type": "float", "min": 0, "max": 1e4, "default": 840,
             "description": "Total upfront battery power capacity costs (e.g. inverter and balance of power systems)"
           },
           "installed_cost_us_dollars_per_kwh": {
-            "type": "float", "min": 0, "max": 1e4, "default": 500,
+            "type": "float", "min": 0, "max": 1e4, "default": 420,
             "description": "Total upfront battery costs"
           },
           "replace_cost_us_dollars_per_kw": {
-            "type": "float", "min": 0, "max": 1e4, "default": 460,
+            "type": "float", "min": 0, "max": 1e4, "default": 410,
             "description": "Battery power capacity replacement cost at time of replacement year"
           },
           "replace_cost_us_dollars_per_kwh": {
-            "type": "float", "min": 0, "max": 1e4, "default": 230,
+            "type": "float", "min": 0, "max": 1e4, "default": 200,
             "description": "Battery energy capacity replacement cost at time of replacement year"
           },
           "inverter_replacement_year": {
@@ -815,7 +815,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e5,
-          "default": 600,
+          "default": 500,
           "description": "Installed diesel generator cost in $/kW"
         },
         "om_cost_us_dollars_per_kw": {
@@ -829,7 +829,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e3,
-          "default": 0.01,
+          "default": 0.00,
           "description": "diesel generator per unit production (variable) operations and maintenance costs in $/kWh"
         },
         "diesel_fuel_cost_us_dollars_per_gallon": {
@@ -843,7 +843,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 10,
-          "default": 0,
+          "default": 0.076,
           "description": "Generator fuel burn rate in gallons/kWh."
         },
         "fuel_intercept_gal_per_hr": {
@@ -857,7 +857,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1e9,
-          "default": 1e9,
+          "default": 660,
           "description": "On-site generator fuel available in gallons."
         },
         "min_turn_down_pct": {

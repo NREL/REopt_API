@@ -339,7 +339,6 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
@@ -352,7 +351,7 @@ class ValidateNestedInput:
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
-
+                    
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.input_dict, self.remove_nones)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
@@ -374,6 +373,10 @@ class ValidateNestedInput:
             # 'doe_reference_name is a mandatory input'
             counter = 2
             for lp in ['critical_loads_kw', 'loads_kw']:
+                if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                    if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
+                        if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                            self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
                     self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
@@ -477,13 +480,8 @@ class ValidateNestedInput:
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
                     gen = self.input_dict['Scenario']["Site"]["Generator"]
-                    gen["min_kw"] += gen["existing_kw"]
-                    gen["max_kw"] += gen["existing_kw"]
 
-                    if gen["max_kw"] < gen["min_kw"]:
-                        gen["min_kw"] = gen["max_kw"]
-
-                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
+                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
                     if gen["fuel_slope_gal_per_kwh"] == 0:
                         gen["fuel_slope_gal_per_kwh"] = m
                     if gen["fuel_intercept_gal_per_hr"] == 0:
@@ -798,11 +796,20 @@ class ValidateNestedInput:
                                 all([x in attribute_type for x in ['float', 'list_of_float']]):
                             if isinstance(value, list):
                                 try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
                                     new_value = list_of_float(value)
                                 except ValueError:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s to list of floats' % (name, value,
                                                          self.object_name_string(object_name_path))
+                                    )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    self.input_data_errors.append(
+                                        '%s in %s contains at least one NaN value.' % (name,
+                                        self.object_name_string(object_name_path))
                                     )
                                     continue  # both continue statements should be in a finally clause, ...
                                 else:
@@ -813,11 +820,10 @@ class ValidateNestedInput:
                             else:
                                 attribute_type = 'float'
                                 make_array = True
-
                         attribute_type = eval(attribute_type)  # convert string to python type
                         try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
-                        except ValueError or TypeError:  # TypeError occurs when a non-list is passed to list_of_float
+                        except:  # if fails for any reason record that the conversion failed
                             self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
                                      self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
                         else:

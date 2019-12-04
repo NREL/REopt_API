@@ -190,7 +190,7 @@ def check_common_outputs(Test, d_calculated, d_expected):
             elif e[key] == 0:
                 Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
-                if isinstance(e[key], float):
+                if isinstance(e[key], float) or isinstance(e[key], int):
                     Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
                 else:
                     pass
@@ -201,8 +201,9 @@ def check_common_outputs(Test, d_calculated, d_expected):
         # Total LCC BAU is sum of utility costs
         Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
                         - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
-                        - float(c['existing_gen_variable_om_cost_us_dollars_bau'])
-                        - float(c['existing_gen_fixed_om_cost_us_dollars_bau'])
-                        - float(c['total_fixed_cost_bau']))
+                        - float(c['total_fixed_cost_bau'])
+                        - float(c['existing_gen_total_variable_om_cost_us_dollars'])
+                        - float(c['existing_gen_total_fixed_om_cost_us_dollars'])
+                        - float(c['existing_gen_total_fuel_cost_us_dollars']))
                         / float(c['lcc_bau'])) < Test.REopt_tol,
-                        "LCC_BAU doesn't add up to sum of utility costs")
+                        "LCC_BAU doesn't add up to sum of individual costs")

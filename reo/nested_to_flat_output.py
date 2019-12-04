@@ -11,7 +11,6 @@ def nested_to_flat(nested_output):
         'lcc': nested_output['Scenario']['Site']['Financial']['lcc_us_dollars'],
         'lcc_bau': nested_output['Scenario']['Site']['Financial']['lcc_bau_us_dollars'],
         'npv': nested_output['Scenario']['Site']['Financial']['npv_us_dollars'],
-        'irr': nested_output['Scenario']['Site']['Financial'].get('irr_pct'),
         'net_capital_costs_plus_om': nested_output['Scenario']['Site']['Financial']['net_capital_costs_plus_om_us_dollars'],
         'avoided_outage_costs_us_dollars': nested_output['Scenario']['Site']['Financial']['avoided_outage_costs_us_dollars'],
         'microgrid_upgrade_cost_us_dollars': nested_output['Scenario']['Site']['Financial']['microgrid_upgrade_cost_us_dollars'],
@@ -72,16 +71,20 @@ def nested_to_flat(nested_output):
         base.update({
             'gen_kw':nested_output['Scenario']['Site']['Generator']['size_kw'],
             'average_yearly_gen_energy_produced':nested_output['Scenario']['Site']['Generator']['average_yearly_energy_produced_kwh'],
-            'average_annual_energy_exported_wind': nested_output['Scenario']['Site']['Generator']['average_yearly_energy_exported_kwh'],
+            'average_annual_energy_exported_gen': nested_output['Scenario']['Site']['Generator']['average_yearly_energy_exported_kwh'],
             'year_one_gen_to_battery_series': nested_output['Scenario']['Site']['Generator']['year_one_to_battery_series_kw'],
             'year_one_gen_to_load_series': nested_output['Scenario']['Site']['Generator']['year_one_to_load_series_kw'],
             'year_one_gen_to_grid_series': nested_output['Scenario']['Site']['Generator']['year_one_to_grid_series_kw'],
             'fuel_used_gal': nested_output['Scenario']['Site']['Generator']['fuel_used_gal'],
-            'existing_gen_fixed_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator']['existing_gen_fixed_om_cost_us_dollars_bau'],
-            'existing_gen_variable_om_cost_us_dollars_bau': nested_output['Scenario']['Site']['Generator'][
-                'existing_gen_variable_om_cost_us_dollars_bau'],
-            'gen_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
-                'gen_variable_om_cost_us_dollars']
+            'existing_gen_total_fixed_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator']['existing_gen_total_fixed_om_cost_us_dollars'],
+            'existing_gen_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'existing_gen_total_variable_om_cost_us_dollars'],
+            'total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'total_fuel_cost_us_dollars'],
+            'gen_total_variable_om_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'total_variable_om_cost_us_dollars'],
+            'existing_gen_total_fuel_cost_us_dollars': nested_output['Scenario']['Site']['Generator'][
+                'existing_gen_total_fuel_cost_us_dollars'],
        })
     return base
 

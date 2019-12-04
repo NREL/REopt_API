@@ -91,7 +91,6 @@ class PV(Tech):
         self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
-        self.min_kw += existing_kw
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
@@ -113,10 +112,6 @@ class PV(Tech):
             else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
         self.kwargs['tilt'] = self.tilt
-
-        # if user has entered the max_kw for new PV to be less than the user-specified existing_pv, max_kw is reset
-        if self.max_kw < self.existing_kw:
-            self.max_kw = self.existing_kw
 
         self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
 
@@ -146,10 +141,10 @@ class Wind(Tech):
         'large': 80,
     }
     size_class_to_installed_cost = {
-        'residential': 10792,
-        'commercial': 4989,
-        'medium': 4111,
-        'large': 1874,
+        'residential': 11950,
+        'commercial': 7390,
+        'medium': 4440,
+        'large': 3450,
     }
 
     size_class_to_itc_incentives = {
@@ -250,6 +245,8 @@ class Generator(Tech):
         self.derate = 0
         self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
+        if max_kw < min_kw:
+            min_kw = max_kw
         self.min_kw = min_kw
         self.max_kw = max_kw
         self.existing_kw = existing_kw
