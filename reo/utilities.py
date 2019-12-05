@@ -1,6 +1,7 @@
 import os
 from .log_levels import log
 from numpy import npv
+from math import log10
 import types
 
 
@@ -192,7 +193,8 @@ def check_common_outputs(Test, d_calculated, d_expected):
             else:
                 if isinstance(e[key], float) or isinstance(e[key], int):
                     if key in ['batt_kw', 'batt_kwh']:
-                        Test.assertAlmostEqual(c[key], e[key], 0)
+                        # variable rounding depends on scale of sizes
+                        Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))-1))
                     else:
                         Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
                                         'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
