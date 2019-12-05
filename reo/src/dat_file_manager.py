@@ -64,7 +64,6 @@ class DatFileManager:
         self.interconnection_limit = None
         self.LoadProfile = {}
         #Added for JuMP
-        self.load = None
         self.TechToNMILMapping = None
         self.TechToNMILMapping_bau = None
         self.CapCostSegCount = None
@@ -602,7 +601,6 @@ class DatFileManager:
                         n_segments = len(tmp_cap_cost_slope)
                         break
 
-
                 # append the current Tech's segments to the arrays that will be passed to REopt
 
                 cap_cost_slope += tmp_cap_cost_slope
@@ -733,10 +731,14 @@ class DatFileManager:
         for tc in self.available_tech_classes:
 
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
-                if bau and hasattr(eval('self.' + tc.lower()), 'existing_kw'):
-                    tech_class_min_size.append(float(eval('self.' + tc.lower() + '.existing_kw')))
+                if hasattr(eval('self.' + tc.lower()), 'existing_kw'):
+                    if bau:
+                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0.0)
+                    else:
+                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0.0) + (eval('self.' + tc.lower() + '.min_kw') or 0.0)
                 else:
-                    tech_class_min_size.append(float(eval('self.' + tc.lower() + '.min_kw')))
+                    new_value = (eval('self.' + tc.lower() + '.min_kw') or 0.0)
+                tech_class_min_size.append(new_value)
             else:
                 tech_class_min_size.append(0.0)
 
@@ -764,28 +766,25 @@ class DatFileManager:
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
-                site_kw_max = eval('self.' + tech + '.max_kw')
-
-                if hasattr(tech, 'min_turn_down'):
+                if hasattr(eval('self.' + tech), 'min_turn_down'):
                     min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
                 else:
                     min_turn_down.append(0.0)
-                
+
+                beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')
                 if eval('self.' + tech + '.acres_per_kw') is not None:
-
                     if eval('self.' + tech + '.kw_per_square_foot') is not None:
-
                         if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
                             # don't restrict unless they specify both land_area and roof_area,
                             # otherwise one of them is "unlimited" in UI
                             roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
                             land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
-                            site_kw_max = max(roof_max_kw + land_max_kw, existing_kw)
+                            beyond_existing_cap_kw = min(roof_max_kw + land_max_kw, beyond_existing_cap_kw)
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(float(existing_kw))
                 else:
-                    max_sizes.append(float(min(eval('self.' + tech + '.max_kw'), site_kw_max)))
+                    max_sizes.append(float(existing_kw + beyond_existing_cap_kw))
 
         return max_sizes, min_turn_down
 
