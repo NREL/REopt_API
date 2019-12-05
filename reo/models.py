@@ -104,6 +104,7 @@ class FinancialModel(models.Model):
     avoided_outage_costs_us_dollars = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs = models.FloatField(null=True, blank=True)
+    net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -675,5 +676,8 @@ class ModelManager(object):
             elif site_key in site_keys:
 
                 move_outs_to_ins(site_key, resp=resp)
+
+        if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
+            del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
 
         return resp

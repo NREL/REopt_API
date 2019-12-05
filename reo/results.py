@@ -196,6 +196,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict.get("npv")
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om")
+                    self.nested_outputs["Scenario"]["Site"][name]["net_om_us_dollars_bau"] = self.results_dict.get("net_capital_costs_plus_om_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs"] = self.results_dict.get("net_capital_costs")
                     self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
                         self.results_dict.get("net_capital_costs") \

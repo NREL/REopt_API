@@ -1,17 +1,11 @@
 # config valid only for current version of Capistrano
-lock "3.9.1"
+lock "~> 3.11.2"
 
 set :application, "reopt_api"
 set :repo_url, "git@github.nrel.gov:REopt/reopt_api.git"
 
 # Set the base deployment directory.
 set :deploy_to_base, "/srv/data/apps"
-
-# Don't replace github.nrel.gov references for internal servers.
-set :bundle_swap_nrel_git_references, false
-
-# This server's nginx runs under the "openresty" service name.
-set :nginx_init_script, "service openresty"
 
 # Set the user the web app runs as.
 set :foreman_user, "www-data-local"
