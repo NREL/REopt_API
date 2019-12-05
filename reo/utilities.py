@@ -194,7 +194,7 @@ def check_common_outputs(Test, d_calculated, d_expected):
                 if isinstance(e[key], float) or isinstance(e[key], int):
                     if key in ['batt_kw', 'batt_kwh']:
                         # variable rounding depends on scale of sizes
-                        Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))-1))
+                        Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))))
                     else:
                         Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
                                         'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
