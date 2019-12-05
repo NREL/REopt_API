@@ -191,7 +191,11 @@ def check_common_outputs(Test, d_calculated, d_expected):
                 Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
                 if isinstance(e[key], float) or isinstance(e[key], int):
-                    Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+                    if key in ['batt_kw', 'batt_kwh']:
+                        Test.assertAlmostEqual(c[key], e[key], 0)
+                    else:
+                        Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
+                                        'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
                 else:
                     pass
         else:
