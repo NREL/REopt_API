@@ -21,8 +21,8 @@ namespace :app do
   task :pip_install do
     on roles(:app) do
       within release_path do
-        execute "virtualenv", "env"
-        execute "./env/bin/pip", "install", "-r", "requirements.txt"
+        execute "virtualenv", "env", "--python=/bin/python3"
+        execute "./env/bin/pip3", "install", "-r", "requirements.txt"
       end
     end
   end

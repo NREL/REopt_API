@@ -118,7 +118,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
     if financial_check == "financial_check":
         # Do financial check
-        if resilience_run_site_result.viewkeys() == financial_run_site_result.viewkeys():
+        if resilience_run_site_result.keys() == financial_run_site_result.keys():
             for k, v in resilience_run_site_result.items():
                 if k in financial_run_site_result:
                     if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
@@ -228,7 +228,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         r_group_month = r_series.groupby(r_series.index.month)
         r_group_hour = r_series.groupby(r_series.index.hour)
 
-        x_vals = range(1, int(floor(r_max)+1))
+        x_vals = list(range(1, int(floor(r_max)+1)))
         y_vals = list()
         y_vals_group_month = list()
         y_vals_group_hour = list()

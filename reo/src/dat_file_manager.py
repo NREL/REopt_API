@@ -9,6 +9,14 @@ big_number = 1e10
 squarefeet_to_acre = 2.2957e-5
 
 
+def get_techs_not_none(techs, cls):
+    ret = []
+    for tech in techs:
+        if eval('cls.' + tech) is not None:
+            ret.append(tech)
+    return ret
+
+
 def _write_var(f, var, dat_var):
     f.write(dat_var + ": [\n")
     if isinstance(var, list):
@@ -907,8 +915,8 @@ class DatFileManager:
 
         # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
-                           techs=[tech for tech in self.available_techs if eval('self.' + tech) is not None],
-                           bau_techs=[tech for tech in self.bau_techs if eval('self.' + tech) is not None],
+                           techs=get_techs_not_none(self.available_techs, self),
+                           bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
 
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)

@@ -19,7 +19,7 @@ class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
     def test_summary_and_unlink(self):
       self.test_run_uuid = self.send_valid_nested_post(self.test_user_uuid)
       summary_response = self.get_summary()
-      self.assertTrue(self.test_run_uuid in summary_response.content)
+      self.assertTrue(self.test_run_uuid in str(summary_response.content))
 
       self.unlink_record()
       self.unlink_messages()
@@ -28,16 +28,16 @@ class SummaryResourceTest(ResourceTestCaseMixin, TestCase):
       unlink_response = self.get_unlink(self.test_user_uuid, self.test_run_uuid)
       self.assertTrue(unlink_response.status_code==204)
       summary_response = self.get_summary()
-      self.assertFalse(self.test_run_uuid in summary_response.content)
+      self.assertFalse(self.test_run_uuid in str(summary_response.content))
 
     def unlink_messages(self):
       
       bad_uuid = str(uuid.uuid4())
       unlink_response = self.get_unlink(bad_uuid, self.test_run_uuid)
-      self.assertTrue("User {} does not exist".format(bad_uuid) in unlink_response.content)
+      self.assertTrue("User {} does not exist".format(bad_uuid) in str(unlink_response.content))
       
       unlink_response = self.get_unlink(self.test_user_uuid, bad_uuid)
-      self.assertTrue("Run {} does not exist".format(bad_uuid) in unlink_response.content)
+      self.assertTrue("Run {} does not exist".format(bad_uuid) in str(unlink_response.content))
       
       test_alt_run_uuid = self.send_valid_nested_post(self.test_alt_user_uuid)
       unlink_response = self.get_unlink(self.test_user_uuid, test_alt_run_uuid)

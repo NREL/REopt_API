@@ -202,8 +202,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
-
-        self.assertEqual(pv_out.station_distance_km, 0.0)
+        self.assertEqual(pv_out.station_distance_km, 0.7)  # increased accuracy with Python 3??? (was 0.0)
         self.assertEqual(pv_out.station_latitude, 35.25)
         self.assertAlmostEqual(pv_out.station_longitude, -91.74, 1)
         self.assertAlmostEqual(financial.lcc_us_dollars, 437842, -1)

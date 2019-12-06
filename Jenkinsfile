@@ -22,7 +22,7 @@ pipeline {
     stage("Test") {
       steps {
         sh """
-	virtualenv env
+	virtualenv env --python=/bin/python3
 	source env/bin/activate
 	source /opt/xpressmp/bin/xpvars.sh
 	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$WORKSPACE/reo/src/:/opt/xpressmp/lib
@@ -30,7 +30,7 @@ pipeline {
 	cat /opt/xpressmp/bin/xpauth.xpr
 
 	cp keys.py.test keys.py
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 	python manage.py test -v 2 --failfast --noinput
 	"""
       }
