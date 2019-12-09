@@ -12,7 +12,7 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
 from reo.src.paths import Paths
 
 
@@ -231,10 +231,16 @@ def setup_scenario(self, run_uuid, data, raw_post):
     except Exception as e:
         if isinstance(e, LoadProfileError):
                 raise e
-        
+
         if hasattr(e, 'message'):
             if e.args[0] == 'Wind Dataset Timed Out':
                 raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
+            if e.message.startswith('PVWatts'):
+                message = 'PV Watts could not locate a dataset station within the search radius'
+                radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius",0)
+                if radius > 0:
+                    message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.message)
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("Scenario.py raising error: " + exc_value.args[0])
