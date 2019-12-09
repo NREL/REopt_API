@@ -33,7 +33,6 @@ def add_user_uuid(request):
                         scenario = ScenarioModel.objects.filter(run_uuid=run_uuid).first()
                         print (scenario.user_uuid)
                         if scenario.user_uuid is None:
-                            print ('None')
                             ModelManager.add_user_uuid(user_uuid, run_uuid)
                             response = JsonResponse(
                                 {"Success": "user_uuid for run_uuid {} has been set to {}".format(run_uuid, user_uuid)})
@@ -69,8 +68,8 @@ def unlink(request, user_uuid, run_uuid):
             uuid.UUID(check_id)  # raises ValueError if not valid uuid
 
         except ValueError as e:
-            if e.message == "badly formed hexadecimal UUID string":
-                return JsonResponse({"Error": "{} {}".format(name, e.message) }, status=400)
+            if e.args[0] == "badly formed hexadecimal UUID string":
+                return JsonResponse({"Error": "{} {}".format(name, e.args[0]) }, status=400)
             else:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 if name == 'user_uuid':
@@ -138,7 +137,7 @@ def summary(request, user_uuid):
         uuid.UUID(user_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
+        if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.message)}, status=404)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -161,25 +160,15 @@ def summary(request, user_uuid):
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
         
         #saving time by only calling each table once
-        def dbToDict(db_results):
-            result = {}
-            for r in db_results:
-                if r in result.keys():
-                    result[r['run_uuid']] = result[r['run_uuid']] + [r]
-                else:
-                    result[r['run_uuid']] = r
-            return result
-
-        messages = dbToDict(MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message'))
-        sites = dbToDict(SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address'))
-        loads = dbToDict(LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name'))
-        batts = dbToDict(StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh'))
-        pvs = dbToDict(PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
-        winds = dbToDict(WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw'))
-        gens = dbToDict(
-            GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw'))
-        financials = dbToDict(FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs'))
-        tariffs = dbToDict(ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars'))
+        messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')[0]
+        sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')[0]
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')[0]
+        batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')[0]
+        pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
+        winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
+        gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')[0]
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')[0]
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')[0]
 
         for scenario in scenarios:
             results = {}

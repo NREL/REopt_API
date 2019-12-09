@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, list_of_float
+from .urdb_logger import log_urdb_errors
+from .nested_inputs import nested_input_definitions, list_of_float
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -12,7 +12,7 @@ import uuid
 from reo.src.techs import Generator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
-hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
 
 class URDB_RateValidator:
@@ -339,7 +339,6 @@ class ValidateNestedInput:
         def __init__(self, input_dict):
 
             self.nested_input_definitions = nested_input_definitions
-
             self.input_data_errors = []
             self.urdb_errors = []
             self.input_as_none = []
@@ -352,7 +351,7 @@ class ValidateNestedInput:
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
-
+                    
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.input_dict, self.remove_nones)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
@@ -370,42 +369,23 @@ class ValidateNestedInput:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
-            # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
-            # 'doe_reference_name is a mandatory input'
-            counter = 2
-            for lp in ['critical_loads_kw', 'loads_kw']:
+            if any((isinstance(self.input_dict['Scenario']['Site']['Wind']['max_kw'], x) for x in [float, int])):
+                if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+                    if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
+                                           "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
-                    counter -= 1
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
+                                           "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                else:  # When using DOE load profile, year must start on Sunday
-                    self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
+                                           "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
-            # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
-            if counter == 0:
-                self.input_data_errors.append(
-                    "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
-
-            if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
-
-                if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
-                else:
-                    self.validate_wind_resource()
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
+                                           "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                    else:
+                        self.validate_wind_resource()
 
             """
             If using URDB, user provides either:
@@ -463,7 +443,7 @@ class ValidateNestedInput:
                 if electric_tariff.get(blended, False):
                     if len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
-            
+
             for lp in ['critical_loads_kw', 'loads_kw']:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
@@ -476,17 +456,38 @@ class ValidateNestedInput:
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
                     gen = self.input_dict['Scenario']["Site"]["Generator"]
-                    gen["min_kw"] += gen["existing_kw"]
-                    gen["max_kw"] += gen["existing_kw"]
 
-                    if gen["max_kw"] < gen["min_kw"]:
-                        gen["min_kw"] = gen["max_kw"]
-
-                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"])
+                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
                     if gen["fuel_slope_gal_per_kwh"] == 0:
                         gen["fuel_slope_gal_per_kwh"] = m
                     if gen["fuel_intercept_gal_per_hr"] == 0:
                         gen["fuel_intercept_gal_per_hr"] = b
+
+                # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
+                # 'doe_reference_name is a mandatory input'
+                counter = 2
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                        if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+
+                    if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                        self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
+                                           "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+
+                    elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and \
+                            self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                        counter -= 1
+
+                    else:  # When using DOE load profile, year must start on Sunday
+                        self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
+                # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
+                if counter == 0:
+                    self.input_data_errors.append(
+                        "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
 
         @property
         def isValid(self):
@@ -688,7 +689,8 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if value is None:
                             self.delete_attribute(object_name_path, name)
@@ -709,7 +711,8 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
@@ -795,11 +798,20 @@ class ValidateNestedInput:
                                 all([x in attribute_type for x in ['float', 'list_of_float']]):
                             if isinstance(value, list):
                                 try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
                                     new_value = list_of_float(value)
                                 except ValueError:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s to list of floats' % (name, value,
                                                          self.object_name_string(object_name_path))
+                                    )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    self.input_data_errors.append(
+                                        '%s in %s contains at least one NaN value.' % (name,
+                                        self.object_name_string(object_name_path))
                                     )
                                     continue  # both continue statements should be in a finally clause, ...
                                 else:
@@ -810,11 +822,10 @@ class ValidateNestedInput:
                             else:
                                 attribute_type = 'float'
                                 make_array = True
-
                         attribute_type = eval(attribute_type)  # convert string to python type
                         try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
-                        except ValueError or TypeError:  # TypeError occurs when a non-list is passed to list_of_float
+                        except:  # if fails for any reason record that the conversion failed
                             self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
                                      self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
                         else:
@@ -994,7 +1005,7 @@ class ValidateNestedInput:
                     lat=self.input_dict['Scenario']['Site']['latitude'],   
                     lng=self.input_dict['Scenario']['Site']['longitude'])
             except Exception as e:
-                self.input_data_errors.append(e.message)
+                self.input_data_errors.append(e.args[0])
 
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')

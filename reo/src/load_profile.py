@@ -4,7 +4,7 @@ import json
 import math
 import requests
 from datetime import datetime, timedelta
-from developer_reo_api import DeveloperREOapi
+from .developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
 from uszipcode import SearchEngine
@@ -398,17 +398,18 @@ class BuiltInProfile(object):
 
                 url = "http://www.afanalytics.com/api/climatezone/" + str(zip)
                 r = requests.get(url)
-                resp = json.loads(r.content)
-                zone_number = str(resp["climate_zone_number"])
-                zone_letter = str(resp["climate_zone_letter"])
-                if zone_letter == 'None':
-                    zone_letter = ''
-                zone = zone_number + zone_letter
+                if r.ok:
+                    resp = json.loads(r.content)
+                    zone_number = str(resp["climate_zone_number"])
+                    zone_letter = str(resp["climate_zone_letter"])
+                    if zone_letter == 'None':
+                        zone_letter = ''
+                    zone = zone_number + zone_letter
 
-                for city in map(self.Default_city._make, self.default_cities):
-                    if city.zoneid == zone:
-                        self.nearest_city = city.name
-                        return self.nearest_city
+                    for city in map(self.Default_city._make, self.default_cities):
+                        if city.zoneid == zone:
+                            self.nearest_city = city.name
+                            return self.nearest_city
 
         # else use old geometric approach, never fails...but isn't necessarily correct
         if self.nearest_city is None:
@@ -641,7 +642,7 @@ class LoadProfile(BuiltInProfile):
         self.annual_kwh = sum(self.load_list)
         # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
         fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
-        with open(fp, 'wb') as f:
+        with open(fp, 'w') as f:
             f.write(str(self.annual_kwh))
 
         self.bau_annual_kwh = sum(self.bau_load_list)
@@ -651,7 +652,7 @@ class LoadProfile(BuiltInProfile):
 
         # write csv for critical_load_series_kw. needed for outage sim
         fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
-        with open(fp, 'wb') as f:
+        with open(fp, 'w') as f:
             for ld in critical_loads_kw:
                 f.write((str(ld)+'\n'))
 

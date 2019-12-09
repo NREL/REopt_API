@@ -187,11 +187,11 @@ nested_input_definitions = {
         "loads_kw": {
           "type": "list_of_float",
           "replacement_sets": load_profile_possible_sets,
-          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "critical_loads_kw": {
           "type": "list_of_float",
-          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "loads_kw_is_net": {
           "default": True,
@@ -369,7 +369,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
@@ -525,7 +525,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
         },
         "macrs_itc_reduction": {
@@ -691,7 +691,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "default": 0,
-          "description": "Radius to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
+          "description": "Radius, in miles, to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
         },
         "tilt": {
           "type": "float",
@@ -772,7 +772,7 @@ nested_input_definitions = {
             "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
           },
           "macrs_bonus_pct": {
-            "type": "float", "min": 0, "max": 1, "default": 0,
+            "type": "float", "min": 0, "max": 1, "default": 1,
             "description": "Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation"
           },
           "macrs_itc_reduction": {
@@ -887,7 +887,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {

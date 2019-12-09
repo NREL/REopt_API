@@ -447,7 +447,7 @@ def run(*args):
 		for r in range(0,int(total_runs/10000.0)+1):
 			start = r*10000
 			end = min((r+1)*10000,total_runs)
-			print start, end, total_runs
+			print(start, end, total_runs)
 			tmp = np.array_split(np.array(ScenarioModel.objects.values_list("created","run_uuid",).all()[start:end]),CORES)			
 			scenario_results = combine_scenarios(p.map(process_scenario_set, tmp), scenario_results)
 	
@@ -467,7 +467,7 @@ def run(*args):
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
 			end = min((r+1)*10000,total_t)
-			print start, end, total_t
+			print(start, end, total_t)
 			tmp = np.array_split(np.array(ElectricTariffModel.objects.values_list("urdb_label","urdb_response","run_uuid","blended_annual_demand_charges_us_dollars_per_kw","blended_annual_rates_us_dollars_per_kwh","blended_monthly_demand_charges_us_dollars_per_kw","blended_monthly_rates_us_dollars_per_kwh","add_blended_rates_to_urdb_rate").all()[start:end]),CORES)			
 			urdb_results = combine_urdb_summaries(p.map(process_urdb_set, tmp) + [urdb_results])
 		

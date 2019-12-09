@@ -5,22 +5,22 @@ import traceback as tb
 import uuid
 import copy
 from django.http import JsonResponse
-from src.load_profile import BuiltInProfile
-from models import URDBError
-from nested_inputs import nested_input_definitions
+from reo.src.load_profile import BuiltInProfile
+from reo.models import URDBError
+from reo.nested_inputs import nested_input_definitions
 from reo.api import UUIDFilter
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 from reo.log_levels import log
 from reo.src.techs import Generator
 
-from django.http import HttpResponse,Http404
+from django.http import HttpResponse
 from django.template import  loader
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
-hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
 def make_error_resp(msg):
         resp = dict()
@@ -85,15 +85,15 @@ def annual_kwh(request):
         return response
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.message)})
+        return JsonResponse({"Error. Missing": str(e.args[0])})
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.message)})
+        return JsonResponse({"Error": str(e.args[0])})
 
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
@@ -106,7 +106,7 @@ def remove(request, run_uuid):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -117,14 +117,14 @@ def results(request, run_uuid):
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
-            resp = make_error_resp(e.message)
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            resp = make_error_resp(e.args[0])
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='results', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='results', run_uuid=run_uuid)
             err.save_to_db()
-            return JsonResponse({"Error": str(err.message)}, status=400)
+            return JsonResponse({"Error": str(err.args[0])}, status=400)
 
     try:
         d = ModelManager.make_response(run_uuid)  # ModelManager has some internal exception handling
@@ -135,7 +135,7 @@ def results(request, run_uuid):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -182,15 +182,15 @@ def simulated_load(request):
         return response
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.message)})
+        return JsonResponse({"Error. Missing": str(e.args[0])})
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.message)})
+        return JsonResponse({"Error": str(e.args[0])})
 
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
@@ -225,12 +225,12 @@ def generator_efficiency(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.message)})
+        return JsonResponse({"Error": str(e.args[0])})
 
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.message,
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})

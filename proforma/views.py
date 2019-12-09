@@ -2,7 +2,7 @@ import os
 import sys
 import uuid
 from django.http import JsonResponse
-from models import ProForma, ScenarioModel
+from proforma.models import ProForma, ScenarioModel
 from django.http import HttpResponse
 from wsgiref.util import FileWrapper
 from reo.exceptions import UnexpectedError
@@ -14,8 +14,8 @@ def proforma(request, run_uuid):
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
     except ValueError as e:
-        if e.message == "badly formed hexadecimal UUID string":
-            resp = {"Error": e.message}
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            resp = {"Error": e.args[0]}
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -34,7 +34,7 @@ def proforma(request, run_uuid):
         pf.generate_spreadsheet()
         pf.save()
 
-        wrapper = FileWrapper(file(pf.output_file))
+        wrapper = FileWrapper(open(pf.output_file, "rb"))
  
         response = HttpResponse(wrapper, content_type='application/vnd.ms-excel.sheet.macroEnabled.12')
         response['Content-Length'] = os.path.getsize(pf.output_file)
