@@ -3,7 +3,6 @@ import os
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
 from unittest import TestCase
-from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 
@@ -34,7 +33,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    @skip("Inconsistent value on Red Hat server and other OS")
     def test_generator_sizing_without_existing_diesel_gen(self):
         """
         Test scenario with
@@ -61,10 +59,9 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['pv_kw'] = 0.0
         d_expected['batt_kw'] = 0.0
         d_expected['batt_kwh'] = 0.0
-        d_expected['gen_kw'] = 11.2938
+        d_expected['gen_kw'] = 11.3
         d_expected['fuel_used_gal'] = 1.52
-        d_expected['avoided_outage_costs_us_dollars'] = 1449.55 #1465.83
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.6
+        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.7
 
         try:
             check_common_outputs(self, c, d_expected)
