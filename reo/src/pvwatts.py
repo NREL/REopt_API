@@ -77,23 +77,19 @@ class PVWatts:
 
         if self.response is None:
             resp = requests.get(self.url, verify=self.verify)
-            
             if not resp.ok:
-
                 # check for international location
                 data = json.loads(resp.text)
                 intl_warning = "This location appears to be outside the US"
                 
-                for warning in data.get("warnings",[]):
-                    if intl_warning in warning:
-                        self.dataset = "intl"
-                        self.radius = self.radius * 2 # bump up search radius, since there aren't many sites
-                        resp = requests.get(self.url, verify=self.verify)
-                        break
+                if (intl_warning in s for s in data.get("warnings",[])):
+                    self.dataset = "intl"
+                    self.radius = self.radius * 2 # bump up search radius, since there aren't many sites
+                    resp = requests.get(self.url, verify=self.verify)
 
-                if not resp.ok:
-                    log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
-                    raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+            if not resp.ok:
+                log.error("PVWatts status code {}. {}".format(resp.status_code, resp.content))
+                raise Exception("PVWatts status code {}. {}".format(resp.status_code, resp.content))
 
             log.info("PVWatts API query successful.")
             data = json.loads(resp.text)
