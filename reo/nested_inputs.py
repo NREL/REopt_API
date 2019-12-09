@@ -369,7 +369,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
@@ -525,7 +525,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
         },
         "macrs_itc_reduction": {
@@ -772,7 +772,7 @@ nested_input_definitions = {
             "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
           },
           "macrs_bonus_pct": {
-            "type": "float", "min": 0, "max": 1, "default": 0,
+            "type": "float", "min": 0, "max": 1, "default": 1,
             "description": "Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation"
           },
           "macrs_itc_reduction": {
@@ -887,7 +887,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0,
           "max": 1,
-          "default": 0,
+          "default": 1,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
