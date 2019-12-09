@@ -54,4 +54,4 @@ class TestPVWatts(ResourceTestCaseMixin, TestCase):
           "time_steps_per_hour": 1, "user_uuid": None}}
         
         response = self.get_response(post)
-        self.assertTrue('PV Watts could not locate a dataset station within the search radius' in response.content)
+        self.assertTrue('PV Watts could not locate a dataset station within the search radius' in str(response.content))
