@@ -130,7 +130,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
 
-        if 'Wind Dataset Timed Out' in d['messages']['error']:
+        err_messages = d['messages'].get('error') or []
+        if 'Wind Dataset Timed Out' in err_messages:
             print("Wind Dataset Timed Out")
         else:
             c = nested_to_flat(d['outputs'])
