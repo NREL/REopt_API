@@ -187,11 +187,11 @@ nested_input_definitions = {
         "loads_kw": {
           "type": "list_of_float",
           "replacement_sets": load_profile_possible_sets,
-          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Typical load over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "critical_loads_kw": {
           "type": "list_of_float",
-          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+          "description": "Critical load during an outage period. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples). All non-net load values must be greater than or equal to zero."
         },
         "loads_kw_is_net": {
           "default": True,
@@ -254,7 +254,7 @@ nested_input_definitions = {
           "description": "Array (length of 12) of blended energy rates (total monthly energy in kWh divided by monthly cost in $)"
         },
         "blended_monthly_demand_charges_us_dollars_per_kw": {
-          "type": "list_of_float", 
+          "type": "list_of_float",
           "replacement_sets": electric_tariff_possible_sets,
           "depends_on": ["blended_monthly_rates_us_dollars_per_kwh"],
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"

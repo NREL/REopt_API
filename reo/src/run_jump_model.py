@@ -28,8 +28,11 @@ class RunJumpModelTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
+            msg = exc.message
+        else:
+            msg = exc.args[0]
         data = kwargs['data']
-        data["messages"]["error"] = exc.message
+        data["messages"]["error"] = msg
         data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(data, run_uuid=data['outputs']['Scenario']['run_uuid'])
 

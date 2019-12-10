@@ -1,4 +1,4 @@
-from nested_inputs import nested_input_definitions, list_of_float
+from .nested_inputs import nested_input_definitions, list_of_float
 
 
 def list_of_string(input):
@@ -102,6 +102,11 @@ nested_output_definitions = {
                   "description": "Capital cost for all technologies plus present value of operations and maintenance over anlaysis period",
                   "units": "$"
                 },
+                "net_om_us_dollars_bau": {
+                  "type": float,
+                  "description": "Business-as-usual present value of operations and maintenance over anlaysis period",
+                  "units": "$"
+                },
                 "avoided_outage_costs_us_dollars": {
                   "type": float,
                   "description": "Avoided outage costs are determined using the Value of Lost Load [$/kWh], multiplied by the average critical load in kW (determined using critical_load_pct), the average hours that the critical load is sustained (determined by simulating outages starting at every hour of the year), and a present worth factor that accounts for cost growth with escalation_pct over the analysis_years and discounts the avoided costs to present value using offtaker_discount_pct.  Note that the use of a present worth factor presumes that the outage period and the microgrid's ability to meet the critical load is the same each year in the analysis_years. If outage_is_major_event is set to True, then the present worth factor is set to 1, which assumes that only one outage occurs in the analysis_years.",
@@ -127,6 +132,11 @@ nested_output_definitions = {
                 "average_yearly_energy_produced_kwh": {
                   "type": float,
                   "description": "Average annual energy produced by the PV system over one year",
+                  "units": "kWh"
+                },
+                "average_yearly_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Average annual energy produced by the existing PV system over one year",
                   "units": "kWh"
                 },
                 "average_yearly_energy_exported_kwh": {
@@ -375,12 +385,12 @@ nested_output_definitions = {
                 },
                 "year_one_energy_supplied_kwh": {
                   "type": float,
-                  "description": "Year one hourly time series of power from grid to load",
+                  "description": "Year one energy supplied from grid to load",
                   "units": "kWh"
                 },
-"year_one_energy_supplied_kwh_bau": {
+                "year_one_energy_supplied_kwh_bau": {
                   "type": float,
-                  "description": "Year one hourly time series of power from grid to load in bau scenario",
+                  "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
                 }
               },
@@ -436,19 +446,49 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of diesel generator exporting to grid",
                   "units": "kW"
                 },
-                "existing_gen_fixed_om_cost_us_dollars_bau": {
+                "existing_gen_total_fixed_om_cost_us_dollars": {
                   "type": float,
                   "description": "Lifetime fixed O&M cost for existing diesel generator system in bau case.",
                   "units": "$"
                 },
-                "existing_gen_variable_om_cost_us_dollars_bau": {
+                "existing_gen_total_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system in bau case.",
+                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing diesel generator system.",
                   "units": "$"
                 },
-                "gen_variable_om_cost_us_dollars":{
+                "existing_gen_year_one_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Lifetime variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing diesel generator system.",
+                  "units": "$"
+                },
+                "total_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_variable_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing + newly recommended diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_total_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fuel cost for existing diesel generator system",
+                  "units": "$"
+                },
+                "existing_gen_year_one_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
                 }
               }

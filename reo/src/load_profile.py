@@ -4,7 +4,7 @@ import json
 import math
 import requests
 from datetime import datetime, timedelta
-from developer_reo_api import DeveloperREOapi
+from .developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
 from uszipcode import SearchEngine
@@ -14,9 +14,9 @@ from reo.log_levels import log
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
-    
+
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
-    
+
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
         Default_city('Houston', 29.760427, -95.369803, 722430, '2A'),
@@ -501,7 +501,7 @@ class LoadProfile(BuiltInProfile):
             it is determined as either "loads_kw" or built-in profile times the "critical_load_pct".
     """
 
-    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
+    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None,
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
@@ -641,7 +641,7 @@ class LoadProfile(BuiltInProfile):
         self.annual_kwh = sum(self.load_list)
         # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
         fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
-        with open(fp, 'wb') as f:
+        with open(fp, 'w') as f:
             f.write(str(self.annual_kwh))
 
         self.bau_annual_kwh = sum(self.bau_load_list)

@@ -39,7 +39,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'longitude': city.lng,
         })
 
-        assert "could not convert string to float" in response.content
+        assert "could not convert string to float" in str(response.content)
 
     def test_annual_kwh_bad_building_name(self):
         bldgs = [b for b in BuiltInProfile.default_buildings if b!='flatload']
@@ -53,4 +53,4 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             'longitude': city.lng,
         })
 
-        assert "Invalid doe_reference_name. Select from the following" in response.content
+        assert "Invalid doe_reference_name. Select from the following" in str(response.content)

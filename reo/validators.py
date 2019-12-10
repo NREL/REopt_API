@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
-from urdb_logger import log_urdb_errors
-from nested_inputs import nested_input_definitions, list_of_float
+from .urdb_logger import log_urdb_errors
+from .nested_inputs import nested_input_definitions, list_of_float
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -12,7 +12,7 @@ import uuid
 from reo.src.techs import Generator
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
-hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'rb'))]
+hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
 
 class URDB_RateValidator:
@@ -21,7 +21,7 @@ class URDB_RateValidator:
 
     def __init__(self,_log_errors=True, **kwargs):
         """
-        Takes a dictionary parsed from a URDB Rate Json response 
+        Takes a dictionary parsed from a URDB Rate Json response
         - See http://en.openei.org/services/doc/rest/util_rates/?version=3
 
         Rates may or mat not have the following keys:
@@ -74,7 +74,7 @@ class URDB_RateValidator:
         self.errors = []                             #Catch Errors - write to output file
         self.warnings = []                           #Catch Warnings
         kwargs.setdefault("label", "custom")
-        for key in kwargs:                           #Load in attributes          
+        for key in kwargs:                           #Load in attributes
             setattr(self, key, kwargs[key])
 
         self.validate()                              #Validate attributes
@@ -84,13 +84,13 @@ class URDB_RateValidator:
                 log_urdb_errors(self.label, self.errors, self.warnings)
 
     def validate(self):
-         
+
         # Check if in known hard problems
         if self.label in hard_problem_labels:
             self.errors.append("URDB Rate (label={}) is currently restricted due to performance limitations".format(self.label))
 
          # Validate each attribute with custom valdidate function
-        for key in dir(self):                      
+        for key in dir(self):
             v = 'validate_' + key
             if hasattr(self, v):
                 getattr(self, v)()
@@ -99,7 +99,7 @@ class URDB_RateValidator:
     def dependencies(self):
         # map to tell if a field requires one or more other fields
         return {
-            
+
             'demandweekdayschedule': ['demandratestructure'],
             'demandweekendschedule': ['demandratestructure'],
             'demandratestructure':['demandweekdayschedule','demandweekendschedule'],
@@ -116,7 +116,7 @@ class URDB_RateValidator:
         return self.errors == []
 
     # CUSTOM VALIDATION FUNCTIONS FOR EACH URDB ATTRIBUTE name validate_<attribute name>
-    
+
     def validate_demandratestructure(self):
         name = 'demandratestructure'
         if self.validDependencies(name):
@@ -124,7 +124,7 @@ class URDB_RateValidator:
 
     def validate_demandweekdayschedule(self):
         name = 'demandweekdayschedule'
-        self.validCompleteHours(name, [12,24]) 
+        self.validCompleteHours(name, [12,24])
         if self.validDependencies(name):
             self.validSchedule(name, 'demandratestructure')
 
@@ -136,13 +136,13 @@ class URDB_RateValidator:
 
     def validate_energyweekendschedule(self):
         name = 'energyweekendschedule'
-        self.validCompleteHours(name, [12,24])  
+        self.validCompleteHours(name, [12,24])
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
 
     def validate_energyweekdayschedule(self):
         name = 'energyweekdayschedule'
-        self.validCompleteHours(name, [12,24])  
+        self.validCompleteHours(name, [12,24])
         if self.validDependencies(name):
             self.validSchedule(name, 'energyratestructure')
 
@@ -174,14 +174,14 @@ class URDB_RateValidator:
 
 
     #### FUNCTIONS TO VALIDATE ATTRIBUTES ####
-    
+
     def validDependencies(self, name):
         # check that all dependent attributes exist
         # return Boolean if any errors found
-        
+
         all_dependencies = self.dependencies.get(name)
         valid = True
-        if all_dependencies is not None:    
+        if all_dependencies is not None:
             for d in all_dependencies:
                 error = False
                 if hasattr(self,d):
@@ -189,38 +189,38 @@ class URDB_RateValidator:
                         error = True
                 else:
                     error=True
-                
+
                 if error:
                     self.errors.append("Missing %s a dependency of %s" % (d, name))
                     valid = False
-        
+
         return valid
 
     def validCompleteHours(self, schedule_name,expected_counts):
         # check that each array in a schedule contains the correct number of entries
         # return Boolean if any errors found
-       
+
         if hasattr(self,schedule_name):
             valid = True
             schedule = getattr(self,schedule_name)
-            
+
             def recursive_search(item,level=0, entry=0):
                 if type(item) == list:
                     if len(item) != expected_counts[level]:
                         msg = 'Entry {} {}{} does not contain {} entries'.format(entry,'in sublevel ' + str(level)+ ' ' if level>0 else '', schedule_name, expected_counts[level])
                         self.errors.append(msg)
-                        valid = False 
+                        valid = False
                     for ii,subitem in enumerate(item):
                         recursive_search(subitem,level=level+1, entry=ii)
             recursive_search(schedule)
-        return valid 
-    
+        return valid
+
     def validRate(self, rate):
         # check that each  tier in rate structure array has a rate attribute, and that all rates except one contain a 'max' attribute
         # return Boolean if any errors found
         if hasattr(self,rate):
             valid = True
-            
+
             for i, r in enumerate(getattr(self, rate)):
                 if len(r) == 0:
                     self.errors.append('Missing rate information for rate ' + str(i) + ' in ' + rate)
@@ -351,7 +351,7 @@ class ValidateNestedInput:
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
-                    
+
             self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
             self.recursively_check_input_dict(self.input_dict, self.remove_nones)
             self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
@@ -369,51 +369,28 @@ class ValidateNestedInput:
                 self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                           err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
 
-            # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
-            # 'doe_reference_name is a mandatory input'
-            counter = 2
-            for lp in ['critical_loads_kw', 'loads_kw']:
-                if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
-                    if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
-                        if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
-                            self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+            if any((isinstance(self.input_dict['Scenario']['Site']['Wind']['max_kw'], x) for x in [float, int])):
+                if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
 
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+                    if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
+                                           "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
-                    counter -= 1
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
+                                           "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
-                else:  # When using DOE load profile, year must start on Sunday
-                    self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
+                                           "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
-            # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
-            if counter == 0:
-                self.input_data_errors.append(
-                    "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
-
-            if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
-
-                if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                       "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                       "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                       "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                       "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
-                else:
-                    self.validate_wind_resource()
+                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
+                                           "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                    else:
+                        self.validate_wind_resource()
 
             """
             If using URDB, user provides either:
-            - urdb_response, 
-            - OR urdb_label, 
+            - urdb_response,
+            - OR urdb_label,
             - OR urdb_rate_name AND urdb_utility_name.
             For the latter two options, we have to get the urdb_response.
             """
@@ -447,7 +424,7 @@ class ValidateNestedInput:
                     self.validate_urdb_response()
 
             if electric_tariff['add_blended_rates_to_urdb_rate']:
-                monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
+                monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
                 monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
                 urdb_rate = electric_tariff.get('urdb_response', True)
 
@@ -466,11 +443,11 @@ class ValidateNestedInput:
                 if electric_tariff.get(blended, False):
                     if len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
-            
+
             for lp in ['critical_loads_kw', 'loads_kw']:
 
                 if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp), 
+                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
                                        "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
 
             if self.isValid:
@@ -486,6 +463,32 @@ class ValidateNestedInput:
                     if gen["fuel_intercept_gal_per_hr"] == 0:
                         gen["fuel_intercept_gal_per_hr"] = b
 
+                # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
+                # 'doe_reference_name is a mandatory input'
+                counter = 2
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
+                        if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
+                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+
+                    if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
+                        self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
+                                           "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+
+                    elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and \
+                            self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
+                        counter -= 1
+
+                    else:  # When using DOE load profile, year must start on Sunday
+                        self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
+
+                # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
+                if counter == 0:
+                    self.input_data_errors.append(
+                        "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
+
         @property
         def isValid(self):
             if self.input_data_errors or self.urdb_errors:
@@ -496,7 +499,7 @@ class ValidateNestedInput:
         @property
         def messages(self):
             output = {}
-           
+
             if self.errors != {}:
                 output = self.errors
 
@@ -530,14 +533,14 @@ class ValidateNestedInput:
 
             if self.urdb_errors and self.input_data_errors:
                 output["input_errors"] += self.urdb_errors
-            
+
             elif self.urdb_errors:
                 output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.urdb_errors
 
             return output
 
-        @property 
+        @property
         def warnings(self):
             output = {}
 
@@ -595,7 +598,7 @@ class ValidateNestedInput:
                 if self.isSingularKey(template_k):  # True if template_k is upper case and does not end in "s"
                     comparison_function(object_name_path=object_name_path + [template_k],
                                         template_values=template_values, real_values=real_values)
-                    
+
                     self.recursively_check_input_dict(nested_template[template_k], comparison_function,
                                                       real_values or {},
                                                       object_name_path=object_name_path + [template_k])
@@ -686,7 +689,8 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if value is None:
                             self.delete_attribute(object_name_path, name)
@@ -707,12 +711,13 @@ class ValidateNestedInput:
             :return: None
             """
             if real_values is not None:
-                for name, value in real_values.items():
+                rv = copy.deepcopy(real_values)
+                for name, value in rv.items():
                     if self.isAttribute(name):
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
                             self.invalid_inputs.append([name, object_name_path])
-        
+
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
             """
             comparison_function for recursively_check_input_dict.
@@ -889,9 +894,9 @@ class ValidateNestedInput:
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
             all_missing_attribute_sets = []
-            
+
             for key,value in template_values.items():
-                
+
                 if self.isAttribute(key):
 
                     missing_attribute_sets = []
@@ -900,27 +905,27 @@ class ValidateNestedInput:
 
                     if replacements is not None:
                         current_set = [key] + depends_on
-                        
+
                         if list(set(current_set)-set(real_values.keys())) != []:
                             for replace in replacements:
                                 missing = list(set(replace)-set(real_values.keys()))
-                                
+
                                 if missing == []:
                                     missing_attribute_sets = []
                                     break
-                                
+
                                 else:
                                     replace = sorted(replace)
                                     if replace not in missing_attribute_sets:
                                         missing_attribute_sets.append(replace)
-                        
+
                     else:
                         if real_values.get(key) is not None:
                             missing = []
                             for dependent_key in depends_on:
                                 if real_values.get(dependent_key) is None:
                                     missing.append(dependent_key)
-                            
+
                             if missing !=[]:
                                 missing_attribute_sets.append(missing)
 
@@ -965,8 +970,8 @@ class ValidateNestedInput:
                 """
                 size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
                 climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
-                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the 
-                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be 
+                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
+                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
                 handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
                 modified.
                 """
@@ -997,10 +1002,10 @@ class ValidateNestedInput:
                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
             try:
                 get_conic_coords(
-                    lat=self.input_dict['Scenario']['Site']['latitude'],   
+                    lat=self.input_dict['Scenario']['Site']['latitude'],
                     lng=self.input_dict['Scenario']['Site']['longitude'])
             except Exception as e:
-                self.input_data_errors.append(e.message)
+                self.input_data_errors.append(e.args[0])
 
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')

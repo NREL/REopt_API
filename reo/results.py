@@ -7,7 +7,7 @@ from reo.dispatch import ProcessOutputs
 from reo.log_levels import log
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
-from reo.models import ModelManager, PVModel
+from reo.models import ModelManager, PVModel, ScenarioModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 
@@ -35,7 +35,7 @@ class ResultsTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        self.data["messages"]["error"] = exc.message
+        self.data["messages"]["error"] = exc.args[0]
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -55,6 +55,14 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+
+    if len(ScenarioModel.objects.filter(run_uuid=self.run_uuid)) == 0:
+        msg = "Scenario was not found in database. No results will be saved."
+        log.info("Results.py for run_uuid={} raising REoptError: {}".format(self.run_uuid, msg))
+        raise REoptError(task='callback', name='results.py', run_uuid=self.run_uuid, message=msg, traceback='',
+                         user_uuid=self.user_uuid)
 
     paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
@@ -80,7 +88,11 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             "net_capital_costs_plus_om",
             "pv_net_fixed_om_costs",
             "gen_net_fixed_om_costs",
-            "gen_net_variable_om_costs"
+            "gen_net_variable_om_costs",
+            "total_gen_fuel_cost",
+            "year_one_gen_fuel_cost",
+            "gen_year_one_variable_om_costs",
+            "average_yearly_pv_energy_produced",
         ]
 
         def __init__(self, path_templates, path_output, path_output_bau, path_static, year, dfm):
@@ -158,7 +170,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # Loop through all sub-site dicts and init
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 nested_outputs["Scenario"]["Site"][name] = dict()
-                for k in d.iterkeys():
+                for k in d.keys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
             return nested_outputs
 
@@ -184,6 +196,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get("lcc_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["npv_us_dollars"] = self.results_dict.get("npv")
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs_plus_om_us_dollars"] = self.results_dict.get("net_capital_costs_plus_om")
+                    self.nested_outputs["Scenario"]["Site"][name]["net_om_us_dollars_bau"] = self.results_dict.get("net_capital_costs_plus_om_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs"] = self.results_dict.get("net_capital_costs")
                     self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
                         self.results_dict.get("net_capital_costs") \
@@ -192,6 +205,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw",0)
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
+                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_battery_series_kw"] = self.po.get_pv_to_batt()
@@ -269,13 +283,31 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_fixed_om_cost_us_dollars_bau"] = self.results_dict.get("gen_net_fixed_om_costs_bau")
+                        "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_net_fixed_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_gen_variable_om_cost_us_dollars_bau"] = self.results_dict.get(
+                        "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "gen_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "existing_gen_year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_variable_om_cost_us_dollars"] = self.results_dict.get(
+                        "gen_year_one_variable_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "total_gen_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "year_one_gen_fuel_cost")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_total_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "total_gen_fuel_cost_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
+                        "year_one_gen_fuel_cost_bau")
 
             self.profiler.profileEnd()
             self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
@@ -297,9 +329,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             return power
 
     self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
-    
+
     try:
         year = data['inputs']['Scenario']['Site']['LoadProfile']['year']
         output_file = os.path.join(paths['outputs'], "REopt_results.json")
@@ -326,5 +356,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=self.run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=self.run_uuid,
                               user_uuid=self.user_uuid)

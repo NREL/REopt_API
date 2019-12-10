@@ -8,8 +8,8 @@ from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
-from validators import ValidateNestedInput
-from scenario import setup_scenario
+from .validators import ValidateNestedInput
+from .scenario import setup_scenario
 from reo.log_levels import log
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
@@ -48,6 +48,7 @@ class Job(ModelResource):
         serializer = Serializer(formats=['json'])
         always_return_data = True
         validation = Validation()
+        object_class = None
         
     def detail_uri_kwargs(self, bundle_or_obj):
         kwargs = {}
@@ -84,7 +85,7 @@ class Job(ModelResource):
             input_validator = ValidateNestedInput(bundle.data)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.message,  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0],  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
             err.save_to_db()
             set_status(data, 'Internal Server Error during input validation. No optimization task has been created. Please check your POST for bad values.')
             data['inputs'] = bundle.data
@@ -131,7 +132,7 @@ class Job(ModelResource):
             except Exception as e:
                 log.error("Could not create and save run_uuid: {}\n Data: {}".format(run_uuid,data))
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value.message, exc_traceback, task='ModelManager.create_and_save',
+                err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='ModelManager.create_and_save',
                                       run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, "Internal Server Error during saving of inputs. Please see messages.")
@@ -154,7 +155,7 @@ class Job(ModelResource):
                 pass  # handled in each task
             else:  # for every other kind of exception
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value.message,  exc_traceback, task='api.py', run_uuid=run_uuid)
+                err = UnexpectedError(exc_type, exc_value.args[0],  exc_traceback, task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, 'Internal Server Error. See messages for more.')
                 if 'messages' not in data.keys():

@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
                 ('resilience_hours_avg', models.FloatField(null=True)),
                 ('outage_durations', django.contrib.postgres.fields.ArrayField(null=True, base_field=models.FloatField(null=True), size=None)),
                 ('probs_of_surviving', django.contrib.postgres.fields.ArrayField(null=True, base_field=models.FloatField(null=True), size=None)),
-                ('scenariomodel', models.OneToOneField(null=True, default=None, blank=True, to='reo.ScenarioModel')),
+                ('scenariomodel', models.OneToOneField(null=True, default=None, blank=True, to='reo.ScenarioModel', on_delete=models.CASCADE)),
             ],
         ),
     ]

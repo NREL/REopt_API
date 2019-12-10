@@ -131,7 +131,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # Loop through all sub-site dicts and init
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 nested_outputs["Scenario"]["Site"][name] = dict()
-                for k in d.iterkeys():
+                for k in d.keys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
             return nested_outputs
 
@@ -357,5 +357,5 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=self.run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=self.run_uuid,
                               user_uuid=self.user_uuid)

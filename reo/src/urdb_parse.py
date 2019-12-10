@@ -633,13 +633,13 @@ class UrdbParse:
 
     def write_energy_cost(self, file_path):
 
-        with open(file_path, 'wb') as f:
+        with open(file_path, 'w') as f:
             for v in self.energy_rates_summary:
                 f.write(str(v)+'\n')
 
     def write_demand_cost(self, file_path):
 
-        with open(file_path, 'wb') as f:
+        with open(file_path, 'w') as f:
             for v in self.demand_rates_summary:
                 f.write(str(v)+'\n')
 

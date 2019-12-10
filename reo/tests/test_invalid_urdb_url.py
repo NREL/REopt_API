@@ -12,6 +12,6 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
 
 	def test_problems(self):
 		invalid_list = json.loads(self.api_client.get(self.invalid_urdb_url,format='json').content)['Invalid IDs']
-		hard_problems = [i[0] for i in csv.reader(open('reo/hard_problems.csv','rb'))]
+		hard_problems = [i[0] for i in csv.reader(open('reo/hard_problems.csv', 'r'))]
 		for hp in hard_problems:
 			self.assertTrue(hp in invalid_list)
