@@ -398,17 +398,18 @@ class BuiltInProfile(object):
 
                 url = "http://www.afanalytics.com/api/climatezone/" + str(zip)
                 r = requests.get(url)
-                resp = json.loads(r.content)
-                zone_number = str(resp["climate_zone_number"])
-                zone_letter = str(resp["climate_zone_letter"])
-                if zone_letter == 'None':
-                    zone_letter = ''
-                zone = zone_number + zone_letter
+                if r.ok:
+                    resp = json.loads(r.content)
+                    zone_number = str(resp["climate_zone_number"])
+                    zone_letter = str(resp["climate_zone_letter"])
+                    if zone_letter == 'None':
+                        zone_letter = ''
+                    zone = zone_number + zone_letter
 
-                for city in map(self.Default_city._make, self.default_cities):
-                    if city.zoneid == zone:
-                        self.nearest_city = city.name
-                        return self.nearest_city
+                    for city in map(self.Default_city._make, self.default_cities):
+                        if city.zoneid == zone:
+                            self.nearest_city = city.name
+                            return self.nearest_city
 
         # else use old geometric approach, never fails...but isn't necessarily correct
         if self.nearest_city is None:

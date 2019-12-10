@@ -49,12 +49,26 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         d_expected['avoided_outage_costs_us_dollars'] = 472773.94
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 
+        #d_alt_expected catches case where http://www.afanalytics.com/api/climatezone/ is down and we fall back on the nearest city lookup 
+        d_alt_expected = dict()
+        d_alt_expected['lcc'] = 259353.0
+        d_alt_expected['npv'] = 631.0
+        d_alt_expected['pv_kw'] = 0.0
+        d_alt_expected['batt_kw'] = 2.316
+        d_alt_expected['batt_kwh'] = 4.331
+        d_alt_expected['fuel_used_gal'] = 1.56
+        d_alt_expected['avoided_outage_costs_us_dollars'] = 492251.61
+        d_alt_expected['microgrid_upgrade_cost_us_dollars'] = 1069.2
+
         try:
             check_common_outputs(self, c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
-            raise
+            try:
+                check_common_outputs(self, c, d_alt_expected)
+            except:
+                print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+                print("Error message: {}".format(d['messages']))
+                raise
 
         critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
         generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']

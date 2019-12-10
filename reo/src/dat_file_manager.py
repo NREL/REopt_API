@@ -155,7 +155,6 @@ class DatFileManager:
         return self.paths
 
     def add_load(self, load):
-        self.load = load
         #  fill in W, X, S bins
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)

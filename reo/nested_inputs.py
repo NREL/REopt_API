@@ -1,3 +1,4 @@
+
 max_big_number = 1.0e8
 max_incentive = 1.0e10
 max_years = 75
@@ -525,7 +526,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 1.0,
           "description": "Percent of upfront project costs to depreciate in year one in addition to scheduled depreciation"
         },
         "macrs_itc_reduction": {
@@ -691,7 +692,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "default": 0.0,
-          "description": "Radius to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
+          "description": "Radius, in miles, to use when searching for the closest climate data station. Use zero to use the closest station regardless of the distance"
         },
         "tilt": {
           "type": "float",
@@ -772,7 +773,7 @@ nested_input_definitions = {
             "description": "Duration over which accelerated depreciation will occur. Set to zero by default"
           },
           "macrs_bonus_pct": {
-            "type": "float", "min": 0.0, "max": 1.0, "default": 0.0,
+            "type": "float", "min": 0.0, "max": 1.0, "default": 1.0,
             "description": "Percent of upfront project costs to depreciate under MACRS in year one in addtion to scheduled depreciation"
           },
           "macrs_itc_reduction": {
@@ -887,7 +888,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 1.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
