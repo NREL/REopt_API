@@ -28,11 +28,11 @@ class URDBError(models.Model):
 
 class ProfileModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
-    pre_setup_scenario_seconds = models.FloatField(null=True, default='')
-    setup_scenario_seconds = models.FloatField(null=True, default='')
-    reopt_seconds = models.FloatField(null=True, default='')
-    reopt_bau_seconds = models.FloatField(null=True, default='')
-    parse_run_outputs_seconds = models.FloatField(null=True, default='')
+    pre_setup_scenario_seconds = models.FloatField(null=True, blank=True)
+    setup_scenario_seconds = models.FloatField(null=True, blank=True)
+    reopt_seconds = models.FloatField(null=True, blank=True)
+    reopt_bau_seconds = models.FloatField(null=True, blank=True)
+    parse_run_outputs_seconds = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -121,9 +121,9 @@ class LoadProfileModel(models.Model):
     doe_reference_name = models.TextField(null=True, blank=True, default='')
     annual_kwh = models.FloatField(null=True, blank=True)
     year = models.IntegerField(default=2018)
-    monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=[])
-    loads_kw = ArrayField(models.FloatField(blank=True), default=[])
-    critical_loads_kw = ArrayField(models.FloatField(blank=True), default=[])
+    monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=list)
+    loads_kw = ArrayField(models.FloatField(blank=True), default=list)
+    critical_loads_kw = ArrayField(models.FloatField(blank=True), default=list)
     loads_kw_is_net = models.BooleanField(default=True)
     critical_loads_kw_is_net = models.BooleanField(default=False)
     outage_start_hour = models.IntegerField(null=True, blank=True)
@@ -132,8 +132,8 @@ class LoadProfileModel(models.Model):
     outage_is_major_event = models.BooleanField(default=True)
 
     #Outputs
-    year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
-    critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=[])
+    year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
     sustain_hours = models.IntegerField(null=True, blank=True)
     resilience_check_flag = models.BooleanField(default=False)
@@ -153,8 +153,8 @@ class ElectricTariffModel(models.Model):
     urdb_utility_name = models.TextField(blank=True, default='')
     urdb_rate_name = models.TextField(blank=True, default='')
     urdb_label = models.TextField(blank=True, default='')
-    blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=[])
-    blended_monthly_demand_charges_us_dollars_per_kw = ArrayField(models.FloatField(blank=True), default=[])
+    blended_monthly_rates_us_dollars_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
+    blended_monthly_demand_charges_us_dollars_per_kw = ArrayField(models.FloatField(blank=True), default=list)
     blended_annual_rates_us_dollars_per_kwh = models.FloatField(blank=True, default=0, null=True)
     blended_annual_demand_charges_us_dollars_per_kw = models.FloatField(blank=True, default=0, null=True)
     net_metering_limit_kw = models.FloatField()
@@ -447,7 +447,7 @@ class BadPost(models.Model):
         try:
             super(BadPost, self).save()
         except Exception as e:
-            log.info("Database saving error: {}".format(e.message))
+            log.info("Database saving error: {}".format(e.args[0]))
 
 
 def attribute_inputs(inputs):
@@ -504,7 +504,7 @@ class ModelManager(object):
         self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
         self.generatorM = GeneratorModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Generator']))
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
     
@@ -552,7 +552,7 @@ class ModelManager(object):
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
 
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
                 pass
@@ -568,7 +568,7 @@ class ModelManager(object):
         """
         d = data["outputs"]["Scenario"]
         ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))
-        for message_type, message in data['messages'].iteritems():
+        for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
                 pass
@@ -606,7 +606,7 @@ class ModelManager(object):
 
             resp['inputs']['Scenario']['Site'][site_key] = dict()
 
-            for k in nested_input_definitions['Scenario']['Site'][site_key].iterkeys():
+            for k in nested_input_definitions['Scenario']['Site'][site_key].keys():
 
                 try:
                     resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
@@ -663,12 +663,12 @@ class ModelManager(object):
         for m in MessageModel.objects.filter(run_uuid=run_uuid).values('message_type', 'message'):
             resp['messages'][m['message_type']] = m['message']
             
-        for scenario_key in nested_input_definitions['Scenario'].iterkeys():
+        for scenario_key in nested_input_definitions['Scenario'].keys():
             if scenario_key.islower():
                 resp['inputs']['Scenario'][scenario_key] = resp['outputs']['Scenario'][scenario_key]
                 del resp['outputs']['Scenario'][scenario_key]
 
-        for site_key in nested_input_definitions['Scenario']['Site'].iterkeys():
+        for site_key in nested_input_definitions['Scenario']['Site'].keys():
             if site_key.islower():
                 resp['inputs']['Scenario']['Site'][site_key] = resp['outputs']['Scenario']['Site'][site_key]
                 del resp['outputs']['Scenario']['Site'][site_key]

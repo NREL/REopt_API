@@ -35,7 +35,7 @@ class ResultsTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        self.data["messages"]["error"] = exc.message
+        self.data["messages"]["error"] = exc.args[0]
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -169,7 +169,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             # Loop through all sub-site dicts and init
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 nested_outputs["Scenario"]["Site"][name] = dict()
-                for k in d.iterkeys():
+                for k in d.keys():
                     nested_outputs["Scenario"]["Site"][name].setdefault(k, None)
             return nested_outputs
 
@@ -347,6 +347,14 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
+        pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'].get('station_distance_km') or 0
+        if pv_watts_station_check > 322:
+            pv_warning = "The best available solar resource data is more than 200 miles ({} miles) from the site's coordinates. Consider choosing an alternative location closer to the continental US with similar solar irradiance and weather patterns and rerunning the analysis".format(round(pv_watts_station_check*0.621,0))
+            if data.get('messages') is None:
+                data['messages'] = {"PVWatts Warning": pv_warning}
+            else:
+                data['messages']["PVWatts Warning"] = pv_warning
+
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
 
@@ -356,5 +364,5 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=self.run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=self.run_uuid,
                               user_uuid=self.user_uuid)

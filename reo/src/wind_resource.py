@@ -157,7 +157,6 @@ def get_wind_resource_hsds(latitude, longitude, hub_height_meters, time_steps_pe
                 with h5pyd.File("/nrel/wtk-us.h5", 'r') as hf:
                     return hf[name][start_i:end_i,y,x]
             except:
-                # print "wind dataset timed out {} times".format(numberTries+1)
                 time.sleep(0.2)
                 numberTries +=1
         log.error("Wind data download timed out")

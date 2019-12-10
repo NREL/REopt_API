@@ -1,6 +1,7 @@
 import os
-from log_levels import log
+from .log_levels import log
 from numpy import npv
+from math import log10
 import types
 
 
@@ -178,20 +179,25 @@ def check_common_outputs(Test, d_calculated, d_expected):
     e = d_expected
 
     # check all calculated keys against the expected
-    for key, value in e.iteritems():
+    for key, value in e.items():
         tolerance = Test.REopt_tol
         if key == 'npv':
             tolerance = 2 * Test.REopt_tol
 
         if key in c and key in e:
-            if (not isinstance(e[key], types.ListType) and isinstance(e[key], types.ListType)) or \
-                    (isinstance(e[key], types.ListType) and not isinstance(e[key], types.ListType)):
+            if (not isinstance(e[key], list) and isinstance(e[key], list)) or \
+                    (isinstance(e[key], list) and not isinstance(e[key], list)):
                 Test.fail('Key: {0} expected type: {1} actual type {2}'.format(key, str(type(e[key])), str(type(c[key]))))
             elif e[key] == 0:
                 Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
             else:
                 if isinstance(e[key], float) or isinstance(e[key], int):
-                    Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance, 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+                    if key in ['batt_kw', 'batt_kwh']:
+                        # variable rounding depends on scale of sizes
+                        Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))))
+                    else:
+                        Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
+                                        'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
                 else:
                     pass
         else:

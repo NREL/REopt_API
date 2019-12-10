@@ -12,7 +12,7 @@ from reo.src.storage import Storage
 from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
-from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError
+from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
 from reo.src.paths import Paths
 
 
@@ -180,8 +180,8 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            log.error("Scenario.py raising error: " + exc_value.message)
-            lp_error = LoadProfileError(exc_value.message, exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            log.error("Scenario.py raising error: " + exc_value.args[0])
+            lp_error = LoadProfileError(exc_value.args[0], exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
             lp_error.save_to_db()
             raise lp_error
 
@@ -231,12 +231,19 @@ def setup_scenario(self, run_uuid, data, raw_post):
     except Exception as e:
         if isinstance(e, LoadProfileError):
                 raise e
-        
-        if hasattr(e, 'message'):
-            if e.message == 'Wind Dataset Timed Out':
-                raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
+
+        if hasattr(e, 'args'):
+            if len(e.args)>0:
+                if e.args[0] == 'Wind Dataset Timed Out':
+                    raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
+                if e.args[0].startswith('PVWatts'):
+                    message = 'PV Watts could not locate a dataset station within the search radius'
+                    radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius") or 0
+                    if radius > 0:
+                        message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                    raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising error: " + exc_value.message)
-        raise UnexpectedError(exc_type, exc_value.message, exc_traceback, task=self.name, run_uuid=run_uuid,
+        log.error("Scenario.py raising error: " + exc_value.args[0])
+        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=run_uuid,
                               user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
