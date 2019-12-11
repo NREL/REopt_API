@@ -36,11 +36,7 @@ class DatFileManager:
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
-        self.self = self
-        self.self = self
-        self.LoadProfile = {}
-        self.CapCostSegCount = None
-        self.CapCostSegCount_bau = None
+        self.LoadProfile = {}  # used to pass data to process_results.py
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -52,68 +48,6 @@ class DatFileManager:
         self.paths = paths
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
-
-        file_tail = str(run_id) + '.dat'
-        file_tail_bau = str(run_id) + '_bau.dat'
-
-        self.command_line_args = list()
-        self.command_line_args_bau = list()
-
-        self.DAT = [None] * 20
-        self.DAT_bau = [None] * 20
-
-        self.file_constant = os.path.join(paths['inputs'], 'constant_' + file_tail)
-        self.file_constant_bau = os.path.join(paths['inputs'], 'constant_' + file_tail_bau)
-        self.file_economics = os.path.join(paths['inputs'], 'economics_' + file_tail)
-        self.file_economics_bau = os.path.join(paths['inputs'], 'economics_' + file_tail_bau)
-        self.file_load_profile = os.path.join(paths['inputs'], 'Load8760_' + file_tail)
-        self.file_load_size = os.path.join(paths['inputs'], 'LoadSize_' + file_tail)
-        self.file_load_profile_bau = os.path.join(paths['inputs'], 'Load8760_' + file_tail_bau)
-        self.file_load_size_bau = os.path.join(paths['inputs'], 'LoadSize_' + file_tail_bau)
-        self.file_gis = os.path.join(paths['inputs'], "GIS_" + file_tail)
-        self.file_gis_bau = os.path.join(paths['inputs'], "GIS_" + file_tail_bau)
-        self.file_storage = os.path.join(paths['inputs'], 'storage_' + file_tail)
-        self.file_storage_bau = os.path.join(paths['inputs'], 'storage_' + file_tail_bau)
-        self.file_max_size = os.path.join(paths['inputs'], 'maxsizes_' + file_tail)
-        self.file_max_size_bau = os.path.join(paths['inputs'], 'maxsizes_' + file_tail_bau)
-        self.file_NEM = os.path.join(paths['inputs'], 'NMIL_' + file_tail)
-        self.file_NEM_bau = os.path.join(paths['inputs'], 'NMIL_' + file_tail_bau)
-
-        self.file_demand_periods = os.path.join(paths['utility'], 'TimeStepsDemand.dat')
-        self.file_demand_rates = os.path.join(paths['utility'], 'DemandRate.dat')
-        self.file_demand_rates_monthly = os.path.join(paths['utility'], 'DemandRateMonth.dat')
-        self.file_demand_ratchets_monthly = os.path.join(paths['utility'], 'TimeStepsDemandMonth.dat')
-        self.file_demand_lookback = os.path.join(paths['utility'], 'LookbackMonthsAndPercent.dat')
-        self.file_demand_num_ratchets = os.path.join(paths['utility'], 'NumRatchets.dat')
-        self.file_energy_rates = os.path.join(paths['utility'], 'FuelCost.dat')
-        self.file_energy_rates_bau = os.path.join(paths['utility'], 'FuelCostBase.dat')
-        self.file_energy_tiers_num = os.path.join(paths['utility'], 'bins.dat')
-        self.file_energy_burn_rate = os.path.join(paths['utility'], 'FuelBurnRate.dat')
-        self.file_energy_burn_rate_bau = os.path.join(paths['utility'], 'FuelBurnRateBase.dat')
-        self.file_max_in_tiers = os.path.join(paths['utility'], 'UtilityTiers.dat')
-        self.file_export_rates = os.path.join(paths['utility'], 'ExportRates.dat')
-        self.file_export_rates_bau = os.path.join(paths['utility'], 'ExportRatesBase.dat')
-
-        self.DAT[0] = "DAT1=" + "'" + self.file_constant + "'"
-        self.DAT_bau[0] = "DAT1=" + "'" + self.file_constant_bau + "'"
-        self.DAT[1] = "DAT2=" + "'" + self.file_economics + "'"
-        self.DAT_bau[1] = "DAT2=" + "'" + self.file_economics_bau + "'"
-        self.DAT[2] = "DAT3=" + "'" + self.file_load_size + "'"
-        self.DAT_bau[2] = "DAT3=" + "'" + self.file_load_size_bau + "'"
-        self.DAT[3] = "DAT4=" + "'" + self.file_load_profile + "'"
-        self.DAT_bau[3] = "DAT4=" + "'" + self.file_load_profile_bau + "'"
-        self.DAT[4] = "DAT5=" + "'" + self.file_gis + "'"
-        self.DAT_bau[4] = "DAT5=" + "'" + self.file_gis_bau + "'"
-        self.DAT[5] = "DAT6=" + "'" + self.file_storage + "'"
-        self.DAT_bau[5] = "DAT6=" + "'" + self.file_storage_bau + "'"
-        self.DAT[6] = "DAT7=" + "'" + self.file_max_size + "'"
-        self.DAT_bau[6] = "DAT7=" + "'" + self.file_max_size_bau + "'"
-        self.DAT[16] = "DAT17=" + "'" + self.file_NEM + "'"
-        self.DAT_bau[16] = "DAT17=" + "'" + self.file_NEM_bau + "'"
-
-        self.command_line_args.append("ScenarioNum=" + str(run_id))
-        self.command_line_args_bau.append("ScenarioNum=" + str(run_id))
-        # TODO: any command_line_args need passed to reopt.jl?
 
     def get_paths(self):
         return self.paths
@@ -747,11 +681,7 @@ class DatFileManager:
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
-        self.command_line_args.append("CapCostSegCount=" + str(n_segments))
-        self.CapCostSegCount = n_segments
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
-        self.command_line_args_bau.append("CapCostSegCount=" + str(n_segments_bau))
-        self.CapCostSegCount_bau = n_segments_bau
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -774,32 +704,11 @@ class DatFileManager:
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
 
-        # elec_tariff args
         parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
-
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
-
-        self.command_line_args.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
-        self.command_line_args.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
-        self.command_line_args.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
-        self.command_line_args.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
-
-        self.command_line_args_bau.append('NumRatchets=' + str(tariff_args.demand_num_ratchets))
-        self.command_line_args_bau.append('FuelBinCount=' + str(tariff_args.energy_tiers_num))
-        self.command_line_args_bau.append('DemandBinCount=' + str(tariff_args.demand_tiers_num))
-        self.command_line_args_bau.append('DemandMonthsBinCount=' + str(tariff_args.demand_month_tiers_num))
-
-        ta = tariff_args
-        # time_steps_per_hour
-        self.command_line_args.append('TimeStepCount=' + str(self.n_timesteps))
-        self.command_line_args.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
-
-        self.command_line_args_bau.append('TimeStepCount=' + str(self.n_timesteps))
-        self.command_line_args_bau.append('TimeStepScaling=' + str(8760.0/self.n_timesteps))
-
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
         NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
@@ -873,7 +782,7 @@ class DatFileManager:
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
-            'CapCostSegCount': self.CapCostSegCount,
+            'CapCostSegCount': n_segments,
             #'BattLevelCoef':
             #'BattLevelCount':
             #'Points':
@@ -954,5 +863,5 @@ class DatFileManager:
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping_bau,
-            'CapCostSegCount': self.CapCostSegCount_bau
+            'CapCostSegCount': n_segments_bau
         }
