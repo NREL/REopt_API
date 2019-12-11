@@ -1,4 +1,3 @@
-import json
 import os
 import operator
 import calendar
@@ -189,7 +188,6 @@ class UrdbParse:
         self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
 
         self.prepare_fixed_charges(current_rate)
-        self.write_files()  # TODO: remove file writing
         
         return self.reopt_args
 
@@ -450,7 +448,6 @@ class UrdbParse:
         self.prepare_demand_ratchets(current_rate)
         self.prepare_demand_rate_summary()
 
-
     def prepare_demand_ratchets(self, current_rate):
 
         demand_lookback_months = list()
@@ -597,27 +594,6 @@ class UrdbParse:
             self.reopt_args.annual_min_charge = float(current_rate.annualmincharge)
         if not isinstance(current_rate.minmonthlycharge, list):
             self.reopt_args.min_monthly_charge = float(current_rate.minmonthlycharge)
-
-    def write_files(self):
-
-        # summary
-        file_path = open(self.file_summary, 'w')
-        self.write_summary(file_path)
-        file_path.close()
-
-    def write_urdb_json(self, file_name):
-        with open(file_name, 'w') as outfile:
-            json.dump(self.urdb_rate, outfile)
-
-    def write_summary(self, file_name):
-        file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')
-        file_name.write(self.has_fixed_demand + ',' +
-                        self.has_tou_demand + ',' +
-                        self.has_demand_tiers + ',' +
-                        self.has_tou_energy + ',' +
-                        self.has_energy_tiers + ',' +
-                        str(self.max_demand_rate)
-                        )
 
     def get_hours_in_month(self, month):
 
