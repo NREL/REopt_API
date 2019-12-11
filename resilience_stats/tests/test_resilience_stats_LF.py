@@ -1,6 +1,5 @@
 import json
 import os
-import uuid
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from resilience_stats.outage_simulator_LF import simulate_outage
