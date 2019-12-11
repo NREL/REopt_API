@@ -58,7 +58,7 @@ coverage.xml
 *.pot
 
 # Django stuff:
-*.log
+.log
 local_settings.py
 
 # Flask instance folder
@@ -108,5 +108,7 @@ static/files/*
 # Redis
 *.rdb
 
+all_data*
+=======
 # CHP results processing
 results_processing/*

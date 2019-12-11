@@ -14,9 +14,9 @@ from reo.log_levels import log
 class BuiltInProfile(object):
 
     library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
-    
+
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
-    
+
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
         Default_city('Houston', 29.760427, -95.369803, 722430, '2A'),
@@ -502,7 +502,7 @@ class LoadProfile(BuiltInProfile):
             it is determined as either "loads_kw" or built-in profile times the "critical_load_pct".
     """
 
-    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None, 
+    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None,
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
@@ -599,7 +599,7 @@ class LoadProfile(BuiltInProfile):
             # modify loads based on custom critical loads profile
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
@@ -619,7 +619,7 @@ class LoadProfile(BuiltInProfile):
             # modify loads based on percentage
             self.load_list[outage_start_hour:outage_end_hour] = critical_loads_kw[outage_start_hour:outage_end_hour]
             self.bau_load_list[outage_start_hour:outage_end_hour] = \
-                [0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
+                [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
@@ -648,15 +648,6 @@ class LoadProfile(BuiltInProfile):
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net
-        #self.critical_load_series_kw = critical_loads_kw
-
-        # write csv for critical_load_series_kw. needed for outage sim
-        fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
-        with open(fp, 'w') as f:
-            for ld in critical_loads_kw:
-                f.write((str(ld)+'\n'))
+        self.critical_load_series_kw = critical_loads_kw
 
         dfm.add_load(self)
-
-
-

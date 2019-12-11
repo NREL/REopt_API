@@ -12,7 +12,7 @@ class Tech(object):
     """
 
     def __init__(self, min_kw=0, max_kw=big_number, installed_cost_us_dollars_per_kw=big_number,
-                 om_cost_us_dollars_per_kw=0, *args, **kwargs):
+                 om_cost_us_dollars_per_kw=0.0, *args, **kwargs):
 
         self.min_kw = min_kw
         self.max_kw = max_kw
@@ -23,7 +23,7 @@ class Tech(object):
         self.nmil_regime = None
         self.reopt_class = ""
         self.is_grid = False
-        self.derate = 1
+        self.derate = 1.0
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
 
@@ -52,7 +52,7 @@ class Util(Tech):
         self.outage_end_hour = outage_end_hour
         self.loads_served = ['retail', 'storage']
         self.is_grid = True
-        self.derate = 0
+        self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
         dfm.add_util(self)
@@ -77,7 +77,7 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0, tilt=0.537, azimuth=180, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
@@ -133,7 +133,6 @@ class PV(Tech):
 
 
 class Wind(Tech):
-
     size_class_to_hub_height = {
         'residential': 20,
         'commercial': 40,
@@ -154,7 +153,7 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, acres_per_kw=.03,time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, acres_per_kw=.03, time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.path_inputs = dfm.get_paths()['inputs']
@@ -172,7 +171,7 @@ class Wind(Tech):
 
         # if user hasn't entered the installed cost per kw, it gets assigned based on size_class
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
-                self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
+            self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
         self.ventyx = None
         self.sam_prod_factor = None
@@ -205,7 +204,6 @@ class Wind(Tech):
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
         if self.sam_prod_factor is None:
-            
             sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
                              time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
@@ -242,7 +240,7 @@ class Generator(Tech):
         self.fuel_avail_before_outage_pct = fuel_avail_before_outage_pct
         self.generator_sells_energy_back_to_grid = kwargs['generator_sells_energy_back_to_grid']
         self.diesel_fuel_cost_us_dollars_per_gallon = kwargs['diesel_fuel_cost_us_dollars_per_gallon']
-        self.derate = 0
+        self.derate = 0.0
         self.loads_served = ['retail', 'storage']
         self.incentives = Incentives(**kwargs)
         if max_kw < min_kw:

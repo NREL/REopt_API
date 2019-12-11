@@ -95,7 +95,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['max_kw'] = pv.max_kw
             tmp['min_kw'] = pv.min_kw
             ModelManager.updateModel('PVModel', tmp, run_uuid)
-
+            # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
         else:
             pv = None
 
@@ -135,10 +135,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_slope=gen.fuel_slope,
                                  fuel_intercept=gen.fuel_intercept,
                                  **inputs_dict['Site']['LoadProfile'])
-                tmp = dict()
-                tmp['resilience_check_flag'] = lp.resilience_check_flag
-                tmp['sustain_hours'] = lp.sustain_hours
-                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
             else:
                 lp = LoadProfile(dfm=dfm,
                                  user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
@@ -153,18 +149,14 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  fuel_slope=0,
                                  fuel_intercept=0,
                                  **inputs_dict['Site']['LoadProfile'])
-                tmp = dict()
-                tmp['resilience_check_flag'] = lp.resilience_check_flag
-                tmp['sustain_hours'] = lp.sustain_hours
-                ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
-            
+
             # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
             # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
-            # correct loads falling between the threshold and zero.    
-            
+            # correct loads falling between the threshold and zero.
+
             #Default tolerance
             negative_load_tolerance = -0.1
-            
+
             #If there is existing PV update the default tolerance based on capacity
             if pv is not None:
                 if getattr(pv,'existing_kw',0) > 0:
@@ -174,7 +166,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             if min(lp.load_list) < negative_load_tolerance:
                 message = "After adding existing generation to the load profile there were still negative electricity loads. Loads (non-net) must be equal to or greater than 0."
                 raise LoadProfileError(message,None, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
-            
+
             #Correct load profile values that fall between the tolerance and 0
             lp.load_list = [0 if ((x>negative_load_tolerance) and (x<0)) else x for x in lp.load_list]
 
@@ -202,7 +194,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
 
             ModelManager.updateModel('WindModel', tmp, run_uuid)
-
+            # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
@@ -215,8 +207,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
-            # delete python objects, which are not serializable
-        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator']:
+
+        # delete python objects, which are not serializable
+        for k in ['storage', 'pv', 'wind', 'site', 'elec_tariff', 'util', 'pvnm', 'windnm', 'generator', 'load']:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
@@ -225,6 +218,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         tmp = dict()
         tmp['setup_scenario_seconds'] = self.profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
+        # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
         return vars(dfm)  # --> gets passed to REopt runs (BAU and with tech)
 
