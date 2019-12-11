@@ -36,7 +36,10 @@ class DatFileManager:
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
-        self.LoadProfile = {}  # used to pass data to process_results.py
+        # following attributes used to pass data to process_results.py
+        self.LoadProfile = {}
+        self.year_one_energy_cost_series_us_dollars_per_kwh = []
+        self.year_one_demand_cost_series_us_dollars_per_kw = []
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -713,6 +716,8 @@ class DatFileManager:
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
         NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
                       self.elec_tariff.interconnection_limit_kw * 10]
+        self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
+        self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
         self.reopt_inputs = {
             'Tech': reopt_techs,

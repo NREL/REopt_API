@@ -257,9 +257,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_series_us_dollars_per_kwh"] = self.results_dict.get('energy_cost')
+                        "year_one_energy_cost_series_us_dollars_per_kwh"] = \
+                        self.dfm.get('year_one_energy_cost_series_us_dollars_per_kwh')
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_demand_cost_series_us_dollars_per_kw"] = self.results_dict.get('demand_cost')
+                        "year_one_demand_cost_series_us_dollars_per_kw"] = \
+                        self.dfm.get('year_one_demand_cost_series_us_dollars_per_kw')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get('GridToLoad')
                     self.nested_outputs["Scenario"]["Site"][name][
