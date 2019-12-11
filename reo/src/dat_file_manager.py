@@ -38,7 +38,6 @@ class DatFileManager:
 
         self.self = self
         self.self = self
-
         self.LoadProfile = {}
         self.CapCostSegCount = None
         self.CapCostSegCount_bau = None
