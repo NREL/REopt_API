@@ -1,5 +1,6 @@
 from __future__ import absolute_import, unicode_literals
 import sys
+import traceback
 from reo.nested_outputs import nested_output_definitions
 from reo.log_levels import log
 from celery import shared_task, Task
@@ -359,5 +360,5 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=self.run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task=self.name, run_uuid=self.run_uuid,
                               user_uuid=self.user_uuid)

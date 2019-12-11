@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
-import json
-import os
+import traceback
 import sys
 from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
@@ -168,7 +167,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.args[0])
-            lp_error = LoadProfileError(exc_value.args[0], exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error = LoadProfileError(exc_value.args[0], traceback.format_tb(exc_traceback), self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
             lp_error.save_to_db()
             raise lp_error
 
@@ -179,7 +178,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
             wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                        longitude=inputs_dict['Site'].get('longitude'),time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
+                        longitude=inputs_dict['Site'].get('longitude'),
+                        time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                        run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
 
             # must propogate these changes back to database for proforma
             data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind.installed_cost_us_dollars_per_kw
@@ -230,5 +231,5 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.error("Scenario.py raising error: " + exc_value.args[0])
-        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task=self.name, run_uuid=run_uuid,
                               user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

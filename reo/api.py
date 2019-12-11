@@ -2,6 +2,7 @@ import json
 import logging
 import uuid
 import sys
+import traceback
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
@@ -85,7 +86,7 @@ class Job(ModelResource):
             input_validator = ValidateNestedInput(bundle.data)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.args[0],  exc_traceback, task='ValidateNestedInput', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='ValidateNestedInput', run_uuid=run_uuid)
             err.save_to_db()
             set_status(data, 'Internal Server Error during input validation. No optimization task has been created. Please check your POST for bad values.')
             data['inputs'] = bundle.data
@@ -132,7 +133,7 @@ class Job(ModelResource):
             except Exception as e:
                 log.error("Could not create and save run_uuid: {}\n Data: {}".format(run_uuid,data))
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='ModelManager.create_and_save',
+                err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='ModelManager.create_and_save',
                                       run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, "Internal Server Error during saving of inputs. Please see messages.")
@@ -155,7 +156,7 @@ class Job(ModelResource):
                 pass  # handled in each task
             else:  # for every other kind of exception
                 exc_type, exc_value, exc_traceback = sys.exc_info()
-                err = UnexpectedError(exc_type, exc_value.args[0],  exc_traceback, task='api.py', run_uuid=run_uuid)
+                err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='api.py', run_uuid=run_uuid)
                 err.save_to_db()
                 set_status(data, 'Internal Server Error. See messages for more.')
                 if 'messages' not in data.keys():

@@ -106,7 +106,7 @@ def remove(request, run_uuid):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
@@ -122,7 +122,7 @@ def results(request, run_uuid):
             return JsonResponse(resp, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='results', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='results', run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.args[0])}, status=400)
 
@@ -135,7 +135,7 @@ def results(request, run_uuid):
     except Exception:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='reo.views.results', run_uuid=run_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
