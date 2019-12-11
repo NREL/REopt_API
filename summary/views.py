@@ -169,18 +169,19 @@ def summary(request, user_uuid):
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
         financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
+        
+        def get_scenario_data(data, run_uuid):
+            if type(data)==dict:
+                if str(data.get('run_uuid')) == str(run_uuid):
+                    return data
+            result = [s for s in data if str(s.get('run_uuid')) == str(run_uuid)]
+            if len(result) > 0:
+                return result
+            return [{}]
 
         for scenario in scenarios:
             results = {}
-            def get_scenario_data(data, run_uuid):
-                if type(data)==dict:
-                    if str(data.get('run_uuid')) == str(run_uuid):
-                        return data
-                result = [s for s in data if str(s.get('run_uuid')) == str(run_uuid)]
-                if len(result) > 0:
-                    return result
-                return [{}]
-
+            
             message_set = get_scenario_data(messages, scenario.run_uuid)
             if not type(message_set) == list:
                 message_set = [message_set]
@@ -197,7 +198,8 @@ def summary(request, user_uuid):
             # Messages
             results['messages'] = {}
             for message in message_set:
-                results['messages'][message['message_type']] = message['message']
+                if len(message.keys()) > 0:
+                    results['messages'][message.get('message_type')] = message.get('message')
             
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
