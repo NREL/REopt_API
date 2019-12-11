@@ -220,11 +220,11 @@ def summary(request, user_uuid):
                     results['focus'] = "Financial"
 
                 # Address
-                results['address'] = site['address']
+                results['address'] = site.get('address')
 
                 # Utility Tariff
                 if tariff['urdb_rate_name']:
-                    results['urdb_rate_name'] = tariff['urdb_rate_name']
+                    results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                 else:
                     results['urdb_rate_name'] = "Custom"
 
@@ -232,29 +232,29 @@ def summary(request, user_uuid):
                 if load['loads_kw']:
                     results['doe_reference_name'] = "Custom"
                 else:
-                    results['doe_reference_name'] = load['doe_reference_name']
+                    results['doe_reference_name'] = load.get('doe_reference_name')
 
                 # NPV
-                results['npv_us_dollars'] = financial['npv_us_dollars']
+                results['npv_us_dollars'] = financial.get('npv_us_dollars')
 
                 # DG System Cost
-                results['net_capital_costs'] = financial['net_capital_costs']
+                results['net_capital_costs'] = financial.get('net_capital_costs')
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
-                    tariff['year_one_energy_cost_us_dollars'],
-                    tariff['year_one_demand_cost_us_dollars'],
-                    tariff['year_one_fixed_cost_us_dollars'],
-                    tariff['year_one_min_charge_adder_us_dollars'],
-                    tariff['year_one_bill_us_dollars']
+                    tariff.get('year_one_energy_cost_us_dollars'),
+                    tariff.get('year_one_demand_cost_us_dollars'),
+                    tariff.get('year_one_fixed_cost_us_dollars'),
+                    tariff.get('year_one_min_charge_adder_us_dollars'),
+                    tariff.get('year_one_bill_us_dollars')
                     ]))
                 
                 year_one_costs_bau = sum(filter(None, [
-                    tariff['year_one_energy_cost_bau_us_dollars'],
-                    tariff['year_one_demand_cost_bau_us_dollars'],
-                    tariff['year_one_fixed_cost_bau_us_dollars'],
-                    tariff['year_one_min_charge_adder_bau_us_dollars'],
-                    tariff['year_one_bill_bau_us_dollars']
+                    tariff.get('year_one_energy_cost_bau_us_dollars'),
+                    tariff.get('year_one_demand_cost_bau_us_dollars'),
+                    tariff.get('year_one_fixed_cost_bau_us_dollars'),
+                    tariff.get('year_one_min_charge_adder_bau_us_dollars'),
+                    tariff.get('year_one_bill_bau_us_dollars')
                     ]))
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
@@ -262,7 +262,7 @@ def summary(request, user_uuid):
                 # PV Size
                 if pv is not None:
                     if pv['max_kw'] > 0:
-                        results['pv_kw'] = pv['size_kw']
+                        results['pv_kw'] = pv.get('size_kw')
                     else:
                         results['pv_kw'] = 'not evaluated'
                 else:
@@ -271,7 +271,7 @@ def summary(request, user_uuid):
                 # Wind Size
                 if wind is not None:
                     if wind.get('max_kw',-1) > 0:
-                        results['wind_kw'] = wind['size_kw']
+                        results['wind_kw'] = wind.get('size_kw')
                     else:
                         results['wind_kw'] = 'not evaluated'
                 else:
@@ -280,7 +280,7 @@ def summary(request, user_uuid):
                 # Generator Size
                 if gen is not None:
                     if gen.get('max_kw', -1) > 0:
-                        results['gen_kw'] = gen['size_kw']
+                        results['gen_kw'] = gen.get('size_kw')
                     else:
                         results['gen_kw'] = 'not evaluated'
                 else:
@@ -289,8 +289,8 @@ def summary(request, user_uuid):
                 # Battery Size
                 if batt is not None:
                     if batt.get('max_kw',-1) > 0:
-                        results['batt_kw'] = batt['size_kw']
-                        results['batt_kwh'] = batt['size_kwh']
+                        results['batt_kw'] = batt.get('size_kw')
+                        results['batt_kwh'] = batt.get('size_kwh')
                     else:
                         results['batt_kw'] = 'not evaluated'
                         results['batt_kwh'] = 'not evaluated'
