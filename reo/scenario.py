@@ -62,11 +62,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
     self.run_uuid = run_uuid
     self.data = data
 
-    # Log POST request
-    file_post_input = os.path.join(paths['inputs'], "POST.json")
-    with open(file_post_input, 'w') as file_post:
-        json.dump(raw_post, file_post)
-
     try:
         inputs_dict = data['inputs']['Scenario']
         dfm = DatFileManager(run_id=run_uuid, paths=paths,
