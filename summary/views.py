@@ -158,7 +158,7 @@ def summary(request, user_uuid):
             return response
         
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
-        
+
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
         sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
@@ -199,7 +199,7 @@ def summary(request, user_uuid):
             results['messages'] = {}
             for message in message_set:
                 if len(message.keys()) > 0:
-                    results['messages'][message.get('message_type')] = message.get('message')
+                    results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
             
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
