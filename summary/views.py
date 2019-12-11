@@ -242,19 +242,19 @@ def summary(request, user_uuid):
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
-                    tariff.get('year_one_energy_cost_us_dollars'),
-                    tariff.get('year_one_demand_cost_us_dollars'),
-                    tariff.get('year_one_fixed_cost_us_dollars'),
-                    tariff.get('year_one_min_charge_adder_us_dollars'),
-                    tariff.get('year_one_bill_us_dollars')
+                    tariff.get('year_one_energy_cost_us_dollars') or 0,
+                    tariff.get('year_one_demand_cost_us_dollars') or 0,
+                    tariff.get('year_one_fixed_cost_us_dollars') or 0,
+                    tariff.get('year_one_min_charge_adder_us_dollars') or 0,
+                    tariff.get('year_one_bill_us_dollars') or 0
                     ]))
                 
                 year_one_costs_bau = sum(filter(None, [
-                    tariff.get('year_one_energy_cost_bau_us_dollars'),
-                    tariff.get('year_one_demand_cost_bau_us_dollars'),
-                    tariff.get('year_one_fixed_cost_bau_us_dollars'),
-                    tariff.get('year_one_min_charge_adder_bau_us_dollars'),
-                    tariff.get('year_one_bill_bau_us_dollars')
+                    tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
+                    tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
