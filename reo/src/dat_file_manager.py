@@ -42,9 +42,6 @@ class DatFileManager:
         self.net_metering_limit = None
         self.interconnection_limit = None
         self.LoadProfile = {}
-        #Added for JuMP
-        self.TechToNMILMapping = None
-        self.TechToNMILMapping_bau = None
         self.CapCostSegCount = None
         self.CapCostSegCount_bau = None
         self.NMILLimits = None
@@ -170,12 +167,6 @@ class DatFileManager:
         # TODO this method can be removed once we transition to new process_results.py and JuMP model
         # constant.dat contains NMILRegime
         # NMIL.dat contains NMILLimits and TechToNMILMapping
-
-        TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
-        TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
-
-        self.TechToNMILMapping = TechToNMILMapping
-        self.TechToNMILMapping_bau = TechToNMILMapping_bau
         self.NMILLimits = [net_metering_limit, interconnection_limit, interconnection_limit*10]
         self.net_metering_limit = net_metering_limit
         self.interconnection_limit = interconnection_limit
@@ -891,7 +882,7 @@ class DatFileManager:
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': self.NMILLimits,
-            'TechToNMILMapping': self.TechToNMILMapping,
+            'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': self.CapCostSegCount,
             #'BattLevelCoef':
             #'BattLevelCount':
@@ -972,6 +963,6 @@ class DatFileManager:
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': self.NMILLimits,
-            'TechToNMILMapping': self.TechToNMILMapping_bau,
+            'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': self.CapCostSegCount_bau
         }
