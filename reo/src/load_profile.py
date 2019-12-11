@@ -13,7 +13,7 @@ from reo.log_levels import log
 
 class BuiltInProfile(object):
 
-    library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
+    library_path = os.path.join('input_files', 'LoadProfiles')
 
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
 

@@ -10,9 +10,7 @@ class Paths(object):
     def __init__(self, run_uuid):
 
         self.egg = os.getcwd()
-        self.templates = os.path.join(self.egg, "Xpress")
-        self.xpress = os.path.join(self.egg, "Xpress")
-        self.run = os.path.join(self.xpress, "Run" + str(run_uuid))
+        self.run = os.path.join(self.egg, "input_files", "Run" + str(run_uuid))
         self.inputs = os.path.join(self.run, "Inputs")
         self.static_outputs = os.path.join(self.egg, "static", "files", str(run_uuid))
 
