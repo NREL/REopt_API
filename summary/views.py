@@ -160,30 +160,39 @@ def summary(request, user_uuid):
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
         
         #saving time by only calling each table once
-        messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')[0]
-        sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')[0]
-        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')[0]
-        batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')[0]
-        pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
-        winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
-        gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')[0]
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')[0]
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')[0]
+        messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
+        sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')
+        batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')
+        pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
 
         for scenario in scenarios:
             results = {}
-            
-            message_set = messages.get(scenario.run_uuid,[])
+            def get_scenario_data(data, run_uuid):
+                if type(data)==dict:
+                    if str(data.get('run_uuid')) == str(run_uuid):
+                        return data
+                result = [s for s in data if str(s.get('run_uuid')) == str(run_uuid)]
+                if len(result) > 0:
+                    return result
+                return [{}]
+
+            message_set = get_scenario_data(messages, scenario.run_uuid)
             if not type(message_set) == list:
                 message_set = [message_set]
-            site = sites.get(scenario.run_uuid)
-            load = loads.get(scenario.run_uuid)
-            batt = batts.get(scenario.run_uuid)
-            pv = pvs.get(scenario.run_uuid)
-            wind = winds.get(scenario.run_uuid)
-            gen = gens.get(scenario.run_uuid)
-            financial = financials.get(scenario.run_uuid)
-            tariff = tariffs.get(scenario.run_uuid)
+            
+            site = get_scenario_data(sites, scenario.run_uuid)[0]
+            load = get_scenario_data(loads, scenario.run_uuid)[0]
+            batt = get_scenario_data(batts, scenario.run_uuid)[0]
+            pv = get_scenario_data(pvs, scenario.run_uuid)[0]
+            wind = get_scenario_data(winds, scenario.run_uuid)[0]
+            gen = get_scenario_data(gens, scenario.run_uuid)[0]
+            financial = get_scenario_data(financials, scenario.run_uuid)[0]
+            tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
             
             # Messages
             results['messages'] = {}
