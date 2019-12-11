@@ -1,4 +1,3 @@
-from __future__ import absolute_import, unicode_literals
 import sys
 import traceback
 from reo.nested_outputs import nested_output_definitions

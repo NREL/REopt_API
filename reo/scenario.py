@@ -1,4 +1,3 @@
-from __future__ import absolute_import, unicode_literals
 import traceback
 import sys
 from reo.log_levels import log
