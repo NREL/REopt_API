@@ -19,7 +19,7 @@ def get_techs_not_none(techs, cls):
 
 class DatFileManager:
     """
-    writes dat files and creates command line strings for dat file paths
+    Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
 
     def __init__(self, run_id, paths, n_timesteps=8760):
@@ -63,6 +63,7 @@ class DatFileManager:
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["sustain_hours"] = load.sustain_hours
+        self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.load = load
 
     def add_pv(self, pv):

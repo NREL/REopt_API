@@ -638,13 +638,7 @@ class LoadProfile(BuiltInProfile):
         # resilience_check_flag: True if existing diesel can sustain critical load during outage
         self.resilience_check_flag = resilience_check_flag
         self.sustain_hours = sustain_hours
-
         self.annual_kwh = sum(self.load_list)
-        # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
-        fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
-        with open(fp, 'w') as f:
-            f.write(str(self.annual_kwh))
-
         self.bau_annual_kwh = sum(self.bau_load_list)
         self.loads_kw_is_net = loads_kw_is_net
         self.critical_loads_kw_is_net = critical_loads_kw_is_net

@@ -149,7 +149,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dfm["LoadProfile"].get("critical_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.results_dict.get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dfm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dfm["LoadProfile"].get("resilience_check_flag")
                     self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dfm["LoadProfile"].get("sustain_hours")
                 elif name == "Financial":
