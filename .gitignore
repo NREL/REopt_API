@@ -5,8 +5,8 @@ __pycache__/
 
 keys.py
 .idea
-Xpress/
-!Xpress/REopt_API.mos
+input_files/
+!input_files/LoadProfiles/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
@@ -96,9 +96,6 @@ ENV/
 .ropeproject
 
 *.sqlite3
-
-# Dat files
-#*.dat
 
 /tmp/*
 /log/*
