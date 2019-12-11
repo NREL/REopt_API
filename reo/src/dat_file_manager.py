@@ -622,9 +622,9 @@ class DatFileManager:
             del cap_cost_x[0:n_segments+1]
 
             n_segments_to_add = n_segments_max - n_segments
-            adj_cap_cost_slope += [0]*n_segments_to_add + slope_list
-            adj_cap_cost_yint += [0]*n_segments_to_add + y_list
-            adj_cap_cost_x += [0]*n_segments_to_add + x_list
+            adj_cap_cost_slope += [0.0]*n_segments_to_add + slope_list
+            adj_cap_cost_yint += [0.0]*n_segments_to_add + y_list
+            adj_cap_cost_x += [0.0]*n_segments_to_add + x_list
 
         return adj_cap_cost_slope, adj_cap_cost_x, adj_cap_cost_yint, n_segments_max
 
