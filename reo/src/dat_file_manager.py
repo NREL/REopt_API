@@ -333,20 +333,10 @@ class DatFileManager:
         cap_cost_slope = list()
         cap_cost_x = list()
         cap_cost_yint = list()
-        n_segments_out = 0
-        n_segments = None
-        tech_to_size = float(big_number)  # There are challeges with breakpoint creation, but may want to support large systems (100MW scale)
-
-        # generating existing_kw_flag for padding the cost curve values of wind for the case when pv_existing_kw > 0
-        existing_kw_flag = False
-        for tech in techs:
-
-            if eval('self.' + tech) is not None and tech not in ['util']:
-
-                existing_kw = 0
-                if hasattr(eval('self.' + tech), 'existing_kw'):
-                    if eval('self.' + tech + '.existing_kw') is not None:
-                        existing_kw_flag = True
+        n_segments_max = 0  # tracking the maximum number of cost curve segments
+        n_segments = 1
+        n_segments_list = list()
+        tech_to_size = float(big_number)
 
         for tech in techs:
 
@@ -368,7 +358,7 @@ class DatFileManager:
                         if region == 'federal' or region == 'total':
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.itc')
                             tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.itc_max')
-                        else: # region == 'state' or region == 'utility'
+                        else:  # region == 'state' or region == 'utility'
                             tech_incentives[region]['%'] = eval('self.' + tech + '.incentives.' + region + '.ibi')
                             tech_incentives[region]['%_max'] = eval('self.' + tech + '.incentives.' + region + '.ibi_max')
 
@@ -381,7 +371,7 @@ class DatFileManager:
                         if tech_incentives[region]['rebate_max'] == max_incentive:
                             tech_incentives[region]['rebate_max'] = 0
 
-                    else: # for generator there are no incentives
+                    else:  # for generator there are no incentives
                         tech_incentives[region]['%'] = 0
                         tech_incentives[region]['%_max'] = 0
                         tech_incentives[region]['rebate'] = 0
@@ -536,7 +526,7 @@ class DatFileManager:
                     tmp_cap_cost_slope.append(tmp_slope)
                     tmp_cap_cost_yint.append(tmp_y_int)
 
-                n_segments =len(tmp_cap_cost_slope)
+                n_segments = len(tmp_cap_cost_slope)
 
                 # Following logic modifies the cap cost segments to account for the tax benefits of the ITC and MACRs
                 updated_cap_cost_slope = list()
@@ -587,8 +577,7 @@ class DatFileManager:
                     4. shift the rest of the cost curve down by the y-value found in step 2
                     5. reset n_segments (existing_kw can add a breakpoint, or take them away)
                 """
-                if existing_kw > 0:
-
+                if existing_kw > 0:  # PV or Generator has existing_kw
                     # find the first index in cost_curve_bp_x that is larger than existing_kw, then reset cost curve
                     for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
                         if bp <= existing_kw:
@@ -601,43 +590,45 @@ class DatFileManager:
                             n_segments = len(tmp_cap_cost_slope)
                             break
 
-                elif existing_kw_flag:
-
-                    for i, bp in enumerate(cost_curve_bp_x[1:]):  # need to make sure existing_kw is never larger then last bp
-                        tmp_cap_cost_slope = tmp_cap_cost_slope[i:] + [1] # adding 1 as the slope for wind's second segment
-                        tmp_cap_cost_yint = [0] + [big_number]
-                        cost_curve_bp_x = [0] + [cost_curve_bp_x[i+1]] + [cost_curve_bp_x[-1]+1]
-                        n_segments = len(tmp_cap_cost_slope)
-                        break
-
                 # append the current Tech's segments to the arrays that will be passed to REopt
-
                 cap_cost_slope += tmp_cap_cost_slope
                 cap_cost_yint += tmp_cap_cost_yint
                 cap_cost_x += cost_curve_bp_x
 
                 # Have to take n_segments as the maximum number across all technologies
-                n_segments_out = max(n_segments, n_segments_out)
+                n_segments_max = max(n_segments, n_segments_max)
+                n_segments_list.append(n_segments)
 
             elif eval('self.' + tech) is not None and tech in ['util']:
 
-                if n_segments is None:  # only util in techs (usually BAU case)
-                    n_segments = 1
-
-                for seg in range(n_segments):
-                    cap_cost_slope.append(0)
-                    cap_cost_yint.append(0)
-
-                for seg in range(n_segments + 1):
-                    x = 0
-                    if len(cap_cost_x) > 0 and cap_cost_x[-1] == 0:
-                        x = big_number
-                    cap_cost_x.append(x)
+                cap_cost_slope.append(0.0)
+                cap_cost_yint.append(0.0)
+                cap_cost_x += [0.0, big_number]
 
                 # Have to take n_segments as the maximum number across all technologies
-                n_segments_out = max(n_segments, n_segments_out)
+                n_segments_max = max(n_segments, n_segments_max)
+                n_segments_list.append(n_segments)
 
-        return cap_cost_slope, [0]+cap_cost_x[1:], cap_cost_yint, n_segments_out
+        """
+        Last step in creating cost curve is filling in the curves for each tech that does not have
+        n_segments == n_segments_max. The filling in is achieved by duplicating the origin with zero cap_cost_slope for
+        as many additional segments that are needed.
+        """
+        adj_cap_cost_slope, adj_cap_cost_x, adj_cap_cost_yint = list(), list(), list()
+        for n_segments in n_segments_list:
+            slope_list = cap_cost_slope[0:n_segments]
+            del cap_cost_slope[0:n_segments]
+            y_list = cap_cost_yint[0:n_segments]
+            del cap_cost_yint[0:n_segments]
+            x_list = cap_cost_x[0:n_segments+1]
+            del cap_cost_x[0:n_segments+1]
+
+            n_segments_to_add = n_segments_max - n_segments
+            adj_cap_cost_slope += [0]*n_segments_to_add + slope_list
+            adj_cap_cost_yint += [0]*n_segments_to_add + y_list
+            adj_cap_cost_x += [0]*n_segments_to_add + x_list
+
+        return adj_cap_cost_slope, adj_cap_cost_x, adj_cap_cost_yint, n_segments_max
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
