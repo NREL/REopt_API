@@ -117,7 +117,7 @@ class UrdbParse:
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
+    def __init__(self, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -145,8 +145,6 @@ class UrdbParse:
             self.generator_fuel_avail = 0.0
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
-
-        self.file_summary = os.path.join(paths['utility'], 'Summary.csv')
 
         self.energy_rates_summary = []
         self.demand_rates_summary = []

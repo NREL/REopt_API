@@ -707,7 +707,7 @@ class DatFileManager:
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
 
-        parser = UrdbParse(paths=self.paths, big_number=big_number, elec_tariff=self.elec_tariff,
+        parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
                            techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
