@@ -39,12 +39,9 @@ class DatFileManager:
         self.self = self
         self.self = self
 
-        self.net_metering_limit = None
-        self.interconnection_limit = None
         self.LoadProfile = {}
         self.CapCostSegCount = None
         self.CapCostSegCount_bau = None
-        self.NMILLimits = None
 
         self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
         self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
@@ -162,14 +159,6 @@ class DatFileManager:
 
     def add_site(self, site):
         self.site = site
-
-    def add_net_metering(self, net_metering_limit, interconnection_limit):
-        # TODO this method can be removed once we transition to new process_results.py and JuMP model
-        # constant.dat contains NMILRegime
-        # NMIL.dat contains NMILLimits and TechToNMILMapping
-        self.NMILLimits = [net_metering_limit, interconnection_limit, interconnection_limit*10]
-        self.net_metering_limit = net_metering_limit
-        self.interconnection_limit = interconnection_limit
 
     def add_storage(self, storage):
         self.storage = storage
@@ -814,6 +803,8 @@ class DatFileManager:
 
         TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+        NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
+                      self.elec_tariff.interconnection_limit_kw * 10]
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -881,7 +872,7 @@ class DatFileManager:
             'LoadProfile': self.load.load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
-            'NMILLimits': self.NMILLimits,
+            'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': self.CapCostSegCount,
             #'BattLevelCoef':
@@ -962,7 +953,7 @@ class DatFileManager:
             'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
-            'NMILLimits': self.NMILLimits,
+            'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': self.CapCostSegCount_bau
         }
