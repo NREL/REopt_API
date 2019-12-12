@@ -173,7 +173,6 @@ class Wind(Tech):
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
             self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
-        self.ventyx = None
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
@@ -207,11 +206,6 @@ class Wind(Tech):
             sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
                              time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
-
-        # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
-        if self.ventyx is None:  # TODO: remove Ventyx?
-            self.ventyx = Ventyx()
-        # return self.ventyx.wind_prod_factor
         return self.sam_prod_factor
 
 
