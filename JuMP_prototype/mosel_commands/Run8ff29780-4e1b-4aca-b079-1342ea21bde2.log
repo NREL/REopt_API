@@ -1,8 +1,0 @@
-#!/usr/bin/zsh
-
-corepath="/u/eu/an/jpohl/reopt_api/JuMP_prototype"
-datadir="Run8ff29780-4e1b-4aca-b079-1342ea21bde2"
-mospath="$corepath/REopt_API.mos"
-ScenarioNum="8ff29780-4e1b-4aca-b079-1342ea21bde2"
-
-mosel exec -g $mospath CapCostSegCount=2 NumRatchets=12 FuelBinCount=1 DemandBinCount=1 DemandMonthsBinCount=1 TimeStepCount=8760 TimeStepScaling=1.0 DAT1="$corepath/data/$datadir/Inputs/constant_$ScenarioNum.dat" DAT2="$corepath/data/$datadir/Inputs/economics_$ScenarioNum.dat" DAT3="$corepath/data/$datadir/Inputs/LoadSize_$ScenarioNum.dat" DAT4="$corepath/data/$datadir/Inputs/Load8760_$ScenarioNum.dat" DAT5="$corepath/data/$datadir/Inputs/GIS_$ScenarioNum.dat" DAT6="$corepath/data/$datadir/Inputs/storage_$ScenarioNum.dat" DAT7="$corepath/data/$datadir/Inputs/maxsizes_$ScenarioNum.dat" DAT17="$corepath/data/$datadir/Inputs/NMIL_$ScenarioNum.dat" OutputDir="$corepath/output" ScenarioPath="$corepath/data/$datadir/Inputs" BaseString=""
