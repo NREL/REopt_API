@@ -169,7 +169,7 @@ def summary(request, user_uuid):
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
         financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
-        
+
         def get_scenario_data(data, run_uuid):
             if type(data)==dict:
                 if str(data.get('run_uuid')) == str(run_uuid):
@@ -272,7 +272,7 @@ def summary(request, user_uuid):
 
                 # Wind Size
                 if wind is not None:
-                    if wind.get('max_kw',-1) > 0:
+                    if wind.get('max_kw') or -1 > 0:
                         results['wind_kw'] = wind.get('size_kw')
                     else:
                         results['wind_kw'] = 'not evaluated'
@@ -281,7 +281,7 @@ def summary(request, user_uuid):
 
                 # Generator Size
                 if gen is not None:
-                    if gen.get('max_kw', -1) > 0:
+                    if gen.get('max_kw') or -1 > 0:
                         results['gen_kw'] = gen.get('size_kw')
                     else:
                         results['gen_kw'] = 'not evaluated'
@@ -290,7 +290,7 @@ def summary(request, user_uuid):
 
                 # Battery Size
                 if batt is not None:
-                    if batt.get('max_kw',-1) > 0:
+                    if batt.get('max_kw') or -1 > 0:
                         results['batt_kw'] = batt.get('size_kw')
                         results['batt_kwh'] = batt.get('size_kwh')
                     else:

@@ -203,7 +203,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
                     pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw",0)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw") or 0
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_pv_energy_produced_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported")
@@ -217,7 +217,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
                     self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
                 elif name == "Wind":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw",0)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw") or 0
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_wind_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_wind")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_wind_energy_produced")
@@ -226,8 +226,8 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_wind_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_power_production_series_kw"] = self.compute_total_power(name)
                 elif name == "Storage":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw",0)
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh",0)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw") or 0
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh") or 0
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_batt_to_load()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_grid_series_kw"] = self.po.get_batt_to_grid()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = self.po.get_soc(self.results_dict.get('batt_kwh'))
@@ -261,7 +261,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh_bau"] = self.results_dict.get("year_one_utility_kwh_bau")
                 elif name == "Generator":
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw",0)
+                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw") or 0
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get("fuel_used_gal")
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal_bau"] = self.results_dict.get("fuel_used_gal_bau")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_to_load_series_kw"] = self.po.get_gen_to_load()
