@@ -37,8 +37,10 @@ class ScenarioTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-
-        self.data["messages"]["error"] = exc.message
+            msg = exc.message
+        else:
+            msg = exc.args[0]
+        self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -218,17 +220,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 raise e
 
         if hasattr(e, 'args'):
-            if len(e.args)>0:
+            if len(e.args) > 0:
                 if e.args[0] == 'Wind Dataset Timed Out':
                     raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
-                if e.args[0].startswith('PVWatts'):
-                    message = 'PV Watts could not locate a dataset station within the search radius'
-                    radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius") or 0
-                    if radius > 0:
-                        message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
-                    raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
+                if isinstance(e.args[0], str):
+                    if e.args[0].startswith('PVWatts'):
+                        message = 'PV Watts could not locate a dataset station within the search radius'
+                        radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius") or 0
+                        if radius > 0:
+                            message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                        raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising error: " + exc_value.args[0])
+        log.error("Scenario.py raising error: " + str(exc_value.args[0]))
         raise UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task=self.name, run_uuid=run_uuid,
                               user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
