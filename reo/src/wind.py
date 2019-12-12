@@ -199,6 +199,7 @@ class WindSAMSDK:
 
         # If we need to download the resource data
         elif file_resource_full is None or not self.file_downloaded:
+            # TODO: check input_files for previously downloaded wind resource file
             from reo.src.wind_resource import get_wind_resource_developer_api
 
             # evaluate hub height, determine what heights of resource data are required
@@ -241,7 +242,7 @@ class WindSAMSDK:
 
             # combine into one file to pass to SAM
             if len(heights) > 1:
-                self.file_downloaded = combine_wind_files(file_resource_heights, file_resource_full)
+                self.file_downloaded = combine_wind_files(file_resource_heights, file_resource_full, path_inputs)
 
         self.file_resource_full = file_resource_full
         self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 

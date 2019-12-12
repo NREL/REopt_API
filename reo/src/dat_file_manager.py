@@ -1,4 +1,3 @@
-import os
 import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
@@ -22,7 +21,7 @@ class DatFileManager:
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
 
-    def __init__(self, run_id, paths, n_timesteps=8760):
+    def __init__(self, run_id, n_timesteps=8760):
         self.pv = None
         self.pvnm = None
         self.wind = None
@@ -48,12 +47,8 @@ class DatFileManager:
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
 
         self.run_id = run_id
-        self.paths = paths
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
-
-    def get_paths(self):
-        return self.paths
 
     def add_load(self, load):
         #  fill in W, X, S bins
@@ -77,6 +72,7 @@ class DatFileManager:
             self.bau_techs = tmp_tech+self.bau_techs
 
     def add_wind(self, wind):
+        junk = wind.prod_factor  # avoids redundant PVWatts call for pvnm
         self.wind = wind
         self.windnm = copy.deepcopy(wind)
         self.windnm.nmil_regime = 'NMtoIL'

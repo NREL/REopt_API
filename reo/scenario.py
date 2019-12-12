@@ -1,5 +1,6 @@
 import traceback
 import sys
+import os
 from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
@@ -11,7 +12,6 @@ from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
-from reo.src.paths import Paths
 
 
 class ScenarioTask(Task):
@@ -58,14 +58,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     self.profiler = Profiler()
-    paths = vars(Paths(run_uuid=run_uuid))
+    inputs_path = os.path.join(os.getcwd(), "input_files")
     self.run_uuid = run_uuid
     self.data = data
 
     try:
         inputs_dict = data['inputs']['Scenario']
-        dfm = DatFileManager(run_id=run_uuid, paths=paths,
-                             n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+        dfm = DatFileManager(run_id=run_uuid, n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])
@@ -178,7 +177,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  **inputs_dict['Site']['ElectricTariff'])
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-            wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
+            wind = Wind(dfm=dfm, inputs_path=inputs_path, latitude=inputs_dict['Site'].get('latitude'),
                         longitude=inputs_dict['Site'].get('longitude'),
                         time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
                         run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
