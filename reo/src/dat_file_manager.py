@@ -160,6 +160,7 @@ class DatFileManager:
             self.bau_techs = tmp_tech+self.bau_techs
 
     def add_wind(self, wind):
+        junk = wind.prod_factor  # avoids redundant WindToolkit call for windnm
         self.wind = wind
         self.windnm = copy.deepcopy(wind)
         self.windnm.nmil_regime = 'NMtoIL'
