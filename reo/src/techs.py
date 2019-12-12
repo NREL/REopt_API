@@ -2,8 +2,6 @@ from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
-from reo.src.ventyx import Ventyx
-
 
 
 class Tech(object):
