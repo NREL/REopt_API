@@ -1,7 +1,6 @@
-from __future__ import absolute_import, unicode_literals
-import json
-import os
+import traceback
 import sys
+import os
 from reo.log_levels import log
 from reo.src.dat_file_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
@@ -13,7 +12,6 @@ from reo.src.techs import PV, Util, Wind, Generator
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
-from reo.src.paths import Paths
 
 
 class ScenarioTask(Task):
@@ -39,8 +37,10 @@ class ScenarioTask(Task):
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-
-        self.data["messages"]["error"] = exc.message
+            msg = exc.message
+        else:
+            msg = exc.args[0]
+        self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -58,19 +58,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     self.profiler = Profiler()
-    paths = vars(Paths(run_uuid=run_uuid))
+    inputs_path = os.path.join(os.getcwd(), "input_files")
     self.run_uuid = run_uuid
     self.data = data
 
-    # Log POST request
-    file_post_input = os.path.join(paths['inputs'], "POST.json")
-    with open(file_post_input, 'w') as file_post:
-        json.dump(raw_post, file_post)
-
     try:
         inputs_dict = data['inputs']['Scenario']
-        dfm = DatFileManager(run_id=run_uuid, paths=paths,
-                             n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
+        dfm = DatFileManager(run_id=run_uuid, n_timesteps=int(inputs_dict['time_steps_per_hour'] * 8760))
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])
@@ -173,7 +167,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
         except Exception as lp_error:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             log.error("Scenario.py raising error: " + exc_value.args[0])
-            lp_error = LoadProfileError(exc_value.args[0], exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+            lp_error = LoadProfileError(exc_value.args[0], traceback.format_tb(exc_traceback), self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
             lp_error.save_to_db()
             raise lp_error
 
@@ -183,8 +177,10 @@ def setup_scenario(self, run_uuid, data, raw_post):
                                  **inputs_dict['Site']['ElectricTariff'])
 
         if inputs_dict["Site"]["Wind"]["max_kw"] > 0:
-            wind = Wind(dfm=dfm, latitude=inputs_dict['Site'].get('latitude'),
-                        longitude=inputs_dict['Site'].get('longitude'),time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
+            wind = Wind(dfm=dfm, inputs_path=inputs_path, latitude=inputs_dict['Site'].get('latitude'),
+                        longitude=inputs_dict['Site'].get('longitude'),
+                        time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
+                        run_uuid=run_uuid, **inputs_dict["Site"]["Wind"])
 
             # must propogate these changes back to database for proforma
             data['inputs']['Scenario']["Site"]["Wind"]["installed_cost_us_dollars_per_kw"] = wind.installed_cost_us_dollars_per_kw
@@ -201,10 +197,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                     )
 
-        dfm.add_net_metering(
-            net_metering_limit=inputs_dict['Site']['ElectricTariff'].get("net_metering_limit_kw"),
-            interconnection_limit=inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
-        )
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
 
@@ -227,17 +219,18 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 raise e
 
         if hasattr(e, 'args'):
-            if len(e.args)>0:
+            if len(e.args) > 0:
                 if e.args[0] == 'Wind Dataset Timed Out':
                     raise WindDownloadError(task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))
-                if e.args[0].startswith('PVWatts'):
-                    message = 'PV Watts could not locate a dataset station within the search radius'
-                    radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius") or 0
-                    if radius > 0:
-                        message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
-                    raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
+                if isinstance(e.args[0], str):
+                    if e.args[0].startswith('PVWatts'):
+                        message = 'PV Watts could not locate a dataset station within the search radius'
+                        radius =  data['inputs']['Scenario']["Site"]["PV"].get("radius") or 0
+                        if radius > 0:
+                            message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                        raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        log.error("Scenario.py raising error: " + exc_value.args[0])
-        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=run_uuid,
+        log.error("Scenario.py raising error: " + str(exc_value.args[0]))
+        raise UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task=self.name, run_uuid=run_uuid,
                               user_uuid=self.data['inputs']['Scenario'].get('user_uuid'))

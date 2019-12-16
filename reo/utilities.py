@@ -1,8 +1,5 @@
-import os
-from .log_levels import log
 from numpy import npv
 from math import log10
-import types
 
 
 class API_Error:
@@ -24,12 +21,6 @@ class API_Error:
     @property
     def response(self):
         return self.errors
-
-
-def check_directory_created(path):
-    if not os.path.exists(path):
-        log.error("Directory: " + path + " failed to create")
-        raise RuntimeError('utilties', "Directory failed to create: " + path)
 
 
 def slope(x1, y1, x2, y2):

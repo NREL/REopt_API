@@ -1,4 +1,6 @@
 import julia
+import sys
+import traceback
 from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
@@ -56,8 +58,9 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         j.include("reo/src/reopt.jl")
         results = j.reopt(data, reopt_inputs)
     except Exception as e:
-        # TODO: exception handling
-        raise e
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
+        raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
     else:
         status = results["status"]
         logger.info("REopt run successful. Status {}".format(status))

@@ -1,5 +1,5 @@
-from __future__ import absolute_import, unicode_literals
 import sys
+import traceback
 from reo.nested_outputs import nested_output_definitions
 from reo.log_levels import log
 from celery import shared_task, Task
@@ -149,7 +149,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
                     self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dfm["LoadProfile"].get("critical_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.results_dict.get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dfm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dfm["LoadProfile"].get("resilience_check_flag")
                     self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dfm["LoadProfile"].get("sustain_hours")
                 elif name == "Financial":
@@ -257,9 +257,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_cost_series_us_dollars_per_kwh"] = self.results_dict.get('energy_cost')
+                        "year_one_energy_cost_series_us_dollars_per_kwh"] = \
+                        self.dfm.get('year_one_energy_cost_series_us_dollars_per_kwh')
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_demand_cost_series_us_dollars_per_kw"] = self.results_dict.get('demand_cost')
+                        "year_one_demand_cost_series_us_dollars_per_kw"] = \
+                        self.dfm.get('year_one_demand_cost_series_us_dollars_per_kw')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get('GridToLoad')
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -357,5 +359,5 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         log.info("Results.py raising the error: {}, detail: {}".format(exc_type, exc_value))
-        raise UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=self.run_uuid,
+        raise UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task=self.name, run_uuid=self.run_uuid,
                               user_uuid=self.user_uuid)

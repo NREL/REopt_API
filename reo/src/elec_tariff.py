@@ -6,7 +6,7 @@ from reo.log_levels import log
 class ElecTariff(object):
 
     def __init__(self, dfm, run_id, wholesale_rate_us_dollars_per_kwh, wholesale_rate_above_site_load_us_dollars_per_kwh,
-                 net_metering_limit_kw, load_year, time_steps_per_hour,
+                 net_metering_limit_kw, interconnection_limit_kw, load_year, time_steps_per_hour,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
                  blended_annual_demand_charges_us_dollars_per_kw=None,
@@ -57,6 +57,8 @@ class ElecTariff(object):
         self.utility_name = re.sub(r'\W+', '', str(urdb_response.get('utility')))
         self.rate_name = re.sub(r'\W+', '', str(urdb_response.get('name')))
         self.urdb_response = urdb_response
+        self.net_metering_limit_kw = net_metering_limit_kw
+        self.interconnection_limit_kw = interconnection_limit_kw
 
         dfm.add_elec_tariff(self)
 

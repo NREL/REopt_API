@@ -2,8 +2,6 @@ from reo.src.dat_file_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
 from reo.src.incentives import Incentives
-from reo.src.ventyx import Ventyx
-
 
 
 class Tech(object):
@@ -153,10 +151,10 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, acres_per_kw=.03, time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
-        self.path_inputs = dfm.get_paths()['inputs']
+        self.path_inputs = inputs_path
         self.nmil_regime = 'BelowNM'
         self.reopt_class = 'WIND'
         self.acres_per_kw = acres_per_kw
@@ -173,7 +171,6 @@ class Wind(Tech):
         if kwargs.get('installed_cost_us_dollars_per_kw') == 3013:
             self.installed_cost_us_dollars_per_kw = Wind.size_class_to_installed_cost[kwargs.get('size_class')]
 
-        self.ventyx = None
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
@@ -207,11 +204,6 @@ class Wind(Tech):
             sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
                              time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
             self.sam_prod_factor = sam.wind_prod_factor()
-
-        # below "prod factor" was tested in desktop to validate API with wind, perhaps integrate into a test
-        if self.ventyx is None:
-            self.ventyx = Ventyx()
-        # return self.ventyx.wind_prod_factor
         return self.sam_prod_factor
 
 

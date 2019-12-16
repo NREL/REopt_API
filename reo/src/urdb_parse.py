@@ -1,4 +1,3 @@
-import json
 import os
 import operator
 import calendar
@@ -118,7 +117,7 @@ class UrdbParse:
 
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, paths, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
+    def __init__(self, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
 
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
@@ -147,13 +146,6 @@ class UrdbParse:
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
-        self.file_summary = os.path.join(paths['utility'], 'Summary.csv')
-        self.file_energy_summary = os.path.join(paths['outputs'], "energy_cost.txt")
-        self.file_demand_summary = os.path.join(paths['outputs'], "demand_cost.txt")
-        self.file_energy_summary_bau = os.path.join(paths['outputs_bau'], "energy_cost.txt")
-        self.file_demand_summary_bau = os.path.join(paths['outputs_bau'], "demand_cost.txt")
-        self.file_urdb_json = os.path.join(paths['utility'], 'urdb.json')
-        
         self.energy_rates_summary = []
         self.demand_rates_summary = []
         self.energy_costs = []
@@ -194,7 +186,6 @@ class UrdbParse:
         self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
 
         self.prepare_fixed_charges(current_rate)
-        self.write_files()
         
         return self.reopt_args
 
@@ -455,7 +446,6 @@ class UrdbParse:
         self.prepare_demand_ratchets(current_rate)
         self.prepare_demand_rate_summary()
 
-
     def prepare_demand_ratchets(self, current_rate):
 
         demand_lookback_months = list()
@@ -602,46 +592,6 @@ class UrdbParse:
             self.reopt_args.annual_min_charge = float(current_rate.annualmincharge)
         if not isinstance(current_rate.minmonthlycharge, list):
             self.reopt_args.min_monthly_charge = float(current_rate.minmonthlycharge)
-
-    def write_files(self):
-
-        # summary
-        file_path = open(self.file_summary, 'w')
-        self.write_summary(file_path)
-        file_path.close()
-
-        # hourly cost summary
-        self.write_energy_cost(self.file_energy_summary)
-        self.write_demand_cost(self.file_demand_summary)
-        self.write_energy_cost(self.file_energy_summary_bau)
-        self.write_demand_cost(self.file_demand_summary_bau)
-        self.write_urdb_json(self.file_urdb_json)
-
-    def write_urdb_json(self, file_name):
-        with open(file_name, 'w') as outfile:
-            json.dump(self.urdb_rate, outfile)
-
-    def write_summary(self, file_name):
-        file_name.write('Fixed Demand,TOU Demand,Demand Tiers,TOU Energy,Energy Tiers,Max Demand Rate ($/kW)\n')
-        file_name.write(self.has_fixed_demand + ',' +
-                        self.has_tou_demand + ',' +
-                        self.has_demand_tiers + ',' +
-                        self.has_tou_energy + ',' +
-                        self.has_energy_tiers + ',' +
-                        str(self.max_demand_rate)
-                        )
-
-    def write_energy_cost(self, file_path):
-
-        with open(file_path, 'w') as f:
-            for v in self.energy_rates_summary:
-                f.write(str(v)+'\n')
-
-    def write_demand_cost(self, file_path):
-
-        with open(file_path, 'w') as f:
-            for v in self.demand_rates_summary:
-                f.write(str(v)+'\n')
 
     def get_hours_in_month(self, month):
 
