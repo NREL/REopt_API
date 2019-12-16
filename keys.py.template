@@ -8,8 +8,10 @@ ashrae_tmy_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
 
 secret_key_='secret_key_test'
 
+dev_database_host = 'localhost'
+dev_database_name = 'reopt'
 dev_user = 'reopt_api'
-dev_user_password = 'password'
+dev_user_password = 'reopt'
 dev_redis_password = 'password'
 
 urdb_error_team_emails_test = ['ted.kwasnik@nrel.gov']
