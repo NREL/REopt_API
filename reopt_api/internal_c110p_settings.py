@@ -16,8 +16,6 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 import django
 
-
-URDB_NOTIFICATION_EMAIL_LIST = urdb_error_team_emails_test
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
