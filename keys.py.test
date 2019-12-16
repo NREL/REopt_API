@@ -12,5 +12,3 @@ dev_user = 'reopt_api'
 dev_user_password = 'password'
 dev_redis_password = 'password'
 
-urdb_error_team_emails_test = ['ted.kwasnik@nrel.gov']
-urdb_error_team_emails = ['ted.kwasnik@nrel.gov','Jay.Huggins@nrel.gov']
