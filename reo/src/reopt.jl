@@ -12,7 +12,7 @@ const MOI = MathOptInterface
 include("utils.jl")
 
 
-function reopt(data, model_inputs)
+function reopt(reo_model, data, model_inputs)
 
           #println("Tech: ", typeof(model_inputs["Tech"]))
           #println("Load: ", typeof(model_inputs["Load"]))
@@ -151,11 +151,14 @@ function reopt(data, model_inputs)
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
-    return reopt_run(MAXTIME, p)
+	SOLVER = data["inputs"]["Scenario"]["solver"]
+
+    return reopt_run(reo_model, MAXTIME, SOLVER, p)
 end
 
-function reopt_run(MAXTIME::Int64, p::Parameter)
-    REopt = Model(with_optimizer(Cbc.Optimizer, seconds=295.0, loglevel=3, allowableGap=1e-2))
+function reopt_run(reo_model, MAXTIME::Int64, SOLVER::String, p::Parameter)
+
+	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
@@ -229,7 +232,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
             end
         end
     end
-    
+
     ## Fuel Tracking Constraints
     @constraint(REopt, [t in p.Tech, fb in p.FuelBin],
                 sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * p.FuelBurnRateM[t,LD,fb] * p.TimeStepScaling
@@ -243,24 +246,24 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                     for ts in p.TimeStep, LD in p.Load, s in p.Seg) +
                 sum(binTechIsOnInTS[t,ts] * p.FuelBurnRateB[t,LD,fb] * p.TimeStepScaling * p.FuelRate[t,fb,ts] * p.pwf_e
                     for ts in p.TimeStep, LD in p.Load) == dvFuelCost[t,fb])
-    
+
     ### Switch Constraints
     @constraint(REopt, [t in p.Tech, ts in p.TimeStep],
                 sum(p.ProdFactor[t,LD,ts] * dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, s in p.Seg, fb in p.FuelBin) <=
                 p.MaxSize[t] * 100 * binTechIsOnInTS[t,ts])
     @constraint(REopt, [t in p.Tech, ts in p.TimeStep],
                 sum(p.MinTurndown[t] * dvSystemSize[t,s] for s in p.Seg) -
-      		    sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, s in p.Seg, fb in p.FuelBin) <= 
+      		    sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, s in p.Seg, fb in p.FuelBin) <=
                 p.MaxSize[t] * (1 - binTechIsOnInTS[t, ts]))
-    
+
     ### Boundary Conditions and Size Limits
     @constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH / p.TimeStepScaling)
     @constraint(REopt, p.MinStorageSizeKWH <= dvStorageSizeKWH)
     @constraint(REopt, dvStorageSizeKWH <=  p.MaxStorageSizeKWH)
     @constraint(REopt, p.MinStorageSizeKW <= dvStorageSizeKW)
     @constraint(REopt, dvStorageSizeKW <=  p.MaxStorageSizeKW)
-    
-    
+
+
     ### Battery Operations
     @constraint(REopt, [ts in p.TimeStep],
     	        dvElecToStor[ts] == sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * p.EtaStorIn[t,LD]
@@ -271,7 +274,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH / p.TimeStepScaling)
-    
+
     ### Operational Nuance
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStorageSizeKW >=  dvElecToStor[ts])
@@ -295,14 +298,14 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                 sum(binSegChosen[t,s] for s in p.Seg) == 1)
     @constraint(REopt, [b in p.TechClass],
                 sum(binSingleBasicTech[t,b] for t in p.Tech) <= 1)
-    
-    
+
+
     ### Capital Cost Constraints (NEED Had to modify b/c AxisArrays doesn't do well with range 0:20
     @constraint(REopt, [t in p.Tech, s in p.Seg],
                 dvSystemSize[t,s] <= p.CapCostX[t,s+1] * binSegChosen[t,s])
     @constraint(REopt, [t in p.Tech, s in p.Seg],
                 dvSystemSize[t,s] >= p.CapCostX[t,s] * binSegChosen[t,s])
-    
+
     ### Production Incentive Cap Module
     @constraint(REopt, [t in p.Tech],
                 dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
@@ -312,7 +315,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                                        for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @constraint(REopt, [t in p.Tech, LD in p.Load,ts in p.TimeStep],
                 sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
-    
+
     ### System Size and Production Constraints
     @constraint(REopt, [t in p.Tech, s in p.Seg],
                 dvSystemSize[t,s] <=  p.MaxSize[t])
@@ -332,7 +335,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [t in p.Tech, s in p.Seg, ts in p.TimeStep],
                 sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, fb in p.FuelBin) <= dvSystemSize[t, s])
 
-   
+
     for LD in p.Load
         if LD != "1R" && LD != "1S"
             @constraint(REopt, [ts in p.TimeStep],
@@ -344,20 +347,20 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [LD in ["1R"], ts in p.TimeStep],
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
-    
+
     ###  Net Meter Module
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
-    
+
     @constraint(REopt, [n in p.NMILRegime],
                 sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
                     for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
-    
+
     ###  Rate Variable Definitions
     @constraint(REopt, [t in ["UTIL1"], LD in p.Load, fb in p.FuelBin, ts in p.TimeStep],
     	        sum(dvRatedProd[t,LD,ts,s,fb] for s in p.Seg) == sum(dvGrid[LD,ts,db,fb,dbm] for db in p.DemandBin, dbm in p.DemandMonthsBin))
     @constraint(REopt, [t in ["UTIL1"], fb in p.FuelBin, m in p.Month],
     	        UsageInTier[m, fb] ==  sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling for LD in p.Load, ts in p.TimeStepRatchetsMonth[m], s in p.Seg))
-    
+
     ### Fuel Bins
     @constraint(REopt, [fb in p.FuelBin, m in p.Month],
                 UsageInTier[m, fb] <= binUsageTier[m, fb] * p.MaxUsageInTier[fb])
@@ -365,7 +368,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
     @constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
     	        binUsageTier[m, fb] * p.MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0)
-    
+
     ### Peak Demand Energy Rates
     for db in p.DemandBin
         @constraint(REopt, [r in p.Ratchets],
@@ -378,14 +381,14 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
         end
     end
 
-    
+
     if !isempty(p.TimeStepRatchets)
         @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
                     dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, fb in p.FuelBin, dbm in p.DemandMonthsBin))
         @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
                     dvPeakDemandE[r,db] >= p.DemandLookbackPercent * dvPeakDemandELookback)
     end
-    
+
     ### Peak Demand Energy Rachets
     for dbm in p.DemandMonthsBin
         @constraint(REopt, [m in p.Month],
@@ -401,14 +404,14 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     	        dvPeakDemandEMonth[m, dbm] >=  sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, db in p.DemandBin, fb in p.FuelBin))
     @constraint(REopt, [LD in p.Load, lbm in p.DemandLookbackMonths],
                 dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in p.DemandMonthsBin))
-    
+
     #= Annual energy produced by Tech's' (except UTIL) used to meet the 1R, 1W, and 1S loads must
     be less than the annual site load (in kWh) =#
     TechIsNotGridSet = filter(t->p.TechIsGrid[t] == 0, p.Tech)
     @constraint(REopt, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *  p.TimeStepScaling
                            for t in TechIsNotGridSet, LD in ["1R", "1W", "1S"],
                            ts in p.TimeStep, s in p.Seg, fb in p.FuelBin) <=  p.AnnualElecLoad)
-    
+
     ###
     #Added, but has awful bounds
     @constraint(REopt, [t in p.Tech, b in p.TechClass],
@@ -421,12 +424,12 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                             LD in ["1R", "1W", "1X", "1S"]) ==  dvSystemSize[t, s])
         end
     end
-    
-    
+
+
     ### Parts of Objective
 
     ProdLoad = ["1R", "1W", "1X", "1S"]
-    
+
     PVTechs = filter(t->p.TechToTechClassMatrix[t, "PV"] == 1, p.Tech)
     @expression(REopt, Year1PvProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling
                                             for t in PVTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
@@ -440,7 +443,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                                               for t in WindTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
 
     GeneratorTechs = filter(t->p.TechToTechClassMatrix[t, "GENERATOR"] == 1, p.Tech)
-    @expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling 
+    @expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling
                        for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
     @expression(REopt, AverageGenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
                        for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin, ts in p.TimeStep, LD in ProdLoad))
@@ -451,17 +454,17 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @expression(REopt, TotalPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in p.Tech, s in p.Seg))
 
     if !isempty(GeneratorTechs)
-        @expression(REopt, TotalPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
+        @expression(REopt, TotalPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
                                                     for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     else
         @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
     end
 
     @expression(REopt, GenPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in GeneratorTechs, s in p.Seg))
-    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om 
+    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
                                               for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
 
-    
+
     ### Aggregates of definitions
     @expression(REopt, TotalEnergyCharges, sum(dvFuelCost[t,fb]
                                                  for t in p.Tech, fb in p.FuelBin))
@@ -473,13 +476,13 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                                                 for m in p.Month, dbm in p.DemandMonthsBin))
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     @expression(REopt, TotalFixedCharges, p.FixedMonthlyCharge * 12 * p.pwf_e)
-    
+
     ### Utility and Taxable Costs
-    @expression(REopt, TotalEnergyExports, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * 
+    @expression(REopt, TotalEnergyExports, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *
                                                  p.ExportRates[t,LD,ts] * p.pwf_e for t in p.Tech, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
-    
-    
+
+
     ### MinChargeAdder
     if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
         TotalMinCharge = p.AnnualMinCharge * p.pwf_e
@@ -495,11 +498,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     #= Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.001*MinChargeAdder is added back into LCC when writing to results.  =#
-    
+
     # Define Rates
     r_tax_fraction_owner = (1 - p.r_tax_owner)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
-    
+
     ### Objective Function
     @expression(REopt, REcosts,
 		# Capital Costs
@@ -517,7 +520,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 		# Subtract Incentives, which are taxable
 		TotalProductionIncentive * r_tax_fraction_owner
 	)
-    
+
     if Obj == 1
 		@objective(REopt, Min, REcosts)
 	elseif Obj == 2  # Keep SOC high
@@ -528,7 +531,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     ##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-    @expression(REopt, ExportedElecPV, 
+    @expression(REopt, ExportedElecPV,
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
                     for t in PVTechs, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @expression(REopt, ExportedElecWIND,
@@ -542,11 +545,11 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     @expression(REopt, ExportBenefitYr1,
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.ExportRates[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-    @expression(REopt, Year1UtilityEnergy, 
-                sum(dvRatedProd["UTIL1",LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor["UTIL1", LD, ts] 
+    @expression(REopt, Year1UtilityEnergy,
+                sum(dvRatedProd["UTIL1",LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor["UTIL1", LD, ts]
                     for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-    
-    
+
+
     ojv = round(JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
@@ -555,26 +558,26 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
     Year1FixedCharges = TotalFixedCharges / p.pwf_e
     Year1MinCharges = MinChargeAdder / p.pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
-    
+
     results = Dict{String, Any}("lcc" => ojv)
-    
+
     results["batt_kwh"] = value(dvStorageSizeKWH)
     results["batt_kw"] = value(dvStorageSizeKW)
-    
+
     if results["batt_kwh"] != 0
     	@expression(REopt, soc[ts in p.TimeStep], dvStoredEnergy[ts] / results["batt_kwh"])
         results["year_one_soc_series_pct"] = value.(soc)
     else
         results["year_one_soc_series_pct"] = []
     end
-    
+
     if !isempty(PVTechs)
         results["PV"] = Dict()
         results["pv_kw"] = round(value(sum(dvSystemSize[t,s] for s in p.Seg, t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[t in PVTechs, ts in p.TimeStep],
                     sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t] for s in p.Seg, fb in p.FuelBin))
     end
-    
+
     WindTechs = filter(t->p.TechToTechClassMatrix[t, "WIND"] == 1, p.Tech)
     if !isempty(WindTechs)
         results["Wind"] = Dict()
@@ -588,7 +591,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 	results["gen_total_fuel_cost"] = 0
 	results["gen_year_one_fuel_cost"] = 0
 	results["gen_year_one_variable_om_costs"] = 0
-        
+
     GeneratorTechs = filter(t->p.TechToTechClassMatrix[t, "GENERATOR"] == 1, p.Tech)
     if !isempty(GeneratorTechs)
     	if value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs)) > 0
@@ -601,8 +604,8 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om, digits=0)
 		end
     end
-   
-    net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) + 
+
+    net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) +
                                 value(TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
                                 value(TotalGenFuelCharges) * r_tax_fraction_offtaker
 
@@ -633,7 +636,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
                          "average_yearly_gen_energy_produced" => round(value(AverageGenProd), digits=0),
                          "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=0),
 						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
-    
+
     @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsed[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
     results["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
 
@@ -704,7 +707,7 @@ function reopt_run(MAXTIME::Int64, p::Parameter)
 	end
 
     results["Load"] = p.LoadProfile["1R", :]
-    
+
 	if termination_status(REopt) == MOI.TIME_LIMIT
 		status = "timed-out"
     elseif termination_status(REopt) == MOI.OPTIMAL

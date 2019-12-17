@@ -40,5 +40,6 @@ export PATH
 export DYLD_LIBRARY_PATH
 export CLASSPATH
 export APP_ENV="local"
+export SOLVER="xpress"
 
 #==============================================================================

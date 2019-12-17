@@ -26,7 +26,10 @@ services:
     container_name: reopt
     build:
       context: .
-      dockerfile: Dockerfile-xpress
+      dockerfile: Dockerfile.xpress
+      args:
+        - oom_kill_disable=true
+    image: reopt-image
     command: >
       bash -c "python manage.py migrate
       && python manage.py runserver 0.0.0.0:8000"
@@ -46,17 +49,14 @@ services:
 
   celery:
     container_name: celery
-    build:
-      context: .
-      dockerfile: Dockerfile-xpress
-      args:
-        - oom_kill_disable=true
+    image: reopt-image
     command: celery -A reopt_api worker -l info
     environment:
       - APP_ENV=local
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
+      - SOLVER=xpress
     volumes:
       - .:/opt/reopt
     depends_on:
