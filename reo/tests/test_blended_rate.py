@@ -21,6 +21,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
             "webtool_uuid": None,
             "description": "name_with_underscore",
             "timeout_seconds": 295,
+            "solver": "Cbc",
             "Site": {
               "PV": {
                 "pbi_years": 1.0,

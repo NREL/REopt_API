@@ -55,8 +55,15 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
+        if data['inputs']['Scenario']['solver'] == "Xpress":
+            j.include("reo/src/reopt_xpress_model.jl")
+            model = j.reopt_model()
+        else:
+            j.include("reo/src/reopt_cbc_model.jl")
+            model = j.reopt_model()
+
         j.include("reo/src/reopt.jl")
-        results = j.reopt(data, reopt_inputs)
+        results = j.reopt(model, data, reopt_inputs)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))

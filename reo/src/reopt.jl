@@ -10,12 +10,8 @@ import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
 
-#SOLVER = data["inputs"]["Scenario"]["solver"]
-using Xpress
-using Cbc
 
-
-function reopt(data, model_inputs)
+function reopt(reo_model, data, model_inputs)
 
           #println("Tech: ", typeof(model_inputs["Tech"]))
           #println("Load: ", typeof(model_inputs["Load"]))
@@ -156,19 +152,13 @@ function reopt(data, model_inputs)
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 	SOLVER = data["inputs"]["Scenario"]["solver"]
-    return reopt_run(MAXTIME, SOLVER, p)
+
+    return reopt_run(reo_model, MAXTIME, SOLVER, p)
 end
 
-function reopt_run(MAXTIME::Int64, SOLVER::String, p::Parameter)
+function reopt_run(reo_model, MAXTIME::Int64, SOLVER::String, p::Parameter)
    
-    if SOLVER=="Xpress"
-    	REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
-	elseif SOLVER=="Cbc"
-		REopt = Model(with_optimizer(Cbc.Optimizer, logLevel=1))
-	else
-		print("incorrect optimizer provided")
-	end
-
+	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
