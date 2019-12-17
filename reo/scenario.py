@@ -2,7 +2,7 @@ import traceback
 import sys
 import os
 from reo.log_levels import log
-from reo.src.dat_file_manager import DatFileManager
+from reo.src.data_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
 from reo.src.profiler import Profiler

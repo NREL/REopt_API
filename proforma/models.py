@@ -4,7 +4,7 @@ import os
 import datetime, tzlocal
 from openpyxl import load_workbook
 from reo.models import ScenarioModel, SiteModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
-from reo.src.dat_file_manager import big_number
+from reo.src.data_manager import big_number
 from reo.log_levels import log
 
 class ProForma(models.Model):
