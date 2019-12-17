@@ -62,6 +62,11 @@ nested_input_definitions = {
       "type": "str",
       "description": "An optional user defined description to describe the scenario and run"
     },
+    "solver": {
+      "type": "str",
+      "default": "Xpress",
+      "description": "Solver options. Currently supports Xpress (needs license) and GLPK (open-source)"
+    },
     "time_steps_per_hour": {
       "type": "int",
       "restrict_to": [1, 2, 4],

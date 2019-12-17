@@ -54,6 +54,7 @@ class ScenarioModel(models.Model):
     job_type = models.TextField(null=True, blank=True)
 
     description = models.TextField(null=True, blank=True, default='')
+    solver = models.TextField(default='Xpress')
     status = models.TextField(null=True, blank=True)
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)

@@ -7,6 +7,7 @@ reopt:
 
 using JuMP
 using Xpress
+using GLPK
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
@@ -81,6 +82,7 @@ function reopt(data, model_inputs)
           #println("NumRatchets: ", typeof(model_inputs["NumRatchets"]))
           #println("TimeStepScaling: ", typeof(model_inputs["TimeStepScaling"]))
           #println("OMcostPerUnitProd: ", typeof(model_inputs["OMcostPerUnitProd"]))
+		  println("SolverName: ", typeof(data["inputs"]["Scenario"]["solver"]))
 
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
@@ -151,12 +153,20 @@ function reopt(data, model_inputs)
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
-    return reopt_run(MAXTIME, p)
+	SOLVER = data["inputs"]["Scenario"]["solver"]
+    return reopt_run(MAXTIME, SOLVER, p)
 end
 
-function reopt_run(MAXTIME::Int64, p::Parameter)
+function reopt_run(MAXTIME::Int64, SOLVER::String, p::Parameter)
    
-    REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
+    if SOLVER=="Xpress"
+    	REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
+	elseif SOLVER=="GLPK"
+		REopt = direct_model(GLPK.Optimizer(MAXTIME=-MAXTIME))
+	else
+		print("incorrect optimizer provided")
+	end
+
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
