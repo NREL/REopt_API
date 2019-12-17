@@ -5,8 +5,7 @@ Below are guidelines for making contributions to REopt Lite.
 
 
 ### I don't want to read this whole thing I just have a question!!!
-Please don't create an "issue" if you have a question. We have a discussion board **here**(TODO add URL).
-
+Please do not create an "issue" if you have a question. We have a discussion board **here**(TODO add URL or change to stackoverflow with "reopt" tag?). You might find answers to general questions on [our web site](https://reopt.nrel.gov/). Finally, if you want to reach out to us ... 
 TODO should we include the following: You can also contact us at reopt@nrel.gov
 
 ## How Can I Contribute?
