@@ -65,7 +65,7 @@ nested_input_definitions = {
     "solver": {
       "type": "str",
       "default": "Xpress",
-      "description": "Solver options. Currently supports Xpress (needs license) and Cbc (open-source)"
+      "description": "Solver options. Currently supports Xpress (needs license) and Cbc (open-source). The inputs are case sensitive"
     },
     "time_steps_per_hour": {
       "type": "int",

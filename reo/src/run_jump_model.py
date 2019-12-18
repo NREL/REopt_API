@@ -56,10 +56,10 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     try:
         j = julia.Julia()
         if data['inputs']['Scenario']['solver'] == "Xpress":
-            j.include("reo/src/reopt_xpress_model.jl")
+            j.include("reo/src/reo_xpress_mdl.jl")
             model = j.reopt_model()
         else:
-            j.include("reo/src/reopt_cbc_model.jl")
+            j.include("reo/src/reo_cbc_mdl.jl")
             model = j.reopt_model()
 
         j.include("reo/src/reopt.jl")
