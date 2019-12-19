@@ -116,6 +116,9 @@ elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
             'NAME': 'reopt',
             'USER': 'reopt',
             'PASSWORD': 'reopt',
+            'OPTIONS': {
+                 'options': '-c search_path=public'
+             },
             'HOST': 'localhost',
             'PORT': '',
         }
