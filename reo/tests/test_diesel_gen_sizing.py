@@ -33,55 +33,6 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
                 tech_to_load = [sum_t + t for sum_t, t in zip(tech_to_load, tech[outage_start:outage_end])]
         return tech_to_load
 
-    def test_generator_sizing_without_existing_diesel_gen(self):
-        """
-        Test scenario with
-        - no existing diesel generator
-        - PV and Wind disabled
-        - Unlimited max storage
-        - generator doesn't sell energy to grid
-        - generator is only allowed to operate during outage hours
-        """
-        nested_data = json.load(open(self.test_post, 'rb'))
-        nested_data['Scenario']['Site']['LoadProfile']['outage_is_major_event'] = True
-        nested_data['Scenario']['Site']['PV']['max_kw'] = 0
-        nested_data['Scenario']['Site']['Generator']['existing_kw'] = 0
-        resp = self.get_response(data=nested_data)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-
-        d_expected = dict()
-        d_expected['lcc'] = 236962.0
-        d_expected['npv'] = -7685.0
-        d_expected['pv_kw'] = 0.0
-        d_expected['batt_kw'] = 0.0
-        d_expected['batt_kwh'] = 0.0
-        d_expected['gen_kw'] = 11.3
-        d_expected['fuel_used_gal'] = 1.52
-        d_expected['microgrid_upgrade_cost_us_dollars'] = 2046.7
-
-        try:
-            check_common_outputs(self, c, d_expected)
-        except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
-            raise
-
-        critical_load = d['outputs']['Scenario']['Site']['LoadProfile']['critical_load_series_kw']
-        generator_to_load = d['outputs']['Scenario']['Site']['Generator']['year_one_to_load_series_kw']
-        storage_to_load = d['outputs']['Scenario']['Site']['Storage']['year_one_to_load_series_kw']
-        outage_start = d['inputs']['Scenario']['Site']['LoadProfile']['outage_start_hour']
-        outage_end = d['inputs']['Scenario']['Site']['LoadProfile']['outage_end_hour']
-
-        # critical load during outage is served by both generator and storage
-        list_to_load = [generator_to_load, storage_to_load]
-        tech_to_load = self.outage_tech_to_load(list_to_load, outage_start, outage_end)
-        for x, y in zip(critical_load[outage_start:outage_end], tech_to_load):
-            self.assertAlmostEquals(x, y, places=3)
-
     def test_generator_sizing_with_existing_diesel_gen(self):
         """
         Test scenario with
