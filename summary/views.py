@@ -158,37 +158,48 @@ def summary(request, user_uuid):
             return response
         
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
-        
+
         #saving time by only calling each table once
-        messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')[0]
-        sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')[0]
-        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')[0]
-        batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')[0]
-        pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
-        winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')[0]
-        gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')[0]
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')[0]
-        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')[0]
+        messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
+        sites = SiteModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','address')
+        loads = LoadProfileModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','outage_start_hour','loads_kw','doe_reference_name')
+        batts = StorageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw','size_kwh')
+        pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
+        tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
+
+        def get_scenario_data(data, run_uuid):
+            if type(data)==dict:
+                if str(data.get('run_uuid')) == str(run_uuid):
+                    return data
+            result = [s for s in data if str(s.get('run_uuid')) == str(run_uuid)]
+            if len(result) > 0:
+                return result
+            return [{}]
 
         for scenario in scenarios:
             results = {}
             
-            message_set = messages.get(scenario.run_uuid,[])
+            message_set = get_scenario_data(messages, scenario.run_uuid)
             if not type(message_set) == list:
                 message_set = [message_set]
-            site = sites.get(scenario.run_uuid)
-            load = loads.get(scenario.run_uuid)
-            batt = batts.get(scenario.run_uuid)
-            pv = pvs.get(scenario.run_uuid)
-            wind = winds.get(scenario.run_uuid)
-            gen = gens.get(scenario.run_uuid)
-            financial = financials.get(scenario.run_uuid)
-            tariff = tariffs.get(scenario.run_uuid)
+            
+            site = get_scenario_data(sites, scenario.run_uuid)[0]
+            load = get_scenario_data(loads, scenario.run_uuid)[0]
+            batt = get_scenario_data(batts, scenario.run_uuid)[0]
+            pv = get_scenario_data(pvs, scenario.run_uuid)[0]
+            wind = get_scenario_data(winds, scenario.run_uuid)[0]
+            gen = get_scenario_data(gens, scenario.run_uuid)[0]
+            financial = get_scenario_data(financials, scenario.run_uuid)[0]
+            tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
             
             # Messages
             results['messages'] = {}
             for message in message_set:
-                results['messages'][message['message_type']] = message['message']
+                if len(message.keys()) > 0:
+                    results['messages'][message.get('message_type') or "type"] = message.get('message') or ""
             
             # Run ID
             results['run_uuid'] = str(scenario.run_uuid)
@@ -211,11 +222,11 @@ def summary(request, user_uuid):
                     results['focus'] = "Financial"
 
                 # Address
-                results['address'] = site['address']
+                results['address'] = site.get('address')
 
                 # Utility Tariff
                 if tariff['urdb_rate_name']:
-                    results['urdb_rate_name'] = tariff['urdb_rate_name']
+                    results['urdb_rate_name'] = tariff.get('urdb_rate_name')
                 else:
                     results['urdb_rate_name'] = "Custom"
 
@@ -223,29 +234,29 @@ def summary(request, user_uuid):
                 if load['loads_kw']:
                     results['doe_reference_name'] = "Custom"
                 else:
-                    results['doe_reference_name'] = load['doe_reference_name']
+                    results['doe_reference_name'] = load.get('doe_reference_name')
 
                 # NPV
-                results['npv_us_dollars'] = financial['npv_us_dollars']
+                results['npv_us_dollars'] = financial.get('npv_us_dollars')
 
                 # DG System Cost
-                results['net_capital_costs'] = financial['net_capital_costs']
+                results['net_capital_costs'] = financial.get('net_capital_costs')
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
-                    tariff['year_one_energy_cost_us_dollars'],
-                    tariff['year_one_demand_cost_us_dollars'],
-                    tariff['year_one_fixed_cost_us_dollars'],
-                    tariff['year_one_min_charge_adder_us_dollars'],
-                    tariff['year_one_bill_us_dollars']
+                    tariff.get('year_one_energy_cost_us_dollars') or 0,
+                    tariff.get('year_one_demand_cost_us_dollars') or 0,
+                    tariff.get('year_one_fixed_cost_us_dollars') or 0,
+                    tariff.get('year_one_min_charge_adder_us_dollars') or 0,
+                    tariff.get('year_one_bill_us_dollars') or 0
                     ]))
                 
                 year_one_costs_bau = sum(filter(None, [
-                    tariff['year_one_energy_cost_bau_us_dollars'],
-                    tariff['year_one_demand_cost_bau_us_dollars'],
-                    tariff['year_one_fixed_cost_bau_us_dollars'],
-                    tariff['year_one_min_charge_adder_bau_us_dollars'],
-                    tariff['year_one_bill_bau_us_dollars']
+                    tariff.get('year_one_energy_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_demand_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_fixed_cost_bau_us_dollars') or 0,
+                    tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
+                    tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
@@ -253,7 +264,7 @@ def summary(request, user_uuid):
                 # PV Size
                 if pv is not None:
                     if pv['max_kw'] > 0:
-                        results['pv_kw'] = pv['size_kw']
+                        results['pv_kw'] = pv.get('size_kw')
                     else:
                         results['pv_kw'] = 'not evaluated'
                 else:
@@ -261,8 +272,8 @@ def summary(request, user_uuid):
 
                 # Wind Size
                 if wind is not None:
-                    if wind.get('max_kw',-1) > 0:
-                        results['wind_kw'] = wind['size_kw']
+                    if wind.get('max_kw') or -1 > 0:
+                        results['wind_kw'] = wind.get('size_kw')
                     else:
                         results['wind_kw'] = 'not evaluated'
                 else:
@@ -270,8 +281,8 @@ def summary(request, user_uuid):
 
                 # Generator Size
                 if gen is not None:
-                    if gen.get('max_kw', -1) > 0:
-                        results['gen_kw'] = gen['size_kw']
+                    if gen.get('max_kw') or -1 > 0:
+                        results['gen_kw'] = gen.get('size_kw')
                     else:
                         results['gen_kw'] = 'not evaluated'
                 else:
@@ -279,9 +290,9 @@ def summary(request, user_uuid):
 
                 # Battery Size
                 if batt is not None:
-                    if batt.get('max_kw',-1) > 0:
-                        results['batt_kw'] = batt['size_kw']
-                        results['batt_kwh'] = batt['size_kwh']
+                    if batt.get('max_kw') or -1 > 0:
+                        results['batt_kw'] = batt.get('size_kw')
+                        results['batt_kwh'] = batt.get('size_kwh')
                     else:
                         results['batt_kw'] = 'not evaluated'
                         results['batt_kwh'] = 'not evaluated'

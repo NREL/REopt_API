@@ -1,14 +1,16 @@
 
 rollbar_access_token = 'test'
 
-pvwatts_api_key = 'lsEanynMGwsxRZ91B9EMxH3wudOmNe9e6vY5Eu27'
-developer_nrel_gov_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
+pvwatts_api_key = 'DEMO_KEY'
+developer_nrel_gov_key = 'DEMO_KEY'
 ashrae_tmy_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
 
 
 secret_key_='secret_key_test'
 
+dev_database_host = 'localhost'
+dev_database_name = 'reopt'
 dev_user = 'reopt_api'
-dev_user_password = 'password'
+dev_user_password = 'reopt'
 dev_redis_password = 'password'
 

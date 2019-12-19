@@ -112,7 +112,6 @@ def remove(request, run_uuid):
         return JsonResponse(resp)
 
 def results(request, run_uuid):
-
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
 
