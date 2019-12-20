@@ -109,3 +109,7 @@ all_data*
 =======
 # CHP results processing
 results_processing/*
+
+# Docker
+docker_setup/solver_install_files/xpress_files
+docker_share/
