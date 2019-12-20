@@ -6,11 +6,11 @@ This repo builds a container hosting the **REopt Lite API**. You will need Docke
 Also note, the **REopt Lite API** is a memory intensive application. In Docker **Preferences**, under the **Advanced** settings tab increase the **Memory** as much as you can before running this server.
 
 ## Installation
-To run the **REopt Lite API** you need to (1) build a container to get all the software loaded onto the container, then (2) run the container. Note there are some additional licensing steps if Xpress is used as the optimization solver. There are two build folders in this directory:
+To run the **REopt Lite API** you need to (1) build a container to get all the software loaded onto the container, then (2) run the container. Note there are some additional licensing steps if Xpress is used as the optimization solver. 
 
 ### XPRESS USERS
 
-You will need to unzip the linux Xpress installation files to a folder ```solver_install_files\xpress_files``` inside the docker build folder before building your container. You should have files like:
+You will need to unzip the linux Xpress installation files to a folder ```solver_install_files\xpress_files``` inside the ```docker_setup```  folder before building your container. You should have files like:
 - install.sh			
 - xp8.0.4_linux_x86_64.tar.gz
 - kalis_license.txt		
@@ -18,13 +18,14 @@ You will need to unzip the linux Xpress installation files to a folder ```solver
 
 #### Steps
 1. Once Docker is installed and running, from the _docker_setup_ folder as the working directory in a terminal window, use the following to build the image:
+	```
 	$ cd docker_setup
 	$ docker build -t reopt:test  --build-arg github_username='<GITHUB USERNAME>' --build-arg github_password='<GITHUB PASSWORD>' --build-arg solver='<SOLVER>' .
-	
+	```
 	*Note* : The . at the end is not a typo and needs to be included preceded by a space. 
 
 	*Also* :  You will need to replace your \<GITHUB USERNAME> and \<GITHUB PASSWORD> above with your github login credentials in a [web encoded string](https://www.w3schools.com/tags/ref_urlencode.asp). For example, if your password contains a '!' replace it with '%21'. 
-	Furthermore, replace the \<SOLVER> text with your solver of choice (unless you are building from ```docker_private``` which uses Xpress by default). Currently, the solver set is limited to the following: 
+	Furthermore, replace the \<SOLVER> text with your solver of choice. Currently, the solver set is limited to the following: 
 	- xpress
 	- glpk
 	 
