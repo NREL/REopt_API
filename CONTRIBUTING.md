@@ -15,6 +15,9 @@ Creating an issue in the github.com repository is the preferred method for repor
 Please see our issue template(TODO create issue template) for more.
 
 #### Suggesting Enhancements
+First, please check the [REopt Lite Development Plan](https://reopt.nrel.gov/development-plans.html) in case your idea is already in the works.
+
+TODO: use issues for suggested enhancements? if so, add template for enhancement issue?
 
 #### Testing
 The REopt API has a built-in test suite. 
