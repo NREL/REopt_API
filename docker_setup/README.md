@@ -41,7 +41,7 @@ You will need to unzip the linux Xpress installation files to a folder ```solver
 	$ cp <path to keys.py> docker_share/keys.py
 	``` 
 
-3. Now, to run the container, from the `reopt_docker` directory as the working directory in a terminal window, activate the docker container with:
+3. Now, to run the container, from the `reopt_api` directory as the working directory in a terminal window, activate the docker container with:
 
 	```
 	$ docker run -v "$(pwd)/docker_share:/share" -p 8001:8000  --restart always --name reoptcontainer --mount source=reoptdb,target=/var/lib/postgresql/9.5/main reopt:test
@@ -54,7 +54,7 @@ You will need to unzip the linux Xpress installation files to a folder ```solver
 
 ### Xpress Solver Licensing
 
-If you are running _docker_private_ or choose 'xpress' as your optimization solver from ```docker_public``` you will need to follow a few more steps to activate your license before the API will work.
+If you choose 'xpress' as your optimization solver you will need to follow a few more steps to activate your license before the API will work.
 #### Additional Steps
 5. In the ```docker_share``` folder you should now see a file ```license_info.txt```. Use the host_id in this file to generate a license file named ```xpauth.xpr```.
 
@@ -86,7 +86,7 @@ $ docker restart -t 0 reoptcontainer
 
 #### Start (terminal window with this repository as the working directory)
 ```
-$ docker run -v "$(pwd)/share:/share" -p 8001:8000  --restart always --name reoptcontainer --mount source=reoptdb,target=/var/lib/postgresql/9.5/main reopt:test
+$ docker run -v "$(pwd)/docker_share:/share" -p 8001:8000  --restart always --name reoptcontainer --mount source=reoptdb,target=/var/lib/postgresql/9.5/main reopt:test
 ```
 
 #### Interactive Commands on Container 
@@ -113,15 +113,3 @@ You can explore the file directory inside the docker container with command line
 ```
 docker exec reoptcontainer ls
 ```
-
-## Modifying REopt Lite API Code
-
-By default when you build a container, git commands are used to pull the most recent version of the **REopt Lite API** code to a folder inside the container called ```\data\github\reopt_api```.
-
-If you intend to use your own version of the **REopt Lite API** code, one method is to overwrite these ```reopt_api``` files inside the container by mounting a directory from the your host onto the docker container in place of its existing API code when starting the container. For example if you copy a version of the **REopt Lite API** code to a ```reopt_api``` folder in this repository, you can use this version of the code by running the container with:
-
-```
-$ docker run -v "$(pwd)/docker_share:/share" -v "$(pwd)/reopt_api:/data/github/reopt_api" -p 8001:8000  --restart always --name reoptcontainer --mount source=reoptdb,target=/var/lib/postgresql/9.5/main reopt:test 
-```
-
-In this way you can use git commands to pull appropriate versions of the code to the host machine, modify the code on the host machine, and then load the new code to the container before it starts the API services. Also, files generated during the operation of the **REopt Lite API** will save to the host machine and be more readily available for you to work with.
