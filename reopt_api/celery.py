@@ -5,7 +5,7 @@ from keys import *
 
 # set the default Django settings module for the 'celery' program.
 raw_env = 'reopt_api.dev_settings'
-redis_host = 'localhost'
+redis_host = os.environ.get('REDIS_HOST', 'localhost')
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', raw_env)
 

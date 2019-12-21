@@ -2,7 +2,15 @@ version: "3"
 
 services:
 
+  redis:
+    container_name: redis
+    image: redis
+    command: redis-server
+    ports:
+      - 6379:6379
+
   db:
+    container_name: db
     image: postgres
     restart: always
     volumes:
@@ -15,18 +23,38 @@ services:
       - 5432:5432
 
   reopt:
+    container_name: reopt
     build: .
-    command: bash -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    command: >
+      bash -c "python manage.py migrate
+      && python manage.py runserver 0.0.0.0:8000"
     environment:
       - APP_ENV=local
       - SQL_HOST=db
       - SQL_PORT=5432
+      - REDIS_HOST=redis
     depends_on:
       - db
+      - redis
     ports:
       - 8000:8000
     volumes:
       - .:/opt/reopt
+
+  celery:
+    container_name: celery
+    build: .
+    command: celery -A reopt_api worker -l info
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - REDIS_HOST=redis
+    volumes:
+      - .:/opt/reopt
+    depends_on:
+      - db
+      - redis
 
 volumes:
   pgdata:
