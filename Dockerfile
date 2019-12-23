@@ -16,7 +16,6 @@ ENV LD_PRELOAD=/usr/src/julia-1.2.0/lib/julia/libstdc++.so.6
 RUN python -c 'import julia; julia.install()'
 RUN julia -e 'import Pkg; \
               Pkg.update(); \
-              ENV["PYTHON"] = "/data/github/reopt_api/env/bin/python"; \
               Pkg.add("Cbc"); \
               Pkg.add("JuMP"); \
               Pkg.add("AxisArrays"); \
