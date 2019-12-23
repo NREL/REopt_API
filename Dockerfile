@@ -3,6 +3,7 @@ FROM python:3-onbuild
 ENV PYTHONDONTWRITEBYTECODE 1
 ADD . /opt/reopt
 ENV APP_ENV=local
+ENV SRC_DIR=/opt/reopt/src
 
 RUN apt update -y && apt install -y coinor-cbc;  # TODO: docker push container with cbc
 
