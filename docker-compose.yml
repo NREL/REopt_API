@@ -1,4 +1,4 @@
-version: "3"
+version: "2"
 
 services:
 
@@ -43,7 +43,10 @@ services:
 
   celery:
     container_name: celery
-    build: .
+    build:
+      context: .
+      args:
+        - oom_kill_disable=true
     command: celery -A reopt_api worker -l info
     environment:
       - APP_ENV=local
