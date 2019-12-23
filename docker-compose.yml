@@ -24,7 +24,9 @@ services:
 
   reopt:
     container_name: reopt
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile-xpress
     command: >
       bash -c "python manage.py migrate
       && python manage.py runserver 0.0.0.0:8000"
@@ -33,6 +35,7 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
+      - SOLVER=xpress
     depends_on:
       - db
       - redis
@@ -45,6 +48,7 @@ services:
     container_name: celery
     build:
       context: .
+      dockerfile: Dockerfile-xpress
       args:
         - oom_kill_disable=true
     command: celery -A reopt_api worker -l info
