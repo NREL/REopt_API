@@ -6,7 +6,7 @@ reopt:
 =#
 
 using JuMP
-using Xpress
+using Cbc
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
@@ -155,8 +155,7 @@ function reopt(data, model_inputs)
 end
 
 function reopt_run(MAXTIME::Int64, p::Parameter)
-   
-    REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME))
+    REopt = Model(with_optimizer(Cbc.Optimizer, seconds=295.0, loglevel=3, allowableGap=1e-2))
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
