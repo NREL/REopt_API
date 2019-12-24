@@ -6,7 +6,7 @@ import pandas as pd
 class Generator():
     def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
         self.kw = diesel_kw
-        self.fuel_available = fuel_available if self.kw > 0 else 0
+        self.fuel_available = fuel_available if (self.kw or 0) > 0 else 0
         self.b = b  # input b: fuel curve intercept
         self.m = m
         self.min_turndown = diesel_min_turndown
@@ -22,7 +22,7 @@ class Generator():
             return 0
 
     def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        if self.gen_avail(n_steps_per_hour) >= self.genmin and gen_output > 0:
+        if self.gen_avail(n_steps_per_hour) >= self.genmin and (gen_output or 0) > 0:
             gen_output = max(self.genmin, min(gen_output, self.gen_avail(n_steps_per_hour)))
             fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
             self.fuel_available -= min(self.fuel_available, fuel_consume)
@@ -34,7 +34,7 @@ class Generator():
 class Battery():
     def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
         self.kw = batt_kw
-        self.size = batt_kwh if self.kw > 0 else 0
+        self.size = batt_kwh if (self.kw or 0) > 0 else 0
         self.soc = soc
         self.roundtrip_efficiency = batt_roundtrip_efficiency
 
@@ -213,7 +213,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 unmatch, gen, batt = load_following(
                     critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
-                if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
+                if (unmatch or 0) > 0 or i == (n_timesteps-1):  # cannot survive
                     r[time_step] = float(i) / float(n_steps_per_hour)
                     break
 
