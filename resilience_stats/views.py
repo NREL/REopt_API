@@ -166,10 +166,10 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                     }
                     kwargs_dict["bau"] = kwargs
 
-                
                 p = {k: pool.apply_async(simulate_outage, tuple(), v) for k, v in kwargs_dict.items()}
                 pool.close()
                 pool.join()
+
                 for k, v in p.items():
                     if k == 'wtch':
                         results.update(v.get())
