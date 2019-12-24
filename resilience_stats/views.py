@@ -171,7 +171,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                 pool.close()
                 pool.join()
                 for k, v in p.items():
-                    if k == 'wtch':                        
+                    if k == 'wtch':
                         results.update(v.get())
                     if k == 'bau':
                         results.update({key+'_bau': val for key, val in v.get().items()})
