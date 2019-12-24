@@ -6,7 +6,6 @@ reopt:
 =#
 
 using JuMP
-using Cbc
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
