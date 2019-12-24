@@ -58,7 +58,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         j = julia.Julia()
         if os.environ.get("SOLVER") == "xpress":
             j.include("reo/src/reopt_xpress_model.jl")
-            model = j.reopt_model()
+            model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
         else:
             j.include("reo/src/reopt_cbc_model.jl")
             model = j.reopt_model()
