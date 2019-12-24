@@ -150,12 +150,11 @@ function reopt(reo_model, data, model_inputs)
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
-	SOLVER = data["inputs"]["Scenario"]["solver"]
 
-    return reopt_run(reo_model, MAXTIME, SOLVER, p)
+    return reopt_run(reo_model, MAXTIME, p)
 end
 
-function reopt_run(reo_model, MAXTIME::Int64, SOLVER::String, p::Parameter)
+function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
