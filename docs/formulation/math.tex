@@ -1,0 +1,590 @@
+%\newpage
+\begin{comment}
+\section{Editing colors}
+Please pick a color for collaboration and making of major edits in the document: 
+\textcolor{blue}{Alex Zolan}
+\textcolor{olive}{Seun Ogunmodede}
+\tcr{Joshua Pearson}
+
+\section{Problem Description}
+\tcr{start with existing REopt material}
+\begin{longtable}{|lll|}
+	\caption{Resource Data}
+	\label{tab:my-table}\\
+	\hline
+	\multicolumn{1}{|l|}{Math}          & \multicolumn{1}{l|}{Description}          & Elements    \\ \hline
+	\endfirsthead
+	%
+	\endhead
+	%
+	\multicolumn{1}{|l|}{$\mathcal{T}$} & \multicolumn{1}{l|}{PV: photovoltaic technology}          & 1 = PV      \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{(Technology)}               & \multicolumn{1}{l|}{PVNM: photovoltaic's operated in a net}    & 2 = PVNM    \\
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{metering configuration}                            &             \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{WIND: wind technology is used}                & 3 = WIND    \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{WINDNM: wind is operated in a net metering}   & 4 = WINDNM  \\
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{configuration}                                 &             \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{UTIL1: eletricity sourced from the grid}    & 5 = UTIL1   \\ \hline
+	&                                                                         &             \\ \hline
+	\multicolumn{1}{|l|}{$\mathcal{D}$} & \multicolumn{1}{l|}{1R: on site demand }                           & 1 = 1R      \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{(Demand Types)}              & \multicolumn{1}{l|}{1W:  electricity sent to the wholesale market} & 2 = 1W      \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{1X: excess generation}                   & 3 = 1X      \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}              & \multicolumn{1}{l|}{1S: electricity in battery storage}      & 4 = 1S      \\ \hline
+	&                                                                         &             \\ \hline
+	\multicolumn{1}{|l|}{$\mathcal{V}$} & \multicolumn{1}{l|}{Below net metering limit regime} & 1 = BelowNM \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{(Net Metering)} & \multicolumn{1}{l|}{Net metering to interconnect limit regime} & 2 = NMtoIL  \\ \cline{2-3} 
+	\multicolumn{1}{|l|}{}  & \multicolumn{1}{l|}{Above interconnect limit regime}  & 3 = AboveIL \\ \hline
+\end{longtable}
+\end{comment}
+\section{Optimization Model (\reoptlitemod)}
+\label{sec:Optimization_Model}
+We define here indices and sets, parameters, and variables, in that order, and then state the objective function and the constraints.
+We choose as our naming convention calligraphic capital letters to represent sets, lower-case letters to represent parameters, and upper-case letters to represent variables; in the latter case, $Z$-variables are binary, and represent design and operational decisions, respectively. $X$-variables represent continuous decisions, e.g., quantities of energy.
+All subscripts denote indices. Names with the same ``stem" are related, and superscripts and ``decorations" (e.g., hats, tildes) differentiate the names with respect to, e.g., various indices included in the name or 
+maximum and minimum values for the same parameter.
+\newpage
+\subsection{Sets and Parameters}
+
+\newcommand{\tfn}{\textsuperscript{*}}
+\begin{longtable}{llll}
+\caption{REopt Lite, sets and parameters.} \label{tab:param-set} \\
+\multicolumn{3}{l}{\textbf{Sets}} & {\textbf{Units}} \\ \hline
+&$\mathcal{S}$              & Segments defining the capital cost & \\
+&$\mathcal{M}$              & Months of the year & \\
+&$\mathcal{R}$              & Ratchets of rate tariff & \\
+&$\mathcal{U}$              & Fuel bins & \\
+&$\mathcal{E}$              & Ratcheted demand bins in utility tariff & \\
+&$\mathcal{N}$              & Monthly demand bins in utility tariff & \\
+&$\mathcal{B}$              & Battery systems & \\
+&$\mathcal{C}$              & Technology classes & \\
+&$\mathcal{T}$              & Technologies \\%($\mathcal{T}$ = PV, PVNM, WIND, WINDNM, UTIL1)& \\
+%&$\mathcal{T}^{u}$          & Subset of technologies that are from the utility & \\
+%&\textcolor{olive}{\xout{\textcolor{red}{$\mathcal{T}^{nu}$}}}         & \textcolor{olive}{\xout{\textcolor{red}{Subset of technologies that are not from the utility}}} \textbf{No need} & \\
+&$\mathcal{H}$              & Time steps & \\
+&$\mathcal{D}$              & Electrical loads\\% ($\mathcal{D}$  = 1R, 1W, 1X, 1S)& \\
+&$\mathcal{V}$              & Net metering regimes  & \\
+&$\mathcal{M}^{LB}$         & Look-back months & \\
+&$\mathcal{T}^{td} \subseteq \mathcal{T}$         & Subset of technologies that cannot turn down, i.e., PV and wind & \\
+&$\mathcal{T}_c \subseteq \mathcal{T}$			& Subset of technologies in class $c$\\
+&$\mathcal{T}^{ld}_d \subseteq \mathcal{T}$			& Subset of technologies that can serve load $d$\\
+&$\mathcal{T}^{u} \subseteq \mathcal{T}$			& Subset of technologies that are utilities\\
+&$\mathcal{D}^s \subseteq \mathcal{D}$            & Subset of electrical loads due to charging storage & \\
+&$\mathcal{D}^{r} \subseteq \mathcal{D}$ 			& Subset of loads that include site load & \\
+&$\mathcal{D}^{w} \subseteq \mathcal{D}$ 			& Subset of loads that include wholesale generation & \\
+&$\mathcal{D^{\delta}} \subseteq \mathcal{D}$     & Subset of loads that can serve annual load & \\
+&$\mathcal{H}_r \subseteq \mathcal{H}$             & Subset of time steps within a given rate tariff ratchet $r$ & \\
+&$\mathcal{H}_m \subseteq \mathcal{H}$            & Subset of time steps within a given month $m$ & \\
+%&$\mathcal{H}^{b}_{d} \subseteq \mathcal{H}$            & Subset of time steps in which load $d$ is nonzero & \\
+%&\xout{\textcolor{olive}{{\textcolor{red}{$\mathcal{B}^l$}}}}            & \xout{\textcolor{olive}{\textcolor{red}{Second set for parameter BattLevelCoef  \{1,2\}}}} \textbf{No need} & \\
+&&&\\
+\multicolumn{4}{l}{\textbf{Counting Parameters}} \\ \hline
+%&$n^{\dot{p}}$  & Number of points defining capital costs   & [unitless] \\
+&$n^{tss}$      & Time step scaling                         & [h] \\
+&$n^{tsc}$      & Time step count                           & [count] \\
+&&&\\
+\multicolumn{4}{l}{\textbf{Cost Parameters}} \\ \hline
+&$c^{cA}_{ts}$      & Slope of capital cost curve for technology $t$ in segment $s$                      &[\$/kW]\\
+&$c^{cy}_{ts}$      & Y-intercept of capital cost curve for technology $t$ in segment $s$                       &[\$]\\
+&$c^{cx}_{ts}$      & X-value of the inflection point for technology $t$ in segment $s$                             &[kW]\\
+&$c^{kW}_{b}$       & Capital cost of inverter for battery system $b$                                   &[\$/kW]\\
+&$c^{kWh}_{b}$      & Capital cost of storage per $kWh$ for battery system $b$                                  &[\$/kWh]\\
+&$c^{U}_{tuh}$      & Fuel cost for technology $t$ using fuel bin $u$ in timestep $h$                           &[\$/MMBTU]\\
+&$c^{fbrA}_{tdu}$   & Slope of the fuel rate curve for technology $t$ under load $d$ using &  \\&& fuel bin $u$    &[MMBTU/kWh]\\
+&$c^{fbrB}_{tdu}$   & Y-intercept of the fuel curve for technology $t$ under load $d$ using &  \\&& fuel bin $u$   &[MMBTU/h]\\
+&$c^{fmc}$          & Utility rate fixed monthly charge                                                         &[\$]\\
+%&$c^{amc}$          & Utility annual minimum charge                                                             &[\$]\\
+%&$c^{mmc}$          & Utility monthly minimum charge                                                            &[\$]\\
+&$c^{om}_t$         & Operation and maintenance cost of technology $t$ per unit of system size                        &[\$/kW]\\
+&$c^e_{tdh}$        & Export rate of technology $t$ in load $d$ in time step $h$                                &[\$/kWh]\\
+&&&\\
+\multicolumn{4}{l}{\textbf{Demand Parameters}} \\ \hline
+&$\delta$               &   Electrical energy used at location for the year      &[kWh]\\
+&$\delta^r_{re}$        &   Demand rate for ratchet $r$ in ratcheted demand bin $e$       &[\$/kW]\\
+&$\delta^{rm}_{mn}$     &   Monthly demand rate for month $m$ in demand month bin $n$   &[\$/kW]\\
+&$\bar\delta^{t}_{e}$   &   Maximum demand in tier for demand bin $e$                    &[kW]\\
+&$\bar\delta^{mt}_{n}$  &   Maximum demand months in tier for demand months bin $n$            &[kW]\\
+&$\bar\delta^{tu}_{u}$  &   Maximum energy usage from fuel bin $u$                &[kWh]\\
+&$\delta^{lp}$          &   Look-back proportion                                &[fraction]\\
+%&$\delta^{lm}$          &   Look-back months                                    &[Integer]\\
+&\\
+\multicolumn{4}{l}{\textbf{Incentive parameters}} \\ \hline
+&$i^{N}_{v}$            & The actual net metering limits and interconnect limits numbers in &  \\&& net metering regime $v$                  &[kW]\\
+&$i^{ttN}_{tv}$         & Net metering incentive levels for technology $t$ produces electric in bin $v$                    &[Unitless]\\
+&$\bar{\imath}_{t}$          & Upper bound of incentives for technology $t$                              &[\$]\\
+&$i^{r}_{td}$           & Incentive rate for technology $t$ and demand $d$                          &[\$/kWh]\\
+&$\bar{\imath}^{\sigma}_{t}$ & Maximum system size to obtain production incentive for technology $t$                               & [kW]\\
+&&&\\
+\multicolumn{4}{l}{\textbf{Factor Parameters}} \\ \hline
+&$f^P_{tdh}$            & Production factor of technology $t$ for load $d$ time step $h$            &[Unitless]\\
+&$f^d_{t}$              & Derate factor for turbine technology $t$   &[Unitless]\\
+&$\ubarf^{td}_t$  & Minimum turn down for technology $t$                       &[kW]\\
+%&$f^{ay}$               & Analysis year                                                             &[Year]\\
+&$f^{e}$                & Energy present worth factor                                           &[Unitless]\\
+&$f^{om}$               & Operations and maintenance present worth factor                       &[Unitless]\\
+&$f^{pi}_{t}$               & Present worth factor for incentives for technology $t$                      &[Unitless]\\
+&$f^l_t$                & Levelization factor of technology $t$                                     &[fraction]\\
+&$f^{lp}_t$             & Levelization factor of production incentive for technology $t$            &[fraction]\\
+&$f^{tow}$              & Tax rate factor for owner                                                 &[fraction]\\
+&$f^{tot}$              & Tax rate factor for offtaker                                              &[fraction]\\
+%&$f^{tp}$               & Tax rate factor for a two party agreement                                 &[fraction]\\
+%&$f^X$                  & Factor for eliminating symmetry in auxiliary variable $x^{aux}$           &[Unitless]\\
+&&&\\    
+\multicolumn{4}{l}{\textbf{Performance Parameters}} \\ \hline
+&$\ubarb^{{\sigma}}_{c}$  & Minimum system size for technology class $c$                                                             &[kW]\\
+&$\bar{b}^{{\sigma}}_{t}$       & Maximum system size for technology $t$                                                            &[kW]\\
+%&$b^{e}_{tdh}$                  & Wholesale rate of electricity and fuels for technology $t$ in demand $d$ &  \\ &&and time step $h$   &[\$/kW]\\
+&$b^{d}_{dh}$                   & Electricity or fuel load profile for demand $d$ in time step $h$                                  &[kW]\\
+%&$b^{tg}_{t}$                   & Technology is connected to electrical grid for technology $t$                                      &[Unitless]\\
+%&$b^{lm}_{td}$                  & Technology to load matrix, describes which technology $t$ can serve &  \\ &&which demand $d$         &[Unitless]\\
+%&$b^{m}_{tc}$                   & Technology to class matrix, mapping of technology $t$ to tech class $c$                           &[Unitless]\\
+&$b^{fa}_{tu}$                  & Amount of available fuel for technology $t$ and fuel bin $u$                                      &[MMBTU]\\
+&&&\\
+\multicolumn{4}{l}{\textbf{Storage Parameters}} \\ \hline
+&$w^{esi}_{t}$             & Efficiency of charging storage using technology $t$   &[Unitless]\\
+&$w^{eso}$              & Efficiency of discharging storage          &[Unitless]\\
+&$\bar{w}^{b^{kWh}}$        & Maximum energy capacity of storage                               &[kWh]\\
+&$\ubarw^{b^{kWh}}$   & Minimum energy capacity of storage                               &[kWh]\\
+&$\bar{w}^{b^{kW}}$         & Maximum power output of storage                               &[kW]\\
+&$\ubarw^{b^{kW}}$    & Minimum power output of storage                               &[kW]\\
+&$\ubarw^{mcp}$       & Minimum state of charge of the battery                 &[fraction]\\
+&$w^i$                      & Initial state of charge of the battery                &[fraction]\\
+%&$w^{l}$                    & Battery level coefficient                             &[Unitless]\\
+%&$w^{eb}$                   & Amount of battery charging done by the grid vs.renewable energy.                                &[fraction]\\
+\end{longtable}
+
+\subsection{Variables}
+\begin{longtable}{llll}
+\caption{REopt Lite, Variables} 
+\label{tab:variables} \\
+\multicolumn{4}{l}{\textbf{Continuous Variables}}   \\ \hline
+&$X^{ss}_{ts}$      &System size of technology $t$ in segment $s$                                                                       &[kW]\\
+&$X^{g}_{dheun}$    &Power from grid dispatched to meet load $d$, in time step $h$, from ratcheted demand bin $e$, &  \\&& fuel bin $u$, and demand months bin $n$   &[kW]\\
+&$X^{rp}_{tdhsu}$   &Rated production of technology $t$ in load $d$ during time step $h$ in &  \\&& segment $s$ from fuel bin $u$ & [kW]\\
+&$X^{t}_{mu}$     &Energy usage in tier during month $m$ using fuel bin $u$                                                                  &[kWh]\\
+&$X^{pi}_{t}$       &The production incentive of technology $t$                                                                         &[\$]\\
+&$X^{de}_{re}$     &The peak energy demand in ratchet $r$ in ratchet demand bin $e$                                                    &[kW]\\
+&$X^{dn}_{mn}$     &The peak energy demand in months $m$ in monthly demand bin $n$                                                     &[kW]\\
+&$X^{ts}_{h}$      &Electricity going to the storage system during each time step $h$                                                  &[kW]\\
+&$X^{fs}_{h}$      &Electricity coming from the storage system during each time step $h$                                               &[kW]\\
+&$X^{se}_{h}$       &State of charge of the storage system in time step $h$                                                             &[kWh] \\
+&$X^{skW}_{b}$     &Maximum amount of energy charging or discharging battery $b$                        &[kW]\\
+&$X^{skWh}_{b}$    &Physical size of storage system $b$                                                                                &[kWh]\\
+%&$X^{sc}$         &Mean state of charge                                                                                                           &[kW]\\
+&$X^{fc}_{tu}$      &Fuel cost of technology $t$ from fuel bin $u$                                                                   &[\$]\\
+%&$X^{fu}_{tu}$      &Fuel consumed by technology $t$ from fuel bin $u$                                                              &[MMBTU]\\
+&$X^{plb}$        &Peak electric demand look back                                                                                              &[kW]\\
+&$X^{mc}$          &Utility minimum charge adder                                                                                       &[\$]\\
+&$X^{eb}_t$         &Power dispatched to charging battery from technology $t$                                                           &[kW]\\
+&&& \\
+\multicolumn{4}{l}{\textbf{Binary Variables}}   \\ \hline
+&$Z^{NMIL}_v$    &1 If generation is in net metering interconnect limit regime $v$; 0 otherwise                         &[Unitless]\\
+&$Z^{sc}_{ts}$   &1 If technology $t$ is in cost segment  $s$ is chosen; 0 otherwise                   &[Unitless]\\
+&$Z^{pi}_t$      &1 If production incentive is available for technology $t$; 0 otherwise    &[Unitless]\\
+&$Z^{sbt}_{tc}$  &1 If technology $t$ is used for technology class $c$; 0 otherwise      & [Unitless]\\
+&$Z^{b+}_h$      &1 If battery is charging in time step $h$; 0 otherwise         &[Unitless]\\
+&$Z^{b-}_h$      &1 If battery is discharging in time step $h$; 0 otherwise      &[Unitless]\\
+&$Z^{to}_{th}$   &1 If technology $t$ is operating in time step $h$; 0 otherwise            &[Unitless]\\
+&$Z^{dt}_{re}$   &1 If ratchet $r$ is in demand bin $e$; 0 otherwise                        &[Unitless]\\
+&$Z^{dmt}_{mn}$  &1 If month $m$ is in monthly demand bin $n$; 0 otherwise                  &[Unitless]\\
+&$Z^{ut}_{mu}$   &1 If month $m$ is in fuel bin $u$; 0 otherwise               &[Unitless]\\
+&$Z^{bl}_{b}$    &1 If storage system is in battery $b$; 0 otherwise                  &[Unitless]\\
+&&&\\
+\end{longtable}
+
+\subsection{Objective Function}
+\begin{flalign*}
+   \text{Minimize} 
+   \underbrace{\sum_{t \in \mc{T}, s \in \mc{S}} \bigg(c^{cA}_{ts} \cdot X^{ss}_{ts} + c^{cy}_{ts} \cdot Z^{sc}_{ts} \bigg)}_{\text{Total Techcnology Capital Costs}} + 
+   \underbrace{\sum_{b \in \mc{B}} \bigg(c^{kW}_{b} \cdot X^{skW}_{b} + c^{kWh}_{b} \cdot X^{skWh}_{b}\bigg)}_{\text{Total Storage Capital Costs}} + \\
+   (1-f^{tow}) \cdot \underbrace{\sum_{t \in \mc{T}, s \in \mc{S}} \bigg( c^{om}_t \cdot f^{om} \cdot X^{ss}_{ts}\bigg)}_{\text{Total Operation and Maintenance Costs}} + \\   (1-f^{tot}) \cdot
+    \bigg( \underbrace{\sum_{t \in \mc{T}^{ld}_d, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}}
+    	\big( n^{tss} \cdot c^{U}_{tuh} \cdot f^{e} \cdot( f^P_{tdh} \cdot f^l_t \cdot c^{fbrA}_{tdu} \cdot \sum_{s \in \mc{S}} X^{rp}_{tdhsu} + 
+    	c^{fbrB}_{tdu} \cdot Z^{to}_{th}) \big) }_{\text{Total Energy Charges}} + \\
+    \underbrace{\sum_{r \in \mc{R}, e \in \mc{E}} f^{e} \cdot \delta^r_{re} \cdot X^{de}_{re}}_{\text{Total Demand Charges}} + \underbrace{\sum_{m \in \mc{M}, n \in \mc{N}} f^{e} \cdot \delta^{rm}_{mn} \cdot X^{dn}_{mn}}_{\text{Demand Flat Charges}} - \\
+    \underbrace{\sum_{t \in \mc{T}^{ld}_d, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}}  n^{tss} \cdot f^{e} \cdot c^e_{tdh} \cdot \;f^l_t \cdot f^P_{tdh} \cdot X^{rp}_{tdhsu}}_{\text{Total Energy Exports}} + \\ 
+    \underbrace{f^{e} \cdot c^{fmc} + X^{mc}}_{\text{Total Fixed Charges}} \bigg) - (1-f^{tow}) \cdot  \underbrace{\left( \sum_{t \in \mc{T}} X^{pi}_{t}\right)}_{\text{Production Incentives}}
+    \end{flalign*}
+The objective function minimizes the sum of capital costs, fixed operations and maintenance costs, total energy costs and subtracts incentive. The capital cost is comprised of equipment costs and storage costs.  The total energy costs is a combination of total energy charges, total demand charges, total energy exports, total fixed charges, and the fixed minimum charge.  	  
+\\
+\subsection{Constraints}
+\label{sssec:rec-su}
+This section contains both mathematical expressions and text descriptions for all constraints in the model. In general, the text descriptions are written to convey the spirit of the constraint and may not address every index in \textit{for all} or \textit{summation} statements when they are not central to how the constraint operates. For complete sets of indices included in the constraint, please refer to the mathematical notation.
+{
+\allowdisplaybreaks
+\newpage
+\subsubsection{Fuel constraints}
+%\textit{Fuel Constraints}
+\begin{eqnarray}
+%\label{eq:fuelBoundAux}
+\sum_{h \in \mc{H}, d \in \mc{D}, s \in \mc{S}: t \in \mc{T}^{ld}_{d}} n^{tss} \cdot f^l_t \cdot c^{fbrA}_{tdu} \cdot f^P_{tdh} \cdot X^{rp}_{tdhsu}   +  && \nonumber \\
+\sum_{h \in \mc{H}, d \in \mc{D}} c^{fbrB}_{tdu} \cdot n^{tss} \cdot Z^{to}_{th}  && \leq b^{fa}_{tu}  \;\;\; \forall t \in \mc{T}, u \in \mc{U}  \label{eq:fuel}
+\end{eqnarray} 
+
+Constraint \eqref{eq:fuel} restricts the fuel consumed by a technology to a prespecified limit for each fuel type.  Here, we define the each technology's fuel consumption as a function of (i) its total energy produced, and (ii) its number of operating hours.
+
+\subsubsection{Switch Constraints}
+\begin{subequations}\label{con:switch}
+\begin{eqnarray}
+\label{eq:swi}
+&& \sum_{d \in \mc{D}, s \in \mc{S}, u \in \mc{U}: t \in \mc{T}^{ld}_{d}} f^P_{tdh} \cdot X^{rp}_{tdhsu} \leq \bar{b}^{{\sigma}}_{t} \cdot Z^{to}_{th}  \;\;\; \forall t \in \mc{T}, h \in \mc{H}\\ 
+\label{eq:minEProd}
+&&  \sum_{s \in \mc{S}} \ubarf^{td}_t \cdot X^{ss}_{ts} - \sum_{d \in \mc{D}, s \in \mc{S}, u \in \mc{U}: t \in \mc{T}^{ld}_{d}} X^{rp}_{tdhsu} \leq \bar{b}^{{\sigma}}_{t} \cdot (1 - Z^{to}_{th}) \;\;\; \forall t \in \mc{T}, h \in \mc{H}
+\end{eqnarray}
+\end{subequations}
+
+Constraint set \eqref{con:switch} restricts the rate of production to an operating window between a system's minimum turn down and its maximum size. Constraint \eqref{eq:swi} defines if a system is on it must be less than the the maximum system size. Constraint \eqref{eq:minEProd} forces a lower bound for the minimum downturn a technology can operate.\\
+
+\subsubsection{Storage System Constraints}
+\textit{Boundary Conditions and Size Limits}
+\begin{subequations}\label{con:storage}
+\begin{eqnarray}
+%the state of the storage system at the beginning is 0.  boundary condition.  State of charge must begin and end the same.
+\label{eq:batIC}
+&& 	X^{se}_{0} = w^i \cdot \sum_{b \in \mc{B}} X^{skWh}_{b} 
+% / n^{tss}
+\\
+%next to lines set the SOC of the battery at time of GridOutage
+\label{eq:batkWh}
+&&\ubarw^{b^{kWh}} \leq \sum_{b \in \mc{B}} X^{skWh}_{b} \leq \bar{w}^{b^{kWh}}\\
+\label{eq:batkW}
+&&\ubarw^{b^{kW}} \leq \sum_{b \in \mc{B}} X^{skW}_{b} \leq \bar{w}^{b^{kW}}
+\end{eqnarray}
+
+Constraint \eqref{eq:batIC} sets the initial state of charge across all of the battery systems based on the physical size of the storage system and Constraints \eqref{eq:batkWh} - \eqref{eq:batkW} restrict the size of the storage system system between the upper lower bounds for capacity and output, respectively. \\
+
+\textit{Battery Operations}
+\begin{eqnarray}
+% Electricity to be stored is the \sum_{ of the electricity in the S-bin for that timestep
+\label{eq:elecToStor}
+&&X^{ts}_{h} = \sum_{t \in \mc{T}^{ld}_{d}, s \in \mc{S}, u \in \mc{U}, d \in \mc{D}^s} f^P_{tdh} \cdot f^l_t \cdot w^{esi}_{t} \cdot X^{rp}_{tdhsu}  \;\;\; \forall h \in \mc{H} \\
+% state of charge at each timestep is \sum_{ of previous state and electiricy coming in, and less electricity going out
+\label{eq:storedEnergy}
+&&X^{se}_{h} =   X^{se}_{h-1} + n^{tss} \cdot (X^{ts}_{h} - X^{fs}_{h} / w^{eso}) \;\;\; \forall h \in \mc{H} \\ %\tcb{ \setminus \{1\}}
+%energy coming out of the storage system cannot be greater than the current state of charge
+\label{eq:elecFromStor}
+&&X^{fs}_{h} \leq  w^{eso} \cdot X^{se}_{h-1} / n^{tss} \;\;\; \forall h \in \mc{H} \\
+\label{eq:minCharge}
+&&X^{se}_{h} \geq  \ubarw^{mcp} \cdot \sum_{b \in \mc{B}} X^{skWh}_{b}
+% / n^{tss}
+ \;\;\; \forall h \in \mc{H}
+\end{eqnarray}
+
+Constraint \eqref{eq:elecToStor} defines the amount of energy dispatched to the battery system as the sum of all production dispatched to battery storage for each time step. Constraint \eqref{eq:storedEnergy} is inventory balance, the stored energy of the previous step added to the difference between electricity to storage and the electricity from storage.  Constraint \eqref{eq:elecFromStor} limits the amount of discharge from the battery system from exceeding the amount of electricity available. Constraint \eqref{eq:minCharge} forces the state of charge to always be greater than the minimum battery system size. 
+%defines stored energy to be the stored energy of the previous step added to the difference between electricity to store and the electricity [POWER?] from storage.
+%\tcb{[az] I removed hour 1 from the inventory reconciliation, since it connects h and (h-1).  We'll want to set up a boundary condition for this as well.  I believe (7h) is superfluous if we just enforce nonnegativity on state of charge, which we should do if it's not already in the implementation (bounds on variables are preferable to structural constraints, they tend to result in quicker computations). }
+%Constraint \eqref{eq:nonegEFS} makes the power from storage nonnegative. 
+
+\textit{Operational Nuance}
+\begin{eqnarray}
+\label{eq:inverterto}
+&&\sum_{b \in \mc{B}} X^{skW}_{b} \geq  X^{ts}_{h} \;\;\; \forall h \in \mc{H}\\
+\label{eq:inverterfrom}
+&&\sum_{b \in \mc{B}} X^{skW}_{b} \geq  X^{fs}_{h} \;\;\; \forall h \in \mc{H}\\
+\label{eq:meanSOC}
+%&&X^{sc} = \sum_{h \in \mc{H}} X^{se}_{h} / n^{tsc}\\
+%\label{eq:sysUp}
+&&\sum_{b \in \mc{B}} X^{skWh}_{b} \geq 
+%n^{tss} \cdot  
+X^{se}_{h} \;\;\; \forall h \in \mc{H}\\
+\label{eq:batstatChar}
+&&X^{ts}_{h} \leq \bar{w}^{b^{kW}} \cdot Z^{b+}_h \;\;\; \forall h \in \mc{H}\\
+\label{eq:batstatDisChar}
+&&X^{fs}_{h} \leq \bar{w}^{b^{kW}} \cdot Z^{b-}_h\;\;\; \forall h \in \mc{H}\\
+\label{eq:eitherOrChar}
+&&Z^{b-}_h + Z^{b+}_h \leq 1\;\;\; \forall h \in \mc{H}\\
+\label{eq:electToBat}
+&&X^{eb}_t = \sum_{h \in \mc{H},  s \in \mc{S}, u \in \mc{U}, d \in \mc{D}^s } f^P_{tdh} \cdot f^l_t \cdot X^{rp}_{tdhsu} \;\;\; \forall t \in \mc{T} 
+\end{eqnarray}
+\end{subequations}
+
+Constraints \eqref{eq:inverterto} and \eqref{eq:inverterfrom} keep the dispatch to and from storage within the system size. Constraint \eqref{eq:meanSOC} defines the mean state of charge of the battery. 
+%Constraint \eqref{eq:sysUp} limits the state of charge of the battery to the actual system size. 
+Constraints \eqref{eq:batstatChar} and \eqref{eq:batstatDisChar}, force battery system to be turned on in order to charge or discharge.  
+Constraint \eqref{eq:eitherOrChar} force the battery to be either charging or discharging but never both. 
+Constraint \eqref{eq:electToBat} defines the amount of power dispatched to the battery from each technology. \\
+
+
+
+\textit{Battery Level}
+\begin{subequations}\label{con:batLvl}
+\begin{eqnarray}
+\label{eq:batLvlkWh}
+&&X^{skWh}_{b} \leq \bar{w}^{b^{kWh}}\cdot Z^{bl}_{b} \;\;\; \forall b \in \mc{B}\\
+\label{eq:batLvlkW}
+&&X^{skW}_{b} \leq \bar{w}^{b^{kW}}\cdot Z^{bl}_{b}\;\;\; \forall b \in \mc{B}\\
+\label{eq:chooseBatLvl}
+&&\sum_{b \in \mc{B}} Z^{bl}_{b} = 1 \;\;\;
+\end{eqnarray}
+\end{subequations}
+
+Constraints \eqref{eq:batLvlkWh} limit the battery storage to be less than the maximum battery storage available.  Constraints   \eqref{eq:batLvlkW} limit the battery storage to be less than the maximum amount of energy charging or discharging the battery.  Constraint \eqref{eq:chooseBatLvl} restricts the battery technology selection to a single level.
+%Using a basic reservoir model: SOC at this timestep is SOC at last timestep, plus energy in, minus energy out (divided by outbound efficiency – which is sqrt(round-trip)*rectifier efficiency). The energy into the battery gets an efficiency on the way in. 
+ 
+
+
+\subsubsection{Capital Cost Constraints}
+\textit{Capital Cost Constraints}
+\begin{subequations}\label{con:capCost}
+\begin{eqnarray}
+%Determine which segment of the PWL cost curve.  binSegChosen is 1 for that segment, 0 else.
+\label{eq:capCost1}
+&&X^{ss}_{ts} \leq c^{cx}_{ts}   \cdot Z^{sc}_{ts} \;\;\; \forall t \in \mc{T}, s \in \mc{S}\\
+\label{eq:capCost2}
+&&X^{ss}_{ts} \geq c^{cx}_{t,s-1} \cdot Z^{sc}_{ts} \;\;\; \forall t \in \mc{T}, s \in \mc{S}: s \geq 2
+\end{eqnarray}
+\end{subequations}
+Constraints \eqref{eq:capCost1} and \eqref{eq:capCost2} determine in which segment of the piece wise linear cost curve the system is operating. 
+
+\textit{Technology Selection Constraints}
+\begin{subequations}\label{con:binDec}
+	\begin{eqnarray}
+	%can only hve one tech from each tech class
+	\label{eq:segChosen}
+	&&\sum_{s \in \mc{S}} Z^{sc}_{ts} = 1 \;\;\; \forall t \in \mc{T}\\
+	\label{eq:segSingle}
+	&&\sum_{t \in \mc{T}} Z^{sbt}_{tc} \leq 1 \;\;\; \forall c \in \mc{C}
+	\end{eqnarray}
+\end{subequations}
+Constraint \eqref{eq:segChosen} limits each technology to fall into one segment of the capital cost curve.  
+Constraint \eqref{eq:segSingle} this ensures that there is only one technology per technology class.  \\ 
+ 
+ 
+\subsubsection{Production Incentive Cap}
+\textit{Production Incentive Cap Module}
+\begin{subequations}\label{ProdInt}
+\begin{eqnarray}
+%Number 1: the Production Incentive can't exceed a certain dollar max [and is "0" if system size is too big]
+\label{eq:ProdInt1}
+&&X^{pi}_{t} \leq \bar{\imath}_{t} \cdot f^{pi}_{t} \cdot Z^{pi}_t \;\;\; \forall t \in \mc{T}\\
+%Number 2: Calculate the production incentive based on the energy produced.  Then dvProdIncent must be less than that. added LD to Prod Incent ExportRates 8912
+\label{eq:ProdInt2}
+&&X^{pi}_{t} \leq \sum_{d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}: t \in \mc{T}^{ld}_d} n^{tss} \cdot i^{r}_{td} \cdot f^{pi}_{t} \cdot f^P_{tdh} \cdot f^{lp}_t \cdot  X^{rp}_{tdhsu} \;\;\; \forall t \in \mc{T}\\
+%Number 3: If system size is bigger than MaxSizeForProdIncent, binProdIncent is 0, meaning you don't get the Prod Incent.
+\label{eq:ProdInt3}
+&&\sum_{s \in \mc{S}} X^{ss}_{ts} \leq \bar{\imath}^{\sigma}_{t} + \bar{b}^{{\sigma}}_{t} \cdot (1 - Z^{pi}_t) \;\;\; \forall t \in \mc{T}
+\end{eqnarray}
+\end{subequations}
+Constraint \eqref{eq:ProdInt1} limits the production incentives available for a given technology.  Constraint \eqref{eq:ProdInt2} calculates the production incentive based on the energy produced.  Constraint \eqref{eq:ProdInt3} sets an upper bound on the size of system that qualifies for production incentives, if production incentives are available.   
+
+\subsubsection{System size}
+\textit{System size constraints}
+\begin{subequations}\label{SysSizeProd}
+\begin{eqnarray}
+%System size cannot exceed MaxSize and must equal or exceed MinSize  
+\label{eq:SysSizeProd1}
+&&X^{ss}_{ts} \leq  \bar{b}^{{\sigma}}_{t}\;\;\; \forall t \in \mc{T},s \in \mc{S}\\
+\label{eq:SysSizeProd2}
+&&\sum_{t \in \mc{T}_c, s \in \mc{S}} X^{ss}_{ts} \geq \ubarb^{{\sigma}}_{c} \;\;\; \forall c \in \mc{C}\\
+%dvRatedProduction must be \geq 0, or if MinTurndown is > 0, use semi-continuous variable \ubarf^{td}_t = 0 and exists [X^{rp}_{tdhsu}]] do \nonumber \\
+%&&\textcolor{olive}{\xout{X^{rp}_{tdhsu} \geq 0 \;\;\; \forall t \in \mc{T}, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}}}\nonumber \\
+%\ubarf^{td}_t > 0 and exists [X^{rp}_{tdhsu}]] do\nonumber \\ 
+%&&X^{rp}_{tdhsu} is semcont \ubarf^{td}_t \;\;\; \forall t \in \mc{T}, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}\\ 
+%&&\textcolor{olive}{X^{rp}_{tdhsu} \geq \ubarf^{td}_t \cdot Y^1_t \;\;\; \forall t \in \mc{T}, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}} \\
+%&&\textcolor{olive}{X^{rp}_{tdhsu} \leq \mc{M} \cdot Y^1_t \;\;\; \forall t \in \mc{T}, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}}\\
+%Per conversation with DC 7 6 12, changed below line to following 2 lines to capture size limit constraint based only on electric output of a CoGen with mandatory thermal tech For most techs, Rated Production across all loads cannot exceed System size for variable effiency gensets
+\label{eq:SysSizeProd3}
+&&\sum_{d \in \mc{D}, u \in \mc{U}: t \in \mc{T}^{ld}_d} X^{rp}_{tdhsu} \leq X^{ss}_{ts} \;\;\; \forall t \in \mc{T},s \in \mc{S},h \in \mc{H}\\
+%sun of everything but retail electric produced by all techs must be less than max load for each fuel type !TS 31513 should this exclude SHW?  need to include [LD <> "1R" and LD <>"1S"]
+\label{eq:SysSizeProd4}
+&&\sum_{t \in \mc{T}^{ld}_{d}, s \in \mc{S}, u \in \mc{U}} f^P_{tdh} \cdot f^l_t \cdot X^{rp}_{tdhsu} \leq b^{d}_{dh} \;\;\; \forall d \in \mc{D} \setminus \mc{D}^{\delta}, h \in \mc{H}\\ 
+%companion to the above.  Electric load can be met from generation OR from the storage LD = "1R"] do
+\label{eq:SysSizeProd5}
+&&\sum_{t \in \mc{T}^{ld}_{d}, s \in \mc{S},u \in \mc{U}} \left( f^P_{tdh} \cdot f^l_t \cdot X^{rp}_{tdhsu} \right) + X^{fs}_{h} \geq b^{d}_{dh} \;\;\; \forall d \in \mc{D}^{r}, h \in \mc{H}
+\end{eqnarray}
+\end{subequations}
+Constraint~\eqref{eq:SysSizeProd1} limit the system size to the maximum system size for a technology.   Constraint~\eqref{eq:SysSizeProd2} limit the system size to the minimum allowed system size for a technology class.  Constraint~\eqref{eq:SysSizeProd3} limits rated production from all loads to be less than the system size.  Constraint~\eqref{eq:SysSizeProd4} limits rate of production by all technologies to be less than maximum load for each fuel type.  Constraint \eqref{eq:SysSizeProd5} allows electric load to be met from either generation or storage.\\
+
+\subsubsection{Rate Tariff Constraints}
+\textit{Net Meter Module}
+\begin{subequations}\label{NetMeter}
+\begin{eqnarray}
+%can only be in regime at a time.
+\label{eq:NetMeter1}
+&&\sum_{v \in \mc{V}} Z^{NMIL}_v = 1  \;\;\;\\
+%sum of the electricity output of all techs must be less than the limit for the regime  include | n <> "AboveIL"
+\label{eq:NetMeter2}
+&&\sum_{t \in \mc{T}, s \in \mc{S}} i^{ttN}_{tv} \cdot f^d_{t} \cdot X^{ss}_{ts} \leq i^{N}_{v} \cdot Z^{NMIL}_v \;\;\; \forall v \in \mc{V}%\\
+%indicator[-1, Z^{NMIL}_{"AboveIL"}, 
+%&&\textcolor{olive}{Z^{NMIL}_v \leq Y^2_{v}\cdot M \;\;\; \forall v = "AboveIL"} \\
+%\label{eq:NetMeter3}
+%&&\sum_{t \in \mc{T}, s \in \mc{S}} i^{ttN}_{tv} \cdot f^d_{t} \cdot X^{ss}_{ts} \leq M \cdot Z^{NMIL}_v \;\;\; \forall v = 3
+\end{eqnarray}
+\end{subequations}
+Constraint \eqref{eq:NetMeter1} limits the net metering interconnect limit to only be in one regime at a time. Constraint \eqref{eq:NetMeter2} limits the sum of the electricity output of all technologies to be less than the limit for the net metering interconnect limit regime. %Constraint \eqref{eq:NetMeter3} allows incentives if the system is operating in a net metering interconnect limit regime\\
+
+\begin{subequations}\label{con:demandRate}
+\textit{Rate Variable Definitions}
+\begin{eqnarray}
+\label{eq:powFromGrid}
+&&\sum_{s \in \mc{S}} X^{rp}_{tdhsu} = \sum_{e \in \mc{E}, n \in \mc{N}} X^{g}_{dheun} \;\;\; \forall d \in \mc{D}, u \in \mc{U}, h \in \mc{H}, t \in \mc{T}^u\\
+\label{eq:useInTier}
+&&X^{t}_{mu} =  n^{tss} \cdot \sum_{d \in \mc{D}, h \in \mc{H}_m, s \in \mc{S}} X^{rp}_{tdhsu} \forall u \in \mc{U}, m \in \mc{M}, t \in \mc{T}^u
+%\label{eq:useInTiernn}
+%&&\textcolor{olive}{\xcancel{X^{t}_{mu} \geq 0 \;\;\; \forall m \in \mc{M}, u \in \mc{U}}} \textbf{No need} \nonumber 
+\end{eqnarray}
+\end{subequations}
+
+Constraint \eqref{eq:powFromGrid} defines the power dispatched from the grid to be equal to the rate of production supplied from the utility company. Constraint \eqref{eq:useInTier} parses out the power from the grid to be used in calculating tiered pricing of electricity. \\
+
+\begin{subequations}\label{con:FuelBins}
+\textit{Fuel Bins}
+\begin{eqnarray}
+\label{eq:useInTierUpper}
+&&X^{t}_{mu} \leq \bar\delta^{tu}_{u} \cdot Z^{ut}_{mu} \;\;\; \forall m \in \mc{M}, u \in \mc{U}\\ 
+%\label{eq:activeFuelBin}
+%indicator[-1, Z^{ut}_{mu_{c}}, X^{t}_{mu_{c}} \leq 0]
+%&& \textcolor{olive}{Z^{ut}_{mu_{c}} \leq Y^3_{mu_{c}}\cdot M \;\;\; \forall m \in \mc{M} \;\;\; Excessive?}\\
+%&&X^{t}_{mu} \leq M \cdot Z^{ut}_{mu} \;\;\; \forall m \in \mc{M},  u \in \mc{U}: u = \vert\mc{U}\vert \;\;\;\\
+\label{eq:fuelBinOrder}
+&&Z^{ut}_{mu} \leq Z^{ut}_{m,u-1} \;\;\; \forall u \in \mc{U} : u \geq 2, m \in \mc{M}\\
+\label{eq:useOrder}
+&&\bar\delta^{tu}_{u-1} \cdot Z^{ut}_{mu} \leq X^{t}_{m,u-1} \;\;\; \forall u \in \mc{U} : u \geq 2, m \in \mc{M}
+\end{eqnarray}
+\end{subequations}
+
+Constraint \eqref{eq:useInTierUpper} limits the usage of  electricity in a given month from a specified fuel bin to the maximum available electricity from that fuel bin if the fuel bin is available. 
+%Constraint \eqref{eq:activeFuelBin} forces a the fuel bin to be on if it is available for use.   Constraint \eqref{eq:fuelBinOrder} forces fuel bins to become active in order.  
+Constraint \eqref{eq:useOrder} forces fuel bins to be full before moving to the next fuel bin.\\
+
+\begin{subequations}\label{con:PeakDemandEnergyRatchets}
+\textit{Peak Demand Energy Ratchets}
+\begin{eqnarray}
+\label{eq:peakDemUp}
+&&X^{de}_{re} \leq \bar\delta^{t}_{e}\cdot Z^{dt}_{re} \;\;\; \forall e \in \mc{E}, r \in \mc{R}\\
+%\label{eq:activePeakDem}
+%indicator(-1, Z^{dt}_{re_{c}}, X^{pde^{r}}_{re_{c}} \leq 0)
+%&&\textcolor{olive}{Z^{dt}_{re_{c}}\leq Y^4_{re_{c}} \cdot M \;\;\; \forall r \in \mc{R} \;\;\; Excessive?}\\
+%&&X^{de}_{re} \leq M \cdot Z^{dt}_{re} \;\;\; \forall r \in \mc{R}, e \in \mc{E}: e = \vert\mc{E} \vert \;\;\; \\
+\label{eq:peakDemOrder}
+&&Z^{dt}_{re} \leq Z^{dt}_{r,e-1} \;\;\; \forall e \in \mc{E} : e \geq 2, r \in \mc{R}\\
+\label{eq:demOrder}
+&&\bar\delta^{t}_{e-1} \cdot Z^{dt}_{re} \leq  X^{de}_{r,e-1} \;\;\; \forall e \in \mc{E} : e \geq 2, r \in \mc{R}\\
+\label{eq:peakEpi}
+&&X^{de}_{re} \geq \sum_{d \in \mc{D}, u \in \mc{U}, n \in \mc{N}} X^{g}_{dheun} \;\;\; \forall e \in \mc{E}, r \in \mc{R}, h \in \mc{H}_r \\
+\label{eq:peakDemnn}
+%&&\textcolor{olive}{\xcancel{X^{de}_{re} \geq 0 \;\;\; \forall e \in \mc{E}, r \in \mc{R}, h \in \mc{H}_r}} \nonumber\\
+\label{eq:peakDemLB}
+&&X^{de}_{re} \geq \delta^{lp} \cdot X^{plb} \;\;\; \forall e \in \mc{E}, r \in \mc{R}
+\end{eqnarray}
+\end{subequations}
+
+Constraint \eqref{eq:peakDemUp} limits the peak energy demand to the maximum energy available.  
+%Constraint \eqref{eq:activePeakDem} forces the demand tier to be available if it is to be used.  
+Constraint \eqref{eq:peakDemOrder} forces demand bins to become active in order. Constraint \eqref{eq:demOrder} forces demand to be met before moving to the next demand tier. Constraint \eqref{eq:peakEpi} defines the peak demand to be greater than all of the demands across the time horizon. Constraint \eqref{eq:peakDemLB} defines the look-back value to be used with necessary tariffs.\\
+
+\begin{subequations}\label{con:PeakDemandEnergyMonths}
+\textit{Peak Demand Energy Months}
+\begin{eqnarray}
+\label{eq:peakDemMonUp}
+&& X^{dn}_{mn} \leq \bar\delta^{mt}_{n} \cdot Z^{dmt}_{mn} \;\;\; \forall n \in \mc{N}, m \in \mc{M}\\
+\label{eq:activePeakMonDem}
+%indicator(-1, Z^{dmt}_{mn_{c}}, X^{pdm}_{mn_{c}} \leq 0)
+%&&\textcolor{olive}{Z^{dmt}_{mn_{c}} \leq Y^5_{mn_{c}} \cdot M \;\;\; \forall m \in \mc{M} \;\;\; Excessive?}\\
+ &&X^{dn}_{mn} \leq M \cdot Z^{dmt}_{mn} \;\;\; \forall m \in \mc{M}, n \in \mc{N}:  n = \vert \mc{N} \vert \;\;\;\\
+%\label{eq:peakDemMonOrder}
+%&&Z^{dmt}_{mn} \leq Z^{dmt}_{m,n-1} \;\;\; \forall n \in \mc{N} : n \geq 2, m \in \mc{M}\\
+\label{eq:demMonOrder}
+&& \bar\delta^{mt}_{n-1} \cdot Z^{dmt}_{mn} \leq X^{dn}_{m,n-1} \;\;\; \forall n \in \mc{N} : n \geq 2, m \in \mc{M}\\
+\label{eq:peakMonEpi}
+&&X^{dn}_{mn} \geq  \sum_{d \in \mc{D}, e \in \mc{E}, u \in \mc{U}} X^{g}_{dheun} \;\;\; \forall n \in \mc{N}, m \in \mc{M}, h \in \mc{H}_m\\
+\label{eq:peakMonDemnn}
+%&&\textcolor{olive}{\xcancel{X^{dn}_{mn} \geq 0 \;\;\; \forall n \in \mc{N}, m \in \mc{M}, h \in \mc{H}_m}} \nonumber\\
+\label{eq:lookBackDef}
+&&X^{plb} \geq \sum_{n \in \mc{N}} X^{dn}_{mn} \;\;\; \forall m \in \mc{M}^{LB}
+\end{eqnarray}
+\end{subequations}
+
+These are analagous to constraint set ($12$), except they focus on demand for months rather than ratchets. Specifically, constraint \eqref{eq:peakDemMonUp} limits the energy demand to the maximum demand required. Constraint \eqref{eq:activePeakMonDem} forces the demand tier to be available if it is to be used.  
+%Constraint \eqref{eq:peakDemMonOrder} forces monthly demand tiers to become active in order.  
+Constraint \eqref{eq:demMonOrder} forces demand to be met before moving to the next demand tier.  Constraint \eqref{eq:peakMonEpi} defines the peak demand to be greater than all of the demands across the time horizon. Constraint \eqref{eq:lookBackDef} defines the look-back value to be used with necessary tariffs.
+
+\begin{subequations}\label{con:SiteLoad}
+\textit{Site Load}
+\begin{eqnarray}
+\label{eq:belowDemand}
+&&\sum_{t \in \mc{T}^{ld}_d, d \in \mc {D}^{r} \cup \mc{D}^{w} \cup \mc{D}^{s}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}} f^P_{tdh} \cdot f^l_t \cdot  n^{tss} \cdot X^{rp}_{tdhsu} \leq  \delta \;\;\; \\
+\label{eq:singleBasic}
+%indicator(-1, Z^{sbt}_{tc}, X^{ss}_{ts} \cdot b^{m}_{tc} \leq  0)
+%&&Z^{sbt}_{tc} \leq  Y^6_{tc}\cdot M \;\;\; \forall t \in \mc{T},  c \in \mc{C}\\
+&&\sum_{s \in \mc{S}}  X^{ss}_{ts} \leq M \cdot Z^{sbt}_{tc}  \;\;\; \forall t \in \mc{T}_c,  c \in \mc{C}\\
+\label{eq:nonCurtail}
+&&X^{ss}_{ts}  = \sum_{u \in \mc{U}, d \in \mc{D}: t \in \mc{T}^{ld}_d} X^{rp}_{tdhsu}  \;\;\; \forall t \in \mc{T}^{td}, h \in \mc{H}, s \in \mc{S} 
+\end{eqnarray}
+\end{subequations}
+
+Constraint \eqref{eq:belowDemand} enforces for demands in the subset that can serve annual loads, the rate of production across all technologies, hours, and capital cost segments, reduced by the appropriate production an levelization factors cannot exceed electricity used.  Constraint \eqref{eq:singleBasic} refers to the concept of single basic technology being available for any given technology class. Constraint \eqref{eq:nonCurtail} prevents renewable technologies from turning down. They output at their nameplate capacity. %\tcr {opportunity for efficiency gain}
+
+
+\subsubsection{Minimum Utility Charge}
+%	\textit{Minimum Utility Charge}
+	\begin{flalign}
+	X^{mc} \geq && 
+	\underbrace{\sum_{t \in \mc{T}^{ld}_d, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}}
+		\big( n^{tss} \cdot c^{U}_{tuh} \cdot f^{e} \cdot( f^P_{tdh} \cdot f^l_t \cdot c^{fbrA}_{tdu} \cdot \sum_{s \in \mc{S}} X^{rp}_{tdhsu} + 
+		c^{fbrB}_{tdu} \cdot Z^{to}_{th}) \big) }_{Total Energy Charges} + \nonumber \\ 
+	&&	\underbrace{\sum_{r \in \mc{R}, e \in \mc{E}} f^{e} \cdot \delta^r_{re} \cdot X^{de}_{re}}_{Total Demand Charges} + \underbrace{\sum_{m \in \mc{M}, n \in \mc{N}} f^{e} \cdot \delta^{rm}_{mn} \cdot X^{dn}_{mn}}_{Demand Flat Charges} - \nonumber \\
+	&&	\underbrace{\sum_{t \in \mc{T}^{ld}_d, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}}  n^{tss} \cdot f^{e} \cdot c^e_{tdh} \cdot \;f^l_t \cdot f^P_{tdh} \cdot X^{rp}_{tdhsu}}_{Total Energy Exports}  \label{eq:minChargeAdder}
+	\end{flalign}
+	
+Constraint~\eqref{eq:minChargeAdder} enforces a minimum payment to the utility provider, which may be covered by energy and demand charges from the utility, net of any exports produced by the system.
+
+\subsubsection{Non-negativity}
+\begin{subequations}\label{con:nonegEFS}
+\begin{eqnarray}
+&&X^{plb}, X^{mc} \geq 0 \\ 
+&&X^{ss}_{ts} \geq 0 \;\;\; \forall t \in \mc{T}, s \in \mc{S}\\
+&&X^{g}_{dheun} \geq 0 \;\;\; \forall d \in \mc{D}, h \in \mc{H}, e \in \mc{E}, u \in \mc{U}, n \in \mc{N}\\   
+&&X^{rp}_{tdhsu} \geq 0 \;\;\; \forall t \in \mc{T}^{tl}_{d}, d \in \mc{D}, h \in \mc{H}, s \in \mc{S}, u \in \mc{U}\\  
+&&X^{t}_{mu} \geq 0 \;\;\; \forall m \in \mc{M}, u \in \mc{U}\\    
+&&X^{pi}_{t} \geq 0 \;\;\; \forall t \in \mc{T}\\     
+&&X^{de}_{re} \geq 0 \;\;\; \forall r \in \mc{R}, e \in \mc{E}\\    
+&&X^{dn}_{mn} \geq 0 \;\;\; \forall m \in \mc{M}, n \in \mc{N}\\     
+&&X^{ts}_{h}, X^{fs}_{h}, X^{se}_{h} \geq 0 \;\;\; h \in \mc{H}\\
+&&X^{skW}_{b}, X^{skWh}_{b} \geq 0 \;\;\; b \in \mc{B} \\
+&&X^{fc}_{tu}, X^{fu}_{tu} \geq 0 \;\;\;  \forall t \in \mc{T}, u \in \mc{U} \\     
+&&X^{eb}_t \geq 0 \;\;\;  \forall t \in \mc{T}
+\end{eqnarray}
+\end{subequations}
+
+\subsubsection{Integrality}
+\begin{subequations}\label{con:binEFS}
+\begin{eqnarray}
+&&Z^{NMIL}_v \in \{0,1\} \;\;\;  \forall v \in \mc{V} \\
+&&Z^{sc}_{ts} \in  \{0,1\} \;\;\;  \forall t \in \mc{T}, s \in \mc{S} \\
+&&Z^{pi}_t \in  \{0,1\} \;\;\;  \forall t \in \mc{T} \\
+&&Z^{sbt}_{tc}  \in \{0,1\} \;\;\;  \forall t \in \mc{T}, c \in \mc{C} \\
+&&Z^{b+}_h, Z^{b-}_h \in  \{0,1\} \;\;\;  \forall h \in \mc{H} \\
+&&Z^{to}_{th} \in  \{0,1\} \;\;\;  \forall t \in \mc{T}, h \in \mc{H} \\
+&&Z^{dt}_{re}  \in \{0,1\} \;\;\;  \forall r \in \mc{R}, e \in \mc{E} \\
+&&Z^{dmt}_{mn}, Z^{ut}_{mu} \in  \{0,1\} \;\;\;  \forall m \in \mc{M}, n \in \mc{N} \\
+&&Z^{bl}_{b}  \in \{0,1\} \;\;\;  \forall b \in \mc{B}
+\end{eqnarray}
+\end{subequations}
+
+Finally, constraints \eqref{con:nonegEFS} ensure all of the variables in our formulation assume non-negative values. In addition to non-negativity restrictions, constraints \eqref{con:binEFS} establish the integrality of the appropriate variables.
+
+\begin{comment}
+\textit{Production}
+\begin{subequations}\label{??}
+\begin{eqnarray}
+% | b^{cm}_{t"PV"} = 1 and [LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"]]]
+&&Year1ElecProd = \sum_{t \in \mc{T}, s \in \mc{S}, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}} X^{rp}_{tdhsu}\cdot f^P_{tdh} \cdot  n^{tss}\\
+% | b^{cm}_{t"PV"} = 1 and [LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"]]]
+&&AverageElecProd = \sum_{ t \in \mc{T}, s \in \mc{S}, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}} X^{rp}_{tdhsu}\cdot f^P_{tdh} \cdot  n^{tss}  \cdot f^l_t\\
+%| b^{cm}_{t"WIND"} = 1 and [LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"]]]
+&&Year1WindProd = \sum_{t \in \mc{T}, s \in \mc{S}, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}} X^{rp}_{tdhsu}\cdot f^P_{tdh} \cdot  n^{tss}\\
+%| b^{cm}_{t"WIND"} = 1 and [LD = "1R" or LD = "1W" or LD = "1X" or LD = "1S"]]]
+&&AverageWindProd = \sum_{t \in \mc{T}, s \in \mc{S}, u \in \mc{U}, h \in \mc{H}, d \in \mc{D}} X^{rp}_{tdhsu}\cdot f^P_{tdh} \cdot  n^{tss}  \cdot f^l_t
+\label{eq:??}
+\end{eqnarray}
+\end{subequations}
+
+%template 
+\textit{constant text}
+\begin{subequations}\label{??}
+\begin{eqnarray}
+&& eqn...  \ \ \forall 
+\label{eq:??}
+\end{eqnarray}
+\end{subequations}
+\end{comment}
+}
