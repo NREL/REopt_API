@@ -14,7 +14,13 @@ In docker-compose.yml, under the `celery` service, change the `dockerfile` setti
 - `xpress`
 - `cbc`
 
-## Xpress license
+## Xpress solver
+If you are using FICO Xpress as the solver, then you must put the following files into the project `solver` directory:
+- install.sh
+- xp8.0.4_linux_x86_64.tar.gz
+- xpauth.xpr (see "Xpress license" section below)
+
+### Xpress license
 There is an extra step to get your Xpress license:
 - After running `docker-compose up` you need to `docker exec -it celery bash` in order to run the Xpress Host ID tool.
 - Once you are logged into a bash terminal within the celery container (via `docker exec -it celery bash`), change your directory via
