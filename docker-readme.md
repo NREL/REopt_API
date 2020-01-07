@@ -2,7 +2,7 @@
 1. Install docker-compose
 2. From the top directory:
 ```
-docker-compose-up
+docker-compose up
 ```
 3. Make POST's and GET's using `0.0.0.0:8000/v1/` as the root URL
 
@@ -25,7 +25,7 @@ There is an extra step to get your Xpress license:
 - After running `docker-compose up` you need to `docker exec -it celery bash` in order to run the Xpress Host ID tool.
 - Once you are logged into a bash terminal within the celery container (via `docker exec -it celery bash`), change your directory via
 ```
-cd cd /opt/xpressmp/bin/
+cd /opt/xpressmp/bin/
 ```
 - Then
 ```
