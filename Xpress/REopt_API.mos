@@ -386,7 +386,7 @@ forall ( ts in TimeStep) do
 end-do
 
 forall ( ts in TimeStep )  do
-	dvStorageSizeKW >=  dvElecToStor(ts)
+	dvStorageSizeKW >=  dvElecToStor(ts) / EtaStorIn
 	dvStorageSizeKW >=  dvElecFromStor(ts)
 end-do
 
