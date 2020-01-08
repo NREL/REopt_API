@@ -373,7 +373,7 @@ end-do
 
 forall ( ts in TimeStep) do
 	! Electricity to be stored is the sum of the electricity in the S-bin for that timestep
-  acElecToStor(ts)  = sum(t in Tech, s in Seg, fb in FuelBin | exists (dvRatedProd(t,"1S",ts,s,fb))) ProdFactor(t,"1S",ts) * LevelizationFactor(t) * dvRatedProd (t,"1S",ts,s,fb)
+    acElecToStor(ts)  := sum(t in Tech, s in Seg, fb in FuelBin | exists (dvRatedProd(t,"1S",ts,s,fb))) ProdFactor(t,"1S",ts) * LevelizationFactor(t) * dvRatedProd (t,"1S",ts,s,fb)
 	dvElecToStor( ts) = sum(t in Tech, s in Seg, fb in FuelBin | exists (dvRatedProd(t,"1S",ts,s,fb))) ProdFactor(t,"1S",ts) * LevelizationFactor(t) * dvRatedProd (t,"1S",ts,s,fb) * EtaStorIn(t,"1S")
 	! state of charge at each timestep is sum of previous state and electiricy coming in, and less electricity going out
 	dvStoredEnergy(ts) =   dvStoredEnergy(ts-1) +  dvElecToStor( ts) - dvElecFromStor(ts) / EtaStorOut("1S")
