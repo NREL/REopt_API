@@ -55,6 +55,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
+        j.using("Pkg")
+        j.eval('Pkg.activate("./")')
         j.include("reo/src/reopt.jl")
         results = j.reopt(data, reopt_inputs)
     except Exception as e:
