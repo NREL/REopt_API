@@ -39,7 +39,6 @@ pexpect==4.2.1
 pickleshare==0.7.4
 pigar==0.7.0
 pipreqs==0.4.9
-pkg-resources==0.0.0
 prompt-toolkit==1.0.13
 psutil==4.3.1
 psycopg2==2.8.4
