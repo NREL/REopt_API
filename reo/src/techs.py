@@ -108,12 +108,10 @@ class PV(Tech):
                     """
                     self.tilt = -1 * self.tilt
                     self.azimuth = 0
-                    self.kwargs['azimuth'] = 0
             else:  # All other tilts come from lookup table included in the array_type_to_tilt_angle dictionary above
                 self.tilt = PV.array_type_to_tilt_angle[kwargs.get('array_type')]
-        self.kwargs['tilt'] = self.tilt
 
-        self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
+        self.pvwatts = PVWatts(time_steps_per_hour=self.time_steps_per_hour, azimuth=self.azimuth, tilt=self.tilt, **self.kwargs)
 
         dfm.add_pv(self)
 
