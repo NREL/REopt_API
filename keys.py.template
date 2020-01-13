@@ -4,7 +4,6 @@ rollbar_access_token = 'test'
 #get your individual key from here: https://developer.nrel.gov/docs/api-key/ and replace the DEMO_KEY with that
 pvwatts_api_key = 'DEMO_KEY'
 developer_nrel_gov_key = 'DEMO_KEY'
-ashrae_tmy_key = 'bLVFRPEJNfHdcvkCvhKooAMafzUlZn4nGjXlywDM'
 
 
 secret_key_='secret_key_test'
