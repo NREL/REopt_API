@@ -9,6 +9,8 @@ from collections import namedtuple
 from reo.utilities import degradation_factor
 from uszipcode import SearchEngine
 from reo.log_levels import log
+import geopandas as gpd
+from shapely import geometry as g 
 
 
 class BuiltInProfile(object):
