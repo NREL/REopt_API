@@ -4,10 +4,8 @@ import json
 import math
 import requests
 from datetime import datetime, timedelta
-from .developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
-from uszipcode import SearchEngine
 from reo.log_levels import log
 import geopandas as gpd
 from shapely import geometry as g
