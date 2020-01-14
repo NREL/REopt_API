@@ -58,6 +58,9 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         if data['inputs']['Scenario']['solver'] == "Xpress":
             j.include("reo/src/reo_xpress_mdl.jl")
             model = j.reopt_model()
+        elif data['inputs']['Scenario']['solver'] == "SCIP":
+            j.include("reo/src/reo_scip_mdl.jl")
+            model = j.reopt_model()
         else:
             j.include("reo/src/reo_cbc_mdl.jl")
             model = j.reopt_model()

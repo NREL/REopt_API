@@ -23,7 +23,7 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
             "webtool_uuid": None,
             "description": "",
             "timeout_seconds": 295,
-            "solver": "Cbc",
+            "solver": "SCIP",
             "Site": {
               "PV": {
                 "pbi_years": 1.0,
