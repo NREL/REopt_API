@@ -753,11 +753,14 @@ class ValidateNestedInput:
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
                         self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
-
-                        if not (real_values.get(lp + '_is_net') or True):
+                        isnet = real_values.get(lp + '_is_net')
+                        if isnet is None:
+                            isnet = True
+                        if not isnet:
                             # next line can fail if non-numeric values are passed in for (critical_)loads_kw
                             if min(real_values.get(lp)) < 0:
                                 self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+
 
                 if real_values.get('doe_reference_name') is not None:
                     real_values['year'] = 2017
