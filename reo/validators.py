@@ -678,7 +678,7 @@ class ValidateNestedInput:
                                 self.input_data_errors.append(e.args[0])
 
             if object_name_path[-1] == "Generator":
-                    if real_values["max_kw"] > 0 or real_values["existing_kw"] > 0:
+                    if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0) and self.isValid:
                         # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                         # REopt (which need to be in place before data is saved and passed on to celery tasks)
                         gen = real_values
