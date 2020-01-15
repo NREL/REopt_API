@@ -758,8 +758,9 @@ class ValidateNestedInput:
                             isnet = True
                         if not isnet:
                             # next line can fail if non-numeric values are passed in for (critical_)loads_kw
-                            if min(real_values.get(lp)) < 0:
-                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+                            if self.isValid:
+                                if min(real_values.get(lp)) < 0:
+                                    self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
 
                 if real_values.get('doe_reference_name') is not None:
