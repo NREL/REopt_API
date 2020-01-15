@@ -24,20 +24,22 @@ fi
 XPRESSDIR="/usr/local/opt/xpress"
 
 #  path to reopt_api/reo/src for SAM SDK C libraries
-SRC_DIR="${HOME}/projects/reopt/webtool/reopt_api/reo/src"
+SRC_DIR="${HOME}/reopt_api/reo/src"
 
 #==============================================================================
 
 #------------------------------------------------------------------------------
 #  Leave the following unchanged
 #------------------------------------------------------------------------------
-DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"
-PATH="${XPRESSDIR}/bin:${PATH}"
+DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
+LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
+PATH="${XPRESSDIR}/bin:/usr/lib/julia-1.3.1/bin:${PATH}"
 CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
 
 export XPRESS="$XPRESSDIR/bin"
 export PATH
 export DYLD_LIBRARY_PATH
+export LD_LIBRARY_PATH
 export CLASSPATH
 export APP_ENV="local"
 
