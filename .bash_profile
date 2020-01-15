@@ -20,27 +20,39 @@ fi
 #------------------------------------------------------------------------------
 #  Define the following based on your file structure
 #------------------------------------------------------------------------------
-#  xpress path
-XPRESSDIR="/usr/local/opt/xpress"
-
 #  path to reopt_api/reo/src for SAM SDK C libraries
 SRC_DIR="${HOME}/reopt_api/reo/src"
+#==============================================================================
 
+
+#------------------------------------------------------------------------------
+#  Comment out the following if you are NOT using the Xpress solver
+#------------------------------------------------------------------------------
+#  xpress path
+XPRESSDIR="/usr/local/opt/xpress"
+DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
+LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
+CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
+PATH="${XPRESSDIR}/bin:${PATH}"
+
+export PATH
+export XPRESS="$XPRESSDIR/bin"
+export DYLD_LIBRARY_PATH
+export LD_LIBRARY_PATH
+export CLASSPATH
+source /opt/xpressmp/bin/xpvars.sh
+#==============================================================================
+
+
+#------------------------------------------------------------------------------
+#  You can change the following to add Julia to your system Path
+#------------------------------------------------------------------------------
+PATH="/usr/lib/julia-1.3.1/bin:${PATH}"
+export PATH
 #==============================================================================
 
 #------------------------------------------------------------------------------
 #  Leave the following unchanged
 #------------------------------------------------------------------------------
-DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
-LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
-PATH="${XPRESSDIR}/bin:/usr/lib/julia-1.3.1/bin:${PATH}"
-CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
-
-export XPRESS="$XPRESSDIR/bin"
-export PATH
-export DYLD_LIBRARY_PATH
-export LD_LIBRARY_PATH
-export CLASSPATH
 export APP_ENV="local"
-
 #==============================================================================
