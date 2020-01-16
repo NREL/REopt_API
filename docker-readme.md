@@ -1,6 +1,10 @@
 # Docker documentation for REopt Lite API
-After cloning the API, and setting up your keys.py and ~/.bash_profile:
-TODO: ADD LINKS FOR THE PREVIOUS LINE
+After cloning the API, you must set up your keys.py.
+Within the directory that you cloned the REopt API is a file called `keys.py.template`. First, copy `keys.py.template` to `keys.py` (in the same directory.
+Then, [get a NREL Developer API key](https://developer.nrel.gov/signup/) and replace the `DEMO-KEY` value within `keys.py` with your API key.
+
+
+Once you have your keys.py set up:
 1. Install docker-compose
 2. From the top directory:
 ```
