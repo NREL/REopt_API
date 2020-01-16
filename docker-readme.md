@@ -33,3 +33,12 @@ cd /opt/xpressmp/bin/
 ```
 - Copy the output of the Xpress Host ID tool and send to your Xpress license manager or user the online Xpress tool to get your `xpauth.xpr` file
 - Finally, place your `xpauth.xpr` file in the `solver` directory
+
+#### Interactive Commands on Container 
+
+You can interactively run commands in a docker container with:
+
+```
+docker exec -it <container-name> /bin/bash
+```
+where container names can be found via `docker ps`. For more see the [Docker documentation](https://docs.docker.com/).
