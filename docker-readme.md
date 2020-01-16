@@ -44,3 +44,5 @@ You can interactively run commands in a docker container with:
 docker exec -it <container-name> /bin/bash
 ```
 where container names can be found via `docker ps`. For more see the [Docker documentation](https://docs.docker.com/).
+
+For instructions on running tests when logged into the `celery` container see [Testing the REopt API](https://github.com/NREL/reopt_api/wiki/Testing-the-REopt-API).
