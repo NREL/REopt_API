@@ -1,4 +1,6 @@
 # Docker documentation for REopt Lite API
+After cloning the API, and setting up your keys.py and ~/.bash_profile:
+TODO: ADD LINKS FOR THE PREVIOUS LINE
 1. Install docker-compose
 2. From the top directory:
 ```
