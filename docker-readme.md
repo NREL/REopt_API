@@ -40,6 +40,13 @@ cd /opt/xpressmp/bin/
 - Copy the output of the Xpress Host ID tool and send to your Xpress license manager or user the online Xpress tool to get your `xpauth.xpr` file
 - Finally, place your `xpauth.xpr` file in the `solver` directory
 
+NOTE: You may have issues with your Xpress license being associated with a particular MAC address.
+If so you can set the MAC address of the `celery` service in the docker-compose.yml file by adding the option:
+```
+mac_address: <image-mac-adress>
+```
+
+
 #### Interactive Commands on Container 
 
 You can interactively run commands in a docker container with:
