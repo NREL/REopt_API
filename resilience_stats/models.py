@@ -45,9 +45,6 @@ class ResilienceModel(models.Model):
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=scenariomodel.run_uuid)
-            try:
-                err.save_to_db()
-            except:
-                log.info("Database saving error: {}".format(e.args[0]))
+            err.save_to_db()
             raise err
         return rm
