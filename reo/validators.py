@@ -691,10 +691,6 @@ class ValidateNestedInput:
 
 
             if object_name_path[-1] == "LoadProfile":
-                if real_values.get('outage_start_hour') is None and real_values.get('outage_end_hour') is not None:
-                    self.input_data_errors.append('In the LoadProfile, outage_start_hour is not defined, but the outage_end_hour is not')
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is None:
-                    self.input_data_errors.append('In the LoadProfile, outage_start_hour is defined, but the outage_end_hour is')
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
                         self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')

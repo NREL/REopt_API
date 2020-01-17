@@ -95,6 +95,28 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             self.assertTrue(text in err_msg)
             self.assertTrue("(OOPS)" in err_msg)
 
+    def test_outage_hours(self):
+        data = self.complete_valid_nestedpost
+        data['Scenario']['Site']['LoadProfile']['outage_start_hour'] = 0
+        data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = None
+        response = self.get_response(data)
+        err_msg = str(json.loads(response.content)['messages']['input_errors'])
+        self.assertTrue("Missing Required for Scenario>Site>LoadProfile: (outage_end_hour)" in err_msg)
+
+        data['Scenario']['Site']['LoadProfile']['outage_start_hour'] = None
+        data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 0
+        response = self.get_response(data)
+        err_msg = str(json.loads(response.content)['messages']['input_errors'])
+        self.assertTrue("Missing Required for Scenario>Site>LoadProfile: (outage_start_hour)" in err_msg)
+        
+
+        data['Scenario']['Site']['LoadProfile']['outage_start_hour'] = 0
+        data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 0
+        response = self.get_response(data)
+        err_msg = str(json.loads(response.content)['messages']['input_errors'])
+        self.assertTrue("LoadProfile outage_start_hour and outage_end_hour cannot be the same" in err_msg)
+        
+        
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
