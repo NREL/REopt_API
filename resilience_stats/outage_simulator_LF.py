@@ -6,7 +6,7 @@ import pandas as pd
 class Generator():
     def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
         self.kw = diesel_kw
-        self.fuel_available = fuel_available if self.kw > 0 else 0
+        self.fuel_available = fuel_available if (self.kw or 0) > 0 else 0
         self.b = b  # input b: fuel curve intercept
         self.m = m
         self.min_turndown = diesel_min_turndown
@@ -34,7 +34,7 @@ class Generator():
 class Battery():
     def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
         self.kw = batt_kw
-        self.size = batt_kwh if self.kw > 0 else 0
+        self.size = batt_kwh if (self.kw or 0) > 0 else 0
         self.soc = soc
         self.roundtrip_efficiency = batt_roundtrip_efficiency
 
