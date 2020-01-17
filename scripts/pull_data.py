@@ -1,8 +1,3 @@
-from IPython import embed
-embed()
-
-
-
 import sys
 import cPickle
 import os
