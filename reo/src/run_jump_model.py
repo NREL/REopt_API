@@ -59,13 +59,22 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         if os.environ.get("SOLVER") == "xpress":
             j.include("reo/src/reopt_xpress_model.jl")
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
-        else:
+        elif os.environ.get("SOLVER") == "cbc":
             j.include("reo/src/reopt_cbc_model.jl")
-            model = j.reopt_model()
+            model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+        elif os.environ.get("SOLVER") == "scip":
+            j.include("reo/src/reopt_scip_model.jl")
+            model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+        else:
+            raise REoptFailedToStartError(
+                message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
+                run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
         j.include("reo/src/reopt.jl")
         results = j.reopt(model, data, reopt_inputs)
     except Exception as e:
+        if isinstance(e, REoptFailedToStartError):
+            raise e
         exc_type, exc_value, exc_traceback = sys.exc_info()
         logger.error("REopt.py raise unexpected error: UUID: " + str(self.run_uuid))
         raise UnexpectedError(exc_type, exc_value, traceback.format_tb(exc_traceback), task=name, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
