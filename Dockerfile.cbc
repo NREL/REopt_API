@@ -3,7 +3,8 @@ FROM python:3-onbuild
 ENV PYTHONDONTWRITEBYTECODE 1
 ADD . /opt/reopt
 ENV APP_ENV=local
-ENV SRC_DIR=/opt/reopt/src
+ENV SRC_DIR=/opt/reopt/reo/src
+ENV LD_LIBRARY_PATH=${SRC_DIR}:${LD_LIBRARY_PATH}
 
 RUN apt update -y && apt install -y coinor-cbc;
 
