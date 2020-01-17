@@ -4,7 +4,6 @@ from reo.log_levels import log
 import rollbar
 
 
-
 class REoptError(Exception):
     """
     Base class for exceptions in reo app.

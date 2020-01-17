@@ -48,7 +48,6 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
     """
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-            
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.args[0])}, status=400)
@@ -58,7 +57,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
-    try:  # to run outage simulator        
+    try:  # to run outage simulator
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
         if scenario.status == "Optimizing...":
             raise ScenarioOptimizing
@@ -203,7 +202,6 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                         if isinstance(e, REoptError):
                             return JsonResponse({"Error": e.message}, status=500)
                         raise e
-    
                     ResilienceModel.objects.filter(id=rm.id).update(**results)
                     
                 except IntegrityError:
