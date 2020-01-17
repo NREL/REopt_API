@@ -22,7 +22,7 @@ class Generator():
             return 0
 
     def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        if self.gen_avail(n_steps_per_hour) >= self.genmin and (gen_output or 0) > 0:
+        if self.gen_avail(n_steps_per_hour) >= self.genmin and gen_output > 0:
             gen_output = max(self.genmin, min(gen_output, self.gen_avail(n_steps_per_hour)))
             fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
             self.fuel_available -= min(self.fuel_available, fuel_consume)
@@ -213,7 +213,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 unmatch, gen, batt = load_following(
                     critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
-                if (unmatch or 0) > 0 or i == (n_timesteps-1):  # cannot survive
+                if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
                     r[time_step] = float(i) / float(n_steps_per_hour)
                     break
 
