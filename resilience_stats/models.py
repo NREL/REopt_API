@@ -1,7 +1,9 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField, HStoreField
 from reo.models import ScenarioModel
-
+import sys
+from reo.log_levels import log
+from reo.exceptions import SaveToDatabase
 
 class ResilienceModel(models.Model):
 
@@ -37,7 +39,12 @@ class ResilienceModel(models.Model):
 
     @classmethod
     def create(cls, scenariomodel, **kwargs):
-        
         rm = cls(scenariomodel=scenariomodel, **kwargs)
-        rm.save()
+        try:
+            rm.save()
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=scenariomodel.run_uuid)
+            err.save_to_db()
+            raise err
         return rm

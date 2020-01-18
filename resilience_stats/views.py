@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outage
-from reo.exceptions import UnexpectedError
+from reo.exceptions import UnexpectedError, REoptError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
 from reo.models import ModelManager
@@ -46,10 +46,8 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
               "probs_of_surviving",
              }
     """
-
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.args[0])}, status=400)
@@ -198,9 +196,14 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
 
                 try:
                     # new model
-                    rm = ResilienceModel.create(scenariomodel=scenario)
+                    try:
+                        rm = ResilienceModel.create(scenariomodel=scenario)
+                    except Exception as e:
+                        if isinstance(e, REoptError):
+                            return JsonResponse({"Error": e.message}, status=500)
+                        raise e
                     ResilienceModel.objects.filter(id=rm.id).update(**results)
-
+                    
                 except IntegrityError:
                     # have run resiliense_stat & bau=false
                     # return both w/tech and bau

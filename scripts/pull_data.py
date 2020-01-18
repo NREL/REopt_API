@@ -462,7 +462,7 @@ def run(*args):
 		now = now.replace(tzinfo=pytz.utc)
 		now = int(round((now - datetime.datetime(1970, 1, 1,tzinfo=pytz.utc)).total_seconds()))
 
-	 	total_t = ElectricTariffModel.objects.all().count()
+		total_t = ElectricTariffModel.objects.all().count()
 		urdb_results = {}
 		for r in range(0,int(total_t/10000.0)+1):
 			start = r*10000
