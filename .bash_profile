@@ -31,13 +31,15 @@ SRC_DIR="${HOME}/projects/reopt/webtool/reopt_api/reo/src"
 #------------------------------------------------------------------------------
 #  Leave the following unchanged
 #------------------------------------------------------------------------------
-DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"
+DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for mac
+LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for linux
 PATH="${XPRESSDIR}/bin:${PATH}"
 CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
 
 export XPRESS="$XPRESSDIR/bin"
 export PATH
 export DYLD_LIBRARY_PATH
+export LD_LIBRARY_PATH
 export CLASSPATH
 export APP_ENV="local"
 

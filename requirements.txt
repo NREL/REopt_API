@@ -42,7 +42,7 @@ pigar==0.7.0
 pipreqs==0.4.9
 prompt-toolkit==1.0.13
 psutil==4.3.1
-psycopg2==2.7.1
+psycopg2==2.8.4
 ptyprocess==0.5.1
 pycodestyle==2.5.0
 Pygments==2.2.0

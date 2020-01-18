@@ -222,17 +222,17 @@ class UrdbParse:
         for period in current_rate.demandratestructure:
             for tier in period:
                 if 'rate' in tier:
-                    rate = tier['rate']
+                    rate = float(tier['rate'])
                     if 'adj' in tier:
-                        rate += tier['adj']
+                        rate += float(tier['adj'])
                     if rate > max_demand_rate:
                         max_demand_rate = rate
         for period in range(0, len(current_rate.flatdemandstructure)):
             for tier in range(0, len(current_rate.flatdemandstructure[period])):
                 if 'rate' in current_rate.flatdemandstructure[period][tier]:
-                    rate = current_rate.flatdemandstructure[period][tier]['rate']
+                    rate = float(current_rate.flatdemandstructure[period][tier]['rate'])
                     if 'adj' in current_rate.flatdemandstructure[period][tier]:
-                        rate += current_rate.flatdemandstructure[period][tier]['adj']
+                        rate += float(current_rate.flatdemandstructure[period][tier]['adj'])
                     if rate > max_demand_rate:
                         max_demand_rate = rate
 
@@ -269,7 +269,7 @@ class UrdbParse:
             energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
-                energy_tier_max = energy_tier['max']
+                energy_tier_max = float(energy_tier['max'])
 
             if 'rate' in energy_tier or 'adj' in energy_tier:
                 self.reopt_args.energy_max_in_tiers.append(energy_tier_max)
@@ -282,12 +282,12 @@ class UrdbParse:
                     average_rates = True
 
             if 'rate' in energy_tier:
-                rates.append(energy_tier['rate'])
+                rates.append(float(energy_tier['rate']))
                 if 'adj' in energy_tier:
-                    rates[-1] += energy_tier['adj']
+                    rates[-1] += float(energy_tier['adj'])
             # people put adj but no rate in some rates
             elif 'adj' in energy_tier:
-                rates.append(energy_tier['adj'])
+                rates.append(float(energy_tier['adj']))
 
         if average_rates:
             rate_average = float(sum(rates)) / max(len(rates), 1)
@@ -325,9 +325,9 @@ class UrdbParse:
                         if average_rates:
                             rate = rate_average
                         else:
-                            rate = current_rate.energyratestructure[period][tier_use].get('rate') or 0
+                            rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
 
-                        adj = current_rate.energyratestructure[period][tier_use].get('adj') or 0
+                        adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
 
                         for step in range(0, self.time_steps_per_hour):
                             self.energy_costs.append(rate + adj)
@@ -514,7 +514,7 @@ class UrdbParse:
                     demand_tier = demand_rate_structure[period][tier]
                     demand_tier_max = self.big_number
                     if 'max' in demand_tier:
-                        demand_tier_max = demand_tier['max']
+                        demand_tier_max = float(demand_tier['max'])
                     demand_max.append(demand_tier_max)
                 demand_tiers[period] = demand_max
                 demand_maxes.append(demand_max[-1])
@@ -545,8 +545,8 @@ class UrdbParse:
                     if period_in_month == period_idx:
 
                         for tier in seasonal_period:
-                            seasonal_rate = tier.get('rate') or 0
-                            seasonal_adj = tier.get('adj') or 0
+                            seasonal_rate = float(tier.get('rate') or 0)
+                            seasonal_adj = float(tier.get('adj') or 0)
                             self.reopt_args.demand_rates_monthly.append(seasonal_rate + seasonal_adj)
 
     def prepare_demand_rate_summary(self):
@@ -583,8 +583,8 @@ class UrdbParse:
 
                     for tier in current_rate.demandratestructure[demand_period]:
 
-                        tou_rate = tier.get('rate') or 0
-                        tou_adj = tier.get('adj') or 0
+                        tou_rate = float(tier.get('rate') or 0)
+                        tou_adj = float(tier.get('adj') or 0)
 
                         demand_rates.append(tou_rate + tou_adj)
 

@@ -522,6 +522,8 @@ class LoadProfile(BuiltInProfile):
                             fuel_avail_before_outage, fuel_slope, fuel_intercept):
             fuel_avail = fuel_avail_before_outage
             
+            i = -1
+            
             if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
                 return False, 0
 
