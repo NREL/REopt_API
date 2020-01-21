@@ -38,16 +38,16 @@ cd /opt/xpressmp/bin/
 ./xphostid
 ```
 - Copy the output of the Xpress Host ID tool and send to your Xpress license manager or user the online Xpress tool to get your `xpauth.xpr` file
-- Finally, place your `xpauth.xpr` file in the `solver` directory
+- Finally, place your `xpauth.xpr` file in the `solver` directory and rebuild
 
-NOTE: You may have issues with your Xpress license being associated with a particular MAC address.
-If so you can set the MAC address of the `celery` service in the docker-compose.yml file by adding the option:
+NOTE: You may have issues with your Xpress license being associated with a particular MAC address. The license should be tied to the MAC address of the `celery` service image.
+You can set the MAC address of the `celery` service in the docker-compose.yml file by adding the option:
 ```
 mac_address: <image-mac-adress>
 ```
 
 
-#### Interactive Commands on Container 
+### Interactive Commands on Container 
 
 You can interactively run commands in a docker container with:
 
@@ -57,3 +57,9 @@ docker exec -it <container-name> /bin/bash
 where container names can be found via `docker ps`. For more see the [Docker documentation](https://docs.docker.com/).
 
 For instructions on running tests when logged into the `celery` container see [Testing the REopt API](https://github.com/NREL/reopt_api/wiki/Testing-the-REopt-API).
+
+
+### FAQ
+
+#### address already in use
+If you are already running PostgreSQL or Redis when you start the docker containers then you may get a conflict with the ports that PostgreSQL and Redis use. To fix this you can either shut down your PostgreSQL and/or Redis servers or change the port numbers in the docker-compose.yml file. For more on ports see the [Docker documentation](https://docs.docker.com/).
