@@ -48,7 +48,8 @@ mac_address: <image-mac-adress>
 
 
 ### Interactive Commands on Container 
-
+#### to check if all the containers are running as expected, run the following command:
+docker ps
 You can interactively run commands in a docker container with:
 
 ```
