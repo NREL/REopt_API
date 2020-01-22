@@ -26,7 +26,7 @@ services:
     container_name: celery
     build:
       context: .
-      dockerfile: Dockerfile.xpress
+      dockerfile: Dockerfile.cbc
       args:
         - oom_kill_disable=true
     command: celery -A reopt_api worker -l info
@@ -36,7 +36,7 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
-      - SOLVER=xpress
+      - SOLVER=cbc
     volumes:
       - .:/opt/reopt
     depends_on:
@@ -54,7 +54,7 @@ services:
       - SQL_HOST=db
       - SQL_PORT=5432
       - REDIS_HOST=redis
-      - SOLVER=xpress
+      - SOLVER=cbc
     depends_on:
       - db
       - redis
