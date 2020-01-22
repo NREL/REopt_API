@@ -56,13 +56,17 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
+        j.using("Pkg")
         if os.environ.get("SOLVER") == "xpress":
+            j.eval('Pkg.activate("./julia_envs/Xpress/")')
             j.include("reo/src/reopt_xpress_model.jl")
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
         elif os.environ.get("SOLVER") == "cbc":
+            j.eval('Pkg.activate("./julia_envs/Cbc/")')
             j.include("reo/src/reopt_cbc_model.jl")
             model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
         elif os.environ.get("SOLVER") == "scip":
+            j.eval('Pkg.activate("./julia_envs/SCIP/")')
             j.include("reo/src/reopt_scip_model.jl")
             model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
         else:
