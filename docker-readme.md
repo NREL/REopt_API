@@ -13,15 +13,24 @@ docker-compose up
 3. Make POST's and GET's using `0.0.0.0:8000/v1/` as the root URL
 
 ## Changing Solver
-In docker-compose.yml, under the `celery` service, change the `dockerfile` setting to one of:
-- Dockerfile.xpress
-- Dockerfile.cbc
-2. and change the `environment` variable for `SOLVER` within the `celery` and `reopt` services to the corresponding solver:
-- `xpress`
-- `cbc`
+By default the solver is set to Cbc (because it does not require a license and therefore builds without any additional steps).
+If you would like to use another solver we have set up Dockerfile's for SCIP and Xpress, but these (and other solvers) require extra steps, which are described below.
 
-## Xpress solver
-If you are using FICO Xpress as the solver, then you must put the following files into the project `solver` directory:
+### SCIP
+To use [SCIP](https://scip.zib.de/) you will need to download SCIPOptSuite-6.0.2-Linux.deb (or another version if you wish, but you will have to modify the Dockerfile.scip).
+Place SCIPOptSuite-6.0.2-Linux.deb in the "solver" directory before running `docker-compose up`.
+Note: if you have previously run `docker-compose up` with another solver then you will need to add the `--build` option.
+
+Additionally, in docker-compose.yml, under the `celery` service, change the `dockerfile` setting to `Dockerfile.scip`
+and change the `environment` variable for `SOLVER` within the `celery` and `reopt` services to `scip`.
+
+Note: The Dockerfile.scip starts from the Ubuntu 18.04 image instead of the Python3 image because SCIP is not compatible for Jessie Debian 8 (which is the OS for the Python3 image).
+
+### Xpress
+Similar to changing to the SCIP solver, under the `celery` service, change the `dockerfile` setting to `Dockerfile.xpress`
+and change the `environment` variable for `SOLVER` within the `celery` and `reopt` services to `xpress`.
+
+Next, obtain the install files from FICO Xpress and put the following files into the project "solver" directory:
 - install.sh
 - xp8.0.4_linux_x86_64.tar.gz
 - xpauth.xpr (see "Xpress license" section below)
