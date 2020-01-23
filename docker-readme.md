@@ -54,7 +54,10 @@ You can set the MAC address of the `celery` service in the docker-compose.yml fi
 ```
 mac_address: <image-mac-adress>
 ```
-
+To find your mac address in the celery docker container you can use:
+```
+ip addr show
+```
 
 ### Interactive Commands on Container 
 #### to check if all the containers are running as expected, run the following command:
