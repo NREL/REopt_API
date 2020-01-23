@@ -26,21 +26,28 @@ SRC_DIR="${HOME}/reopt_api/reo/src"
 
 
 #------------------------------------------------------------------------------
-#  Comment out the following if you are NOT using the Xpress solver
+#  Choose your solver
 #------------------------------------------------------------------------------
-#  xpress path
-XPRESSDIR="/usr/local/opt/xpress"
-DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
-LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
-CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
-PATH="${XPRESSDIR}/bin:${PATH}"
+export SOLVER="cbc"
+#==============================================================================
 
-export PATH
-export XPRESS="$XPRESSDIR/bin"
-export DYLD_LIBRARY_PATH
-export LD_LIBRARY_PATH
-export CLASSPATH
-source /opt/xpressmp/bin/xpvars.sh
+
+#------------------------------------------------------------------------------
+
+#  Uncomment the following if you are using the Xpress solver
+#------------------------------------------------------------------------------
+#XPRESSDIR="/usr/local/opt/xpress"
+#DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${DYLD_LIBRARY_PATH}"  # for Mac
+#LD_LIBRARY_PATH="${XPRESSDIR}/lib:${SRC_DIR}:${LD_LIBRARY_PATH}"  # for Linux
+#CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
+#PATH="${XPRESSDIR}/bin:${PATH}"
+#
+#export PATH
+#export XPRESS="$XPRESSDIR/bin"
+#export DYLD_LIBRARY_PATH
+#export LD_LIBRARY_PATH
+#export CLASSPATH
+#source /opt/xpressmp/bin/xpvars.sh
 #==============================================================================
 
 
@@ -50,6 +57,7 @@ source /opt/xpressmp/bin/xpvars.sh
 PATH="/usr/lib/julia-1.3.1/bin:${PATH}"
 export PATH
 #==============================================================================
+
 
 #------------------------------------------------------------------------------
 #  Leave the following unchanged

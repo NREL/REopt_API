@@ -119,8 +119,8 @@ elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
             'OPTIONS': {
                  'options': '-c search_path=public'
              },
-            'HOST': 'localhost',
-            'PORT': '',
+            "HOST": os.environ.get("SQL_HOST", "localhost"),
+            "PORT": os.environ.get("SQL_PORT", "5432"),
         }
 }
 else:
