@@ -54,10 +54,12 @@ You can set the MAC address of the `celery` service in the docker-compose.yml fi
 ```
 mac_address: <image-mac-adress>
 ```
-To find your mac address in the celery docker container you can use:
+You can check your MAC address by logging into the celery service with `docker exec -it celery /bin/bash` and then execute `mosel` to see something like:
 ```
-ip addr show
+Xpress licensing error 9: The license file only supports host ID(s) mx0242ac125004.
 ```
+Then set your `mac_address` in the docker-compose.yml file to `02:42:ac:12:50:04` and run `docker-compose up` again.
+
 
 ### Interactive Commands on Container 
 #### to check if all the containers are running as expected, run the following command:
