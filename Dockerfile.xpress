@@ -28,13 +28,10 @@ RUN tar xvfz julia-1.2.0-linux-x86_64.tar.gz && rm julia-1.2.0-linux-x86_64.tar.
 ENV PATH=/usr/src/julia-1.2.0/bin:$PATH
 ENV LD_PRELOAD=/usr/src/julia-1.2.0/lib/julia/libstdc++.so.6
 RUN python -c 'import julia; julia.install()'
-RUN julia -e 'import Pkg; \
+RUN julia --project="./julia_envs/Xpress/" -e 'import Pkg; \
               Pkg.update(); \
               ENV["PYTHON"] = "/data/github/reopt_api/env/bin/python"; \
-              Pkg.add(Pkg.PackageSpec(url="https://github.com/JuliaOpt/Xpress.jl.git")); \
-              Pkg.add(Pkg.PackageSpec(name="JuMP", version="0.19.2")); \
-              Pkg.add(Pkg.PackageSpec(name="AxisArrays", version="0.3.3")); \
-              Pkg.add(Pkg.PackageSpec(name="MathOptInterface", version="0.8.4"))'
+              Pkg.instantiate();'
 
 WORKDIR /opt/reopt
 EXPOSE 8000

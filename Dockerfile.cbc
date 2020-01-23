@@ -15,12 +15,8 @@ RUN tar xvfz julia-1.2.0-linux-x86_64.tar.gz && rm julia-1.2.0-linux-x86_64.tar.
 ENV PATH=/usr/src/julia-1.2.0/bin:$PATH
 ENV LD_PRELOAD=/usr/src/julia-1.2.0/lib/julia/libstdc++.so.6
 RUN python -c 'import julia; julia.install()'
-RUN julia -e 'import Pkg; \
-              Pkg.update(); \
-              Pkg.add("Cbc"); \
-              Pkg.add("JuMP"); \
-              Pkg.add("AxisArrays"); \
-              Pkg.add("MathOptInterface")'
+RUN julia --project="./julia_envs/Cbc/" -e 'import Pkg; \
+              Pkg.instantiate();'
 
 WORKDIR /opt/reopt
 EXPOSE 8000
