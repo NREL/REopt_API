@@ -46,7 +46,10 @@ python manage.py test reo.tests.test_reopt_url.EntryResourceTest.test_complex_in
 ## Styleguides
 
 #### Python code
-- PEP8 and PyCharm
+- PEP8
+
+## Recommended IDE
+- PyCharm
 
 #### Git Commit Messages
 - Use the present tense ("Add feature" not "Added feature")

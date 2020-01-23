@@ -114,3 +114,7 @@ results_processing/*
 # Docker
 docker_setup/solver_install_files/xpress_files
 docker_share/
+
+# Math Forumlation Latex
+docs/formulation/*aux
+docs/formulation/*log

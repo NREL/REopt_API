@@ -4,11 +4,11 @@ import json
 import math
 import requests
 from datetime import datetime, timedelta
-from .developer_reo_api import DeveloperREOapi
 from collections import namedtuple
 from reo.utilities import degradation_factor
-from uszipcode import SearchEngine
 from reo.log_levels import log
+import geopandas as gpd
+from shapely import geometry as g 
 
 
 class BuiltInProfile(object):
@@ -373,60 +373,30 @@ class BuiltInProfile(object):
 
     @property
     def city(self):
-
-        if self.nearest_city is not None:
-            return self.nearest_city
-
-        if not self.tried_developer_reo_api:
-            self.tried_developer_reo_api = True
-            # get nearest city from developer reo api (not to be confused with this reo api)
-            drapi = DeveloperREOapi(lat=self.latitude, lon=self.longitude)
-            ashrae_city = drapi.get_city(self.default_cities)
-            if ashrae_city is not None:
-                self.nearest_city = ashrae_city
-                return ashrae_city
-
-        # else use alternate API
         if self.nearest_city is None:
-            log.info("Using alternate location api.")
+            #try shapefile lookup
+            log.info("Trying city lookup by shapefile.")
+            gdf = gpd.read_file('reo/src/data/climate_cities.shp')
+            gdf = gdf[gdf.geometry.intersects(g.Point(self.longitude, self.latitude))]
+            if not gdf.empty:
+                self.nearest_city = gdf.city.values[0].replace(' ','')
+                
+            if self.nearest_city is None:
+                # else use old geometric approach, never fails...but isn't necessarily correct
+                log.info("Using geometrically nearest city to lat/lng.")
+                min_distance = None
 
-            search = SearchEngine(simple_zipcode=True)
-            result = search.by_coordinates(self.latitude, self.longitude, radius=50, returns=1)
+                for i, c in enumerate(self.default_cities):
+                    distance = math.sqrt((self.latitude - c.lat) ** 2 + (self.longitude - c.lng) ** 2)
 
-            if len(result) > 0:
-                zip = result[0].zipcode
+                    if i == 0:
+                        min_distance = distance
+                        self.nearest_city = c.name
+                    elif distance < min_distance:
+                        min_distance = distance
+                        self.nearest_city = c.name
 
-                url = "http://www.afanalytics.com/api/climatezone/" + str(zip)
-                r = requests.get(url)
-                if r.ok:
-                    resp = json.loads(r.content)
-                    zone_number = str(resp["climate_zone_number"])
-                    zone_letter = str(resp["climate_zone_letter"])
-                    if zone_letter == 'None':
-                        zone_letter = ''
-                    zone = zone_number + zone_letter
-
-                    for city in map(self.Default_city._make, self.default_cities):
-                        if city.zoneid == zone:
-                            self.nearest_city = city.name
-                            return self.nearest_city
-
-        # else use old geometric approach, never fails...but isn't necessarily correct
-        if self.nearest_city is None:
-            log.info("Using geometrically nearest city to lat/lng.")
-            min_distance = None
-
-            for i, c in enumerate(self.default_cities):
-                distance = math.sqrt((self.latitude - c.lat) ** 2 + (self.longitude - c.lng) ** 2)
-
-                if i == 0:
-                    min_distance = distance
-                    self.nearest_city = c.name
-                elif distance < min_distance:
-                    min_distance = distance
-                    self.nearest_city = c.name
-
-            return self.nearest_city
+        return self.nearest_city
 
     @property
     def default_annual_kwh(self):
