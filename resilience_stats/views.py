@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outage
-from reo.exceptions import UnexpectedError
+from reo.exceptions import UnexpectedError, REoptError
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
 from reo.models import ModelManager
@@ -46,10 +46,8 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
               "probs_of_surviving",
              }
     """
-
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
-
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.args[0])}, status=400)
@@ -143,7 +141,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                         "init_soc": batt.year_one_soc_series_pct,
                         "critical_loads_kw": load_profile.critical_load_series_kw,
                         "batt_roundtrip_efficiency": batt_roundtrip_efficiency,
-                        "diesel_kw": gen.size_kw,
+                        "diesel_kw": gen.size_kw or 0,
                         "fuel_available": gen.fuel_avail_gal,
                         "b": gen.fuel_intercept_gal_per_hr,
                         "m": gen.fuel_slope_gal_per_kwh,
@@ -158,7 +156,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                         "batt_kw": 0,
                         "pv_kw_ac_hourly": [p*pv.size_kw*pv.existing_kw for p in pv.year_one_power_production_series_kw],
                         "critical_loads_kw": load_profile.critical_load_series_kw,
-                        "diesel_kw": gen.existing_kw,
+                        "diesel_kw": gen.existing_kw or 0,
                         "fuel_available": gen.fuel_avail_gal,
                         "b": gen.fuel_intercept_gal_per_hr,
                         "m": gen.fuel_slope_gal_per_kwh,
@@ -198,9 +196,14 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
 
                 try:
                     # new model
-                    rm = ResilienceModel.create(scenariomodel=scenario)
+                    try:
+                        rm = ResilienceModel.create(scenariomodel=scenario)
+                    except Exception as e:
+                        if isinstance(e, REoptError):
+                            return JsonResponse({"Error": e.message}, status=500)
+                        raise e
                     ResilienceModel.objects.filter(id=rm.id).update(**results)
-
+                    
                 except IntegrityError:
                     # have run resiliense_stat & bau=false
                     # return both w/tech and bau

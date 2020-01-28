@@ -358,136 +358,7 @@ class ValidateNestedInput:
             self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
             self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
-
-            if self.input_dict['Scenario'].get('user_uuid') is not None:
-                self.validate_user_uuid(user_uuid=self.input_dict['Scenario']['user_uuid'], err_msg = "user_uuid must be a valid UUID")
-            if self.input_dict['Scenario'].get('description') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['description'],
-                                          pattern = r'^[-0-9a-zA-Z.  $:;)(*&#_!@]*$',
-                          err_msg = "description can include enlisted special characters: [-0-9a-zA-Z.  $:;)(*&#_!@] and can have 0-9, a-z, A-Z, periods, and spaces.")
-            if self.input_dict['Scenario']['Site'].get('address') is not None:
-                self.validate_text_fields(str = self.input_dict['Scenario']['Site']['address'], pattern = r'^[0-9a-zA-Z. ]*$',
-                          err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
-
-            if any((isinstance(self.input_dict['Scenario']['Site']['Wind']['max_kw'], x) for x in [float, int])):
-                if self.input_dict['Scenario']['Site']['Wind']['max_kw'] > 0:
-
-                    if self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"):
-                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_meters_per_sec"),
-                                           "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("wind_direction_degrees"),
-                                           "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("temperature_celsius"),
-                                           "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
-
-                        self.validate_8760(self.input_dict['Scenario']['Site']['Wind'].get("pressure_atmospheres"),
-                                           "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
-                    else:
-                        self.validate_wind_resource()
-
-            """
-            If using URDB, user provides either:
-            - urdb_response,
-            - OR urdb_label,
-            - OR urdb_rate_name AND urdb_utility_name.
-            For the latter two options, we have to get the urdb_response.
-            """
-            electric_tariff = self.input_dict['Scenario']['Site']['ElectricTariff']
-
-            if electric_tariff.get('urdb_response') is not None:
-                self.validate_urdb_response()
-
-            elif electric_tariff.get('urdb_label','') != '':
-                rate = Rate(rate=electric_tariff.get('urdb_label'))
-
-                if rate.urdb_dict is None:
-                    self.urdb_errors.append(
-                        "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
-                            .format(electric_tariff.get('urdb_label'))
-                    )
-                else:
-                    electric_tariff['urdb_response'] = rate.urdb_dict
-                    self.validate_urdb_response()
-
-            elif electric_tariff.get('urdb_utility_name','') != '' and electric_tariff.get('urdb_rate_name','') != '':
-                rate = Rate(util=electric_tariff.get('urdb_utility_name'), rate=electric_tariff.get('urdb_rate_name'))
-
-                if rate.urdb_dict is None:
-                    self.urdb_errors.append(
-                        "Unable to download {} from URDB. Please check the input values for 'urdb_utility_name' and 'urdb_rate_name'."
-                            .format(electric_tariff.get('urdb_rate_name'))
-                    )
-                else:
-                    electric_tariff['urdb_response'] = rate.urdb_dict
-                    self.validate_urdb_response()
-
-            if electric_tariff['add_blended_rates_to_urdb_rate']:
-                monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
-                monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
-                urdb_rate = electric_tariff.get('urdb_response', True)
-
-                if monthly_demand==True or monthly_energy==True or urdb_rate==True:
-                    missing_keys = []
-                    if monthly_demand==True:
-                        missing_keys.append('blended_monthly_demand_charges_us_dollars_per_kw')
-                    if monthly_energy==True:
-                        missing_keys.append('blended_monthly_rates_us_dollars_per_kwh')
-                    if urdb_rate==True:
-                        missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
-
-                    self.input_data_errors.append('add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: {}'.format(', '.join(missing_keys)))
-
-            for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
-                if electric_tariff.get(blended, False):
-                    if len(electric_tariff.get(blended)) != 12:
-                        self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
-
-            for lp in ['critical_loads_kw', 'loads_kw']:
-
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                    self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                       "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
-
-            if self.isValid:
-                if self.input_dict['Scenario']["Site"]["Generator"]["max_kw"] > 0 or \
-                        self.input_dict['Scenario']["Site"]["Generator"]["existing_kw"] > 0:
-                    # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
-                    # REopt (which need to be in place before data is saved and passed on to celery tasks)
-                    gen = self.input_dict['Scenario']["Site"]["Generator"]
-
-                    m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
-                    if gen["fuel_slope_gal_per_kwh"] == 0:
-                        gen["fuel_slope_gal_per_kwh"] = m
-                    if gen["fuel_intercept_gal_per_hr"] == 0:
-                        gen["fuel_intercept_gal_per_hr"] = b
-
-                # counts down if both 'loads_kw' and 'critical_loads_lw' lists are empty, in which case
-                # 'doe_reference_name is a mandatory input'
-                counter = 2
-                for lp in ['critical_loads_kw', 'loads_kw']:
-                    if len(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp,[])) > 0:
-                        if not self.input_dict['Scenario']['Site']['LoadProfile'].get(lp + '_is_net', True):
-                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
-                            if min(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp)) < 0:
-                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-
-                    if self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) not in [None, []]:
-                        self.validate_8760(self.input_dict['Scenario']['Site']['LoadProfile'].get(lp),
-                                           "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
-
-                    elif self.input_dict['Scenario']['Site']['LoadProfile'].get(lp) in [None, []] and \
-                            self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is None:
-                        counter -= 1
-
-                    else:  # When using DOE load profile, year must start on Sunday
-                        self.input_dict['Scenario']['Site']['LoadProfile']['year'] = 2017
-
-                # if both the load_kw and critical_load_kw are NOT uploaded by the user, then doe_reference name is a mandatory input
-                if counter == 0:
-                    self.input_data_errors.append(
-                        "If the load profile is not uploaded by the user, then doe_reference_name is a required input.")
+            self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
 
         @property
         def isValid(self):
@@ -717,6 +588,181 @@ class ValidateNestedInput:
                         if name not in template_values.keys():
                             self.delete_attribute(object_name_path, name)
                             self.invalid_inputs.append([name, object_name_path])
+
+
+        def check_special_cases(self, object_name_path, template_values=None, real_values=None):
+            """
+            checks special input requirements not otherwise programatically captured by nested input definitions
+            
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :return: None
+            """
+
+            if object_name_path[-1] == "Scenario":
+                if real_values.get('user_uuid') is not None:
+                    self.validate_user_uuid(user_uuid=real_values['user_uuid'], err_msg = "user_uuid must be a valid UUID")
+                if real_values.get('description') is not None:
+                    self.validate_text_fields(str = real_values['description'],
+                                              pattern = r'^[-0-9a-zA-Z.  $:;)(*&#_!@]*$',
+                              err_msg = "description can include enlisted special characters: [-0-9a-zA-Z.  $:;)(*&#_!@] and can have 0-9, a-z, A-Z, periods, and spaces.")
+            
+            if object_name_path[-1] == "Site":
+                if real_values.get('address') is not None:
+                    self.validate_text_fields(str = real_values['address'], pattern = r'^[0-9a-zA-Z. ]*$',
+                              err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
+            
+            if object_name_path[-1] == "Wind":
+                if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
+                    if real_values['max_kw'] > 0:
+
+                        if real_values.get("wind_meters_per_sec"):
+                            self.validate_8760(real_values.get("wind_meters_per_sec"),
+                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
+
+                            self.validate_8760(real_values.get("wind_direction_degrees"),
+                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
+
+                            self.validate_8760(real_values.get("temperature_celsius"),
+                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
+
+                            self.validate_8760(real_values.get("pressure_atmospheres"),
+                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                        else:
+                            from reo.src.wind_resource import get_conic_coords
+
+                            if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
+                                """
+                                size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
+                                climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
+                                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the 
+                                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be 
+                                handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
+                                modified.
+                                """
+
+                                avg_load_kw = 0
+                                if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
+                                    avg_load_kw = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') / 8760
+
+                                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
+
+                                    from reo.src.load_profile import BuiltInProfile
+                                    b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                                       longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                       **self.input_dict['Scenario']['Site']['LoadProfile']
+                                                       )
+                                    self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
+
+                                    avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
+                                                  / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
+
+                                if avg_load_kw <= 12.5:
+                                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
+                                elif avg_load_kw <= 100:
+                                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
+                                elif avg_load_kw <= 1000:
+                                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
+                                else:
+                                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
+                            try:
+                                get_conic_coords(
+                                    lat=self.input_dict['Scenario']['Site']['latitude'],   
+                                    lng=self.input_dict['Scenario']['Site']['longitude'])
+                            except Exception as e:
+                                self.input_data_errors.append(e.args[0])
+
+            if object_name_path[-1] == "Generator":
+                if self.isValid:
+                    if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
+                        # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
+                        # REopt (which need to be in place before data is saved and passed on to celery tasks)
+                        gen = real_values
+                        m, b = Generator.default_fuel_burn_rate(gen["min_kw"] + gen["existing_kw"])
+                        if gen["fuel_slope_gal_per_kwh"] == 0:
+                            gen["fuel_slope_gal_per_kwh"] = m
+                        if gen["fuel_intercept_gal_per_hr"] == 0:
+                            gen["fuel_intercept_gal_per_hr"] = b
+
+
+            if object_name_path[-1] == "LoadProfile":
+                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+
+            if object_name_path[-1] == "ElectricTariff":
+                electric_tariff =real_values
+
+                if electric_tariff.get('urdb_response') is not None:
+                    self.validate_urdb_response()
+
+                elif electric_tariff.get('urdb_label','') != '':
+                    rate = Rate(rate=electric_tariff.get('urdb_label'))
+
+                    if rate.urdb_dict is None:
+                        self.urdb_errors.append(
+                            "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
+                                .format(electric_tariff.get('urdb_label'))
+                        )
+                    else:
+                        electric_tariff['urdb_response'] = rate.urdb_dict
+                        self.validate_urdb_response()
+
+                elif electric_tariff.get('urdb_utility_name','') != '' and electric_tariff.get('urdb_rate_name','') != '':
+                    rate = Rate(util=electric_tariff.get('urdb_utility_name'), rate=electric_tariff.get('urdb_rate_name'))
+
+                    if rate.urdb_dict is None:
+                        self.urdb_errors.append(
+                            "Unable to download {} from URDB. Please check the input values for 'urdb_utility_name' and 'urdb_rate_name'."
+                                .format(electric_tariff.get('urdb_rate_name'))
+                        )
+                    else:
+                        electric_tariff['urdb_response'] = rate.urdb_dict
+                        self.validate_urdb_response()
+
+                if electric_tariff['add_blended_rates_to_urdb_rate']:
+                    monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
+                    monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
+                    urdb_rate = electric_tariff.get('urdb_response', True)
+
+                    if monthly_demand==True or monthly_energy==True or urdb_rate==True:
+                        missing_keys = []
+                        if monthly_demand==True:
+                            missing_keys.append('blended_monthly_demand_charges_us_dollars_per_kw')
+                        if monthly_energy==True:
+                            missing_keys.append('blended_monthly_rates_us_dollars_per_kwh')
+                        if urdb_rate==True:
+                            missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
+
+                        self.input_data_errors.append('add_blended_rates_to_urdb_rate is set to \'true\' yet missing valid entries for the following inputs: {}'.format(', '.join(missing_keys)))
+
+                for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
+                    if electric_tariff.get(blended, False):
+                        if len(electric_tariff.get(blended)) != 12:
+                            self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
+            
+            if object_name_path[-1] == "LoadProfile":
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if real_values.get(lp) not in [None, []]:
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+                        isnet = real_values.get(lp + '_is_net')
+                        if isnet is None:
+                            isnet = True
+                        if not isnet:
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if self.isValid:
+                                if min(real_values.get(lp)) < 0:
+                                    self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+
+
+                if real_values.get('doe_reference_name') is not None:
+                    real_values['year'] = 2017
+
 
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
             """
@@ -956,56 +1002,6 @@ class ValidateNestedInput:
             if final_message != '':
                 self.input_data_errors.append('Missing Required for %s: %s' % (self.object_name_string(object_name_path), final_message))
 
-        def validate_wind_resource(self):
-            """
-            Validate that provided lat/lon lies within the wind toolkit data set.
-            If the location is not within the dataset, then return input_data_error.
-            If the location is within the dataset, add the wind_meters_per_sec to the Wind inputs so
-            that we only query the database once.
-            :return: None
-            """
-            from reo.src.wind_resource import get_conic_coords
-
-            if self.input_dict['Scenario']['Site']['Wind'].get('size_class') is None:
-                """
-                size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
-                climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
-                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
-                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
-                handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
-                modified.
-                """
-
-                avg_load_kw = 0
-                if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
-                    avg_load_kw = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') / 8760
-
-                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
-
-                    from reo.src.load_profile import BuiltInProfile
-                    b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
-                                       longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                       **self.input_dict['Scenario']['Site']['LoadProfile']
-                                       )
-                    self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
-
-                    avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
-                                  / len(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])
-
-                if avg_load_kw <= 12.5:
-                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'residential'
-                elif avg_load_kw <= 100:
-                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'commercial'
-                elif avg_load_kw <= 1000:
-                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'medium'
-                else:
-                    self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
-            try:
-                get_conic_coords(
-                    lat=self.input_dict['Scenario']['Site']['latitude'],
-                    lng=self.input_dict['Scenario']['Site']['longitude'])
-            except Exception as e:
-                self.input_data_errors.append(e.args[0])
 
         def validate_urdb_response(self):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')

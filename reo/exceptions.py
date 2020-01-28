@@ -199,3 +199,20 @@ class PVWattsDownloadError(REoptError):
     def __init__(self, task='', run_uuid='', user_uuid='', message='',traceback=''):
         super(PVWattsDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                 message=message, traceback=traceback)
+
+class SaveToDatabase(REoptError):
+    """
+    Catches case where a model cannot be saved to the database
+
+    Attributes:
+        message - explanation of the error
+    """
+
+    __name__ = 'SaveToDatabase'
+
+    def __init__(self, exc_type, exc_value, exc_traceback, task='', run_uuid='', user_uuid='', message=None):
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value, tb.format_tb(exc_traceback))
+        if message is None:
+            message = "Error saving to database."
+        super(SaveToDatabase, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
+                                              message=message, traceback=debug_msg)

@@ -45,7 +45,10 @@ class GeneratorTests(ResourceTestCaseMixin, TestCase):
         # sizing" capability additon. This is because the generator is now allowing to charge the battery as well.
         # So, for hour 11 and 12 (when outage happens), generator is now charging battery with 3.00845 and 0.986111 kWh,
         # along with serving the load, Thereby increasing its fuel consumption.
-        d_expected['fuel_used_gal'] = 1.79 # 1.53
+        # 200108 nlaws: when removing the binary constraints for battery charge/discharge, the fuel used during the two hour
+        # outage increased because there is now an arbitrary decision in the last/second hour of the outage to either _only_ charge the battery 
+        # or (as allowed with new constraints) both charge and discharge the battery during the last outage hour, with the same net energy transferred
+        d_expected['fuel_used_gal'] = 1.85  # 1.79  # 1.53
         d_expected['avoided_outage_costs_us_dollars'] = 472773.94
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1245.00
 

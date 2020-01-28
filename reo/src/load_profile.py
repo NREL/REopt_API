@@ -1,14 +1,12 @@
 import os
 import copy
-import json
 import math
-import requests
 from datetime import datetime, timedelta
 from collections import namedtuple
 from reo.utilities import degradation_factor
 from reo.log_levels import log
 import geopandas as gpd
-from shapely import geometry as g 
+from shapely import geometry as g
 
 
 class BuiltInProfile(object):
@@ -522,7 +520,9 @@ class LoadProfile(BuiltInProfile):
         def resilienceCheck(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                             fuel_avail_before_outage, fuel_slope, fuel_intercept):
             fuel_avail = fuel_avail_before_outage
-
+            
+            i = -1
+            
             if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
                 return False, 0
 
