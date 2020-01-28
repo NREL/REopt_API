@@ -165,6 +165,14 @@ class RateData:
                     if tier.get('adj') or False != False:
                         tier['adj'] = float(tier['adj']) * 0.7457
 
+        if self.demandunits == 'hp': #convert hp to KW, assume PF is 1 so no need to convert kVA to kW, as of 01/28/2020 only 3 rates in URDB with hp units
+            for period in self.demandratestructure:
+                for tier in period:
+                    if tier.get('rate') or False != False:
+                        tier['rate'] = float(tier['rate']) * 0.7457
+                    if tier.get('adj') or False != False:
+                        tier['adj'] = float(tier['adj']) * 0.7457
+
 
 class UrdbParse:
     """
@@ -726,6 +734,11 @@ class UrdbParse:
 
     def prepare_fixed_charges(self, current_rate):
         if not isinstance(current_rate.fixedchargefirstmeter, list):      #URDB v7
+            if current_rate.fixedchargeunits == '$/month': # first try $/month, then check if $/day exists, as of 1/28/2020 there were only $/day and $month entries in the URDB
+                self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter 
+            if current_rate.fixedchargeunits == '$/day': 
+                self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
+        else:                                                           #URDB v3, preserve backwards compatability
             if not isinstance(current_rate.fixedmonthlycharge, list):     
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
 
