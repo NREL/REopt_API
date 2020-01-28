@@ -4,7 +4,4 @@
 hs_endpoint = https://developer.nrel.gov/api/hsds
 hs_username = None
 hs_password = None
-#hs_endpoint = http://hsds-dev.nrel.gov
-#hs_username = reopt
-#hs_password = kate_test
-hs_api_key = 653bcca1955c8acf748bcf5ce9a953f7b2e23629
+hs_api_key = DEMO_KEY
