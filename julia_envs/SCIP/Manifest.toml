@@ -179,9 +179,9 @@ uuid = "a63ad114-7e13-5084-954f-fe012c677804"
 
 [[MutableArithmetics]]
 deps = ["LinearAlgebra", "SparseArrays", "Test"]
-git-tree-sha1 = "aceb69c03688ec90a31ecad9d4fb60db8d472856"
+git-tree-sha1 = "f1c1ceab8adc1141ac5eba3881b0d53b277949c0"
 uuid = "d8a4904e-b15c-11e9-3269-09a3773c0cb0"
-version = "0.2.1"
+version = "0.2.2"
 
 [[NaNMath]]
 git-tree-sha1 = "928b8ca9b2791081dc71a51c55347c27c618760f"
