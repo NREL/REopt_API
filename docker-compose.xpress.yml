@@ -26,7 +26,7 @@ services:
     container_name: celery
     build:
       context: .
-      dockerfile: Dockerfile.xpress
+      dockerfile: Dockerfile.xpress.pyjul
       args:
         - oom_kill_disable=true
     command: celery -A reopt_api worker -l info
