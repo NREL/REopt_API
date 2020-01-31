@@ -15,8 +15,8 @@ jobs:
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
         run: |
-          ./transcrypt/transcrypt --flush-credentials -y || true
-          ./transcrypt/transcrypt -c aes-256-cbc -p "$TRANSCRYPT_PASSWORD" -y
+          . "${PWD}"/transcrypt/transcrypt --flush-credentials -y || true
+          . "${PWD}"/transcrypt/transcrypt -c aes-256-cbc -p "$TRANSCRYPT_PASSWORD" -y
       - name: test
         run: |
           if [ -f docker-compose.xpress.yml ]; then
