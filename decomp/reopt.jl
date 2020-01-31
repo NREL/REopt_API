@@ -12,7 +12,7 @@ function run_all_scenarios()
     for (root, dirs, files) in walkdir("./data")
         for file in files
             path = root*"/"*file
-            println("Starting Scenario: "*path)
+            println("\n\nStarting Scenario: "*path)
             result = reopt(path)
             results[path] = result
         end
