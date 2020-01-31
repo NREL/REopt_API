@@ -14,9 +14,7 @@ jobs:
       - name: decrypt
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
-        run: |
-          . transcrypt/transcrypt --flush-credentials -y || true
-          . transcrypt/transcrypt -c aes-256-cbc -p "$TRANSCRYPT_PASSWORD" -y
+        run: ./.github/scripts/decrypt.sh 
       - name: test
         run: |
           if [ -f docker-compose.xpress.yml ]; then
