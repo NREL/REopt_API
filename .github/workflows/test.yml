@@ -11,6 +11,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - uses: actions/checkout@v2
       - name: decrypt
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
