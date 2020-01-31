@@ -15,7 +15,7 @@ jobs:
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
         run: ./.github/scripts/decrypt.sh 
-     - name: test
+      - name: test
         run: |
           if [ -f docker-compose.xpress.yml ]; then
             docker-compose --file docker-compose.xpress.yml build
