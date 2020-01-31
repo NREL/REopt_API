@@ -150,7 +150,7 @@ class Job(ModelResource):
 
         log.info("Starting celery chain")
         try:
-            chain(setup | group(rjm, rjm_bau) | call_back)()
+            chain(setup | rjm | call_back)()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
