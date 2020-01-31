@@ -1,0 +1,25 @@
+name: CI
+
+on:
+
+  pull_request:
+    branches: develop
+
+jobs:
+
+  test:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: decrypt
+        env:
+          TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
+        run: |
+          ./transcrypt/transcrypt --flush-credentials -y || true
+          ./transcrypt/transcrypt -c aes-256-cbc -p "$TRANSCRYPT_PASSWORD" -y
+      - name: test
+        run: |
+          if [ -f docker-compose.xpress.yml ]; then
+            docker-compose --file docker-compose.xpress.yml build
+            docker-compose --file docker-compose.xpress.yml run celery python manage.py test -v 2 --failfast --noinput
+          fi
