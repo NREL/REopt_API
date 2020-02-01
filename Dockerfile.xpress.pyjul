@@ -31,5 +31,5 @@ RUN julia --project="/opt/reopt/julia_envs/Xpress/" -e 'import Pkg; \
 ENV PYTHONDONTWRITEBYTECODE 1
 COPY . /opt/reopt
 WORKDIR /opt/reopt
+EXPOSE 8000
 CMD ["pip", "install", "-r", "requirements.txt"]
-CMD tail -f /dev/null
