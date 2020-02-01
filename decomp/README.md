@@ -12,7 +12,7 @@ for you to be using that same version.
 
 > NOTE: All of these command assume that you are in this directory
 
-## Notes on Julia
+### Notes on Julia
 
 When launching a Julia REPL you should use the command:
 
