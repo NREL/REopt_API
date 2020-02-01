@@ -32,3 +32,4 @@ ENV PYTHONDONTWRITEBYTECODE 1
 COPY . /opt/reopt
 WORKDIR /opt/reopt
 CMD ["pip", "install", "-r", "requirements.txt"]
+CMD tail -f /dev/null
