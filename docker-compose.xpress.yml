@@ -27,8 +27,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.xpress.pyjul
-      args:
-        - oom_kill_disable=true
+#       args:
+#         - oom_kill_disable=true
     command: celery -A reopt_api worker -l info
     image: celery-image
     environment:
@@ -42,7 +42,7 @@ services:
     depends_on:
       - db
       - redis
-    mac_address: 02:42:ac:12:00:04
+#     mac_address: 02:42:ac:12:00:04
 
   reopt:
     container_name: reopt
