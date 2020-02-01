@@ -3,16 +3,32 @@
 We will use this directory to prototype the decomposition of REopt. I have
 effectivly neutered the api to only generate JLD files with the data we need to
 run the model outside of the api using `reopt.jl` and`reopt_slow.jl` found in
-this script. This is a work in progess and here are the things we need to do:
-
-  - [ ] Address problems generating data with hybrid wind systems
-  - [ ] Generate data sets that have incentive structure logic in them
-  - [ ] Implement decompostion in standard REopt
-      - [ ] Benchmark tiered scenarios to show the speedups achieved
-  - [ ] Add CHP to decompostion
-      - [ ] Benchmark with hard CHP cases
+this script.
 
 ## Usage
+
+We are using Julia 1.2.0 for all of the opensource code right now. It is ideal
+for you to be using that same version.
+
+> NOTE: All of these command assume that you are in this directory
+
+## Notes on Julia
+
+When launching a Julia REPL you should use the command:
+
+``` bash
+julia --project
+```
+
+This will activate the julia environment in the `Project.toml` and
+`Manifest.toml` files in this directory.
+
+The first time you run things you will need to install all of the necesary
+packages. To install all of the packages described in the environment files run:
+
+``` julia
+using Pkg; Pkg.instantiate()
+```
 
 ### reopt\_slow.jl
 
