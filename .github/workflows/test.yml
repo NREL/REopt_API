@@ -20,5 +20,10 @@ jobs:
         run: ./.github/scripts/decrypt.sh 
       - name: build
         run: docker-compose --file docker-compose.xpress.yml up -d
+      - name: delete_test_db
+        run: |
+          docker exec -it db psql -U reopt
+          drop database test_reopt;
+          \q
       - name: test
         run: docker-compose run celery python manage.py test -v 2 --failfast --no-input
