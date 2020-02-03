@@ -29,9 +29,8 @@ RUN tar xvfz julia-1.2.0-linux-x86_64.tar.gz && rm julia-1.2.0-linux-x86_64.tar.
 ENV PATH=/usr/src/julia-1.2.0/bin:$PATH
 ENV LD_PRELOAD=/usr/src/julia-1.2.0/lib/julia/libstdc++.so.6
 COPY julia_envs/Xpress /opt/reopt/julia_envs/Xpress
-RUN julia --project="/opt/reopt/julia_envs/Xpress/" -e 'import Pkg; \
-              Pkg.update(); \
-              Pkg.instantiate();'
+RUN julia --project="/opt/reopt/julia_envs/Xpress/" -e 'import Pkg; Pkg.instantiate();'
+RUN julia --project="/opt/reopt/julia_envs/Xpress/" /opt/reopt/julia_envs/Xpress/precompile.jl
 RUN python -c 'import julia; julia.install()'
 
 COPY . /opt/reopt
