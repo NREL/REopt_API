@@ -22,8 +22,10 @@ jobs:
         run: docker-compose --file docker-compose.xpress.yml up -d
       - name: delete_test_db
         run: |
-          docker exec -i db psql -U reopt
+          docker exec -i db /bin/bash
+          psql -U reopt
           drop database test_reopt;
           \q
+          exit
       - name: test
         run: docker-compose run celery python manage.py test -v 2 --failfast --no-input
