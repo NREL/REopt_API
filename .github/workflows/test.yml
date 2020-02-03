@@ -21,4 +21,5 @@ jobs:
       - name: build
         run: docker-compose --file docker-compose.xpress.yml up -d
       - name: test
-        run: docker-compose ps
+        image: celery
+        run: python manage.py test -v 2 --failfast --no-input
