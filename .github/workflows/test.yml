@@ -19,6 +19,6 @@ jobs:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
         run: ./.github/scripts/decrypt.sh 
       - name: build
-        run: docker-compose --file docker-compose.xpress.yml up -d
+        run: docker-compose --file docker-compose.xpress.yml up
       - name: test
-        run: docker-compose run celery python manage.py test -v 2 --failfast --noinput
+        run: docker-compose ps
