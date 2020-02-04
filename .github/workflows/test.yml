@@ -22,7 +22,9 @@ jobs:
         run: docker-compose --file docker-compose.xpress.yml up -d
       - name: Check running containers
         run: docker ps -a
-      - name: Check logs
+      - name: Check celery logs
         run: docker logs celery
+      - name: Check reopt logs
+        run: docker logs reopt
       - name: test
         run: docker-compose exec celery python manage.py test -v 2 --failfast --no-input
