@@ -18,6 +18,10 @@ jobs:
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
         run: ./.github/scripts/decrypt.sh 
+      - name: make keys.py
+        env:
+          NREL_DEV_API_KEY: ${{ secrets.NREL_DEV_API_KEY }}
+        run: ./.github/scripts/make_keys.py.sh 
       - name: build
         run: docker-compose --file docker-compose.xpress.yml up -d
       - name: Check running containers
