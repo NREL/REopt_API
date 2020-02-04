@@ -20,7 +20,9 @@ jobs:
         run: ./.github/scripts/decrypt.sh 
       - name: build
         run: docker-compose --file docker-compose.xpress.yml up -d
-      - name: check_containers
-        run: docker ps
+      - name: Check running containers
+        run: docker ps -a
+      - name: Check logs
+        run: docker logs backend
       - name: test
         run: docker-compose run celery python manage.py test -v 2 --failfast --no-input
