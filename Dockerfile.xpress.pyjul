@@ -33,3 +33,4 @@ COPY . /opt/reopt
 WORKDIR /opt/reopt
 EXPOSE 8000
 CMD ["pip", "install", "-r", "requirements.txt"]
+ENTRYPOINT ["/bin/bash", "-c"]
