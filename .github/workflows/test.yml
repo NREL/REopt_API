@@ -31,4 +31,4 @@ jobs:
       - name: Check reopt logs
         run: docker logs reopt
       - name: test
-        run: docker-compose exec celery python manage.py test -v 2 --failfast --no-input
+        run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
