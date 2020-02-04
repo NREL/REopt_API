@@ -23,6 +23,6 @@ jobs:
       - name: Check running containers
         run: docker ps -a
       - name: Check logs
-        run: docker logs backend
+        run: docker logs celery
       - name: test
         run: docker-compose run celery python manage.py test -v 2 --failfast --no-input
