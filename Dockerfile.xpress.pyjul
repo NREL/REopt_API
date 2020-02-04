@@ -32,5 +32,6 @@ ENV PYTHONDONTWRITEBYTECODE 1
 COPY . /opt/reopt
 WORKDIR /opt/reopt
 EXPOSE 8000
-CMD ["pip", "install", "-r", "requirements.txt"]
+RUN ["pip", "install", "-r", "requirements.txt"]
+RUN ["python", "manage.py", "migrate"]
 ENTRYPOINT ["/bin/bash", "-c"]
