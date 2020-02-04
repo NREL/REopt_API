@@ -25,4 +25,4 @@ jobs:
       - name: Check logs
         run: docker logs celery
       - name: test
-        run: docker-compose run celery python manage.py test -v 2 --failfast --no-input
+        run: docker-compose exec celery python manage.py test -v 2 --failfast --no-input
