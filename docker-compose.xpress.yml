@@ -13,8 +13,6 @@ services:
     container_name: db
     image: postgres
     restart: always
-    volumes:
-      - pgdata:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=reopt
       - POSTGRES_PASSWORD=reopt
@@ -37,8 +35,6 @@ services:
       - SQL_PORT=5432
       - REDIS_HOST=redis
       - SOLVER=xpress
-    volumes:
-      - .:/opt/reopt
     depends_on:
       - db
       - redis
@@ -61,8 +57,3 @@ services:
       - redis
     ports:
       - 8000:8000
-    volumes:
-      - .:/opt/reopt
-
-volumes:
-  pgdata:

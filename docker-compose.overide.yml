@@ -1,0 +1,18 @@
+version: "2.1"
+
+services:
+
+  db:
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  celery:
+    volumes:
+      - .:/opt/reopt
+
+  reopt:
+    volumes:
+      - .:/opt/reopt
+
+volumes:
+  pgdata:
