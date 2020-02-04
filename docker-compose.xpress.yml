@@ -27,7 +27,7 @@ services:
       dockerfile: Dockerfile.xpress.pyjul
       args:
         - oom_kill_disable=true
-    command: celery -A reopt_api worker -l info
+    command: ["celery", "-A", "reopt_api", "worker", "-l", "info"]
     image: celery-image
     environment:
       - APP_ENV=local
@@ -43,9 +43,7 @@ services:
   reopt:
     container_name: reopt
     image: celery-image
-    command: >
-      bash -c "python manage.py migrate
-      && python manage.py runserver 0.0.0.0:8000"
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
     environment:
       - APP_ENV=local
       - SQL_HOST=db
