@@ -30,5 +30,7 @@ jobs:
         run: docker logs celery
       - name: Check reopt logs
         run: docker logs reopt
+      - name: Check julia packages
+        run: docker-compose exec -T celery julia -e 'import Pkg; Pkg.activate("./julia_envs/Xpress/"); Pkg.status();'
       - name: test
         run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
