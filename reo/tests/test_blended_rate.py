@@ -132,7 +132,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "wholesale_rate_us_dollars_per_kwh": 0.0,
                 "net_metering_limit_kw": 0.0,
                 "interconnection_limit_kw": 100000000.0,
-                "blended_monthly_demand_charges_us_dollars_per_kw": [],
                 "urdb_utility_name": "",
                 "urdb_label": "",
                 "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0,
@@ -186,7 +185,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
             "user_uuid": None
           }
         }
-               
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
@@ -194,7 +192,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
         return response
 
-    def test_blended_rate(self):
+    def test_blended_rate_and_pv_station(self):
         """
         Test that self.post scenario, with monthly rates, returns the expected LCC and PV station attributes
         """
@@ -205,30 +203,7 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.assertEqual(pv_out.station_distance_km, 0.7)  # increased accuracy with Python 3??? (was 0.0)
         self.assertEqual(pv_out.station_latitude, 35.25)
         self.assertAlmostEqual(pv_out.station_longitude, -91.74, 1)
-        try:
-            self.assertAlmostEqual(financial.lcc_us_dollars, 437842, -1)
-        except:
-            # catches case where http://www.afanalytics.com/api/climatezone/ is down
-            self.assertAlmostEqual(financial.lcc_us_dollars, 435179, -1)
-
-    def test_blended_annual_rate(self):
-        """
-        Test that self.post scenario returns the expected LCC with annual blended rates
-        """
-        # remove monthly rates (because they are used before annual rates)
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"] = None
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = None
-        # add annual rates
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_rates_us_dollars_per_kwh"] = 0.2
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_annual_demand_charges_us_dollars_per_kw"] = 0.0
-
-        response = self.get_response(self.post)
-        financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
-        try:
-            self.assertAlmostEqual(financial.lcc_us_dollars, 422437, -1)
-        except:
-            # catches case where http://www.afanalytics.com/api/climatezone/ is down
-            self.assertAlmostEqual(financial.lcc_us_dollars, 418320, -1)
+        self.assertAlmostEqual(financial.lcc_us_dollars, 437842, -1)
 
     def test_time_of_export_rate(self):
         """
