@@ -4,7 +4,8 @@ import math
 from datetime import datetime, timedelta
 from collections import namedtuple
 from reo.utilities import degradation_factor
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 import geopandas as gpd
 from shapely import geometry as g
 

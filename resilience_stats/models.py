@@ -2,7 +2,8 @@ from django.db import models
 from django.contrib.postgres.fields import ArrayField, HStoreField
 from reo.models import ScenarioModel
 import sys
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 from reo.exceptions import SaveToDatabase
 
 class ResilienceModel(models.Model):

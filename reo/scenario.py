@@ -1,7 +1,8 @@
 import traceback
 import sys
 import os
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 from reo.src.data_manager import DatFileManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile

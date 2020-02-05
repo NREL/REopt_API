@@ -1,7 +1,7 @@
-from __future__ import absolute_import, unicode_literals
 import os
+import logging
 from celery import Celery
-from keys import *
+from celery.signals import after_setup_logger
 
 # set the default Django settings module for the 'celery' program.
 raw_env = 'reopt_api.dev_settings'
@@ -36,3 +36,23 @@ app.autodiscover_tasks()
 @app.task(bind=True)
 def debug_task(self):
     print('Request: {0!r}'.format(self.request))
+
+
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    file_formatter = logging.Formatter(
+        '%(asctime)s %(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
+    console_formatter = logging.Formatter(
+        '%(name)-12s %(levelname)-8s %(filename)s::%(funcName)s line %(lineno)s %(message)s')
+
+    logfile = os.path.join(os.getcwd(), "log", "reopt_api.log")
+
+    file_handler = logging.FileHandler(filename=logfile, mode='a')
+    file_handler.setFormatter(file_formatter)
+    file_handler.setLevel(logging.INFO)
+    logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(console_formatter)
+    console_handler.setLevel(logging.INFO)
+    logger.addHandler(console_handler)

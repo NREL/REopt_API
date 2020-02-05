@@ -23,7 +23,8 @@ my_rate2 = Rate(rate='Residential Time of Use', util='United Power, Inc')
 """
 import requests
 import json
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 
 # cache_file = "rate_cache.json"
 # try:

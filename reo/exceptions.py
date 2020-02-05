@@ -1,5 +1,6 @@
 from reo.models import ErrorModel
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 import rollbar
 
 

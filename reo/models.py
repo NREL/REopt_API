@@ -4,7 +4,8 @@ from django.contrib.postgres.fields import *
 from django.forms.models import model_to_dict
 from picklefield.fields import PickledObjectField
 from reo.nested_inputs import nested_input_definitions
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 import sys
 import traceback as tb
 import warnings

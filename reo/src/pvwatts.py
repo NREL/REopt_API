@@ -6,7 +6,8 @@
 import requests
 import json
 import keys
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 
 
 class PVWatts:
