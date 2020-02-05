@@ -82,15 +82,15 @@ def unlink(request, user_uuid, run_uuid):
     try:
         
         if not ScenarioModel.objects.filter(user_uuid=user_uuid).exists():
-            return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=500)
+            return JsonResponse({"Error":"User {} does not exist".format(user_uuid)}, status=400)
 
         if not ScenarioModel.objects.filter(run_uuid=run_uuid).exists():
-            return JsonResponse({"Error":"Run {} does not exist".format(run_uuid)}, status=500)
+            return JsonResponse({"Error":"Run {} does not exist".format(run_uuid)}, status=400)
 
         runs = ScenarioModel.objects.filter(run_uuid=run_uuid)
         if runs.exists():
             if runs[0].user_uuid != user_uuid:
-                return JsonResponse({"Error":"Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=500)
+                return JsonResponse({"Error":"Run {} is not associated with user {}".format(run_uuid, user_uuid)}, status=400)
 
         if not UserUnlinkedRuns.objects.filter(run_uuid=run_uuid).exists():
             UserUnlinkedRuns.create(**content)
