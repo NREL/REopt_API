@@ -45,8 +45,8 @@ services:
       - redis
     mac_address: 02:42:ac:12:00:04
 
-  reopt:
-    container_name: reopt
+  django:
+    container_name: django
     image: celery-image
     command:  >
       "python manage.py migrate
