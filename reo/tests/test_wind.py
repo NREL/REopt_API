@@ -10,6 +10,8 @@ from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
 from reo.src.wind import WindSAMSDK, combine_wind_files
+import logging
+logging.disable(logging.CRITICAL)
 
 
 wind_post = {"Scenario":

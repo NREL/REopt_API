@@ -11,7 +11,8 @@ from tastypie.resources import ModelResource
 from tastypie.validation import Validation
 from .validators import ValidateNestedInput
 from .scenario import setup_scenario
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.process_results import process_results
