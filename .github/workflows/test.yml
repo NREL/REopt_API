@@ -1,9 +1,11 @@
-name: CI
+name: Built-in Tests for Pull Requests (Xpress in Ubuntu 18.04)
 
 on:
 
   pull_request:
-    branches: develop
+    branches:
+      - master
+      - develop
 
 jobs:
 
@@ -14,23 +16,21 @@ jobs:
       - uses: actions/checkout@v2
         with:
           ref: ${{ github.event.pull_request.head.sha }}
-      - name: decrypt
+      - name: Decrypt
         env:
           TRANSCRYPT_PASSWORD: ${{ secrets.TRANSCRYPT_PASSWORD }}
         run: ./.github/scripts/decrypt.sh 
-      - name: make keys.py
+      - name: Make keys.py
         env:
           NREL_DEV_API_KEY: ${{ secrets.NREL_DEV_API_KEY }}
         run: ./.github/scripts/make_keys.py.sh 
-      - name: build
+      - name: Build containers
         run: docker-compose --file docker-compose.xpress.yml up -d
       - name: Check running containers
         run: docker ps -a
       - name: Check celery logs
         run: docker logs celery
-      - name: Check reopt logs
+      - name: Check django logs
         run: docker logs reopt
-      - name: Check julia packages
-        run: docker-compose exec -T celery julia -e 'import Pkg; Pkg.activate("./julia_envs/Xpress/"); Pkg.status();'
       - name: test
         run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
