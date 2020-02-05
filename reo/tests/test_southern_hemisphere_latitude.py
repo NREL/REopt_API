@@ -48,7 +48,7 @@ class NegativeLatitudeTest(ResourceTestCaseMixin, TestCase):
         messages = d['messages']
 
         try:
-            self.assertEqual( d['inputs']['Scenario']['Site']['PV']['azimuth'], 0,
+            self.assertEqual(d['inputs']['Scenario']['Site']['PV']['azimuth'], 0,
                              "Not adjusting azimuth for negative latitudes.")
 
             self.assertEqual(d['inputs']['Scenario']['Site']['PV']['tilt'], 31.9505,

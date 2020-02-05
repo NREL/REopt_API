@@ -114,7 +114,6 @@ class InputValidatorTests(TestCase):
                 self.assertEquals(validator.isValid, False)
                 assert(any('Invalid length for critical_loads_kw' in e for e in validator.errors['input_errors']))
 
-
     def test_warnings_for_mismatch_of_time_steps_per_hour_and_resolution_of_time_of_export_rate(self):
         post = copy.deepcopy(self.post)
         rates = ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]

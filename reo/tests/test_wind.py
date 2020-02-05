@@ -78,7 +78,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
-        Not validated against REopt desktop, replaces results that matched REopt desktop results as of 9/26/17.
         Note no tax, no ITC, no MACRS.
         :return:
         """

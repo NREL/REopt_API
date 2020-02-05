@@ -189,7 +189,6 @@ class TestDemandRatchets(ResourceTestCaseMixin, TestCase):
             "user_uuid": None
           }
         }
-        
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)

@@ -1,5 +1,4 @@
 import json
-#from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.nested_to_flat_output import nested_to_flat
