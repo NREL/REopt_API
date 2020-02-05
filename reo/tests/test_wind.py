@@ -43,38 +43,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    @skip("This test is invalid until we re-institute Wind.max_kw setting based on Wind.size_class.")
-    def test_wind_size_class(self):
-        """
-        Validation to ensure that max_kw of wind is set to size_class
-        Annual kWh results in roughly 11 kW average load, going into commercial size_class for wind (max_kw = 100)
-        Trying to set min_kw to 1000 should result in min_kw getting reset to max_kw for size_class and wind_kw coming to 100 kW
-        :return:
-        """
-        wind_post_updated = wind_post
-        wind_post_updated["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 100000
-        wind_post_updated["Scenario"]["Site"]["Wind"]["min_kw"] = 0
-
-        # For some reason, when running full suite, validators isn't run, and this is not updated
-        wind_post_updated["Scenario"]["Site"]["Wind"]["size_class"] = "commercial"
-
-        d_expected = dict()
-        d_expected['wind_kw'] = 100
-
-        resp = self.get_response(data=wind_post_updated)
-        self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
-        run_uuid = r.get('run_uuid')
-        d = ModelManager.make_response(run_uuid=run_uuid)
-        c = nested_to_flat(d['outputs'])
-
-        try:
-            check_common_outputs(self, c, d_expected)
-        except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
-            print("Error message: {}".format(d['messages']))
-            raise
-
     def test_wind(self):
         """
         Validation run for wind scenario with updated WindToolkit data
@@ -200,17 +168,6 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         if os.path.isfile(file_out):
             os.remove(file_out)
         self.assertTrue(combine_wind_files(file_resource_heights, file_out))
-
-    @skip("HSDS wind api barely works")
-    def test_wind_hsds_api(self):
-        from reo.src.wind_resource import get_wind_resource_hsds
-
-        latitude, longitude = 39.7555, -105.2211
-
-        wind_data = get_wind_resource_hsds(latitude, longitude, hub_height_meters=40, time_steps_per_hour=4)
-        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760*4)
-        wind_data = get_wind_resource_hsds(latitude, longitude, hub_height_meters=80, time_steps_per_hour=1)
-        self.assertEqual(len(wind_data['wind_meters_per_sec']), 8760)
 
     def test_location_outside_wind_toolkit_dataset(self):
         bad_post = copy.deepcopy(wind_post)
