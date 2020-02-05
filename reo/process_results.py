@@ -1,7 +1,8 @@
 import sys
 import traceback
 from reo.nested_outputs import nested_output_definitions
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel

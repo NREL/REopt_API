@@ -1,6 +1,7 @@
 import re
 import copy
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 
 
 class ElecTariff(object):

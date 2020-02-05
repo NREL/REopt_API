@@ -8,7 +8,8 @@ import requests
 import json
 
 from keys import developer_nrel_gov_key
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 """
 References: 
 - https://www.nrel.gov/grid/wind-toolkit.html

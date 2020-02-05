@@ -2,7 +2,8 @@ import os
 import operator
 import calendar
 import numpy
-from reo.log_levels import log
+import logging
+log = logging.getLogger(__name__)
 
 cum_days_in_yr = numpy.cumsum(calendar.mdays)
 
