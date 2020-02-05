@@ -4,13 +4,14 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase, skip  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager, ScenarioModel
-from reo.nested_inputs import flat_to_nested
 from reo.utilities import check_common_outputs
 from functools import reduce  # forward compatibility for Python 3
 import operator
 import copy
+import logging
+logging.disable(logging.CRITICAL)
 
 
 def get_by_path(root, items):
@@ -115,8 +116,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         err_msg = str(json.loads(response.content)['messages']['input_errors'])
         self.assertTrue("LoadProfile outage_start_hour and outage_end_hour cannot be the same" in err_msg)
-        
-        
+
     def test_valid_data_ranges(self):
 
         input = ValidateNestedInput(self.complete_valid_nestedpost)
