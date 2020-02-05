@@ -10,6 +10,7 @@ from unittest import skip
 from proforma.models import ProForma
 from reo.models import ScenarioModel
 
+
 def now():
     return tzlocal.get_localzone().localize(datetime.datetime.now())
 
@@ -42,9 +43,7 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
         return response
 
-    #@skip("HSDS wind api barely works")
-    # un-skipping this test by making wind's max_kw = 0, testing diesel generator instead
-    def test_full_tech_mix(self):
+    def test_proforma(self):
         run_output = self.get_response(self.example_reopt_request_data)
         uuid = run_output['outputs']['Scenario']['run_uuid']
         mapping = self.get_mapping(run_output, uuid)
@@ -54,27 +53,6 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
             msg = "Failed at: " + str(a) + " Value: " + str(a.value) + "!= " + str(b) + " run_uuid: " + str(uuid)
             self.assertAlmostEqual(float(a.value), b, places=2, msg=msg)
             idx += 1
-
-    @skip("HSDS wind api barely works")
-    def test_wind(self):
-        self.example_reopt_request_data = json.loads(open('proforma/tests/wind_bug.json').read())
-        run_output = self.get_response(self.example_reopt_request_data)
-        uuid = run_output['outputs']['Scenario']['run_uuid']
-
-        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["pre_setup_scenario_seconds"], 0)
-        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["setup_scenario_seconds"], 0)
-        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["reopt_seconds"], 0)
-        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["reopt_bau_seconds"], 0)
-        self.assertGreater(run_output["outputs"]["Scenario"]["Profile"]["parse_run_outputs_seconds"], 0)
-
-        mapping = self.get_mapping(run_output, uuid)
-
-        idx = 0
-        for a, b in mapping:
-            msg = "Failed at idx: " + str(idx) + " Value: " + str(a.value) + "!= " + str(b) + " run_uuid: " + str(uuid)
-            self.assertAlmostEqual(float(a.value), b, places=2, msg=msg)
-            idx += 1
-
 
     def test_bad_run_uuid(self):
         run_uuid = "5"
