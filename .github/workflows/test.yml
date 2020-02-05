@@ -31,6 +31,6 @@ jobs:
       - name: Check celery logs
         run: docker logs celery
       - name: Check django logs
-        run: docker logs reopt
+        run: docker logs django
       - name: test
         run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
