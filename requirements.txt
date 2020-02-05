@@ -21,7 +21,7 @@ et-xmlfile==1.0.1
 geopandas==0.6.2
 gevent==1.2.2
 greenlet==0.4.12
--e git+http://github.com/HDFGroup/h5pyd.git@d34083e9ebbd78c0762c426684a95ed0b11da00d#egg=h5pyd
+h5pyd==0.7.0
 idna==2.6
 importlib-metadata==0.23
 ipython-genutils==0.2.0

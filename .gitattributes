@@ -1,0 +1,2 @@
+#pattern  filter=crypt diff=crypt
+solver/xpauth.xpr filter=crypt diff=crypt

@@ -10,7 +10,6 @@ input_files/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
-solver/
 
 # C extensions
 *.so
