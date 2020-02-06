@@ -51,7 +51,7 @@ python-dateutil==2.8.0
 python-mimeparse==1.5.1
 pytz==2019.3
 redis==3.3.11
-requests==2.11.1
+requests==2.20.0
 rollbar==0.14.7
 scandir==1.5
 simplegeneric==0.8.1
