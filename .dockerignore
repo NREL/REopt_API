@@ -1,0 +1,10 @@
+env/
+*.pyc
+*.rdb
+*.log
+*/.*
+static/
+tmp/
+docs/
+Jenkinsfile
+*.md
