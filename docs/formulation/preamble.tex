@@ -1,0 +1,137 @@
+%-------------------- 
+%- commands and packages used by the authors
+%--------------------
+
+
+%package for spacing around custom commands
+\usepackage{xspace}
+\usepackage{tabularx}  %load tabularx before arydshln
+%\usepackage{arydshln}
+
+
+
+%Everything below was copied from the Math.tex file from Mark until noted
+\usepackage{amsmath,epsf,amssymb}
+\usepackage{setspace}
+\usepackage{color}
+\usepackage{lineno}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage{fancyvrb}
+\usepackage{url}
+\usepackage{wasysym}
+\usepackage{longtable}
+%\usepackage{floatrow}
+\usepackage{lipsum}
+\usepackage{adjustbox}
+\usepackage{cite}
+\usepackage[acronym]{glossaries}
+\usepackage [english]{babel}
+%\usepackage [autostyle, english = american]{csquotes}
+\usepackage{enumitem}
+\usepackage{indentfirst}
+\usepackage{relsize}
+%\MakeOuterQuote{"}
+\usepackage{relsize}
+%End of copied from the Math.tex file
+\usepackage{cancel}
+\usepackage[normalem]{ulem}
+%-use solarreserve as a command just in case we decide to scrub later.
+\newcommand{\sampt}{MSPT\xspace}
+\newcommand{\abbr}[2]{#2 (#1)}
+\newcommand{\tcr}{\textcolor{red}}
+\newcommand{\tcb}{\textcolor{blue}}
+\newcommand{\tcy}{\textcolor{yellow}}
+\newcommand{\tcg}{\textcolor{green}}
+\newcommand{\tcp}{\textcolor{purple}}
+\newcommand{\tcc}{\textcolor{cyan}}
+\newcommand{\scotu}{s-CO$_2$\xspace}
+\newcommand{\TM}{\textsuperscript{\tiny TM}}
+\newcommand{\mc}[1]{\mathcal{#1}}
+%\newcommand{\munderbar}[1]{\underaccent{\bar}{#1}}
+
+\newcommand{\sr}{{\xspace}SolarReserve\xspace}
+\newcommand{\sd}{{\xspace}PS\xspace}
+\newcommand{\crescentdunes}{{\xspace}Crescent Dunes\xspace}
+\newcommand{\rice}{{\xspace}Rice\xspace}
+
+\newif\ifsrok
+\srokfalse
+\sroktrue
+
+%\ifsrok\else
+%\renewcommand{\sr}{{\xspace}Company-X\xspace}
+%\renewcommand{\sd}{{\xspace}Iterative Optimizer\xspace}
+%\renewcommand{\crescentdunes}{{\xspace}Plant A\xspace}
+%\renewcommand{\sandstone}{{\xspace}Plant B\xspace}
+%\fi
+
+\newcommand{\sse}{$_\textsf{e}$}
+\newcommand{\sst}{$_\textsf{t}$}
+
+%\renewcommand{\tcr}[1]{}
+
+%\DeclareCaptionLabelFormat{andtable}{#1~#2  \&  \tablename~\thetable}
+
+\newcommand{\figref}[1]{Figure~\ref{#1}\xspace}
+\newcommand{\tabref}[1]{Table~\ref{#1}\xspace}
+
+\graphicspath{{./figures/}}    % all figures to go in there!
+%\usepackage[colorlinks, linkcolor=black, citecolor=black, urlcolor=black]{hyperref}
+\usepackage{multirow}	%table cells spanning multiple rows
+%\usepackage{amsmath}   % Turned off due to warning
+\usepackage{amssymb,wasysym}  %Math fonts
+\usepackage{verbatim}
+
+\usepackage{longtable}
+\usepackage{float}
+\restylefloat{table}	% use the H placement option to make sure tables do not get repositioned
+%\usepackage{subcaption}
+\usepackage[caption=false]{subfig}	%allow subfigures
+
+%--- Table column commands with specified widths:
+%\usepackage{array}
+% L		left-aligned
+% C		centered
+% R		right-aligned
+\newcolumntype{L}[1]%
+{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]%
+{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]%
+{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{T}[1]%
+{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}p{#1}}
+
+\newcommand{\rcgray}[1]{\rowcolor{Gray!40}\multicolumn{3}{c}{\textit{#1}}}
+%\newcommand\norm[1]{\left\lVert#1\right\rVert}
+
+%Adding accents package for underbar
+%\usepackage{etoolbox}
+%\usepackage{accents}
+%\robustify{\underaccent}
+%\MakeRobust{\underaccent} % make \underaccent not fragile in moving arguments
+%\newcommand{\ubarw}{\underaccent{\bar}{w}}
+%\newcommand{\ubarf}{\underaccent{\bar}{f}}
+%\newcommand{\ubarb}{\underaccent{\bar}{b}}
+\newcommand{\ubarw}{\underline{w}}
+\newcommand{\ubarf}{\underline{f}}
+\newcommand{\ubarb}{\underline{b}}
+\newcommand{\reoptlitemod}{$\mathcal{R}$}
+\newcommand{\resetmod}{$\mathcal{B}$}
+\newcommand{\resetupper}{$\bar{\mathcal{B}}$}
+%\newcommand{\resetlower}{{$\underaccent{\bar}{\mathcal{B}}$}}
+\newcommand{\resetlower}{{$\underline{\mathcal{B}}$}}
+\newcommand{\Ell}{\mathcal{L}}
+
+
+
+\usepackage{tikz}
+\usepackage{varwidth}
+\usetikzlibrary{positioning, automata}
+\newcommand{\mwnote}[2][]{
+\begin{tikzpicture}[remember picture]
+\node[font=\small\sffamily, fill=yellow, opacity=0.9, draw=brown, rectangle, yshift=0in, xshift=0in] {\begin{varwidth}{2.5in}\textcolor{red}{#1}\par#2\end{varwidth}};
+\end{tikzpicture}
+}
+%for final, uncomment the following
+%\renewcommand{\mwnote}[2][]{\xspace}

@@ -1,0 +1,16 @@
+
+rollbar_access_token = 'test'
+
+#get your individual key from here: https://developer.nrel.gov/docs/api-key/ and replace the DEMO_KEY with that
+pvwatts_api_key = 'DEMO_KEY'
+developer_nrel_gov_key = 'DEMO_KEY'
+
+
+secret_key_='secret_key_test'
+
+dev_database_host = 'localhost'
+dev_database_name = 'reopt'
+dev_user = 'reopt_api'
+dev_user_password = 'reopt'
+dev_redis_password = 'password'
+

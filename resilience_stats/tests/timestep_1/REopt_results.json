@@ -1,0 +1,19 @@
+{
+  "Problem status":"Optimum found",
+  "cmd_line":"cmd line complete!",
+  "LCC ($)":551142,
+  "Capital Cost ($)":279846,
+  "Total kWh Cost ($)":172653,
+  "Total Demand Cost ($)":217303,
+  "PV":0,
+  "PVNM":433.2979,
+  "UTIL1":1.2e+07,
+  "Battery Capacity (kWh)":583.4217,
+  "Battery Power (kW)":93.2664,
+  "Utility":"Southern California Edison Co",
+  "Rate":"Time-of-use_-_General_Service_-_Demand_Metered-Super_Off_Peak_TOU-GS-3-SOP_(2kv-50kv)",
+  "Year 1 Energy Cost ($)":19964.9,
+  "Year 1 Demand Cost ($)":25128.1,
+  "Total PV production (kWh)":620114,
+  "Year 1 Export Benefit ($)":-0
+}
