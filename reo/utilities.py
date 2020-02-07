@@ -29,6 +29,7 @@
 # *********************************************************************************
 from numpy import npv
 from math import log10
+from reo.models import ErrorModel
 
 
 class API_Error:
@@ -198,38 +199,49 @@ def check_common_outputs(Test, d_calculated, d_expected):
     c = d_calculated
     e = d_expected
 
-    # check all calculated keys against the expected
-    for key, value in e.items():
-        tolerance = Test.REopt_tol
-        if key == 'npv':
-            tolerance = 2 * Test.REopt_tol
+    try:
+        # check all calculated keys against the expected
+        for key, value in e.items():
+            tolerance = Test.REopt_tol
+            if key == 'npv':
+                tolerance = 2 * Test.REopt_tol
 
-        if key in c and key in e:
-            if (not isinstance(e[key], list) and isinstance(e[key], list)) or \
-                    (isinstance(e[key], list) and not isinstance(e[key], list)):
-                Test.fail('Key: {0} expected type: {1} actual type {2}'.format(key, str(type(e[key])), str(type(c[key]))))
-            elif e[key] == 0:
-                Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
-            else:
-                if isinstance(e[key], float) or isinstance(e[key], int):
-                    if key in ['batt_kw', 'batt_kwh']:
-                        # variable rounding depends on scale of sizes
-                        Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))))
-                    else:
-                        Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
-                                        'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+            if key in c and key in e:
+                if (not isinstance(e[key], list) and isinstance(e[key], list)) or \
+                        (isinstance(e[key], list) and not isinstance(e[key], list)):
+                    Test.fail('Key: {0} expected type: {1} actual type {2}'.format(key, str(type(e[key])), str(type(c[key]))))
+                elif e[key] == 0:
+                    Test.assertEqual(c[key], e[key], 'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
                 else:
-                    pass
-        else:
-            print("Warning: Expected value for {} not in calculated dictionary.".format(key))
+                    if isinstance(e[key], float) or isinstance(e[key], int):
+                        if key in ['batt_kw', 'batt_kwh']:
+                            # variable rounding depends on scale of sizes
+                            Test.assertAlmostEqual(c[key], e[key], -(int(log10(c[key]))))
+                        else:
+                            Test.assertTrue(abs((float(c[key]) - e[key]) / e[key]) < tolerance,
+                                            'Key: {0} expected: {1} actual {2}'.format(key, str(e[key]), str(c[key])))
+                    else:
+                        pass
+            else:
+                print("Warning: Expected value for {} not in calculated dictionary.".format(key))
 
-    if 'lcc_bau' in c and c['lcc_bau'] > 0:
+        if 'lcc_bau' in c and c['lcc_bau'] > 0:
         # Total LCC BAU is sum of utility costs
-        Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                        - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
-                        - float(c['total_fixed_cost_bau'])
-                        - float(c['existing_gen_total_variable_om_cost_us_dollars'])
-                        - float(c['existing_gen_total_fixed_om_cost_us_dollars'])
-                        - float(c['existing_gen_total_fuel_cost_us_dollars']))
-                        / float(c['lcc_bau'])) < Test.REopt_tol,
-                        "LCC_BAU doesn't add up to sum of individual costs")
+            Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
+                            - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
+                            - float(c['total_fixed_cost_bau'])
+                            - float(c['existing_gen_total_variable_om_cost_us_dollars'])
+                            - float(c['existing_gen_total_fixed_om_cost_us_dollars'])
+                            - float(c['existing_gen_total_fuel_cost_us_dollars']))
+                            / float(c['lcc_bau'])) < Test.REopt_tol,
+                            "LCC_BAU doesn't add up to sum of individual costs")
+    except Exception as e:
+        print("check_common_outputs failed: {}".format(e.args[0]))
+        em = ErrorModel.objects.filter(run_uuid=c["run_uuid"]).first()
+        if em is not None:
+            raise Exception("""ErrorModel values:
+                task: \t {}
+                message: \t {}
+                traceback: \t {}
+                """.format(em.task, em.message, em.traceback)
+            )
