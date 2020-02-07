@@ -99,7 +99,8 @@ ENV/
 *.sqlite3
 
 /tmp/*
-/log/*
+/log/**
+!/log/.gitkeep
 static/files/*
 !static/files/.gitkeep
 
