@@ -28,4 +28,4 @@ jobs:
       - name: Check django logs
         run: docker logs django
       - name: test
-        run: docker-compose exec -T celery python manage.py test -v 2 --failfast --no-input
+        run: docker exec celery python manage.py test -v 2 --failfast --no-input
