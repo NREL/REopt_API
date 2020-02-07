@@ -224,7 +224,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         try:
             check_common_outputs(self, c, d_expected)
         except:
-            print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
+            print("Run {} expected outputs may have changed.".format(run_uuid))
             print("Error message: {}".format(d['messages'].get('error')))
             raise
 
