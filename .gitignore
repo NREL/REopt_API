@@ -12,9 +12,6 @@ input_files/*
 urdb_rate_errors/
 outage_sizing/
 
-# C extensions
-*.so
-
 # Distribution / packaging
 .Python
 env/
