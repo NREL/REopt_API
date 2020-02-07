@@ -5,8 +5,9 @@ __pycache__/
 
 keys.py
 .idea
-input_files/
-!input_files/LoadProfiles/
+input_files/*
+!input_files/**/
+!input_files/LoadProfiles/**/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
@@ -109,10 +110,6 @@ all_data*
 =======
 # CHP results processing
 results_processing/*
-
-# Docker
-docker_setup/solver_install_files/xpress_files
-docker_share/
 
 # Math Forumlation Latex
 docs/formulation/*aux
