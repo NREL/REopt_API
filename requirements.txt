@@ -51,7 +51,7 @@ python-dateutil==2.8.0
 python-mimeparse==1.5.1
 pytz==2019.3
 redis==3.3.11
-requests==2.11.1
+requests==2.20.0
 rollbar==0.14.7
 scandir==1.5
 simplegeneric==0.8.1
@@ -60,7 +60,7 @@ SQLAlchemy==1.3.1
 sqlparse==0.3.0
 traitlets==4.3.2
 tzlocal==1.4
-urllib3==1.22
+urllib3==1.24.2
 vine==1.3.0
 wcwidth==0.1.7
 xlrd==1.0.0

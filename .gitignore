@@ -5,14 +5,12 @@ __pycache__/
 
 keys.py
 .idea
-input_files/
-!input_files/LoadProfiles/
+input_files/*
+!input_files/**/
+!input_files/LoadProfiles/**/
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
-
-# C extensions
-*.so
 
 # Distribution / packaging
 .Python
@@ -98,7 +96,8 @@ ENV/
 *.sqlite3
 
 /tmp/*
-/log/*
+/log/**
+!/log/.gitkeep
 static/files/*
 !static/files/.gitkeep
 
@@ -109,10 +108,6 @@ all_data*
 =======
 # CHP results processing
 results_processing/*
-
-# Docker
-docker_setup/solver_install_files/xpress_files
-docker_share/
 
 # Math Forumlation Latex
 docs/formulation/*aux
