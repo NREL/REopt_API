@@ -49,19 +49,6 @@ class ScenarioErrored(Exception):
     pass
 
 
-def parse_system_sizes(site):
-    size_dict = dict()
-    if "Generator" in site:
-        size_dict["Generator"] = site["Generator"]["size_kw"]
-    if "Storage" in site:
-        size_dict["Storage_kw"] = site["Storage"]["size_kw"]
-        size_dict["Storage_kwh"] = site["Storage"]["size_kwh"]
-    if "Wind" in site:
-        size_dict["Wind"] = site["Wind"]["size_kw"]
-    if "PV" in site:
-        size_dict["PV"] = site["PV"]["size_kw"]
-    return size_dict
-
 def resilience_stats(request, run_uuid=None, financial_check=None):
     """
     Run outage simulator for given run_uuid
@@ -75,6 +62,19 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
               "probs_of_surviving",
              }
     """
+    def parse_system_sizes(site):
+        size_dict = dict()
+        if "Generator" in site:
+            size_dict["Generator"] = site["Generator"]["size_kw"]
+        if "Storage" in site:
+            size_dict["Storage_kw"] = site["Storage"]["size_kw"]
+            size_dict["Storage_kwh"] = site["Storage"]["size_kwh"]
+        if "Wind" in site:
+            size_dict["Wind"] = site["Wind"]["size_kw"]
+        if "PV" in site:
+            size_dict["PV"] = site["PV"]["size_kw"]
+        return size_dict
+
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
