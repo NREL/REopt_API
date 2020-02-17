@@ -94,6 +94,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
             raise ScenarioErrored
 
         if financial_check == "financial_check":
+            """ Check to see if resilience scenario system sizes are the same as financial scenario sizes """
             query = request.GET
             financial_uuid = query['financial_uuid']
 
@@ -103,20 +104,23 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
             elif "error" in scenario.status.lower():
                 raise ScenarioErrored
 
-            ## retrieve sizes from db
+            # retrieve sizes from db
             resilience_result = ModelManager.make_response(run_uuid)
             financial_result = ModelManager.make_response(financial_uuid)
 
-            resilience_size = parse_system_sizes(resilience_result["outputs"]["Scenario"]["Site"])
-            financial_size = parse_system_sizes(financial_result["outputs"]["Scenario"]["Site"])
+            resilience_sizes = parse_system_sizes(resilience_result["outputs"]["Scenario"]["Site"])
+            financial_sizes = parse_system_sizes(financial_result["outputs"]["Scenario"]["Site"])
 
-            results = simulate_outage(
-                resilience_run_site_result=resilience_size,
-                financial_run_site_result=financial_size,
-                financial_check=financial_check
-            )
+            survives = True
+            if resilience_sizes.keys() == financial_sizes.keys():
+                for tech, resil_size in resilience_sizes.items():
+                    if float(resil_size - financial_sizes[tech]) / float(max(resil_size, 1)) > 1.0e-3:
+                        survives = False
+                        break
+            else:
+                survives = False
 
-            results = {"survives_specified_outage": results}
+            results = {"survives_specified_outage": survives}
 
         else:
             try:
