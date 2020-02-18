@@ -95,8 +95,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
 
         if financial_check == "financial_check":
             """ Check to see if resilience scenario system sizes are the same as financial scenario sizes """
-            query = request.GET
-            financial_uuid = query['financial_uuid']
+            financial_uuid = request.GET['financial_uuid']  # TODO: validate financial_uuid
 
             scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
             if scenario.status == "Optimizing...":
@@ -123,19 +122,16 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
             results = {"survives_specified_outage": survives}
 
         else:
-            try:
-                query = request.GET
-                bau = query['bau'] in ["True", "true", "1"]
-            except:
-                bau = False
-
-            wtch = True
+            with_tech = True
+            bau = False
+            if request.GET.get('bau') in ["True", "true", "1"]:
+                bau = True
             try:  # see if ResilienceModel already created
                 rm = ResilienceModel.objects.get(scenariomodel=scenario)
                 results = model_to_dict(rm)
 
                 if bau and "probs_of_surviving_bau" not in results:
-                    wtch = False
+                    with_tech = False
                     raise Exception('no resilience_stat_bau in database')
 
                 if not bau:
@@ -159,14 +155,14 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                                             * batt.inverter_efficiency_pct \
                                             * batt.rectifier_efficiency_pct
                 results = dict()
-                kwargs_dict = dict()
-                # if wtch and bau:
-                pool = Pool(processes=2 if wtch and bau else 1)
+                scenarios_dict = dict()
+                # if with_tech and bau:
+                pool = Pool(processes=2 if with_tech and bau else 1)
                 # else:
                 #     pool = Pool(processes=1)
 
-                if wtch:
-                    kwargs = {
+                if with_tech:
+                    scenarios_dict["with_tech"] = {
                         "batt_kwh": batt.size_kwh or 0,
                         "batt_kw": batt.size_kw or 0,
                         "pv_kw_ac_hourly": pv.year_one_power_production_series_kw,
@@ -180,11 +176,10 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                         "m": gen.fuel_slope_gal_per_kwh,
                         "diesel_min_turndown": gen.min_turn_down_pct
                     }
-                    kwargs_dict["wtch"] = kwargs
 
                 if bau:
                     # only PV and diesel generator may have existing size
-                    kwargs = {
+                    scenarios_dict["bau"] = {
                         "batt_kwh": 0,
                         "batt_kw": 0,
                         "pv_kw_ac_hourly": [p*pv.size_kw*pv.existing_kw for p in pv.year_one_power_production_series_kw],
@@ -195,14 +190,13 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                         "m": gen.fuel_slope_gal_per_kwh,
                         "diesel_min_turndown": gen.min_turn_down_pct
                     }
-                    kwargs_dict["bau"] = kwargs
 
-                p = {k: pool.apply_async(simulate_outage, tuple(), v) for k, v in kwargs_dict.items()}
+                p = {name: pool.apply_async(simulate_outage, tuple(), kwargs) for name, kwargs in scenarios_dict.items()}
                 pool.close()
                 pool.join()
 
                 for k, v in p.items():
-                    if k == 'wtch':
+                    if k == 'with_tech':
                         results.update(v.get())
                     if k == 'bau':
                         results.update({key+'_bau': val for key, val in v.get().items()})
@@ -267,7 +261,6 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
         if type(e).__name__ == 'DoesNotExist':
             msg = "Scenario {} does not exist.".format(run_uuid)
             return JsonResponse({"Error": msg}, content_type='application/json', status=404)
-
 
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
