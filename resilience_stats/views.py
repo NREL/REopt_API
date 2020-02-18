@@ -182,7 +182,7 @@ def resilience_stats(request, run_uuid=None, financial_check=None):
                     scenarios_dict["bau"] = {
                         "batt_kwh": 0,
                         "batt_kw": 0,
-                        "pv_kw_ac_hourly": [p*pv.size_kw*pv.existing_kw for p in pv.year_one_power_production_series_kw],
+                        "pv_kw_ac_hourly": [p / pv.size_kw * pv.existing_kw for p in pv.year_one_power_production_series_kw],
                         "critical_loads_kw": load_profile.critical_load_series_kw,
                         "diesel_kw": gen.existing_kw or 0,
                         "fuel_available": gen.fuel_avail_gal,
