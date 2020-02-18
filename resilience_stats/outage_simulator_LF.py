@@ -28,86 +28,56 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 #!usr/bin/python
-import copy
 from math import floor
 import pandas as pd
 
-class Generator():
-    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
+
+class Generator(object):
+    def __init__(self, diesel_kw, fuel_available, b, m, min_turndown):
         self.kw = diesel_kw
         self.fuel_available = fuel_available if (self.kw or 0) > 0 else 0
-        self.b = b  # input b: fuel curve intercept
-        self.m = m
-        self.min_turndown = diesel_min_turndown
-        self.genmin = self.min_turndown * self.kw
-
-        if self.fuel_available == 1e9:
-                self.fuel_available = 660
+        self.b = b  # fuel burn rate intercept (y=mx+b)  [gal/hour]
+        self.m = m  # fuel burn rate slope     (y=mx+b)  [gal/kWh]
+        self.genmin = min_turndown * self.kw
 
     def gen_avail(self, n_steps_per_hour):  # kW
+        gen_avail = 0
         if self.fuel_available - self.b > 0:
-            return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
-        else:
-            return 0
+            gen_avail = min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
+        return gen_avail
 
-    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        if self.gen_avail(n_steps_per_hour) >= self.genmin and gen_output > 0:
-            gen_output = max(self.genmin, min(gen_output, self.gen_avail(n_steps_per_hour)))
+    def fuel_consume(self, load, n_steps_per_hour):  # kW
+        gen_output = 0
+        if self.gen_avail(n_steps_per_hour) >= self.genmin and load > 0:
+            gen_output = max(self.genmin, min(load, self.gen_avail(n_steps_per_hour)))
             fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
             self.fuel_available -= min(self.fuel_available, fuel_consume)
-        else:
-            gen_output = 0
         return gen_output
 
 
-class Battery():
+class Battery(object):
     def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
         self.kw = batt_kw
-        self.size = batt_kwh if (self.kw or 0) > 0 else 0
+        self.kwh = batt_kwh if (self.kw or 0) > 0 else 0
         self.soc = soc
         self.roundtrip_efficiency = batt_roundtrip_efficiency
 
     def batt_avail(self, n_steps_per_hour):  # kW
-        return min(self.size * self.soc * n_steps_per_hour, self.kw)
+        return min(self.kwh * self.soc * n_steps_per_hour, self.kw)
 
     def batt_discharge(self, discharge, n_steps_per_hour):  # kW
         discharge = min(self.batt_avail(n_steps_per_hour), discharge)
-        self.soc -= min(discharge / self.size / n_steps_per_hour, self.soc) if self.size > 0 else 0
+        self.soc -= min(discharge / self.kwh / n_steps_per_hour, self.soc) if self.kwh > 0 else 0
         return discharge
 
     def batt_charge(self, charge, n_steps_per_hour):  # kw
         room = (1 - self.soc)  # if there's room in the battery
-        charge = min(room * n_steps_per_hour * self.size / self.roundtrip_efficiency, charge,
+        charge = min(room * n_steps_per_hour * self.kwh / self.roundtrip_efficiency, charge,
                      self.kw / self.roundtrip_efficiency)
-        chargesoc = charge * self.roundtrip_efficiency / self.size / n_steps_per_hour if self.size > 0 else 0
+        chargesoc = charge * self.roundtrip_efficiency / self.kwh / n_steps_per_hour if self.kwh > 0 else 0
         self.soc += chargesoc
         return charge
 
-class NoGenerator():
-    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
-        self.kw = 0
-        self.fuel_available = 0
-        self.genmin = 0
-
-    def gen_avail(self, n_steps_per_hour):  # kW
-        return 0
-
-    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        return 0
-
-class NoBattery():
-    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
-        self.kw = 0
-        self.size = 0
-
-    def batt_avail(self, n_steps_per_hour):  # kW
-        return 0
-
-    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
-        return 0
-
-    def batt_charge(self, charge, n_steps_per_hour):  # kw
-        return 0
 
 def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
@@ -125,51 +95,37 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
     :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
-    :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
+    :return: dict,
+        {
+            "resilience_by_timestep": r,
+            "resilience_hours_min": r_min,
+            "resilience_hours_max": r_max,
+            "resilience_hours_avg": r_avg,
+            "outage_durations": x_vals,
+            "probs_of_surviving": y_vals,
+            "probs_of_surviving_by_month": y_vals_group_month,
+            "probs_of_surviving_by_hour_of_the_day": y_vals_group_hour,
+        }
     """
-<<<<<<< HEAD
-    # capping fuel availability to 660 - default fuel availability is set at 1e9 for the optimization process
-    # for the outage simulator, the fuel availability is capped at 660.
-    if fuel_available == 1e9:
-        fuel_available = 660
-
-
-    if financial_check == "financial_check":
-        # Do financial check
-        if resilience_run_site_result.keys() == financial_run_site_result.keys():
-            for k, v in resilience_run_site_result.items():
-                if k in financial_run_site_result:
-                    if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
-                        return False
-            return True
-        else:
-            return False
-
-=======
     n_timesteps = len(critical_loads_kw)
-    n_steps_per_hour = n_timesteps / 8760  # type: int
-
+    n_steps_per_hour = int(n_timesteps / 8760)
     r = [0] * n_timesteps
-
-    # NOTE: not making hourly load assumptions: a kW is not equivalent to a kWh!!!
 
     if batt_kw == 0 or batt_kwh == 0:
         init_soc = [0] * n_timesteps  # default is None
 
-        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
-
+        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:
+            # no pv, generator, nor battery --> no resilience
             months = 12
             hours = 24
-            probs_of_surviving_by_month = [[0] for _ in range(months)]
-            probs_of_surviving_by_hour_of_the_day = [[0] for _ in range(hours)]
             return {"resilience_by_timestep": r,
                     "resilience_hours_min": 0,
                     "resilience_hours_max": 0,
                     "resilience_hours_avg": 0,
                     "outage_durations": [],
                     "probs_of_surviving": [],
-                    "probs_of_surviving_by_month": probs_of_surviving_by_month,
-                    "probs_of_surviving_by_hour_of_the_day": probs_of_surviving_by_hour_of_the_day,
+                    "probs_of_surviving_by_month": [[0] for _ in range(months)],
+                    "probs_of_surviving_by_hour_of_the_day": [[0] for _ in range(hours)],
                     }
 
     if pv_kw_ac_hourly in [None, []]:
@@ -180,12 +136,14 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     def load_following(critical_load, pv, wind, generator, battery, n_steps_per_hour):
         """
         Dispatch strategy for one time step
+        1. PV and/or Wind
+        2. Generator
+        3. Battery
         """
-
         # distributed generation minus load is the burden on battery
         unmatch = (critical_load - pv - wind)  # kw
 
-        if unmatch < 0:    # pv + wind> critical_load
+        if unmatch < 0:    # pv + wind > critical_load
             # excess PV power to charge battery
             charge = battery.batt_charge(-unmatch, n_steps_per_hour)
             unmatch = 0
@@ -206,22 +164,11 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     '''
     Simulation starts here
     '''
-    if diesel_kw == 0 or fuel_available == 0:
-        GEN = NoGenerator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
->>>>>>> 6cf671b3... clarify what "financial_check" does
-    else:
-        GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-
-    if batt_kw == 0 or batt_kwh == 0:
-        BATT = NoBattery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
-    else:
-        BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
-
     for time_step in range(n_timesteps):
-        gen = copy.deepcopy(GEN)
-        batt = copy.deepcopy(BATT)
+        gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
+        batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=init_soc[time_step])
         # outer loop: do simulation starting at each time step
-        batt.soc = init_soc[time_step]   # reset battery for each simulation
+        # TODO: is generator fuel_available getting reset?
 
         for i in range(n_timesteps):    # the i-th time step of simulation
             # inner loop: step through all possible surviving time steps
@@ -232,6 +179,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
                 critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
 
             if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
+                # TODO: not wrapping time-series? why can't survive if i == (n_timesteps-1) ?
                 r[time_step] = float(i) / float(n_steps_per_hour)
                 break
 
