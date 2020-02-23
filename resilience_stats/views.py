@@ -37,8 +37,6 @@ from reo.exceptions import UnexpectedError, SaveToDatabase
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
 from reo.models import ModelManager
-from multiprocessing import Pool
-from celery import shared_task, Task
 
 
 def resilience_stats(request, run_uuid=None):
@@ -214,49 +212,38 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
                                 * batt.inverter_efficiency_pct \
                                 * batt.rectifier_efficiency_pct
     results = dict()
-    scenarios_dict = dict()
-    pool = Pool(processes=2 if with_tech and bau else 1)
 
     if with_tech:
-        scenarios_dict["with_tech"] = {
-            "batt_kwh": batt.size_kwh or 0,
-            "batt_kw": batt.size_kw or 0,
-            "pv_kw_ac_hourly": pv.year_one_power_production_series_kw,
-            "wind_kw_ac_hourly": wind.year_one_power_production_series_kw,
-            "init_soc": batt.year_one_soc_series_pct,
-            "critical_loads_kw": load_profile.critical_load_series_kw,
-            "batt_roundtrip_efficiency": batt_roundtrip_efficiency,
-            "diesel_kw": gen.size_kw or 0,
-            "fuel_available": gen.fuel_avail_gal,
-            "b": gen.fuel_intercept_gal_per_hr,
-            "m": gen.fuel_slope_gal_per_kwh,
-            "diesel_min_turndown": gen.min_turn_down_pct
-        }
+        tech_results = simulate_outages(
+            batt_kwh=batt.size_kwh or 0,
+            batt_kw=batt.size_kw or 0,
+            pv_kw_ac_hourly=pv.year_one_power_production_series_kw,
+            wind_kw_ac_hourly=wind.year_one_power_production_series_kw,
+            init_soc=batt.year_one_soc_series_pct,
+            critical_loads_kw=load_profile.critical_load_series_kw,
+            batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+            diesel_kw=gen.size_kw or 0,
+            fuel_available=gen.fuel_avail_gal,
+            b=gen.fuel_intercept_gal_per_hr,
+            m=gen.fuel_slope_gal_per_kwh,
+            diesel_min_turndown=gen.min_turn_down_pct,
+        )
+        results.update(tech_results)
 
     if bau:
         # only PV and diesel generator may have existing size
-        scenarios_dict["bau"] = {
-            "batt_kwh": 0,
-            "batt_kw": 0,
-            "pv_kw_ac_hourly": [p / pv.size_kw * pv.existing_kw for p in pv.year_one_power_production_series_kw],
-            "critical_loads_kw": load_profile.critical_load_series_kw,
-            "diesel_kw": gen.existing_kw or 0,
-            "fuel_available": gen.fuel_avail_gal,
-            "b": gen.fuel_intercept_gal_per_hr,
-            "m": gen.fuel_slope_gal_per_kwh,
-            "diesel_min_turndown": gen.min_turn_down_pct
-        }
-
-    # TODO: use celery tasks to run parallel outage simulators
-    p = {name: pool.apply_async(simulate_outages, tuple(), kwargs) for name, kwargs in scenarios_dict.items()}
-    pool.close()
-    pool.join()
-
-    for k, v in p.items():
-        if k == 'with_tech':
-            results.update(v.get())
-        if k == 'bau':
-            results.update({key+'_bau': val for key, val in v.get().items()})
+        bau_results = simulate_outages(
+            batt_kwh=0,
+            batt_kw=0,
+            pv_kw_ac_hourly=[p / pv.size_kw * pv.existing_kw for p in pv.year_one_power_production_series_kw],
+            critical_loads_kw=load_profile.critical_load_series_kw,
+            diesel_kw=gen.existing_kw or 0,
+            fuel_available=gen.fuel_avail_gal,
+            b=gen.fuel_intercept_gal_per_hr,
+            m=gen.fuel_slope_gal_per_kwh,
+            diesel_min_turndown=gen.min_turn_down_pct
+        )
+        results.update({key+'_bau': val for key, val in bau_results.items()})
 
     """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
             avoided_outage_costs_us_dollars = resilience_hours_avg * 
