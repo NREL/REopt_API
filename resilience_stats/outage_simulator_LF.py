@@ -138,7 +138,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
 
         unmet_load, gen, batt = load_following(crit_load[t], gen, batt, n_steps_per_hour)
 
-        if unmet_load > 0:  # met critical load for i time steps
+        if round(unmet_load, 5) > 0:  # failed to meet load in this time step
             return float(i) / float(n_steps_per_hour)
 
     return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
