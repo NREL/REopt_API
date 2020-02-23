@@ -34,111 +34,82 @@ from celery import group, shared_task
 from time import sleep
 
 
-class Generator(object):
-    def __init__(self, diesel_kw, fuel_available, b, m, min_turndown):
-        self.kw = diesel_kw
-        self.fuel_available = fuel_available if (self.kw or 0) > 0 else 0
-        self.b = b  # fuel burn rate intercept (y=mx+b)  [gal/hour]
-        self.m = m  # fuel burn rate slope     (y=mx+b)  [gal/kWh]
-        self.genmin = min_turndown * self.kw
-
-    def gen_avail(self, n_steps_per_hour):  # kW
-        gen_avail = 0
-        if self.fuel_available - self.b > 0:
-            gen_avail = min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
-        return gen_avail
-
-    def fuel_consume(self, load, n_steps_per_hour):  # kW
-        gen_output = 0
-        if self.gen_avail(n_steps_per_hour) >= self.genmin and load > 0:
-            gen_output = max(self.genmin, min(load, self.gen_avail(n_steps_per_hour)))
-            fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
-            self.fuel_available -= min(self.fuel_available, fuel_consume)
-        return gen_output
-
-
-class Battery(object):
-    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
-        self.kw = batt_kw
-        self.kwh = batt_kwh if (self.kw or 0) > 0 else 0
-        self.soc = soc
-        self.roundtrip_efficiency = batt_roundtrip_efficiency
-
-    def batt_avail(self, n_steps_per_hour):  # kW
-        # return min of power to completely drain battery and inverter capacity
-        return min(self.kwh * self.soc * n_steps_per_hour, self.kw)
-
-    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
-        discharge = min(self.batt_avail(n_steps_per_hour), discharge)
-        self.soc -= min(discharge / self.kwh / n_steps_per_hour, self.soc) if self.kwh > 0 else 0
-        return discharge
-
-    def batt_charge(self, charge, n_steps_per_hour):  # kw
-        room = (1 - self.soc)  # if there's room in the battery
-        charge = min(room * n_steps_per_hour * self.kwh / self.roundtrip_efficiency, charge,
-                     self.kw)
-        chargesoc = charge * self.roundtrip_efficiency / self.kwh / n_steps_per_hour if self.kwh > 0 else 0
-        self.soc += chargesoc
-        return charge
-
-
-def load_following(load, generator, battery, n_steps_per_hour):
-    """
-    Dispatch strategy for one time step
-    1. PV and/or Wind
-    2. Generator
-    3. Battery
-    """
-    if load < 0:    # pv + wind > critical_load
-        # excess PV+Wind charges the battery
-        charge = battery.batt_charge(-load, n_steps_per_hour)
-        load = 0
-
-    elif generator.genmin <= generator.gen_avail(n_steps_per_hour) and generator.kw > 0:
-        gen_output = generator.fuel_consume(load, n_steps_per_hour)
-        # charge battery with excess energy if load < genmin
-        charge = battery.batt_charge(max(gen_output - load, 0), n_steps_per_hour)  # prevent negative charge
-        # discharge battery if load > gen_output
-        discharge = battery.batt_discharge(max(load - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
-        load -= (gen_output + discharge - charge)
-
-    elif load <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
-        discharge = battery.batt_discharge(load, n_steps_per_hour)
-        load = 0
-
-    return load, generator, battery
-
-
 @shared_task
 def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
                     batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load):
     """
-    Determine how long the critical load can be met with gas generator and energy storage
-    :param init_time_step:
-    :param diesel_kw:
+    Determine how long the critical load can be met with gas generator and energy storage.
+    Celery task used to parallelize outage simulations starting every time step in a year.
+    :param init_time_step: int, initial time step
+    :param diesel_kw: float, generator capacity
     :param fuel_available: float, gallons
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b)  [gal/hr]
     :param m: float, diesel fuel burn rate slope (y = m*x + b)  [gal/kWh]
     :param diesel_min_turndown:
-    :param batt_kwh:
-    :param batt_kw:
+    :param batt_kwh: float, battery capacity
+    :param batt_kw: float, battery inverter capacity (AC rating)
     :param batt_roundtrip_efficiency:
-    :param batt_soc_kwh:
-    :param n_timesteps:
-    :param n_steps_per_hour:
-    :param crit_load:
+    :param batt_soc_kwh: float, battery state of charge in kWh
+    :param n_timesteps: int, number of time steps in a year
+    :param n_steps_per_hour: int, number of time steps per hour
+    :param crit_load: list of float, load after DER (PV, Wind, ...)
     :return: float, number of hours that the critical load can be met using load following
     """
-
-    gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-    batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=batt_soc_kwh/batt_kwh)
-
     for i in range(n_timesteps):
         t = (init_time_step + i) % n_timesteps  # for wrapping around end of year
+        load_kw = crit_load[t]
 
-        unmet_load, gen, batt = load_following(crit_load[t], gen, batt, n_steps_per_hour)
+        if load_kw < 0:  # load is met
+            if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
+                batt_soc_kwh += min(
+                    batt_kwh - batt_soc_kwh,     # room available
+                    batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
+                    -load_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # excess energy
+                )
+        else:  # check if we can meet load with generator then storage
+            fuel_needed = (m * max(load_kw, diesel_min_turndown*diesel_kw) + b) / n_steps_per_hour
+            # (gal/kWh * kW + gal/hr) * hr = gal
+            # TODO: do we want to enforce diesel_min_turndown? (Used to not b/c we assume it is an emergency so it doesn't matter)
 
-        if round(unmet_load, 5) > 0:  # failed to meet load in this time step
+            if load_kw <= diesel_kw and fuel_needed <= fuel_available:  # diesel can meet load
+                fuel_available -= fuel_needed
+                if load_kw < diesel_min_turndown * diesel_kw:  # extra generation goes to battery
+                    if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
+                        batt_soc_kwh += min(
+                            batt_kwh - batt_soc_kwh,     # room available
+                            batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
+                            (diesel_min_turndown * diesel_kw - load_kw) / n_steps_per_hour * batt_roundtrip_efficiency  # excess energy
+                        )
+                load_kw = 0
+            else:  # diesel can meet part or no load
+
+                if fuel_needed > fuel_available and load_kw <= diesel_kw:  # tank is limiting factor
+                    load_kw -= max(0, (fuel_available * n_steps_per_hour - b) / m)  # (gal/hr - gal/hr) * kWh/gal = kW
+                    fuel_available = 0
+
+                    # check if battery can meet remaining load_kw
+                    if min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
+
+                elif fuel_needed <= fuel_available and load_kw > diesel_kw:  # diesel capacity is limiting factor
+                    load_kw -= diesel_kw
+                    # run diesel gen at max output
+                    fuel_available = max(0, fuel_available - (diesel_kw * m + b) / n_steps_per_hour)
+                                                              # (kW * gal/kWh + gal/hr) * hr = gal
+                    # check if battery can meet remaining load_kw
+                    if min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
+
+                elif min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
+
+        if round(load_kw, 5) > 0:  # failed to meet load in this time step
             return float(i) / float(n_steps_per_hour)
 
     return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
