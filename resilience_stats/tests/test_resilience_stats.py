@@ -92,7 +92,40 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         # self.test_path = test_path
 
         self.submit_url = '/v1/job/'
-        self.results_url = '/v1/job/<run_uuid>/resilience_stats/'
+        self.resil_stats_url = '/v1/job/<run_uuid>/resilience_stats/'
+        self.financial_check_url = '/v1/financial_check/'
+
+    def test_outage_sim_no_diesel(self):
+        """
+        For the case that no diesel generator is on site, outage simulation with load following strategy should have the
+        same results as existing simulation's results.
+        """
+        inputs = self.inputs
+        inputs.update(diesel_kw=0, fuel_available=0, m=0, b=0)
+
+        # Output parse from existing simulation
+        expected = {
+            'resilience_hours_min': 0,
+            'resilience_hours_max': 78,
+            'resilience_hours_avg': 10.26,
+            "outage_durations": list(range(1, 79)),
+            "probs_of_surviving": [0.8486, 0.7963, 0.7373, 0.6624, 0.59, 0.5194, 0.4533, 0.4007, 0.3583, 0.3231, 0.2934,
+                                   0.2692, 0.2473, 0.2298, 0.2152, 0.2017, 0.1901, 0.1795, 0.1703, 0.1618, 0.1539,
+                                   0.1465, 0.139, 0.1322, 0.126, 0.1195, 0.1134, 0.1076, 0.1024, 0.0979, 0.0938, 0.0898,
+                                   0.0858, 0.0818, 0.0779, 0.0739, 0.0699, 0.066, 0.0619, 0.0572, 0.0524, 0.0477,
+                                   0.0429, 0.038, 0.0331, 0.0282, 0.0233, 0.0184, 0.015, 0.012, 0.0099, 0.0083, 0.0073,
+                                   0.0068, 0.0064, 0.0062, 0.0059, 0.0057, 0.0055, 0.0053, 0.005, 0.0048, 0.0046,
+                                   0.0043, 0.0041, 0.0037, 0.0032, 0.0027, 0.0023, 0.0018, 0.0014, 0.0009, 0.0007,
+                                   0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
+        }
+        resp = simulate_outage(**inputs)
+
+        self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=3)
+        self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=3)
+        self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=3)
+        self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=3)
+        for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
+            self.assertAlmostEquals(x, y, places=3)
 
     def test_outage_sim(self):
         """
@@ -120,12 +153,25 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         }
         resp = simulate_outage(**self.inputs)
 
-        self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=3)
-        self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=3)
-        self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=3)
-        self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=3)
+        self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=4)
+        self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=4)
+        self.assertAlmostEqual(expected['resilience_hours_avg'], resp['resilience_hours_avg'], places=4)
+        self.assertAlmostEqual(expected['outage_durations'], resp['outage_durations'], places=4)
         for x, y in zip(expected['probs_of_surviving'], resp['probs_of_surviving']):
-            self.assertAlmostEquals(x, y, places=3)
+            self.assertAlmostEquals(x, y, places=4)
+
+    def test_no_resilience(self):
+        inputs = self.inputs
+        inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0)
+        resp = simulate_outage(**inputs)
+
+        self.assertEqual(0, resp['resilience_hours_min'])
+        self.assertEqual(0, resp['resilience_hours_max'])
+        self.assertEqual(0, resp['resilience_hours_avg'])
+        self.assertEqual([], resp['outage_durations'])
+        self.assertEqual([], resp['probs_of_surviving'])
+        self.assertEqual([[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]], resp['probs_of_surviving_by_month'])
+        self.assertEqual([[0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0], [0]], resp['probs_of_surviving_by_hour_of_the_day'])
 
     def test_flexible_timesteps(self):
         """
@@ -182,3 +228,65 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
             for x, y in zip(expected['probs_of_surviving_by_hour_of_the_day'][e],
                             resp['probs_of_surviving_by_hour_of_the_day'][r]):
                 self.assertAlmostEquals(x, y, places=3)
+
+    def test_resil_endpoint(self):
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
+        r = self.api_client.post(self.submit_url, format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        uuid = reopt_resp['run_uuid']
+
+        resp = self.api_client.get(self.resil_stats_url.replace('<run_uuid>', uuid))
+        self.assertEqual(resp.status_code, 200)
+        resp_dict = json.loads(resp.content)
+
+        expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                          0.0011]
+        for idx, p in enumerate(resp_dict["probs_of_surviving"]):
+            self.assertAlmostEqual(p, expected_probs[idx], places=2)
+        self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
+        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+        self.assertEqual(resp_dict["resilience_hours_min"], 0)
+        self.assertEqual(resp_dict["resilience_hours_max"], 12)
+
+        self.assertFalse("resilience_hours_max_bau" in resp_dict)
+
+    def test_resil_endpoint_bau(self):
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
+        r = self.api_client.post(self.submit_url, format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        uuid = reopt_resp['run_uuid']
+
+        resp = self.api_client.get(self.resil_stats_url.replace('<run_uuid>', uuid) + "?bau=True")
+        self.assertEqual(resp.status_code, 200)
+
+        resp_dict = json.loads(resp.content)
+
+        expected_probs = [0.605, 0.2454, 0.1998, 0.1596, 0.1237, 0.0897, 0.0587, 0.0338, 0.0158, 0.0078, 0.0038,
+                          0.0011]
+        for idx, p in enumerate(resp_dict["probs_of_surviving"]):
+            self.assertAlmostEqual(p, expected_probs[idx], places=2)
+        self.assertEqual(resp_dict["resilience_hours_avg"], 1.54)
+        self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+        self.assertEqual(resp_dict["resilience_hours_min"], 0)
+        self.assertEqual(resp_dict["resilience_hours_max"], 12)
+
+        self.assertTrue("resilience_hours_max_bau" in resp_dict)
+
+    def test_financial_resil_check(self):
+        """
+        financial_check returns true if the financial scenario system capacities are greater than or equal to the
+        resilience scenario system capacities
+        :return:
+        """
+        post = json.load(open(os.path.join(self.test_path, 'POST_nested.json'), 'r'))
+        r = self.api_client.post(self.submit_url, format='json', data=post)
+        reopt_resp = json.loads(r.content)
+        run_uuid = reopt_resp['run_uuid']
+
+        resp = self.api_client.get(
+                self.financial_check_url + "?financial_uuid={1}&resilience_uuid={1}".format(run_uuid),
+                format='json')
+
+        self.assertEqual(resp.status_code, 200)
+        results = json.loads(resp.content)
+        self.assertTrue(results["survives_specified_outage"])
