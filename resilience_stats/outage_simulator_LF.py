@@ -65,6 +65,7 @@ class Battery(object):
         self.roundtrip_efficiency = batt_roundtrip_efficiency
 
     def batt_avail(self, n_steps_per_hour):  # kW
+        # return min of power to completely drain battery and inverter capacity
         return min(self.kwh * self.soc * n_steps_per_hour, self.kw)
 
     def batt_discharge(self, discharge, n_steps_per_hour):  # kW
@@ -115,9 +116,9 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     Determine how long the critical load can be met with gas generator and energy storage
     :param init_time_step:
     :param diesel_kw:
-    :param fuel_available:
-    :param b:
-    :param m:
+    :param fuel_available: float, gallons
+    :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b)  [gal/hr]
+    :param m: float, diesel fuel burn rate slope (y = m*x + b)  [gal/kWh]
     :param diesel_min_turndown:
     :param batt_kwh:
     :param batt_kw:
@@ -130,7 +131,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
     """
 
     gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-    batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=batt_soc_kwh)
+    batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=batt_soc_kwh/batt_kwh)
 
     for i in range(n_timesteps):
         t = (init_time_step + i) % n_timesteps  # for wrapping around end of year
@@ -141,6 +142,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
             return float(i) / float(n_steps_per_hour)
 
     return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
+
 
 def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                      batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
@@ -201,7 +203,7 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     # outer loop: do simulation starting at each time step
     jobs = group(simulate_outage.s(time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
                  batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour,
-                 batt_soc_kwh=init_soc[time_step],
+                 batt_soc_kwh=init_soc[time_step]*batt_kwh,
                  crit_load=load_minus_der) for time_step in range(n_timesteps))
     result = jobs()
     while not result.ready():
