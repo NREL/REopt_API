@@ -76,7 +76,7 @@ class Battery(object):
     def batt_charge(self, charge, n_steps_per_hour):  # kw
         room = (1 - self.soc)  # if there's room in the battery
         charge = min(room * n_steps_per_hour * self.kwh / self.roundtrip_efficiency, charge,
-                     self.kw / self.roundtrip_efficiency)
+                     self.kw)
         chargesoc = charge * self.roundtrip_efficiency / self.kwh / n_steps_per_hour if self.kwh > 0 else 0
         self.soc += chargesoc
         return charge
