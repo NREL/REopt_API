@@ -284,7 +284,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         run_uuid = reopt_resp['run_uuid']
 
         resp = self.api_client.get(
-                self.financial_check_url + "?financial_uuid={1}&resilience_uuid={1}".format(run_uuid),
+                self.financial_check_url + "?financial_uuid={0}&resilience_uuid={0}".format(run_uuid),
                 format='json')
 
         self.assertEqual(resp.status_code, 200)
