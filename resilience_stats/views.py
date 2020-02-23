@@ -32,12 +32,13 @@ import sys
 from django.http import JsonResponse
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from resilience_stats.models import ResilienceModel
-from resilience_stats.outage_simulator_LF import simulate_outage
+from resilience_stats.outage_simulator_LF import simulate_outages
 from reo.exceptions import UnexpectedError, SaveToDatabase
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
 from reo.models import ModelManager
 from multiprocessing import Pool
+from celery import shared_task, Task
 
 
 def resilience_stats(request, run_uuid=None):
@@ -247,7 +248,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
         }
 
     # TODO: use celery tasks to run parallel outage simulators
-    p = {name: pool.apply_async(simulate_outage, tuple(), kwargs) for name, kwargs in scenarios_dict.items()}
+    p = {name: pool.apply_async(simulate_outages, tuple(), kwargs) for name, kwargs in scenarios_dict.items()}
     pool.close()
     pool.join()
 

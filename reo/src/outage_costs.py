@@ -27,7 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from resilience_stats.outage_simulator_LF import simulate_outage
+from resilience_stats.outage_simulator_LF import simulate_outages
 
 
 def calc_avoided_outage_costs(data, present_worth_factor):
@@ -56,7 +56,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
 
-    results = simulate_outage(
+    results = simulate_outages(
         batt_kwh=site_outputs['Storage'].get('size_kwh') or 0,
         batt_kw=site_outputs['Storage'].get('size_kw') or 0,
         pv_kw_ac_hourly=pv['year_one_power_production_series_kw'],
