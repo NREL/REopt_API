@@ -206,8 +206,8 @@ def resilience_stats(request, run_uuid=None):
 
 def financial_check(request):
     """ Check to see if resilience scenario system sizes are the same as financial scenario sizes """
-    resilience_uuid = request.GET['resilience_uuid']
-    financial_uuid = request.GET['financial_uuid']
+    resilience_uuid = request.GET.get['resilience_uuid']
+    financial_uuid = request.GET.get['financial_uuid']
 
     def parse_system_sizes(site):
         size_dict = dict()
