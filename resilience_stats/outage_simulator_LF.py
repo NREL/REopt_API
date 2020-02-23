@@ -201,10 +201,20 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     load_minus_der = [ld - pv - wd for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
     
     # outer loop: do simulation starting at each time step
-    jobs = group(simulate_outage.s(time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
-                 batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour,
-                 batt_soc_kwh=init_soc[time_step]*batt_kwh,
-                 crit_load=load_minus_der) for time_step in range(n_timesteps))
+    jobs = group(simulate_outage.s(
+        init_time_step=time_step,
+        diesel_kw=diesel_kw,
+        fuel_available=fuel_available,
+        b=b, m=m,
+        diesel_min_turndown=diesel_min_turndown,
+        batt_kwh=batt_kwh,
+        batt_kw=batt_kw,
+        batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+        n_timesteps=n_timesteps,
+        n_steps_per_hour=n_steps_per_hour,
+        batt_soc_kwh=init_soc[time_step]*batt_kwh,
+        crit_load=load_minus_der) for time_step in range(n_timesteps)
+    )
     result = jobs()
     while not result.ready():
         sleep(2)
