@@ -31,7 +31,7 @@ import json
 import os
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
-from resilience_stats.outage_simulator_LF import simulate_outage
+from resilience_stats.outage_simulator_LF import simulate_outages
 
 
 class TestResilStats(ResourceTestCaseMixin, TestCase):
@@ -118,7 +118,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                    0.0043, 0.0041, 0.0037, 0.0032, 0.0027, 0.0023, 0.0018, 0.0014, 0.0009, 0.0007,
                                    0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
         }
-        resp = simulate_outage(**inputs)
+        resp = simulate_outages(**inputs)
 
         self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=3)
         self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=3)
@@ -151,7 +151,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                    0.0038, 0.0034, 0.0031, 0.0027, 0.0024, 0.0021, 0.0018, 0.0016, 0.0015, 0.0014,
                                    0.0013, 0.0011, 0.001, 0.0009, 0.0008, 0.0007, 0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
         }
-        resp = simulate_outage(**self.inputs)
+        resp = simulate_outages(**self.inputs)
 
         self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=4)
         self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=4)
@@ -163,7 +163,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
     def test_no_resilience(self):
         inputs = self.inputs
         inputs.update(pv_kw_ac_hourly=[], batt_kw=0, diesel_kw=0)
-        resp = simulate_outage(**inputs)
+        resp = simulate_outages(**inputs)
 
         self.assertEqual(0, resp['resilience_hours_min'])
         self.assertEqual(0, resp['resilience_hours_max'])
@@ -177,8 +177,8 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
         """
         Same input with different timesteps-per-hour should have almost equal results.
         """
-        resp1 = simulate_outage(**self.inputs1)
-        resp2 = simulate_outage(**self.inputs2)
+        resp1 = simulate_outages(**self.inputs1)
+        resp2 = simulate_outages(**self.inputs2)
 
         self.assertAlmostEqual(1, resp2['resilience_hours_max'] / resp1['resilience_hours_max'], places=1)
         self.assertAlmostEqual(resp2['resilience_hours_min'], resp1['resilience_hours_min'], places=1)
@@ -218,7 +218,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                        0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0055, 0.0027]
             ]
         }
-        resp = simulate_outage(**inputs)
+        resp = simulate_outages(**inputs)
 
         for e, r in zip([0, 1], [0, 11]):
             for x, y in zip(expected['probs_of_surviving_by_month'][e], resp['probs_of_surviving_by_month'][r]):

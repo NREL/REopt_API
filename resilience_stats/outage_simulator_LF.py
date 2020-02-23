@@ -79,9 +79,9 @@ class Battery(object):
         return charge
 
 
-def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
-                    batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
-                    ):
+def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
+                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
+                     ):
     """
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
@@ -168,7 +168,6 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
         batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=init_soc[time_step])
         # outer loop: do simulation starting at each time step
-        # TODO: is generator fuel_available getting reset?
 
         for i in range(n_timesteps):    # the i-th time step of simulation
             # inner loop: step through all possible surviving time steps
@@ -180,7 +179,7 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
 
             if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
                 # TODO: not wrapping time-series? why can't survive if i == (n_timesteps-1) ?
-                r[time_step] = float(i) / float(n_steps_per_hour)
+                r[time_step] = int(float(i) / float(n_steps_per_hour))
                 break
 
     r_min = min(r)
