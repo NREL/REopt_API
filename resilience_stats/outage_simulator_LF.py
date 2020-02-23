@@ -81,48 +81,65 @@ class Battery(object):
         return charge
 
 
-def load_following(load_minus_der, generator, battery, n_steps_per_hour):
+def load_following(load, generator, battery, n_steps_per_hour):
     """
     Dispatch strategy for one time step
     1. PV and/or Wind
     2. Generator
     3. Battery
     """
-    if load_minus_der < 0:    # pv + wind > critical_load
+    if load < 0:    # pv + wind > critical_load
         # excess PV+Wind charges the battery
-        charge = battery.batt_charge(-load_minus_der, n_steps_per_hour)
-        load_minus_der = 0
+        charge = battery.batt_charge(-load, n_steps_per_hour)
+        load = 0
 
     elif generator.genmin <= generator.gen_avail(n_steps_per_hour) and generator.kw > 0:
-        gen_output = generator.fuel_consume(load_minus_der, n_steps_per_hour)
-        # charge battery with excess energy if load_minus_der < genmin
-        charge = battery.batt_charge(max(gen_output - load_minus_der, 0), n_steps_per_hour)  # prevent negative charge
-        # discharge battery if load_minus_der > gen_output
-        discharge = battery.batt_discharge(max(load_minus_der - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
-        load_minus_der -= (gen_output + discharge - charge)
+        gen_output = generator.fuel_consume(load, n_steps_per_hour)
+        # charge battery with excess energy if load < genmin
+        charge = battery.batt_charge(max(gen_output - load, 0), n_steps_per_hour)  # prevent negative charge
+        # discharge battery if load > gen_output
+        discharge = battery.batt_discharge(max(load - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
+        load -= (gen_output + discharge - charge)
 
-    elif load_minus_der <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
-        discharge = battery.batt_discharge(load_minus_der, n_steps_per_hour)
-        load_minus_der = 0
+    elif load <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
+        discharge = battery.batt_discharge(load, n_steps_per_hour)
+        load = 0
 
-    return load_minus_der, generator, battery
+    return load, generator, battery
 
 
 @shared_task
 def simulate_outage(ts, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
-                    batt_roundtrip_efficiency, init_soc, n_timesteps, n_steps_per_hour, load_minus_der):
+                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh,  crit_load):
+    """
+    Determine how long the critical load can be met with gas generator and energy storage
+    :param ts:
+    :param diesel_kw:
+    :param fuel_available:
+    :param b:
+    :param m:
+    :param diesel_min_turndown:
+    :param batt_kwh:
+    :param batt_kw:
+    :param batt_roundtrip_efficiency:
+    :param batt_soc_kwh:
+    :param n_timesteps:
+    :param n_steps_per_hour:
+    :param crit_load:
+    :return: float, number of hours that the critical load can be met using load following
+    """
 
     gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-    batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=init_soc[ts])
+    batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=batt_soc_kwh)
 
     for i in range(n_timesteps):    # the i-th time step of simulation
         # inner loop: step through all possible surviving time steps
         # break inner loop if can not survive
         t = (ts + i) % n_timesteps  # for wrapping around end of year
 
-        unmatch, gen, batt = load_following(load_minus_der[t], gen, batt, n_steps_per_hour)
+        unmet_load, gen, batt = load_following(crit_load[t], gen, batt, n_steps_per_hour)
 
-        if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
+        if unmet_load > 0 or i == (n_timesteps-1):  # cannot survive
             return float(i) / float(n_steps_per_hour)
 
 
@@ -184,8 +201,9 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     
     # outer loop: do simulation starting at each time step
     jobs = group(simulate_outage.s(time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
-                 batt_roundtrip_efficiency, init_soc, n_timesteps, n_steps_per_hour,
-                 load_minus_der) for time_step in range(n_timesteps))
+                 batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour,
+                 batt_soc_kwh=init_soc[time_step],
+                 crit_load=load_minus_der) for time_step in range(n_timesteps))
     result = jobs()
     while not result.ready():
         sleep(2)
