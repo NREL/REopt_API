@@ -151,8 +151,6 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
                                    0.0013, 0.0011, 0.001, 0.0009, 0.0008, 0.0007, 0.0006, 0.0005, 0.0003, 0.0002, 0.0001]
         }
         resp = simulate_outages(**self.inputs)
-        print(resp['outage_durations'])
-        print(resp['probs_of_surviving'])
 
         self.assertAlmostEqual(expected['resilience_hours_min'], resp['resilience_hours_min'], places=4)
         self.assertAlmostEqual(expected['resilience_hours_max'], resp['resilience_hours_max'], places=4)
