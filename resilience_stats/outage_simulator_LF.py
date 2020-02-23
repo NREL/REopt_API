@@ -109,11 +109,11 @@ def load_following(load, generator, battery, n_steps_per_hour):
 
 
 @shared_task
-def simulate_outage(ts, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
-                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh,  crit_load):
+def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
+                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load):
     """
     Determine how long the critical load can be met with gas generator and energy storage
-    :param ts:
+    :param init_time_step:
     :param diesel_kw:
     :param fuel_available:
     :param b:
@@ -132,16 +132,15 @@ def simulate_outage(ts, diesel_kw, fuel_available, b, m, diesel_min_turndown, ba
     gen = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
     batt = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=batt_soc_kwh)
 
-    for i in range(n_timesteps):    # the i-th time step of simulation
-        # inner loop: step through all possible surviving time steps
-        # break inner loop if can not survive
-        t = (ts + i) % n_timesteps  # for wrapping around end of year
+    for i in range(n_timesteps):
+        t = (init_time_step + i) % n_timesteps  # for wrapping around end of year
 
         unmet_load, gen, batt = load_following(crit_load[t], gen, batt, n_steps_per_hour)
 
-        if unmet_load > 0 or i == (n_timesteps-1):  # cannot survive
+        if unmet_load > 0:  # met critical load for i time steps
             return float(i) / float(n_steps_per_hour)
 
+    return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
 
 def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                      batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
