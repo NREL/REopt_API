@@ -30,7 +30,7 @@
 #!usr/bin/python
 from math import floor
 import pandas as pd
-from celery import group, shared_task
+from celery import group, shared_task, chord
 from time import sleep
 
 
@@ -172,6 +172,7 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     load_minus_der = [ld - pv - wd for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
     
     # outer loop: do simulation starting at each time step
+    # TODO: set celery to eager mode when outage duration is under certain duration based on time tests
     jobs = group(simulate_outage.s(
         init_time_step=time_step,
         diesel_kw=diesel_kw,
@@ -186,12 +187,16 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
         batt_soc_kwh=init_soc[time_step]*batt_kwh,
         crit_load=load_minus_der) for time_step in range(n_timesteps)
     )
-    result = jobs()
+    result = chord(jobs, process_results.s(n_steps_per_hour, n_timesteps)).delay()
     while not result.ready():
         sleep(2)
-    if result.failed():
+    if not result.successful():
         raise Exception("Outage simulator failed.")
-    r = result.get()
+    return result.result
+
+
+@shared_task
+def process_results(r, n_steps_per_hour, n_timesteps):
 
     r_min = min(r)
     r_max = max(r)
