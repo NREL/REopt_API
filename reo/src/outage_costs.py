@@ -58,7 +58,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
 
     celery_eager = True
     try:
-        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
+        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 9000:
             celery_eager = False
     except KeyError:
         pass  # in case no outage has been defined

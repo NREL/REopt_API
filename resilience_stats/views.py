@@ -216,7 +216,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     if with_tech:
         celery_eager = True
         try:
-            if load_profile.outage_end_hour - load_profile.outage_start_hour > 1000:
+            if load_profile.outage_end_hour - load_profile.outage_start_hour > 9000:
                 celery_eager = False
         except TypeError:
             pass  # when outage hours are None
