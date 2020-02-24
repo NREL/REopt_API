@@ -57,8 +57,11 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
 
     celery_eager = True
-    if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
-        celery_eager = False
+    try:
+        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
+            celery_eager = False
+    except KeyError:
+        pass  # in case no outage has been defined
 
     results = simulate_outages(
         batt_kwh=site_outputs['Storage'].get('size_kwh') or 0,
