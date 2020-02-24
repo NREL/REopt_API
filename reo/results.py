@@ -85,6 +85,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    profiler = Profiler()
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
@@ -134,7 +135,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
             :param path_static: path to copy proForma to for user download
             :param year: load_year
             """
-            self.profiler = Profiler()
             self.dfm = dfm
 
             with open(os.path.join(path_output, "REopt_results.json"), 'r') as f:
@@ -339,9 +339,6 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                         "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
                         "year_one_gen_fuel_cost_bau")
 
-            self.profiler.profileEnd()
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
-
         def compute_total_power(self, tech):
             power_lists = list()
             d = self.nested_outputs["Scenario"]["Site"][tech]
@@ -387,6 +384,9 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+
+        profiler.profileEnd()
+        data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
