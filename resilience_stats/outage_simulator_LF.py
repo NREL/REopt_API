@@ -117,6 +117,7 @@ def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_
 
 def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
                      batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
+                     celery_eager=True
                      ):
     """
     :param batt_kwh: float, battery storage capacity
@@ -166,33 +167,53 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
         pv_kw_ac_hourly = [0] * n_timesteps
     if wind_kw_ac_hourly in [None, []]:
         wind_kw_ac_hourly = [0] * n_timesteps
+    load_minus_der = [ld - pv - wd for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
     '''
     Simulation starts here
     '''
-    load_minus_der = [ld - pv - wd for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
-    
     # outer loop: do simulation starting at each time step
     # TODO: set celery to eager mode when outage duration is under certain duration based on time tests
-    jobs = group(simulate_outage.s(
-        init_time_step=time_step,
-        diesel_kw=diesel_kw,
-        fuel_available=fuel_available,
-        b=b, m=m,
-        diesel_min_turndown=diesel_min_turndown,
-        batt_kwh=batt_kwh,
-        batt_kw=batt_kw,
-        batt_roundtrip_efficiency=batt_roundtrip_efficiency,
-        n_timesteps=n_timesteps,
-        n_steps_per_hour=n_steps_per_hour,
-        batt_soc_kwh=init_soc[time_step]*batt_kwh,
-        crit_load=load_minus_der) for time_step in range(n_timesteps)
-    )
-    result = chord(jobs, process_results.s(n_steps_per_hour, n_timesteps)).delay()
-    while not result.ready():
-        sleep(2)
-    if not result.successful():
-        raise Exception("Outage simulator failed.")
-    return result.result
+    from celery.contrib import rdb
+    rdb.set_trace()
+    if not celery_eager:  # run jobs in parallel
+        jobs = group(simulate_outage.s(
+            init_time_step=time_step,
+            diesel_kw=diesel_kw,
+            fuel_available=fuel_available,
+            b=b, m=m,
+            diesel_min_turndown=diesel_min_turndown,
+            batt_kwh=batt_kwh,
+            batt_kw=batt_kw,
+            batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+            n_timesteps=n_timesteps,
+            n_steps_per_hour=n_steps_per_hour,
+            batt_soc_kwh=init_soc[time_step]*batt_kwh,
+            crit_load=load_minus_der) for time_step in range(n_timesteps)
+        )
+        result = chord(jobs, process_results.s(n_steps_per_hour, n_timesteps)).delay()
+        while not result.ready():
+            sleep(2)
+        if not result.successful():
+            raise Exception("Outage simulator failed.")
+        return result.result
+    else:  # run jobs serially, faster when each job only takes a small amount of time
+        for time_step in range(n_timesteps):
+            r[time_step] = simulate_outage(
+                init_time_step=time_step,
+                diesel_kw=diesel_kw,
+                fuel_available=fuel_available,
+                b=b, m=m,
+                diesel_min_turndown=diesel_min_turndown,
+                batt_kwh=batt_kwh,
+                batt_kw=batt_kw,
+                batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+                n_timesteps=n_timesteps,
+                n_steps_per_hour=n_steps_per_hour,
+                batt_soc_kwh=init_soc[time_step] * batt_kwh,
+                crit_load=load_minus_der
+            )
+        results = process_results(r, n_steps_per_hour, n_timesteps)
+        return results
 
 
 @shared_task

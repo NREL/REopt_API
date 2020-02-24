@@ -214,6 +214,10 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
     results = dict()
 
     if with_tech:
+        celery_eager = True
+        if load_profile.outage_end_hour - load_profile.outage_start_hour > 1000:
+            celery_eager = False
+
         tech_results = simulate_outages(
             batt_kwh=batt.size_kwh or 0,
             batt_kw=batt.size_kw or 0,
@@ -227,6 +231,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             b=gen.fuel_intercept_gal_per_hr,
             m=gen.fuel_slope_gal_per_kwh,
             diesel_min_turndown=gen.min_turn_down_pct,
+            celery_eager=celery_eager
         )
         results.update(tech_results)
 
