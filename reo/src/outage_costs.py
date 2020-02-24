@@ -56,6 +56,10 @@ def calc_avoided_outage_costs(data, present_worth_factor):
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
 
+    celery_eager = True
+    if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
+        celery_eager = False
+
     results = simulate_outages(
         batt_kwh=site_outputs['Storage'].get('size_kwh') or 0,
         batt_kw=site_outputs['Storage'].get('size_kw') or 0,
@@ -68,7 +72,8 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         fuel_available=site_inputs['Generator']['fuel_avail_gal'],
         b=site_inputs['Generator']['fuel_intercept_gal_per_hr'],
         m=site_inputs['Generator']['fuel_slope_gal_per_kwh'],
-        diesel_min_turndown=site_inputs['Generator']['min_turn_down_pct']
+        diesel_min_turndown=site_inputs['Generator']['min_turn_down_pct'],
+        celery_eager=celery_eager,
     )
 
     avg_crit_ld = sum(critical_load) / len(critical_load)
