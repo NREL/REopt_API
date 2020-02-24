@@ -172,9 +172,6 @@ def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, criti
     Simulation starts here
     '''
     # outer loop: do simulation starting at each time step
-    # TODO: set celery to eager mode when outage duration is under certain duration based on time tests
-    from celery.contrib import rdb
-    rdb.set_trace()
     if not celery_eager:  # run jobs in parallel
         jobs = group(simulate_outage.s(
             init_time_step=time_step,
