@@ -142,6 +142,7 @@ def remove(request, run_uuid):
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
 
+
 def results(request, run_uuid):
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
@@ -183,7 +184,11 @@ def simulated_load(request):
             annual_kwh = None
 
         try:  # monthly_totals_kwh is optional. if not provided, then DOE reference value is used.
-            monthly_totals_kwh = float(request.GET['monthly_totals_kwh'])
+            string_array = request.GET.get('monthly_totals_kwh')
+            if string_array is not None:
+                monthly_totals_kwh = [float(v) for v in string_array.strip('[]').split(',')]
+            else:
+                monthly_totals_kwh = None
         except KeyError:
             monthly_totals_kwh = None
 
