@@ -98,15 +98,14 @@ def resilience_stats(request, run_uuid=None):
             del results['scenariomodel']
             del results['id']
 
-            if bau and "probs_of_surviving_bau" not in results:  # then need to run outage_sim with existing sizes (BAU)
+            if bau and results["probs_of_surviving_bau"] is None:  # then need to run outage_sim with existing sizes (BAU)
                 bau_results = run_outage_sim(run_uuid, with_tech=False, bau=bau)
                 ResilienceModel.objects.filter(id=rm.id).update(**bau_results)
                 results.update(bau_results)
 
             if not bau:  # remove BAU results from results dict (if they're there)
-                for k, v in results.items():
-                    if k[-4:] == "_bau":
-                        results.pop(k)
+                filtered_dict = {k: v for k, v in results.items() if "_bau" not in k}
+                results = filtered_dict
 
         results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
                     })
