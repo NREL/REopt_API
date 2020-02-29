@@ -119,9 +119,11 @@ def resilience_stats(request, run_uuid=None):
         return JsonResponse({"Error": err.message}, status=500)
 
 
-def financial_check(request):
+def financial_check(request, run_uuid=None):
     """ Check to see if resilience scenario system sizes are the same as financial scenario sizes """
     resilience_uuid = request.GET.get('resilience_uuid')
+    if resilience_uuid is None:  # preserving old behavior
+        resilience_uuid = run_uuid
     financial_uuid = request.GET.get('financial_uuid')
 
     def parse_system_sizes(site):
