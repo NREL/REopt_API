@@ -235,33 +235,34 @@ def process_results(r, n_steps_per_hour, n_timesteps):
     for hrs in x_vals:
         y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
 
-    width = 0
-    for k, v in r_group_month:
-        tmp = list()
-        max_hr = int(v.max()) + 1
-        for hrs in range(max_hr):
-            tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
-        y_vals_group_month.append(tmp)
-        if max_hr > width:
-            width = max_hr
+    if len(x_vals) > 0:
+        width = 0
+        for k, v in r_group_month:
+            tmp = list()
+            max_hr = int(v.max()) + 1
+            for hrs in range(max_hr):
+                tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            y_vals_group_month.append(tmp)
+            if max_hr > width:
+                width = max_hr
 
-    # PostgreSQL requires that the arrays are rectangular
-    for i, v in enumerate(y_vals_group_month):
-        y_vals_group_month[i] = v + [0] * (width - len(v))
+        # PostgreSQL requires that the arrays are rectangular
+        for i, v in enumerate(y_vals_group_month):
+            y_vals_group_month[i] = v + [0] * (width - len(v))
 
-    width = 0
-    for k, v in r_group_hour:
-        tmp = list()
-        max_hr = int(v.max()) + 1
-        for hrs in range(max_hr):
-            tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
-        y_vals_group_hour.append(tmp)
-        if max_hr > width:
-            width = max_hr
+        width = 0
+        for k, v in r_group_hour:
+            tmp = list()
+            max_hr = int(v.max()) + 1
+            for hrs in range(max_hr):
+                tmp.append(round(float(sum([1 if h >= hrs else 0 for h in v])) / float(len(v)), 4))
+            y_vals_group_hour.append(tmp)
+            if max_hr > width:
+                width = max_hr
 
-    # PostgreSQL requires that the arrays are rectangular
-    for i, v in enumerate(y_vals_group_hour):
-        y_vals_group_hour[i] = v + [0] * (width - len(v))
+        # PostgreSQL requires that the arrays are rectangular
+        for i, v in enumerate(y_vals_group_hour):
+            y_vals_group_hour[i] = v + [0] * (width - len(v))
 
     return {"resilience_by_timestep": r,
             "resilience_hours_min": r_min,
