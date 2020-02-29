@@ -42,7 +42,7 @@ from reo.models import ModelManager
 def resilience_stats(request, run_uuid=None):
     """
     Run outage simulator for given run_uuid
-    :param request:
+    :param request: optional parameter for 'bau', boolean
     :param run_uuid:
     :return: {"resilience_by_timestep",
               "resilience_hours_min",
@@ -51,6 +51,7 @@ def resilience_stats(request, run_uuid=None):
               "outage_durations",
               "probs_of_surviving",
              }
+         Also can GET the same values as above with '_bau' appended if 'bau=true' for the site's existing capacities.
     """
     try:
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
@@ -88,10 +89,10 @@ def resilience_stats(request, run_uuid=None):
 
             try:
                 ResilienceModel.objects.filter(id=rm.id).update(**results)
-            except SaveToDatabase as e :
+            except SaveToDatabase as e:
                 return JsonResponse({"Error": e.message}, status=500)
 
-        else:  # ResilienceModel does exist
+        else:  # ResilienceModel does exist (reo/results.py runs the outage simulator after REopt)
             results = model_to_dict(rm)
             # remove items that user does not need
             del results['scenariomodel']
@@ -213,7 +214,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
                                 * batt.rectifier_efficiency_pct
     results = dict()
 
-    if with_tech:
+    if with_tech:  # NOTE: with_tech case is run after each optimization in reo/results.py
         celery_eager = True
         """ nlaws 200229
         Set celery_eager = False to run each inner outage simulator loop in parallel. Timing tests with generator only
