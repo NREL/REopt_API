@@ -39,6 +39,7 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     :param present_worth_factor: float, accounts for escalation and discount of avoided outage costs over analysis
         period. NOTE: we use pwf_e from REopt, which uses the electricity cost escalation rate and offtaker
         discount rate.
+    :param run_uuid: UUID
     :return: None
 
     NOTE: we cannot use resilience_stats endpoint for this calculation because it relies on the results already being
