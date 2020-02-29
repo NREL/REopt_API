@@ -57,12 +57,17 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
 
     celery_eager = True
+    """ nlaws 200229
+    Set celery_eager = False to run each inner outage simulator loop in parallel. Timing tests with generator only
+    indicate that celery task management does not improve speed due to the overhead required to manage the 8760 tasks.
+    However, if the outage simulator does get more complicated (say with CHP) we should revisit using celery to run
+    the inner loops in parallel.
     try:
-        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 9000:
+        if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
             celery_eager = False
     except KeyError:
         pass  # in case no outage has been defined
-
+    """
     results = simulate_outages(
         batt_kwh=site_outputs['Storage'].get('size_kwh') or 0,
         batt_kw=site_outputs['Storage'].get('size_kw') or 0,
