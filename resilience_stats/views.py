@@ -215,12 +215,17 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
 
     if with_tech:
         celery_eager = True
+        """ nlaws 200229
+        Set celery_eager = False to run each inner outage simulator loop in parallel. Timing tests with generator only
+        indicate that celery task management does not improve speed due to the overhead required to manage the 8760 tasks.
+        However, if the outage simulator does get more complicated (say with CHP) we should revisit using celery to run
+        the inner loops in parallel.
         try:
-            if load_profile.outage_end_hour - load_profile.outage_start_hour > 9000:
+            if load_profile['outage_end_hour'] - load_profile['outage_start_hour'] > 1000:
                 celery_eager = False
-        except TypeError:
-            pass  # when outage hours are None
-
+        except KeyError:
+            pass  # in case no outage has been defined
+        """
         tech_results = simulate_outages(
             batt_kwh=batt.size_kwh or 0,
             batt_kw=batt.size_kw or 0,
