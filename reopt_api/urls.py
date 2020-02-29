@@ -53,6 +53,7 @@ def page_not_found(request, url):
 urlpatterns = [
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', resilience_stats, name='resilience_stats'),
+    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/financial_check/?$', financial_check, name='financial_check'),  # preserving old behavior
     url(r'^v1/financial_check/?$', financial_check, name='financial_check'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results, name='results'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/remove/?$', views.remove, name='remove'),
