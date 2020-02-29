@@ -383,7 +383,7 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
                 data['messages']["PVWatts Warning"] = pv_warning
 
         # Calculate avoided outage costs
-        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()

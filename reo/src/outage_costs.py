@@ -28,9 +28,13 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 from resilience_stats.outage_simulator_LF import simulate_outages
+from resilience_stats.models import ResilienceModel
+from reo.models import ScenarioModel
+import logging
+log = logging.getLogger(__name__)
 
 
-def calc_avoided_outage_costs(data, present_worth_factor):
+def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     """
     Add output parameter to data:
         data['outputs']['Scenario']['Site']['avoided_outage_costs_us_dollars']
@@ -45,6 +49,9 @@ def calc_avoided_outage_costs(data, present_worth_factor):
     NOTE: we cannot use resilience_stats endpoint for this calculation because it relies on the results already being
     saved to the DB, and calculating the outage costs is done before the results are saved because it is one of the
     results.
+
+    NOTE: this function saves the outage simulator results to the database to ensure that the simulation is not run
+    twice (second time occurs when user calls resilience_stats endpoint with run_uuid).
     """
     site_inputs = data['inputs']['Scenario']['Site']
     site_outputs = data['outputs']['Scenario']['Site']
@@ -96,3 +103,16 @@ def calc_avoided_outage_costs(data, present_worth_factor):
         * results['resilience_hours_avg']
         * avg_crit_ld
         * present_worth_factor, 2)
+
+    results.update({
+        "present_worth_factor": present_worth_factor,
+        "avg_critical_load": avg_crit_ld
+    })
+    # save results
+    try:
+        scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
+        rm = ResilienceModel.create(scenariomodel=scenario, **results)
+    except:
+        log.warning("Failed to save ResilienceModel for run_uuid {}".format(run_uuid))
+    else:
+        log.info("Successfully saved ResilienceModel for run_uuid {}".format(run_uuid))
