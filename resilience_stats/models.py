@@ -67,7 +67,6 @@ class ResilienceModel(models.Model):
                                                            null=True)
     present_worth_factor = models.FloatField(null=True)
     avg_critical_load = models.FloatField(null=True)
-    survives_specified_outage = models.NullBooleanField()
 
     @classmethod
     def create(cls, scenariomodel, **kwargs):
