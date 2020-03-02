@@ -1,80 +1,223 @@
 using JuMP
+using Debugger
+using Xpress
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
 
 
-function reopt(reo_model, data, model_inputs)
+function reopt(reo_pyobject, data;
+                     Tech,
+                     Load,
+                     TechClass,
+                     TechIsGrid,
+                     TechToLoadMatrix,
+                     TurbineDerate,
+                     TechToTechClassMatrix,
+                     NMILRegime,
+                     ProdFactor,
+                     EtaStorIn,
+                     EtaStorOut,
+                     MaxSize,
+                     MinStorageSizeKW,
+                     MaxStorageSizeKW,
+                     MinStorageSizeKWH,
+                     MaxStorageSizeKWH,
+                     TechClassMinSize,
+                     MinTurndown,
+                     LevelizationFactor,
+                     LevelizationFactorProdIncent,
+                     pwf_e,
+                     pwf_om,
+                     two_party_factor,
+                     pwf_prod_incent,
+                     ProdIncentRate,
+                     MaxProdIncent,
+                     MaxSizeForProdIncent,
+                     CapCostSlope,
+                     CapCostX,
+                     CapCostYInt,
+                     r_tax_owner,
+                     r_tax_offtaker,
+                     StorageCostPerKW,
+                     StorageCostPerKWH,
+                     OMperUnitSize,
+                     OMcostPerUnitProd,
+                     analysis_years,
+                     NumRatchets,
+                     FuelBinCount,
+                     DemandBinCount,
+                     DemandMonthsBinCount,
+                     DemandRatesMonth,
+                     DemandRates,
+                     TimeStepRatchets,
+                     MaxDemandInTier,
+                     MaxUsageInTier,
+                     MaxDemandMonthsInTier,
+                     FuelRate,
+                     FuelAvail,
+                     FixedMonthlyCharge,
+                     AnnualMinCharge,
+                     MonthlyMinCharge,
+                     ExportRates,
+                     DemandLookbackMonths,
+                     DemandLookbackPercent,
+                     TimeStepRatchetsMonth,
+                     FuelBurnRateM,
+                     FuelBurnRateB,
+                     TimeStepCount,
+                     TimeStepScaling,
+                     AnnualElecLoad,
+                     LoadProfile,
+                     StorageMinChargePcent,
+                     InitSOC,
+                     NMILLimits,
+                     TechToNMILMapping,
+                     CapCostSegCount)
 
-    p = build_param(Tech = model_inputs["Tech"],
-          Load = model_inputs["Load"],
-          TechClass = model_inputs["TechClass"],
-          TechIsGrid = model_inputs["TechIsGrid"],
-          TechToLoadMatrix = model_inputs["TechToLoadMatrix"],
-          TurbineDerate = model_inputs["TurbineDerate"],
-          TechToTechClassMatrix = model_inputs["TechToTechClassMatrix"],
-          NMILRegime = model_inputs["NMILRegime"],
-          r_tax_owner = model_inputs["r_tax_owner"],
-          r_tax_offtaker = model_inputs["r_tax_offtaker"],
-          pwf_om = model_inputs["pwf_om"],
-          pwf_e = model_inputs["pwf_e"],
-          pwf_prod_incent = model_inputs["pwf_prod_incent"],
-          LevelizationFactor = model_inputs["LevelizationFactor"],
-          LevelizationFactorProdIncent = model_inputs["LevelizationFactorProdIncent"],
-          StorageCostPerKW = model_inputs["StorageCostPerKW"],
-          StorageCostPerKWH = model_inputs["StorageCostPerKWH"],
-          OMperUnitSize = model_inputs["OMperUnitSize"],
-          CapCostSlope = model_inputs["CapCostSlope"],
-          CapCostYInt = model_inputs["CapCostYInt"],
-          CapCostX = model_inputs["CapCostX"],
-          ProdIncentRate = model_inputs["ProdIncentRate"],
-          MaxProdIncent = model_inputs["MaxProdIncent"],
-          MaxSizeForProdIncent = model_inputs["MaxSizeForProdIncent"],
-          two_party_factor = model_inputs["two_party_factor"],
-          analysis_years = model_inputs["analysis_years"],
-          AnnualElecLoad = model_inputs["AnnualElecLoad"],
-          LoadProfile = model_inputs["LoadProfile"],
-          ProdFactor = model_inputs["ProdFactor"],
-          StorageMinChargePcent = model_inputs["StorageMinChargePcent"],
-          EtaStorIn = model_inputs["EtaStorIn"],
-          EtaStorOut = model_inputs["EtaStorOut"],
-          InitSOC = model_inputs["InitSOC"],
-          MaxSize = model_inputs["MaxSize"],
-          MinStorageSizeKW = model_inputs["MinStorageSizeKW"],
-          MaxStorageSizeKW = model_inputs["MaxStorageSizeKW"],
-          MinStorageSizeKWH = model_inputs["MinStorageSizeKWH"],
-          MaxStorageSizeKWH = model_inputs["MaxStorageSizeKWH"],
-          TechClassMinSize = model_inputs["TechClassMinSize"],
-          MinTurndown = model_inputs["MinTurndown"],
-          FuelRate = model_inputs["FuelRate"],
-          FuelAvail = model_inputs["FuelAvail"],
-          FixedMonthlyCharge = model_inputs["FixedMonthlyCharge"],
-          AnnualMinCharge = model_inputs["AnnualMinCharge"],
-          MonthlyMinCharge = model_inputs["MonthlyMinCharge"],
-          ExportRates = model_inputs["ExportRates"],
-          TimeStepRatchetsMonth = model_inputs["TimeStepRatchetsMonth"],
-          DemandRatesMonth = model_inputs["DemandRatesMonth"],
-          DemandLookbackPercent = model_inputs["DemandLookbackPercent"],
-          MaxDemandInTier = model_inputs["MaxDemandInTier"],
-          MaxDemandMonthsInTier = model_inputs["MaxDemandMonthsInTier"],
-          MaxUsageInTier = model_inputs["MaxUsageInTier"],
-          FuelBurnRateM = model_inputs["FuelBurnRateM"],
-          FuelBurnRateB = model_inputs["FuelBurnRateB"],
-          NMILLimits = model_inputs["NMILLimits"],
-          TechToNMILMapping = model_inputs["TechToNMILMapping"],
-          DemandRates = model_inputs["DemandRates"],
-          TimeStepRatchets = model_inputs["TimeStepRatchets"],
-          DemandLookbackMonths = model_inputs["DemandLookbackMonths"],
-          CapCostSegCount = model_inputs["CapCostSegCount"],
-          FuelBinCount = model_inputs["FuelBinCount"],
-          DemandBinCount  = model_inputs["DemandBinCount"],
-          DemandMonthsBinCount = model_inputs["DemandMonthsBinCount"],
-          TimeStepCount = model_inputs["TimeStepCount"],
-          NumRatchets = model_inputs["NumRatchets"],
-          TimeStepScaling = model_inputs["TimeStepScaling"],
-          OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
+    open("types_covered.txt", "w") do io
+        write(io, "Tech: " * string(typeof(Tech)) * "\n")
+        write(io, "Load: " * string(typeof(Load)) * "\n")
+        write(io, "TechClass: " * string(typeof(TechClass)) * "\n")
+        write(io, "TechIsGrid: " * string(typeof(TechIsGrid)) * "\n")
+        write(io, "TechToLoadMatrix: " * string(typeof(TechToLoadMatrix)) * "\n")
+        write(io, "TurbineDerate: " * string(typeof(TurbineDerate)) * "\n")
+        write(io, "TechToTechClassMatrix: " * string(typeof(TechToTechClassMatrix)) * "\n")
+        write(io, "NMILRegime: " * string(typeof(NMILRegime)) * "\n")
+        write(io, "ProdFactor: " * string(typeof(ProdFactor)) * "\n")
+        write(io, "EtaStorIn: " * string(typeof(EtaStorIn)) * "\n")
+        write(io, "EtaStorOut: " * string(typeof(EtaStorOut)) * "\n")
+        write(io, "MaxSize: " * string(typeof(MaxSize)) * "\n")
+        write(io, "MinStorageSizeKW: " * string(typeof(MinStorageSizeKW)) * "\n")
+        write(io, "MaxStorageSizeKW: " * string(typeof(MaxStorageSizeKW)) * "\n")
+        write(io, "MinStorageSizeKWH: " * string(typeof(MinStorageSizeKWH)) * "\n")
+        write(io, "MaxStorageSizeKWH: " * string(typeof(MaxStorageSizeKWH)) * "\n")
+        write(io, "TechClassMinSize: " * string(typeof(TechClassMinSize)) * "\n")
+        write(io, "MinTurndown: " * string(typeof(MinTurndown)) * "\n")
+        write(io, "LevelizationFactor: " * string(typeof(LevelizationFactor)) * "\n")
+        write(io, "LevelizationFactorProdIncent: " * string(typeof(LevelizationFactorProdIncent)) * "\n")
+        write(io, "pwf_e: " * string(typeof(pwf_e)) * "\n")
+        write(io, "pwf_om: " * string(typeof(pwf_om)) * "\n")
+        write(io, "two_party_factor: " * string(typeof(two_party_factor)) * "\n")
+        write(io, "pwf_prod_incent: " * string(typeof(pwf_prod_incent)) * "\n")
+        write(io, "ProdIncentRate: " * string(typeof(ProdIncentRate)) * "\n")
+        write(io, "MaxProdIncent: " * string(typeof(MaxProdIncent)) * "\n")
+        write(io, "MaxSizeForProdIncent: " * string(typeof(MaxSizeForProdIncent)) * "\n")
+        write(io, "CapCostSlope: " * string(typeof(CapCostSlope)) * "\n")
+        write(io, "CapCostX: " * string(typeof(CapCostX)) * "\n")
+        write(io, "CapCostYInt: " * string(typeof(CapCostYInt)) * "\n")
+        write(io, "r_tax_owner: " * string(typeof(r_tax_owner)) * "\n")
+        write(io, "r_tax_offtaker: " * string(typeof(r_tax_offtaker)) * "\n")
+        write(io, "StorageCostPerKW: " * string(typeof(StorageCostPerKW)) * "\n")
+        write(io, "StorageCostPerKWH: " * string(typeof(StorageCostPerKWH)) * "\n")
+        write(io, "OMperUnitSize: " * string(typeof(OMperUnitSize)) * "\n")
+        write(io, "OMcostPerUnitProd: " * string(typeof(OMcostPerUnitProd)) * "\n")
+        write(io, "analysis_years: " * string(typeof(analysis_years)) * "\n")
+        write(io, "NumRatchets: " * string(typeof(NumRatchets)) * "\n")
+        write(io, "FuelBinCount: " * string(typeof(FuelBinCount)) * "\n")
+        write(io, "DemandBinCount: " * string(typeof(DemandBinCount)) * "\n")
+        write(io, "DemandMonthsBinCount: " * string(typeof(DemandMonthsBinCount)) * "\n")
+        write(io, "DemandRatesMonth: " * string(typeof(DemandRatesMonth)) * "\n")
+        write(io, "DemandRates: " * string(typeof(DemandRates)) * "\n")
+        write(io, "TimeStepRatchets: " * string(typeof(TimeStepRatchets)) * "\n")
+        write(io, "MaxDemandInTier: " * string(typeof(MaxDemandInTier)) * "\n")
+        write(io, "MaxUsageInTier: " * string(typeof(MaxUsageInTier)) * "\n")
+        write(io, "MaxDemandMonthsInTier: " * string(typeof(MaxDemandMonthsInTier)) * "\n")
+        write(io, "FuelRate: " * string(typeof(FuelRate)) * "\n")
+        write(io, "FuelAvail: " * string(typeof(FuelAvail)) * "\n")
+        write(io, "FixedMonthlyCharge: " * string(typeof(FixedMonthlyCharge)) * "\n")
+        write(io, "AnnualMinCharge: " * string(typeof(AnnualMinCharge)) * "\n")
+        write(io, "MonthlyMinCharge: " * string(typeof(MonthlyMinCharge)) * "\n")
+        write(io, "ExportRates: " * string(typeof(ExportRates)) * "\n")
+        write(io, "DemandLookbackMonths: " * string(typeof(DemandLookbackMonths)) * "\n")
+        write(io, "DemandLookbackPercent: " * string(typeof(DemandLookbackPercent)) * "\n")
+        write(io, "TimeStepRatchetsMonth: " * string(typeof(TimeStepRatchetsMonth)) * "\n")
+        write(io, "FuelBurnRateM: " * string(typeof(FuelBurnRateM)) * "\n")
+        write(io, "FuelBurnRateB: " * string(typeof(FuelBurnRateB)) * "\n")
+        write(io, "TimeStepCount: " * string(typeof(TimeStepCount)) * "\n")
+        write(io, "TimeStepScaling: " * string(typeof(TimeStepScaling)) * "\n")
+        write(io, "AnnualElecLoad: " * string(typeof(AnnualElecLoad)) * "\n")
+        write(io, "LoadProfile: " * string(typeof(LoadProfile)) * "\n")
+        write(io, "StorageMinChargePcent: " * string(typeof(StorageMinChargePcent)) * "\n")
+        write(io, "InitSOC: " * string(typeof(InitSOC)) * "\n")
+        write(io, "NMILLimits: " * string(typeof(NMILLimits)) * "\n")
+        write(io, "TechToNMILMapping: " * string(typeof(TechToNMILMapping)) * "\n")
+        write(io, "CapCostSegCount: " * string(typeof(CapCostSegCount)) * "\n")
+    end
 
-    MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
+
+    reo_model = direct_model(Xpress.Optimizer())
+
+    p = build_param(Tech = Tech,
+                    Load = Load,
+                    TechClass = TechClass,
+                    TechIsGrid = TechIsGrid,
+                    TechToLoadMatrix = TechToLoadMatrix,
+                    TurbineDerate = TurbineDerate,
+                    TechToTechClassMatrix = TechToTechClassMatrix,
+                    NMILRegime = NMILRegime,
+                    r_tax_owner = r_tax_owner,
+                    r_tax_offtaker = r_tax_offtaker,
+                    pwf_om = pwf_om,
+                    pwf_e = pwf_e,
+                    pwf_prod_incent = pwf_prod_incent,
+                    LevelizationFactor = LevelizationFactor,
+                    LevelizationFactorProdIncent = LevelizationFactorProdIncent,
+                    StorageCostPerKW = StorageCostPerKW,
+                    StorageCostPerKWH = StorageCostPerKWH,
+                    OMperUnitSize = OMperUnitSize,
+                    CapCostSlope = CapCostSlope,
+                    CapCostYInt = CapCostYInt,
+                    CapCostX = CapCostX,
+                    ProdIncentRate = ProdIncentRate,
+                    MaxProdIncent = MaxProdIncent,
+                    MaxSizeForProdIncent = MaxSizeForProdIncent,
+                    two_party_factor = two_party_factor,
+                    analysis_years = analysis_years,
+                    AnnualElecLoad = AnnualElecLoad,
+                    LoadProfile = LoadProfile,
+                    ProdFactor = ProdFactor,
+                    StorageMinChargePcent = StorageMinChargePcent,
+                    EtaStorIn = EtaStorIn,
+                    EtaStorOut = EtaStorOut,
+                    InitSOC = InitSOC,
+                    MaxSize = MaxSize,
+                    MinStorageSizeKW = MinStorageSizeKW,
+                    MaxStorageSizeKW = MaxStorageSizeKW,
+                    MinStorageSizeKWH = MinStorageSizeKWH,
+                    MaxStorageSizeKWH = MaxStorageSizeKWH,
+                    TechClassMinSize = TechClassMinSize,
+                    MinTurndown = MinTurndown,
+                    FuelRate = FuelRate,
+                    FuelAvail = FuelAvail,
+                    FixedMonthlyCharge = FixedMonthlyCharge,
+                    AnnualMinCharge = AnnualMinCharge,
+                    MonthlyMinCharge = MonthlyMinCharge,
+                    ExportRates = ExportRates,
+                    TimeStepRatchetsMonth = TimeStepRatchetsMonth,
+                    DemandRatesMonth = DemandRatesMonth,
+                    DemandLookbackPercent = DemandLookbackPercent,
+                    MaxDemandInTier = MaxDemandInTier,
+                    MaxDemandMonthsInTier = MaxDemandMonthsInTier,
+                    MaxUsageInTier = MaxUsageInTier,
+                    FuelBurnRateM = FuelBurnRateM,
+                    FuelBurnRateB = FuelBurnRateB,
+                    NMILLimits = NMILLimits,
+                    TechToNMILMapping = TechToNMILMapping,
+                    DemandRates = DemandRates,
+                    TimeStepRatchets = TimeStepRatchets,
+                    DemandLookbackMonths = DemandLookbackMonths,
+                    CapCostSegCount = CapCostSegCount,
+                    FuelBinCount = FuelBinCount,
+                    DemandBinCount = DemandBinCount  ,
+                    DemandMonthsBinCount = DemandMonthsBinCount,
+                    TimeStepCount = TimeStepCount,
+                    NumRatchets = NumRatchets,
+                    TimeStepScaling = TimeStepScaling,
+                    OMcostPerUnitProd = OMcostPerUnitProd)
+
+    #MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
+    MAXTIME = 60000
 
     return reopt_run(reo_model, MAXTIME, p)
 end
@@ -318,8 +461,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     end
     @constraint(REopt, [dbm in p.DemandMonthsBin, m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
     	        dvPeakDemandEMonth[m, dbm] >=  sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, db in p.DemandBin, fb in p.FuelBin))
-    @constraint(REopt, [LD in p.Load, lbm in p.DemandLookbackMonths],
-                dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in p.DemandMonthsBin))
+    #@constraint(REopt, [LD in p.Load, lbm in p.DemandLookbackMonths], dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in p.DemandMonthsBin))
+    @expression(REopt, fake, dvPeakDemandEMonth[1])
 
     #= Annual energy produced by Tech's' (except UTIL) used to meet the 1R, 1W, and 1S loads must
     be less than the annual site load (in kWh) =#
@@ -485,7 +628,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         results["year_one_soc_series_pct"] = value.(soc)
     else
         results["year_one_soc_series_pct"] = []
-    end
+    #MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
+   end
 
     if !isempty(PVTechs)
         results["PV"] = Dict()
@@ -635,3 +779,81 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     results["status"] = status
     return results
 end
+
+
+function test(reo_model, data; Tech, kwargs...)
+
+    println("Tech =", Tech)
+    #for (k,v) in kwargs
+    #    println(k, ": ", typeof(v))
+    #end
+end
+
+py_reopt = pyfunctionret(reopt, Dict, PyObject, Dict{Any,Any};
+                     Tech=Array{String,1},
+                     Load=Array{String,1},
+                     TechClass=Array{String,1},
+                     TechIsGrid=Array{Int64,1},
+                     TechToLoadMatrix=Array{Int64,1},
+                     TurbineDerate=Array{Float64,1},
+                     TechToTechClassMatrix=Array{Int64,1},
+                     NMILRegime=Array{String,1},
+                     ProdFactor=Array{Float64,1},
+                     EtaStorIn=Array{Float64,1},
+                     EtaStorOut=Array{Float64,1},
+                     MaxSize=Array{Float64,1},
+                     MinStorageSizeKW=Float64,
+                     MaxStorageSizeKW=Float64,
+                     MinStorageSizeKWH=Float64,
+                     MaxStorageSizeKWH=Float64,
+                     TechClassMinSize=Array{Float64,1},
+                     MinTurndown=Array{Float64,1},
+                     LevelizationFactor=Array{Float64,1},
+                     LevelizationFactorProdIncent=Array{Float64,1},
+                     pwf_e=Float64,
+                     pwf_om=Float64,
+                     two_party_factor=Float64,
+                     pwf_prod_incent=Array{Float64,1},
+                     ProdIncentRate=Array{Float64,1},
+                     MaxProdIncent=Array{Float64,1},
+                     MaxSizeForProdIncent=Array{Float64,1},
+                     CapCostSlope=Array{Float64,1},
+                     CapCostX=Array{Float64,1},
+                     CapCostYInt=Array{Float64,1},
+                     r_tax_owner=Float64,
+                     r_tax_offtaker=Float64,
+                     StorageCostPerKW=Float64,
+                     StorageCostPerKWH=Float64,
+                     OMperUnitSize=Array{Float64,1},
+                     OMcostPerUnitProd=Array{Float64,1},
+                     analysis_years=Int64,
+                     NumRatchets=Int64,
+                     FuelBinCount=Int64,
+                     DemandBinCount=Int64,
+                     DemandMonthsBinCount=Int64,
+                     DemandRatesMonth=Array{Float64,1},
+                     DemandRates=Array{Any,1},
+                     TimeStepRatchets=Array{Any,1},
+                     MaxDemandInTier=Array{Float64,1},
+                     MaxUsageInTier=Array{Float64,1},
+                     MaxDemandMonthsInTier=Array{Float64,1},
+                     FuelRate=Array{Float64,1},
+                     FuelAvail=Array{Float64,1},
+                     FixedMonthlyCharge=Int64,
+                     AnnualMinCharge=Int64,
+                     MonthlyMinCharge=Int64,
+                     ExportRates=Array{Float64,1},
+                     DemandLookbackMonths=Array{Any,1},
+                     DemandLookbackPercent=Float64,
+                     TimeStepRatchetsMonth=Array{Array{Int64,1},1},
+                     FuelBurnRateM=Array{Float64,1},
+                     FuelBurnRateB=Array{Float64,1},
+                     TimeStepCount=Int64,
+                     TimeStepScaling=Float64,
+                     AnnualElecLoad=Float64,
+                     LoadProfile=Array{Float64,1},
+                     StorageMinChargePcent=Float64,
+                     InitSOC=Float64,
+                     NMILLimits=Array{Float64,1},
+                     TechToNMILMapping=Array{Int64,1},
+                     CapCostSegCount=Int64)
