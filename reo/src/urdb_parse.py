@@ -53,7 +53,7 @@ class REoptArgs:
             for hour in range(24 * cum_days_in_yr[month]+1, 24 * cum_days_in_yr[month+1]+1):
                 self.demand_ratchets_monthly[month].append(hour)
         self.demand_rates_tou = []
-        self.demand_ratchets_tou = []
+        self.demand_ratchets_tou = [[]]
         self.demand_num_ratchets = 12
         self.demand_tiers_num = 1
         self.demand_month_tiers_num = 1
