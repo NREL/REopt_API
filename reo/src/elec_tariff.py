@@ -43,7 +43,7 @@ class ElecTariff(object):
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
-        :param dfm: Object, DatFileManager
+        :param dfm: Object, DataManager
         :param run_id: str, run uuid
         :param wholesale_rate_us_dollars_per_kwh: float or list of float
         :param wholesale_rate_above_site_load_us_dollars_per_kwh: float or list of float
