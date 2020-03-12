@@ -1,0 +1,61 @@
+LevelizationFactor: [
+1.0
+]
+LevelizationFactorProdIncent: [
+1.0
+]
+pwf_e: [
+12.35539
+]
+pwf_om: [
+11.76667
+]
+two_party_factor: [
+0
+]
+pwf_prod_incent: [
+0
+]
+ProdIncentRate: [
+0
+0
+0
+0
+]
+MaxProdIncent: [
+0
+]
+MaxSizeForProdIncent: [
+0
+]
+CapCostSlope: [
+0.0
+]
+CapCostX: [
+0.0
+10000000000.0
+]
+CapCostYInt: [
+0.0
+]
+r_tax_owner: [
+0.0
+]
+r_tax_offtaker: [
+0.0
+]
+StorageCostPerKW: [
+1048.4232
+]
+StorageCostPerKWH: [
+521.6699
+]
+OMperUnitSize: [
+0
+]
+OMcostPerUnitProd: [
+0
+]
+analysis_years: [
+25
+]
