@@ -26,10 +26,10 @@ Note that not all suggestions will be integrated into the public code. Enhancmen
 Besides creating an issue for bugs found in the code, you can help the community by creating a suggested fix for a bug that you have found. Here are the general steps for contributing your bug-fix:
 - First, fork the repository and create a new branch on your fork with a name like "fix_some_bug"
 - Once the bug is fixed, run the full test suite (instructions for running the test suite are available [here](https://github.com/NREL/reopt_api/wiki/Testing-the-REopt-API))
-- If it passes, send a PR to the original repository
-- If tests aren't passing, then check the test(s) that is/are failing. Then think through - "should the test fail after my bug-fix?"
-    - If yes, make a pull request and provide a clear description of the identified bug, how you fixed it, and explanation for why the test(s) is failing
-    - If no, then revisit the new feature you have developed to troubleshoot the problem with the failing test[s]
+- If it passes, send a PR to the original repository. If you haven't signed the [Code License Agreement](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md) already, the CLA Assistant will comment on your PR and request you to sign the CLA. You can simply comment "I have read the CLA Document and I hereby sign the CLA" to sign the [CLA](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md). 
+- If tests aren't passing, then first look the specific test[s] that is/are failing. Then think through - "do I expect the test to fail after introducing the bug-fix I am proposing?"
+    - If yes, then please provide a clear description of the identified bug, how you fixed it, and explanation for why the fix is making an existing test fail
+    - If no, then revisit the changes you introduced to identify where the problem is
 
 ##### I have added a feature that other users will benefit from
 Not all features or Pull Requests will be merged into the public code. New features must provide clear benefit for the user community, as well as ideally preserve backwards compatibility.
@@ -39,8 +39,8 @@ The following describes the general steps for adding a feature to the REopt Lite
 - Then develop the feature on that branch (a detailed tutorial for REopt-api feature development is [here](https://github.com/NREL/reopt_api/wiki/Developing-the-API))
 - Note that we highly recommend test-driven development
 - After the feature is complete, run the full test suite
-- If it passes, send a PR to the original repository
-- If tests aren't passing, then first look the specific test which is failing. Then think through - "Do I expect this test to fail after having added the new feature?"
+- If it passes, send a PR to the original repository. If you haven't signed the [Code License Agreement](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md) already, the CLA Assistant will comment on your PR and request you to sign the CLA. You can simply comment "I have read the CLA Document and I hereby sign the CLA" to sign the [CLA](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md). 
+- If tests aren't passing, then first look the specific test which is failing. Then think through - Do I expect this test to fail after having added the new feature? 
     - If yes, then please provide a clear explanation for why the existing test[s] should fail after the introduction of the new feature
     - If no, then revisit the new feature you have developed to troubleshoot the problem with the failing test[s]
 
