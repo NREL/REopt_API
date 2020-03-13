@@ -94,12 +94,12 @@ class CastStudyTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
 
         # Create objects to be checked
-        results = self.get_case_study_results(study)
-        d_expected = dict()
-        d_expected['lcc'] = results['lcc']
+        #results = self.get_case_study_results(study)
+        #d_expected['lcc'] = results['lcc']
+        expected = 437716.0
 
 
         c = nested_to_flat(d['outputs'])
 
-        self.assertAlmostEqual(c['lcc'], d_expected['lcc'], places=2, msg="LCC doesn't match test case results")
+        self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 
