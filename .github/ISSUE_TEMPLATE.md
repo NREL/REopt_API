@@ -1,4 +1,4 @@
-**Note: for support questions and enhancement suggestions please use the REopt Discourse site**. This repository's issues are reserved for feature requests and bug reports.
+**Note: for support questions and enhancement suggestions please use the REopt Forum (under development)**. This repository's issues are reserved for feature requests and bug reports.
 
 * **I'm submitting a ...**
   - [ ] bug report

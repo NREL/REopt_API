@@ -138,7 +138,7 @@ class RateData:
 
 class UrdbParse:
     """
-    Sub-function of DatFileManager.
+    Sub-function of DataManager.
     Makes all REopt args for dat files in Inputs/Utility directory
 
     Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in

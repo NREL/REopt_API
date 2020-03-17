@@ -45,7 +45,7 @@ def get_techs_not_none(techs, cls):
     return ret
 
 
-class DatFileManager:
+class DataManager:
     """
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
