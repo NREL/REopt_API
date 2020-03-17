@@ -19,14 +19,31 @@ end
 
 #TODO Get rid of union types
 struct Parameter
-     Tech::Array{String,1}
-     Load::Array{String,1}
-     TechClass::Array{String,1}
+	 !!!  SETS  !!!
+	 Storage::Array{String,1}      ! Set B in math; new; B = "Elec","HotThermal","ColdThermal"
+     TechClass::Array{String,1}    ! Set C
+	 DemandBin::UnitRange{Int64}   ! Set E
+	 FuelType::Array{String,1}	   ! Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
+     TimeStep::UnitRange{Int64}    ! Set H
+     TimeStepBat::UnitRange{Int64} ! Set H union {0}
+	 Segmentations::Array{String,1}	! Set K; new; elements = { "CapCost", "FuelBurn" }
+	 Month::UnitRange{Int64} 	    ! Set M
+	 DemandMonthsBin::UnitRange{Int64}	! Set N
+	 Ratchets::UnitRange{Int64}	   ! Set R
+     Seg::UnitRange{Int64}	       ! Set S
+	 Tech::Array{String,1}         ! Set T in math
+	 FuelBin::UnitRange{Int64}	   ! Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we probably want to change this.
+	 NMILRegime::Array{String,1}	! Set V
+	 
+	 !!!  SUBSETS AND INDEXED SETS  !!!!
+	 
+	 
+	 !!!  PARAMETERS !!!
+	 Load::Array{String,1}
      TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
      TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
      TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     NMILRegime::Array{String,1}
      r_tax_owner::Float64
      r_tax_offtaker::Float64
      pwf_om::Float64
@@ -36,9 +53,8 @@ struct Parameter
      LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      StorageCostPerKW::Float64
      StorageCostPerKWH::Float64
-     OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
-     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
+     OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
+	 CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
      CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
      ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
      MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
@@ -83,15 +99,11 @@ struct Parameter
      DemandBinCount ::Int64
      DemandMonthsBinCount::Int64
      TimeStepCount::Int64
-     Seg::UnitRange{Int64}
      Points::UnitRange{Int64}
-     Month::UnitRange{Int64}
-     Ratchets::UnitRange{Int64}
-     FuelBin::UnitRange{Int64}
-     DemandBin::UnitRange{Int64}
-     DemandMonthsBin::UnitRange{Int64}
-     TimeStep::UnitRange{Int64}
-     TimeStepBat::UnitRange{Int64}
+     
+     
+     
+     
      TimeStepScaling::Float64
      OMcostPerUnitProd::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
 end
