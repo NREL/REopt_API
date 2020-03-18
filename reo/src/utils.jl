@@ -38,21 +38,57 @@ struct Parameter
 	 !!!  SUBSETS AND INDEXED SETS  !!!!
 	 
 	 
-	 !!!  PARAMETERS !!!
-	 Load::Array{String,1}
-     TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     r_tax_owner::Float64
-     r_tax_offtaker::Float64
-     pwf_om::Float64
-     pwf_e::Float64
-     pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     StorageCostPerKW::Float64
+	 !!!  COST PARAMETERS AND THEIR FUNCTIONAL FORMS !!!
+	 StorageCostPerKW::Float64
      StorageCostPerKWH::Float64
+	 
+	 !!!  DEMAND PARAMETERS !!!
+	 
+	 
+	 !!!  INCENTIVE PARAMETERS !!!
+	 
+	 
+	 !!!  TECHNOLOGY-SPECIFIC TIME-SERIES FACTOR PARAMETERS !!!
+	 
+	 
+	 !!!  TECHNOLOGY-SPECIFIC FACTOR PARAMETERS !!!
+	 
+	 
+	 !!!  GENERIC FACTOR PARAMETERS !!!
+	 TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ! f^\text{d}_{t}:  Derate factor for turbine technology t  [fraction]
+	 pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   ! f^{pi}_{t}: Present worth factor for incentives for technology t    [unitless]
+	 LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    ! f^\text{l}_{t}: Levelization factor of technology t  [fraction]
+     LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   !  f^\text{lp}_{t}  Levelization factor of production incentive for technology $t$ [fraction]
+	 pwf_om::Float64            !  f^om: Operations and maintenance present worth factor [unitless]
+     pwf_e::Float64             !  f^e: Energy present worth factor [unitless]
+	 r_tax_owner::Float64       !  f^tow: Tax rate factor for owner [fraction]
+     r_tax_offtaker::Float64    !  f^tot: Tax rate factor for offtaker [fraction]
+     
+	 
+	 !!!  SYSTEM SIZE AND FUEL LIMIT PARAMETERS !!!
+	 
+	 
+	 !!!  EFFICIENCY PARAMETERS !!!
+	 
+	 
+	 !!!  STORAGE PARAMETERS !!!
+	 
+	 
+	 !!!  FUEL BURN PARAMETERS !!!
+	 
+	 
+	 !!!  CHP THERMAL PERFORMANCE PARAMETERS !!!
+	 
+	 
+	 !!!  BOUNDARY CONDITIONS  !!!
+	 
+	 
+     
+     TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     
+     
+     
+     
      OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
 	 CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
      CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
@@ -106,6 +142,12 @@ struct Parameter
      
      TimeStepScaling::Float64
      OMcostPerUnitProd::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+	 
+	 !!! LEAVING BEHIND !!!
+	 Load::Array{String,1}
+     TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
+     TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+	 
 end
 
 
