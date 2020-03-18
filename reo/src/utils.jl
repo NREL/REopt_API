@@ -34,7 +34,7 @@ struct Parameter
 	 Tech::Array{String,1}         ! Set T in math
 	 FuelBin::UnitRange{Int64}	   ! Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we probably want to change this.
 	 !PricingTier::UnitRange{Int64}  ! Set U: Pricing Tiers (proposed revision)
-	 NMILRegime::Array{String,1}	! Set V
+	 NMILRegime::Array{String,1}	! Set V: Net-metering Regimes
 	 
 	 !!!  Subsets and Indexed Sets  !!!!
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   !  H_m: Time steps in month m
@@ -43,7 +43,8 @@ struct Parameter
 	 
 	 !!!  Parameters and Tables supporting Indexed Sets !!!
 	 TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} ! Defines T_c: technologies in class c
-	 TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}   !  Defines technologies that serve loads, this is replaced by other subsets  ! Defines electrical, hot and cold thermal technology subsets
+	 TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}    ! Defines electrical, hot and cold thermal technology subsets
+	 TechToNMILMapping::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  ! Defines set T_v: Technologies that may be access net-metering regime v 
 	 
 	 !!!  Scaling Parameters !!!
 	 TimeStepScaling::Float64  ! \Delta: Time step scaling [h]
@@ -67,23 +68,31 @@ struct Parameter
 	 DemandRatesMonth::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}   ! c^{rm}_{mn}: c^{r}_{re}: Cost per unit peak demand in tier n during month m
 	 
 	 !!!  Demand Parameters !!!
-	 LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
-     DemandLookbackPercent::Float64
-     MaxDemandInTier::Array{Float64,1}
-     MaxDemandMonthsInTier::Array{Float64,1}
-     MaxUsageInTier::Array{Float64,1}
+	 LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}   ! Covers Electrical Load and Thermal Load Profiles; this is to be split into three parameters in the math
+	 ! ElecLoad::Array{Float64,1}  ! \delta^{d}_{h}: Electrical load in time step h   [kW]
+	 ! HeatingLoad::Array{Float64,1}  ! \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
+	 ! CoolingLoad::Array{Float64,1}  ! \delta^{c}_{h}: Cooling load in time step h   [kW]
+     DemandLookbackPercent::Float64    ! \delta^{lp}: Demand Lookback proportion [fraction]
+     MaxDemandInTier::Array{Float64,1}  ! \delta^{t}_{e}: Maximum power demand in ratchet e
+     MaxDemandMonthsInTier::Array{Float64,1}   ! \delta^{mt}_{n}: Maximum monthly power demand in tier n
+	 ! MaxGridSales::Array{Float64,1}   ! \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
+     MaxUsageInTier::Array{Float64,1}   ! \delta^{tu}_{u}: Maximum monthly energy demand in tier u
 	 
 	 
 	 !!!  Incentive Parameters !!!
-	 NMILLimits::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToNMILMapping::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+	 NMILLimits::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   ! i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
+     
      MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}           ! \bar{i}_t: Upper incentive limit for technology t [$]
-     ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}   ! i^{r}_{t}: Incentive rate for technology t [$/kWh]
+     ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}   ! i^{r}_{t}: Incentive rate for technology t [$/kWh] in math; this is currently indexed on load but does not need to be as the incentive is for total production. 
+	 ! MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}           ! \bar{i}_t: Upper incentive limit for technology t [$]  Adjusted
 	 MaxSizeForProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    ! \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
 	 
 	 !!!  Technology-specific Time-series Factor Parameters !!!
-	 ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-     
+	 ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}   ! f^{p}_{th}:  Production factor of technology t and time step h  [unitless] in math; currently also indexed on fuel bin which should be removed. 
+     ! f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+	 ! f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
+	 ! f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
+	 ! f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
 	 
 	 !!!  Technology-specific Factor Parameters !!!
 	 TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  ! f^{d}_{t}: Derate factor for turbine technologyt [unitless]
