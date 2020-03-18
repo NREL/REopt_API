@@ -38,7 +38,7 @@ struct Parameter
 	 !!!  Subsets and Indexed Sets  !!!!
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   !  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    !  H_r: Time steps in ratchet r
-	 DemandLookbackMonths::Array{Any,1}
+	 DemandLookbackMonths::Array{Any,1}   ! M^{lb}: Look back months considered for peak pricing 
 	 
 	 !!!  Parameters and Tables supporting Indexed Sets !!!
 	 TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} ! Defines T_c: technologies in class c
@@ -49,9 +49,9 @@ struct Parameter
 	 
 	 !!!  Parameters for Costs and their Functional Forms !!!
 	 
-     AnnualMinCharge::Float64
-     MonthlyMinCharge::Float64
-	 FixedMonthlyCharge::Float64
+     AnnualMinCharge::Float64    ! Utility annual minimum charge
+     MonthlyMinCharge::Float64    ! Utility monthly minimum charge
+	 FixedMonthlyCharge::Float64  ! Utility monthly fixed charge
 	 StorageCostPerKW::Float64    ! c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]    NOTE: Needs to be updated for set B
      StorageCostPerKWH::Float64   ! c^{kW}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
 	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ! c^{om}_{t}: Operation and maintenance cost of technologytper unit of system size [$/kW]
@@ -101,16 +101,21 @@ struct Parameter
 	 FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  ! b^{fa}_{f}: Amount of available fuel for type f [MMBTU]
 	 
 	 !!!  Efficiency Parameters !!!
+	 EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  ! \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (need to update indices)
+	 !EtaGridToStor::Float64   ! \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction]
+     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  ! \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction]
+	 ! \eta^{bo}: Boiler efficiency [fraction]
+	 ! \eta^{ecop}: Electric chiller efficiency [fraction]
+	 ! \eta^{acop}: Absorption chiller efficiency [fraction]
 	 
 	 
 	 !!!  Storage Parameters !!!
-	 MinStorageSizeKW::Float64
-     MaxStorageSizeKW::Float64
-     MinStorageSizeKWH::Float64
-     MaxStorageSizeKWH::Float64
-     StorageMinChargePcent::Float64  
-     EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MinStorageSizeKWH::Float64     ! \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b (needs to be indexed on b
+     MaxStorageSizeKWH::Float64     ! \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b (needs to be indexed on b 
+	 MinStorageSizeKW::Float64     ! \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b (needs to be indexed on b 
+     MaxStorageSizeKW::Float64     ! \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b 
+     StorageMinChargePcent::Float64     !  \ubar{w}^{mcp}_{b}: Minimum state of charge of strage system b
+     InitSOC::Float64    ! w^{i}_{b} Initial percent state of charge for storage system b
 	 
 	 !!!  Fuel Burn Parameters !!!
      FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
@@ -137,7 +142,7 @@ struct Parameter
      DemandMonthsBinCount::Int64   ! Size of set N
      TimeStepCount::Int64          ! Size of set H
      Points::UnitRange{Int64}      ! CapCostSegCount+1; this is going to be the size of set S^{c} now
-     
+		
 end
 
 
