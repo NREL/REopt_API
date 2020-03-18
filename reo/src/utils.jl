@@ -33,6 +33,7 @@ struct Parameter
      Seg::UnitRange{Int64}	       ! Set S
 	 Tech::Array{String,1}         ! Set T in math
 	 FuelBin::UnitRange{Int64}	   ! Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we probably want to change this.
+	 !PricingTier::UnitRange{Int64}  ! Set U: Pricing Tiers (proposed revision)
 	 NMILRegime::Array{String,1}	! Set V
 	 
 	 !!!  Subsets and Indexed Sets  !!!!
@@ -48,23 +49,25 @@ struct Parameter
 	 TimeStepScaling::Float64  ! \Delta: Time step scaling [h]
 	 
 	 !!!  Parameters for Costs and their Functional Forms !!!
-	 
-     AnnualMinCharge::Float64    ! Utility annual minimum charge
-     MonthlyMinCharge::Float64    ! Utility monthly minimum charge
-	 FixedMonthlyCharge::Float64  ! Utility monthly fixed charge
+     AnnualMinCharge::Float64    ! c^{amc}: Utility annual minimum charge
+     MonthlyMinCharge::Float64    ! c^{mmc}: Utility monthly minimum charge  (not in math; will use this in min charge calculation)
+	 FixedMonthlyCharge::Float64  ! c^{fmc}: Utility monthly fixed charge
 	 StorageCostPerKW::Float64    ! c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]    NOTE: Needs to be updated for set B
-     StorageCostPerKWH::Float64   ! c^{kW}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
-	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ! c^{om}_{t}: Operation and maintenance cost of technologytper unit of system size [$/kW]
-     FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}	 
-	 ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-	 CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
-     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
-     CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     StorageCostPerKWH::Float64   ! c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
+	 FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}   	 ! c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math; currently indexed on fuelbin, tech, time step - needs to change
+	 !ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  !   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h
+	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ! c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
+     
+	 ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}    ! c^{e}_{uh}: Export rate for energy in energy demand tier u in time step h in math; currently indexed on tech, load, timestep 
+	 CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   ! c^{cm}_{s}: Slope of capital cost curve for technology t in segment s 
+     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   ! c^{cb}_{s}: Y-Intercept of capital cost curve for technology t in segment s 
+     CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}    ! X-value of inflection point (will be changed)
+	 !For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
+	 DemandRates::Union{Array{Float64,1},AxisArray{Any,2,Array{Any,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}},AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}    ! c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
+	 DemandRatesMonth::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}   ! c^{rm}_{mn}: c^{r}_{re}: Cost per unit peak demand in tier n during month m
 	 
 	 !!!  Demand Parameters !!!
 	 LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
-	 DemandRates::Union{Array{Float64,1},AxisArray{Any,2,Array{Any,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}},AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}
-	 DemandRatesMonth::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}
      DemandLookbackPercent::Float64
      MaxDemandInTier::Array{Float64,1}
      MaxDemandMonthsInTier::Array{Float64,1}
@@ -110,11 +113,11 @@ struct Parameter
 	 
 	 
 	 !!!  Storage Parameters !!!
-     MinStorageSizeKWH::Float64     ! \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b (needs to be indexed on b
-     MaxStorageSizeKWH::Float64     ! \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b (needs to be indexed on b 
-	 MinStorageSizeKW::Float64     ! \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b (needs to be indexed on b 
-     MaxStorageSizeKW::Float64     ! \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b 
-     StorageMinChargePcent::Float64     !  \ubar{w}^{mcp}_{b}: Minimum state of charge of strage system b
+     MinStorageSizeKWH::Float64     ! \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b (needs to be indexed on b)
+     MaxStorageSizeKWH::Float64     ! \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b (needs to be indexed on b )
+	 MinStorageSizeKW::Float64     ! \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b (needs to be indexed on b )
+     MaxStorageSizeKW::Float64     ! \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
+     StorageMinChargePcent::Float64     !  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
      InitSOC::Float64    ! w^{i}_{b} Initial percent state of charge for storage system b
 	 
 	 !!!  Fuel Burn Parameters !!!
@@ -126,7 +129,7 @@ struct Parameter
 	 
 	 
 	 !!! Boundary Conditions  !!!
-	 InitSOC::Float64
+	 
 	 
 	 !!! To be replaced  !!!
 	 Load::Array{String,1}
