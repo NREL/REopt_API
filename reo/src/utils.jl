@@ -23,17 +23,17 @@ struct Parameter
 	 #Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
 	 DemandBin::UnitRange{Int64}   # Set E
-	 #FuelType::Array{String,1}	   # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
+	 FuelType::Array{String,1}	   # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
      TimeStep::UnitRange{Int64}    # Set H
      TimeStepBat::UnitRange{Int64} # Set H union {0}
-	 #Segmentations::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
+	 Segmentation::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
 	 Month::UnitRange{Int64} 	    # Set M
 	 DemandMonthsBin::UnitRange{Int64}	# Set N
 	 Ratchets::UnitRange{Int64}	   # Set R
      Seg::UnitRange{Int64}	       # Set S
 	 Tech::Array{String,1}         # Set T in math
-	 FuelBin::UnitRange{Int64}	   # Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we probably want to change this.
-	 #PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision)
+	 FuelBin::UnitRange{Int64}	   # Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we will eventually remove this.
+	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision)
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
 	 
 	 ###  Subsets and Indexed Sets  ####
@@ -56,6 +56,7 @@ struct Parameter
 	 StorageCostPerKW::Float64    # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]    NOTE: Needs to be updated for set B
      StorageCostPerKWH::Float64   # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
 	 FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}   	 # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math; currently indexed on fuelbin, tech, time step - needs to change
+	 FuelCost::AxisArray
 	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h
 	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      
@@ -239,6 +240,9 @@ function build_param(args...;
     DemandMonthsBin = 1:DemandMonthsBinCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
+	Segmentation=1:1
+	FuelType = 1:FuelBinCount
+	PricingTier = 1:FuelBinCount
 
     TechIsGrid = parameter(Tech, TechIsGrid)
     TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
@@ -352,7 +356,10 @@ function build_param(args...;
                       TimeStep,
                       TimeStepBat,
                       TimeStepScaling,
-                      OMcostPerUnitProd)
+                      OMcostPerUnitProd,
+					  Segmentation,
+					  FuelType,
+					  PricingTier)
 
     return param
 
