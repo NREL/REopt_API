@@ -20,7 +20,7 @@ end
 #TODO Get rid of union types
 struct Parameter
 	 ###  Sets  ###
-	 #Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
+	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
 	 DemandBin::UnitRange{Int64}   # Set E
 	 FuelType::Array{String,1}	   # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
@@ -243,6 +243,7 @@ function build_param(args...;
 	Segmentation=1:1
 	FuelType = 1:FuelBinCount
 	PricingTier = 1:FuelBinCount
+	Storage = 1:1
 
     TechIsGrid = parameter(Tech, TechIsGrid)
     TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
@@ -359,7 +360,8 @@ function build_param(args...;
                       OMcostPerUnitProd,
 					  Segmentation,
 					  FuelType,
-					  PricingTier)
+					  PricingTier,
+					  Storage)
 
     return param
 
