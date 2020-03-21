@@ -140,7 +140,14 @@ function reopt(reo_model, data, model_inputs)
           TimeStepCount = model_inputs["TimeStepCount"],
           NumRatchets = model_inputs["NumRatchets"],
           TimeStepScaling = model_inputs["TimeStepScaling"],
-          OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"])
+          OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"],
+		  FuelCost = model_inputs["FuelCost"],
+		  ElecRate = model_inputs["ElecRate"],
+		  MaxGridSales = model_inputs["MaxGridSales"],
+		  MaxProdIncentive = model_inputs["MaxProdIncentive"],
+		  ProductionFactor = model_inputs["ProductionFactor"],
+		  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"]
+		  )
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
