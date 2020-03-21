@@ -160,34 +160,53 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
-        binNMLorIL[p.NMILRegime], Bin
-        binSegChosen[p.Tech, p.Seg], Bin
-        dvSystemSize[p.Tech, p.Seg] >= 0
-        dvGrid[p.Load, p.TimeStep, p.DemandBin, p.FuelBin, p.DemandMonthsBin] >= 0
-        dvRatedProd[p.Tech, p.Load, p.TimeStep, p.Seg, p.FuelBin] >= 0
-        dvProdIncent[p.Tech] >= 0
-        binProdIncent[p.Tech], Bin
-        binSingleBasicTech[p.Tech,p.TechClass], Bin
-        dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0
-        dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0
-        dvElecToStor[p.Tech, p.TimeStep] >= 0
-        dvElecFromStor[p.TimeStep] >= 0
-        dvStoredEnergy[p.TimeStepBat] >= 0
-        dvStorageSizeKWH >= 0
-        dvStorageSizeKW >= 0
-        dvMeanSOC >= 0
-        dvFuelCost[p.Tech, p.FuelBin]
-        dvFuelUsed[p.Tech, p.FuelBin]
-        binTechIsOnInTS[p.Tech, p.TimeStep], Bin
-        MinChargeAdder >= 0
-        binDemandTier[p.Ratchets, p.DemandBin], Bin
-        binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin
-        binUsageTier[p.Month, p.FuelBin], Bin
-        dvPeakDemandELookback >= 0
+		# Continuous Variables
+	    dvSystemSize[p.Tech, p.Seg] >= 0   #to be replaced
+	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
+	    dvSystemSizeSegment[p.Tech, p.Segmentation, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
+	    dvGrid[p.Load, p.TimeStep, p.DemandBin, p.FuelBin, p.DemandMonthsBin] >= 0  #to be replaced
+	    dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
+	    dvRatedProd[p.Tech, p.Load, p.TimeStep, p.Seg, p.FuelBin] >= 0  #to be replaced
+	    dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
+	    dvProductionToGrid[p.Tech, p.PricingTier, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
+	    dvStorageToGrid[p.PricingTier, p.TimeStep] >= 0  # X^{g}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
+	    dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
+	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
+	    dvGridToStorage[p.TimeStep] >= 0 # Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
+	    dvStoredEnergy[p.TimeStepBat] >= 0  # To be replaced
+	    dvStorageSOC[p.Storage, p.TimeStep] >= 0  #  State of charge of storage system b in time step h   (NEW)
+	    dvStorageSizeKW >= 0        # to be removed
+	    dvStorageSizeKWH >= 0       # to be removed
+	    dvStorageCapPower[p.Storage] >= 0   # Power capacity of storage system b [kW]  (NEW)
+	    dvStorageCapEnergy[p.Storage] >= 0   # Energy capacity of storage system b [kWh]  (NEW)
+	    dvProdIncent[p.Tech] >= 0   # Production incentive collected for technology [$]
+		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  #  Peak electrical power demand allocated to tier e during ratchet r [kW]
+		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  Peak electrical power demand allocated to tier n during month m [kW]
+		dvPeakDemandELookback >= 0  # Peak electric demand look back [kW]
+        MinChargeAdder >= 0   #to be removed
+		UtilityMinChargeAdder[p.Month] >= 0   # Annual utility minimum charge adder [kW]
+		
+		# Binary Variables
+        binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
+        binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
+		binSegmentSelect[p.Tech, p.Segmentation, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow.
+        binProdIncent[p.Tech], Bin # 1 If production incentive is available for technology t; 0 otherwise 
+        binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
+        binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
+		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
+        binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
+        binUsageTier[p.Month, p.FuelBin], Bin    #  to be replaced
+		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise 
+			
+        dvElecToStor[p.Tech, p.TimeStep] >= 0  #to be removed
+        dvElecFromStor[p.TimeStep] >= 0        #to be removed
+        dvMeanSOC >= 0  # to be removed 
+        dvFuelCost[p.Tech, p.FuelBin]   #to be removed
+        dvFuelUsed[p.Tech, p.FuelBin]   #to be removed
 
     # ADDED due to implied types
-        ElecToBatt[p.Tech] >= 0
-        UsageInTier[p.Month, p.FuelBin] >= 0
+        ElecToBatt[p.Tech] >= 0    # to be removed
+        UsageInTier[p.Month, p.FuelBin] >= 0   # to be removed
         #TotalTechCapCosts >= 0
         #TotalStorageCapCosts >= 0
         #TotalEnergyCharges >= 0
@@ -206,7 +225,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         #AverageWindProd
 
     # ADDED for modeling
-        binMinTurndown[p.Tech, p.TimeStep], Bin
+        binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
 
     ##############################################################################
