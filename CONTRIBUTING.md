@@ -27,7 +27,7 @@ Besides creating an issue for bugs found in the code, you can help the community
 - First, fork the repository and create a new branch on your fork with a name like "fix_some_bug"
 - Once the bug is fixed, run the full test suite (instructions for running the test suite are available [here](https://github.com/NREL/reopt_api/wiki/Testing-the-REopt-API))
 - If it passes, send a PR to the original repository. If you haven't signed the [Code License Agreement](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md) already, the CLA Assistant will comment on your PR and request you to sign the CLA. You can simply comment "I have read the CLA Document and I hereby sign the CLA" to sign the [CLA](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md). 
-- If tests aren't passing, then first look the specific test[s] that is/are failing. Then think through - "do I expect the test to fail after introducing the bug-fix I am proposing?"
+- If tests aren't passing, then first look at the specific test[s] that is/are failing. Then think through - "do I expect the test to fail after introducing the bug-fix I am proposing?"
     - If yes, then please provide a clear description of the identified bug, how you fixed it, and explanation for why the fix is making an existing test fail
     - If no, then revisit the changes you introduced to identify where the problem is
 
@@ -40,7 +40,7 @@ The following describes the general steps for adding a feature to the REopt Lite
 - Note that we highly recommend test-driven development
 - After the feature is complete, run the full test suite
 - If it passes, send a PR to the original repository. If you haven't signed the [Code License Agreement](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md) already, the CLA Assistant will comment on your PR and request you to sign the CLA. You can simply comment "I have read the CLA Document and I hereby sign the CLA" to sign the [CLA](https://github.com/NREL/REopt_Lite_API/blob/master/cla.md). 
-- If tests aren't passing, then first look the specific test which is failing. Then think through - Do I expect this test to fail after having added the new feature? 
+- If tests aren't passing, then first look at the specific test which is failing. Then think through - Do I expect this test to fail after having added the new feature? 
     - If yes, then please provide a clear explanation for why the existing test[s] should fail after the introduction of the new feature
     - If no, then revisit the new feature you have developed to troubleshoot the problem with the failing test[s]
 
