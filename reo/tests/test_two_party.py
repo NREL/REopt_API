@@ -66,7 +66,5 @@ class TwoPartyTests(ResourceTestCaseMixin, TestCase):
         d = direct['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         t = two_party['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
 
-        import ipdb; ipdb.set_trace()
-
-        msg = 'Direct ownership and two_part ownership have the same results.'
-        self.assertNotEqual(d, t, msg=msg)
+        self.assertAlmostEqual(t - d,  0.0, places=1,
+           msg='Difference between two party and direct ownership LCCs has changed.')
