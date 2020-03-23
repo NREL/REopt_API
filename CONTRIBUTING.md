@@ -32,6 +32,7 @@ Besides creating an issue for bugs found in the code, you can help the community
     - If no, then revisit the changes you introduced to identify where the problem is
 
 ##### I have added a feature that other users will benefit from
+
 Not all features or Pull Requests will be merged into the public REopt Lite API code. New features must provide clear benefit for the user community, as well as ideally preserve backwards compatibility.
 
 The following describes the general steps for adding a feature to the REopt Lite API:
