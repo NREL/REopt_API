@@ -89,8 +89,6 @@ function reopt(reo_model, data, model_inputs)
 		  #println("GridChargeEfficiency: ", typeof(model_inputs["GridChargeEfficiency"]))
 		  #println("DischargeEfficiency: ", typeof(model_inputs["DischargeEfficiency"])) 
 
-    println("get to the beginning of Julia")
-
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
           TechClass = model_inputs["TechClass"],
@@ -158,24 +156,21 @@ function reopt(reo_model, data, model_inputs)
           NumRatchets = model_inputs["NumRatchets"],
           TimeStepScaling = model_inputs["TimeStepScaling"],
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"],
-		  #StoragePowerCost = model_inputs["StoragePowerCost"],
-		  #StorageEnergyCost = model_inputs["StorageEnergyCost"],
-		  #FuelCost = model_inputs["FuelCost"],
-		  #ElecRate = model_inputs["ElecRate"],
-		  #GridExportRates = model_inputs["GridExportRates"],
-		  #FuelBurnSlope = model_inputs["FuelBurnSlope"],
-		  #FueBurnYInt = model_inputs["FueBurnYInt"],
-		  #MaxGridSales = model_inputs["MaxGridSales"],
-		  #ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
-		  #ProductionFactor = model_inputs["ProductionFactor"],
-		  #ElecLoad = model_inputs["ElecLoad"],
-		  #FuelLimit = model_inputs["FuelLimit"],
-		  #ChargeEfficiency = model_inputs["ChargeEfficiency"],
-		  #GridChargeEfficiency = model_inputs["GridChargeEfficiency"],
-		  #DischargeEfficiency = model_inputs["DischargeEfficiency"]
-		  )
-
-    println("Finished building julia moving on to optimization")
+	  StoragePowerCost = model_inputs["StoragePowerCost"],
+	  StorageEnergyCost = model_inputs["StorageEnergyCost"],
+	  FuelCost = model_inputs["FuelCost"],
+	  ElecRate = model_inputs["ElecRate"],
+	  GridExportRates = model_inputs["GridExportRates"],
+	  FuelBurnSlope = model_inputs["FuelBurnSlope"],
+	  FueBurnYInt = model_inputs["FueBurnYInt"],
+	  MaxGridSales = model_inputs["MaxGridSales"],
+	  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
+	  ProductionFactor = model_inputs["ProductionFactor"],
+	  ElecLoad = model_inputs["ElecLoad"],
+	  FuelLimit = model_inputs["FuelLimit"],
+	  ChargeEfficiency = model_inputs["ChargeEfficiency"],
+	  GridChargeEfficiency = model_inputs["GridChargeEfficiency"],
+	  DischargeEfficiency = model_inputs["DischargeEfficiency"])
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
@@ -186,8 +181,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
-
-    println("got to reopt_run fuction")
 
     @variables REopt begin
 		# Continuous Variables
@@ -264,8 +257,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
 
-
-    println("built variables")
 
     ##############################################################################
 	#############  		Constraints									 #############
