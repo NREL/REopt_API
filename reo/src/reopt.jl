@@ -73,6 +73,21 @@ function reopt(reo_model, data, model_inputs)
           #println("NumRatchets: ", typeof(model_inputs["NumRatchets"]))
           #println("TimeStepScaling: ", typeof(model_inputs["TimeStepScaling"]))
           #println("OMcostPerUnitProd: ", typeof(model_inputs["OMcostPerUnitProd"]))
+		  #println("StoragePowerCost: ", typeof(model_inputs["StoragePowerCost"]))
+		  #println("StorageEnergyCost: ", typeof(model_inputs["StorageEnergyCost"]))
+		  #println("FuelCost: ", typeof(model_inputs["FuelCost"]))
+		  #println("ElecRate: ", typeof(model_inputs["ElecRate"]))
+		  #println("GridExportRates: ", typeof(model_inputs["GridExportRates"]))
+		  #println("FuelBurnSlope: ", typeof(model_inputs["FuelBurnSlope"])) 
+		  #println("FueBurnYInt: ", typeof(model_inputs["FueBurnYInt"])) 
+		  #println("MaxGridSales: ", typeof(model_inputs["MaxGridSales"])) 
+		  #println("ProductionIncentiveRate: ", typeof(model_inputs["ProductionIncentiveRate"]))
+		  #println("ProductionFactor: ", typeof(model_inputs["ProductionFactor"])) 
+		  #println("ElecLoad: ", typeof(model_inputs["ElecLoad"])) 
+		  #println("FuelLimit: ", typeof(model_inputs["FuelLimit"]))
+		  #println("ChargeEfficiency: ", typeof(model_inputs["ChargeEfficiency"])) 
+		  #println("GridChargeEfficiency: ", typeof(model_inputs["GridChargeEfficiency"]))
+		  #println("DischargeEfficiency: ", typeof(model_inputs["DischargeEfficiency"])) 
 
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
@@ -141,12 +156,21 @@ function reopt(reo_model, data, model_inputs)
           NumRatchets = model_inputs["NumRatchets"],
           TimeStepScaling = model_inputs["TimeStepScaling"],
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"],
+		  StoragePowerCost = model_inputs["StoragePowerCost"],
+		  StorageEnergyCost = model_inputs["StorageEnergyCost"],
 		  FuelCost = model_inputs["FuelCost"],
 		  ElecRate = model_inputs["ElecRate"],
+		  GridExportRates = model_inputs["GridExportRates"],
+		  FuelBurnSlope = model_inputs["FuelBurnSlope"],
+		  FueBurnYInt = model_inputs["FueBurnYInt"],
 		  MaxGridSales = model_inputs["MaxGridSales"],
-		  MaxProdIncentive = model_inputs["MaxProdIncentive"],
+		  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
 		  ProductionFactor = model_inputs["ProductionFactor"],
-		  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"]
+		  ElecLoad = model_inputs["ElecLoad"],
+		  FuelLimit = model_inputs["FuelLimit"],
+		  ChargeEfficiency = model_inputs["ChargeEfficiency"],
+		  GridChargeEfficiency = model_inputs["GridChargeEfficiency"],
+		  DischargeEfficiency = model_inputs["DischargeEfficiency"]
 		  )
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]

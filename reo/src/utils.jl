@@ -79,14 +79,17 @@ struct Parameter
 	 FixedMonthlyCharge::Float64  # c^{fmc}: Utility monthly fixed charge
 	 StorageCostPerKW::Float64    # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]    NOTE: Needs to be updated for set B
      StorageCostPerKWH::Float64   # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
-	 FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}   	 # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math; currently indexed on fuelbin, tech, time step - needs to change
-	 FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math
-	 ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h
+	 #StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
+	 #StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
+	 FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}   	 # to be replaced by FuelCost and ElecRate
+	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
+	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      
-	 ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy demand tier u in time step h in math; currently indexed on tech, load, timestep 
-	 CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   # c^{cm}_{s}: Slope of capital cost curve for technology t in segment s 
-     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   # c^{cb}_{s}: Y-Intercept of capital cost curve for technology t in segment s 
+	 ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}    # to be replaced by GridExportRates
+	 #GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
+     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}   # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
      CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}    # X-value of inflection point (will be changed)
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
 	 DemandRates::Union{Array{Float64,1},AxisArray{Any,2,Array{Any,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}},AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}    # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
@@ -94,13 +97,13 @@ struct Parameter
 	 
 	 ###  Demand Parameters ###
 	 LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}   # Covers Electrical Load and Thermal Load Profiles; this is to be split into three parameters in the math
-	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
+	 # ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
 	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
 	 # CoolingLoad::Array{Float64,1}  # \delta^{c}_{h}: Cooling load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
-	 MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
+	 #MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
      MaxUsageInTier::Array{Float64,1}   # \delta^{tu}_{u}: Maximum monthly energy demand in tier u
 	 
 	 
@@ -108,14 +111,13 @@ struct Parameter
 	 NMILLimits::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
      
      MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}           # \bar{i}_t: Upper incentive limit for technology t [$]
-     MaxProdIncentive::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}           # \bar{i}_t: Upper incentive limit for technology t [$]  Adjusted
-	 ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}   # i^{r}_{t}: Incentive rate for technology t [$/kWh] in math; this is currently indexed on load but does not need to be as the incentive is for total production. 
-	 ProductionIncentiveRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # i^{r}_{t}: Incentive rate for technology t [$/kWh] corrected version
+	 ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}   # to be replaced by ProductionIncentiveRate 
+	 #ProductionIncentiveRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
 	 MaxSizeForProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    # \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
 	 
 	 ###  Technology-specific Time-series Factor Parameters ###
-	 ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}   # f^{p}_{th}:  Production factor of technology t and time step h  [unitless] in math; currently also indexed on fuel bin which should be removed. 
-	 ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (corrected version)
+	 ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}   # to eb replaced by production factor 
+	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
      # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
@@ -138,12 +140,14 @@ struct Parameter
 	 TechClassMinSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
 	 MaxSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
 	 FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  # to be replaced
-	 FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]
+	 #FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
 	 
 	 ###  Efficiency Parameters ###
-	 EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (need to update indices)
-	 #EtaGridToStor::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction]
-     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction]
+	 EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # to be replaced by ChargeEfficiency (index change)
+	 #ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
+	 #GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
+     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # To be replaced by DischargeEfficiency (Index Change)
+     #DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
 	 # \eta^{bo}: Boiler efficiency [fraction]
 	 # \eta^{ecop}: Electric chiller efficiency [fraction]
 	 # \eta^{acop}: Absorption chiller efficiency [fraction]
@@ -160,11 +164,28 @@ struct Parameter
 	 ###  Fuel Burn Parameters ###
      FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
      FuelBurnRateB::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-	 
+	 #FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
+	 #FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
 	 
 	 ###  CHP Thermal Performance Parameters ###
 	 
 	 
+	 ### New parameters (commented copies above ###
+	 StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
+	 StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
+	 FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
+	 ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
+	 GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
+	 FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
+	 MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
+	 ProductionIncentiveRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
+	 ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
+	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
+	 FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
+	 ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
+	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
+	 DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
 	 
 	 ### To be replaced  ###
 	 Load::Array{String,1}
@@ -252,13 +273,21 @@ function build_param(args...;
           NumRatchets,
           TimeStepScaling,
           OMcostPerUnitProd,
+		  StoragePowerCost,
+		  StorageEnergyCost,
 		  FuelCost,
 		  ElecRate,
+		  GridExportRates,
+		  FuelBurnSlope,
+		  FueBurnYInt,
 		  MaxGridSales,
-		  MaxProdIncentive,
-		  ProductionFactor,
 		  ProductionIncentiveRate,
+		  ProductionFactor,
+		  ElecLoad,
 		  FuelLimit,
+		  ChargeEfficiency,
+		  GridChargeEfficiency,
+		  DischargeEfficiency,
           kwargs...
     )
 
@@ -313,13 +342,21 @@ function build_param(args...;
     NMILLimits = parameter(NMILRegime, NMILLimits)
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     OMcostPerUnitProd = parameter(Tech, OMcostPerUnitProd)
+	StoragePowerCost = parameter(Storage, StoragePowerCost)
+	StorageEnergyCost = parameter(Storage, StorageEnergyCost)
 	FuelCost = parameter(FuelType, FuelCost)
 	ElecRate = parameter((PricingTier,TimeStep), ElecRate)
+	GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
+	FuelBurnSlope = parameter(Tech, FuelBurnSlope)
+	FuelBurnYInt = parameter(Tech, FuelBurnYInt)
 	MaxGridSales = parameter(PricingTier, MaxGridSales)
-	MaxProdIncentive = parameter(Tech, MaxProdIncentive)
 	ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
 	ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
+	ElecLoad = parameter(TimeStep, ElecLoad)
 	FuelLimit = parameter(FuelType, FuelLimit)
+	ChargeEfficiency = parameter(Storage, ChargeEfficiency)
+	GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
+	DischargeEfficiency = parameter(Storage, DischargeEfficiency)
 
     param = Parameter(Tech, 
                       Load, 
@@ -400,13 +437,21 @@ function build_param(args...;
 					  FuelType,
 					  PricingTier,
 					  Storage,
+					  StoragePowerCost,
+					  StorageEnergyCost,
 					  FuelCost,
 					  ElecRate,
+					  GridExportRates,
+					  FuelBurnSlope,
+					  FueBurnYInt,
 					  MaxGridSales,
-					  MaxProdIncentive,
-					  ProductionFactor,
 					  ProductionIncentiveRate,
-					  FuelLimit
+					  ProductionFactor,
+					  ElecLoad,
+					  FuelLimit,
+					  ChargeEfficiency,
+					  GridChargeEfficiency,
+					  DischargeEfficiency
 					  )
 
     return param

@@ -816,13 +816,21 @@ class DatFileManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'FuelCost': 0,
-            'ElecRate': 0,
-            'ProductionFactor': 0,
-            'ProductionIncentiveRate': 0,
-            'FuelLimit': 0,
-            'MaxGridSales': 0,
-            'MaxProdIncentive': 0
+            'StoragePowerCost': 0,
+					 'StorageEnergyCost': 0,
+					 'FuelCost': 0,
+					 'ElecRate': 0,
+					 'GridExportRates': 0,
+					 'FuelBurnSlope': 0,
+					 'FueBurnYInt': 0,
+					 'MaxGridSales': 0,
+					 'ProductionIncentiveRate': 0,
+					 'ProductionFactor': 0,
+					 'ElecLoad': 0,
+					 'FuelLimit': 0,
+					 'ChargeEfficiency': 0,
+					 'GridChargeEfficiency': 0,
+					 'DischargeEfficiency': 0
             #'BattLevelCoef':
             #'BattLevelCount':
             #'Points':
@@ -905,11 +913,19 @@ class DatFileManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-            'FuelCost': 0,
-            'ElecRate': 0,
-            'ProductionFactor': 0,
-            'ProductionIncentiveRate': 0,
-            'FuelLimit': 0,
-            'MaxGridSales': 0,
-            'MaxProdIncentive': 0
+            'StoragePowerCost': 0,
+					 'StorageEnergyCost': 0,
+					 'FuelCost': 0,
+					 'ElecRate': 0,
+					 'GridExportRates': 0,
+					 'FuelBurnSlope': 0,
+					 'FueBurnYInt': 0,
+					 'MaxGridSales': 0,
+					 'ProductionIncentiveRate': 0,
+					 'ProductionFactor': 0,
+					 'ElecLoad': 0,
+					 'FuelLimit': 0,
+					 'ChargeEfficiency': 0,
+					 'GridChargeEfficiency': 0,
+					 'DischargeEfficiency': 0
         }
