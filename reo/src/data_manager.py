@@ -815,6 +815,14 @@ class DatFileManager:
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
+            # new parameters for reformulation
+            'FuelCost': 0,
+            'ElecRate': 0,
+            'ProductionFactor': 0,
+            'ProductionIncentiveRate': 0,
+            'FuelLimit': 0,
+            'MaxGridSales': 0,
+            'MaxProdIncentive': 0
             #'BattLevelCoef':
             #'BattLevelCount':
             #'Points':
@@ -895,5 +903,13 @@ class DatFileManager:
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
             'TechToNMILMapping': TechToNMILMapping_bau,
-            'CapCostSegCount': n_segments_bau
+            'CapCostSegCount': n_segments_bau,
+            # new parameters for reformulation
+            'FuelCost': 0,
+            'ElecRate': 0,
+            'ProductionFactor': 0,
+            'ProductionIncentiveRate': 0,
+            'FuelLimit': 0,
+            'MaxGridSales': 0,
+            'MaxProdIncentive': 0
         }
