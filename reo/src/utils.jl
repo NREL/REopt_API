@@ -23,7 +23,7 @@ struct Parameter
 	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
 	 DemandBin::UnitRange{Int64}   # Set E
-	 FuelType::Array{String,1}	   # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
+	 FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
      TimeStep::UnitRange{Int64}    # Set H
      TimeStepBat::UnitRange{Int64} # Set H union {0}
 	 Segmentation::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
@@ -32,14 +32,38 @@ struct Parameter
 	 Ratchets::UnitRange{Int64}	   # Set R
      Seg::UnitRange{Int64}	       # Set S
 	 Tech::Array{String,1}         # Set T in math
-	 FuelBin::UnitRange{Int64}	   # Set U: Pricing tiers.  This is used for fuel type and utility pricing tier; we will eventually remove this.
+	 FuelBin::UnitRange{Int64}	   # To be removed
 	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision)
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
 	 
 	 ###  Subsets and Indexed Sets  ####
+	 #ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
+	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems
+	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems
+	 #TES::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems
+	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
+	 #K_t \subset K: Segmentations applied to technology t
+	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Segmentations
+	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Segmentations
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing 
+	 #SegByTechSegmentation::AxisArray{Int64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}} # S_{kt}: System size segments from segmentation k applied to technology t
+	 #TechsChargingStorage::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_b \subset T: Technologies that can charge storage system b
+	 #TechsInClass::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_c \subset T: Technologies that are in class c
+	 #TechsByFuelType::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # T_f \subset T: Technologies that burn fuel type f
+	 #TechsByPricingTier::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # T_u  \subset T: Technologies that access pricing tier u
+	 #TechsByNMILRegime::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} # T_v \subset T: Technologies that may acess net-meterng regime v 
+	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers
+	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies
+	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies
+	 #ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
+	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers 
+	 #FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
+	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies
+	 #TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
+	 #PricingTiersByTech::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # U_t \subset U:  Pricing tiers accessible by technology td
+	 #PricingTiersNM::Array{Int64}  # U^{nm} \subset U: Pricing Tiers Used in net-metering
 	 
 	 ###  Parameters and Tables supporting Indexed Sets ###
 	 TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} # Defines T_c: technologies in class c
@@ -113,7 +137,8 @@ struct Parameter
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
 	 MaxSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
-	 FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]
+	 FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  # to be replaced
+	 FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]
 	 
 	 ###  Efficiency Parameters ###
 	 EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (need to update indices)
@@ -233,6 +258,7 @@ function build_param(args...;
 		  MaxProdIncentive,
 		  ProductionFactor,
 		  ProductionIncentiveRate,
+		  FuelLimit,
           kwargs...
     )
 
@@ -292,7 +318,8 @@ function build_param(args...;
 	MaxGridSales = parameter(PricingTier, MaxGridSales)
 	MaxProdIncentive = parameter(Tech, MaxProdIncentive)
 	ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
-	ProductionIncentiveRate = parameters(Tech, ProductionIncentiveRate)
+	ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
+	FuelLimit = parameter(FuelType, FuelLimit)
 
     param = Parameter(Tech, 
                       Load, 
@@ -378,7 +405,8 @@ function build_param(args...;
 					  MaxGridSales,
 					  MaxProdIncentive,
 					  ProductionFactor,
-					  ProductionIncentiveRate
+					  ProductionIncentiveRate,
+					  FuelLimit
 					  )
 
     return param

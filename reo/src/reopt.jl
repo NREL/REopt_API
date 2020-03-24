@@ -172,19 +172,25 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	    dvStorageToGrid[p.PricingTier, p.TimeStep] >= 0  # X^{g}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 	    dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
 	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
-	    dvGridToStorage[p.TimeStep] >= 0 # Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
+	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStoredEnergy[p.TimeStepBat] >= 0  # To be replaced
-	    dvStorageSOC[p.Storage, p.TimeStep] >= 0  #  State of charge of storage system b in time step h   (NEW)
+	    dvStorageSOC[p.Storage, p.TimeStep] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
 	    dvStorageSizeKW >= 0        # to be removed
 	    dvStorageSizeKWH >= 0       # to be removed
-	    dvStorageCapPower[p.Storage] >= 0   # Power capacity of storage system b [kW]  (NEW)
-	    dvStorageCapEnergy[p.Storage] >= 0   # Energy capacity of storage system b [kWh]  (NEW)
-	    dvProdIncent[p.Tech] >= 0   # Production incentive collected for technology [$]
-		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  #  Peak electrical power demand allocated to tier e during ratchet r [kW]
-		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  Peak electrical power demand allocated to tier n during month m [kW]
-		dvPeakDemandELookback >= 0  # Peak electric demand look back [kW]
+	    dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
+	    dvStorageCapEnergy[p.Storage] >= 0   # X^{bkWh}_b: Energy capacity of storage system b [kWh]  (NEW)
+	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
+		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
+		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
+		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
-		UtilityMinChargeAdder[p.Month] >= 0   # Annual utility minimum charge adder [kW]
+		UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [kW]
+		#CHP and Fuel-burning variables
+		#dvFuelUsage[p.Tech, p.TimeStep]  # Fuel burned by technology t in time step h
+		#dvFuelBurnYIntercept[p.Tech, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
+		#dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
+		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
+		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		
 		# Binary Variables
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
@@ -261,6 +267,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                     for ts in p.TimeStep, LD in p.Load, s in p.Seg) +
                 sum(binTechIsOnInTS[t,ts] * p.FuelBurnRateB[t,LD,fb] * p.TimeStepScaling * p.FuelRate[t,fb,ts] * p.pwf_e
                     for ts in p.TimeStep, LD in p.Load) == dvFuelCost[t,fb])
+					
+	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
+	#@constraint(REopt, [f in p.FuelType],
+	#			sum( dvFuelUsage[t,h] for t in p.TechsByFuel[f] ) <= 
+	#			p.FuelAvail[f]
+	#			)
+	#
+	## Constraint (1b): Fuel burn for non-CHP Constraints
+	#@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
+	#			dvFuelUsage[t,h]  <= (FuelBurnRateM[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
+	#				(FuelBurnRateB[t] * binTechIsOnInTS[t,ts])
+	#			)
+	#Skipping (1c)-(1f) until CHP implementation
+	
+	### Thermal Production Constraints (Placeholder for constraint set (2) until CHP is implemented)
 
     ### Switch Constraints
     @constraint(REopt, [t in p.Tech, ts in p.TimeStep],
