@@ -160,6 +160,12 @@ struct Parameter
      MaxStorageSizeKW::Float64     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
      InitSOC::Float64    # w^{i}_{b} Initial percent state of charge for storage system b
+	 StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
+     StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
+	 StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
+     StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
+     StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
+     StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
      FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
@@ -186,6 +192,13 @@ struct Parameter
 	 ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
 	 DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
+	 StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh] (NEW)
+     StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh] (NEW)
+	 StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW] (NEW)
+     StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW] (NEW)
+     StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction] (NEW)
+     StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction] (NEW)
+	 
 	 
 	 ### To be replaced  ###
 	 Load::Array{String,1}
@@ -288,6 +301,12 @@ function build_param(args...;
 		  ChargeEfficiency,
 		  GridChargeEfficiency,
 		  DischargeEfficiency,
+		  StorageMinSizeEnergy,
+		  StorageMaxSizeEnergy,
+		  StorageMinSizePower,
+		  StorageMaxSizePower,
+		  StorageMinSOC,
+		  StorageInitSOC,
           kwargs...
     )
 
@@ -357,6 +376,12 @@ function build_param(args...;
 	ChargeEfficiency = parameter(Storage, ChargeEfficiency)
 	GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
 	DischargeEfficiency = parameter(Storage, DischargeEfficiency)
+    StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
+    StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
+    StorageMinSizePower = parameter(Storage, StorageMinSizePower)
+    StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
+    StorageMinSOC = parameter(Storage, StorageMinSOC)
+    StorageInitSOC = parameter(Storage, StorageInitSOC)
 
     param = Parameter(Tech, 
                       Load, 
@@ -451,7 +476,13 @@ function build_param(args...;
 					  FuelLimit,
 					  ChargeEfficiency,
 					  GridChargeEfficiency,
-					  DischargeEfficiency
+					  DischargeEfficiency,
+					  StorageMinSizeEnergy,
+					  StorageMaxSizeEnergy,
+					  StorageMinSizePower,
+					  StorageMaxSizePower,
+					  StorageMinSOC,
+					  StorageInitSOC
 					  )
 
     return param
