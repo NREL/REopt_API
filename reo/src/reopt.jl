@@ -89,6 +89,8 @@ function reopt(reo_model, data, model_inputs)
 		  #println("GridChargeEfficiency: ", typeof(model_inputs["GridChargeEfficiency"]))
 		  #println("DischargeEfficiency: ", typeof(model_inputs["DischargeEfficiency"])) 
 
+    println("get to the beginning of Julia")
+
     p = build_param(Tech = model_inputs["Tech"],
           Load = model_inputs["Load"],
           TechClass = model_inputs["TechClass"],
@@ -156,22 +158,24 @@ function reopt(reo_model, data, model_inputs)
           NumRatchets = model_inputs["NumRatchets"],
           TimeStepScaling = model_inputs["TimeStepScaling"],
           OMcostPerUnitProd = model_inputs["OMcostPerUnitProd"],
-		  StoragePowerCost = model_inputs["StoragePowerCost"],
-		  StorageEnergyCost = model_inputs["StorageEnergyCost"],
-		  FuelCost = model_inputs["FuelCost"],
-		  ElecRate = model_inputs["ElecRate"],
-		  GridExportRates = model_inputs["GridExportRates"],
-		  FuelBurnSlope = model_inputs["FuelBurnSlope"],
-		  FueBurnYInt = model_inputs["FueBurnYInt"],
-		  MaxGridSales = model_inputs["MaxGridSales"],
-		  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
-		  ProductionFactor = model_inputs["ProductionFactor"],
-		  ElecLoad = model_inputs["ElecLoad"],
-		  FuelLimit = model_inputs["FuelLimit"],
-		  ChargeEfficiency = model_inputs["ChargeEfficiency"],
-		  GridChargeEfficiency = model_inputs["GridChargeEfficiency"],
-		  DischargeEfficiency = model_inputs["DischargeEfficiency"]
+		  #StoragePowerCost = model_inputs["StoragePowerCost"],
+		  #StorageEnergyCost = model_inputs["StorageEnergyCost"],
+		  #FuelCost = model_inputs["FuelCost"],
+		  #ElecRate = model_inputs["ElecRate"],
+		  #GridExportRates = model_inputs["GridExportRates"],
+		  #FuelBurnSlope = model_inputs["FuelBurnSlope"],
+		  #FueBurnYInt = model_inputs["FueBurnYInt"],
+		  #MaxGridSales = model_inputs["MaxGridSales"],
+		  #ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
+		  #ProductionFactor = model_inputs["ProductionFactor"],
+		  #ElecLoad = model_inputs["ElecLoad"],
+		  #FuelLimit = model_inputs["FuelLimit"],
+		  #ChargeEfficiency = model_inputs["ChargeEfficiency"],
+		  #GridChargeEfficiency = model_inputs["GridChargeEfficiency"],
+		  #DischargeEfficiency = model_inputs["DischargeEfficiency"]
 		  )
+
+    println("Finished building julia moving on to optimization")
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
@@ -183,26 +187,28 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
+    println("got to reopt_run fuction")
+
     @variables REopt begin
 		# Continuous Variables
 	    dvSystemSize[p.Tech, p.Seg] >= 0   #to be replaced
-	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
-	    dvSystemSizeSegment[p.Tech, p.Segmentation, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
+	    #dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
+	    #dvSystemSizeSegment[p.Tech, p.Segmentation, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
 	    dvGrid[p.Load, p.TimeStep, p.DemandBin, p.FuelBin, p.DemandMonthsBin] >= 0  #to be replaced
-	    dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
+	    #dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
 	    dvRatedProd[p.Tech, p.Load, p.TimeStep, p.Seg, p.FuelBin] >= 0  #to be replaced
-	    dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
-	    dvProductionToGrid[p.Tech, p.PricingTier, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
-	    dvStorageToGrid[p.PricingTier, p.TimeStep] >= 0  # X^{g}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
-	    dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
-	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
+	    #dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
+	    #dvProductionToGrid[p.Tech, p.PricingTier, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
+	    #dvStorageToGrid[p.PricingTier, p.TimeStep] >= 0  # X^{g}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
+	    #dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
+	    #dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
+	    #dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStoredEnergy[p.TimeStepBat] >= 0  # To be replaced
-	    dvStorageSOC[p.Storage, p.TimeStep] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
+	    #dvStorageSOC[p.Storage, p.TimeStep] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
 	    dvStorageSizeKW >= 0        # to be removed
 	    dvStorageSizeKWH >= 0       # to be removed
-	    dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
-	    dvStorageCapEnergy[p.Storage] >= 0   # X^{bkWh}_b: Energy capacity of storage system b [kWh]  (NEW)
+	    #dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
+	    #dvStorageCapEnergy[p.Storage] >= 0   # X^{bkWh}_b: Energy capacity of storage system b [kWh]  (NEW)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
@@ -219,14 +225,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Binary Variables
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
         binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
-		binSegmentSelect[p.Tech, p.Segmentation, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow.
+		#binSegmentSelect[p.Tech, p.Segmentation, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
         binProdIncent[p.Tech], Bin # 1 If production incentive is available for technology t; 0 otherwise 
         binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
         binUsageTier[p.Month, p.FuelBin], Bin    #  to be replaced
-		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise 
+		#binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
 			
         dvElecToStor[p.Tech, p.TimeStep] >= 0  #to be removed
         dvElecFromStor[p.TimeStep] >= 0        #to be removed
@@ -257,6 +263,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # ADDED for modeling
         binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
+
+
+    println("built variables")
 
     ##############################################################################
 	#############  		Constraints									 #############
