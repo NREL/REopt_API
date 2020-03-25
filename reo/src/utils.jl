@@ -2,6 +2,7 @@ import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
 import JuMP.value
+using Base: @kwdef
 using AxisArrays
 using JuMP
 
@@ -17,23 +18,23 @@ function emptySetException(sets, values, floatbool=false)
     end
 end
 
-#TODO Get rid of union types
+##TODO Get rid of union types
 struct Parameter
 	 ###  Sets  ###
-	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
+	 #Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
 	 DemandBin::UnitRange{Int64}   # Set E
-	 FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
+	 #FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
      TimeStep::UnitRange{Int64}    # Set H
      TimeStepBat::UnitRange{Int64} # Set H union {0}
-	 Segmentation::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
+	 #Segmentation::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
 	 Month::UnitRange{Int64} 	    # Set M
 	 DemandMonthsBin::UnitRange{Int64}	# Set N
 	 Ratchets::UnitRange{Int64}	   # Set R
      Seg::UnitRange{Int64}	       # Set S
 	 Tech::Array{String,1}         # Set T in math
 	 FuelBin::UnitRange{Int64}	   # To be removed
-	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision)
+	 #PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision) #new
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
 	 
 	 ###  Subsets and Indexed Sets  ####
@@ -177,29 +178,29 @@ struct Parameter
 	 
 	 
 	 ### New parameters (commented copies above ###
-	 StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
-	 StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
-	 FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
-	 ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
-	 GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
-	 FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
-	 MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
-	 ProductionIncentiveRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
-	 ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
-	 FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
-	 ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
-	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
-	 DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh] (NEW)
-     StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh] (NEW)
-	 StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW] (NEW)
-     StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW] (NEW)
-     StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction] (NEW)
-     StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction] (NEW)
+	 #StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
+	 #StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
+	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
+	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
+	 #GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 #FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
+	 #FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
+	 #MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
+	 #ProductionIncentiveRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
+	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
+	 #ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
+	 #FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
+	 #ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
+	 #GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
+	 #DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
+	 #StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh] (NEW)
+     #StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh] (NEW)
+	 #StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW] (NEW)
+     #StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW] (NEW)
+     #StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction] (NEW)
+     #StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction] (NEW)
 	 
-	 
+
 	 ### To be replaced  ###
 	 Load::Array{String,1}
 	 TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
@@ -361,129 +362,129 @@ function build_param(args...;
     NMILLimits = parameter(NMILRegime, NMILLimits)
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     OMcostPerUnitProd = parameter(Tech, OMcostPerUnitProd)
-	StoragePowerCost = parameter(Storage, StoragePowerCost)
-	StorageEnergyCost = parameter(Storage, StorageEnergyCost)
-	FuelCost = parameter(FuelType, FuelCost)
-	ElecRate = parameter((PricingTier,TimeStep), ElecRate)
-	GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
-	FuelBurnSlope = parameter(Tech, FuelBurnSlope)
-	FuelBurnYInt = parameter(Tech, FuelBurnYInt)
-	MaxGridSales = parameter(PricingTier, MaxGridSales)
-	ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
-	ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
-	ElecLoad = parameter(TimeStep, ElecLoad)
-	FuelLimit = parameter(FuelType, FuelLimit)
-	ChargeEfficiency = parameter(Storage, ChargeEfficiency)
-	GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
-	DischargeEfficiency = parameter(Storage, DischargeEfficiency)
-    StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
-    StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
-    StorageMinSizePower = parameter(Storage, StorageMinSizePower)
-    StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
-    StorageMinSOC = parameter(Storage, StorageMinSOC)
-    StorageInitSOC = parameter(Storage, StorageInitSOC)
+	#StoragePowerCost = parameter(Storage, StoragePowerCost)
+	#StorageEnergyCost = parameter(Storage, StorageEnergyCost)
+	#FuelCost = parameter(FuelType, FuelCost)
+	#ElecRate = parameter((PricingTier,TimeStep), ElecRate)
+	#GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
+	#FuelBurnSlope = parameter(Tech, FuelBurnSlope)
+	#FuelBurnYInt = parameter(Tech, FuelBurnYInt)
+	#MaxGridSales = parameter(PricingTier, MaxGridSales)
+	#ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
+	#ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
+	#ElecLoad = parameter(TimeStep, ElecLoad)
+	#FuelLimit = parameter(FuelType, FuelLimit)
+	#ChargeEfficiency = parameter(Storage, ChargeEfficiency)
+	#GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
+	#DischargeEfficiency = parameter(Storage, DischargeEfficiency)
+    #StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
+    #StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
+    #StorageMinSizePower = parameter(Storage, StorageMinSizePower)
+    #StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
+    #StorageMinSOC = parameter(Storage, StorageMinSOC)
+    #StorageInitSOC = parameter(Storage, StorageInitSOC)
 
-    param = Parameter(Tech, 
-                      Load, 
-                      TechClass,
-                      TechIsGrid,
-                      TechToLoadMatrix,
-                      TurbineDerate,
-                      TechToTechClassMatrix,
-                      NMILRegime,
-                      r_tax_owner,
-                      r_tax_offtaker,
-                      pwf_om,
-                      pwf_e,
-                      pwf_prod_incent,
-                      LevelizationFactor,
-                      LevelizationFactorProdIncent,
-                      StorageCostPerKW,
-                      StorageCostPerKWH,
-                      OMperUnitSize,
-                      CapCostSlope,
-                      CapCostYInt,
-                      CapCostX,
-                      ProdIncentRate,
-                      MaxProdIncent,
-                      MaxSizeForProdIncent,
-                      two_party_factor,
-                      analysis_years,
-                      AnnualElecLoad,
-                      LoadProfile,
-                      ProdFactor,
-                      StorageMinChargePcent,
-                      EtaStorIn,
-                      EtaStorOut,
-                      InitSOC,
-                      MaxSize,
-                      MinStorageSizeKW,
-                      MaxStorageSizeKW,
-                      MinStorageSizeKWH,
-                      MaxStorageSizeKWH,
-                      TechClassMinSize,
-                      MinTurndown,
-                      FuelRate,
-                      FuelAvail,
-                      FixedMonthlyCharge,
-                      AnnualMinCharge,
-                      MonthlyMinCharge,
-                      ExportRates,
-                      TimeStepRatchetsMonth,
-                      DemandRatesMonth,
-                      DemandLookbackPercent,
-                      MaxDemandInTier,
-                      MaxDemandMonthsInTier,
-                      MaxUsageInTier,
-                      FuelBurnRateM,
-                      FuelBurnRateB,
-                      NMILLimits,
-                      TechToNMILMapping,
-                      DemandRates,
-                      TimeStepRatchets,
-                      DemandLookbackMonths,
-                      CapCostSegCount,
-                      FuelBinCount,
-                      DemandBinCount ,
-                      DemandMonthsBinCount,
-                      TimeStepCount,
-                      Seg,
-                      Points,
-                      Month,
-                      Ratchets,
-                      FuelBin,
-                      DemandBin,
-                      DemandMonthsBin,
-                      TimeStep,
-                      TimeStepBat,
-                      TimeStepScaling,
-                      OMcostPerUnitProd,
-					  Segmentation,
-					  FuelType,
-					  PricingTier,
-					  Storage,
-					  StoragePowerCost,
-					  StorageEnergyCost,
-					  FuelCost,
-					  ElecRate,
-					  GridExportRates,
-					  FuelBurnSlope,
-					  FueBurnYInt,
-					  MaxGridSales,
-					  ProductionIncentiveRate,
-					  ProductionFactor,
-					  ElecLoad,
-					  FuelLimit,
-					  ChargeEfficiency,
-					  GridChargeEfficiency,
-					  DischargeEfficiency,
-					  StorageMinSizeEnergy,
-					  StorageMaxSizeEnergy,
-					  StorageMinSizePower,
-					  StorageMaxSizePower,
-					  StorageMinSOC,
-					  StorageInitSOC
-					  )
+    param = Parameter(
+                TechClass,
+                DemandBin,
+                TimeStep,
+                TimeStepBat,
+                Month,
+                DemandMonthsBin,
+                Ratchets,
+                Seg,
+                Tech,
+                FuelBin,
+                NMILRegime,
+                TimeStepRatchetsMonth,
+                TimeStepRatchets,
+                DemandLookbackMonths,
+                TechToTechClassMatrix,
+                TechToLoadMatrix,
+                TechToNMILMapping,
+                TimeStepScaling,
+                AnnualMinCharge,
+                MonthlyMinCharge,
+                FixedMonthlyCharge,
+                StorageCostPerKW,
+                StorageCostPerKWH,
+                FuelRate,
+                OMperUnitSize,
+                ExportRates,
+                CapCostSlope,
+                CapCostYInt,
+                CapCostX,
+                DemandRates,
+                DemandRatesMonth,
+                LoadProfile,
+                DemandLookbackPercent,
+                MaxDemandInTier,
+                MaxDemandMonthsInTier,
+                MaxUsageInTier,
+                NMILLimits,
+                MaxProdIncent,
+                ProdIncentRate,
+                MaxSizeForProdIncent,
+                ProdFactor,
+                TurbineDerate,
+                MinTurndown,
+                pwf_prod_incent,
+                LevelizationFactor,
+                LevelizationFactorProdIncent,
+                pwf_om,
+                pwf_e,
+                r_tax_owner,
+                r_tax_offtaker,
+                TechClassMinSize,
+                MaxSize,
+                FuelAvail,
+                EtaStorIn,
+                EtaStorOut,
+                MinStorageSizeKWH,
+                MaxStorageSizeKWH,
+                MinStorageSizeKW,
+                MaxStorageSizeKW,
+                StorageMinChargePcent,
+                InitSOC,
+                FuelBurnRateM,
+                FuelBurnRateB,
+                Load,
+                TechIsGrid,
+                two_party_factor,
+                analysis_years,
+                AnnualElecLoad,
+                CapCostSegCount,
+                FuelBinCount,
+                DemandBinCount,
+                DemandMonthsBinCount,
+                TimeStepCount,
+                Points#,
+      			#Segmentation,
+			    #FuelType,
+			    #PricingTier,
+			    #Storage,
+			    #StoragePowerCost,
+			    #StorageEnergyCost,
+			    #FuelCost,
+			    #ElecRate,
+			    #GridExportRates,
+			    #FuelBurnSlope,
+			    #FueBurnYInt,
+			    #MaxGridSales,
+			    #ProductionIncentiveRate,
+			    #ProductionFactor,
+			    #ElecLoad,
+			    #FuelLimit,
+			    #ChargeEfficiency,
+			    #GridChargeEfficiency,
+			    #DischargeEfficiency,
+			    #StorageMinSizeEnergy,
+			    #StorageMaxSizeEnergy,
+			    #StorageMinSizePower,
+			    #StorageMaxSizePower,
+			    #StorageMinSOC,
+			    #StorageInitSOC
+        )
 
     return param
 
