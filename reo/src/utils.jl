@@ -41,7 +41,7 @@ struct Parameter
 	 #ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
 	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems
 	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems
-	 #TES::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems
+	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
