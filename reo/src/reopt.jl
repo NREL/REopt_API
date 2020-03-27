@@ -547,6 +547,42 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#)
 	#	
  
+	### Constraint set (8): Electrical Load Balancing and Grid Sales
+	
+	##Constraint (8a): Electrical Load Balancing
+	#@constraint(REopt, [ts in p.TimeStep],
+	#	sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.ElectricTechs) +  
+	#sum( dvDischargeFromStorage[b] for b in p.ElecStorage ) + 
+	#sum( dvGridPurchase[u,ts] for u in p.PricingTier ) ==
+	#sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
+		#sum(dvProductionToGrid[t,u,ts] for b in p.ElecStorage) for t in p.ElectricTechs) +
+	#sum(dvStorageToGrid[u,ts] for u in p.PricingTier) + dvGridToStorage[ts] + 
+	## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+	#p.ElecLoad[ts]
+	#)
+	
+	##Constraint (8b): Grid-to-storage no greater than grid purchases 
+	#@constraint(REopt, [ts in p.TimeStep],
+	#	sum( dvGridPurchase[u,ts] for u in p.PricingTier)  >= dvGridToStorage[ts]
+	#)
+	#	
+	
+	##Constraint (8c): Storage-to-grid no greater than discharge from Storatge
+	#@constraint(REopt, [ts in p.TimeStep],
+	#	sum( dvDischargeFromStorage[b,ts] for u in p.ElecStorage)  >= sum(dvStorageToGrid[u,ts] for u in p.PricingTier)
+	#)
+	#	
+	
+	
+	##Constraint (8d): Production-to-grid no greater than production
+	#@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
+	# p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] >= sum(dvProductionToGrid[t,u,ts] for u in p.PricingTier)
+	#)
+	
+	##Constraint (8e): Total sales to grid no greater than annual allocation
+	#@constraint(REopt, [u in p.PricingTier],
+	# sum( dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u]) for ts in p.TimeStep) <= MaxGridSales[u]
+	#)
 	
 	
     for t in p.Tech
