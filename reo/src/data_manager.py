@@ -830,7 +830,13 @@ class DatFileManager:
 					 'FuelLimit': 0,
 					 'ChargeEfficiency': 0,
 					 'GridChargeEfficiency': 0,
-					 'DischargeEfficiency': 0
+					 'DischargeEfficiency': 0,
+		  'StorageMinSizeEnergy':0,
+		  'StorageMaxSizeEnergy':0,
+		  'StorageMinSizePower':0,
+		  'StorageMaxSizePower':0,
+		  'StorageMinSOC':0,
+		  'StorageInitSOC':0,
             #'BattLevelCoef':
             #'BattLevelCount':
             #'Points':
@@ -927,5 +933,11 @@ class DatFileManager:
 					 'FuelLimit': 0,
 					 'ChargeEfficiency': 0,
 					 'GridChargeEfficiency': 0,
-					 'DischargeEfficiency': 0
+					 'DischargeEfficiency': 0,
+		  'StorageMinSizeEnergy':0,
+		  'StorageMaxSizeEnergy':0,
+		  'StorageMinSizePower':0,
+		  'StorageMaxSizePower':0,
+		  'StorageMinSOC':0,
+		  'StorageInitSOC':0,
         }

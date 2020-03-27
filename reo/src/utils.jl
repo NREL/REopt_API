@@ -161,12 +161,12 @@ struct Parameter
      MaxStorageSizeKW::Float64     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
      InitSOC::Float64    # w^{i}_{b} Initial percent state of charge for storage system b
-	 StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
-     StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
-	 StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
-     StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
-     StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
-     StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction]
+     #StorageMinSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
+     #StorageMaxSizeEnergy::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
+     #StorageMinSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
+     #StorageMaxSizePower::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
+     #StorageMinSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
+     #StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
      FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
