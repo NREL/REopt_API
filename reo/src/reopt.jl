@@ -192,7 +192,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Continuous Variables
 	    dvSystemSize[p.Tech, p.Seg] >= 0   #to be replaced
 	    #dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
-	    #dvSystemSizeSegment[p.Tech, p.Segmentation, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
+	    #dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
 	    dvGrid[p.Load, p.TimeStep, p.DemandBin, p.FuelBin, p.DemandMonthsBin] >= 0  #to be replaced
 	    #dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
 	    dvRatedProd[p.Tech, p.Load, p.TimeStep, p.Seg, p.FuelBin] >= 0  #to be replaced
@@ -224,7 +224,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Binary Variables
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
         binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
-		#binSegmentSelect[p.Tech, p.Segmentation, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
+		#binSegmentSelect[p.Tech, p.Subdivision, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
         binProdIncent[p.Tech], Bin # 1 If production incentive is available for technology t; 0 otherwise 
         binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
@@ -496,8 +496,57 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t,b] for t in p.Tech, s in p.Seg) >= p.TechClassMinSize[b])
     #NEED to tighten bound and check logic
 	
-	###Constraint set (7): System Size
+	###Constraint set (7): System Size is zero unless single basic tech is selected for class
+	#Constraint (7a): Single Basic Technology Constraints
+	#@constraint(REopt, [c in p.TechClass, t in p.TechsInClass[c]],
+	#	dvSize[t] <= p.MaxSize[t] * binSingleBasicTech[t,c]
+	#	)
+	##Constraint (7b): At most one Single Basic Technology per Class
+	#@constraint(REopt, [c in p.TechClass],
+	#	sum( binSingleBasicTech[t,c] for t in p.TechsInClass[c] ) <= 1
+	#	)
 	
+	##Constraint (7c): Minimum size for each tech class
+	#@constraint(REopt, [c in p.TechClass],
+	#	sum( dvSize[t] for t in in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
+	#	)
+	
+	## Constraint (7d): Non-turndown technologies are always at rated production
+	#@constraint(REopt, [t in p.TechsNoTurndown, ts in p.TimeStep],
+	#	dvRatedProduction[t,ts] == dvSize[t]  
+	#)
+	#	
+	
+	##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
+	#@constraint(REopt, [t in p.TechsTurndown, ts in p.TimeStep],
+	#	dvRatedProduction[t,ts]  <= p.TurbineDerate[t,ts] * dvSize[t]
+	#)
+	#	
+	
+	##Constraint (7f)-1: Minimum segment size
+	#@constraint(REopt, [t in p.Techs, k in p.Subdivisions, s in p.SegByTechSubdivision[t,k]],
+	#	dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,ts] * binSegChosen[t,k,s]
+	#)
+	#	
+	
+	##Constraint (7f)-2: Maximum segment size
+	#@constraint(REopt, [t in p.Techs, k in p.Subdivisions, s in p.SegByTechSubdivision[t,k]],
+	#	dvSystemSizeSegment[t,k,s]  <= p.SegmentMaxSize[t,ts] * binSegChosen[t,k,s]
+	#)
+	#	
+
+	##Constraint (7g):  Segments add up to system size 
+	#@constraint(REopt, [t in p.Techs, k in p.Subdivisions],
+	#	sum(dvSystemSizeSegment[t,k,s] for s in p.SegByTechSubdivision[t,k])  == dvSize[t]
+	#)
+	#	
+	
+	##Constraint (7h): At most one segment allowed
+	#@constraint(REopt, [t in p.Techs, k in p.Subdivisions],
+	#	sum(binSegChosen[t,k,s] for s in p.SegByTechSubdivision[t,k])  <= 1
+	#)
+	#	
+ 
 	
 	
     for t in p.Tech

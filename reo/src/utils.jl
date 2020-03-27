@@ -27,7 +27,7 @@ struct Parameter
 	 #FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
      TimeStep::UnitRange{Int64}    # Set H
      TimeStepBat::UnitRange{Int64} # Set H union {0}
-	 #Segmentation::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
+	 #Subdivision::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
 	 Month::UnitRange{Int64} 	    # Set M
 	 DemandMonthsBin::UnitRange{Int64}	# Set N
 	 Ratchets::UnitRange{Int64}	   # Set R
@@ -45,11 +45,11 @@ struct Parameter
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
-	 #K_t \subset K: Segmentations applied to technology t
-	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Segmentations
-	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Segmentations
+	 #K_t \subset K: Subdivisions applied to technology t
+	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Subdivisions
+	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing 
-	 #SegByTechSegmentation::AxisArray{Int64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}} # S_{kt}: System size segments from segmentation k applied to technology t
+	 #SegByTechSubdivision::AxisArray{Int64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}} # S_{kt}: System size segments from segmentation k applied to technology t
 	 #TechsChargingStorage::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_b \subset T: Technologies that can charge storage system b
 	 #TechsInClass::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_c \subset T: Technologies that are in class c
 	 #TechsByFuelType::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # T_f \subset T: Technologies that burn fuel type f
@@ -63,6 +63,7 @@ struct Parameter
 	 #FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies
 	 #TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
+	 #TechsTurndown::Array{String,1}  # This is just T \setminus T^{ac}; not in the math
 	 #PricingTiersByTech::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # U_t \subset U:  Pricing tiers accessible by technology td
 	 #PricingTiersNM::Array{Int64}  # U^{nm} \subset U: Pricing Tiers Used in net-metering
 	 
@@ -140,6 +141,8 @@ struct Parameter
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
 	 MaxSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
+	 #SegmentMinSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \ubar{b}^{\sigma s}_{tks}: Minimum system size for technology t, subdivision k, segments
+	 #SegmentMaxSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \bar{b}^{\sigma s}_{tks}: Maximum system size for technology t, subdivision k, segments
 	 FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  # to be replaced
 	 #FuelLimit::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
 	 
@@ -321,7 +324,7 @@ function build_param(args...;
     DemandMonthsBin = 1:DemandMonthsBinCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
-	Segmentation=1:1
+	Subdivision=1:1
 	FuelType = 1:FuelBinCount
 	PricingTier = 1:FuelBinCount
 	Storage = 1:1
@@ -459,7 +462,7 @@ function build_param(args...;
                 DemandMonthsBinCount,
                 TimeStepCount,
                 Points#,
-      			#Segmentation,
+      			#Subdivision,
 			    #FuelType,
 			    #PricingTier,
 			    #Storage,
