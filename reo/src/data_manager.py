@@ -445,16 +445,17 @@ class DataManager:
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
-                                                                 0,
-                                                                 sf.analysis_years,
-                                                                 sf.owner_discount_pct,
-                                                                 sf.owner_tax_pct,
-                                                                 itc,
-                                                                 eval('self.' + tech + '.incentives.macrs_schedule'),
-                                                                 eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
-
+                    updated_slope = setup_capital_cost_incentive(
+                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                        replacement_cost=0,
+                        replacement_year=sf.analysis_years,
+                        discount_rate=sf.owner_discount_pct,
+                        tax_rate=sf.owner_tax_pct,
+                        itc=itc,
+                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                    )
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
