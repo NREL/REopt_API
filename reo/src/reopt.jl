@@ -583,7 +583,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#@constraint(REopt, [u in p.PricingTier],
 	# sum( dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u]) for ts in p.TimeStep) <= MaxGridSales[u]
 	#)
-	
+	## End constraint (8)
 	
     for t in p.Tech
         if p.MinTurndown[t] > 0
@@ -610,9 +610,17 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
 
-    ###  Net Meter Module
+    ### Constraint set (9): Net Meter Module 
+	#Constraint (9a): exactly one net-metering regime must be selected
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
-
+	
+	##Constraint (9b): Maximum system sizes for each net-metering regime
+	#@constraint(REopt, [n in p.NMILRegime],
+    #            sum(p.TurbineDerate[t] * dvSize[t]
+    #                for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
+	###End constraint set (9)
+	
+	##Previous analog to (9b)
     @constraint(REopt, [n in p.NMILRegime],
                 sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
                     for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
@@ -630,6 +638,18 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
     @constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
     	        binUsageTier[m, fb] * p.MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0)
+				
+	### Constraint set (10): Electrical Energy Demand Pricing Tiers
+	##Constraint (10a): Usage limits by pricing tier, by month
+	#@constraint(REopt, [u in p.PricingTier, m in p.Month],
+    #            Delta * sum( dvGridPurchase[u, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= binUsageTier[m, u] * p.MaxUsageInTier[u])
+	##Constraint (10b): Ordering of pricing tiers
+	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
+    #	        binUsageTier[m, u] - binUsageTier[m, u-1] <= 0)
+	## Constraint (10c): One tier must be full before any usage in next tier 
+	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
+    #	        binUsageTier[m, u] * p.MaxUsageInTier[u-1] - UsageInTier[m, u-1] <= 0)
+	#
 
     ### Peak Demand Energy Rates
     for db in p.DemandBin
