@@ -816,8 +816,8 @@ class DatFileManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'StoragePowerCost': 0,
-					 'StorageEnergyCost': 0,
+            'StoragePowerCost': StorageCostPerKW,
+	    'StorageEnergyCost': StorageCostPerKWH,
 					 'FuelCost': 0,
 					 'ElecRate': 0,
 					 'GridExportRates': 0,
