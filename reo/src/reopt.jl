@@ -137,9 +137,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
-    #TODO: account for exist formatting
+
+    # These loops enforce the exist formatting that is present in mosel
     for t in p.Tech
-        if p.MaxSize == 0
+        if p.MaxSize[t] == 0
             for LD in p.Load
                 if p.TechToLoadMatrix[t,LD] == 0
                     for ts in p.TimeStep
