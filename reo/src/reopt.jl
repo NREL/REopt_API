@@ -162,7 +162,7 @@ function reopt(reo_model, data, model_inputs)
 		  ElecRate = model_inputs["ElecRate"],
 		  GridExportRates = model_inputs["GridExportRates"],
 		  FuelBurnSlope = model_inputs["FuelBurnSlope"],
-		  FueBurnYInt = model_inputs["FueBurnYInt"],
+		  FueBurnYInt = model_inputs["FuelBurnYInt"],
 		  MaxGridSales = model_inputs["MaxGridSales"],
 		  ProductionIncentiveRate = model_inputs["ProductionIncentiveRate"],
 		  ProductionFactor = model_inputs["ProductionFactor"],

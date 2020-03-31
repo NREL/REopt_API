@@ -61,6 +61,7 @@ class DatFileManager:
         self.site = None
         self.elec_tariff = None
         self.load = None
+        self.elec_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
@@ -81,6 +82,7 @@ class DatFileManager:
 
     def add_load(self, load):
         #  fill in W, X, S bins
+        self.elec_load = copy.deepcopy(load.load_list)
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
@@ -183,9 +185,12 @@ class DatFileManager:
         max_prod_incent = list()
         max_size_for_prod_incent = list()
 
+        production_incentive_rate = list()
+
         for tech in techs:
 
             if eval('self.' + tech) is not None:
+
 
                 if tech not in ['util', 'generator']:
 
@@ -206,16 +211,20 @@ class DatFileManager:
                             eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
                         )
 
+                    production_incentive_rate.append(
+                        eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
+                    )
                 else:
 
                     pwf_prod_incent.append(0.0)
                     max_prod_incent.append(0.0)
                     max_size_for_prod_incent.append(0.0)
+                    production_incentive_rate.append(0.0)
 
                     for load in self.available_loads:
                         prod_incent_rate.append(0.0)
 
-        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent
+        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
     def _get_REopt_cost_curve(self, techs):
 
@@ -543,6 +552,7 @@ class DatFileManager:
         :return: prod_factor, tech_to_load, tech_is_grid, derate, etaStorIn, etaStorOut
         """
         prod_factor = list()
+        production_factor = list()
         tech_to_load = list()
         tech_is_grid = list()
         derate = list()
@@ -551,6 +561,10 @@ class DatFileManager:
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
 
+        charge_efficiency = list()
+        grid_charge_efficiency = list()
+        discharge_efficiency = list()
+
         for tech in techs:
 
             if eval('self.' + tech) is not None:
@@ -558,6 +572,16 @@ class DatFileManager:
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
                 om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
+
+                for pf in eval('self.' + tech + '.prod_factor'):
+                    production_factor.append(float(pf))
+
+                if tech == 'util':
+                        grid_charge_efficiency.append(self.storage.rectifier_efficiency_pct *
+                                                 self.storage.internal_efficiency_pct**0.5)
+                else:
+                        charge_efficiency.append(self.storage.rectifier_efficiency_pct *
+                                                 self.storage.internal_efficiency_pct**0.5)
 
                 # only generator tech has variable o&m cost
                 if tech.lower() == 'generator':
@@ -594,10 +618,13 @@ class DatFileManager:
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
                                    if load == 'storage' else 1.0)
 
+        discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
+
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
         return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
-               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
+               grid_charge_efficiency, discharge_efficiency
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -693,9 +720,11 @@ class DatFileManager:
         tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
-            om_cost_us_dollars_per_kwh= self._get_REopt_array_tech_load(self.available_techs)
+            om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
+            grid_charge_efficiency, discharge_efficiency = self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
-            om_dollars_per_kw_bau, om_dollars_per_kwh_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
+            grid_charge_efficiency_bau, discharge_efficiency_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -705,9 +734,9 @@ class DatFileManager:
         levelization_factor_bau, production_incentive_levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau \
             = self._get_REopt_pwfs(self.bau_techs)
 
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent \
+        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
             = self._get_REopt_production_incentives(self.available_techs)
-        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
+        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
@@ -745,6 +774,7 @@ class DatFileManager:
                       self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
+
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -818,37 +848,27 @@ class DatFileManager:
             # new parameters for reformulation
             'StoragePowerCost': StorageCostPerKW,
 	    'StorageEnergyCost': StorageCostPerKWH,
-					 'FuelCost': 0,
-					 'ElecRate': 0,
-					 'GridExportRates': 0,
-					 'FuelBurnSlope': 0,
-					 'FueBurnYInt': 0,
-					 'MaxGridSales': 0,
-					 'ProductionIncentiveRate': 0,
-					 'ProductionFactor': 0,
-					 'ElecLoad': 0,
-					 'FuelLimit': 0,
-					 'ChargeEfficiency': 0,
-					 'GridChargeEfficiency': 0,
-					 'DischargeEfficiency': 0,
+	    'FuelCost': tariff_args.fuel_costs,
+	    'ElecRate': tariff_args.energy_costs,
+	    'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+	    'FuelBurnSlope': tariff_args.fuel_burn_rate,
+	    'FuelBurnYInt': tariff_args.fuel_burn_intercept,
+	    'MaxGridSales': self.load.annual_kwh,
+	    'ProductionIncentiveRate': production_incentive_rate,
+	    'ProductionFactor': production_factor,
+	    'ElecLoad': self.elec_load, # Needed to copy make sure that changed
+	    'FuelLimit': tariff_args.fuel_limit,
+	    'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
+	    'GridChargeEfficiency': grid_charge_efficiency,
+	    'DischargeEfficiency': discharge_efficiency,
 		  'StorageMinSizeEnergy':0,
 		  'StorageMaxSizeEnergy':0,
 		  'StorageMinSizePower':0,
 		  'StorageMaxSizePower':0,
 		  'StorageMinSOC':0,
 		  'StorageInitSOC':0,
-            #'BattLevelCoef':
-            #'BattLevelCount':
-            #'Points':
-            #'Month':
-            #'Ratchets':
-            #'FuelBin':
-            #'DemandBin':
-            #'DemandMonthsBin':
-            #'BattLevel':
-            #'TimeStep':
-            #'TimeStepBat':
         }
+
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
             'TechIsGrid': tech_is_grid_bau,
@@ -919,21 +939,21 @@ class DatFileManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-            'StoragePowerCost': 0,
-					 'StorageEnergyCost': 0,
-					 'FuelCost': 0,
-					 'ElecRate': 0,
-					 'GridExportRates': 0,
-					 'FuelBurnSlope': 0,
-					 'FueBurnYInt': 0,
-					 'MaxGridSales': 0,
-					 'ProductionIncentiveRate': 0,
-					 'ProductionFactor': 0,
-					 'ElecLoad': 0,
-					 'FuelLimit': 0,
-					 'ChargeEfficiency': 0,
-					 'GridChargeEfficiency': 0,
-					 'DischargeEfficiency': 0,
+            'StoragePowerCost': StorageCostPerKW,
+	    'StorageEnergyCost': StorageCostPerKWH,
+	    'FuelCost': tariff_args.fuel_costs_bau,
+	    'ElecRate': tariff_args.energy_costs_bau,
+	    'GridExportRates': tariff_args.grid_export_rates_bau,
+	    'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
+	    'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
+	    'MaxGridSales': self.load.annual_kwh,
+	    'ProductionIncentiveRate': production_incentive_rate_bau,
+	    'ProductionFactor': production_factor_bau,
+	    'ElecLoad': self.elec_load,
+	    'FuelLimit': tariff_args.fuel_limit,
+	    'ChargeEfficiency': charge_efficiency_bau,
+	    'GridChargeEfficiency': grid_charge_efficiency_bau,
+	    'DischargeEfficiency': discharge_efficiency_bau,
 		  'StorageMinSizeEnergy':0,
 		  'StorageMaxSizeEnergy':0,
 		  'StorageMinSizePower':0,
@@ -941,3 +961,5 @@ class DatFileManager:
 		  'StorageMinSOC':0,
 		  'StorageInitSOC':0,
         }
+
+        #import ipdb;ipdb.set_trace()
