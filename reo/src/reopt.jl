@@ -328,7 +328,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#			dvRatedProduction[t,ts] <= MaxSize[t] * binTechIsOnInTS[t,ts])
 	##Constraint (3b): Technologies that are turned on must not be turned down
 	#@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
-	#			dvRatedProduction[t,ts] >= MaxSize[t] * (1-binTechIsOnInTS[t,ts])) - MinTurndown[t] * dvSystemSize[t]
+	#		MaxSize[t] * (1-binTechIsOnInTS[t,ts]))	- dvRatedProduction[t,ts] >= MinTurndown[t] * dvSystemSize[t]
 
     ### Section 4: Storage System Constraints
 	### 
