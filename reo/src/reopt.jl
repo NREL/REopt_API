@@ -583,7 +583,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#@constraint(REopt, [u in p.PricingTier],
 	# sum( dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u]) for ts in p.TimeStep) <= MaxGridSales[u]
 	#)
-	
+	## End constraint (8)
 	
     for t in p.Tech
         if p.MinTurndown[t] > 0
@@ -610,9 +610,17 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
 
-    ###  Net Meter Module
+    ### Constraint set (9): Net Meter Module 
+	#Constraint (9a): exactly one net-metering regime must be selected
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
-
+	
+	##Constraint (9b): Maximum system sizes for each net-metering regime
+	#@constraint(REopt, [n in p.NMILRegime],
+    #            sum(p.TurbineDerate[t] * dvSize[t]
+    #                for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
+	###End constraint set (9)
+	
+	##Previous analog to (9b)
     @constraint(REopt, [n in p.NMILRegime],
                 sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
                     for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
@@ -630,6 +638,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
     @constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
     	        binUsageTier[m, fb] * p.MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0)
+				
+	### Constraint set (10): Electrical Energy Demand Pricing Tiers
+	##Constraint (10a): Usage limits by pricing tier, by month
+	#@constraint(REopt, [u in p.PricingTier, m in p.Month],
+    #            Delta * sum( dvGridPurchase[u, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= binUsageTier[m, u] * p.MaxUsageInTier[u])
+	##Constraint (10b): Ordering of pricing tiers
+	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
+    #	        binUsageTier[m, u] - binUsageTier[m, u-1] <= 0)
+	## Constraint (10c): One tier must be full before any usage in next tier 
+	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
+    #	        binUsageTier[m, u] * p.MaxUsageInTier[u-1] - UsageInTier[m, u-1] <= 0)
+	#
+	#End constraint set (10)
 
     ### Peak Demand Energy Rates
     for db in p.DemandBin
@@ -642,7 +663,27 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                         binDemandTier[r, db] * p.MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0)
         end
     end
-
+	### Constraint set (11): Peak Electrical Power Demand Charges: Months
+	
+	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
+	#@constraint(REopt, [n in p.DemandMonthsBin, m in p.Month],
+    #            dvPeakDemandEMonth[m,n] <= p.MaxDemandMonthsInTier[n] * binDemandMonthsTier[m,n])
+	
+	## Constraint (11b): Monthly peak electrical power demand tier ordering
+	@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+        	        binDemandMonthsTier[m, n] <= binDemandMonthsTier[m, n-1])
+	
+	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
+	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+    #    	 binDemandMonthsTier[m, n] * p.MaxDemandMonthsInTier[n-1] <= dvPeakDemandEMonth[m, n-1])
+	
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
+	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+    #    	 sum( dvPeakDemandEMonth for n in p.DemandMonthsBin ) >= 
+	#		 sum( dvGridPurchase[u,h] for u in p.PricingTiers )
+	#)
+	
+	### End Constraint Set (11)
 
     if !isempty(p.TimeStepRatchets)
         @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
