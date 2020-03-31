@@ -650,6 +650,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
     #	        binUsageTier[m, u] * p.MaxUsageInTier[u-1] - UsageInTier[m, u-1] <= 0)
 	#
+	#End constraint set (10)
 
     ### Peak Demand Energy Rates
     for db in p.DemandBin
@@ -662,7 +663,27 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                         binDemandTier[r, db] * p.MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0)
         end
     end
-
+	### Constraint set (11): Peak Electrical Power Demand Charges: Months
+	
+	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
+	#@constraint(REopt, [n in p.DemandMonthsBin, m in p.Month],
+    #            dvPeakDemandEMonth[m,n] <= p.MaxDemandMonthsInTier[n] * binDemandMonthsTier[m,n])
+	
+	## Constraint (11b): Monthly peak electrical power demand tier ordering
+	@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+        	        binDemandMonthsTier[m, n] <= binDemandMonthsTier[m, n-1])
+	
+	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
+	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+    #    	 binDemandMonthsTier[m, n] * p.MaxDemandMonthsInTier[n-1] <= dvPeakDemandEMonth[m, n-1])
+	
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
+	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+    #    	 sum( dvPeakDemandEMonth for n in p.DemandMonthsBin ) >= 
+	#		 sum( dvGridPurchase[u,h] for u in p.PricingTiers )
+	#)
+	
+	### End Constraint Set (11)
 
     if !isempty(p.TimeStepRatchets)
         @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
