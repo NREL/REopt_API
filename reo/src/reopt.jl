@@ -300,7 +300,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					
 	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
 	#@constraint(REopt, [f in p.FuelType],
-	#			sum( dvFuelUsage[t,h] for t in p.TechsByFuel[f] ) <= 
+	#			sum( dvFuelUsage[t,ts] for t in p.TechsByFuel[f], ts in p.TimeStep ) <= 
 	#			p.FuelAvail[f]
 	#			)
 	#
@@ -610,7 +610,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                     for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
 
-    ### Constraint set (9): Net Meter Module 
+    ### Constraint set (9): Net Meter Module (copied directly from legacy model)
 	#Constraint (9a): exactly one net-metering regime must be selected
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
 	
@@ -678,12 +678,43 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #    	 binDemandMonthsTier[m, n] * p.MaxDemandMonthsInTier[n-1] <= dvPeakDemandEMonth[m, n-1])
 	
 	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
-	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
+	#@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
     #    	 sum( dvPeakDemandEMonth for n in p.DemandMonthsBin ) >= 
-	#		 sum( dvGridPurchase[u,h] for u in p.PricingTiers )
+	#		 sum( dvGridPurchase[u,ts] for u in p.PricingTiers )
 	#)
 	
 	### End Constraint Set (11)
+	
+	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
+	#if !isempty(p.TimeStepRatchets)
+		## Constraint (12a): Upper bound on peak electrical power demand by tier, by ratchet, if tier is selected (0 o.w.)
+		#@constraint(REopt, [r in p.Ratchets, e in p.DemandBin],
+		#            dvPeakDemandE[r, e] <= p.MaxDemandInTier[e] * binDemandTier[r, e])
+		
+		## Constraint (12b): Ratchet peak electrical power ratchet tier ordering
+		#@constraint(REopt, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		#    	        binDemandTier[r, e] <= binDemandTier[r, e-1])
+		
+		## Constraint (12c): One ratchet peak electrical power demand tier must be full before next one is active
+		#@constraint(REopt, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		#    	 binDemandTier[r, e] * p.MaxDemandInTier[e-1] <= dvPeakDemandE[r, e-1])
+		
+		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
+		#@constraint(REopt, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		#    	 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
+		#		 sum( dvGridPurchase[u, h] for u in p.PricingTiers )
+		#)
+		
+		##Constraint (12e): Peak demand used in percent lookback calculation 
+		#@constraint(REopt, [m in p.DemandLookbackMonths],
+		#	        dvPeakDemandELookback >= sum(dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin)
+		
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		#@constraint(REopt, [r in p.Ratchets],
+		#			sum( dvPeakDemandEMonth[r,e] for e in p.DemandBin ) >= 
+		#			p.DemandLookbackPercent * dvPeakDemandELookback )
+	#end
+	### End Constraint Set (12)
 
     if !isempty(p.TimeStepRatchets)
         @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
@@ -692,7 +723,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                     dvPeakDemandE[r,db] >= p.DemandLookbackPercent * dvPeakDemandELookback)
     end
 
-    ### Peak Demand Energy Rachets
+    ### Peak Demand Energy Ratchets
     for dbm in p.DemandMonthsBin
         @constraint(REopt, [m in p.Month],
         	        dvPeakDemandEMonth[m, dbm] <= binDemandMonthsTier[m,dbm] * p.MaxDemandMonthsInTier[dbm])
@@ -801,6 +832,27 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #= Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.001*MinChargeAdder is added back into LCC when writing to results.  =#
+		
+	### Constraint (13): Annual minimum charge adder 
+	#if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
+    #    TotalMinCharge = p.AnnualMinCharge 
+    #else
+    #    TotalMinCharge = 12 * p.MonthlyMinCharge
+    #end
+	
+	#if TotalMinCharge > 0
+    #    @constraint(REopt, MinChargeAdder >= TotalMinCharge - (
+	#		TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+	#		sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+	#		sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+	#		TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u]) for ts in p.TimeStep, u in p.PricingTier ) - 
+	#		p.FixedMonthlyCharge * 12
+	#	)
+	#else
+	#	@constraint(REopt, MinChargeAdder == 0)
+    #end
+	
+	### Alternate constraint (13): Monthly minimum charge adder
 
     # Define Rates
     r_tax_fraction_owner = (1 - p.r_tax_owner)
@@ -823,6 +875,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Subtract Incentives, which are taxable
 		TotalProductionIncentive * r_tax_fraction_owner
 	)
+	
 
     if Obj == 1
 		@objective(REopt, Min, REcosts)
