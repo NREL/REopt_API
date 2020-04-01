@@ -300,13 +300,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					
 	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
 	#@constraint(REopt, [f in p.FuelType],
-	#			sum( dvFuelUsage[t,ts] for t in p.TechsByFuel[f], ts in p.TimeStep ) <= 
+	#			sum( dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep ) <= 
 	#			p.FuelAvail[f]
 	#			)
 	#
 	## Constraint (1b): Fuel burn for non-CHP Constraints
 	#@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
-	#			dvFuelUsage[t,h]  <= (FuelBurnRateM[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
+	#			dvFuelUsage[t,ts]  <= (FuelBurnRateM[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 	#				(FuelBurnRateB[t] * binTechIsOnInTS[t,ts])
 	#			)
 	#Skipping (1c)-(1f) until CHP implementation
@@ -381,7 +381,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#			)
 	# Constraint (4f): Reconcile state-of-charge for electrical storage
 	#@constraint(REopt, [b in p.ElecStorage, ts in p.TimeStep],
-    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + TimeStepScaling * (  
+    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.ElecTechs) + 
 	#				GridChargeEfficiency*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
 	#				)
@@ -389,7 +389,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	# Constraint (4g)-1: Reconcile state-of-charge for (hot) thermal storage
 	#@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
-    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + TimeStepScaling * (  
+    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
 	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
 	#				)
@@ -397,7 +397,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				
 	# Constraint (4g)-2: Reconcile state-of-charge for (cold) thermal storage
 	#@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
-    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + TimeStepScaling * (  
+    #	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
 	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
 	#				)
@@ -842,18 +842,25 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	#if TotalMinCharge > 0
     #    @constraint(REopt, MinChargeAdder >= TotalMinCharge - (
-	#		TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+	#		#Demand Charges
+	#		p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+	#		#Peak Ratchet Charges
 	#		sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+	#		#Preak Monthyl Demand Charges
 	#		sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-	#		TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u]) for ts in p.TimeStep, u in p.PricingTier ) - 
-	#		p.FixedMonthlyCharge * 12
+	#		# Energy Exports
+	#		p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier ) - 
+	#		p.FixedMonthlyCharge * 12 )
 	#	)
 	#else
 	#	@constraint(REopt, MinChargeAdder == 0)
     #end
 	
 	### Alternate constraint (13): Monthly minimum charge adder
-
+	
+	
+	
+	
     # Define Rates
     r_tax_fraction_owner = (1 - p.r_tax_owner)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
@@ -876,7 +883,50 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		TotalProductionIncentive * r_tax_fraction_owner
 	)
 	
+	###  New Objective Function
+	#@expression(REopt, REcosts,
+		## Non-Storage Technology Capital Costs
+		#sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,k,s] for t in p.Tech, k in p.CapCostSeg, t in p.SegByTechSubdivision[t,k]) +
+		
+		## Storage capital costs
+		#sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+		
+		## Fixed O&M, tax deductible for owner
+		#r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
 
+		## Variable O&M, tax deductible for owner
+		#r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
+
+		
+		#r_tax_fraction_offtaker * p.pwf_e * (
+		
+		## Total Production Costs
+		#p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+		
+		#
+		## Total Demand Charges
+		#		p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+		
+		## Peak Ratchet Charges
+		#sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+		
+		## Peak Monthly Demand Charges
+		#sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+		
+		## Energy Exports
+		#		p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier )  + 
+		
+		## Fixed Charges
+		# p.FixedMonthlyCharge * 12 + MinChargeAdder
+		
+		#) -
+		
+		## Production Incentives
+		#r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
+		
+	#)
+	
+	
     if Obj == 1
 		@objective(REopt, Min, REcosts)
 	elseif Obj == 2  # Keep SOC high
