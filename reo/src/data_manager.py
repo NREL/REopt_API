@@ -75,6 +75,7 @@ class DatFileManager:
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = ['util']
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
+        self.fuel_burning_techs = ['generator']  # order is critical for REopt!
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps
@@ -564,6 +565,7 @@ class DatFileManager:
         charge_efficiency = list()
         grid_charge_efficiency = list()
         discharge_efficiency = list()
+        techs_charging_storage = list()
 
         for tech in techs:
 
@@ -582,6 +584,9 @@ class DatFileManager:
                 else:
                         charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
+
+                if eval('self.' + tech + '.can_serve("storage")'):
+                    techs_charging_storage.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
 
                 # only generator tech has variable o&m cost
                 if tech.lower() == 'generator':
@@ -624,7 +629,7 @@ class DatFileManager:
 
         return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               grid_charge_efficiency, discharge_efficiency
+               grid_charge_efficiency, discharge_efficiency, techs_charging_storage
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -644,6 +649,7 @@ class DatFileManager:
         """
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
+        tech_in_class = list()  # array(TechClass)
         for tc in self.available_tech_classes:
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
                 if hasattr(eval('self.' + tc.lower()), 'existing_kw'):
@@ -668,8 +674,13 @@ class DatFileManager:
                     else:
                         tech_to_tech_class.append(0)
 
+        for tc in self.available_tech_classes:
+            for tech in techs:
+                if eval('self.' + tech) is not None:
+                    tech_in_class.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
 
-        return tech_class_min_size, tech_to_tech_class
+        return tech_class_min_size, tech_to_tech_class, tech_in_class
+
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
@@ -704,6 +715,24 @@ class DatFileManager:
 
         return max_sizes, min_turn_down
 
+
+    def _get_tech_subdivisions(self, techs):
+        cc_techs=self.available_techs
+        fb_techs=self.fuel_burning_techs
+
+        tech_subdivisions = list()
+        for tech in techs:
+            tech_sub = list()
+            if tech in cc_techs:
+                tech_sub.append('CapCost')
+            if tech in fb_techs:
+                tech_sub.append('FuelBurn')
+
+            tech_subdivisions.append(tech_sub)
+
+        return tech_subdivisions
+
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -716,15 +745,15 @@ class DatFileManager:
 
         load_list = ['1R', '1W', '1X', '1S']  # same for BAU
 
-        tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs, False)
-        tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
+        tech_class_min_size, tech_to_tech_class, tech_in_class = self._get_REopt_tech_classes(self.available_techs, False)
+        tech_class_min_size_bau, tech_to_tech_class_bau, tech_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            grid_charge_efficiency, discharge_efficiency = self._get_REopt_array_tech_load(self.available_techs)
+            grid_charge_efficiency, discharge_efficiency, techs_charging_storage = self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            grid_charge_efficiency_bau, discharge_efficiency_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            grid_charge_efficiency_bau, discharge_efficiency_bau, techs_charging_storage_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -775,6 +804,10 @@ class DatFileManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
+
+        subdivisions = ['CapCost','FuelBurn']
+        tech_subdivisions = self._tech_subdivisions(reopt_techs):
+        tech_subdivisions_bau = self._tech_subdivisions(reopt_techs_bau):
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -867,7 +900,18 @@ class DatFileManager:
 		  'StorageMaxSizePower':0,
 		  'StorageMinSOC':0,
 		  'StorageInitSOC':0,
-        }
+            # Sets that need to be populated
+            'Storage':['Elec'],
+            'FuelType':['Diesel']
+            'Subdivision':subdivisions
+            'PricingTierCount':tariff_args.energy_tiers_num
+            'ElecStorage':['Elec'],
+            'FuelTypeByTech':[['Diesel']]
+            'SubdivisionByTech':tech_subdivisions
+            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions]
+            'TechsChargingStorage':techs_charging_storage
+            'TechsInClass':tech_in_class
+            }
 
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,

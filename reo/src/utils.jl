@@ -45,7 +45,7 @@ struct Parameter
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
-	 #K_t \subset K: Subdivisions applied to technology t
+	 #SubdivsionByTech K_t \subset K: Subdivisions applied to technology t
 	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Subdivisions
 	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions   (IGNORE)
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing 
@@ -316,6 +316,7 @@ function build_param(args...;
 
 
     Seg = 1:CapCostSegCount
+    CapCostSeg = 1:CapCostSegCount
     Points = 0:CapCostSegCount
     Month = 1:12
     Ratchets = 1:NumRatchets
