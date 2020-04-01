@@ -39,15 +39,15 @@ struct Parameter
 	 
 	 ###  Subsets and Indexed Sets  ####
 	 #ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
-	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems
-	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems
-	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems
+	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems (IGNORE)
+	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
+	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
 	 #K_t \subset K: Subdivisions applied to technology t
 	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Subdivisions
-	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions
+	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions   (IGNORE)
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing 
 	 #SegByTechSubdivision::AxisArray{Int64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}} # S_{kt}: System size segments from segmentation k applied to technology t
 	 #TechsChargingStorage::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_b \subset T: Technologies that can charge storage system b
@@ -55,13 +55,13 @@ struct Parameter
 	 #TechsByFuelType::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # T_f \subset T: Technologies that burn fuel type f
 	 #TechsByPricingTier::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # T_u  \subset T: Technologies that access pricing tier u
 	 #TechsByNMILRegime::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} # T_v \subset T: Technologies that may acess net-meterng regime v 
-	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers
-	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies
-	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies
+	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers (IGNORE)
+	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
+	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 #ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
-	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers 
+	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
 	 #FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
-	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies
+	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 #TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
 	 #TechsTurndown::Array{String,1}  # This is just T \setminus T^{ac}; not in the math
 	 #PricingTiersByTech::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # U_t \subset U:  Pricing tiers accessible by technology td
