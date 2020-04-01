@@ -806,8 +806,8 @@ class DatFileManager:
 
 
         subdivisions = ['CapCost','FuelBurn']
-        tech_subdivisions = self._tech_subdivisions(reopt_techs):
-        tech_subdivisions_bau = self._tech_subdivisions(reopt_techs_bau):
+        tech_subdivisions = self._get_tech_subdivisions(reopt_techs)
+        tech_subdivisions_bau = self._get_tech_subdivisions(reopt_techs_bau)
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -902,15 +902,15 @@ class DatFileManager:
 		  'StorageInitSOC':0,
             # Sets that need to be populated
             'Storage':['Elec'],
-            'FuelType':['Diesel']
-            'Subdivision':subdivisions
-            'PricingTierCount':tariff_args.energy_tiers_num
+            'FuelType':['Diesel'],
+            'Subdivision':subdivisions,
+            'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':['Elec'],
-            'FuelTypeByTech':[['Diesel']]
-            'SubdivisionByTech':tech_subdivisions
-            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions]
-            'TechsChargingStorage':techs_charging_storage
-            'TechsInClass':tech_in_class
+            'FuelTypeByTech':[['Diesel']],
+            'SubdivisionByTech':tech_subdivisions,
+            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
+            'TechsChargingStorage':techs_charging_storage,
+            'TechsInClass':tech_in_class,
             }
 
         self.reopt_inputs_bau = {
