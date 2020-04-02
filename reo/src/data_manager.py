@@ -821,9 +821,21 @@ class DatFileManager:
 
 
         subdivisions = ['CapCost','FuelBurn']
+        fuel_type = ['Diesel'] if 'GENERATOR' in reopt_techs else []
+        fuel_type_bau = ['Diesel'] if 'GENERATOR' in reopt_techs_bau else []
+
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
         subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
-        techs_by_fuel_type = [['GENERATOR']]
+
+        techs_by_fuel_type = [['GENERATOR']] if 'GENERATOR' in reopt_techs else [[]]
+        techs_by_fuel_type_bau = [['GENERATOR']] if 'GENERATOR' in reopt_techs_bau else [[]]
+
+        fuel_type_by_tech = [['Diesel']] if 'GENERATOR' in reopt_techs else [[]]
+        fuel_type_by_tech_bau = [['Diesel']] if 'GENERATOR' in reopt_techs_bau else [[]]
+
+        fuel_limit = [big_number for x in fuel_type]
+        fuel_limit_bau = [big_number for x in fuel_type_bau]
+
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -906,7 +918,8 @@ class DatFileManager:
 	    'ProductionIncentiveRate': production_incentive_rate,
 	    'ProductionFactor': production_factor,
 	    'ElecLoad': self.elec_load, # Needed to copy make sure that changed
-	    'FuelLimit': tariff_args.fuel_limit,
+	    #'FuelLimit': tariff_args.fuel_limit,
+	    'FuelLimit': fuel_limit,
 	    'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	    'GridChargeEfficiency': grid_charge_efficiency,
 	    'DischargeEfficiency': discharge_efficiency,
@@ -918,11 +931,11 @@ class DatFileManager:
 	    'StorageInitSOC':self.storage.soc_init_pct,
             # Sets that need to be populated
             'Storage':['Elec'],
-            'FuelType':['Diesel'],
+            'FuelType': fuel_type,
             'Subdivision':subdivisions,
             'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':['Elec'],
-            'FuelTypeByTech':techs_by_fuel_type,
+            'FuelTypeByTech': fuel_type_by_tech,
             'SubdivisionByTech':subdivisions_by_tech,
             'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
             'TechsChargingStorage':techs_charging_storage,
@@ -1016,7 +1029,7 @@ class DatFileManager:
 	    'ProductionIncentiveRate': production_incentive_rate_bau,
 	    'ProductionFactor': production_factor_bau,
 	    'ElecLoad': self.elec_load,
-	    'FuelLimit': tariff_args.fuel_limit,
+	    'FuelLimit': fuel_limit_bau,
 	    'ChargeEfficiency': charge_efficiency_bau,
 	    'GridChargeEfficiency': grid_charge_efficiency_bau,
 	    'DischargeEfficiency': discharge_efficiency_bau,
@@ -1028,11 +1041,11 @@ class DatFileManager:
 	    'StorageInitSOC':self.storage.soc_init_pct,
             # Sets that need to be populated
             'Storage':['Elec'],
-            'FuelType':['Diesel'],
+            'FuelType':fuel_type_bau,
             'Subdivision':subdivisions,
             'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':[],
-            'FuelTypeByTech':[['Diesel']],
+            'FuelTypeByTech': fuel_type_by_tech_bau,
             'SubdivisionByTech':subdivisions_by_tech,
             'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
             'TechsChargingStorage':techs_charging_storage,
@@ -1040,6 +1053,7 @@ class DatFileManager:
             'TechsByFuelType':techs_by_fuel_type,
             'ElectricTechs':reopt_techs,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
-            'TechsNoTurndown':self.no_turndown_techs,        }
+            'TechsNoTurndown':self.no_turndown_techs,
+            }
 
-        #import ipdb;ipdb.set_trace()
+        import ipdb;ipdb.set_trace()

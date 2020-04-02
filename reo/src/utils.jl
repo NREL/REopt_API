@@ -290,27 +290,41 @@ function build_param(args...;
           NumRatchets,
           TimeStepScaling,
           OMcostPerUnitProd,
-		  StoragePowerCost,
-		  StorageEnergyCost,
-		  FuelCost,
-		  ElecRate,
-		  GridExportRates,
-		  FuelBurnSlope,
-		  FueBurnYInt,
-		  MaxGridSales,
-		  ProductionIncentiveRate,
-		  ProductionFactor,
-		  ElecLoad,
-		  FuelLimit,
-		  ChargeEfficiency,
-		  GridChargeEfficiency,
-		  DischargeEfficiency,
-		  StorageMinSizeEnergy,
-		  StorageMaxSizeEnergy,
-		  StorageMinSizePower,
-		  StorageMaxSizePower,
-		  StorageMinSOC,
-		  StorageInitSOC,
+	  StoragePowerCost,
+	  StorageEnergyCost,
+	  FuelCost,
+	  ElecRate,
+	  GridExportRates,
+	  FuelBurnSlope,
+	  FuelBurnYInt,
+	  MaxGridSales,
+	  ProductionIncentiveRate,
+	  ProductionFactor,
+	  ElecLoad,
+	  FuelLimit,
+	  ChargeEfficiency,
+	  GridChargeEfficiency,
+	  DischargeEfficiency,
+	  StorageMinSizeEnergy,
+	  StorageMaxSizeEnergy,
+	  StorageMinSizePower,
+	  StorageMaxSizePower,
+	  StorageMinSOC,
+	  StorageInitSOC,
+          Storage,
+          FuelType,
+          Subdivision,
+          PricingTierCount,
+          ElecStorage,
+          FuelTypeByTech,
+          SubdivisionByTech,
+          SegByTechSubdivision,
+          TechsChargingStorage,
+          TechsInClass,
+          TechsByFuelType,
+          ElectricTechs,
+          FuelBurningTechs,
+          TechsNoTurndown,
           kwargs...
     )
 
@@ -325,10 +339,10 @@ function build_param(args...;
     DemandMonthsBin = 1:DemandMonthsBinCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
-	Subdivision=1:1
-	FuelType = 1:FuelBinCount
+	#Subdivision=1:1
+	#FuelType = 1:FuelBinCount
 	PricingTier = 1:FuelBinCount
-	Storage = 1:1
+	#Storage = 1:1
 
     TechIsGrid = parameter(Tech, TechIsGrid)
     TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
@@ -366,27 +380,27 @@ function build_param(args...;
     NMILLimits = parameter(NMILRegime, NMILLimits)
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     OMcostPerUnitProd = parameter(Tech, OMcostPerUnitProd)
-	#StoragePowerCost = parameter(Storage, StoragePowerCost)
-	#StorageEnergyCost = parameter(Storage, StorageEnergyCost)
-	#FuelCost = parameter(FuelType, FuelCost)
-	#ElecRate = parameter((PricingTier,TimeStep), ElecRate)
-	#GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
-	#FuelBurnSlope = parameter(Tech, FuelBurnSlope)
-	#FuelBurnYInt = parameter(Tech, FuelBurnYInt)
-	#MaxGridSales = parameter(PricingTier, MaxGridSales)
-	#ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
-	#ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
-	#ElecLoad = parameter(TimeStep, ElecLoad)
-	#FuelLimit = parameter(FuelType, FuelLimit)
-	#ChargeEfficiency = parameter(Storage, ChargeEfficiency)
-	#GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
-	#DischargeEfficiency = parameter(Storage, DischargeEfficiency)
-    #StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
-    #StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
-    #StorageMinSizePower = parameter(Storage, StorageMinSizePower)
-    #StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
-    #StorageMinSOC = parameter(Storage, StorageMinSOC)
-    #StorageInitSOC = parameter(Storage, StorageInitSOC)
+	StoragePowerCost = parameter(Storage, StoragePowerCost)
+	StorageEnergyCost = parameter(Storage, StorageEnergyCost)
+	FuelCost = parameter(FuelType, FuelCost)
+	ElecRate = parameter((PricingTier,TimeStep), ElecRate)
+	GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
+	FuelBurnSlope = parameter(Tech, FuelBurnSlope)
+	FuelBurnYInt = parameter(Tech, FuelBurnYInt)
+	MaxGridSales = parameter(PricingTier, MaxGridSales)
+	ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
+	ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
+	ElecLoad = parameter(TimeStep, ElecLoad)
+	FuelLimit = parameter(FuelType, FuelLimit)
+	#ChargeEfficiency = parameter(Storage, ChargeEfficiency) # does this need to be indexed on techs?
+	GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
+	DischargeEfficiency = parameter(Storage, DischargeEfficiency)
+    StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
+    StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
+    StorageMinSizePower = parameter(Storage, StorageMinSizePower)
+    StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
+    StorageMinSOC = parameter(Storage, StorageMinSOC)
+    StorageInitSOC = parameter(Storage, StorageInitSOC)
 
     param = Parameter(
                 TechClass,
@@ -473,7 +487,7 @@ function build_param(args...;
 			    #ElecRate,
 			    #GridExportRates,
 			    #FuelBurnSlope,
-			    #FueBurnYInt,
+			    #FuelBurnYInt,
 			    #MaxGridSales,
 			    #ProductionIncentiveRate,
 			    #ProductionFactor,
@@ -559,6 +573,14 @@ function reshape(data::Number, axes::Int64)
 end
 
 function AxisArray(data::Number, index::Array{Symbol, 1})
+    return AxisArray([float(data)], index)
+end
+
+function AxisArray(data::Float64, index::Array{String, 1})
+    return AxisArray([float(data)], index)
+end
+
+function AxisArray(data::Int64, index::Array{String, 1})
     return AxisArray([float(data)], index)
 end
 
