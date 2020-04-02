@@ -1265,7 +1265,6 @@ def generate_proforma(scenariomodel, output_file_path):
 
     for idx, pv in enumerate(pv_data):
         dcs['A{}'.format(current_row)] = "{} Annual energy (AC kWh)".format(pv['name'])
-        dcs['B{}'.format(current_row)] = 0
         for ii in range(len(pv_cell_locations[idx]['pv_production_series'])):
             dcs['{}{}'.format(upper_case_letters[ii + 2], current_row)] = '={}'.format(
                 pv_cell_locations[idx]['pv_production_series'][ii])
@@ -1275,7 +1274,6 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
 
     dcs['A{}'.format(current_row)] = "Wind Annual energy (AC kWh)"
-    dcs['B{}'.format(current_row)] = 0
     for i in range(len(wind_production_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_production_series[i])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1284,7 +1282,6 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Generator Annual energy (AC kWh)"
-    dcs['B{}'.format(current_row)] = 0
     for i in range(len(generator_production_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(generator_production_series[i])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1300,7 +1297,6 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Value of electricity savings ($)"
-    dcs['B{}'.format(current_row)] = 0
     for i in range(len(value_of_savings_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(value_of_savings_series[i])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
