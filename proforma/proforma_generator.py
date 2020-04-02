@@ -1079,15 +1079,17 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         ws['A{}'.format(current_row)] = "{} Annual energy (kWh)".format(pv['name'])
         ws['B{}'.format(current_row)] = 0
         pv_cell_locations[idx]["pv_production_series"] = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
-        ws['C{}'.format(current_row)] = '={}'.format(pv_cell_locations[idx]["pv_energy_cell"])
 
-        for ii in range(2, financial.analysis_years + 1):
-            ws['{}{}'.format(upper_case_letters[1 + ii], current_row)] = \
-                '={prev_col}{row}*(1-{pv_degradation_rate_cell}/100)'.format(
-                    prev_col=upper_case_letters[ii], row=current_row,
-                    pv_degradation_rate_cell=pv_cell_locations[idx]["pv_degradation_rate_cell"])
+        for year in range(1, financial.analysis_years + 1):
+            ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '={pv_energy} * (1 - {pv_degradation_rate}/100)^{year}'.format(
+                    pv_energy=pv_cell_locations[idx]["pv_energy_cell"],
+                    pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
+                    year=year,
+                )
             pv_cell_locations[idx]["pv_production_series"].append("\'{}\'!{}{}".format(
-                inandout_sheet_name, upper_case_letters[1 + ii], current_row))
+                inandout_sheet_name, upper_case_letters[1 + year], current_row))
+            
         make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
                            number_format='#,##0')
         fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
