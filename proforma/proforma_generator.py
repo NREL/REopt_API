@@ -1404,35 +1404,6 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Tax Deductible Operating Expenses
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Tax Deductible Operating Expenses"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Total deductible expenses"
-    for i in range(financial.analysis_years):
-        pv_string = ','.join(
-            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
-             for idx in range(len(pv_data))]
-        )
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
-            "{wind_macrs_option_cell}=7), {col}{total_operating_row}, 0)"
-        ).format(
-            batt_macrs_option_cell=batt_macrs_option_cell,
-            pv_string=pv_string,
-            wind_macrs_option_cell=wind_macrs_option_cell,
-            total_operating_row=total_operating_row,
-            col=upper_case_letters[i + 2]
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    total_deductions_row = current_row
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
     # Incentives
     ####################################################################################################################
     ####################################################################################################################
@@ -1776,15 +1747,29 @@ def generate_proforma(scenariomodel, output_file_path):
 
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
+
     current_row += 1
     dcs['A{}'.format(current_row)] = "Deductions"
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Deductible operating expenses"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
+
     for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}{}'.format(
-            upper_case_letters[i + 2], total_deductions_row)
+        pv_string = ','.join(
+            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
+             for idx in range(len(pv_data))]
+        )
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
+            "{wind_macrs_option_cell}=7), {col}{total_operating_row}, 0)"
+        ).format(
+            batt_macrs_option_cell=batt_macrs_option_cell,
+            pv_string=pv_string,
+            wind_macrs_option_cell=wind_macrs_option_cell,
+            total_operating_row=total_operating_row,
+            col=upper_case_letters[i + 2]
+        )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fed_total_deductions_row = current_row
