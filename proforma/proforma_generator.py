@@ -1067,12 +1067,17 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     # Annual Value Summary
     ####################################################################################################################
 
+    def fill_in_annual_values(row):
+        make_attribute_row(ws, row, length=financial.analysis_years + 2, alignment=center_align,
+                           number_format='#,##0')
+        fill_cols(ws, range(2, financial.analysis_years + 2), row, calculated_fill)
+        fill_cols(ws, range(1, 2), row, grey_fill)
+        
     ws['A{}'.format(current_row)] = "ANNUAL VALUES"
 
     for i in range(financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[i + 1], current_row)] = i
     make_title_row(ws, current_row, length=financial.analysis_years+2)
-
     current_row += 1
 
     for idx, pv in enumerate(pv_data):
@@ -1090,10 +1095,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             pv_cell_locations[idx]["pv_production_series"].append("\'{}\'!{}{}".format(
                 inandout_sheet_name, upper_case_letters[year+1], current_row))
             
-        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                           number_format='#,##0')
-        fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-        fill_cols(ws, range(1, 2), current_row, grey_fill)
+        fill_in_annual_values(current_row)
         current_row += 1
 
     ws['A{}'.format(current_row)] = "Wind Annual energy (kWh)"
@@ -1104,11 +1106,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(wind_energy_cell)
         wind_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                            current_row))
-
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Generator Annual energy (kWh)"
@@ -1119,10 +1117,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(generator_energy_cell)
         generator_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                 current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Total Annual energy (kWh)"
@@ -1133,11 +1128,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             '=SUM({col}{first_row}:{col}{last_row})'.format(
                 col=upper_case_letters[i+1], first_row=current_row-3, last_row=current_row-1
             )
-
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Electricity bill without system ($)"
@@ -1153,11 +1144,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             )
         electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                    current_row))
-
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
     cost_bau_row = current_row
 
     current_row += 1
@@ -1173,10 +1160,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 base_col="C", base_row=current_row, i=i - 1, escalation_pct_cell=escalation_pct_cell)
         electric_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
                                                                current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
     cost_row = current_row
 
     current_row += 1
@@ -1193,11 +1177,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 pv_degradation_rate_cell=pv_cell_locations[0]["pv_degradation_rate_cell"])
         export_credit_cell_series.append(
             "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
-
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
     export_credit_row = current_row
 
     current_row += 1
@@ -1214,10 +1194,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             col=upper_case_letters[1 + i], bau=cost_bau_row, export=export_credit_row, result=cost_row)
         value_of_savings_series.append(
             "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
+    fill_in_annual_values(current_row)
     current_row += 1
 
     for idx, pv in enumerate(pv_data):
