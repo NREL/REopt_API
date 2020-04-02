@@ -1328,13 +1328,13 @@ def generate_proforma(scenariomodel, output_file_path):
     for i, pv in enumerate(pv_data):
         dcs['A{}'.format(current_row)] = "{} cost in $/kW".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
-        for ii in range(1, financial.analysis_years + 1):
-            dcs['{}{}'.format(upper_case_letters[ii + 1], current_row)] = (
-                '=({pv_om_cost_us_dollars_per_kw_cell}*((1+{om_escalation_rate_cell}/100)^{i}))*{pv_size_kw_cell}'
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '=({pv_om_cost_us_dollars_per_kw_cell}*((1+{om_escalation_rate_cell}/100)^{year}))*{pv_size_kw_cell}'
             ).format(
                 pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
                 om_escalation_rate_cell=om_escalation_rate_cell,
-                i=ii - 1,
+                year=year,
                 pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"]
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1343,36 +1343,36 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Wind cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={} * ((1+({}/100))^{}) * {}'.format(
-            wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, i - 1, wind_size_kw_cell)
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={} * ((1 + ({}/100))^{}) * {}'.format(
+            wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, wind_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Generator cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={} * ((1+({}/100))^{}) * {}'.format(
-            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, i - 1, generator_size_kw_cell)
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={} * ((1 + ({}/100))^{}) * {}'.format(
+            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Generator cost in $/kWh"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={}*{} * ((1+({}/100))^{}) * {}'.format(
-            outage_cell_series[i], generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, i - 1,
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={}*{} * ((1 + ({}/100))^{}) * {}'.format(
+            outage_cell_series[year], generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
             generator_energy_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={}* {} * ((1+({}/100))^{})'.format \
-            (outage_cell_series[i], diesel_fuel_used_cost_cell, om_escalation_rate_cell, i - 1)
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={}* {} * ((1+({}/100))^{})'.format \
+            (outage_cell_series[year], diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
