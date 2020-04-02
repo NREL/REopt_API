@@ -455,33 +455,6 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Loan Parameters
-    ####################################################################################################################
-
-    ws['A{}'.format(current_row)] = "LOAN PARAMETERS"
-    make_title_row(ws, current_row)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Debt fraction (% of total installed cost)"
-    ws['B{}'.format(current_row)] = 0.0
-    debt_fraction_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Loan term (years)"
-    ws['B{}'.format(current_row)] = 0
-    loan_term_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Loan rate (%/year)"
-    ws['B{}'.format(current_row)] = 0
-    loan_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
     # Analysis Parameters
     ####################################################################################################################
 
@@ -1431,7 +1404,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Tax Deductable Expenses
+    # Tax Deductible Operating Expenses
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Tax Deductible Operating Expenses"
@@ -1460,105 +1433,8 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Debt
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Project Debt"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Debt sizing"
-    make_attribute_row(dcs, current_row, length=1, alignment=right_align, number_format='#,##0', border=no_border)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Total installed cost less IBI and CBI"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    total_installed_cost_minus_incentives_cell = 'B{}'.format(current_row)
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    total_debt_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Debt amount"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    dcs['B{}'.format(current_row)] = "=B{} * ({}/100)".format(current_row - 1, debt_fraction_cell)
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    debt_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Equity"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    dcs['B{}'.format(current_row)] = "=B{} - B{}".format(total_debt_row, debt_row)
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    fill_border(dcs, range(1, 2), current_row, border_top)
-    equity_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Debt payments"
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Balance"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    dcs['C{}'.format(current_row)] = '=B{}'.format(current_row - 3)
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 3], current_row)] = \
-            '=IF({i}<{loan_term}, {col}{top} - {col}{bottom},0)'.format(
-                i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], top=current_row, bottom=current_row + 2)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    balance_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Interest"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = "=IF({}<{}, {}{}*({}/100),0)".format(
-            i, loan_term_cell, upper_case_letters[i + 2], balance_row, loan_rate_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    interest_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Principal"
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
-            '=IF({}<{}, -PPMT({}/100,{},{},$B${},0,0),0)'.format(
-                i, loan_term_cell, loan_rate_cell, i + 1, loan_term_cell, current_row - 5)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    principal_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Total P&I Payment"
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
-            '=IF({i}<{loan_term},SUM({col}{start}:{col}{end}),0)'.format(
-                i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], start=interest_row, end=principal_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    total_p_i_row = current_row
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
-    # Pre-tax cash flow
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Pre-tax cash flow"
-
-    dcs['B{}'.format(current_row)] = '=-B' + str(equity_row)
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '=-SUM({col}{start},{col}{end})'.format(
-            i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], start=total_operating_row, end=total_p_i_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    dcs['A{}'.format(current_row)].font = bold_font
-    pre_tax_cashflow_row = current_row
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
     # Incentives
+    ####################################################################################################################
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Direct Cash Incentives"
@@ -1817,7 +1693,6 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     total_incentive_row = current_row
-    dcs[total_installed_cost_minus_incentives_cell] = "={}-{}".format(installed_costs_cell, 'B{}'.format(current_row))
     current_row += 1
     current_row += 1
 
@@ -2282,16 +2157,15 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "After-tax annual costs"
-    dcs['B{}'.format(current_row)] = "=SUM({col}{debt_row},{col}{total_incentive_row}) - {installed_costs_cell}".format(
-        col='B', debt_row=debt_row, total_incentive_row=total_incentive_row, installed_costs_cell=installed_costs_cell)
+    dcs['B{}'.format(current_row)] = "={col}{total_incentive_row} - {installed_costs_cell}".format(
+        col='B', total_incentive_row=total_incentive_row, installed_costs_cell=installed_costs_cell)
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '=SUM({col}{tax_and_liability_row},{col}{total_incentive_row},{col}{pre_tax_cashflow_row})'
+            '=SUM({col}{tax_and_liability_row},{col}{total_incentive_row})'
         ).format(
             col=upper_case_letters[i + 2],
             tax_and_liability_row=tax_and_liability_row,
             total_incentive_row=total_incentive_row,
-            pre_tax_cashflow_row=pre_tax_cashflow_row
         )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -2321,20 +2195,18 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     dcs['A{}'.format(current_row)] = "After-tax cash flow"
     dcs['B{}'.format(current_row)] = "=B{}+B{}".format(after_tax_cost_row, value_of_savings_row)
-    full_cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name)
-    cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name)
+    full_cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+                               + upper_case_letters[1] + str(current_row) + ":" \
+                               + upper_case_letters[financial.analysis_years + 1] + str(current_row)
+    cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+                          + upper_case_letters[2] + str(current_row) + ":" \
+                          + upper_case_letters[financial.analysis_years + 1] + str(current_row)
     year_0_cashflow_cell = None
 
     for i in range(financial.analysis_years + 1):
         if i == 0:
             year_0_cashflow_cell = "\'{}\'!".format(developer_cashflow_sheet_name) + upper_case_letters[i + 1] \
                                    + str(current_row)
-            full_cashflow_cell_range += upper_case_letters[i + 1] + str(current_row) + ":"
-        if i == 1:
-            cashflow_cell_range += upper_case_letters[i + 1] + str(current_row) + ":"
-        if i == financial.analysis_years:
-            cashflow_cell_range += upper_case_letters[i + 1] + str(current_row)
-            full_cashflow_cell_range += upper_case_letters[i + 1] + str(current_row)
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
             "=SUM({col}{after_tax_cost_row}:{col}{after_tax_value_row})"
         ).format(
@@ -2466,13 +2338,10 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['D{}'.format(current_row)] = "IRR, %"
     ws['E{}'.format(current_row)] = (
-        "=IF({loan_term_cell}=0,IRR({full_cashflow_cell_range}, {discount_rate_cell}/100),IRR({cashflow_cell_range},"
-        "{discount_rate_cell}/100))"
-    ).format(
-        loan_term_cell=loan_term_cell,
-        full_cashflow_cell_range=full_cashflow_cell_range,
-        discount_rate_cell=discount_rate_cell,
-        cashflow_cell_range=cashflow_cell_range
+        "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
+        ).format(
+            full_cashflow_cell_range=full_cashflow_cell_range,
+            discount_rate_cell=discount_rate_cell,
     )
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
