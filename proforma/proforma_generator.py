@@ -1071,7 +1071,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
 
     for i in range(financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[i + 1], current_row)] = i
-    make_title_row(ws, current_row, length=financial.analysis_years + 2)
+    make_title_row(ws, current_row, length=financial.analysis_years+2)
 
     current_row += 1
 
@@ -1090,7 +1090,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             pv_cell_locations[idx]["pv_production_series"].append("\'{}\'!{}{}".format(
                 inandout_sheet_name, upper_case_letters[year+1], current_row))
             
-        make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                            number_format='#,##0')
         fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
         fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1105,7 +1105,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         wind_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                            current_row))
 
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1119,7 +1119,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(generator_energy_cell)
         generator_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                 current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1134,7 +1134,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 col=upper_case_letters[i+1], first_row=current_row-3, last_row=current_row-1
             )
 
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1153,7 +1153,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
                                                                    current_row))
 
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1172,7 +1172,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 base_col="C", base_row=current_row, i=i - 1, escalation_pct_cell=escalation_pct_cell)
         electric_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
                                                                current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1193,7 +1193,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         export_credit_cell_series.append(
             "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
 
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1213,7 +1213,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             col=upper_case_letters[1 + i], bau=cost_bau_row, export=export_credit_row, result=cost_row)
         value_of_savings_series.append(
             "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1231,7 +1231,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             ws[upper_case_letters[2 + ii] + str(current_row)] = 0
             pv_cell_locations[idx]["pv_macrs_cells"].append("\'{}\'!".format(
                 inandout_sheet_name) + upper_case_letters[2 + ii] + str(current_row))
-        make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align)
+        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
         fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
         fill_cols(ws, range(1, 2), current_row, grey_fill)
         current_row += 1
@@ -1245,7 +1245,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(wind.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         wind_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
 
@@ -1261,7 +1261,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(batt.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         batt_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
 
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1276,7 +1276,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(3, financial.analysis_years + 1):
         ws[upper_case_letters[1 + i] + str(current_row)] = '=D{}'.format(current_row)
         outage_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
     current_row += 1
 
     ####################################################################################################################
@@ -1295,7 +1295,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     dcs['A{}'.format(current_row)] = "Operating Year"
     for i in range(financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = i
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     current_row += 1
 
@@ -1304,7 +1304,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Production"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
 
     for idx, pv in enumerate(pv_data):
@@ -1313,7 +1313,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         for ii in range(len(pv_cell_locations[idx]['pv_production_series'])):
             dcs['{}{}'.format(upper_case_letters[ii + 2], current_row)] = '={}'.format(
                 pv_cell_locations[idx]['pv_production_series'][ii])
-        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         pv_cell_locations[idx]['pv_prod_row'] = current_row
         current_row += 1
@@ -1322,7 +1322,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     dcs['B{}'.format(current_row)] = 0
     for i in range(len(wind_production_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_production_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     wind_prod_row = current_row
 
@@ -1331,7 +1331,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     dcs['B{}'.format(current_row)] = 0
     for i in range(len(generator_production_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(generator_production_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     current_row += 1
@@ -1341,13 +1341,13 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Savings"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Value of electricity savings ($)"
     dcs['B{}'.format(current_row)] = 0
     for i in range(len(value_of_savings_series)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(value_of_savings_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     value_of_savings_row = current_row
     current_row += 1
@@ -1358,10 +1358,10 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Operating Expenses"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     start_om_row = current_row
@@ -1377,7 +1377,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 i=ii - 1,
                 pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"]
             )
-        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         current_row += 1
 
@@ -1386,7 +1386,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={} * ((1+({}/100))^{}) * {}'.format(
             wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, i - 1, wind_size_kw_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
@@ -1395,7 +1395,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={} * ((1+({}/100))^{}) * {}'.format(
             generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, i - 1, generator_size_kw_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
@@ -1405,7 +1405,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={}*{} * ((1+({}/100))^{}) * {}'.format(
             outage_cell_series[i], generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, i - 1,
             generator_energy_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
@@ -1413,7 +1413,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '={}* {} * ((1+({}/100))^{})'.format \
             (outage_cell_series[i], diesel_fuel_used_cost_cell, om_escalation_rate_cell, i - 1)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Battery kW replacement cost "
@@ -1421,7 +1421,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=IF({}={},{}*{},0)'.format(
             i, batt_replace_year_cell, batt_size_kw_cell, batt_replace_cost_us_dollars_per_kw_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Battery kWh replacement cost "
@@ -1429,14 +1429,14 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=IF({}={},{}*{},0)'.format(
             i, batt_replace_year_cell, batt_size_kwh_cell, batt_replace_cost_us_dollars_per_kwh_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total operating expenses"
     for i in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=SUM({col}{start_row}:{col}{end_row})'.format(
             col=upper_case_letters[i + 1], start_row=start_om_row, end_row=current_row - 1)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
     total_operating_row = current_row
@@ -1448,7 +1448,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Tax Deductible Operating Expenses"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total deductible expenses"
     for i in range(financial.analysis_years):
@@ -1466,7 +1466,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             total_operating_row=total_operating_row,
             col=upper_case_letters[i + 2]
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     total_deductions_row = current_row
     current_row += 1
@@ -1477,7 +1477,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Project Debt"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Debt sizing"
@@ -1516,7 +1516,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         dcs['{}{}'.format(upper_case_letters[i + 3], current_row)] = \
             '=IF({i}<{loan_term}, {col}{top} - {col}{bottom},0)'.format(
                 i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], top=current_row, bottom=current_row + 2)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     balance_row = current_row
 
@@ -1526,7 +1526,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = "=IF({}<{}, {}{}*({}/100),0)".format(
             i, loan_term_cell, upper_case_letters[i + 2], balance_row, loan_rate_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     interest_row = current_row
 
@@ -1536,7 +1536,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
             '=IF({}<{}, -PPMT({}/100,{},{},$B${},0,0),0)'.format(
                 i, loan_term_cell, loan_rate_cell, i + 1, loan_term_cell, current_row - 5)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     principal_row = current_row
 
@@ -1546,7 +1546,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
             '=IF({i}<{loan_term},SUM({col}{start}:{col}{end}),0)'.format(
                 i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], start=interest_row, end=principal_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
     total_p_i_row = current_row
@@ -1563,7 +1563,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '=-SUM({col}{start},{col}{end})'.format(
             i=i, loan_term=loan_term_cell, col=upper_case_letters[i + 2], start=total_operating_row, end=total_p_i_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     dcs['A{}'.format(current_row)].font = bold_font
     pre_tax_cashflow_row = current_row
@@ -1575,7 +1575,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Direct Cash Incentives"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
 
     ####################################################################################################################
@@ -1802,7 +1802,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 i, pv_cell_locations[idx]["pv_pbi_years_cell"], pv_cell_locations[idx]["pv_pbi_cell"],
                 upper_case_letters[i + 2], pv_cell_locations[idx]["pv_prod_row"],
                 pv_cell_locations[idx]["pv_pbi_max_cell"])
-        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_pbi_total_row"] = current_row
         current_row += 1
@@ -1813,7 +1813,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = "=IF({}<{},MIN({}*{}{},{}),0)".format(
             i, wind_pbi_years_cell, wind_pbi_cell, upper_case_letters[i + 2], wind_prod_row, wind_pbi_max_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     wind_pbi_total_row = current_row
 
@@ -1827,7 +1827,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '=SUM({col}{start}:{col}{end})'.format(
             col=upper_case_letters[i + 2], start=start_pbi_total_row, end=end_pbi_total_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     total_incentive_row = current_row
     dcs[total_installed_cost_minus_incentives_cell] = "={}-{}".format(installed_costs_cell, 'B{}'.format(current_row))
@@ -1839,7 +1839,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Federal Income Tax"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total taxable income before deductions"
     fed_total_income_row = current_row
@@ -1912,7 +1912,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             wind_pbi_total_row=wind_pbi_total_row
         )
 
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Deductions"
@@ -1923,7 +1923,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}{}'.format(
             upper_case_letters[i + 2], total_deductions_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fed_total_deductions_row = current_row
 
@@ -1943,7 +1943,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         for i in range(len(pv_cell_locations[idx]["pv_macrs_cells"])):
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(
                 pv_cell_locations[idx]["pv_macrs_cells"][i])
-        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0.0000', border=no_border)
         pv_cell_locations[idx]["pv_macrs_percent_row"] = current_row
 
@@ -1981,7 +1981,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                         col=upper_case_letters[i + 2],
                         macrs_row=pv_cell_locations[idx]["pv_macrs_percent_row"]
                     )
-        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_fed_income_total"] = current_row
         current_row += 1
@@ -1999,7 +1999,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     for i in range(len(wind_macrs_cells)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_macrs_cells[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0.0000', border=no_border)
     wind_macrs_percent_row = current_row
 
@@ -2028,7 +2028,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         else:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
                 basis_cell=wind_basis_cell, col=upper_case_letters[i + 2], macrs_row=wind_macrs_percent_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     wind_fed_income_total = current_row
     current_row += 1
@@ -2046,7 +2046,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     for i in range(len(batt_macrs_cells)):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(batt_macrs_cells[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0.0000', border=no_border)
     batt_macrs_percent_row = current_row
 
@@ -2074,7 +2074,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         else:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
                 basis_cell=batt_basis_cell, col=upper_case_letters[i + 2], macrs_row=batt_macrs_percent_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     batt_fed_income_total = current_row
     current_row += 1
@@ -2093,7 +2093,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             '=SUM({col}{deductable},{pv_string},{col}{wind},{col}{batt})'.format(
                 col=upper_case_letters[i + 2], deductable=fed_total_deductions_row, pv_string=pv_string,
                 wind=wind_fed_income_total, batt=batt_fed_income_total)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fed_total_calc_deductions_row = current_row
 
@@ -2102,7 +2102,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{top}-{col}{bottom}'.format(
             col=upper_case_letters[i + 2], top=fed_total_income_row, bottom=fed_total_calc_deductions_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fed_taxable_income_row = current_row
 
@@ -2111,7 +2111,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{top}*({fed_tax_rate}/100)'.format(
             col=upper_case_letters[i + 2], top=fed_taxable_income_row, fed_tax_rate=fed_tax_rate_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     income_taxes_row = current_row
     current_row += 1
@@ -2282,7 +2282,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             wind_federal_itc_amount_row=wind_federal_itc_amount_row,
             batt_federal_itc_amount_row=batt_federal_itc_amount_row,
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
     tax_and_liability_row = current_row
@@ -2306,7 +2306,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             total_incentive_row=total_incentive_row,
             pre_tax_cashflow_row=pre_tax_cashflow_row
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     after_tax_cost_row = current_row
     current_row += 1
@@ -2328,7 +2328,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             batt_macrs_option_cell=batt_macrs_option_cell,
             wind_macrs_option_cell=wind_macrs_option_cell
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     after_tax_value_row = current_row
     current_row += 1
@@ -2355,7 +2355,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             after_tax_cost_row=after_tax_cost_row,
             after_tax_value_row=after_tax_value_row
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(1, financial.analysis_years + 2), current_row, border_top)
     dcs['A{}'.format(current_row)].font = bold_font
@@ -2368,7 +2368,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
 
     if financial.two_party_ownership:
         dcs['A{}'.format(current_row)] = "Income from Host"
-        make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+        make_title_row(dcs, current_row, length=financial.analysis_years+2)
 
         # =-1*('Developer Cash Flow'!B98+NPV('Inputs and Outputs'!B47/100,'Developer Cash Flow'!C98:'Developer Cash Flow'!AA98))/(NPV('Inputs and Outputs'!B47/100,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)*(1-'Inputs and Outputs'!B50/100))
         # annual_income_from_host = "=-('{dcs_sn}'!B105+NPV('{ws_sn}'!B47/100,'{dcs_sn}'!C98:'{dcs_sn}'!AA105))/(NPV('{ws_sn}'!B47/100,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)*(1-'Inputs and Outputs'!B50/100))".format(
@@ -2389,7 +2389,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "LCC Calculation"
-    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Net annual costs without system (after tax)"
     dcs['B{}'.format(current_row)] = '=-{}'.format(electric_bau_costs_cell_series[0])
@@ -2407,7 +2407,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             electric_bau_costs_cell=electric_bau_costs_cell_series[i],
             fed_tax_rate_cell=fed_tax_rate_cell
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Net annual costs with system (after tax)"
@@ -2428,7 +2428,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             electric_cost=electric_costs_cell_series[i],
             export_credit=export_credit_cell_series[i]
         )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     ####################################################################################################################
@@ -2512,6 +2512,6 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
         hcs['A{}'.format(current_row)] = "Operating Year"
         for i in range(financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = i
-        make_title_row(hcs, current_row, length=financial.analysis_years + 2)
+        make_title_row(hcs, current_row, length=financial.analysis_years+2)
 
     wb.save(output_file_path)
