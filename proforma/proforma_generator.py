@@ -1114,12 +1114,10 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     ws['A{}'.format(current_row)] = "Generator Annual energy (kWh)"
     ws['B{}'.format(current_row)] = 0
     generator_production_series = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
-    ws['C{}'.format(current_row)] = '={}'.format(generator_energy_cell)
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i], current_row)] = '={prev_col}{row}'.format(
-            prev_col=upper_case_letters[i], row=current_row)
-        generator_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(generator_energy_cell)
+        generator_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                 current_row))
     make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
                        number_format='#,##0')
