@@ -1142,8 +1142,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Electricity bill without system ($)"
     ws['B{}'.format(current_row)] = 0
-    electric_bau_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row), "\'{}\'!{}{}".format(
-        inandout_sheet_name, "C", current_row)]
+    electric_bau_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row)]
 
     for year in range(1, financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
@@ -1152,7 +1151,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
                 escalation_pct=escalation_pct_cell,
                 year=year,
             )
-        electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + year],
+        electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                    current_row))
 
     make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
@@ -2394,20 +2393,17 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Net annual costs without system (after tax)"
-    dcs['B{}'.format(current_row)] = '=-{}'.format(electric_bau_costs_cell_series[0])
     year_0_bau_cost_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
-    bau_cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name)
-    for i in range(1, financial.analysis_years + 1):
-        if i == 1:
-            bau_cost_cell_range += upper_case_letters[i + 1] + str(current_row) + ":"
-        if i == financial.analysis_years:
-            bau_cost_cell_range += upper_case_letters[i + 1] + str(current_row)
+    bau_cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+                          + upper_case_letters[2] + str(current_row) + ":" \
+                          + upper_case_letters[financial.analysis_years+1] + str(current_row)
 
+    for i in range(financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
-            '=-({electric_bau_costs_cell}*(1-{fed_tax_rate_cell}/100))'
+            '=-{electric_bau_cost} * (1 - {fed_tax_rate}/100)'
         ).format(
-            electric_bau_costs_cell=electric_bau_costs_cell_series[i],
-            fed_tax_rate_cell=fed_tax_rate_cell
+            electric_bau_cost=electric_bau_costs_cell_series[i],
+            fed_tax_rate=fed_tax_rate_cell,
         )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
