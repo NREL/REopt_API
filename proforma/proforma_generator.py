@@ -1142,15 +1142,17 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Electricity bill without system ($)"
     ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = '={}'.format(year_one_bau_bill_cell)
     electric_bau_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row), "\'{}\'!{}{}".format(
         inandout_sheet_name, "C", current_row)]
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i], current_row)] = \
-            '=${base_col}${base_row}*(1+{escalation_pct_cell}/100)^{i}'.format(
-                base_col="C", base_row=current_row, i=i - 1, escalation_pct_cell=escalation_pct_cell)
-        electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '={year_one_bau_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+                year_one_bau_bill=year_one_bau_bill_cell,
+                escalation_pct=escalation_pct_cell,
+                year=year,
+            )
+        electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + year],
                                                                    current_row))
 
     make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align,
