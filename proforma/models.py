@@ -54,9 +54,7 @@ class ProForma(models.Model):
     @classmethod
     def create(cls, scenariomodel, **kwargs ):
         pf = cls(scenariomodel = scenariomodel, **kwargs)
-
         file_dir = os.path.dirname(pf.output_file)
-        
         if not os.path.exists(file_dir):
             os.mkdir(file_dir)
         pf.save()        
@@ -65,10 +63,6 @@ class ProForma(models.Model):
     @property
     def sheet_io(self):
         return "Inputs and Outputs"
-
-    @property
-    def file_template(self):
-        return os.path.join('proforma', "REoptCashFlowTemplate.xlsm")
 
     @property
     def output_file_name(self):
@@ -83,6 +77,6 @@ class ProForma(models.Model):
           
     def generate_spreadsheet(self):
         log.info("Generating proforma spreadsheet")
-        generate_proforma(self.scenariomodel, self.file_template, self.output_file)
+        generate_proforma(self.scenariomodel, self.output_file)
         self.spreadsheet_created = tzlocal.get_localzone().localize(datetime.datetime.now())
         return True

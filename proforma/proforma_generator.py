@@ -1,11 +1,15 @@
+import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
 from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, \
     LoadProfileModel
 from openpyxl import load_workbook
 from reo.src.dat_file_manager import big_number
 
+one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
+two_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateTwoParty.xlsm')
 
-def generate_proforma(scenariomodel, template_workbook, output_file_path):
+
+def generate_proforma(scenariomodel, output_file_path):
     """
     In this method we first collect and organize the data from the data bases. Then we set up styles and methods to
     apply styles to columms within a row.
@@ -42,13 +46,18 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     loadprofile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
-    wb = load_workbook(template_workbook, read_only=False, keep_vba=True)
+    if financial.two_party_ownership is True:
+        wb = load_workbook(two_party_workbook, read_only=False, keep_vba=True)
+        developer_cashflow_sheet_name = 'Developer Cash Flow'
+        host_cashflow_sheet_name = 'Host Cash Flow'
+    else:
+        wb = load_workbook(one_party_workbook, read_only=False, keep_vba=True)
+        developer_cashflow_sheet_name = 'Optimal Cash Flow'
+        host_cashflow_sheet_name = 'BAU Cash Flow'
 
     # Open Inputs Sheet
     ws = wb.get_sheet_by_name('Inputs and Outputs')
     inandout_sheet_name = 'Inputs and Outputs'
-    developer_cashflow_sheet_name = 'Developer Cash Flow'
-    host_cashflow_sheet_name = 'Host Cash Flow'
 
     # handle None's
     pv_cell_locations = {}
