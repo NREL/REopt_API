@@ -663,7 +663,7 @@ class DatFileManager:
         """
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
-        tech_in_class = list()  # array(TechClass)
+        techs_in_class = list()  # array(TechClass)
         for tc in self.available_tech_classes:
             if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
                 if hasattr(eval('self.' + tc.lower()), 'existing_kw'):
@@ -689,11 +689,14 @@ class DatFileManager:
                         tech_to_tech_class.append(0)
 
         for tc in self.available_tech_classes:
+            class_list = list()
             for tech in techs:
                 if eval('self.' + tech) is not None:
-                    tech_in_class.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                    if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
+                        class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+            techs_in_class.append(class_list)
 
-        return tech_class_min_size, tech_to_tech_class, tech_in_class
+        return tech_class_min_size, tech_to_tech_class, techs_in_class
 
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
@@ -760,8 +763,8 @@ class DatFileManager:
 
         load_list = ['1R', '1W', '1X', '1S']  # same for BAU
 
-        tech_class_min_size, tech_to_tech_class, tech_in_class = self._get_REopt_tech_classes(self.available_techs, False)
-        tech_class_min_size_bau, tech_to_tech_class_bau, tech_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
+        tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
+        tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
@@ -821,17 +824,21 @@ class DatFileManager:
 
 
         subdivisions = ['CapCost','FuelBurn']
-        fuel_type = ['Diesel'] if 'GENERATOR' in reopt_techs else []
-        fuel_type_bau = ['Diesel'] if 'GENERATOR' in reopt_techs_bau else []
+        fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
+        fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
         subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
 
-        techs_by_fuel_type = [['GENERATOR']] if 'GENERATOR' in reopt_techs else [[]]
-        techs_by_fuel_type_bau = [['GENERATOR']] if 'GENERATOR' in reopt_techs_bau else [[]]
+        # There are no cost curves yet
+        seg_by_tech_subdivision = [[1 for _ in reopt_techs] for __ in subdivisions]
+        seg_by_tech_subdivision_bau = [[1 for _ in reopt_techs_bau] for __ in subdivisions]
 
-        fuel_type_by_tech = [['Diesel']] if 'GENERATOR' in reopt_techs else [[]]
-        fuel_type_by_tech_bau = [['Diesel']] if 'GENERATOR' in reopt_techs_bau else [[]]
+        techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
+        techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
+
+        fuel_type_by_tech = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs]
+        fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
 
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
@@ -937,9 +944,9 @@ class DatFileManager:
             'ElecStorage':['Elec'],
             'FuelTypeByTech': fuel_type_by_tech,
             'SubdivisionByTech':subdivisions_by_tech,
-            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
+            'SegByTechSubdivision':seg_by_tech_subdivision,
             'TechsChargingStorage':techs_charging_storage,
-            'TechsInClass':tech_in_class,
+            'TechsInClass':techs_in_class,
             'TechsByFuelType':techs_by_fuel_type,
             'ElectricTechs':reopt_techs,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
@@ -1047,13 +1054,11 @@ class DatFileManager:
             'ElecStorage':[],
             'FuelTypeByTech': fuel_type_by_tech_bau,
             'SubdivisionByTech':subdivisions_by_tech,
-            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
+            'SegByTechSubdivision':seg_by_tech_subdivision_bau,
             'TechsChargingStorage':techs_charging_storage,
-            'TechsInClass':tech_in_class,
+            'TechsInClass':techs_in_class_bau,
             'TechsByFuelType':techs_by_fuel_type,
             'ElectricTechs':reopt_techs,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
             }
-
-        import ipdb;ipdb.set_trace()

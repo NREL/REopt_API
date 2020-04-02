@@ -380,27 +380,43 @@ function build_param(args...;
     NMILLimits = parameter(NMILRegime, NMILLimits)
     TechToNMILMapping = parameter((Tech, NMILRegime), TechToNMILMapping)
     OMcostPerUnitProd = parameter(Tech, OMcostPerUnitProd)
-	StoragePowerCost = parameter(Storage, StoragePowerCost)
-	StorageEnergyCost = parameter(Storage, StorageEnergyCost)
-	FuelCost = parameter(FuelType, FuelCost)
-	ElecRate = parameter((PricingTier,TimeStep), ElecRate)
-	GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
-	FuelBurnSlope = parameter(Tech, FuelBurnSlope)
-	FuelBurnYInt = parameter(Tech, FuelBurnYInt)
-	MaxGridSales = parameter(PricingTier, MaxGridSales)
-	ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
-	ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
-	ElecLoad = parameter(TimeStep, ElecLoad)
-	FuelLimit = parameter(FuelType, FuelLimit)
-	#ChargeEfficiency = parameter(Storage, ChargeEfficiency) # does this need to be indexed on techs?
-	GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
-	DischargeEfficiency = parameter(Storage, DischargeEfficiency)
+
+    # Reformulation additions
+    StoragePowerCost = parameter(Storage, StoragePowerCost)
+    StorageEnergyCost = parameter(Storage, StorageEnergyCost)
+    FuelCost = parameter(FuelType, FuelCost)
+    ElecRate = parameter((PricingTier,TimeStep), ElecRate)
+    GridExportRates = parameter((PricingTier, TimeStep), GridExportRates)
+    FuelBurnSlope = parameter(Tech, FuelBurnSlope)
+    FuelBurnYInt = parameter(Tech, FuelBurnYInt)
+    MaxGridSales = parameter(PricingTier, MaxGridSales)
+    ProductionFactor = parameter((Tech, TimeStep), ProductionFactor)
+    ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
+    ElecLoad = parameter(TimeStep, ElecLoad)
+    FuelLimit = parameter(FuelType, FuelLimit)
+    #ChargeEfficiency = parameter(Storage, ChargeEfficiency) # does this need to be indexed on techs?
+    GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
+    DischargeEfficiency = parameter(Storage, DischargeEfficiency)
     StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
     StorageMaxSizeEnergy = parameter(Storage, StorageMaxSizeEnergy)
     StorageMinSizePower = parameter(Storage, StorageMinSizePower)
     StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
     StorageMinSOC = parameter(Storage, StorageMinSOC)
     StorageInitSOC = parameter(Storage, StorageInitSOC)
+
+    println("FuelTypeByTech: ", FuelTypeByTech)
+    println("SubdivisionByTech: ", SubdivisionByTech)
+    println("SegByTechSubdivision: ", SegByTechSubdivision)
+    println("TechsInClass: ", TechsInClass)
+    println("TechsByFuelType: ", TechsByFuelType)
+    println("TechsNoTurndown: ", TechsNoTurndown)
+
+    # Indexed Sets
+    #FuelTypeByTech = parameter(Tech, FuelTypeByTech)
+    SubdivisionByTech = parameter(Tech, SubdivisionByTech)
+    SegByTechSubdivision = parameter((Subdivision, Tech), SegByTechSubdivision)
+    TechsInClass = parameter(TechClass, TechsInClass)
+    TechsByFuelType = parameter(FuelType, TechsByFuelType)
 
     param = Parameter(
                 TechClass,
