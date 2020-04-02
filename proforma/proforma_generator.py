@@ -7,26 +7,26 @@ from reo.src.dat_file_manager import big_number
 
 def generate_proforma(scenariomodel, template_workbook, output_file_path):
     """
-	In this method we first collect and organize the data from the data bases. Then we set up styles and methods to 
-	apply styles to columms within a row.
-	We use a cursor (current_row) to start at the top of the Inputs and Outputs sheet (referred to as ws) then work down
-	filling in values, styles and cell references as necessary.
-	We next move down the Developer and Host Cash Flow sheets (referred to as dcs and hcs respectively), filling in only
-	references (no hard coded values other than year references).
-	Finally, we return to the Inputs and Outputs sheet to fill in LCC, NPV enires. 
+    In this method we first collect and organize the data from the data bases. Then we set up styles and methods to
+    apply styles to columms within a row.
+    We use a cursor (current_row) to start at the top of the Inputs and Outputs sheet (referred to as ws) then work down
+    filling in values, styles and cell references as necessary.
+    We next move down the Developer and Host Cash Flow sheets (referred to as dcs and hcs respectively), filling in only
+    references (no hard coded values other than year references).
+    Finally, we return to the Inputs and Outputs sheet to fill in LCC, NPV enires.
 
-	As the cursor is being updated we captures rows and cells that need to be later used as variables, or in the case of
-	PV's (which can have multiple values), as dictionary entries.
+    As the cursor is being updated we captures rows and cells that need to be later used as variables, or in the case of
+    PV's (which can have multiple values), as dictionary entries.
     Examples:
-    
-	line 242 wind_size_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
 
-	line 352 pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"] = "\'{}\'!B{}".format(inandout_sheet_name,
-																							 current_row)
-	
-	When copying and pasting sections of code, pay attention to when the current_row cursor is being updated and any 
-	reference variables that need to be captured.
-	"""
+    line 242 wind_size_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+
+    line 352 pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"] = "\'{}\'!B{}".format(inandout_sheet_name,
+                                                                                             current_row)
+
+    When copying and pasting sections of code, pay attention to when the current_row cursor is being updated and any
+    reference variables that need to be captured.
+    """
 
     ####################################################################################################################
     # Get Data
@@ -332,7 +332,6 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Year 1 net energy produced with system (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data])
-    total_energy_cell = 'B{}'.format(current_row)
     make_attribute_row(ws, current_row)
     current_row += 1
     current_row += 1
@@ -1063,6 +1062,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     current_row += 1
     current_row += 1
 
+
     ####################################################################################################################
     # Annual Value Summary
     ####################################################################################################################
@@ -1072,20 +1072,7 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
     for i in range(financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[i + 1], current_row)] = i
     make_title_row(ws, current_row, length=financial.analysis_years + 2)
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Total Annual energy (kWh)"
-    ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = '={}'.format(total_energy_cell)
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i], current_row)] = \
-            '={prev_col}{row}*(1-{pv_degradation_rate_cell}/100)'.format(
-                prev_col=upper_case_letters[i], row=current_row,
-                pv_degradation_rate_cell=pv_cell_locations[0]["pv_degradation_rate_cell"])
-    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
-                       number_format='#,##0')
-    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
-    fill_cols(ws, range(1, 2), current_row, grey_fill)
     current_row += 1
 
     for idx, pv in enumerate(pv_data):
@@ -1132,6 +1119,21 @@ def generate_proforma(scenariomodel, template_workbook, output_file_path):
             prev_col=upper_case_letters[i], row=current_row)
         generator_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
                                                                 current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
+                       number_format='#,##0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Total Annual energy (kWh)"
+    ws['B{}'.format(current_row)] = 0
+
+    for i in range(1, financial.analysis_years+1):
+        ws['{}{}'.format(upper_case_letters[i+1], current_row)] = \
+            '=SUM({col}{first_row}:{col}{last_row})'.format(
+                col=upper_case_letters[i+1], first_row=current_row-3, last_row=current_row-1
+            )
+
     make_attribute_row(ws, current_row, length=financial.analysis_years + 2, alignment=center_align,
                        number_format='#,##0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
