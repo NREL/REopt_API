@@ -75,7 +75,9 @@ class DatFileManager:
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = ['util']
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.fuel_burning_techs = ['generator']  # order is critical for REopt!
+        self.electic_producing_techs = ['PV', 'PVNM', 'WIND', 'WINDNM', 'GENERATOR', 'UTIL1']
+        self.fuel_burning_techs = ['GENERATOR']
+        self.no_turndown_techs = ['PV', 'PVNM', 'WIND', 'WINDNM']
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps
@@ -532,6 +534,7 @@ class DatFileManager:
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
+        TechsByNMILRegime = list()
 
         for tech in techs:
 
@@ -544,7 +547,18 @@ class DatFileManager:
                         TechToNMILMapping.append(1)
                     else:
                         TechToNMILMapping.append(0)
-        return TechToNMILMapping
+
+        for regime in self.NMILRegime:
+            tech_nmil_reg = list()
+            for tech in techs:
+                if eval('self.' + tech) is not None:
+                    tech_regime = eval('self.' + tech + '.nmil_regime')
+                    if regime == tech_regime:
+                        TechsByNMILRegime.append(tech)
+
+            TechsByNMILRegime.append(tech_nmil_reg)
+
+        return TechToNMILMapping, TechsByNMILRegime
 
     def _get_REopt_array_tech_load(self, techs):
         """
@@ -716,11 +730,12 @@ class DatFileManager:
         return max_sizes, min_turn_down
 
 
-    def _get_tech_subdivisions(self, techs):
+    def _get_tech_subsets(self, techs):
         cc_techs=self.available_techs
         fb_techs=self.fuel_burning_techs
 
         tech_subdivisions = list()
+        tech_by = list()
         for tech in techs:
             tech_sub = list()
             if tech in cc_techs:
@@ -797,8 +812,8 @@ class DatFileManager:
                            bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
-        TechToNMILMapping = self._get_REopt_techToNMILMapping(self.available_techs)
-        TechToNMILMapping_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+        TechToNMILMapping, TechsByNMILRegime = self._get_REopt_techToNMILMapping(self.available_techs)
+        TechToNMILMapping_bau, TechsByNMILRegime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
         NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
                       self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
@@ -806,8 +821,9 @@ class DatFileManager:
 
 
         subdivisions = ['CapCost','FuelBurn']
-        tech_subdivisions = self._get_tech_subdivisions(reopt_techs)
-        tech_subdivisions_bau = self._get_tech_subdivisions(reopt_techs_bau)
+        subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
+        subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
+        techs_by_fuel_type = [['GENERATOR']]
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -894,23 +910,29 @@ class DatFileManager:
 	    'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	    'GridChargeEfficiency': grid_charge_efficiency,
 	    'DischargeEfficiency': discharge_efficiency,
-		  'StorageMinSizeEnergy':0,
-		  'StorageMaxSizeEnergy':0,
-		  'StorageMinSizePower':0,
-		  'StorageMaxSizePower':0,
-		  'StorageMinSOC':0,
-		  'StorageInitSOC':0,
+	    'StorageMinSizeEnergy':self.storage.min_kwh,
+	    'StorageMaxSizeEnergy':self.storage.max_kwh,
+	    'StorageMinSizePower':self.storage.min_kw,
+	    'StorageMaxSizePower':self.storage.max_kw,
+	    'StorageMinSOC':self.storage.soc_min_pct,
+	    'StorageInitSOC':self.storage.soc_init_pct,
             # Sets that need to be populated
             'Storage':['Elec'],
             'FuelType':['Diesel'],
             'Subdivision':subdivisions,
             'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':['Elec'],
-            'FuelTypeByTech':[['Diesel']],
-            'SubdivisionByTech':tech_subdivisions,
+            'FuelTypeByTech':techs_by_fuel_type,
+            'SubdivisionByTech':subdivisions_by_tech,
             'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
             'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':tech_in_class,
+            'TechsByFuelType':techs_by_fuel_type,
+            'ElectricTechs':reopt_techs,
+            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'TechsNoTurndown':self.no_turndown_techs,
+
+            # ask about pricing tiers in general I think it only applies to UTIL1
             }
 
         self.reopt_inputs_bau = {
@@ -998,12 +1020,26 @@ class DatFileManager:
 	    'ChargeEfficiency': charge_efficiency_bau,
 	    'GridChargeEfficiency': grid_charge_efficiency_bau,
 	    'DischargeEfficiency': discharge_efficiency_bau,
-		  'StorageMinSizeEnergy':0,
-		  'StorageMaxSizeEnergy':0,
-		  'StorageMinSizePower':0,
-		  'StorageMaxSizePower':0,
-		  'StorageMinSOC':0,
-		  'StorageInitSOC':0,
-        }
+	    'StorageMinSizeEnergy':0,
+	    'StorageMaxSizeEnergy':0,
+	    'StorageMinSizePower':0,
+	    'StorageMaxSizePower':0,
+	    'StorageMinSOC':self.storage.soc_min_pct,
+	    'StorageInitSOC':self.storage.soc_init_pct,
+            # Sets that need to be populated
+            'Storage':['Elec'],
+            'FuelType':['Diesel'],
+            'Subdivision':subdivisions,
+            'PricingTierCount':tariff_args.energy_tiers_num,
+            'ElecStorage':[],
+            'FuelTypeByTech':[['Diesel']],
+            'SubdivisionByTech':subdivisions_by_tech,
+            'SegByTechSubdivision':[[1 for _ in reopt_techs] for __ in subdivisions],
+            'TechsChargingStorage':techs_charging_storage,
+            'TechsInClass':tech_in_class,
+            'TechsByFuelType':techs_by_fuel_type,
+            'ElectricTechs':reopt_techs,
+            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'TechsNoTurndown':self.no_turndown_techs,        }
 
         #import ipdb;ipdb.set_trace()
