@@ -1127,55 +1127,51 @@ def generate_proforma(scenariomodel, output_file_path):
         electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                    current_row))
     fill_in_annual_values(current_row)
-    cost_bau_row = current_row
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Electricity bill with system before export credits ($)"
     ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = '={}'.format(year_one_bill_cell)
-    electric_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row), "\'{}\'!{}{}".format(
-        inandout_sheet_name, "C", current_row)]
+    electric_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row)]
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i], current_row)] = \
-            '=${base_col}${base_row}*(1+{escalation_pct_cell}/100)^{i}'.format(
-                base_col="C", base_row=current_row, i=i - 1, escalation_pct_cell=escalation_pct_cell)
-        electric_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i],
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '={year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+                year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
+            )
+        electric_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                                current_row))
     fill_in_annual_values(current_row)
-    cost_row = current_row
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Export credits with system ($)"
     ws['B{}'.format(current_row)] = 0
     ws['C{}'.format(current_row)] = '={}'.format(year_one_credits_cell)
-    export_credit_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row), "\'{}\'!{}{}".format(
-        inandout_sheet_name, "C", current_row)]
+    export_credit_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row)]
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i], current_row)] = \
-            '=${base_col}${base_row}*(1+{escalation_pct_cell}/100)^{i}*(1-{pv_degradation_rate_cell}/100)^{i}'.format(
-                base_col="C", base_row=current_row, i=i - 1, escalation_pct_cell=escalation_pct_cell,
-                pv_degradation_rate_cell=pv_cell_locations[0]["pv_degradation_rate_cell"])
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'.format(
+                year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
+                pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
         export_credit_cell_series.append(
-            "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
+            "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1], current_row))
     fill_in_annual_values(current_row)
-    export_credit_row = current_row
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Value of electricity savings ($)"
     ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = '={}-({}+{})'.format(electric_bau_costs_cell_series[1],
-                                                         electric_costs_cell_series[1],
-                                                         export_credit_cell_series[1])
-    value_of_savings_series = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
+    value_of_savings_series = list()
 
-    for i in range(2, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[1 + i],
-                         current_row)] = "={col}{bau}-({col}{result} + {col}{export})".format(
-            col=upper_case_letters[1 + i], bau=cost_bau_row, export=export_credit_row, result=cost_row)
+    for year in range(1, financial.analysis_years + 1):
+        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+            "={bau_cost}-({optimal_cost} + {export_credits})"  # TODO Make sure export credit is negative
+            ).format(
+            bau_cost=electric_bau_costs_cell_series[year], 
+            optimal_cost=electric_costs_cell_series[year], 
+            export_credits=export_credit_cell_series[year],
+        )
         value_of_savings_series.append(
-            "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
+            "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1], current_row))
     fill_in_annual_values(current_row)
     current_row += 1
 
