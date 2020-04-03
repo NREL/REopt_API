@@ -2461,43 +2461,5 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(hcs, current_row, length=financial.analysis_years+2)
 
     ####################################################################################################################
-    # Existing/BAU Production
-    ####################################################################################################################
-
-    hcs['A{}'.format(current_row)] = "Production"
-    make_title_row(hcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-
-    # need to scale these values by existing/purchased pv.existing_kw
-    for idx, pv in enumerate(pv_data):
-        hcs['A{}'.format(current_row)] = "{} Annual energy (AC kWh)".format(pv['name'])
-
-        for i in range(len(pv_cell_locations[idx]['pv_production_series'])):
-            hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(
-                pv_cell_locations[idx]['pv_production_series'][i])
-
-        make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                           number_format='#,##0', border=no_border)
-
-        pv_cell_locations[idx]['pv_prod_row'] = current_row
-        current_row += 1
-
-    hcs['A{}'.format(current_row)] = "Wind Annual energy (AC kWh)"
-    for i in range(len(wind_production_series)):
-        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_production_series[i])
-    make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    wind_prod_row = current_row
-
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Generator Annual energy (AC kWh)"
-    for i in range(len(generator_production_series)):
-        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(generator_production_series[i])
-    make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
     ####################################################################################################################
     wb.save(output_file_path)
