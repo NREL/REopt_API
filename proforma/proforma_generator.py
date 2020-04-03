@@ -95,12 +95,13 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_cost = wind_installed_kw * wind_installed_cost_us_dollars_per_kw
 
     generator_installed_kw = generator.size_kw or 0
-    if generator_installed_kw > 0 and generator.existing_kw > 0:
-        generator_installed_kw -= generator.existing_kw
+    generator_existing_kw = generator.existing_kw or 0
+    if generator_installed_kw > 0 and generator_existing_kw > 0:
+        generator_installed_kw -= generator_existing_kw
     generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
     generator_energy = generator.year_one_energy_produced_kwh or 0
-    generator_cost = generator_installed_kw * generator_installed_cost_us_dollars_per_kw
-    diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * generator.fuel_used_gal
+    generator_cost = generator_installed_kw or 0 * generator_installed_cost_us_dollars_per_kw or 0
+    diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon or 0 * generator.fuel_used_gal or 0
 
     ####################################################################################################################
     # Set up styling
@@ -277,7 +278,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Generator Nameplate capacity (kW), existing"
-    ws['B{}'.format(current_row)] = generator.existing_kw or 0
+    ws['B{}'.format(current_row)] = generator_existing_kw
     make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
