@@ -96,12 +96,13 @@ def generate_proforma(scenariomodel, output_file_path):
 
     generator_installed_kw = generator.size_kw or 0
     generator_existing_kw = generator.existing_kw or 0
+    gen_fuel_used_gal = generator.fuel_used_gal or 0
     if generator_installed_kw > 0 and generator_existing_kw > 0:
         generator_installed_kw -= generator_existing_kw
     generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
     generator_energy = generator.year_one_energy_produced_kwh or 0
     generator_cost = generator_installed_kw or 0 * generator_installed_cost_us_dollars_per_kw or 0
-    diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * generator.fuel_used_gal or 0
+    diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal
 
     ####################################################################################################################
     # Set up styling
@@ -1084,11 +1085,11 @@ def generate_proforma(scenariomodel, output_file_path):
 
     ws['A{}'.format(current_row)] = "Wind Annual energy (kWh)"
     ws['B{}'.format(current_row)] = 0
-    wind_production_series = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
+    wind_annual_kwh_cells = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
 
     for year in range(1, financial.analysis_years + 1):
         ws['{}{}'.format(upper_case_letters[year+1], current_row)] = '={}'.format(wind_energy_cell)
-        wind_production_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
+        wind_annual_kwh_cells.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
                                                            current_row))
     fill_in_annual_values(current_row)
 
@@ -1239,6 +1240,8 @@ def generate_proforma(scenariomodel, output_file_path):
 
     ####################################################################################################################
     ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
     # OPTIMAL / DEVELOPER CASH FLOW SHEET
     ####################################################################################################################
     ####################################################################################################################
@@ -1258,41 +1261,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
     current_row += 1
-
-    ####################################################################################################################
-    # Production
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Production"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-
-    for idx, pv in enumerate(pv_data):
-        dcs['A{}'.format(current_row)] = "{} Annual energy (AC kWh)".format(pv['name'])
-        for ii in range(len(pv_cell_locations[idx]['pv_production_series'])):
-            dcs['{}{}'.format(upper_case_letters[ii + 2], current_row)] = '={}'.format(
-                pv_cell_locations[idx]['pv_production_series'][ii])
-        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                           number_format='#,##0', border=no_border)
-        pv_cell_locations[idx]['pv_prod_row'] = current_row
-        current_row += 1
-
-    dcs['A{}'.format(current_row)] = "Wind Annual energy (AC kWh)"
-    for i in range(len(wind_production_series)):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_production_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    wind_prod_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Generator Annual energy (AC kWh)"
-    for i in range(len(generator_production_series)):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(generator_production_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    current_row += 1
-    current_row += 1
-
+    
     ####################################################################################################################
     # Operating Expenses
     ####################################################################################################################
@@ -1632,6 +1601,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    
     current_row += 1
     start_pbi_total_row = current_row
     for idx, pv in enumerate(pv_data):
@@ -1657,9 +1627,19 @@ def generate_proforma(scenariomodel, output_file_path):
     end_pbi_total_row = current_row
     dcs['A{}'.format(current_row)] = "Wind Combined PBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = "=IF({}<{},MIN({}*{}{},{}),0)".format(
-            i, wind_pbi_years_cell, wind_pbi_cell, upper_case_letters[i + 2], wind_prod_row, wind_pbi_max_cell)
+
+    for year in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
+                "=IF({year} < {pbi_year_limit}, "
+                "MIN({dol_per_kwh} * {wind_kwh}, {pbi_max}), 0)"
+                ).format(
+                year=year,
+                pbi_year_limit=wind_pbi_years_cell,
+                dol_per_kwh=wind_pbi_cell,
+                col=upper_case_letters[year+2],
+                wind_kwh=wind_annual_kwh_cells[year+1],
+                pbi_max=wind_pbi_max_cell,
+            )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     wind_pbi_total_row = current_row
