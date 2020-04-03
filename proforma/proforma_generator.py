@@ -1066,7 +1066,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for idx, pv in enumerate(pv_data):
         ws['A{}'.format(current_row)] = "{} Annual energy (kWh)".format(pv['name'])
         ws['B{}'.format(current_row)] = 0
-        pv_cell_locations[idx]["pv_production_series"] = ["\'{}\'!C{}".format(inandout_sheet_name, current_row)]
+        pv_cell_locations[idx]["pv_production_series"] = list()
 
         for year in range(1, financial.analysis_years + 1):
             ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
