@@ -256,6 +256,7 @@ def generate_proforma(scenariomodel, output_file_path):
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
         ws['A{}'.format(current_row)] = "{} Nameplate capacity (kW), existing".format(pv['name'])
+        pv_cell_locations[i]["pv_existing_kw_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         ws['B{}'.format(current_row)] = pv_data_entry["pv"].existing_kw or 0
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
@@ -1293,22 +1294,6 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Savings
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Savings"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Value of electricity savings ($)"
-    for i in range(len(value_of_savings_series)):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(value_of_savings_series[i])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    value_of_savings_row = current_row
-    current_row += 1
-    current_row += 1
-
-    ####################################################################################################################
     # Operating Expenses
     ####################################################################################################################
 
@@ -1325,12 +1310,14 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
         for year in range(1, financial.analysis_years + 1):
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '=({pv_om_cost_us_dollars_per_kw_cell}*((1+{om_escalation_rate_cell}/100)^{year}))*{pv_size_kw_cell}'
+                '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
+                ' * ({pv_size_kw_cell} + {pv_existing_kw_cell})'
             ).format(
                 pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
                 om_escalation_rate_cell=om_escalation_rate_cell,
                 year=year,
-                pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"]
+                pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
+                pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"],
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -1339,7 +1326,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Wind cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={} * ((1 + ({}/100))^{}) * {}'.format(
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * ((1 + ({}/100))^{}) * {}'.format(
             wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, wind_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1348,7 +1335,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={} * ((1 + ({}/100))^{}) * {}'.format(
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * ((1 + ({}/100))^{}) * {}'.format(
             generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1357,7 +1344,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator cost in $/kWh"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={}*{} * ((1 + ({}/100))^{}) * {}'.format(
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{}*{} * ((1 + ({}/100))^{}) * {}'.format(
             outage_cell_series[year], generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
             generator_energy_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1366,7 +1353,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '={}* {} * ((1+({}/100))^{})'.format \
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{}* {} * ((1+({}/100))^{})'.format \
             (outage_cell_series[year], diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1374,7 +1361,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Battery kW replacement cost "
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=IF({}={},{}*{},0)'.format(
+        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({}={},{}*{},0)'.format(
             i, batt_replace_year_cell, batt_size_kw_cell, batt_replace_cost_us_dollars_per_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1382,7 +1369,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Battery kWh replacement cost "
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=IF({}={},{}*{},0)'.format(
+        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({}={},{}*{},0)'.format(
             i, batt_replace_year_cell, batt_size_kwh_cell, batt_replace_cost_us_dollars_per_kwh_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1394,7 +1381,31 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    total_operating_row = current_row
+    opex_total_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
+
+    for year in range(1, financial.analysis_years + 1):
+        pv_string = ','.join(
+            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
+             for idx in range(len(pv_data))]
+        )
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
+            "{wind_macrs_option_cell}=7), {col}{opex_total_row}, 0)"
+        ).format(
+            batt_macrs_option_cell=batt_macrs_option_cell,
+            pv_string=pv_string,
+            wind_macrs_option_cell=wind_macrs_option_cell,
+            opex_total_row=opex_total_row,
+            col=upper_case_letters[year+1]
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    opex_tax_deductible_row = current_row
+    
     current_row += 1
     current_row += 1
 
@@ -1626,11 +1637,18 @@ def generate_proforma(scenariomodel, output_file_path):
     for idx, pv in enumerate(pv_data):
         dcs['A{}'.format(current_row)] = "{} Combined PBI".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
-        for i in range(financial.analysis_years):
-            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = "=IF({}<{},MIN({}*{}{},{}),0)".format(
-                i, pv_cell_locations[idx]["pv_pbi_years_cell"], pv_cell_locations[idx]["pv_pbi_cell"],
-                upper_case_letters[i + 2], pv_cell_locations[idx]["pv_prod_row"],
-                pv_cell_locations[idx]["pv_pbi_max_cell"])
+        for year in range(financial.analysis_years):
+            dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                "=IF({year} < {pbi_year_limit}, "
+                "MIN({dol_per_kwh} * {pv_kwh}, {pbi_max}), 0)"
+                ).format(
+                year=year, 
+                pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"], 
+                dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
+                col=upper_case_letters[year + 2],
+                pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
+                pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+            )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_pbi_total_row"] = current_row
@@ -1658,29 +1676,22 @@ def generate_proforma(scenariomodel, output_file_path):
             col=upper_case_letters[i + 2], start=start_pbi_total_row, end=end_pbi_total_row)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
-    total_incentive_row = current_row
-    current_row += 1
-    current_row += 1
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    total_cash_incentives_row = current_row
 
-    ####################################################################################################################
-    # Federal Tax
-    ####################################################################################################################
-
-    dcs['A{}'.format(current_row)] = "Federal Income Tax"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Total taxable income before deductions"
-    fed_total_income_row = current_row
+    dcs['A{}'.format(current_row)] = "Total taxable cash incentives"
+
     for i in range(financial.analysis_years):
         pv_cells = list()
         for idx in range(len(pv_data)):  # could be multiple PVs
             pv_cells.append(
                 ('IF({pv_ibi_sta_percent_tax_fed_cell}="Yes", {prev_col}{pv_state_ibi_row}, 0)'
-                 '+IF({pv_ibi_uti_percent_tax_fed_cell}="Yes", {prev_col}{pv_utility_ibi_row}, 0)'
-                 '+IF({pv_cbi_fed_tax_fed_cell}="Yes", {prev_col}{pv_federal_cbi_row} ,0)'
-                 '+IF({pv_cbi_sta_tax_fed_cell}="Yes", {prev_col}{pv_state_cbi_row}, 0)'
-                 '+IF({pv_cbi_uti_tax_fed_cell}="Yes", {prev_col}{pv_utility_cbi_row}, 0)'
-                 '+IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{pv_pbi_total_row}, 0)'
+                 ' + IF({pv_ibi_uti_percent_tax_fed_cell}="Yes", {prev_col}{pv_utility_ibi_row}, 0)'
+                 ' + IF({pv_cbi_fed_tax_fed_cell}="Yes", {prev_col}{pv_federal_cbi_row} ,0)'
+                 ' + IF({pv_cbi_sta_tax_fed_cell}="Yes", {prev_col}{pv_state_cbi_row}, 0)'
+                 ' + IF({pv_cbi_uti_tax_fed_cell}="Yes", {prev_col}{pv_utility_cbi_row}, 0)'
+                 ' + IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{pv_pbi_total_row}, 0)'
                  ).format(
                     col=upper_case_letters[i + 2],
                     pv_ibi_sta_percent_tax_fed_cell=pv_cell_locations[idx]["pv_ibi_sta_percent_tax_fed_cell"],
@@ -1739,55 +1750,18 @@ def generate_proforma(scenariomodel, output_file_path):
             wind_pbi_combined_tax_fed_cell=wind_pbi_combined_tax_fed_cell,
             wind_pbi_total_row=wind_pbi_total_row
         )
-
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
-    ####################################################################################################################
-    # Deductible O&M
-    ####################################################################################################################
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    total_taxable_cash_incentives_row = current_row
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Deductible operating expenses"
-    # dcs['A{}'.format(current_row)].alignment = one_tab_indent
-
-    for year in range(1, financial.analysis_years + 1):
-        pv_string = ','.join(
-            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
-             for idx in range(len(pv_data))]
-        )
-        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-            "=-IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
-            "{wind_macrs_option_cell}=7), {col}{total_operating_row}, 0)"
-        ).format(
-            batt_macrs_option_cell=batt_macrs_option_cell,
-            pv_string=pv_string,
-            wind_macrs_option_cell=wind_macrs_option_cell,
-            total_operating_row=total_operating_row,
-            col=upper_case_letters[year+1]
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fed_total_deductions_row = current_row
-
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Deductible operating expenses after-tax"
-
-    for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-            "={total_deductions} * (1 - {tax_rate}/100)"
-            ).format(
-            total_deductions="{}{}".format(upper_case_letters[year+1], fed_total_deductions_row),
-            tax_rate=fed_tax_rate_cell,
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    opex_after_tax_row = current_row
 
     ####################################################################################################################
-    # Depreciation
+    # Capital Depreciation
     ####################################################################################################################
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Depreciation"
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    dcs['A{}'.format(current_row)] = "Capital Depreciation"
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
 
     ####################################################################################################################
     # PV depreciation
@@ -1946,7 +1920,8 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
 
     dcs['A{}'.format(current_row)] = "Total depreciation"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    dcs['A{}'.format(current_row)].font = bold_font
+    # dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for i in range(financial.analysis_years):
         pv_string = ','.join(["{col}{pv}".format(
             col=upper_case_letters[i + 2],
@@ -1957,27 +1932,19 @@ def generate_proforma(scenariomodel, output_file_path):
                 wind=wind_fed_income_total, batt=batt_fed_income_total)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
-    fed_total_calc_deductions_row = current_row
-
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    total_depreciation_row = current_row
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Total depreciation less deductions"
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{top}+{col}{bottom}'.format(
-            col=upper_case_letters[i + 2], top=fed_total_income_row, bottom=fed_total_calc_deductions_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fed_taxable_income_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Depreciation Tax Shield"
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{top}*({fed_tax_rate}/100)'.format(
-            col=upper_case_letters[i + 2], top=fed_taxable_income_row, fed_tax_rate=fed_tax_rate_cell)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    income_taxes_row = current_row
     current_row += 1
 
+    ####################################################################################################################
+    # Federal ITC
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Federal Investment Tax Credit"
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
+
+    current_row += 1
     for idx, pv in enumerate(pv_data):
         dcs['A{}'.format(current_row)] = "Federal ITC basis: {}".format(pv["name"])
         dcs['B{}'.format(current_row)] = (
@@ -2125,105 +2092,236 @@ def generate_proforma(scenariomodel, output_file_path):
     batt_federal_itc_amount_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal tax savings/liability"
+    dcs['A{}'.format(current_row)] = "Total Federal ITC"
+    dcs['A{}'.format(current_row)].font = bold_font
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    for i in range(financial.analysis_years):
-        pv_string = ",".join([
-            "{col}{pv_federal_itc_amount_row}".format(
-                col=upper_case_letters[i + 2],
-                pv_federal_itc_amount_row=pv_cell_locations[idx]["pv_federal_itc_amount_row"])
-            for idx in range(len(pv_data))
-        ])
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '=SUM({col}{income_taxes_row},{pv_string},{col}{wind_federal_itc_amount_row},'
-            '{col}{batt_federal_itc_amount_row})'
-        ).format(
-            col=upper_case_letters[i + 2],
-            income_taxes_row=income_taxes_row,
-            pv_string=pv_string,
-            wind_federal_itc_amount_row=wind_federal_itc_amount_row,
-            batt_federal_itc_amount_row=batt_federal_itc_amount_row,
-        )
+    pv_string = ",".join([
+        "C{pv_federal_itc_amount_row}".format(
+            pv_federal_itc_amount_row=pv_cell_locations[idx]["pv_federal_itc_amount_row"])
+        for idx in range(len(pv_data))
+    ])
+    dcs['C{}'.format(current_row)] = (
+        '=SUM({pv_string}, {col}{wind_federal_itc_amount_row}, {col}{batt_federal_itc_amount_row})'
+    ).format(
+        col=upper_case_letters[0 + 2],
+        pv_string=pv_string,
+        wind_federal_itc_amount_row=wind_federal_itc_amount_row,
+        batt_federal_itc_amount_row=batt_federal_itc_amount_row,
+    )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    tax_and_liability_row = current_row
-    current_row += 1
+    total_fed_itc_row = current_row
     current_row += 1
     current_row += 1
 
     ####################################################################################################################
     # Summary
     ####################################################################################################################
+    #
+    # dcs['A{}'.format(current_row)] = "After-tax annual costs"
+    # dcs['B{}'.format(current_row)] = "={col}{total_incentive_row} - {installed_costs_cell}".format(
+    #     col='B', total_incentive_row=total_incentive_row, installed_costs_cell=installed_costs_cell)
+    #
+    # for i in range(financial.analysis_years):
+    #     dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+    #         '=SUM({col}{total_fed_itc_row}, {col}{total_incentive_row}, {col}{opex_after_tax})'
+    #     ).format(
+    #         col=upper_case_letters[i + 2],
+    #         total_fed_itc_row=total_fed_itc_row,
+    #         total_incentive_row=total_incentive_row,
+    #         opex_after_tax=opex_after_tax_row,
+    #     )
+    # make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+    #                    number_format='#,##0', border=no_border)
+    # after_tax_cost_row = current_row
 
-    dcs['A{}'.format(current_row)] = "After-tax annual costs"
-    dcs['B{}'.format(current_row)] = "={col}{total_incentive_row} - {installed_costs_cell}".format(
-        col='B', total_incentive_row=total_incentive_row, installed_costs_cell=installed_costs_cell)
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '=SUM({col}{tax_and_liability_row}, {col}{total_incentive_row}, {col}{opex_after_tax})'
-        ).format(
-            col=upper_case_letters[i + 2],
-            tax_and_liability_row=tax_and_liability_row,
-            total_incentive_row=total_incentive_row,
-            opex_after_tax=opex_after_tax_row,
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    after_tax_cost_row = current_row
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "After-tax value of energy generated by system"
-    dcs['B{}'.format(current_row)] = 0
-    for i in range(financial.analysis_years + 1):
-        pv_string = ','.join([
-            "{cell}=5,{cell}=7".format(
-                cell=pv_cell_locations[idx]['pv_macrs_option_cell']) for idx in range(len(pv_data))])
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '=IF(OR({batt_macrs_option_cell}=5,{batt_macrs_option_cell}=7,{pv_string},'
-            '{wind_macrs_option_cell}=5,{wind_macrs_option_cell}=7),'
-            '{col}{value_of_savings_row}*(1-{fed_tax_rate_cell}/100),{col}{value_of_savings_row})'
-        ).format(
-            col=upper_case_letters[i + 2],
-            value_of_savings_row=value_of_savings_row,
-            fed_tax_rate_cell=fed_tax_rate_cell,
-            pv_string=pv_string,
-            batt_macrs_option_cell=batt_macrs_option_cell,
-            wind_macrs_option_cell=wind_macrs_option_cell
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    after_tax_value_row = current_row
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "After-tax cash flow"
-    dcs['B{}'.format(current_row)] = "=B{}+B{}".format(after_tax_cost_row, value_of_savings_row)
-    full_cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
-                               + upper_case_letters[1] + str(current_row) + ":" \
-                               + upper_case_letters[financial.analysis_years + 1] + str(current_row)
-    cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
-                          + upper_case_letters[2] + str(current_row) + ":" \
-                          + upper_case_letters[financial.analysis_years + 1] + str(current_row)
-    year_0_cashflow_cell = None
-
-    for i in range(financial.analysis_years + 1):
-        if i == 0:
-            year_0_cashflow_cell = "\'{}\'!".format(developer_cashflow_sheet_name) + upper_case_letters[i + 1] \
-                                   + str(current_row)
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            "=SUM({col}{after_tax_cost_row}:{col}{after_tax_value_row})"
-        ).format(
-            col=upper_case_letters[i + 2],
-            after_tax_cost_row=after_tax_cost_row,
-            after_tax_value_row=after_tax_value_row
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(dcs, range(1, financial.analysis_years + 2), current_row, border_top)
-    dcs['A{}'.format(current_row)].font = bold_font
-    current_row += 1
-    current_row += 1
+    # current_row += 1
+    # dcs['A{}'.format(current_row)] = "After-tax value of energy generated by system"
+    # dcs['B{}'.format(current_row)] = 0
+    # for i in range(financial.analysis_years + 1):
+    #     pv_string = ','.join([
+    #         "{cell}=5,{cell}=7".format(
+    #             cell=pv_cell_locations[idx]['pv_macrs_option_cell']) for idx in range(len(pv_data))])
+    #     dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+    #         '=IF(OR({batt_macrs_option_cell}=5,{batt_macrs_option_cell}=7,{pv_string},'
+    #         '{wind_macrs_option_cell}=5,{wind_macrs_option_cell}=7),'
+    #         '{col}{value_of_savings_row}*(1-{fed_tax_rate_cell}/100),{col}{value_of_savings_row})'
+    #     ).format(
+    #         col=upper_case_letters[i + 2],
+    #         value_of_savings_row=value_of_savings_row,
+    #         fed_tax_rate_cell=fed_tax_rate_cell,
+    #         pv_string=pv_string,
+    #         batt_macrs_option_cell=batt_macrs_option_cell,
+    #         wind_macrs_option_cell=wind_macrs_option_cell
+    #     )
+    # make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+    #                    number_format='#,##0', border=no_border)
+    # after_tax_value_row = current_row
+    # current_row += 1
+    # dcs['A{}'.format(current_row)] = "After-tax cash flow"
+    # dcs['B{}'.format(current_row)] = "=B{}+B{}".format(after_tax_cost_row, value_of_savings_row)
+    # full_cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+    #                            + upper_case_letters[1] + str(current_row) + ":" \
+    #                            + upper_case_letters[financial.analysis_years + 1] + str(current_row)
+    # cashflow_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+    #                       + upper_case_letters[2] + str(current_row) + ":" \
+    #                       + upper_case_letters[financial.analysis_years + 1] + str(current_row)
+    # year_0_cashflow_cell = None
+    # 
+    # for i in range(financial.analysis_years + 1):
+    #     if i == 0:
+    #         year_0_cashflow_cell = "\'{}\'!".format(developer_cashflow_sheet_name) + upper_case_letters[i + 1] \
+    #                                + str(current_row)
+    #     dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+    #         "=SUM({col}{after_tax_cost_row}:{col}{after_tax_value_row})"
+    #     ).format(
+    #         col=upper_case_letters[i + 2],
+    #         after_tax_cost_row=after_tax_cost_row,
+    #         after_tax_value_row=after_tax_value_row
+    #     )
+    # make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+    #                    number_format='#,##0', border=no_border)
+    # fill_border(dcs, range(1, financial.analysis_years + 2), current_row, border_top)
+    # dcs['A{}'.format(current_row)].font = bold_font
+    # current_row += 1
+    # current_row += 1
 
     ####################################################################################################################
-    # Income Frome Host
+    # After-tax Cash Flows
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Total Cash Flows"
+    make_title_row(dcs, current_row, length=financial.analysis_years + 2)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Upfront Capital Cost"
+    dcs['B{}'.format(current_row)] = "=-{}".format(installed_costs_cell)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    upfront_cost_cell = "B{}".format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Electricity bill with credits, after-tax"
+
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+            "=-({elec_cost} - {elec_credit}) * (1 - {tax_rate}/100)"
+            ).format(
+            elec_cost=electric_costs_cell_series[year],
+            elec_credit=export_credit_cell_series[year],
+            tax_rate=fed_tax_rate_cell,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    elec_bill_after_tax_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Deductible operating expenses, after-tax"
+
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+            "=({col}{opex_total} - {col}{opex_tax_deductible}) + {col}{opex_tax_deductible} * (1 - {tax_rate}/100)"
+            ).format(
+            col=upper_case_letters[year+1],
+            opex_total=opex_total_row,
+            opex_tax_deductible=opex_tax_deductible_row,
+            tax_rate=fed_tax_rate_cell,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    opex_after_tax_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
+    for year in range(financial.analysis_years):
+        dcs["{}{}".format(upper_case_letters[year+2], current_row)] = (
+            "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
+            "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
+            ).format(
+            col=upper_case_letters[year+2],
+            untaxed_incentives=total_cash_incentives_row,
+            taxed_incentives=total_taxable_cash_incentives_row,
+            tax_rate=fed_tax_rate_cell,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    incentives_after_tax_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Depreciation Tax Shield"
+    for i in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{row}*({tax_rate}/100)'.format(
+            col=upper_case_letters[i + 2], row=total_depreciation_row, tax_rate=fed_tax_rate_cell)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    depreciation_tax_shield_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Investment Tax Credit"
+    for i in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{row}'.format(
+            col=upper_case_letters[i + 2],
+            row=total_fed_itc_row,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    itc_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Free Cash Flow"
+    dcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+
+    for i in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+            "={col}{elec_bill} + {col}{opex} + {col}{incentives} + {col}{depr} + {col}{itc}"
+            ).format(
+            col=upper_case_letters[i+2],
+            elec_bill=elec_bill_after_tax_row,
+            opex=opex_after_tax_row,
+            incentives=incentives_after_tax_row,
+            depr=depreciation_tax_shield_row,
+            itc=itc_row,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fcf_row = current_row
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Discounted Cash Flow"
+    dcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+    for year in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
+            "={col}{fcf} / (1 + {disc_rate}/100)^{year}"
+            ).format(
+            col=upper_case_letters[year+2],
+            fcf=fcf_row,
+            disc_rate=discount_rate_cell,
+            year=year+1,
+        )
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    optimal_dcf_row = current_row
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Optimal Life Cycle Cost"
+    dcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
+        row=optimal_dcf_row,
+        col=upper_case_letters[financial.analysis_years+1]
+    )
+    optimal_LCC_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+
+
+
+
+
+    ####################################################################################################################
+    # Income From Host
     ####################################################################################################################
 
     if financial.two_party_ownership:
@@ -2248,45 +2346,45 @@ def generate_proforma(scenariomodel, output_file_path):
     # LCC Calculation
     ####################################################################################################################
 
-    dcs['A{}'.format(current_row)] = "LCC Calculation"
-    make_title_row(dcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Net annual costs without system (after tax)"
-    year_0_bau_cost_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
-    bau_cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
-                          + upper_case_letters[2] + str(current_row) + ":" \
-                          + upper_case_letters[financial.analysis_years+1] + str(current_row)
-
-    for i in range(financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
-            '=-{electric_bau_cost} * (1 - {fed_tax_rate}/100)'
-        ).format(
-            electric_bau_cost=electric_bau_costs_cell_series[i],
-            fed_tax_rate=fed_tax_rate_cell,
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Net annual costs with system (after tax)"
-    dcs['B{}'.format(current_row)] = '=B{}'.format(after_tax_cost_row)
-    year_0_cost_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
-    cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name)
-    for i in range(1, financial.analysis_years + 1):
-        if i == 1:
-            cost_cell_range += upper_case_letters[i + 1] + str(current_row) + ":"
-        if i == financial.analysis_years:
-            cost_cell_range += upper_case_letters[i + 1] + str(current_row)
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
-            '=({col}{after_tax_cost_row} - ({electric_cost}+{export_credit}) * (1- {fed_tax_rate_cell}/100))'
-        ).format(
-            col=upper_case_letters[i + 1],
-            after_tax_cost_row=after_tax_cost_row,
-            fed_tax_rate_cell=fed_tax_rate_cell,
-            electric_cost=electric_costs_cell_series[i],
-            export_credit=export_credit_cell_series[i]
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+    # dcs['A{}'.format(current_row)] = "LCC Calculation"
+    # make_title_row(dcs, current_row, length=financial.analysis_years+2)
+    # current_row += 1
+    # dcs['A{}'.format(current_row)] = "Net annual costs without system (after tax)"
+    # year_0_bau_cost_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    # bau_cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name) \
+    #                       + upper_case_letters[2] + str(current_row) + ":" \
+    #                       + upper_case_letters[financial.analysis_years+1] + str(current_row)
+    #
+    # for i in range(financial.analysis_years + 1):
+    #     dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+    #         '=-{electric_bau_cost} * (1 - {tax_rate}/100)'
+    #     ).format(
+    #         electric_bau_cost=electric_bau_costs_cell_series[i],
+    #         tax_rate=fed_tax_rate_cell,
+    #     )
+    # make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+    #                    number_format='#,##0', border=no_border)
+    # current_row += 1
+    # dcs['A{}'.format(current_row)] = "Net annual costs with system (after tax)"
+    # dcs['B{}'.format(current_row)] = '=B{}'.format(after_tax_cost_row)
+    # year_0_cost_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    # cost_cell_range = "\'{}\'!".format(developer_cashflow_sheet_name)
+    # for i in range(1, financial.analysis_years + 1):
+    #     if i == 1:
+    #         cost_cell_range += upper_case_letters[i + 1] + str(current_row) + ":"
+    #     if i == financial.analysis_years:
+    #         cost_cell_range += upper_case_letters[i + 1] + str(current_row)
+    #     dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+    #         '=({col}{after_tax_cost_row} - ({electric_cost}+{export_credit}) * (1- {fed_tax_rate_cell}/100))'
+    #     ).format(
+    #         col=upper_case_letters[i + 1],
+    #         after_tax_cost_row=after_tax_cost_row,
+    #         fed_tax_rate_cell=fed_tax_rate_cell,
+    #         electric_cost=electric_costs_cell_series[i],
+    #         export_credit=export_credit_cell_series[i]
+    #     )
+    # make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+    #                    number_format='#,##0', border=no_border)
 
     ####################################################################################################################
     # INPUTS AND OUTPUTS - LCC Calculation
@@ -2296,57 +2394,51 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['D{}'.format(current_row)] = "RESULTS"
     make_title_row(ws, current_row, length=2, offset=3)
 
-    current_row += 1
-    ws['D{}'.format(current_row)] = "LCC without system, $"
-    ws['E{}'.format(current_row)] = (
-        "=-({year_0_bau_cost_cell}+NPV({discount_rate_cell}/100, {bau_cost_cell_range}))"
-    ).format(
-        year_0_bau_cost_cell=year_0_bau_cost_cell,
-        discount_rate_cell=discount_rate_cell,
-        bau_cost_cell_range=bau_cost_cell_range
-    )
-    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
-    fill_cols(ws, range(4, 5), current_row, calculated_fill)
+    # current_row += 1
+    # ws['D{}'.format(current_row)] = "LCC without system, $"
+    # ws['E{}'.format(current_row)] = (
+    #     "=-({year_0_bau_cost_cell}+NPV({discount_rate_cell}/100, {bau_cost_cell_range}))"
+    # ).format(
+    #     year_0_bau_cost_cell=year_0_bau_cost_cell,
+    #     discount_rate_cell=discount_rate_cell,
+    #     bau_cost_cell_range=bau_cost_cell_range
+    # )
+    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
+    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
     current_row += 1
     ws['D{}'.format(current_row)] = "LCC with system, $"
-    ws['E{}'.format(current_row)] = (
-        "=-({year_0_cost_cell}+NPV({discount_rate_cell}/100, {cost_cell_range}))"
-    ).format(
-        year_0_cost_cell=year_0_cost_cell,
-        discount_rate_cell=discount_rate_cell,
-        cost_cell_range=cost_cell_range
-    )
+    ws['E{}'.format(current_row)] = ("={}").format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
-    current_row += 1
-    ws['D{}'.format(current_row)] = "NPV, $"
-    ws['E{}'.format(current_row)] = (
-        "={year_0_cashflow_cell}+NPV({discount_rate_cell}/100,{cashflow_cell_range})"
-    ).format(
-        year_0_cashflow_cell=year_0_cashflow_cell,
-        discount_rate_cell=discount_rate_cell,
-        cashflow_cell_range=cashflow_cell_range
-    )
-    ws['F{}'.format(current_row)] = (
-        'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
-        ' optimizer.'
-    )
-    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
-    fill_cols(ws, range(4, 5), current_row, calculated_fill)
+    # current_row += 1
+    # ws['D{}'.format(current_row)] = "NPV, $"
+    # ws['E{}'.format(current_row)] = (
+    #     "={year_0_cashflow_cell}+NPV({discount_rate_cell}/100,{cashflow_cell_range})"
+    # ).format(
+    #     year_0_cashflow_cell=year_0_cashflow_cell,
+    #     discount_rate_cell=discount_rate_cell,
+    #     cashflow_cell_range=cashflow_cell_range
+    # )
+    # ws['F{}'.format(current_row)] = (
+    #     'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
+    #     ' optimizer.'
+    # )
+    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
+    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
-    current_row += 1
-    ws['D{}'.format(current_row)] = "IRR, %"
-    ws['E{}'.format(current_row)] = (
-        "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
-        ).format(
-            full_cashflow_cell_range=full_cashflow_cell_range,
-            discount_rate_cell=discount_rate_cell,
-    )
-    make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
-    fill_cols(ws, range(4, 5), current_row, calculated_fill)
-    current_row += 1
+    # current_row += 1
+    # ws['D{}'.format(current_row)] = "IRR, %"
+    # ws['E{}'.format(current_row)] = (
+    #     "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
+    #     ).format(
+    #         full_cashflow_cell_range=full_cashflow_cell_range,
+    #         discount_rate_cell=discount_rate_cell,
+    # )
+    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
+    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
+    # current_row += 1
 
     ####################################################################################################################
     ####################################################################################################################
@@ -2368,7 +2460,43 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = year
     make_title_row(hcs, current_row, length=financial.analysis_years+2)
 
+    ####################################################################################################################
+    # Existing/BAU Production
+    ####################################################################################################################
 
+    hcs['A{}'.format(current_row)] = "Production"
+    make_title_row(hcs, current_row, length=financial.analysis_years+2)
+    current_row += 1
+
+    # need to scale these values by existing/purchased pv.existing_kw
+    for idx, pv in enumerate(pv_data):
+        hcs['A{}'.format(current_row)] = "{} Annual energy (AC kWh)".format(pv['name'])
+
+        for i in range(len(pv_cell_locations[idx]['pv_production_series'])):
+            hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(
+                pv_cell_locations[idx]['pv_production_series'][i])
+
+        make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+
+        pv_cell_locations[idx]['pv_prod_row'] = current_row
+        current_row += 1
+
+    hcs['A{}'.format(current_row)] = "Wind Annual energy (AC kWh)"
+    for i in range(len(wind_production_series)):
+        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(wind_production_series[i])
+    make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    wind_prod_row = current_row
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Generator Annual energy (AC kWh)"
+    for i in range(len(generator_production_series)):
+        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(generator_production_series[i])
+    make_attribute_row(hcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    current_row += 1
+    current_row += 1
 
     ####################################################################################################################
     ####################################################################################################################
