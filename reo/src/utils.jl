@@ -394,7 +394,7 @@ function build_param(args...;
     ProductionIncentiveRate = parameter(Tech, ProductionIncentiveRate)
     ElecLoad = parameter(TimeStep, ElecLoad)
     FuelLimit = parameter(FuelType, FuelLimit)
-    #ChargeEfficiency = parameter(Storage, ChargeEfficiency) # does this need to be indexed on techs?
+    ChargeEfficiency = parameter((Tech, Storage), ChargeEfficiency) # does this need to be indexed on techs?
     GridChargeEfficiency = parameter(Storage, GridChargeEfficiency)
     DischargeEfficiency = parameter(Storage, DischargeEfficiency)
     StorageMinSizeEnergy = parameter(Storage, StorageMinSizeEnergy)
@@ -404,19 +404,12 @@ function build_param(args...;
     StorageMinSOC = parameter(Storage, StorageMinSOC)
     StorageInitSOC = parameter(Storage, StorageInitSOC)
 
-    println("FuelTypeByTech: ", FuelTypeByTech)
-    println("SubdivisionByTech: ", SubdivisionByTech)
-    println("SegByTechSubdivision: ", SegByTechSubdivision)
-    println("TechsInClass: ", TechsInClass)
-    println("TechsByFuelType: ", TechsByFuelType)
-    println("TechsNoTurndown: ", TechsNoTurndown)
-
     # Indexed Sets
-    #FuelTypeByTech = parameter(Tech, FuelTypeByTech)
-    SubdivisionByTech = parameter(Tech, SubdivisionByTech)
     SegByTechSubdivision = parameter((Subdivision, Tech), SegByTechSubdivision)
-    TechsInClass = parameter(TechClass, TechsInClass)
     TechsByFuelType = parameter(FuelType, TechsByFuelType)
+    FuelTypeByTech = len_zero_param(Tech, FuelTypeByTech)
+    SubdivisionByTech = len_zero_param(Tech, SubdivisionByTech)
+    TechsInClass = len_zero_param(TechClass, TechsInClass)
 
     param = Parameter(
                 TechClass,
@@ -606,4 +599,14 @@ end
 
 function JuMP.value(x::Float64)
     return x
+end
+
+function len_zero_param(sets, arr::Array)
+    if length(arr) == 0
+        dims = setdiff(size(arr), 0)
+        zero_array = Array{Array}(undef, dims...)
+        return parameter(sets, zero_array)
+    else
+        return parameter(sets, arr)
+    end
 end

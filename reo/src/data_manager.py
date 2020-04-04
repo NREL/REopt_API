@@ -1053,7 +1053,7 @@ class DatFileManager:
             'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':[],
             'FuelTypeByTech': fuel_type_by_tech_bau,
-            'SubdivisionByTech':subdivisions_by_tech,
+            'SubdivisionByTech':subdivisions_by_tech_bau,
             'SegByTechSubdivision':seg_by_tech_subdivision_bau,
             'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':techs_in_class_bau,
@@ -1062,3 +1062,5 @@ class DatFileManager:
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
             }
+
+        #import ipdb; ipdb.set_trace()
