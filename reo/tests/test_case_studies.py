@@ -105,12 +105,6 @@ class CaseStudyTests(ResourceTestCaseMixin, TestCase):
         expected = 437716.0
         self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 
-    def test_wind(self):
-        c = self.run_study('wind')
-        expected = 437716.0
-        print(c['lcc'])
-        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
-
     def test_PV_storage(self):
         c = self.run_study('PV + storage')
         expected = 437716.0
