@@ -2201,59 +2201,6 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         current_row += 1
 
-    ####################################################################################################################
-    # INPUTS AND OUTPUTS - LCC Calculation
-    ####################################################################################################################
-
-    current_row = 5
-    ws['D{}'.format(current_row)] = "RESULTS"
-    make_title_row(ws, current_row, length=2, offset=3)
-
-    # current_row += 1
-    # ws['D{}'.format(current_row)] = "LCC without system, $"
-    # ws['E{}'.format(current_row)] = (
-    #     "=-({year_0_bau_cost_cell}+NPV({discount_rate_cell}/100, {bau_cost_cell_range}))"
-    # ).format(
-    #     year_0_bau_cost_cell=year_0_bau_cost_cell,
-    #     discount_rate_cell=discount_rate_cell,
-    #     bau_cost_cell_range=bau_cost_cell_range
-    # )
-    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
-    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
-
-    current_row += 1
-    ws['D{}'.format(current_row)] = "LCC with system, $"
-    ws['E{}'.format(current_row)] = ("={}").format(optimal_LCC_cell)
-    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
-    fill_cols(ws, range(4, 5), current_row, calculated_fill)
-
-    # current_row += 1
-    # ws['D{}'.format(current_row)] = "NPV, $"
-    # ws['E{}'.format(current_row)] = (
-    #     "={year_0_cashflow_cell}+NPV({discount_rate_cell}/100,{cashflow_cell_range})"
-    # ).format(
-    #     year_0_cashflow_cell=year_0_cashflow_cell,
-    #     discount_rate_cell=discount_rate_cell,
-    #     cashflow_cell_range=cashflow_cell_range
-    # )
-    # ws['F{}'.format(current_row)] = (
-    #     'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
-    #     ' optimizer.'
-    # )
-    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
-    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
-
-    # current_row += 1
-    # ws['D{}'.format(current_row)] = "IRR, %"
-    # ws['E{}'.format(current_row)] = (
-    #     "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
-    #     ).format(
-    #         full_cashflow_cell_range=full_cashflow_cell_range,
-    #         discount_rate_cell=discount_rate_cell,
-    # )
-    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
-    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
-    # current_row += 1
 
     ####################################################################################################################
     ####################################################################################################################
@@ -2389,7 +2336,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
 
     hcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
-    make_attribute_row(hcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    make_title_row(hcs, current_row, length=financial.analysis_years + 2)
 
     current_row += 1
     start_pbi_total_row = current_row
@@ -2428,7 +2375,7 @@ def generate_proforma(scenariomodel, output_file_path):
                  ).format(
                     col=upper_case_letters[i + 2],
                     pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
-                    pv_pbi_total_row=pv_cell_locations[idx]["pv_pbi_total_row"]
+                    pv_pbi_total_row= pv_cell_locations[idx]["existing_pv_pbi_row"]
                 )
             )
         pv_string = '+'.join(pv_cells)
@@ -2441,9 +2388,145 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    total_taxable_cash_incentives_row = current_row
+    bau_total_taxable_cash_incentives_row = current_row
     current_row += 1
     current_row += 1
+    
+    ####################################################################################################################
+    # After-tax Cash Flows
+    ####################################################################################################################
+
+    hcs['A{}'.format(current_row)] = "Total Cash Flows"
+    make_title_row(hcs, current_row, length=financial.analysis_years + 2)
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Deductible operating expenses, after-tax"
+
+    for year in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+            "=({col}{opex_total} - {col}{opex_tax_deductible}) + {col}{opex_tax_deductible} * (1 - {tax_rate}/100)"
+        ).format(
+            col=upper_case_letters[year + 1],
+            opex_total=bau_opex_total_row,
+            opex_tax_deductible=bau_opex_tax_deductible_row,
+            tax_rate=fed_tax_rate_cell,
+        )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    bau_opex_after_tax_row = current_row
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
+    for year in range(financial.analysis_years):
+        hcs["{}{}".format(upper_case_letters[year + 2], current_row)] = (
+            "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
+            "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
+        ).format(
+            col=upper_case_letters[year + 2],
+            untaxed_incentives=pv_cell_locations[idx]["existing_pv_pbi_row"],  # TODO: sum existing PV's for multiple PV's
+            taxed_incentives=bau_total_taxable_cash_incentives_row,
+            tax_rate=fed_tax_rate_cell,
+        )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    bau_incentives_after_tax_row = current_row
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Free Cash Flow"
+    hcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+
+    for i in range(financial.analysis_years):
+        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+            "={col}{opex} + {col}{incentives}"
+        ).format(
+            col=upper_case_letters[i + 2],
+            opex=bau_opex_after_tax_row,
+            incentives=bau_incentives_after_tax_row,
+        )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    bau_fcf_row = current_row
+    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Discounted Cash Flow"
+    hcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+    for year in range(financial.analysis_years):
+        hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+            "={col}{fcf} / (1 + {disc_rate}/100)^{year}"
+        ).format(
+            col=upper_case_letters[year + 2],
+            fcf=bau_fcf_row,
+            disc_rate=discount_rate_cell,
+            year=year + 1,
+        )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    bau_dcf_row = current_row
+    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "BAU Life Cycle Cost"
+    hcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
+        row=bau_dcf_row,
+        col=upper_case_letters[financial.analysis_years + 1]
+    )
+    bau_LCC_cell = "\'{}\'!B{}".format(host_cashflow_sheet_name, current_row)
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+
+    ####################################################################################################################
+    ####################################################################################################################
+    # INPUTS AND OUTPUTS - LCC's, NPV, IRR
+    ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
+    ####################################################################################################################
+
+    current_row = 5
+    ws['D{}'.format(current_row)] = "RESULTS"
+    make_title_row(ws, current_row, length=2, offset=3)
+
+    current_row += 1
+    ws['D{}'.format(current_row)] = "Business as usual LCC, $"
+    ws['E{}'.format(current_row)] = "={}".format(bau_LCC_cell)
+    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
+    fill_cols(ws, range(4, 5), current_row, calculated_fill)
+
+    current_row += 1
+    ws['D{}'.format(current_row)] = "Optimal LCC, $"
+    ws['E{}'.format(current_row)] = "={}".format(optimal_LCC_cell)
+    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
+    fill_cols(ws, range(4, 5), current_row, calculated_fill)
+
+    current_row += 1
+    ws['D{}'.format(current_row)] = "NPV, $"
+    ws['E{}'.format(current_row)] = (
+        "=E{} - E{}"
+    ).format(
+        current_row - 1,
+        current_row - 2,
+    )
+    ws['F{}'.format(current_row)] = (
+        'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
+        ' optimizer.'
+    )
+    make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
+    fill_cols(ws, range(4, 5), current_row, calculated_fill)
+
+    # current_row += 1
+    # ws['D{}'.format(current_row)] = "IRR, %"
+    # ws['E{}'.format(current_row)] = (
+    #     "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
+    #     ).format(
+    #         full_cashflow_cell_range=full_cashflow_cell_range,
+    #         discount_rate_cell=discount_rate_cell,
+    # )
+    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
+    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
+    # current_row += 1
+
 
     ####################################################################################################################
     ####################################################################################################################
