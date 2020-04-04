@@ -97,12 +97,14 @@ def generate_proforma(scenariomodel, output_file_path):
     generator_installed_kw = generator.size_kw or 0
     generator_existing_kw = generator.existing_kw or 0
     gen_fuel_used_gal = generator.fuel_used_gal or 0
+    gen_fuel_used_gal_bau = generator.fuel_used_gal_bau or 0
     if generator_installed_kw > 0 and generator_existing_kw > 0:
         generator_installed_kw -= generator_existing_kw
     generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
     generator_energy = generator.year_one_energy_produced_kwh or 0
     generator_cost = generator_installed_kw or 0 * generator_installed_cost_us_dollars_per_kw or 0
     diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal
+    diesel_fuel_used_cost_bau = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal_bau
 
     ####################################################################################################################
     # Set up styling
@@ -281,6 +283,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Generator Nameplate capacity (kW), existing"
     ws['B{}'.format(current_row)] = generator_existing_kw
+    generator_existing_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
@@ -426,6 +429,13 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = diesel_fuel_used_cost
     diesel_fuel_used_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Diesel BAU fuel used cost ($)"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = diesel_fuel_used_cost_bau
+    gen_fuel_used_cost_bau_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
@@ -1295,7 +1305,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Wind cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * ((1 + ({}/100))^{}) * {}'.format(
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
             wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, wind_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1304,8 +1314,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator cost in $/kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * ((1 + ({}/100))^{}) * {}'.format(
-            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_size_kw_cell)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * ({} + {})'.format(
+            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_size_kw_cell, generator_existing_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1313,8 +1323,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator cost in $/kWh"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{}*{} * ((1 + ({}/100))^{}) * {}'.format(
-            outage_cell_series[year], generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
+            generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
             generator_energy_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1322,15 +1332,15 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{}* {} * ((1+({}/100))^{})'.format \
-            (outage_cell_series[year], diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
+            diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Battery kW replacement cost "
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({}={},{}*{},0)'.format(
+        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({} = {}, {} * {}, 0)'.format(
             i, batt_replace_year_cell, batt_size_kw_cell, batt_replace_cost_us_dollars_per_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1338,7 +1348,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Battery kWh replacement cost "
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for i in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({}={},{}*{},0)'.format(
+        dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=-IF({} = {}, {} * {}, 0)'.format(
             i, batt_replace_year_cell, batt_size_kwh_cell, batt_replace_cost_us_dollars_per_kwh_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -2318,6 +2328,106 @@ def generate_proforma(scenariomodel, output_file_path):
     for year in range(financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = year
     make_title_row(hcs, current_row, length=financial.analysis_years+2)
+
+    ####################################################################################################################
+    # BAU/Host Operating Expenses
+    ####################################################################################################################
+
+    hcs['A{}'.format(current_row)] = "Operating Expenses"
+    make_title_row(hcs, current_row, length=financial.analysis_years + 2)
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    current_row += 1
+    start_om_row = current_row
+    for i, pv in enumerate(pv_data):
+        hcs['A{}'.format(current_row)] = "Existing {} cost in $/kW".format(pv['name'])
+        hcs['A{}'.format(current_row)].alignment = one_tab_indent
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
+                ' * {pv_existing_kw_cell}'
+            ).format(
+                pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
+                om_escalation_rate_cell=om_escalation_rate_cell,
+                year=year,
+                pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
+                pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"],
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
+    
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Existing Generator fixed maintenance cost"
+    hcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
+            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_existing_kw_cell)
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    """
+    Generator could be used for outage or during grid connected times. Either way it is used every year in the 
+    analysis period so do not use outage one time or every year for cost calculations (it only applies to outage cost
+    calculations, which are done outside of REopt).
+    TODO: test proforma with generator that can be used anytime (not just outage)
+    """
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Existing Generator variable maintenance cost"
+    hcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
+            generator.existing_gen_year_one_variable_om_cost_us_dollars or 0, om_escalation_rate_cell, year,
+            )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Existing Generator fuel cost ($)"
+    hcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
+            gen_fuel_used_cost_bau_cell, om_escalation_rate_cell, year)
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Total operating expenses"
+    for i in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=SUM({col}{start_row}:{col}{end_row})'.format(
+            col=upper_case_letters[i + 1], start_row=start_om_row, end_row=current_row - 1)
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    bau_opex_total_row = current_row
+
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
+
+    for year in range(1, financial.analysis_years + 1):
+        pv_string = ','.join(
+            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
+             for idx in range(len(pv_data))]
+        )
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
+            "{wind_macrs_option_cell}=7), {col}{bau_opex_total_row}, 0)"
+        ).format(
+            batt_macrs_option_cell=batt_macrs_option_cell,
+            pv_string=pv_string,
+            wind_macrs_option_cell=wind_macrs_option_cell,
+            bau_opex_total_row=bau_opex_total_row,
+            col=upper_case_letters[year + 1]
+        )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    bau_opex_tax_deductible_row = current_row
+
+    current_row += 1
+    current_row += 1
+
+    # TODO: BAU PBI's
 
     ####################################################################################################################
     ####################################################################################################################
