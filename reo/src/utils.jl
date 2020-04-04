@@ -218,7 +218,44 @@ struct Parameter
      DemandMonthsBinCount::Int64   # Size of set N
      TimeStepCount::Int64          # Size of set H
      Points::UnitRange{Int64}      # CapCostSegCount+1; this is going to be the size of set S^{c} now
-		
+
+     # new parameters for reformulation
+     StoragePowerCost
+     StorageEnergyCost
+     FuelCost
+     ElecRate
+     GridExportRates
+     FuelBurnSlope
+     FuelBurnYInt
+     MaxGridSales
+     ProductionIncentiveRate
+     ProductionFactor
+     ElecLoad
+     FuelLimit
+     ChargeEfficiency
+     GridChargeEfficiency
+     DischargeEfficiency
+     StorageMinSizeEnergy
+     StorageMaxSizeEnergy
+     StorageMinSizePower
+     StorageMaxSizePower
+     StorageMinSOC
+     StorageInitSOC
+     # New Sets
+     Storage
+     FuelType
+     Subdivision
+     PricingTierCount
+     ElecStorage
+     FuelTypeByTech
+     SubdivisionByTech
+     SegByTechSubdivision
+     TechsChargingStorage
+     TechsInClass
+     TechsByFuelType
+     ElectricTechs
+     FuelBurningTechs
+     TechsNoTurndown
 end
 
 
@@ -485,32 +522,42 @@ function build_param(args...;
                 DemandBinCount,
                 DemandMonthsBinCount,
                 TimeStepCount,
-                Points#,
-      			#Subdivision,
-			    #FuelType,
-			    #PricingTier,
-			    #Storage,
-			    #StoragePowerCost,
-			    #StorageEnergyCost,
-			    #FuelCost,
-			    #ElecRate,
-			    #GridExportRates,
-			    #FuelBurnSlope,
-			    #FuelBurnYInt,
-			    #MaxGridSales,
-			    #ProductionIncentiveRate,
-			    #ProductionFactor,
-			    #ElecLoad,
-			    #FuelLimit,
-			    #ChargeEfficiency,
-			    #GridChargeEfficiency,
-			    #DischargeEfficiency,
-			    #StorageMinSizeEnergy,
-			    #StorageMaxSizeEnergy,
-			    #StorageMinSizePower,
-			    #StorageMaxSizePower,
-			    #StorageMinSOC,
-			    #StorageInitSOC
+                Points,
+                StoragePowerCost,
+                StorageEnergyCost,
+                FuelCost,
+                ElecRate,
+                GridExportRates,
+                FuelBurnSlope,
+                FuelBurnYInt,
+                MaxGridSales,
+                ProductionIncentiveRate,
+                ProductionFactor,
+                ElecLoad,
+                FuelLimit,
+                ChargeEfficiency,
+                GridChargeEfficiency,
+                DischargeEfficiency,
+                StorageMinSizeEnergy,
+                StorageMaxSizeEnergy,
+                StorageMinSizePower,
+                StorageMaxSizePower,
+                StorageMinSOC,
+                StorageInitSOC,
+                Storage,
+                FuelType,
+                Subdivision,
+                PricingTierCount,
+                ElecStorage,
+                FuelTypeByTech,
+                SubdivisionByTech,
+                SegByTechSubdivision,
+                TechsChargingStorage,
+                TechsInClass,
+                TechsByFuelType,
+                ElectricTechs,
+                FuelBurningTechs,
+                TechsNoTurndown
         )
 
     return param
