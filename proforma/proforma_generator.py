@@ -1216,12 +1216,9 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Operating Expenses"
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
 
     current_row += 1
+    start_om_row = current_row
     dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits ($)"
     electric_costs_cell_series = list()
 
@@ -1251,8 +1248,11 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
+    dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
     current_row += 1
-    start_om_row = current_row
     for i, pv in enumerate(pv_data):
         dcs['A{}'.format(current_row)] = "{} cost in $/kW".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
@@ -1335,17 +1335,10 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
 
     for year in range(1, financial.analysis_years + 1):
-        pv_string = ','.join(
-            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
-             for idx in range(len(pv_data))]
-        )
         dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
-            "{wind_macrs_option_cell}=7), {col}{opex_total_row}, 0)"
+            "=IF({fed_tax_rate} > 0, {col}{opex_total_row}, 0)"
         ).format(
-            batt_macrs_option_cell=batt_macrs_option_cell,
-            pv_string=pv_string,
-            wind_macrs_option_cell=wind_macrs_option_cell,
+            fed_tax_rate=fed_tax_rate_cell,
             opex_total_row=opex_total_row,
             col=upper_case_letters[year+1]
         )
@@ -2089,21 +2082,6 @@ def generate_proforma(scenariomodel, output_file_path):
     upfront_cost_cell = "B{}".format(current_row)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Electricity bill with credits, after-tax"
-
-    for year in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
-            "=({elec_cost} - {elec_credit}) * (1 - {tax_rate}/100)"
-            ).format(
-            elec_cost=electric_costs_cell_series[year],
-            elec_credit=export_credit_cell_series[year],
-            tax_rate=fed_tax_rate_cell,
-        )
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    elec_bill_after_tax_row = current_row
-
-    current_row += 1
     dcs['A{}'.format(current_row)] = "Deductible operating expenses, after-tax"
 
     for year in range(1, financial.analysis_years + 1):
@@ -2161,10 +2139,9 @@ def generate_proforma(scenariomodel, output_file_path):
 
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            "={col}{elec_bill} + {col}{opex} + {col}{incentives} + {col}{depr} + {col}{itc}"
+            "={col}{opex} + {col}{incentives} + {col}{depr} + {col}{itc}"
             ).format(
             col=upper_case_letters[i+2],
-            elec_bill=elec_bill_after_tax_row,
             opex=opex_after_tax_row,
             incentives=incentives_after_tax_row,
             depr=depreciation_tax_shield_row,
@@ -2306,12 +2283,13 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(hcs, current_row, length=financial.analysis_years + 2)
 
     current_row += 1
+    start_om_row = current_row
     hcs['A{}'.format(current_row)] = "BAU electricity bill ($)"
     electric_bau_costs_cell_series = list()
 
     for year in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '={year_one_bau_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+            '=-{year_one_bau_bill} * (1 + {escalation_pct}/100)^{year}'.format(
                 year_one_bau_bill=year_one_bau_bill_cell,
                 escalation_pct=escalation_pct_cell,
                 year=year,
@@ -2327,7 +2305,6 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    start_om_row = current_row
     for i, pv in enumerate(pv_data):
         hcs['A{}'.format(current_row)] = "Existing {} cost in $/kW".format(pv['name'])
         hcs['A{}'.format(current_row)].alignment = one_tab_indent
@@ -2379,6 +2356,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     hcs['A{}'.format(current_row)] = "Total operating expenses"
+
     for i in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=SUM({col}{start_row}:{col}{end_row})'.format(
             col=upper_case_letters[i + 1], start_row=start_om_row, end_row=current_row - 1)
@@ -2391,19 +2369,12 @@ def generate_proforma(scenariomodel, output_file_path):
     hcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
 
     for year in range(1, financial.analysis_years + 1):
-        pv_string = ','.join(
-            ["{cell}=5,{cell}=7".format(cell=pv_cell_locations[idx]['pv_macrs_option_cell'])
-             for idx in range(len(pv_data))]
-        )
-        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-            "=IF(OR({batt_macrs_option_cell}=5, {batt_macrs_option_cell}=7, {pv_string}, {wind_macrs_option_cell}=5,"
-            "{wind_macrs_option_cell}=7), {col}{bau_opex_total_row}, 0)"
+        hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+            "=IF({fed_tax_rate} > 0, {col}{opex_total_row}, 0)"
         ).format(
-            batt_macrs_option_cell=batt_macrs_option_cell,
-            pv_string=pv_string,
-            wind_macrs_option_cell=wind_macrs_option_cell,
-            bau_opex_total_row=bau_opex_total_row,
-            col=upper_case_letters[year + 1]
+            fed_tax_rate=fed_tax_rate_cell,
+            opex_total_row=bau_opex_total_row,
+            col=upper_case_letters[year+1]
         )
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
