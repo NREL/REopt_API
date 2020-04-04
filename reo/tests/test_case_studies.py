@@ -51,9 +51,9 @@ case_studies = {'PV':'76168a37-a78b-4ef3-bdb8-a2f8b213430b',
                 'PV + wind':'b5e895b8-a851-49c0-9650-2072408d1b89',
                 'storage + wind':'7605344c-964c-4e17-9c14-688d6e9fbfb6',
                 'tiered PV':'5b75684a-232d-4e95-8bf1-3fcb47b07a46',
-                'tiered PV + BESS':'dc647e7a-be89-4044-ab40-e500a5f90e6b',
+                'tiered PV + storage':'dc647e7a-be89-4044-ab40-e500a5f90e6b',
                 'TOU PV':'02bd7144-c484-4e42-b7e4-9ea077bfbc34',
-                'TOU PV + BESS':'6c15335f-4d77-4ade-a6f8-a4fd486488d1',
+                'TOU PV + storage':'6c15335f-4d77-4ade-a6f8-a4fd486488d1',
                 'PV + storage + MCA':'5725f8a4-a3a1-4f5b-ac97-491718929be5',
                 'TOU PV + LBM':'dc52957d-a857-46cb-ad4c-989889c0592d',
                 'wind + Monthly Demand':'0cadae26-104a-4dad-a212-d0843a8cc4db'}
@@ -71,7 +71,10 @@ class CaseStudyTests(ResourceTestCaseMixin, TestCase):
     def get_case_study_inputs(self, case_study):
         case_study_inputs_path = './reo/tests/case_studies/Run{}/Inputs/POST.json'.format(case_study)
         inputs = json.load(open(case_study_inputs_path))
-        del inputs['Scenario']['Site']['Generator']['size_kw']
+        try:
+            del inputs['Scenario']['Site']['Generator']['size_kw']
+        except:
+            pass
         return inputs
 
     def get_case_study_results(self, case_study):
@@ -107,31 +110,26 @@ class CaseStudyTests(ResourceTestCaseMixin, TestCase):
 
     def test_PV_storage(self):
         c = self.run_study('PV + storage')
-        expected = 437716.0
-        print(c['lcc'])
+        expected = 528360.0
+        self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_tiered_PV(self):
+        c = self.run_study('tiered PV')
+        expected = None
         #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 
-    def test_PV(self):
-        c = self.run_study('PV')
-        expected = 437716.0
-        print(c['lcc'])
+    def test_tiered_PV_storage(self):
+        c = self.run_study('tiered PV + storage')
+        expected = None
         #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 
-    def test_PV(self):
-        c = self.run_study('PV')
-        expected = 437716.0
-        print(c['lcc'])
-        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+    def test_tou_PV(self):
+        c = self.run_study('TOU PV')
+        expected = 242435.0
+        self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 
-    def test_PV(self):
-        c = self.run_study('PV')
-        expected = 437716.0
-        print(c['lcc'])
-        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
-
-    def test_PV(self):
-        c = self.run_study('PV')
-        expected = 437716.0
-        print(c['lcc'])
-        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+    def test_tou_PV_storage(self):
+        c = self.run_study('TOU PV + storage')
+        expected = 333753.0
+        self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 

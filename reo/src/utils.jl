@@ -86,6 +86,7 @@ struct Parameter
 	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
 	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
+         OMcostPerUnitProd::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      
 	 ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}    # to be replaced by GridExportRates
 	 #GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
@@ -440,12 +441,9 @@ function build_param(args...;
     StorageMinSOC = parameter(Storage, StorageMinSOC)
     StorageInitSOC = parameter(Storage, StorageInitSOC)
 
-    @show FuelType
-    println("TechsByFuelType: ", TechsByFuelType)
-
     # Indexed Sets
     SegByTechSubdivision = parameter((Subdivision, Tech), SegByTechSubdivision)
-    @show TechsByFuelType = len_zero_param(FuelType, TechsByFuelType)
+    TechsByFuelType = len_zero_param(FuelType, TechsByFuelType)
     FuelTypeByTech = len_zero_param(Tech, FuelTypeByTech)
     SubdivisionByTech = len_zero_param(Tech, SubdivisionByTech)
     TechsInClass = len_zero_param(TechClass, TechsInClass)
@@ -476,6 +474,7 @@ function build_param(args...;
                 StorageCostPerKWH,
                 FuelRate,
                 OMperUnitSize,
+                OMcostPerUnitProd,
                 ExportRates,
                 CapCostSlope,
                 CapCostYInt,
