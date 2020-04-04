@@ -266,7 +266,7 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         ws['A{}'.format(current_row)] = "{} degradation rate (%/year)".format(pv['name'])
         ws['B{}'.format(current_row)] = pv_data_entry["pv"].degradation_pct * 100  # TODO: replace pv_data_entry?
-        pv_cell_locations[i]["pv_degradation_rate_cell"] = 'B{}'.format(current_row)
+        pv_cell_locations[i]["pv_degradation_rate_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
 
@@ -317,13 +317,13 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Year 1 utility bill with system ($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_us_dollars or 0
-    year_one_bill_cell = 'B{}'.format(current_row)
+    year_one_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Year 1 export credits with system ($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_export_benefit_us_dollars or 0
-    year_one_credits_cell = 'B{}'.format(current_row)
+    year_one_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
@@ -1126,37 +1126,6 @@ def generate_proforma(scenariomodel, output_file_path):
             )
     fill_in_annual_values(current_row)
 
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Electricity bill with system before export credits ($)"
-    ws['B{}'.format(current_row)] = 0
-    electric_costs_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row)]
-
-    for year in range(1, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '={year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
-                year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
-            )
-        electric_costs_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1],
-                                                               current_row))
-    fill_in_annual_values(current_row)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Export credits with system ($)"
-    ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = '={}'.format(year_one_credits_cell)
-    export_credit_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row)]
-
-    for year in range(1, financial.analysis_years + 1):
-        ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'.format(
-                year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
-                pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
-        export_credit_cell_series.append(
-            "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[year+1], current_row))
-    fill_in_annual_values(current_row)
-
-    current_row += 1
-
     for idx, pv in enumerate(pv_data):
         ws['A{}'.format(current_row)] = "{} Federal depreciation percentages (fraction)".format(pv['name'])
         ws['B{}'.format(current_row)] = 0
@@ -1251,6 +1220,37 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits ($)"
+    electric_costs_cell_series = list()
+
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '=-{year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+                year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
+            )
+        electric_costs_cell_series.append("\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year+1],
+                                                               current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Export credits with system ($)"
+    export_credit_cell_series = list()
+    # TODO CHECK EXPORT CREDIT ACCOUNTING (SHOULD WE HAVE PV DEGRADATION?)
+
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'.format(
+                year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
+                pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
+        export_credit_cell_series.append(
+            "\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
     current_row += 1
     start_om_row = current_row
     for i, pv in enumerate(pv_data):
@@ -2091,9 +2091,9 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     dcs['A{}'.format(current_row)] = "Electricity bill with credits, after-tax"
 
-    for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-            "=-({elec_cost} - {elec_credit}) * (1 - {tax_rate}/100)"
+    for year in range(financial.analysis_years):
+        dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
+            "=({elec_cost} - {elec_credit}) * (1 - {tax_rate}/100)"
             ).format(
             elec_cost=electric_costs_cell_series[year],
             elec_credit=export_credit_cell_series[year],
