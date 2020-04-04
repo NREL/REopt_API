@@ -55,6 +55,9 @@ def proforma(request, run_uuid):
     try:
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
 
+        if scenario.status.lower() == "optimizing...":
+            return HttpResponse("Problem is still solving. Please try again later.", status=425)  # too early status
+
         try:  # see if Proforma already created
             pf = ProForma.objects.get(scenariomodel=scenario)
         except:
@@ -75,6 +78,9 @@ def proforma(request, run_uuid):
         if type(e).__name__ == 'DoesNotExist':
             msg = "Scenario {} does not exist.".format(run_uuid)
             return HttpResponse(msg, status=404)
+        elif "Problem is still solving" in e.args:
+            msg = e.args[0]
+            return HttpResponse(msg, status=425)  # too early status
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             err = UnexpectedError(exc_type, exc_value, exc_traceback, task='proforma', run_uuid=run_uuid)
