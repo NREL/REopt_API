@@ -2,7 +2,6 @@ import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
 import JuMP.value
-using Base: @kwdef
 using AxisArrays
 using JuMP
 
@@ -441,9 +440,12 @@ function build_param(args...;
     StorageMinSOC = parameter(Storage, StorageMinSOC)
     StorageInitSOC = parameter(Storage, StorageInitSOC)
 
+    @show FuelType
+    println("TechsByFuelType: ", TechsByFuelType)
+
     # Indexed Sets
     SegByTechSubdivision = parameter((Subdivision, Tech), SegByTechSubdivision)
-    TechsByFuelType = parameter(FuelType, TechsByFuelType)
+    @show TechsByFuelType = len_zero_param(FuelType, TechsByFuelType)
     FuelTypeByTech = len_zero_param(Tech, FuelTypeByTech)
     SubdivisionByTech = len_zero_param(Tech, SubdivisionByTech)
     TechsInClass = len_zero_param(TechClass, TechsInClass)
@@ -649,11 +651,16 @@ function JuMP.value(x::Float64)
 end
 
 function len_zero_param(sets, arr::Array)
-    if length(arr) == 0
-        dims = setdiff(size(arr), 0)
-        zero_array = Array{Array}(undef, dims...)
-        return parameter(sets, zero_array)
-    else
-        return parameter(sets, arr)
+    try
+        if length(arr) == 0
+            dims = setdiff(size(arr), 0)
+            zero_array = Array{Array}(undef, dims...)
+            return parameter(sets, zero_array)
+        else
+            return parameter(sets, arr)
+        end
+    catch
+        println("Empty Array Created")
+        return []
     end
 end

@@ -1057,8 +1057,8 @@ class DatFileManager:
             'SegByTechSubdivision':seg_by_tech_subdivision_bau,
             'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':techs_in_class_bau,
-            'TechsByFuelType':techs_by_fuel_type,
-            'ElectricTechs':reopt_techs,
+            'TechsByFuelType':techs_by_fuel_type_bau,
+            'ElectricTechs':reopt_techs_bau,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
             }

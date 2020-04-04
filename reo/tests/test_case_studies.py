@@ -59,11 +59,11 @@ case_studies = {'PV':'76168a37-a78b-4ef3-bdb8-a2f8b213430b',
                 'wind + Monthly Demand':'0cadae26-104a-4dad-a212-d0843a8cc4db'}
 
 
-class CastStudyTests(ResourceTestCaseMixin, TestCase):
+class CaseStudyTests(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 
     def setUp(self):
-        super(CastStudyTests, self).setUp()
+        super(CaseStudyTests, self).setUp()
         self.reopt_base = '/v1/job/'
 
     def get_response(self, data):
@@ -78,10 +78,10 @@ class CastStudyTests(ResourceTestCaseMixin, TestCase):
         case_study_results_path = './reo/tests/case_studies/Run{}/Outputs/REopt_results.json'.format(case_study)
         return json.load(open(case_study_results_path))
 
-    def test_PV(self):
+    def run_study(self, study):
 
         # Aquire JSON of test case
-        study = case_studies['PV']
+        study = case_studies[study]
         inputs = self.get_case_study_inputs(study)
 
         # Post job, validate https code
@@ -96,10 +96,48 @@ class CastStudyTests(ResourceTestCaseMixin, TestCase):
         # Create objects to be checked
         #results = self.get_case_study_results(study)
         #d_expected['lcc'] = results['lcc']
+
         expected = 437716.0
+        return nested_to_flat(d['outputs'])
 
-
-        c = nested_to_flat(d['outputs'])
-
+    def test_PV(self):
+        c = self.run_study('PV')
+        expected = 437716.0
         self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_wind(self):
+        c = self.run_study('wind')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_PV_storage(self):
+        c = self.run_study('PV + storage')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_PV(self):
+        c = self.run_study('PV')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_PV(self):
+        c = self.run_study('PV')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_PV(self):
+        c = self.run_study('PV')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
+
+    def test_PV(self):
+        c = self.run_study('PV')
+        expected = 437716.0
+        print(c['lcc'])
+        #self.assertAlmostEqual(c['lcc'], expected, places=2, msg="LCC doesn't match test case results")
 

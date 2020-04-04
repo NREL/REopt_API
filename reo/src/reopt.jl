@@ -1,4 +1,5 @@
 using JuMP
+using JLD2
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
@@ -192,6 +193,8 @@ function reopt(reo_model, data, model_inputs)
           FuelBurningTechs = model_inputs["FuelBurningTechs"],
           TechsNoTurndown = model_inputs["TechsNoTurndown"]
     )
+
+    @save "scen.jld2" p
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 

@@ -1,5 +1,6 @@
 [deps]
 AxisArrays = "39de3d68-74b9-583c-8d2d-e117c070f3a9"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 MathOptInterface = "b8f27783-ece8-5eb3-8dc8-9495eed66fee"
 Xpress = "9e70acf3-d6c9-5be6-b5bd-4e2c73e3e054"
