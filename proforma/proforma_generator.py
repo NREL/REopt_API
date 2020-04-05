@@ -1030,10 +1030,10 @@ def generate_proforma(scenariomodel, output_file_path):
         col_idx += 1
 
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = batt.macrs_bonus_pct
-    wind_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    batt_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = wind.macrs_bonus_pct
-    batt_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    wind_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
     col_idx += 1
     make_attribute_row(ws, current_row, length=col_idx)
     col_idx += 1
