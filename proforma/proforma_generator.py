@@ -6,7 +6,7 @@ from openpyxl import load_workbook
 from reo.src.dat_file_manager import big_number
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
-two_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateTwoParty.xlsm')
+two_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateTwoParty.xlsx')
 
 
 def generate_proforma(scenariomodel, output_file_path):
@@ -488,26 +488,25 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Nominal Developer escalation rate (%/year)"
+    ws['A{}'.format(current_row)] = "Nominal electricity cost escalation rate (%/year)"
     ws['B{}'.format(current_row)] = financial.escalation_pct * 100
     escalation_pct_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Nominal Developer discount rate (%/year)"
+    ws['A{}'.format(current_row)] = "Nominal discount rate (%/year)"
     ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
     discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     if financial.two_party_ownership:
-        current_row += 1
-        ws['A{}'.format(current_row)] = "Nominal Host escalation rate (%/year)"
-        ws['B{}'.format(current_row)] = financial.owner_discount_pct
-        host_escalation_pct_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        ws['A{}'.format(current_row)] = "Nominal Developer discount rate (%/year)"
+        ws['B{}'.format(current_row)] = financial.owner_discount_pct * 100
         make_attribute_row(ws, current_row)
+
         current_row += 1
         ws['A{}'.format(current_row)] = "Nominal Host discount rate (%/year)"
-        ws['B{}'.format(current_row)] = financial.owner_tax_pct
+        ws['B{}'.format(current_row)] = financial.offtaker_discount_pct*100
         host_discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
     current_row += 1
@@ -525,6 +524,18 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = financial.offtaker_tax_pct * 100
     fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
+
+    if financial.two_party_ownership:
+        ws['A{}'.format(current_row)] = "Developer Federal income tax rate (%)"
+        ws['B{}'.format(current_row)] = financial.owner_tax_pct * 100
+        make_attribute_row(ws, current_row)
+
+        current_row += 1
+        ws['A{}'.format(current_row)] = "Host Federal income tax rate (%)"
+        ws['B{}'.format(current_row)] = financial.offtaker_tax_pct * 100
+        host_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        make_attribute_row(ws, current_row)
+
     current_row += 1
     current_row += 1
 
