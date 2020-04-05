@@ -33,13 +33,12 @@ import copy
 import numpy as np
 from reo.nested_outputs import nested_output_definitions
 import logging
-log = logging.getLogger(__name__)
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-# TODO: remove PVModel
+log = logging.getLogger(__name__)
 
 class ProcessResultsTask(Task):
     """
@@ -250,7 +249,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
-            # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
