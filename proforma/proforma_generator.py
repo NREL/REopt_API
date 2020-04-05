@@ -417,6 +417,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = generator.om_cost_us_dollars_per_kw
     generator_om_cost_us_dollars_per_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
+    # TODO: report year 1 O&M costs from REopt instead of calculating them?
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Variable Generator O&M ($/kWh)"
@@ -2495,13 +2496,13 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['D{}'.format(current_row)] = "Business as usual LCC, $"
-    ws['E{}'.format(current_row)] = "={}".format(bau_LCC_cell)
+    ws['E{}'.format(current_row)] = "=-{}".format(bau_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
     current_row += 1
     ws['D{}'.format(current_row)] = "Optimal LCC, $"
-    ws['E{}'.format(current_row)] = "={}".format(optimal_LCC_cell)
+    ws['E{}'.format(current_row)] = "=-{}".format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
@@ -2510,8 +2511,8 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['E{}'.format(current_row)] = (
         "=E{} - E{}"
     ).format(
-        current_row - 1,
         current_row - 2,
+        current_row - 1,
     )
     ws['F{}'.format(current_row)] = (
         'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
