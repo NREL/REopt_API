@@ -361,7 +361,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Total Installed Cost ($)"
-    ws['B{}'.format(current_row)] = sum([pv['pv_cost'] for pv in pv_data]) + batt_cost + wind_cost + generator_cost
+    ws['B{}'.format(current_row)] = financial.initial_capital_costs
     installed_costs_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
