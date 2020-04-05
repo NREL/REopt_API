@@ -1284,8 +1284,19 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * ({} + {})'.format(
-            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_size_kw_cell, generator_existing_kw_cell)
+        if gen_fuel_used_gal == 0 and gen_fuel_used_gal_bau == 0:
+            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+        else:
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * ({gen_kw} + {existing_gen_kw}), 0)'
+                ).format(
+                generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
+                om_escalation_rate=om_escalation_rate_cell,
+                year=year,
+                gen_kw=generator_size_kw_cell,
+                existing_gen_kw=generator_existing_kw_cell,
+            )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1293,9 +1304,13 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Generator variable O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
-            generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
-            generator_energy_cell)
+        if gen_fuel_used_gal == 0 and gen_fuel_used_gal_bau == 0:
+            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+        else:
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
+                generator_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year,
+                generator_energy_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
@@ -2273,11 +2288,20 @@ def generate_proforma(scenariomodel, output_file_path):
                            number_format='#,##0', border=no_border)
         current_row += 1
     
-    hcs['A{}'.format(current_row)] = "Existing Generator fixed maintenance cost"
+    hcs['A{}'.format(current_row)] = "Existing Generator fixed O&M cost"
     hcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
-            generator_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, generator_existing_kw_cell)
+        if gen_fuel_used_gal_bau == 0:
+            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+        else:
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * {existing_gen_kw}, 0)'
+                ).format(
+                generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
+                om_escalation_rate=om_escalation_rate_cell,
+                year=year,
+                existing_gen_kw=generator_existing_kw_cell)
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     """
@@ -2287,12 +2311,16 @@ def generate_proforma(scenariomodel, output_file_path):
     TODO: test proforma with generator that can be used anytime (not just outage)
     """
     current_row += 1
-    hcs['A{}'.format(current_row)] = "Existing Generator variable maintenance cost"
+    hcs['A{}'.format(current_row)] = "Existing Generator variable O&M cost"
     hcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
-            generator.existing_gen_year_one_variable_om_cost_us_dollars or 0, om_escalation_rate_cell, year,
-            )
+        if gen_fuel_used_gal_bau == 0:
+            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+        else:
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
+                generator.existing_gen_year_one_variable_om_cost_us_dollars or 0, om_escalation_rate_cell, year,
+                )
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     current_row += 1
