@@ -1255,7 +1255,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     for i, pv in enumerate(pv_data):
-        dcs['A{}'.format(current_row)] = "{} cost in $/kW".format(pv['name'])
+        dcs['A{}'.format(current_row)] = "{} fixed O&M cost".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
         for year in range(1, financial.analysis_years + 1):
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
@@ -1272,7 +1272,7 @@ def generate_proforma(scenariomodel, output_file_path):
                            number_format='#,##0', border=no_border)
         current_row += 1
 
-    dcs['A{}'.format(current_row)] = "Wind cost in $/kW"
+    dcs['A{}'.format(current_row)] = "Wind fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
@@ -1281,7 +1281,7 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Generator cost in $/kW"
+    dcs['A{}'.format(current_row)] = "Generator fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * ({} + {})'.format(
@@ -1290,7 +1290,7 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Generator cost in $/kWh"
+    dcs['A{}'.format(current_row)] = "Generator variable O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
@@ -2505,6 +2505,9 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['E{}'.format(current_row)] = "=-{}".format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
+    ws['F{}'.format(current_row)] = (
+        'NOTE: A negative LCC indicates a profit (for example when production based incentives are greater than costs.'
+    )
 
     current_row += 1
     ws['D{}'.format(current_row)] = "NPV, $"
