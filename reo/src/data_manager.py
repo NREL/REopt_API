@@ -183,9 +183,7 @@ class DataManager:
                     production_incentive_levelization_factor.append(
                         round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
                                                  degradation_pct), 5))
-                    ################
                 else:
-
                     levelization_factor.append(1.0)
                     production_incentive_levelization_factor.append(1.0)
 
