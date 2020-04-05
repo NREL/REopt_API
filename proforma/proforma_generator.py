@@ -1289,7 +1289,7 @@ def generate_proforma(scenariomodel, output_file_path):
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
         else:
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * ({gen_kw} + {existing_gen_kw}), 0)'
+                '=-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * ({gen_kw} + {existing_gen_kw})'
                 ).format(
                 generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
                 om_escalation_rate=om_escalation_rate_cell,
@@ -2296,7 +2296,7 @@ def generate_proforma(scenariomodel, output_file_path):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
         else:
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * {existing_gen_kw}, 0)'
+                '=-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * {existing_gen_kw}'
                 ).format(
                 generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
                 om_escalation_rate=om_escalation_rate_cell,
