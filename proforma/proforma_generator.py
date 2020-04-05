@@ -103,7 +103,7 @@ def generate_proforma(scenariomodel, output_file_path):
         generator_installed_kw -= generator_existing_kw
     generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
     generator_energy = generator.year_one_energy_produced_kwh or 0
-    generator_cost = generator_installed_kw or 0 * generator_installed_cost_us_dollars_per_kw or 0
+    generator_cost = generator_installed_kw * generator_installed_cost_us_dollars_per_kw
     diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal
     diesel_fuel_used_cost_bau = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal_bau
 
