@@ -2178,6 +2178,8 @@ def generate_proforma(scenariomodel, output_file_path):
     optimal_LCC_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
+    dcs['A{}'.format(current_row)].font = title_font
+    dcs['B{}'.format(current_row)].font = title_font
 
     ####################################################################################################################
     # Income From Host
@@ -2474,6 +2476,9 @@ def generate_proforma(scenariomodel, output_file_path):
     bau_LCC_cell = "\'{}\'!B{}".format(host_cashflow_sheet_name, current_row)
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
+    hcs['A{}'.format(current_row)].font = title_font
+    hcs['B{}'.format(current_row)].font = title_font
+
 
 
     ####################################################################################################################
