@@ -842,6 +842,12 @@ class DatFileManager:
 
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
+        
+        segment_min_size = [[0. for _ in reopt_techs] for __ in subdivisions]
+        segment_min_size_bau = [[0. for _ in reopt_techs_bau] for __ in subdivisions]
+        
+        segment_max_size = [[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions]
+        segment_max_size_bau = [[max_sizes_bau[i] for i in range(len(reopt_techs))] for __ in subdivisions]
 
 
         self.reopt_inputs = {
@@ -936,6 +942,8 @@ class DatFileManager:
 	    'StorageMaxSizePower':self.storage.max_kw,
 	    'StorageMinSOC':self.storage.soc_min_pct,
 	    'StorageInitSOC':self.storage.soc_init_pct,
+        'SegmentMinSize':segment_min_size,
+        'SegmentMaxSize':segment_max_size,
             # Sets that need to be populated
             'Storage':['Elec'],
             'FuelType': fuel_type,
@@ -1046,6 +1054,8 @@ class DatFileManager:
 	    'StorageMaxSizePower':0,
 	    'StorageMinSOC':self.storage.soc_min_pct,
 	    'StorageInitSOC':self.storage.soc_init_pct,
+        'SegmentMinSize':segment_min_size_bau,
+        'SegmentMaxSize':segment_max_size_bau,
             # Sets that need to be populated
             'Storage':['Elec'],
             'FuelType':fuel_type_bau,
