@@ -18,6 +18,7 @@ function reopt()
     return reopt_run(reo_model, MAXTIME, p)
 end
 
+
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
@@ -926,10 +927,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, PVPerUnitSizeOMCosts,
 					sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in PVTechs, s in p.Seg))
 		results["pv_net_fixed_om_costs"] = round(value(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
+		
+		@expression(REopt, PVSize,
+				sum(dvSystemSize["PV",s] for s in p.Seg) )
+		results["pv_size"] = round(value(PVSize),digits=2)
+		
+		@expression(REopt, PVNMSize,
+				sum(dvSystemSize["PVNM",s] for s in p.Seg) )
+		results["pv_nm_size"] = round(value(PVNMSize),digits=2)
+		
 	else
 		results["PVtoLoad"] = []
 		results["PVtoGrid"] = []
 		results["pv_net_fixed_om_costs"] = 0
+		results["pv_size"] = 0
+		results["pv_nm_size"] = 0
 	end
 
 	if !isempty(WindTechs)
@@ -958,5 +970,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     end
 
     results["status"] = status
+	
+	## Parameter values
+	results["p"] = p
+	
     return results
 end
