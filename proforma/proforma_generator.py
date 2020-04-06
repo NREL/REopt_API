@@ -4,6 +4,8 @@ from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, Financi
     LoadProfileModel
 from openpyxl import load_workbook
 from reo.src.dat_file_manager import big_number
+from reo.utilities import annuity
+from reo.nested_inputs import macrs_five_year, macrs_seven_year
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
 two_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateTwoParty.xlsx')
@@ -171,8 +173,8 @@ def generate_proforma(scenariomodel, output_file_path):
                           'KK', 'LL', 'MM', 'NN', 'OO', 'PP', 'QQ', 'RR', 'SS', 'TT', 'UU', 'VV', 'WW', 'XX', 'YY',
                           'ZZ']
 
-    macrs_schedule = {5: [0.20, 0.32, 0.19, 0.12, 0.12, 0.06],
-                      7: [0.1429, 0.2449, 0.1749, 0.1249, 0.0893, 0.0892, 0.0893, 0.0446]}
+    macrs_schedule = {5: macrs_five_year,
+                      7: macrs_seven_year}
 
     def make_title_row(ws, current_row, length=2, offset=0, alignment=None):
         for i in range(offset, offset + length):
@@ -497,6 +499,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)] = "Nominal discount rate (%/year)"
     ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
     discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    host_discount_rate_cell = discount_rate_cell
     make_attribute_row(ws, current_row)
 
     if financial.two_party_ownership:
@@ -506,7 +509,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
         current_row += 1
         ws['A{}'.format(current_row)] = "Nominal Host discount rate (%/year)"
-        ws['B{}'.format(current_row)] = financial.offtaker_discount_pct*100
+        ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
         host_discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
     current_row += 1
@@ -523,6 +526,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)] = "Federal income tax rate (%)"
     ws['B{}'.format(current_row)] = financial.offtaker_tax_pct * 100
     fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    host_fed_tax_rate_cell = fed_tax_rate_cell
     make_attribute_row(ws, current_row)
 
     if financial.two_party_ownership:
@@ -1231,22 +1235,20 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     start_om_row = current_row
-    dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits ($)"
-    electric_costs_cell_series = list()
 
-    for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '=-{year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
-                year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
-            )
-        electric_costs_cell_series.append("\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year+1],
-                                                               current_row))
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+    if not financial.two_party_ownership:  # Bill moves to Host cashflow for two party
+        dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits"
 
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Export credits with system ($)"
-    export_credit_cell_series = list()
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '=-{year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+                    year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
+                )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
+
+    dcs['A{}'.format(current_row)] = "Export credits with system"
     # TODO CHECK EXPORT CREDIT ACCOUNTING (SHOULD WE HAVE PV DEGRADATION?)
 
     for year in range(1, financial.analysis_years + 1):
@@ -1254,8 +1256,6 @@ def generate_proforma(scenariomodel, output_file_path):
             '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'.format(
                 year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
                 pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
-        export_credit_cell_series.append(
-            "\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1273,11 +1273,11 @@ def generate_proforma(scenariomodel, output_file_path):
                 '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
                 ' * ({pv_size_kw_cell} + {pv_existing_kw_cell})'
             ).format(
-                pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
-                om_escalation_rate_cell=om_escalation_rate_cell,
-                year=year,
-                pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
-                pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"],
+            pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
+            om_escalation_rate_cell=om_escalation_rate_cell,
+            year=year,
+            pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
+            pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"] if not financial.two_party_ownership else 0,
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -1306,7 +1306,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 om_escalation_rate=om_escalation_rate_cell,
                 year=year,
                 gen_kw=generator_size_kw_cell,
-                existing_gen_kw=generator_existing_kw_cell,
+                existing_gen_kw=generator_existing_kw_cell if not financial.two_party_ownership else 0,
             )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1600,7 +1600,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    
+    # TODO: remove existing PBI for financial.two_party?
     current_row += 1
     start_pbi_total_row = current_row
     for idx, pv in enumerate(pv_data):
@@ -2109,7 +2109,7 @@ def generate_proforma(scenariomodel, output_file_path):
     upfront_cost_cell = "B{}".format(current_row)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Deductible operating expenses, after-tax"
+    dcs['A{}'.format(current_row)] = "Operating expenses, after-tax"
 
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
@@ -2143,7 +2143,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     dcs['A{}'.format(current_row)] = "Depreciation Tax Shield"
     for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{row}*({tax_rate}/100)'.format(
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={col}{row} * {tax_rate}/100'.format(
             col=upper_case_letters[i + 2], row=total_depreciation_row, tax_rate=fed_tax_rate_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -2198,6 +2198,8 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Optimal Life Cycle Cost"
+    if financial.two_party_ownership:
+        dcs['A{}'.format(current_row)] = "Developer Net Present Cost"
     dcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
         row=optimal_dcf_row,
         col=upper_case_letters[financial.analysis_years+1]
@@ -2213,22 +2215,59 @@ def generate_proforma(scenariomodel, output_file_path):
     ####################################################################################################################
 
     if financial.two_party_ownership:
+
+        current_row += 1
+        pwf_developer = annuity(financial.analysis_years, 0, financial.owner_discount_pct) \
+                        * (1 - financial.owner_tax_pct)
         dcs['A{}'.format(current_row)] = "Income from Host"
-        make_title_row(dcs, current_row, length=financial.analysis_years+2)
-
-        # =-1*('Developer Cash Flow'!B98+NPV('Inputs and Outputs'!B47/100,'Developer Cash Flow'!C98:'Developer Cash Flow'!AA98))/(NPV('Inputs and Outputs'!B47/100,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)*(1-'Inputs and Outputs'!B50/100))
-        # annual_income_from_host = "=-('{dcs_sn}'!B105+NPV('{ws_sn}'!B47/100,'{dcs_sn}'!C98:'{dcs_sn}'!AA105))/(NPV('{ws_sn}'!B47/100,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1)*(1-'Inputs and Outputs'!B50/100))".format(
-        #		           dcs_sn=developer_cashflow_sheet_name, ws_sn=inandout_sheet_name)
-        # for i in range(1,financial.analysis_years+1):
-        #	if i ==1:
-        #		bau_cost_cell_range += upper_case_letters[i+1] + str(current_row) + ":"
-        #	if i == financial.analysis_years:
-        #		bau_cost_cell_range += upper_case_letters[i+1] + str(current_row)
-
-        #	dcs['{}{}'.format(upper_case_letters[i+1], current_row)] = '=-({}*(1-{fed_tax_rate_cell}/100))'.format(,fed_tax_rate_cell=fed_tax_rate_cell)
+        for year in range(financial.analysis_years):
+            dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                "=-{npc} / {pwf}"
+            ).format(
+                npc=optimal_LCC_cell,
+                pwf=pwf_developer,
+            )
+        income_from_host_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
 
         current_row += 1
+        dcs['A{}'.format(current_row)] = "Income from Host, after-tax"
+        for year in range(financial.analysis_years):
+            dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                "={income} * (1 - {tax_rate}/100)"
+            ).format(
+                income=income_from_host_cell,
+                tax_rate=fed_tax_rate_cell,
+            )
+        income_from_host_after_tax_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+
         current_row += 1
+        dcs['A{}'.format(current_row)] = "Discounted Income from Host"
+        for year in range(financial.analysis_years):
+            dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                "={income} / (1 + {disc_rate}/100)^{year}"
+            ).format(
+                income=income_from_host_after_tax_cell,
+                disc_rate=discount_rate_cell,
+                year=year+1,
+            )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        discounted_income_row = current_row
+
+        current_row += 1
+        dcs['A{}'.format(current_row)] = "NPV of Income from Host"
+        dcs['B{}'.format(current_row)] = "=SUM(C{row}:{col}{row})".format(
+            row=discounted_income_row,
+            col=upper_case_letters[financial.analysis_years + 1]
+        )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+        dcs['A{}'.format(current_row)].font = title_font
+        dcs['B{}'.format(current_row)].font = title_font
 
 
     ####################################################################################################################
@@ -2261,7 +2300,6 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     start_om_row = current_row
     hcs['A{}'.format(current_row)] = "BAU electricity bill ($)"
-    electric_bau_costs_cell_series = list()
 
     for year in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
@@ -2270,169 +2308,248 @@ def generate_proforma(scenariomodel, output_file_path):
                 escalation_pct=escalation_pct_cell,
                 year=year,
             )
-        electric_bau_costs_cell_series.append("\'{}\'!{}{}".format(host_cashflow_sheet_name, upper_case_letters[year+1],
-                                                                   current_row))
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
+    bau_bill_row = current_row
 
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+    if not financial.two_party_ownership:
+        """
+        BAU O&M costs do not matter in two party proforma. They are sunk costs. They are shown for single party model
+        to account for BAU LCC. However, in the two party proforma we don't show optimal and BAU LCC's; instead we show
+        the developer's costs (plus income from host benefit for break even) and the host's cost/benefits. The host's
+        costs/benefits are the net bill savings and the payment to the developer.
+        """
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
 
-    current_row += 1
-    for i, pv in enumerate(pv_data):
-        hcs['A{}'.format(current_row)] = "Existing {} cost in $/kW".format(pv['name'])
-        hcs['A{}'.format(current_row)].alignment = one_tab_indent
-        for year in range(1, financial.analysis_years + 1):
-            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
-                ' * {pv_existing_kw_cell}'
-            ).format(
+        current_row += 1
+        for i, pv in enumerate(pv_data):
+            hcs['A{}'.format(current_row)] = "Existing {} cost in $/kW".format(pv['name'])
+            hcs['A{}'.format(current_row)].alignment = one_tab_indent
+            for year in range(1, financial.analysis_years + 1):
+                hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
+                    ' * {pv_existing_kw_cell}'
+                ).format(
                 pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
                 om_escalation_rate_cell=om_escalation_rate_cell,
                 year=year,
                 pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
                 pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"],
-            )
+                )
+            make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                               number_format='#,##0', border=no_border)
+            current_row += 1
+
+        hcs['A{}'.format(current_row)] = "Existing Generator fixed O&M cost"
+        hcs['A{}'.format(current_row)].alignment = one_tab_indent
+        for year in range(1, financial.analysis_years + 1):
+            if gen_fuel_used_gal_bau == 0:
+                # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+                hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+            else:
+                hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    '=-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * {existing_gen_kw}'
+                    ).format(
+                    generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
+                    om_escalation_rate=om_escalation_rate_cell,
+                    year=year,
+                    existing_gen_kw=generator_existing_kw_cell,
+                )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        """
+        Generator could be used for outage or during grid connected times. Either way it is used every year in the 
+        analysis period so do not use outage one time or every year for cost calculations (it only applies to outage cost
+        calculations, which are done outside of REopt).
+        TODO: test proforma with generator that can be used anytime (not just outage)
+        """
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Existing Generator variable O&M cost"
+        hcs['A{}'.format(current_row)].alignment = one_tab_indent
+        for year in range(1, financial.analysis_years + 1):
+            if gen_fuel_used_gal_bau == 0:
+                # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
+                hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
+            else:
+                hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
+                    generator.existing_gen_year_one_variable_om_cost_us_dollars or 0, om_escalation_rate_cell, year,
+                    )
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
         current_row += 1
-    
-    hcs['A{}'.format(current_row)] = "Existing Generator fixed O&M cost"
-    hcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for year in range(1, financial.analysis_years + 1):
-        if gen_fuel_used_gal_bau == 0:
-            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
-            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
-        else:
-            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '=-{generator_om_cost} * (1 + {om_escalation_rate}/100)^{year} * {existing_gen_kw}'
-                ).format(
-                generator_om_cost=generator_om_cost_us_dollars_per_kw_cell,
-                om_escalation_rate=om_escalation_rate_cell,
-                year=year,
-                existing_gen_kw=generator_existing_kw_cell)
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    """
-    Generator could be used for outage or during grid connected times. Either way it is used every year in the 
-    analysis period so do not use outage one time or every year for cost calculations (it only applies to outage cost
-    calculations, which are done outside of REopt).
-    TODO: test proforma with generator that can be used anytime (not just outage)
-    """
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Existing Generator variable O&M cost"
-    hcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for year in range(1, financial.analysis_years + 1):
-        if gen_fuel_used_gal_bau == 0:
-            # generator was not modeled because it could not run (eg. no outage, can't be used with grid)
-            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = 0
-        else:
+        hcs['A{}'.format(current_row)] = "Existing Generator fuel cost ($)"
+        hcs['A{}'.format(current_row)].alignment = one_tab_indent
+        for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
-                generator.existing_gen_year_one_variable_om_cost_us_dollars or 0, om_escalation_rate_cell, year,
+                gen_fuel_used_cost_bau_cell, om_escalation_rate_cell, year)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Total operating expenses"
+
+        for i in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=SUM({col}{start_row}:{col}{end_row})'.format(
+                col=upper_case_letters[i + 1], start_row=start_om_row, end_row=current_row - 1)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        bau_opex_total_row = current_row
+
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
+
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+                "=IF({fed_tax_rate} > 0, {col}{opex_total_row}, 0)"
+            ).format(
+                fed_tax_rate=fed_tax_rate_cell,
+                opex_total_row=bau_opex_total_row,
+                col=upper_case_letters[year+1]
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        bau_opex_tax_deductible_row = current_row
+
+        current_row += 1
+        current_row += 1
+    else:
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Electricity bill with system before export credits"
+
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = \
+                '=-{year_one_bill} * (1 + {escalation_pct}/100)^{year}'.format(
+                    year_one_bill=year_one_bill_cell, year=year, escalation_pct=escalation_pct_cell
                 )
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Existing Generator fuel cost ($)"
-    hcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for year in range(1, financial.analysis_years + 1):
-        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
-            gen_fuel_used_cost_bau_cell, om_escalation_rate_cell, year)
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        bill_with_sys_row = current_row
+    
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Export credits with system"
+        # TODO CHECK EXPORT CREDIT ACCOUNTING (SHOULD WE HAVE PV DEGRADATION?)
+    
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'
+                ).format(
+                    year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
+                    pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        export_credits_row = current_row
 
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Total operating expenses"
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Payment to Developer"
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = "=-{}".format(income_from_host_cell)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        developer_payment_row = current_row
 
-    for i in range(1, financial.analysis_years + 1):
-        hcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = '=SUM({col}{start_row}:{col}{end_row})'.format(
-            col=upper_case_letters[i + 1], start_row=start_om_row, end_row=current_row - 1)
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    bau_opex_total_row = current_row
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Net Electricity Costs"
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+                "=-{bau_bill} + {with_sys_bill} + {export_credits} +  {developer_payment} "
+                ).format(
+                bau_bill="{}{}".format(upper_case_letters[year+1], bau_bill_row),
+                with_sys_bill="{}{}".format(upper_case_letters[year+1], bill_with_sys_row),
+                export_credits="{}{}".format(upper_case_letters[year+1], export_credits_row),
+                developer_payment="{}{}".format(upper_case_letters[year+1], developer_payment_row),
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        net_elec_costs_row = current_row
+        bau_opex_total_row = current_row
 
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Tax deductible operating expenses"
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Tax deductible Electricity Costs"
 
-    for year in range(1, financial.analysis_years + 1):
-        hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-            "=IF({fed_tax_rate} > 0, {col}{opex_total_row}, 0)"
-        ).format(
-            fed_tax_rate=fed_tax_rate_cell,
-            opex_total_row=bau_opex_total_row,
-            col=upper_case_letters[year+1]
-        )
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    bau_opex_tax_deductible_row = current_row
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
+                "=IF({fed_tax_rate} > 0, {col}{opex_total_row}, 0)"
+            ).format(
+                fed_tax_rate=fed_tax_rate_cell,
+                opex_total_row=net_elec_costs_row,
+                col=upper_case_letters[year+1]
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        bau_opex_tax_deductible_row = current_row
 
-    current_row += 1
-    current_row += 1
+        current_row += 1
+        current_row += 1
 
     ####################################################################################################################
     # Existing PBI
     ####################################################################################################################
 
-    hcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
-    make_title_row(hcs, current_row, length=financial.analysis_years + 2)
+    if not financial.two_party_ownership:
 
-    current_row += 1
-    start_pbi_total_row = current_row
-    for idx, pv in enumerate(pv_data):
-        hcs['A{}'.format(current_row)] = "Existing {} Combined PBI".format(pv['name'])
-        hcs['A{}'.format(current_row)].alignment = one_tab_indent
-        pv_scaler = 1
-        if pv["pv_installed_kw"] > 0:
-            pv_scaler = pv["pv_existing_kw"] / pv["pv_installed_kw"]
+        hcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
+        make_title_row(hcs, current_row, length=financial.analysis_years + 2)
 
-        for year in range(financial.analysis_years):
-            hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
-                "=IF({year} < {pbi_year_limit}, "
-                "MIN({dol_per_kwh} * {pv_kwh} * {pv_scaler}, {pbi_max}), 0)"
+        current_row += 1
+        print("\n\n{}\n\n".format(pv_data))
+        for idx, pv in enumerate(pv_data):
+            hcs['A{}'.format(current_row)] = "Existing {} Combined PBI".format(pv['name'])
+            hcs['A{}'.format(current_row)].alignment = one_tab_indent
+            pv_scaler = 1
+            if pv["pv_installed_kw"] > 0:
+                pv_scaler = pv["pv_existing_kw"] / pv["pv_installed_kw"]
+
+            for year in range(financial.analysis_years):
+                hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                    "=IF({year} < {pbi_year_limit}, "
+                    "MIN({dol_per_kwh} * {pv_kwh} * {pv_scaler}, {pbi_max}), 0)"
+                ).format(
+                    year=year,
+                    pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"],
+                    dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
+                    col=upper_case_letters[year + 2],
+                    pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
+                    pv_scaler=pv_scaler,
+                    pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+                )
+            make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                               number_format='#,##0', border=no_border)
+            pv_cell_locations[idx]["existing_pv_pbi_row"] = current_row
+            current_row += 1
+
+        hcs['A{}'.format(current_row)] = "Total taxable cash incentives"
+
+        for i in range(financial.analysis_years):
+            pv_cells = list()
+            for idx in range(len(pv_data)):  # could be multiple PVs
+                pv_cells.append(
+                    ('IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{pv_pbi_total_row}, 0)'
+                     ).format(
+                        col=upper_case_letters[i + 2],
+                        pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
+                        pv_pbi_total_row=pv_cell_locations[idx]["existing_pv_pbi_row"]
+                    )
+                )
+            pv_string = '+'.join(pv_cells)
+
+            hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+                '={pv_string}'
             ).format(
-                year=year,
-                pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"],
-                dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
-                col=upper_case_letters[year + 2],
-                pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
-                pv_scaler=pv_scaler,
-                pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+                pv_string=pv_string,
             )
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
-        pv_cell_locations[idx]["existing_pv_pbi_row"] = current_row
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        bau_total_taxable_cash_incentives_row = current_row
         current_row += 1
-
-    hcs['A{}'.format(current_row)] = "Total taxable cash incentives"
-
-    for i in range(financial.analysis_years):
-        pv_cells = list()
-        for idx in range(len(pv_data)):  # could be multiple PVs
-            pv_cells.append(
-                ('IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{pv_pbi_total_row}, 0)'
-                 ).format(
-                    col=upper_case_letters[i + 2],
-                    pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
-                    pv_pbi_total_row= pv_cell_locations[idx]["existing_pv_pbi_row"]
-                )
-            )
-        pv_string = '+'.join(pv_cells)
-
-        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '={pv_string}'
-        ).format(
-            pv_string=pv_string,
-        )
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    bau_total_taxable_cash_incentives_row = current_row
-    current_row += 1
-    current_row += 1
+        current_row += 1
     
     ####################################################################################################################
     # After-tax Cash Flows
@@ -2442,7 +2559,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(hcs, current_row, length=financial.analysis_years + 2)
 
     current_row += 1
-    hcs['A{}'.format(current_row)] = "Deductible operating expenses, after-tax"
+    hcs['A{}'.format(current_row)] = "Net Operating expenses, after-tax"
 
     for year in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
@@ -2451,55 +2568,58 @@ def generate_proforma(scenariomodel, output_file_path):
             col=upper_case_letters[year + 1],
             opex_total=bau_opex_total_row,
             opex_tax_deductible=bau_opex_tax_deductible_row,
-            tax_rate=fed_tax_rate_cell,
+            tax_rate=host_fed_tax_rate_cell,
         )
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     bau_opex_after_tax_row = current_row
 
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
-    for year in range(financial.analysis_years):
-        hcs["{}{}".format(upper_case_letters[year + 2], current_row)] = (
-            "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
-            "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
-        ).format(
-            col=upper_case_letters[year + 2],
-            untaxed_incentives=pv_cell_locations[idx]["existing_pv_pbi_row"],  # TODO: sum existing PV's for multiple PV's
-            taxed_incentives=bau_total_taxable_cash_incentives_row,
-            tax_rate=fed_tax_rate_cell,
-        )
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    bau_incentives_after_tax_row = current_row
+    if financial.two_party_ownership:
+        bau_fcf_row = current_row  # for discounted cash flow
 
-    current_row += 1
-    hcs['A{}'.format(current_row)] = "Free Cash Flow"
-    hcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+    if not financial.two_party_ownership:
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
+        for year in range(financial.analysis_years):
+            hcs["{}{}".format(upper_case_letters[year + 2], current_row)] = (
+                "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
+                "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
+            ).format(
+                col=upper_case_letters[year + 2],
+                untaxed_incentives=pv_cell_locations[idx]["existing_pv_pbi_row"],  # TODO: sum existing PV's for multiple PV's
+                taxed_incentives=bau_total_taxable_cash_incentives_row,
+                tax_rate=host_fed_tax_rate_cell,
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        bau_incentives_after_tax_row = current_row
 
-    for i in range(financial.analysis_years):
-        hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            "={col}{opex} + {col}{incentives}"
-        ).format(
-            col=upper_case_letters[i + 2],
-            opex=bau_opex_after_tax_row,
-            incentives=bau_incentives_after_tax_row,
-        )
-    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    bau_fcf_row = current_row
-    fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Free Cash Flow"
+
+        for i in range(financial.analysis_years):
+            hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+                "={col}{opex} + {col}{incentives}"
+            ).format(
+                col=upper_case_letters[i + 2],
+                opex=bau_opex_after_tax_row,
+                incentives=bau_incentives_after_tax_row,
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        bau_fcf_row = current_row
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
     current_row += 1
     hcs['A{}'.format(current_row)] = "Discounted Cash Flow"
-    hcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+
     for year in range(financial.analysis_years):
         hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
             "={col}{fcf} / (1 + {disc_rate}/100)^{year}"
         ).format(
             col=upper_case_letters[year + 2],
             fcf=bau_fcf_row,
-            disc_rate=discount_rate_cell,
+            disc_rate=host_discount_rate_cell,
             year=year + 1,
         )
     make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
@@ -2509,6 +2629,8 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     hcs['A{}'.format(current_row)] = "BAU Life Cycle Cost"
+    if financial.two_party_ownership:
+        hcs['A{}'.format(current_row)] = "Host Net Present Value"
     hcs['B{}'.format(current_row)] = "=SUM(B{row}:{col}{row})".format(
         row=bau_dcf_row,
         col=upper_case_letters[financial.analysis_years + 1]
@@ -2536,11 +2658,16 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['D{}'.format(current_row)] = "Business as usual LCC, $"
     ws['E{}'.format(current_row)] = "=-{}".format(bau_LCC_cell)
+    if financial.two_party_ownership:
+        ws['D{}'.format(current_row)] = "Annual payment to developer, $"
+        ws['E{}'.format(current_row)] = "={}".format(income_from_host_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
     current_row += 1
     ws['D{}'.format(current_row)] = "Optimal LCC, $"
+    if financial.two_party_ownership:
+        ws['D{}'.format(current_row)] = "Developer NPC, $"
     ws['E{}'.format(current_row)] = "=-{}".format(optimal_LCC_cell)
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
@@ -2550,12 +2677,15 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['D{}'.format(current_row)] = "NPV, $"
-    ws['E{}'.format(current_row)] = (
-        "=E{} - E{}"
-    ).format(
-        current_row - 2,
-        current_row - 1,
-    )
+    if not financial.two_party_ownership:
+        ws['E{}'.format(current_row)] = (
+            "=E{} - E{}"
+        ).format(
+            current_row - 2,
+            current_row - 1,
+        )
+    else:
+        ws['E{}'.format(current_row)] = "={}".format(bau_LCC_cell)
     ws['F{}'.format(current_row)] = (
         'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
         ' optimizer.'
