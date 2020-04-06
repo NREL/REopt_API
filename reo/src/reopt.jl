@@ -194,7 +194,9 @@ function reopt(reo_model, data, model_inputs)
           TechsNoTurndown = model_inputs["TechsNoTurndown"]
     )
 
-    @save "scen.jld2" p
+    if length(model_inputs["Tech"]) > 1
+        @save "scen.jld2" p
+    end
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
