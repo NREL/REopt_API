@@ -241,8 +241,8 @@ struct Parameter
      StorageMaxSizePower
      StorageMinSOC
      StorageInitSOC
-	 SegmentMinSize
-	 SegmentMaxSize
+	 #SegmentMinSize
+	 #SegmentMaxSize
      # New Sets
      Storage
      FuelType
@@ -350,12 +350,12 @@ function build_param(args...;
 	  StorageMaxSizePower,
 	  StorageMinSOC,
 	  StorageInitSOC,
-	  SegmentMinSize,
-	  SegmentMaxSize,
+	  #SegmentMinSize,
+	  #SegmentMaxSize,
           Storage,
           FuelType,
           Subdivision,
-          PricingTierCount,
+		  PricingTierCount,
           ElecStorage,
           FuelTypeByTech,
           SubdivisionByTech,
@@ -382,7 +382,7 @@ function build_param(args...;
     TimeStepBat=0:TimeStepCount
 	#Subdivision=1:1
 	#FuelType = 1:FuelBinCount
-	PricingTier = 1:FuelBinCount
+	PricingTier = 1:PricingTierCount
 	#Storage = 1:1
 
     TechIsGrid = parameter(Tech, TechIsGrid)
@@ -444,8 +444,8 @@ function build_param(args...;
     StorageMaxSizePower = parameter(Storage, StorageMaxSizePower)
     StorageMinSOC = parameter(Storage, StorageMinSOC)
     StorageInitSOC = parameter(Storage, StorageInitSOC)
-    SegmentMinSize = parameter(Storage, SegmentMinSize)
-    SegmentMaxSize = parameter(Storage, SegmentMaxSize)
+    #SegmentMinSize = parameter((Tech,Subdivision,Seg), SegmentMinSize)
+    #SegmentMaxSize = parameter((Tech,Subdivision,Seg), SegmentMaxSize)
 
     # Indexed Sets
     SegByTechSubdivision = parameter((Subdivision, Tech), SegByTechSubdivision)
@@ -551,8 +551,8 @@ function build_param(args...;
                 StorageMaxSizePower,
                 StorageMinSOC,
                 StorageInitSOC,
-				SegmentMinSize,
-				SegmentMaxSize,
+				#SegmentMinSize,
+				#SegmentMaxSize,
                 Storage,
                 FuelType,
                 Subdivision,
