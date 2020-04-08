@@ -42,6 +42,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempPricingTiers = 1:p.PricingTierCount
 	
+	TempTechByFuelType = Dict()
+	TempTechByFuelType["DIESEL"] = ["GENERATOR"]
+	
 
     @variables REopt begin
 		# Continuous Variables
@@ -155,7 +158,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					
 	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
 	@constraint(REopt, [f in p.FuelType],
-				sum( dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep ) <= 
+				sum( dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep ) <= 
 				p.FuelLimit[f]
 				)
 	
@@ -747,7 +750,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		r_tax_fraction_offtaker * p.pwf_e * (
 		
 		## Total Production Costs
-		p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+		p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 		
 		#
 		## Total Demand Charges
