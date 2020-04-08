@@ -65,10 +65,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
 		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
-        #MinChargeAdder >= 0   #to be removed
-		UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [kW]
+        MinChargeAdder >= 0   #to be removed
+		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
-		#dvFuelUsage[NonUtilTechs, p.TimeStep]  # Fuel burned by technology t in time step h
+		dvFuelUsage[NonUtilTechs, p.TimeStep]  # Fuel burned by technology t in time step h
 		#dvFuelBurnYIntercept[NonUtilTechs, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		#dvThermalProduction[NonUtilTechs, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
 		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
@@ -159,7 +159,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	@constraint(REopt, [t in NonUtilTechs, ts in p.TimeStep],
-				dvFuelUsage[t,ts]  <= (FuelBurnRateM[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
+				dvFuelUsage[t,ts]  == (FuelBurnRateM[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 					(FuelBurnRateB[t] * binTechIsOnInTS[t,ts])
 				)
 	#Skipping (1c)-(1f) until CHP implementation
@@ -181,7 +181,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				dvRatedProduction[t,ts] <= MaxSize[t] * binTechIsOnInTS[t,ts])
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(REopt, [t in NonUtilTechs, ts in p.TimeStep],
-			MaxSize[t] * (1-binTechIsOnInTS[t,ts]))	- dvRatedProduction[t,ts] >= MinTurndown[t] * dvSystemSize[t]
+			MaxSize[t] * (1-binTechIsOnInTS[t,ts])	- dvRatedProduction[t,ts] >= MinTurndown[t] * dvSystemSize[t] )
 
     ### Section 4: Storage System Constraints
 	### 
@@ -193,15 +193,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #@constraint(REopt, dvStorageSizeKW <=  p.MaxStorageSizeKW)
 	
 	### New Boundary Conditions and Size Limits
-	## Constraint (4a): Reconcile initial state of charge for storage systems
-	@constraint(REopt, [b in p.Storage], dvStorageSOC[b] = StorageInitSOC[b,0] * dvStorageCapEnergy[b])
-	## Constraint (4b)-1: Lower bound on Storage Energy Capacity
+	# Constraint (4a): Reconcile initial state of charge for storage systems
+	@constraint(REopt, [b in p.Storage], dvStorageSOC[b] == StorageInitSOC[b,0] * dvStorageCapEnergy[b])
+	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
 	@constraint(REopt, [b in p.Storage], dvStorageCapEnergy[b] >= p.StorageMinSizeEnergy)
-	## Constraint (4b)-2: Upper bound on Storage Energy Capacity
+	# Constraint (4b)-2: Upper bound on Storage Energy Capacity
 	@constraint(REopt, [b in p.Storage], dvStorageCapEnergy[b] <= p.StorageMaxSizeEnergy)
-	## Constraint (4c)-1: Lower bound on Storage Power Capacity
+	# Constraint (4c)-1: Lower bound on Storage Power Capacity
 	@constraint(REopt, [b in p.Storage], dvStorageCapPower[b] >= p.StorageMinSizePower)
-	## Constraint (4c)-2: Upper bound on Storage Power Capacity
+	# Constraint (4c)-2: Upper bound on Storage Power Capacity
 	@constraint(REopt, [b in p.Storage], dvStorageCapPower[b] <= p.StorageMaxSizePower)
 	
     ### Battery Operations
@@ -223,44 +223,43 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				ProductionFactor[t,ts] * LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
 	# Constraint (4e)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	@constraint(REopt, [b in p.HotTES, t in HeatingTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts]  <= 
-				ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-				)
+	#@constraint(REopt, [b in p.HotTES, t in HeatingTechs, ts in p.TimeStep],
+    #	        dvProductionToStorage[b,t,ts]  <= 
+	#			ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+	#			)
 	# Constraint (4e)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
-	@constraint(REopt, [b in p.ColdTES, t in CoolingTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts]  <= 
-				ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-				)
+	#@constraint(REopt, [b in p.ColdTES, t in CoolingTechs, ts in p.TimeStep],
+    #	        dvProductionToStorage[b,t,ts]  <= 
+	#			ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+	#			)
 	# Constraint (4f): Reconcile state-of-charge for electrical storage
 	@constraint(REopt, [b in p.ElecStorage, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
+    	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.ElecTechs) + 
 					GridChargeEfficiency*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
 					)
 				)
 	
 	# Constraint (4g)-1: Reconcile state-of-charge for (hot) thermal storage
-	@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
-					dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
-					)
-				)
+	#@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
+    #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
+	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
+	#				)
+	#			)
 				
 	# Constraint (4g)-2: Reconcile state-of-charge for (cold) thermal storage
-	@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] = dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
-					dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
-					)
-				)
+	#@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
+    #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
+	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
+	#				)
+	#			)
 	
 	# Constraint (4h): Minimum state of charge
 	@constraint(REopt, [b in p.Storage, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] >= StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
-				)
 	
 				
 				
@@ -268,7 +267,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # Storage inverter is AC rated. Following constrains the energy / timestep throughput of the inverter
     #     to the sum of the energy in and energy out of the battery.
     #@constraint(REopt, [ts in p.TimeStep],
-    	        dvStorageSizeKW * p.TimeStepScaling >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
+    #	        dvStorageSizeKW * p.TimeStepScaling >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
     #@constraint(REopt, dvMeanSOC == sum(dvStoredEnergy[ts] for ts in p.TimeStep) / p.TimeStepCount)
     #@constraint(REopt, [ts in p.TimeStep],
     #	        dvStorageSizeKWH >=  dvStoredEnergy[ts] * p.TimeStepScaling)
@@ -300,7 +299,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, [b in p.Storage, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] >= StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
-				)
 	
 	
 	### Constraint set (5) - hot and cold thermal loads - reserved for later
@@ -330,7 +328,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #            sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
 
 
-	### Constraint set 6: Production Incentive Cap
+	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
 	@constraint(REopt, [t in NonUtilTechs],
                 dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
@@ -562,6 +560,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		##Constraint (12e): Peak demand used in percent lookback calculation 
 		@constraint(REopt, [m in p.DemandLookbackMonths],
 			        dvPeakDemandELookback >= sum(dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin)
+					)
 		
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
 		@constraint(REopt, [r in p.Ratchets],
@@ -631,14 +630,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                                               for t in WindTechs, ts in p.TimeStep))
 
     GeneratorTechs = filter(t->p.TechToTechClassMatrix[t, "GENERATOR"] == 1, p.Tech)
-    @expression(REopt, Year1GenProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] *  * p.TimeStepScaling
+    @expression(REopt, Year1GenProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling
                        for t in GeneratorTechs, ts in p.TimeStep))
-    @expression(REopt, AverageGenProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
+    @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
                        for t in GeneratorTechs, ts in p.TimeStep))
 
     @expression(REopt, TotalTechCapCosts, sum(p.CapCostSlope[t, s] * dvSystemSizeSegment[t, "CapCost", s] + p.CapCostYInt[t,s] * binSegmentSelect[t, "CapCost", s]
                                                 for t in p.Tech, s in p.Seg))
-    @expression(REopt, TotalStorageCapCosts, p.StorageEnergyCost[b] * dvStorageCapEnergy[b]  * p.StoragePowerCost[b] * dvStorageCapPower[b] fr b in p.Storage)
+    @expression(REopt, TotalStorageCapCosts, sum(p.StorageEnergyCost[b] * dvStorageCapEnergy[b]  * p.StoragePowerCost[b] * dvStorageCapPower[b] for b in p.Storage))
     @expression(REopt, TotalPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in p.Tech))
 
     if !isempty(GeneratorTechs)
@@ -654,61 +653,52 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 
     ### Aggregates of definitions
-    @expression(REopt, TotalEnergyCharges, sum(dvFuelCost[t,fb]
-                                                 for t in p.Tech, fb in p.FuelBin))
-    @expression(REopt, TotalEnergyChargesUtil, sum(dvFuelCost["UTIL1",fb] for fb in p.FuelBin))
-    @expression(REopt, TotalGenFuelCharges, sum(dvFuelCost[t,fb] for t in GeneratorTechs, fb in p.FuelBin))
-    @expression(REopt, DemandTOUCharges, sum(dvPeakDemandE[r, db] * p.DemandRates[r,db] * p.pwf_e
+    
+    @expression(REopt, TotalEnergyChargesUtil, p.TimeStepScaling * sum(p.ElecRate[u,ts] * dvGridPurchase[u,ts] for u in p.PricingTier, ts in p.TimeStep))
+    @expression(REopt, TotalGenFuelCharges, p.TimeStepScaling *  sum(dvFuelUsage[t,ts] for t in GeneratorTechs, ts in p.TimeStep) * p.FuelCost[1])
+    @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
+	@expression(REopt, DemandTOUCharges, sum(dvPeakDemandE[r, db] * p.DemandRates[r,db] 
                                                for r in p.Ratchets, db in p.DemandBin))
-    @expression(REopt, DemandFlatCharges, sum(dvPeakDemandEMonth[m, dbm] * p.DemandRatesMonth[m, dbm] * p.pwf_e
+    @expression(REopt, DemandFlatCharges, sum(dvPeakDemandEMonth[m, dbm] * p.DemandRatesMonth[m, dbm] 
                                                 for m in p.Month, dbm in p.DemandMonthsBin))
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
-    @expression(REopt, TotalFixedCharges, p.FixedMonthlyCharge * 12 * p.pwf_e)
+    @expression(REopt, TotalFixedCharges, p.FixedMonthlyCharge * 12 )
 
     ### Utility and Taxable Costs
-    @expression(REopt, TotalEnergyExports, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *
-                                                 p.ExportRates[t,LD,ts] * p.pwf_e for t in p.Tech, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-    @expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
+    @expression(REopt, TotalEnergyExports, p.pwf_e * sum(p.TimeStepScaling * p.GridExportRates[u,ts] * (
+				dvStorageToGrid[u,ts]+ sum(dvProductionToGrid[t,u,ts] for t in NonUtilTechs) )
+                for ts in p.TimeStep, u in p.PricingTier) )
+    
+	@expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
 
 
-    ### MinChargeAdder
-    if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
-        TotalMinCharge = p.AnnualMinCharge * p.pwf_e
+    
+    #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
+		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
+		
+	### Constraint (13): Annual minimum charge adder 
+	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
+        TotalMinCharge = p.AnnualMinCharge 
     else
-        TotalMinCharge = 12 * p.MonthlyMinCharge * p.pwf_e
+        TotalMinCharge = 12 * p.MonthlyMinCharge
     end
-
-    if TotalMinCharge > 0
-        @constraint(REopt, MinChargeAdder >= TotalMinCharge - (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges))
+	
+	#if TotalMinCharge > 0
+        @constraint(REopt, MinChargeAdder >= TotalMinCharge - (
+			#Demand Charges
+			p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+			#Peak Ratchet Charges
+			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+			#Preak Monthyl Demand Charges
+			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+			# Energy Exports
+			p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier ) - 
+			p.FixedMonthlyCharge * 12 )
+		)
 	else
 		@constraint(REopt, MinChargeAdder == 0)
     end
-    #= Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
-		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
-		0.001*MinChargeAdder is added back into LCC when writing to results.  =#
-		
-	### Constraint (13): Annual minimum charge adder 
-	#if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
-    #    TotalMinCharge = p.AnnualMinCharge 
-    #else
-    #    TotalMinCharge = 12 * p.MonthlyMinCharge
-    #end
-	
-	#if TotalMinCharge > 0
-    #    @constraint(REopt, MinChargeAdder >= TotalMinCharge - (
-	#		#Demand Charges
-	#		p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-	#		#Peak Ratchet Charges
-	#		sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-	#		#Preak Monthyl Demand Charges
-	#		sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-	#		# Energy Exports
-	#		p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier ) - 
-	#		p.FixedMonthlyCharge * 12 )
-	#	)
-	#else
-	#	@constraint(REopt, MinChargeAdder == 0)
-    #end
 	
 	### Alternate constraint (13): Monthly minimum charge adder
 	
@@ -720,65 +710,65 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
 
     ### Objective Function
-    @expression(REopt, REcosts,
-		# Capital Costs
-		TotalTechCapCosts + TotalStorageCapCosts +
+    #@expression(REopt, REcosts,
+	#	# Capital Costs
+	#	TotalTechCapCosts + TotalStorageCapCosts +
 
 		# Fixed O&M, tax deductible for owner
-		TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
+	#	r_tax_fraction_owner * p.pwf_om * TotalPerUnitSizeOMCosts  +
 
 		# Variable O&M, tax deductible for owner
-		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
+	#	p.pwf_e * r_tax_fraction_owner * TotalPerUnitProdOMCosts  +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker -
+	#	r_tax_fraction_offtaker * p.pwf_e * (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) -
 
 		# Subtract Incentives, which are taxable
-		TotalProductionIncentive * r_tax_fraction_owner
-	)
+	#	r_tax_fraction_owner * TotalProductionIncentive 
+	#)
 	
 	###  New Objective Function
-	#@expression(REopt, REcosts,
+	@expression(REopt, REcosts,
 		## Non-Storage Technology Capital Costs
-		#sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,k,s] for t in NonUtilTechs, k in p.CapCostSeg, t in p.SegByTechSubdivision[t,k]) +
+		sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,k,s] for t in NonUtilTechs, k in p.CapCostSeg, t in p.SegByTechSubdivision[t,k]) +
 		
 		## Storage capital costs
-		#sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
 		
 		## Fixed O&M, tax deductible for owner
-		#r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in NonUtilTechs ) +
+		r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in NonUtilTechs ) +
 
 		## Variable O&M, tax deductible for owner
-		#r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
+		r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
 
 		
-		#r_tax_fraction_offtaker * p.pwf_e * (
+		r_tax_fraction_offtaker * p.pwf_e * (
 		
 		## Total Production Costs
-		#p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+		p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 		
 		#
 		## Total Demand Charges
-		#		p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+				p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
 		
 		## Peak Ratchet Charges
-		#sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+		sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
 		
 		## Peak Monthly Demand Charges
-		#sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+		sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
 		
 		## Energy Exports
-		#		p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier )  + 
+				p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier )  + 
 		
 		## Fixed Charges
-		# p.FixedMonthlyCharge * 12 + MinChargeAdder
+		 p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
 		
-		#) -
+		) -
 		
 		## Production Incentives
-		#r_tax_fraction_owner * sum( dvProdIncent[t] for t in NonUtilTechs )
+		r_tax_fraction_owner * sum( dvProdIncent[t] for t in NonUtilTechs )
 		
-	#)
+	)
 	
 	
     if Obj == 1
@@ -792,25 +782,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
     @expression(REopt, ExportedElecPV,
-                sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
-                    for t in PVTechs, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
+                p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
+                    for t in PVTechs, u in p.PricingTier, ts in p.TimeStep))
     @expression(REopt, ExportedElecWIND,
-                sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
-                    for t in WindTechs, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
+                p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
+                    for t in WindTechs, u in p.PricingTier, ts in p.TimeStep))
     @expression(REopt, ExportedElecGEN,
-                sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * p.TimeStepScaling
-                    for t in GeneratorTechs, LD in ["1W", "1X"], ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-
+                p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
+                    for t in GeneratorTechs, u in p.PricingTier, ts in p.TimeStep))
+                    
     # Needs levelization factor?
     @expression(REopt, ExportBenefitYr1,
-                sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t, LD, ts] * p.ExportRates[t,LD,ts] * p.LevelizationFactor[t]
-                    for t in p.Tech, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-    @expression(REopt, Year1UtilityEnergy,
-                sum(dvRatedProd["UTIL1",LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor["UTIL1", LD, ts]
-                    for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
+                p.TimeStepScaling * sum( p.GridExportRates[u,ts] * (dvStorageToGrid[u,ts] + sum(dvProductionToGrid[t,u,ts] for t in p.TechsByPricingTier[u])) for ts in p.TimeStep, u in p.PricingTier ) )
+    Year1UtilityEnergy = TotalEnergyChargesUtil / p.pwf_e
 
 
-    ojv = round(JuMP.objective_value(REopt)+ 0.001*value(MinChargeAdder))
+    ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
     Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
@@ -821,11 +808,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     results = Dict{String, Any}("lcc" => ojv)
 
-    results["batt_kwh"] = value(dvStorageSizeKWH)
-    results["batt_kw"] = value(dvStorageSizeKW)
+    results["batt_kwh"] = value(dvStorageCapEnergy["Elec"])
+    results["batt_kw"] = value(dvStorageCapPower["Elec"])
 
     if results["batt_kwh"] != 0
-    	@expression(REopt, soc[ts in p.TimeStep], dvStoredEnergy[ts] / results["batt_kwh"])
+    	@expression(REopt, soc[ts in p.TimeStep], dvStorageSOC["Elec",ts] / results["batt_kwh"])
         results["year_one_soc_series_pct"] = value.(soc)
     else
         results["year_one_soc_series_pct"] = []
@@ -833,17 +820,17 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     if !isempty(PVTechs)
         results["PV"] = Dict()
-        results["pv_kw"] = round(value(sum(dvSystemSize[t,s] for s in p.Seg, t in PVTechs)), digits=4)
+        results["pv_kw"] = round(value(sum(dvSize[t] for t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[t in PVTechs, ts in p.TimeStep],
-                    sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t] for s in p.Seg, fb in p.FuelBin))
+                    sum(dvProductionToStorage[t, b, ts] for b in p.ElecStorage))
     end
 
     WindTechs = filter(t->p.TechToTechClassMatrix[t, "WIND"] == 1, p.Tech)
     if !isempty(WindTechs)
         results["Wind"] = Dict()
-        results["wind_kw"] = round(value(sum(dvSystemSize[t,s] for s in p.Seg, t in WindTechs)), digits=4)
+        results["wind_kw"] = round(value(sum(dvSize[t] for t in WindTechs)), digits=4)
         @expression(REopt, WINDtoBatt[t in WindTechs, ts in p.TimeStep],
-                    sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t] for s in p.Seg, fb in p.FuelBin))
+                    sum(dvProductionToStorage[t, b, ts] for b in p.ElecStorage))
     end
 
 	results["gen_net_fixed_om_costs"] = 0
@@ -856,7 +843,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     if !isempty(GeneratorTechs)
     	if value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs)) > 0
 			results["Generator"] = Dict()
-            results["generator_kw"] = value(sum(dvSystemSize[t,s] for s in p.Seg, t in GeneratorTechs))
+            results["generator_kw"] = value(sum(dvSize[t] for t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
 	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
@@ -897,33 +884,30 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                          "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=0),
 						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
 
-    @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsed[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
+    @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsage[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
     results["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
 
-    @expression(REopt, GridToBatt[ts in p.TimeStep],
-                sum(dvRatedProd["UTIL1", "1S", ts, s, fb] * p.ProdFactor["UTIL1", "1S", ts] * p.LevelizationFactor["UTIL1"]
-					for s in p.Seg, fb in p.FuelBin))
+    @expression(REopt, GridToBatt[ts in p.TimeStep], dvGridToStorage[ts])
     results["GridToBatt"] = round.(value.(GridToBatt), digits=3)
 
     @expression(REopt, GridToLoad[ts in p.TimeStep],
-                sum(dvRatedProd["UTIL1", "1R", ts, s, fb] * p.ProdFactor["UTIL1", "1R", ts] * p.LevelizationFactor["UTIL1"]
-					for s in p.Seg, fb in p.FuelBin))
+                sum(dvGridPurchase[u,ts] for u in p.PricingTier) - dvGridToStorage[ts] )
     results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
 	if !isempty(GeneratorTechs)
 		@expression(REopt, GENERATORtoBatt[ts in p.TimeStep],
-					sum(dvRatedProd[t, "1S", ts, s, fb] * p.ProdFactor[t, "1S", ts] * p.LevelizationFactor[t]
-						for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin))
+					sum(dvProductionToStorage["Elec",t,ts] for t in GeneratorTechs))
     	results["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
 
 		@expression(REopt, GENERATORtoGrid[ts in p.TimeStep],
-					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
-						for t in GeneratorTechs, LD in ["1W", "1X"], s in p.Seg, fb in p.FuelBin))
+					sum(dvProductionToGrid[t,u,ts] for t in GeneratorTechs, u in p.PricingTier))
 		results["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
 
 		@expression(REopt, GENERATORtoLoad[ts in p.TimeStep],
-					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
-						for t in GeneratorTechs, s in p.Seg, fb in p.FuelBin))
+					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+						for t in GeneratorTechs) - 
+						GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
+						)
 		results["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
     else
     	results["GENERATORtoBatt"] = []
@@ -933,25 +917,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	if !isempty(PVTechs)
 		@expression(REopt, PVtoLoad[ts in p.TimeStep],
-					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
-						for t in PVTechs, s in p.Seg, fb in p.FuelBin))
+					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+						for t in PVTechs) - sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in p.PricingTier)
+						- sum(dvProductionToStorage["Elec",t,ts] for t in PVTechs)
+						)
     	results["PVtoLoad"] = round.(value.(PVtoLoad), digits=3)
 
 		@expression(REopt, PVtoGrid[ts in p.TimeStep],
-					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
-						for t in PVTechs, LD in ["1W", "1X"], s in p.Seg, fb in p.FuelBin))
+					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in p.PricingTier))
     	results["PVtoGrid"] = round.(value.(PVtoGrid), digits=3)
 
 		@expression(REopt, PVPerUnitSizeOMCosts,
-					sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in PVTechs, s in p.Seg))
+					sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in PVTechs))
 		results["pv_net_fixed_om_costs"] = round(value(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
 		
-		@expression(REopt, PVSize,
-				sum(dvSystemSize["PV",s] for s in p.Seg) )
+		@expression(REopt, PVSize, dvSize["PV"])
 		results["pv_size"] = round(value(PVSize),digits=2)
 		
-		@expression(REopt, PVNMSize,
-				sum(dvSystemSize["PVNM",s] for s in p.Seg) )
+		@expression(REopt, PVNMSize, dvSize["PVNM"])
 		results["pv_nm_size"] = round(value(PVNMSize),digits=2)
 		
 	else
@@ -964,13 +947,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	if !isempty(WindTechs)
 		@expression(REopt, WINDtoLoad[ts in p.TimeStep],
-					sum(dvRatedProd[t, "1R", ts, s, fb] * p.ProdFactor[t, "1R", ts] * p.LevelizationFactor[t]
-						for t in WindTechs, s in p.Seg, fb in p.FuelBin))
+					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+						for t in WindTechs) - sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in p.PricingTier)
+						- sum(dvProductionToStorage["Elec",t,ts] for t in WindTechs) )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
 		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
-					sum(dvRatedProd[t, LD, ts, s, fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t]
-						for t in WindTechs, s in p.Seg, fb in p.FuelBin, LD in ["1W", "1X"]))
+					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in p.PricingTier))
 		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 	else
 		results["WINDtoLoad"] = []
