@@ -57,6 +57,18 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
+	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
+	TempDischargeEff = Dict()  # replaces p.DischargeEfficiency[b] -- indexing is numeric
+	TempGridChargeEff = p.GridChargeEfficiency[1]  # replaces p.GridChargeEfficiency[b] -- should be scalar
+	for b in p.Storage
+		TempDischargeEff[b] = p.DischargeEfficiency[1]
+		idx = 1
+		for t in NonUtilTechs
+			TempChargeEff[b,t] = p.ChargeEfficiency[idx,1]    #needs to be transposed
+			idx += 1
+		end
+	end
+	
 
     @variables REopt begin
 		# Continuous Variables
@@ -252,24 +264,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	# Constraint (4f): Reconcile state-of-charge for electrical storage
 	@constraint(REopt, [b in p.ElecStorage, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.ElecTechs) + 
-					GridChargeEfficiency*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
+					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + 
+					TempGridChargeEff*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
 					)
 				)
 	
 	# Constraint (4g)-1: Reconcile state-of-charge for (hot) thermal storage
 	#@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
     #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
+	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
 	#				)
 	#			)
 				
 	# Constraint (4g)-2: Reconcile state-of-charge for (cold) thermal storage
 	#@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/DischargeEfficiency[b]
+	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
 	#				)
 	#			)
 	
@@ -293,28 +305,35 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #                                 for ts in p.TimeStep, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
 
     #New operational nuance
-	#Constraint (4i)-1: Dispatch to hot storage is no greater than power capacity
-	@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
+	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
+	@constraint(REopt, [b in p.ElecStorage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= (  
-					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs)
 					)
 				)
 	
-	#Constraint (4i)-2: Dispatch to cold storage is no greater than power capacity
-	@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
-    	        dvStorageCapPower[b] >= (  
-					sum(ChargeEfficiency[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
-					)
-				)
+	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
+	#@constraint(REopt, [b in p.HotTES, ts in p.TimeStep],
+    #	        dvStorageCapPower[b] >= (  
+	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in #p.HeatingTechs)
+	#				)
+	#			)
+	
+	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
+	#@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
+    #	        dvStorageCapPower[b] >= (  
+	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in #p.CoolingTechs)
+	#				)
+	#			)
 	
 	#Constraint (4j): Dispatch from storage is no greater than power capacity
-	@constraint(REopt, [b in p.ColdTES, ts in p.TimeStep],
+	@constraint(REopt, [b in p.Storage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
 				)
 	
 	#Constraint (4k): State of charge is no greater than energy capacity
 	@constraint(REopt, [b in p.Storage, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] >= StorageMinSOC[b] * dvStorageCapEnergy[b]
+    	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
 	
 	
