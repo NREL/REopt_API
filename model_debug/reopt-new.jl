@@ -49,7 +49,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	for t in NonUtilTechs
 		TempPricingTiersByTech[t] = []
 		for u in TempPricingTiers
-			if ExportRates[t,u,1] > 1e-6
+			if p.ExportRates[t,u,1] > 1e-6
 				push!(TempPricingTiersByTech[t],u)
 			end
 		end
