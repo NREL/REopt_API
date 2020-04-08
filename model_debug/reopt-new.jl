@@ -45,6 +45,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	TempTechByFuelType = Dict()
 	TempTechByFuelType["DIESEL"] = ["GENERATOR"]
 	
+	TempPricingTiersByTech = Dict()
+	for t in NonUtilTechs
+		TempPricingTiersByTech[t] = []
+		for u in TempPricingTiers
+			if ExportRates[t,u,1] > 1e-6
+				push!(TempPricingTiersByTech[t],u)
+			end
+		end
+	end
+	
 
     @variables REopt begin
 		# Continuous Variables
@@ -224,7 +234,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	### New Storage Operations
 	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
 	@constraint(REopt, [b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts] + sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiers) <= 
+    	        dvProductionToStorage[b,t,ts] + sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiersByTech[t]) <= 
 				ProductionFactor[t,ts] * LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
 	# Constraint (4e)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
@@ -411,7 +421,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	sum( dvDischargeFromStorage[b] for b in p.ElecStorage ) + 
 	sum( dvGridPurchase[u,ts] for u in TempPricingTiers ) ==
 	sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
-		sum(dvProductionToGrid[t,u,ts] for b in p.ElecStorage) for t in p.ElectricTechs) +
+		sum(dvProductionToGrid[t,u,ts] for b in p.ElecStorage, u in TempPricingTiersByTech[t]) for t in p.ElectricTechs) +
 	sum(dvStorageToGrid[u,ts] for u in TempPricingTiers) + dvGridToStorage[ts] + 
 	 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
 	p.ElecLoad[ts]
