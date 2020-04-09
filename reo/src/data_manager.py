@@ -847,7 +847,7 @@ class DatFileManager:
         segment_min_size_bau = [[0. for _ in reopt_techs_bau] for __ in subdivisions]
         
         segment_max_size = [[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions]
-        segment_max_size_bau = [[max_sizes_bau[i] for i in range(len(reopt_techs))] for __ in subdivisions]
+        segment_max_size_bau = [[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions]
 
 
         self.reopt_inputs = {
