@@ -263,7 +263,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     @constraint(REopt, [LD in ["1R"], ts in p.TimeStep],
                 sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
-                    for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
+                    for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] == p.LoadProfile[LD,ts])
 
     ###  Net Meter Module
     @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
