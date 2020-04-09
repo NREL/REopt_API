@@ -24,7 +24,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	REopt = reo_model
     Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
-	NonUtilTechs = String[]   #replaces p.Tech
+	NonUtilTechs = String[]   #replaces p.Tech, filters out "UTIL1" which we don't want
 	for t in p.Tech
 		if !(t == "UTIL1")
 			push!(NonUtilTechs,t)
@@ -69,6 +69,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
+	TempTechsNoTurndown = [t for t in NonUtilTechs if t in ["PV","PVNM","WIND","WINDNM"]]  #To replace p.TechsNoTurndown, which needs to filter out any technologies not also in p.Tech
+	TempTechsTurndown = [t for t in NonUtilTechs if !(t in ["PV","PVNM","WIND","WINDNM"])]  #To be p.TechsTurndown, which isn't explicitly in math but we need to add 
+	
+	TempSegBySubTech = Dict()  # to replace p.SegByTechSubdivision[t,k], which is transposed
+	for t in NonUtilTechs
+		for k in p.Subdivision
+			TempSegBySubTech[t,k] = 1:p.SegByTechSubdivision[k,t]
+		end
+	end
 
     @variables REopt begin
 		# Continuous Variables
@@ -287,7 +296,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	# Constraint (4h): Minimum state of charge
 	@constraint(REopt, [b in p.Storage, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] >= StorageMinSOC[b] * dvStorageCapEnergy[b]
+    	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
 	
 				
@@ -370,7 +379,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
 	##Constraint (6a)-2: Production Incentive According to Production (updated)
 	@constraint(REopt, [t in NonUtilTechs],
-                dvProdIncent[t] <= sum(p.ProductionFactor[t, ts] *  p.TimeStepScaling * p.ProdIncentRate[t]  * p.LevelizationFactorProdIncent[t] * dvRatedProduction[t,ts] for ts in p.TimeStep)
+                dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t]  * p.LevelizationFactorProdIncent[t] *  sum(p.ProductionFactor[t, ts] *   dvRatedProduction[t,ts] for ts in p.TimeStep)
                 )
 	##Constraint (6b): System size max to achieve production incentive
 	@constraint(REopt, [t in NonUtilTechs],
@@ -395,42 +404,42 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Constraint (7c): Minimum size for each tech class
 	@constraint(REopt, [c in p.TechClass],
-		sum( dvSize[t] for t in in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
-		)
+				sum( dvSize[t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
+			)
 	
 	## Constraint (7d): Non-turndown technologies are always at rated production
-	@constraint(REopt, [t in p.TechsNoTurndown, ts in p.TimeStep],
+	@constraint(REopt, [t in TempTechsNoTurndown, ts in p.TimeStep],
 		dvRatedProduction[t,ts] == dvSize[t]  
 	)
 		
 	
 	##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
-	@constraint(REopt, [t in p.TechsTurndown, ts in p.TimeStep],
-		dvRatedProduction[t,ts]  <= p.TurbineDerate[t,ts] * dvSize[t]
+	@constraint(REopt, [t in TempTechsTurndown, ts in p.TimeStep],
+		dvRatedProduction[t,ts]  <= p.TurbineDerate[t] * dvSize[t]
 	)
 		
 	
 	##Constraint (7f)-1: Minimum segment size
-	@constraint(REopt, [t in p.Techs, k in p.Subdivisions, s in p.SegByTechSubdivision[t,k]],
-		dvSystemSizeSegment[t,k,s]  >= SegmentMinSize[t,ts] * binSegChosen[t,k,s]
+	@constraint(REopt, [t in NonUtilTechs, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+		dvSystemSizeSegment[t,k,s]  >= SegmentMinSize[t,s] * binSegmentSelect[t,k,s]
 	)
 		
 	
 	##Constraint (7f)-2: Maximum segment size
-	@constraint(REopt, [t in p.Techs, k in p.Subdivisions, s in p.SegByTechSubdivision[t,k]],
-		dvSystemSizeSegment[t,k,s]  <= SegmentMaxSize[t,ts] * binSegChosen[t,k,s]
+	@constraint(REopt, [t in NonUtilTechs, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+		dvSystemSizeSegment[t,k,s]  <= SegmentMaxSize[t,s] * binSegmentSelect[t,k,s]
 	)
 		
 
 	##Constraint (7g):  Segments add up to system size 
-	@constraint(REopt, [t in p.Techs, k in p.Subdivisions],
-		sum(dvSystemSizeSegment[t,k,s] for s in p.SegByTechSubdivision[t,k])  == dvSize[t]
+	@constraint(REopt, [t in NonUtilTechs, k in p.Subdivision],
+		sum(dvSystemSizeSegment[t,k,s] for s in TempSegBySubTech[t,k])  == dvSize[t]
 	)
 		
 	
 	##Constraint (7h): At most one segment allowed
-	@constraint(REopt, [t in p.Techs, k in p.Subdivisions],
-		sum(binSegChosen[t,k,s] for s in p.SegByTechSubdivision[t,k])  <= 1
+	@constraint(REopt, [t in NonUtilTechs, k in p.Subdivision],
+		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k])  <= 1
 	)
 		
  
@@ -653,7 +662,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ProdLoad = ["1R", "1W", "1X", "1S"]
 
-    PVTechs = filter(t->p.TechToTechClassMatrix[t, "PV"] == 1, p.Tech)
+    PVTechs = TechsInClass["PV"]
     @expression(REopt, Year1PvProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling
                                             for t in PVTechs, ts in p.TimeStep))
     @expression(REopt, AveragePvProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
@@ -766,7 +775,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	###  New Objective Function
 	@expression(REopt, REcosts,
 		## Non-Storage Technology Capital Costs
-		sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,k,s] for t in NonUtilTechs, k in p.CapCostSeg, t in p.SegByTechSubdivision[t,k]) +
+		sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in NonUtilTechs, s in TempSegBySubTech[t,"CapCost"] ) + 
+		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in NonUtilTechs, s in TempSegBySubTech[t,"CapCost"] ) +
 		
 		## Storage capital costs
 		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
