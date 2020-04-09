@@ -143,12 +143,27 @@ nested_output_definitions = {
                 },
                 "net_capital_costs": {
                   "type": float,
-                  "description": "Capital cost for all technologies.",
+                  "description": "Net capital costs for all technologies, in present value, including replacement costs and incentives.",
                   "units": "$"
                 },
                 "microgrid_upgrade_cost_us_dollars": {
                   "type": float,
                   "description": "Cost in US dollars to make a distributed energy system islandable from the grid. Determined by multiplying the total capital costs of resultant energy systems from REopt (such as PV and Storage system) with the input value for microgrid_upgrade_cost_pct (which defaults to 0.30)."
+                },
+                "initial_capital_costs": {
+                  "type": float,
+                  "description": "Up-front capital costs for all technologies, in present value, excluding replacement costs and incentives.",
+                  "units": "$"
+                },
+                "initial_capital_costs_after_incentives": {
+                  "type": float,
+                  "description": "Up-front capital costs for all technologies, in present value, excluding replacement costs, including incentives.",
+                  "units": "$"
+                },
+                "replacement_costs": {
+                  "type": float,
+                  "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
+                  "units": "$"
                 }
               },
 
