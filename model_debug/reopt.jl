@@ -11,7 +11,7 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/tou_pv_storage.jld2", "p")
+    p = load("./scenarios/pv_storage.jld2", "p")
 
     MAXTIME = 100000
 
