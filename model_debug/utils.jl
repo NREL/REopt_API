@@ -255,6 +255,7 @@ struct Parameter
      TechsChargingStorage
      TechsInClass
      TechsByFuelType
+	 #TechsByNMILRegime
      ElectricTechs
      FuelBurningTechs
      TechsNoTurndown
