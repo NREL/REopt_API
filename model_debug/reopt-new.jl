@@ -22,7 +22,7 @@ end
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
-    Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
+    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
 	NonUtilTechs = String[]   #replaces p.Tech, filters out "UTIL1" which we don't want
 	for t in p.Tech
@@ -840,7 +840,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@objective(REopt, Min, REcosts - sum(dvStorageSOC["Elec",ts] for ts in p.TimeStep)/8760.)
 	end
 	optimize!(REopt)
-
+	if termination_status(REopt) == MOI.TIME_LIMIT
+		status = "timed-out"
+    elseif termination_status(REopt) == MOI.OPTIMAL
+        status = "optimal"
+    else
+        status = "not optimal"
+    end
+	print(status)
     ##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
