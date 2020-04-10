@@ -303,7 +303,8 @@ class UrdbParse:
             energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
-                energy_tier_max = float(energy_tier['max'])
+                if energy_tier['max'] is not None:
+                    energy_tier_max = float(energy_tier['max'])
 
             if 'rate' in energy_tier or 'adj' in energy_tier:
                 self.reopt_args.energy_max_in_tiers.append(energy_tier_max)
@@ -547,7 +548,8 @@ class UrdbParse:
                     demand_tier = demand_rate_structure[period][tier]
                     demand_tier_max = self.big_number
                     if 'max' in demand_tier:
-                        demand_tier_max = float(demand_tier['max'])
+                        if demand_tier['max'] is not None:
+                            demand_tier_max = float(demand_tier['max'])
                     demand_max.append(demand_tier_max)
                 demand_tiers[period] = demand_max
                 demand_maxes.append(demand_max[-1])
