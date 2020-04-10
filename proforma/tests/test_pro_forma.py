@@ -103,7 +103,7 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         self.assertTrue(os.path.exists(pf.output_file))
         self.assertTrue(pf.spreadsheet_created < now() and pf.spreadsheet_created > start_time)
 
-        wb = load_workbook(pf.output_file, read_only=False, keep_vba=True)
+        wb = load_workbook(pf.output_file, read_only=False, keep_vba=True, data_only=True)
         ws = wb.get_sheet_by_name(pf.sheet_io)
 
         # Removed ClassAttributes to allow the use of defaultdict to handle cases
@@ -238,6 +238,6 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
         if 'Wind' in run_output['inputs']['Scenario']['Site'].keys():
             mapping.extend(wind_inputs)
 
-        mapping.extend([[ws['D117'], int(not loadprofile_in["outage_is_major_event"])]])
+        mapping.extend([[ws['D118'], int(not loadprofile_in["outage_is_major_event"])]])
 
         return mapping
