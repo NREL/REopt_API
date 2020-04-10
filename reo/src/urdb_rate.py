@@ -111,7 +111,7 @@ class Rate(object):
         url_base = "http://api.openei.org/utility_rates?"
         api_key = "BLLsYv81d8y4w6UPYCfGFsuWlu4IujlZYliDmoq6"
         request_params = {
-            "version": "3",
+            "version": "7",
             "format": "json",
             "detail": "full",
             "api_key": api_key,
