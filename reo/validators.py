@@ -390,9 +390,7 @@ class ValidateNestedInput:
                 self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
                 self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
                 self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
-
                 self.recursively_check_input_dict(self.nested_input_definitions, self.add_number_to_listed_inputs)
-
                 if type(self.input_dict['Scenario']['Site']['PV']) == dict:
                     self.input_dict['Scenario']['Site']['PV']['pv_number'] = 1
                     self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
@@ -407,7 +405,7 @@ class ValidateNestedInput:
         @property
         def messages(self):
             output = {}
-
+           
             if self.errors != {}:
                 output = self.errors
 
@@ -441,14 +439,14 @@ class ValidateNestedInput:
 
             if self.urdb_errors and self.input_data_errors:
                 output["input_errors"] += self.urdb_errors
-
+            
             elif self.urdb_errors:
                 output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.urdb_errors
 
             return output
 
-        @property
+        @property 
         def warnings(self):
             output = {}
 
@@ -477,7 +475,6 @@ class ValidateNestedInput:
         def isAttribute(self, k):
             return k[0] == k[0].lower()
 
-
         def check_object_types(self, nested_dictionary_to_check, object_name_path=[]):
             """
             Checks that all keys (i.e. Scenario, Site) are valid dicts or lists. This function only checks object names
@@ -491,7 +488,7 @@ class ValidateNestedInput:
 
             # Loop through all keys in the dictionary
             for name in nested_dictionary_to_check.keys():
-                # If the key is an object name (i.e. Scnenario, Wind) continue
+                # If the key is an object name (i.e. Scnenario, Wind) continue 
                 if self.isSingularKey(name):
                     # get the value of the key
                     real_input_value = nested_dictionary_to_check.get(name)
@@ -507,7 +504,7 @@ class ValidateNestedInput:
                         pass
                     # catch list case
                     elif type(real_input_value) == list:
-                        # if the object is not one that support a list input flag an error
+                        # if the object is not one that support a list input flag an error 
                         if name not in self.list_or_dict_objects:
                             message = "A list of inputs is not allowed for {}".format(">".join(object_name_path + [name]))
                             self.input_data_errors.append(message)
@@ -611,8 +608,8 @@ class ValidateNestedInput:
                                                               real_values or {},
                                                               object_name_path=object_name_path + [template_k])
 
-                        # if at the end of validation we are left with a list containing one dict, convert the entry fot the object back to
-                        # a dict from a list
+                        # if at the end of validation we are left with a list containing one dict, convert the entry fot the object back to 
+                        # a dict from a list                                
                         if len(real_values_list) == 1:
                             nested_dictionary_to_check[template_k] = real_values_list[0]
 
@@ -658,8 +655,8 @@ class ValidateNestedInput:
                     del to_update[attribute]
             else:
                 if attribute in to_update[number-1].keys():
-                    del to_update[number-1][attribute]
-
+                    del to_update[number-1][attribute]   
+        
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
@@ -725,7 +722,9 @@ class ValidateNestedInput:
             :param number: int, order of the dict in the list
             :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
-            """
+
+            """ 
+
             if real_values is not None and input_isDict==False:
                 object_name_path[-1].lower()
                 self.update_attribute_value(object_name_path, number, object_name_path[-1].lower() + '_number', number)
@@ -745,7 +744,7 @@ class ValidateNestedInput:
             :param number: int, order of the dict in the list
             :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
-            """
+            """ 
             if real_values is not None:
                 rv = copy.deepcopy(real_values)
                 for name, value in rv.items():
@@ -784,8 +783,6 @@ class ValidateNestedInput:
                             if input_isDict == False:
                                 object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                                 self.invalid_inputs.append([name, object_name_path])
-
-
 
         def check_special_cases(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
@@ -833,16 +830,16 @@ class ValidateNestedInput:
 
                         if real_values.get("wind_meters_per_sec"):
                             self.validate_8760(real_values.get("wind_meters_per_sec"),
-                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("wind_direction_degrees"),
-                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("temperature_celsius"),
-                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("pressure_atmospheres"),
-                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
                         else:
                             from reo.src.wind_resource import get_conic_coords
 
@@ -982,7 +979,7 @@ class ValidateNestedInput:
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
-                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],number=number, input_isDict=input_isDict)
                         isnet = real_values.get(lp + '_is_net')
                         if isnet is None:
                             isnet = True
@@ -1021,6 +1018,7 @@ class ValidateNestedInput:
                         if "list_of_float" in data_validators['type'] and isinstance(value, list):
                             if data_validators.get('min') is not None:
                                 if any([v < data_validators['min'] for v in value]):
+
                                     if input_isDict or input_isDict is None:
                                         self.input_data_errors.append(
                                             'At least one value in %s (from %s) exceeds allowable min of %s' % (
@@ -1051,7 +1049,7 @@ class ValidateNestedInput:
                         except:
                             self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
                             name, value, self.object_name_string(object_name_path)))
-                        else:
+                        else:                
                             if data_validators.get('min') is not None:
                                 if value < data_validators['min']:
                                     if input_isDict or input_isDict is None:
@@ -1165,7 +1163,6 @@ class ValidateNestedInput:
                                         name, value, self.object_name_string(object_name_path), number,
                                         str(attribute_type).split(' ')[1]))
 
-
         def fillin_defaults(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
@@ -1233,9 +1230,9 @@ class ValidateNestedInput:
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
             all_missing_attribute_sets = []
-
+            
             for key,value in template_values.items():
-
+                
                 if self.isAttribute(key):
 
                     missing_attribute_sets = []
@@ -1244,27 +1241,27 @@ class ValidateNestedInput:
 
                     if replacements is not None:
                         current_set = [key] + depends_on
-
+                        
                         if list(set(current_set)-set(real_values.keys())) != []:
                             for replace in replacements:
                                 missing = list(set(replace)-set(real_values.keys()))
-
+                                
                                 if missing == []:
                                     missing_attribute_sets = []
                                     break
-
+                                
                                 else:
                                     replace = sorted(replace)
                                     if replace not in missing_attribute_sets:
                                         missing_attribute_sets.append(replace)
-
+                        
                     else:
                         if real_values.get(key) is not None:
                             missing = []
                             for dependent_key in depends_on:
                                 if real_values.get(dependent_key) is None:
                                     missing.append(dependent_key)
-
+                            
                             if missing !=[]:
                                 missing_attribute_sets.append(missing)
 

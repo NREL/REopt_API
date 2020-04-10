@@ -164,7 +164,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         @property
-
         def replacement_costs(self):
             replacement_costs = 0
             replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
@@ -274,6 +273,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.results_dict.get("net_capital_costs") \
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
+
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
                     self.nested_outputs['Scenario']["Site"][name] = []

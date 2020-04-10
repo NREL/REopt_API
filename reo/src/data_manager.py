@@ -72,6 +72,7 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
+
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
@@ -107,6 +108,7 @@ class DataManager:
         if pv.existing_kw > 0:
             self.bau_techs = ["pv"+str(pv_number), "pv"+str(pv_number)+"nm"] + self.bau_techs
 
+
         # update self.available_techs (baseline is ['pv1', 'pv1nm', 'wind', 'windnm', 'generator'])
         if pv_number > 1:
             i = pv_number - 1
@@ -114,6 +116,7 @@ class DataManager:
                                    self.available_techs[i*2:]
             self.available_tech_classes = self.available_tech_classes[:i] + ["PV" + str(pv_number)] + \
                                    self.available_tech_classes[i:]
+
             # eg. ['pv1', 'pvnm1', 'pv2', 'pvnm2', 'wind', 'windnm', 'generator']
 
         # for backwards compatibility with all self._get* methods we need to attach the individual PV objects to self:
@@ -630,6 +633,15 @@ class DataManager:
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
                         tech_to_load[-1] = int(self.storage.canGridCharge)
+                
+                for location in ['roof', 'ground', 'both']:
+                    if tech.startswith('pv'):
+                        if eval('self.' + tech + '.location') == location:
+                            tech_to_location.append(1)
+                        else:
+                            tech_to_location.append(0)
+                    else:
+                        tech_to_location.append(0)
 
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
@@ -675,6 +687,7 @@ class DataManager:
         tech_to_tech_class = list()  # array(Tech, TechClass)
         techs_in_class = list()  # array(TechClass)
         for tc in self.available_tech_classes:
+
             min_sizes = [0.0]
             for tech in (x for x in techs if x.startswith(tc.lower()) and 'nm' not in x):
                 if eval('self.' + tech) is not None:
@@ -714,6 +727,7 @@ class DataManager:
         max_sizes = list()
         min_turn_down = list()
         # default to large max size per location. Max size by roof, ground, both
+
         max_sizes_location = [1.0e9, 1.0e9, 1.0e9]
         pv_roof_limited, pv_ground_limited, pv_space_limited = False, False, False
         roof_existing_pv_kw = 0.0
@@ -825,6 +839,7 @@ class DataManager:
             else:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
+
 
     def finalize(self):
         """

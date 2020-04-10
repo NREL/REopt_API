@@ -27,13 +27,13 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+
 from resilience_stats.outage_simulator_LF import simulate_outages
 from resilience_stats.models import ResilienceModel
 from reo.models import ScenarioModel
 import numpy as np
 import logging
 log = logging.getLogger(__name__)
-
 
 def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     """
@@ -64,6 +64,17 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
                                 * site_inputs['Storage']['inverter_efficiency_pct'] \
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
+    
+    pv_production = []
+    for p in pvs:
+        add_prod = p.get('year_one_power_production_series_kw') or []
+        if add_prod != []:
+            if pv_production == []:
+                pv_production = add_prod
+            else:
+                pv_production += np.array(add_prod)
+    if sum(pv_production) == 0:
+        pv_production = []
 
     """
     smishra 200515

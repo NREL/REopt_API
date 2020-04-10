@@ -575,7 +575,11 @@ class ModelManager(object):
         FinancialModel.objects.filter(run_uuid=run_uuid).delete()
         LoadProfileModel.objects.filter(run_uuid=run_uuid).delete()
         ElectricTariffModel.objects.filter(run_uuid=run_uuid).delete()
-        PVModel.objects.filter(run_uuid=run_uuid).delete()
+        if type(d['Site']['PV'])==dict:
+            PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV'])==list:
+            for pv in d['Site']['PV']:
+                PVModel.objects.filter(run_uuid=run_uuid, pv_number=pv['pv_number']).update(**attribute_inputs(pv))
         WindModel.objects.filter(run_uuid=run_uuid).delete()
         StorageModel.objects.filter(run_uuid=run_uuid).delete()
         GeneratorModel.objects.filter(run_uuid=run_uuid).delete()
