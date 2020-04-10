@@ -1052,6 +1052,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["np"]["SegmentMinSize"] = SegmentMinSize
 	results["np"]["SegmentMaxSize"] = SegmentMaxSize
 	results["np"]["TempTechsByNMILRegime"] = TempTechsByNMILRegime
-	results["model"] = REopt
+	results["dvSize"] = value.(dvSize)
+	results["dvRatedProduction"] = value.(dvRatedProduction)
+	results["dvGridPurchase"] = value.(dvGridPurchase)
+	results["dvProductionToGrid"] = value.(dvProductionToGrid)
+	results["dvProductionToStorage"] = value.(dvProductionToStorage)
+	results["dvStorageToGrid"] = value.(dvStorageToGrid)
+	results["dvGridToStorage"] = value.(dvGridToStorage)
     return results
 end
