@@ -153,6 +153,10 @@ nested_output_definitions = {
               },
 
               "PV": {
+                "pv_name": {
+                  "type": "str",
+                  "description": "Site name/description"
+                },
                 "size_kw": {
                   "type": float,
                   "description": "Optimal PV system size",

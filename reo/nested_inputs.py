@@ -512,6 +512,10 @@ nested_input_definitions = {
       },
 
       "PV": {
+        "pv_name": {
+          "type": "str",
+          "description": "Site name/description"
+        },
         "existing_kw": {
           "type": "float",
           "min": 0.0,
@@ -731,7 +735,13 @@ nested_input_definitions = {
           "max": 90.0,
           "default": 0.537,
           "description": "PV system tilt"
-        }
+        },
+        "location": {
+          "type": "str",
+          "restrict_to": "['roof', 'ground', 'both']",
+          "default": 'both',
+          "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
+         }           
       },
 
       "Storage": {
