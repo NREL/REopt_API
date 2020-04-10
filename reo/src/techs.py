@@ -104,12 +104,12 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
         self.nmil_regime = 'BelowNM'
-        self.reopt_class = 'PV'
+        self.reopt_class = 'PV' + str(pv_number)
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
         self.time_steps_per_hour = time_steps_per_hour
@@ -118,6 +118,8 @@ class PV(Tech):
         self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
+        self.tech_name = 'pv' + str(pv_number)
+        self.location = location
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
