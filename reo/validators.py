@@ -892,7 +892,7 @@ class ValidateNestedInput:
                                 else:
                                     self.update_attribute_value(object_name_path, name, new_value)
                                     self.validate_8760(attr=new_value, obj_name=object_name_path[-1], attr_name=name,
-                                                       time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
+                                                       time_steps_per_hour=self.input_dict['Scenario'].get('time_steps_per_hour') or self.nested_input_definitions['Scenario']['time_steps_per_hour']['default'])
                                     continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
                                 attribute_type = 'float'
