@@ -227,13 +227,13 @@ def check_common_outputs(Test, d_calculated, d_expected):
 
         if 'lcc_bau' in c and c['lcc_bau'] > 0:
         # Total LCC BAU is sum of utility costs
-            Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                            - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
-                            - float(c['total_fixed_cost_bau'])
-                            - float(c['existing_gen_total_variable_om_cost_us_dollars'])
-                            - float(c['existing_gen_total_fixed_om_cost_us_dollars'])
-                            - float(c['existing_gen_total_fuel_cost_us_dollars']))
-                            / float(c['lcc_bau'])) < Test.REopt_tol,
+            Test.assertTrue(abs((float(c['lcc_bau'] or 0) - float(c['total_energy_cost_bau'] or 0) - float(c['total_min_charge_adder'] or 0)
+                            - float(c['total_demand_cost_bau'] or 0) - float(c['existing_pv_om_cost_us_dollars'] or 0)
+                            - float(c['total_fixed_cost_bau'] or 0)
+                            - float(c['existing_gen_total_variable_om_cost_us_dollars'] or 0)
+                            - float(c['existing_gen_total_fixed_om_cost_us_dollars'] or 0)
+                            - float(c['existing_gen_total_fuel_cost_us_dollars'] or 0))
+                            / float(c['lcc_bau'] or 0)) < Test.REopt_tol,
                             "LCC_BAU doesn't add up to sum of individual costs")
     except Exception as e:
         print("check_common_outputs failed: {}".format(e.args[0]))
