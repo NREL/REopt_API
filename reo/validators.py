@@ -39,6 +39,7 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 from reo.src.techs import Generator
+from reo.nested_inputs import max_big_number
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -646,6 +647,24 @@ class ValidateNestedInput:
                     self.validate_text_fields(str = real_values['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                               err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
             
+            if object_name_path[-1] == "PV":
+                if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
+                    if real_values['max_kw'] > 0:
+                        if real_values.get("prod_factor_series_kw"):
+                            self.validate_8760(real_values.get("prod_factor_series_kw"),
+                                                                "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+     
+            if object_name_path[-1] == "Wind":
+                if real_values['max_kw'] is None and real_values['min_kw'] is not None:
+                    #If user set a non-default min_kw for Wind assume they want to run Wind and reset the max_kw so that wind will be run
+                    if real_values['min_kw'] > 0:
+                        self.update_attribute_value(object_name_path, number, 'max_kw', max_big_number)
+
+                if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
+                    if real_values['max_kw'] > 0:
+                        if real_values.get("prod_factor_series_kw"):
+                            self.validate_8760(real_values.get("prod_factor_series_kw"),
+                                                "Wind", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
             if object_name_path[-1] == "Wind":
                 if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                     if real_values['max_kw'] > 0:
