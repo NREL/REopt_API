@@ -1,7 +1,7 @@
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
 from reo.models import ScenarioModel, SiteModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
 from openpyxl import load_workbook
-from reo.nested_inputs import max_big_number
+from reo.nested_inputs import max_big_number as big_number
 
 
 def generate_proforma(scenariomodel, template_workbook, output_file_path):
