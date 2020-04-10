@@ -379,7 +379,10 @@ def parse_run_outputs(self, dfm_list, data, meta, saveToDB=True):
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
-            pv_warning = "The best available solar resource data is more than 200 miles ({} miles) from the site's coordinates. Consider choosing an alternative location closer to the continental US with similar solar irradiance and weather patterns and rerunning the analysis".format(round(pv_watts_station_check*0.621,0))
+            pv_warning = ("The best available solar resource data is {} miles from the site's coordinates. "
+             "Consider choosing an alternative location closer to NREL's NSRDB or international datasets, shown "
+             "at https://maps.nrel.gov/nsrdb-viewer/ and documented at https://nsrdb.nrel.gov/"
+             ).format(round(pv_watts_station_check*0.621,0))
             if data.get('messages') is None:
                 data['messages'] = {"PVWatts Warning": pv_warning}
             else:
