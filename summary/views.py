@@ -196,7 +196,7 @@ def summary(request, user_uuid):
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','replacement_costs', 'initial_capital_costs', 'initial_capital_costs_after_incentives')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
 
         def get_scenario_data(data, run_uuid):
@@ -270,6 +270,11 @@ def summary(request, user_uuid):
 
                 # DG System Cost
                 results['net_capital_costs'] = financial.get('net_capital_costs')
+
+                #Other Financials
+                results['replacement_costs'] = financial.get('replacement_costs')
+                results['initial_capital_costs'] = financial.get('initial_capital_costs')
+                results['initial_capital_costs_after_incentives'] = financial.get('initial_capital_costs_after_incentives')
 
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
