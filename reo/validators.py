@@ -652,19 +652,19 @@ class ValidateNestedInput:
                     if real_values['max_kw'] > 0:
                         if real_values.get("prod_factor_series_kw"):
                             self.validate_8760(real_values.get("prod_factor_series_kw"),
-                                                                "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                                                "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
      
             if object_name_path[-1] == "Wind":
                 if real_values['max_kw'] is None and real_values['min_kw'] is not None:
                     #If user set a non-default min_kw for Wind assume they want to run Wind and reset the max_kw so that wind will be run
                     if real_values['min_kw'] > 0:
-                        self.update_attribute_value(object_name_path, number, 'max_kw', max_big_number)
+                        self.update_attribute_value(object_name_path, 'max_kw', max_big_number)
 
                 if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                     if real_values['max_kw'] > 0:
                         if real_values.get("prod_factor_series_kw"):
                             self.validate_8760(real_values.get("prod_factor_series_kw"),
-                                                "Wind", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                                "Wind", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
             if object_name_path[-1] == "Wind":
                 if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                     if real_values['max_kw'] > 0:

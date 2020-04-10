@@ -176,7 +176,6 @@ def summary(request, user_uuid):
             return JsonResponse({"Error": str(err.message)}, status=404)
 
     try:
-        
         scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
@@ -198,7 +197,7 @@ def summary(request, user_uuid):
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'replacement_costs', 'initial_capital_costs', 'initial_capital_costs_after_incentives', 'net_capital_costs','net_om_us_dollars_bau')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
         resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
 
@@ -289,9 +288,6 @@ def summary(request, user_uuid):
                 #Other Financials
                 results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
                 results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
-                results['replacement_costs'] = financial.get('replacement_costs')
-                results['initial_capital_costs'] = financial.get('initial_capital_costs')
-                results['initial_capital_costs_after_incentives'] = financial.get('initial_capital_costs_after_incentives')
                 results['net_capital_costs'] = financial.get('net_capital_costs')
 
                 # Year 1 Savings
