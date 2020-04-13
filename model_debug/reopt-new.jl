@@ -96,8 +96,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if ProdFactor["UTIL1",1,ts] > 0.5]
-	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if ProdFactor["UTIL1",1,ts] < 0.5]
+	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] > 0.5]
+	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] < 0.5]
 	
 
     @variables REopt begin
