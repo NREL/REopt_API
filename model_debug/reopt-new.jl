@@ -11,7 +11,7 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/pv_storage.jld2", "p")
+    p = load("./scenarios/pv.jld2", "p")
 
     MAXTIME = 100000
 
@@ -95,6 +95,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			end
 		end
 	end
+	
+	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if ProdFactor["UTIL1",1,ts] > 0.5]
 
     @variables REopt begin
 		# Continuous Variables
@@ -241,7 +243,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### Section 4: Storage System Constraints
 	### 
 	### Boundary Conditions and Size Limits
-    #@constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH / p.TimeStepScaling)
+    #@constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH )
     #@constraint(REopt, p.MinStorageSizeKWH <= dvStorageSizeKWH)
     #@constraint(REopt, dvStorageSizeKWH <=  p.MaxStorageSizeKWH)
     #@constraint(REopt, p.MinStorageSizeKW <= dvStorageSizeKW)
@@ -465,7 +467,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	##Constraint (8a): Electrical Load Balancing
 	@constraint(REopt, [ts in p.TimeStep],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in TempElectricTechs) +  
-	sum( dvDischargeFromStorage[b] for b in p.ElecStorage ) + 
+	sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage ) + 
 	sum( dvGridPurchase[u,ts] for u in TempPricingTiers ) ==
 	sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 		sum(dvProductionToGrid[t,u,ts] for b in p.ElecStorage, u in TempPricingTiersByTech[t]) for t in TempElectricTechs) +
@@ -836,15 +838,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Aggregates of definitions
     
-    @expression(REopt, TotalEnergyChargesUtil, p.TimeStepScaling * sum(p.ElecRate[u,ts] * dvGridPurchase[u,ts] for u in TempPricingTiers, ts in p.TimeStep))
-    @expression(REopt, TotalGenFuelCharges, p.TimeStepScaling *  sum(dvFuelUsage[t,ts] for t in GeneratorTechs, ts in p.TimeStep) * p.FuelCost[1])
+    @expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * sum(p.ElecRate[u,ts] * dvGridPurchase[u,ts] for u in TempPricingTiers, ts in p.TimeStep))
+    @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
     @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
-	@expression(REopt, DemandTOUCharges, sum(dvPeakDemandE[r, db] * p.DemandRates[r,db] 
+	@expression(REopt, DemandTOUCharges, p.pwf_e * sum(dvPeakDemandE[r, db] * p.DemandRates[r,db] 
                                                for r in p.Ratchets, db in p.DemandBin))
-    @expression(REopt, DemandFlatCharges, sum(dvPeakDemandEMonth[m, dbm] * p.DemandRatesMonth[m, dbm] 
+    @expression(REopt, DemandFlatCharges, p.pwf_e * sum(dvPeakDemandEMonth[m, dbm] * p.DemandRatesMonth[m, dbm] 
                                                 for m in p.Month, dbm in p.DemandMonthsBin))
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
-    @expression(REopt, TotalFixedCharges, p.FixedMonthlyCharge * 12 )
+    @expression(REopt, TotalFixedCharges, p.pwf_e * p.FixedMonthlyCharge * 12 )
 
     ### Utility and Taxable Costs
     @expression(REopt, TotalEnergyExports, p.pwf_e * sum(p.TimeStepScaling * p.GridExportRates[u,ts] * (
@@ -955,7 +957,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                          "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=0),
 						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
 
-    @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsage[t, fb] for t in GeneratorTechs, fb in p.FuelBin))
+    @expression(REopt, GeneratorFuelUsed, sum(dvFuelUsage[t, ts] for t in GeneratorTechs, ts in p.TimeStep))
     results["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
 
     @expression(REopt, GridToBatt[ts in p.TimeStep], dvGridToStorage[ts])
@@ -1059,5 +1061,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["dvProductionToStorage"] = value.(dvProductionToStorage)
 	results["dvStorageToGrid"] = value.(dvStorageToGrid)
 	results["dvGridToStorage"] = value.(dvGridToStorage)
-    return results
+	results["dvDischargeFromStorage"] = value.(dvDischargeFromStorage)
+	results["dvStorageCapEnergy"] = value.(dvStorageCapEnergy)
+    results["dvStorageCapPower"] = value.(dvStorageCapPower)
+	return results
 end
