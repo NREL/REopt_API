@@ -644,16 +644,16 @@ class DataManager:
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
         for tc in self.available_tech_classes:
-            min_sizes = [0]
+            min_sizes = [0.0]
             for tech in (x for x in techs if x.startswith(tc.lower()) and 'nm' not in x):
                 if eval('self.' + tech) is not None:
                     if hasattr(eval('self.' + tech), 'existing_kw'):
                         if bau:
-                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0))
+                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0))
                         else:
-                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0) + (eval('self.' + tech + '.min_kw') or 0))
+                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0) + (eval('self.' + tech + '.min_kw') or 0.0))
                     else:
-                        min_sizes.append((eval('self.' + tech + '.min_kw') or 0))
+                        min_sizes.append((eval('self.' + tech + '.min_kw') or 0.0))
 
             tech_class_min_size.append(max(min_sizes))
 
@@ -675,11 +675,11 @@ class DataManager:
         max_sizes = list()
         min_turn_down = list()
         # default to large max size per location. Max size by roof, ground, both
-        max_sizes_location = [1e9, 1e9, 1e9]
+        max_sizes_location = [1.0e9, 1.0e9, 1.0e9]
         pv_roof_limited, pv_ground_limited, pv_space_limited = False, False, False
-        roof_existing_pv_kw = 0
-        ground_existing_pv_kw = 0
-        both_existing_pv_kw = 0
+        roof_existing_pv_kw = 0.0
+        ground_existing_pv_kw = 0.0
+        both_existing_pv_kw = 0.0
         for tech in techs:
 
             if eval('self.' + tech) is not None:
@@ -734,11 +734,11 @@ class DataManager:
                     max_sizes.append(float(existing_kw + beyond_existing_cap_kw))
 
         if pv_roof_limited is True:
-            max_sizes_location[0] = roof_existing_pv_kw/2 + roof_max_kw
+            max_sizes_location[0] = float(roof_existing_pv_kw/2 + roof_max_kw)
         if pv_ground_limited is True:
-            max_sizes_location[1] = ground_existing_pv_kw/2 + land_max_kw
+            max_sizes_location[1] = float(ground_existing_pv_kw/2 + land_max_kw)
         if pv_space_limited is True:
-            max_sizes_location[2] = both_existing_pv_kw/2 + roof_max_kw + land_max_kw
+            max_sizes_location[2] = float(both_existing_pv_kw/2 + roof_max_kw + land_max_kw)
         # existing PV kW's divided by 2 b/c of the duplicate existing capacity created by `pv*nm`
 
         return max_sizes, min_turn_down, max_sizes_location
