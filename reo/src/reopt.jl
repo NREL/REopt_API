@@ -113,28 +113,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin
         binUsageTier[p.Month, p.FuelBin], Bin
         dvPeakDemandELookback >= 0
-
-    # ADDED due to implied types
         ElecToBatt[p.Tech] >= 0
         UsageInTier[p.Month, p.FuelBin] >= 0
-        #TotalTechCapCosts >= 0
-        #TotalStorageCapCosts >= 0
-        #TotalEnergyCharges >= 0
-        #DemandTOUCharges >= 0
-        #DemandFlatCharges >= 0
-        #TotalDemandCharges >= 0
-        #TotalFixedCharges >= 0
-        #TotalEnergyExports <= 0
-        #TotalProductionIncentive >= 0
-        #TotalMinCharge >= 0
-
-    # ADDED due to calculations
-        #Year1ElecProd
-        #AverageElecProd
-        #Year1WindProd
-        #AverageWindProd
-
-    # ADDED for modeling
         binMinTurndown[p.Tech, p.TimeStep], Bin
     end
 
@@ -333,8 +313,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                            for t in TechIsNotGridSet, LD in ["1R", "1W", "1S"],
                            ts in p.TimeStep, s in p.Seg, fb in p.FuelBin) <=  p.AnnualElecLoad)
 
-    ###
-    #Added, but has awful bounds
     @constraint(REopt, [t in p.Tech, b in p.TechClass],
                 sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t, b] for s in p.Seg) <= p.MaxSize[t] * binSingleBasicTech[t, b])
 
@@ -345,7 +323,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                             LD in ["1R", "1W", "1X", "1S"]) ==  dvSystemSize[t, s])
         end
     end
-
 
     ### Parts of Objective
 
