@@ -83,6 +83,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    profiler = Profiler()
 
     class Results:
 
@@ -108,13 +109,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "gen_year_one_variable_om_costs",
         ]
 
-        def __init__(self, results_dict, results_dict_bau, dfm, inputs=[]):
+        def __init__(self, results_dict, results_dict_bau, dfm, inputs):
             """
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
             :param results_dict_bau: flat dict of results from reopt.jl for bau case
             """
-            self.profiler = Profiler()
+            self.inputs = inputs
             self.dfm = dfm
             # remove invalid sizes due to optimization error margins
             for r in [results_dict, results_dict_bau]:
@@ -423,8 +424,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
                         "gen_year_one_fuel_cost_bau")
-            self.profiler.profileEnd()
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -448,7 +447,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
     try:
         results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'],
-                                 dfm=dfm_list[0])
+                                 dfm=dfm_list[0], inputs=data['inputs']['Scenario']['Site'])
         results = results_object.get_output()
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
@@ -467,6 +466,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+
+        profiler.profileEnd()
+        data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
         if len(data['outputs']['Scenario']['Site']['PV'])==1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
