@@ -97,6 +97,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	end
 	
 	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if ProdFactor["UTIL1",1,ts] > 0.5]
+	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if ProdFactor["UTIL1",1,ts] < 0.5]
+	
 
     @variables REopt begin
 		# Continuous Variables
@@ -177,6 +179,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
+	
+	## Temporary workaround for outages TempTimeStepsWithoutGrid
+	for ts in TempTimeStepsWithoutGrid
+		fix(dvGridToStorage["Elec",ts], 0.0, force=true)
+		for u in TempPricingTiers
+			fix(dvGridPurchase[u,ts], 0.0, force=true)
+			fix(dvStorageToGrid[u,ts], 0.0, force=true)
+		end
+	end
+	
     #TODO: account for exist formatting
     #for t in p.Tech
     #    if p.MaxSize == 0
@@ -238,7 +250,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				dvRatedProduction[t,ts] <= p.MaxSize[t] * binTechIsOnInTS[t,ts])
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(REopt, [t in NonUtilTechs, ts in p.TimeStep],
-			p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])	- dvRatedProduction[t,ts] >= p.MinTurndown[t] * dvSize[t] )
+			  p.MinTurndown[t] * dvSize[t] - dvRatedProduction[t,ts] <= p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])  )
 
     ### Section 4: Storage System Constraints
 	### 
