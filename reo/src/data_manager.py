@@ -71,7 +71,7 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
-        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
+        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = ['util']
