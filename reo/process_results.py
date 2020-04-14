@@ -130,19 +130,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 else:
                     results_dict[k + '_bau'] = results_dict_bau[k]
 
-            # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
             for i in range(len(self.inputs["PV"])):
-                # add bau outputs to results_dict
-                pv_keys = []
-                pv_keys.append("PV" + str(i+1) + "_net_fixed_om_costs")
-                pv_keys.append("average_yearly_energy_produced_PV" + str(i+1))
-                for k in pv_keys:
+                # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
+                if results_dict.get('PV' + str(i+1) + '_kw') is None:
+                    results_dict['PV' + str(i+1) + '_kw'] = 0
+                pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
+                               "average_yearly_energy_produced_PV" + str(i+1)]
+                for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
                     else:
                         results_dict[k + '_bau'] = results_dict_bau[k]
-                if results_dict.get('PV' + str(i+1) + '_kw') is None:
-                    results_dict['PV' + str(i+1) + '_kw'] = 0
 
             # if wind is zero then no value is written to REopt results.json
             if results_dict.get("wind_kw") is None:
@@ -259,7 +257,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.results_dict.get("net_capital_costs") \
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
-                    
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
                     self.nested_outputs['Scenario']["Site"][name] = []
@@ -267,7 +264,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         i += 1
                         pv = copy.deepcopy(template_pv)
                         pv["pv_number"] = i
-                        pv["size_kw"] = self.results_dict.get("PV{}_kw".format(i)) or 0  # shouldn't PV be lower case? data_manager.available_techs are all lower case
+                        pv["size_kw"] = self.results_dict.get("PV{}_kw".format(i)) or 0
                         pv["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}".format(i))
                         pv["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}_bau".format(i))
                         pv["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_PV{}".format(i))
