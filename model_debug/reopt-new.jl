@@ -482,7 +482,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage ) + 
 	sum( dvGridPurchase[u,ts] for u in TempPricingTiers ) ==
 	sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
-		sum(dvProductionToGrid[t,u,ts] for b in p.ElecStorage, u in TempPricingTiersByTech[t]) for t in TempElectricTechs) +
+		sum(dvProductionToGrid[t,u,ts] for t in TempElectricTechs, u in TempPricingTiersByTech[t]) for t in TempElectricTechs) +
 	sum(dvStorageToGrid[u,ts] for u in TempPricingTiers) + dvGridToStorage[ts] + 
 	## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
 	p.ElecLoad[ts]
@@ -814,19 +814,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #ProdLoad = ["1R", "1W", "1X", "1S"]
 
     PVTechs = p.TechsInClass["PV"]
-    @expression(REopt, Year1PvProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling
+    @expression(REopt, Year1PvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in PVTechs, ts in p.TimeStep))
-    @expression(REopt, AveragePvProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
+    @expression(REopt, AveragePvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] 
                                               for t in PVTechs, ts in p.TimeStep))
 
     WindTechs = p.TechsInClass["WIND"]
-    @expression(REopt, Year1WindProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling
+    @expression(REopt, Year1WindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in WindTechs, ts in p.TimeStep))
-    @expression(REopt, AverageWindProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling * p.LevelizationFactor[t]
+    @expression(REopt, AverageWindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
                                               for t in WindTechs, ts in p.TimeStep))
 
     GeneratorTechs = p.TechsInClass["GENERATOR"]
-    @expression(REopt, Year1GenProd, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.TimeStepScaling
+    @expression(REopt, Year1GenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                        for t in GeneratorTechs, ts in p.TimeStep))
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
                        for t in GeneratorTechs, ts in p.TimeStep))
@@ -1066,6 +1066,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["np"]["SegmentMinSize"] = SegmentMinSize
 	results["np"]["SegmentMaxSize"] = SegmentMaxSize
 	results["np"]["TempTechsByNMILRegime"] = TempTechsByNMILRegime
+	results["np"]["TempTimeStepsWithoutGrid"] = TempTimeStepsWithoutGrid
+	results["np"]["TempTechsByPricingTier"] = TempTechsByPricingTier
 	results["dvSize"] = value.(dvSize)
 	results["dvRatedProduction"] = value.(dvRatedProduction)
 	results["dvGridPurchase"] = value.(dvGridPurchase)
@@ -1076,5 +1078,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["dvDischargeFromStorage"] = value.(dvDischargeFromStorage)
 	results["dvStorageCapEnergy"] = value.(dvStorageCapEnergy)
     results["dvStorageCapPower"] = value.(dvStorageCapPower)
+    results["dvProdIncent"] = value.(dvProdIncent)
 	return results
 end
