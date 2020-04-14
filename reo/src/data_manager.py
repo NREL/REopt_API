@@ -29,7 +29,7 @@
 # *********************************************************************************
 import copy
 from reo.src.urdb_parse import UrdbParse
-from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
+from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
 max_incentive = 1.0e10
 
@@ -159,11 +159,11 @@ class DataManager:
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
-        if pwf_owner == 0 or sf.owner_tax_pct == 0:
-            two_party_factor = 0
+        if sr.two_party_ownership:
+            two_party_factor = (pwf_offtaker * (1 - sf.offtaker_tax_pct)) \
+                                / (pwf_owner * (1 - sf.owner_tax_pct))
         else:
-            two_party_factor = (pwf_offtaker * sf.offtaker_tax_pct) \
-                                / (pwf_owner * sf.owner_tax_pct)
+            two_party_factor = 1
 
         levelization_factor = list()
         production_incentive_levelization_factor = list()
@@ -233,7 +233,7 @@ class DataManager:
 
         return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent
 
-    def _get_REopt_cost_curve(self, techs):
+    def _get_REopt_cost_curve(self, techs, two_party_factor):
 
         regions = ['utility', 'state', 'federal', 'combined']
         cap_cost_slope = list()
@@ -447,16 +447,18 @@ class DataManager:
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
-                                                                 0,
-                                                                 sf.analysis_years,
-                                                                 sf.owner_discount_pct,
-                                                                 sf.owner_tax_pct,
-                                                                 itc,
-                                                                 eval('self.' + tech + '.incentives.macrs_schedule'),
-                                                                 eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
-
+                    updated_slope = setup_capital_cost_incentive(
+                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                        replacement_cost=0,
+                        replacement_year=sf.analysis_years,
+                        discount_rate=sf.owner_discount_pct,
+                        tax_rate=sf.owner_tax_pct,
+                        itc=itc,
+                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                    )
+                    updated_slope *= two_party_factor
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
@@ -785,8 +787,8 @@ class DataManager:
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
-        cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
-        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs, two_party_factor)
+        cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs, two_party_factor_bau)
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
