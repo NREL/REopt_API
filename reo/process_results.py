@@ -101,7 +101,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "total_fixed_cost",
             "total_min_charge_adder",
             "net_capital_costs_plus_om",
-            "pv_net_fixed_om_costs",
             "gen_net_fixed_om_costs",
             "gen_net_variable_om_costs",
             "gen_total_fuel_cost",
@@ -126,14 +125,18 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             # add bau outputs to results_dict
             for k in Results.bau_attributes:
-                results_dict[k + '_bau'] = results_dict_bau[k]
+                if results_dict_bau.get(k) is None:
+                    results_dict[k + '_bau'] = 0
+                else:
+                    results_dict[k + '_bau'] = results_dict_bau[k]
 
             # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
             for i in range(len(self.inputs["PV"])):
                 # add bau outputs to results_dict
-                Results.bau_attributes.append("PV" + str(i+1) + "_net_fixed_om_costs")
-                Results.bau_attributes.append("average_yearly_PV" + str(i+1) + "_energy_produced")
-                for k in Results.bau_attributes:
+                pv_keys = []
+                pv_keys.append("PV" + str(i+1) + "_net_fixed_om_costs")
+                pv_keys.append("average_yearly_energy_produced_PV" + str(i+1))
+                for k in pv_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
                     else:
@@ -264,14 +267,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         i += 1
                         pv = copy.deepcopy(template_pv)
                         pv["pv_number"] = i
-                        pv["size_kw"] = self.results_dict.get("PV{}_kw".format(i)) or 0
-                        pv["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_PV{}_energy_produced".format(i))
-                        pv["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_PV{}_energy_produced_bau".format(i))
+                        pv["size_kw"] = self.results_dict.get("PV{}_kw".format(i)) or 0  # shouldn't PV be lower case? data_manager.available_techs are all lower case
+                        pv["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}".format(i))
+                        pv["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}_bau".format(i))
                         pv["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_PV{}".format(i))
-                        pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_PV{}_energy_produced".format(i))
-                        pv["year_one_to_battery_series_kw"] = self.results_dict.get("PVtoBatt")
-                        pv["year_one_to_load_series_kw"] = self.results_dict.get("PVtoLoad")
-                        pv["year_one_to_grid_series_kw"] = self.results_dict.get("PVtoGrid")
+                        pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced_PV{}".format(i))
+                        pv["year_one_to_battery_series_kw"] = self.results_dict.get("PV{}toBatt".format(i))
+                        pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
+                        pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
                         pv["year_one_power_production_series_kw"] = pv.get("year_one_to_grid_series_kw")
                         if not pv.get("year_one_to_battery_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
