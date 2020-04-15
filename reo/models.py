@@ -285,6 +285,7 @@ class PVModel(models.Model):
     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
