@@ -1188,6 +1188,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
+    free_cash_flow_row = current_row + 1
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Outage expected to occur"
@@ -2217,15 +2218,27 @@ def generate_proforma(scenariomodel, output_file_path):
     if financial.two_party_ownership:
 
         current_row += 1
-        pwf_developer = annuity(financial.analysis_years, 0, financial.owner_discount_pct) \
-                        * (1 - financial.owner_tax_pct)
+        dcs['A{}'.format(current_row)] = "Capital Recovery Factor"
+        dcs['B{}'.format(current_row)] = (
+            "={discount_rate}/100 * POWER(1 + {discount_rate}/100, {years}) / "
+            "(POWER(1 + {discount_rate}/100, {years}) - 1) / (1 - {tax_rate}/100)"
+            ).format(
+            discount_rate=discount_rate_cell,
+            years=financial.analysis_years,
+            tax_rate=fed_tax_rate_cell,
+        )
+        capital_recovery_factor_cell = 'B{}'.format(current_row)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+
+        current_row += 1
         dcs['A{}'.format(current_row)] = "Income from Host"
         for year in range(financial.analysis_years):
             dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
-                "=-{npc} / {pwf}"
+                "=-{npc} * {crf}"
             ).format(
                 npc=optimal_LCC_cell,
-                pwf=pwf_developer,
+                crf=capital_recovery_factor_cell,
             )
         income_from_host_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
@@ -2693,17 +2706,22 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
-    # current_row += 1
-    # ws['D{}'.format(current_row)] = "IRR, %"
-    # ws['E{}'.format(current_row)] = (
-    #     "=IRR({full_cashflow_cell_range}, {discount_rate_cell}/100)"
-    #     ).format(
-    #         full_cashflow_cell_range=full_cashflow_cell_range,
-    #         discount_rate_cell=discount_rate_cell,
-    # )
-    # make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
-    # fill_cols(ws, range(4, 5), current_row, calculated_fill)
-    # current_row += 1
+    if not financial.two_party_ownership:
+        current_row += 1
+        ws['D{}'.format(current_row)] = "IRR, %"
+        ws['E{}'.format(current_row)] = (
+            "=IRR({col1}{row}:{colN}{row}, {discount_rate_cell}/100)"
+            ).format(
+            col1="B",
+            colN=upper_case_letters[financial.analysis_years + 1],
+            row=free_cash_flow_row,
+            discount_rate_cell=discount_rate_cell,
+        )
+        make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
+        fill_cols(ws, range(4, 5), current_row, calculated_fill)
+
+        current_row = free_cash_flow_row
+        ws['A{}'.format(current_row)] = "Free Cash Flow"
 
 
     ####################################################################################################################
