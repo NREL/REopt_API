@@ -1,10 +1,8 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, \
-    LoadProfileModel
+from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
 from reo.src.dat_file_manager import big_number
-from reo.utilities import annuity
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
@@ -76,6 +74,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_data_entry["pv_cost"] = pv_data_entry["pv_installed_kw"] \
                                    * pv_data_entry["pv_installed_cost_us_dollars_per_kw"]
         pv_data_entry["pv_energy"] = pv.year_one_energy_produced_kwh or 0
+        pv_data_entry["pv_energy_bau"] = pv.year_one_energy_produced_bau_kwh or 0
         pv_data_entry["pv_existing_kw"] = pv.existing_kw or 0
         pv_data.append(pv_data_entry)
 
@@ -330,13 +329,21 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Year 1 net {} energy produced with system (kWh/year)".format(pv['name'])
-        ws['B{}'.format(current_row)] = pv['pv_energy']
+        ws['A{}'.format(current_row)] = "Year 1 {} energy produced with system (kWh/year)".format(pv['name'])
+        ws['B{}'.format(current_row)] = pv["pv_energy"]
         pv_cell_locations[i]["pv_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 net wind energy produced with system (kWh/year)"
+
+    for i, pv in enumerate(pv_data):
+        ws['A{}'.format(current_row)] = "Year 1 {} energy produced with existing system (kWh/year)".format(pv['name'])
+        ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
+        pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        make_attribute_row(ws, current_row)
+
+        current_row += 1
+    ws['A{}'.format(current_row)] = "Year 1 wind energy produced with system (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy
     wind_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
@@ -1107,6 +1114,24 @@ def generate_proforma(scenariomodel, output_file_path):
             pv_cell_locations[idx]["pv_production_series"].append("\'{}\'!{}{}".format(
                 inandout_sheet_name, upper_case_letters[year+1], current_row))
             
+        fill_in_annual_values(current_row)
+        current_row += 1
+
+    for idx, pv in enumerate(pv_data):
+        ws['A{}'.format(current_row)] = "Existing {} Annual energy (kWh)".format(pv['name'])
+        ws['B{}'.format(current_row)] = 0
+        pv_cell_locations[idx]["pv_production_series_bau"] = list()
+
+        for year in range(1, financial.analysis_years + 1):
+            ws['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '={pv_energy} * (1 - {pv_degradation_rate}/100)^{year}'.format(
+                    pv_energy=pv_cell_locations[idx]["pv_energy_bau_cell"],
+                    pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
+                    year=year-1,
+                )
+            pv_cell_locations[idx]["pv_production_series_bau"].append("\'{}\'!{}{}".format(
+                inandout_sheet_name, upper_case_letters[year+1], current_row))
+
         fill_in_annual_values(current_row)
         current_row += 1
 
@@ -2515,21 +2540,17 @@ def generate_proforma(scenariomodel, output_file_path):
         for idx, pv in enumerate(pv_data):
             hcs['A{}'.format(current_row)] = "Existing {} Combined PBI".format(pv['name'])
             hcs['A{}'.format(current_row)].alignment = one_tab_indent
-            pv_scaler = 1
-            if pv["pv_installed_kw"] > 0:
-                pv_scaler = pv["pv_existing_kw"] / pv["pv_installed_kw"]
 
             for year in range(financial.analysis_years):
                 hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                     "=IF({year} < {pbi_year_limit}, "
-                    "MIN({dol_per_kwh} * {pv_kwh} * {pv_scaler}, {pbi_max}), 0)"
+                    "MIN({dol_per_kwh} * {pv_kwh}, {pbi_max}), 0)"
                 ).format(
                     year=year,
                     pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"],
                     dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
                     col=upper_case_letters[year + 2],
-                    pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
-                    pv_scaler=pv_scaler,
+                    pv_kwh=pv_cell_locations[idx]['pv_production_series_bau'][year],
                     pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
                 )
             make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
