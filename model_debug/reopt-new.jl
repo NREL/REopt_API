@@ -44,7 +44,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempPricingTiers = 1:p.PricingTierCount     #replaces p.PricingTier
 	
-	TempSalesTiers = 1:p.PricingTierCount+1    #should be 1:2, for now include all tiers
+	TempSalesTiers = 1:2    #1 = "1W", 2 = "1X"
 	
 	TempTechByFuelType = Dict()
 	TempTechByFuelType["DIESEL"] = ["GENERATOR"]
@@ -56,23 +56,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	end
 	for t in NonUtilTechs
 		TempPricingTiersByTech[t] = []
-		for u in TempPricingTiers
-			if (p.ExportRates[t,u,1] > 1e-6) || u == 1
-				push!(TempPricingTiersByTech[t],u)
-				push!(TempTechsByPricingTier[u],t)
-			end
+		if (maximum(p.ExportRates[t,"1W",:])  > 1e-6)     #ExportRates[t,"1W",ts] is zero if tech can't access the wholesale rate; so only include techs that can export
+			push!(TempPricingTiersByTech[t],1)
+			push!(TempTechsByPricingTier[1],t)
 		end
-		push!(TempPricingTiersByTech[t],p.PricingTierCount+1)
-		push!(TempTechsByPricingTier[p.PricingTierCount+1],t)
+		push!(TempPricingTiersByTech[t],2)    # All techs are able to sell at excess rates
+		push!(TempTechsByPricingTier[2],t)
 	end
 	
 	TempGridExportRates = Dict()
 	for ts in p.TimeStep
-		for u in TempPricingTiers
-			TempGridExportRates[u,ts] = p.GridExportRates[u,ts]
-		end
-		TempGridExportRates[p.PricingTierCount+1,ts] = 0.
-	end		
+		TempGridExportRates[1,ts] = maximum(p.ExportRates[:,"1W",ts])
+		TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
+	end
 	
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
 	TempDischargeEff = Dict()  # replaces p.DischargeEfficiency[b] -- indexing is numeric
