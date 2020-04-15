@@ -138,7 +138,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 if results_dict.get('PV' + str(i+1) + '_kw') is None:
                     results_dict['PV' + str(i+1) + '_kw'] = 0
                 pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
-                               "average_yearly_energy_produced_PV" + str(i+1)]
+                               "average_yearly_PV" + str(i+1) + "_energy_produced",
+                               "year_one_PV" + str(i+1) + "_energy_produced",
+                               ]
                 for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
@@ -280,10 +282,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}".format(i))
                         pv["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}_bau".format(i))
                         pv["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_PV{}".format(i))
-                        pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced_PV{}".format(i))
-                        pv["year_one_to_battery_series_kw"] = self.results_dict.get("PV{}toBatt".format(i))
-                        pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
-                        pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
+                        pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_PV{}_energy_produced".format(i))
+                        pv["year_one_energy_produced_bau_kwh"] = self.results_dict.get("year_one_PV{}_energy_produced_bau".format(i))
+                        pv["year_one_to_battery_series_kw"] = self.po.get_pv_to_batt(i)
+                        pv["year_one_to_load_series_kw"] = self.po.get_pv_to_load(i)
+                        pv["year_one_to_grid_series_kw"] = self.po.get_pv_to_grid(i)
                         pv["year_one_power_production_series_kw"] = pv.get("year_one_to_grid_series_kw")
                         if not pv.get("year_one_to_battery_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
