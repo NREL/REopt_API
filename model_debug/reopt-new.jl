@@ -11,11 +11,42 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/pv.jld2", "p")
+    p = load("./scenarios/pv_storage.jld2", "p")
 
     MAXTIME = 100000
 
     return reopt_run(reo_model, MAXTIME, p)
+end
+
+function reopt_scen(filepath)
+	reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
+
+    p = load(filepath, "p")
+
+    MAXTIME = 100000
+
+    return reopt_run(reo_model, MAXTIME, p)
+end
+
+function reopt_all_scens()
+	paths = [
+				"./scenarios/pv.jld2",
+				"./scenarios/pv_storage.jld2",
+				"./scenarios/tiered_pv.jld2",
+				"./scenarios/tiered_pv_storage.jld2",
+				"./scenarios/tou_pv.jld2",
+				"./scenarios/tou_pv_storage.jld2"
+				]
+	objs = []
+	for path in paths
+		results = reopt_scen(path)
+		push!(objs,results["lcc"])
+	end
+	for i in 1:6
+		println(paths[i])
+		println(objs[i])
+	end
+	return objs
 end
 
 
