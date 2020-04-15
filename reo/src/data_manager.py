@@ -29,8 +29,8 @@
 # *********************************************************************************
 import copy
 from reo.src.urdb_parse import UrdbParse
-from reo.utilities import annuity, annuity_degr, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
-    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive
+from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
+    insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -157,7 +157,6 @@ class DataManager:
         self.elec_tariff = elec_tariff
 
     def _get_REopt_pwfs(self, techs):
-
         sf = self.site.financial
         pwf_owner = annuity(sf.analysis_years, 0, sf.owner_discount_pct) # not used in REopt
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
@@ -173,7 +172,6 @@ class DataManager:
                                 / (pwf_owner * sf.owner_tax_pct)
 
         levelization_factor = list()
-        production_incentive_levelization_factor = list()
 
         for tech in techs:
 
@@ -187,19 +185,13 @@ class DataManager:
                     ################
                     degradation_pct = eval('self.' + tech + '.degradation_pct')
                     levelization_factor.append(round(degradation_factor(sf.analysis_years, degradation_pct), 5))
-                    production_incentive_levelization_factor.append(
-                        round(degradation_factor(eval('self.' + tech + '.incentives.production_based.years'),
-                                                 degradation_pct), 5))
-                    ################
                 else:
 
                     levelization_factor.append(1.0)
-                    production_incentive_levelization_factor.append(1.0)
 
-        return levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor
+        return levelization_factor, pwf_e, pwf_om, two_party_factor
 
     def _get_REopt_production_incentives(self, techs):
-
         sf = self.site.financial
         pwf_prod_incent = list()
         prod_incent_rate = list()
@@ -216,17 +208,21 @@ class DataManager:
                 if tech not in ['util', 'generator']:
 
                     # prod incentives don't need escalation
-                    pwf_prod_incent.append(
-                        annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                0, sf.offtaker_discount_pct)
-                    )
+                    if tech.startswith("pv"):  # PV has degradation
+                        pwf_prod_incent.append(
+                            annuity_escalation(eval('self.' + tech + '.incentives.production_based.years'),
+                                               -1 * eval('self.' + tech + '.degradation_pct'),
+                                               sf.offtaker_discount_pct))
+                    else:
+                        pwf_prod_incent.append(
+                            annuity(eval('self.' + tech + '.incentives.production_based.years'),
+                                    0, sf.offtaker_discount_pct))
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
                     )
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
                     )
-
                     for load in self.available_loads:
                         prod_incent_rate.append(
                             eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
@@ -248,7 +244,6 @@ class DataManager:
         return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
     def _get_REopt_cost_curve(self, techs):
-
         regions = ['utility', 'state', 'federal', 'combined']
         cap_cost_slope = list()
         cap_cost_x = list()
@@ -858,12 +853,10 @@ class DataManager:
         max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
 
-        levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
-            = self._get_REopt_pwfs(self.available_techs)
-        levelization_factor_bau, production_incentive_levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau \
-            = self._get_REopt_pwfs(self.bau_techs)
-
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate \
+        levelization_factor, pwf_e, pwf_om, two_party_factor = self._get_REopt_pwfs(self.available_techs)
+        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau = self._get_REopt_pwfs(self.bau_techs)
+        
+        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
             = self._get_REopt_production_incentives(self.available_techs)
         pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
@@ -895,7 +888,7 @@ class DataManager:
                                                          self.storage.incentives.macrs_itc_reduction)
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
-                           techs=get_techs_not_none(self.available_techs, self),
+                          techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)

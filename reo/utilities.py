@@ -86,18 +86,17 @@ def degradation_factor(analysis_period, rate_degradation):
     return sum(factors)/analysis_period
 
 
-def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradation):
+def annuity_escalation(analysis_period, rate_escalation, rate_discount):
     '''
-    same as VBA Function PWaDegr(
     :param analysis_period: years
     :param rate_escalation: escalation rate
     :param rate_discount: discount rate
-    :param rate_degradation: annual degradation
-    :return: present worth factor with degradation
+    :return: present worth factor with escalation (inflation, or degradation if negative)
+    NOTE: assume escalation/degradation starts in year 2
     '''
     pwf = 0
     for yr in range(1, int(analysis_period + 1)):
-        pwf += (1 + rate_escalation) ** yr / (1 + rate_discount) ** yr * (1 + rate_degradation) ** (yr - 1)
+        pwf += (1 + rate_escalation) ** (yr - 1) / (1 + rate_discount) ** yr
     return pwf
 
 
