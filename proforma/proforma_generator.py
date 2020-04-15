@@ -2187,7 +2187,7 @@ def generate_proforma(scenariomodel, output_file_path):
     itc_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Free Cash Flow"
+    dcs['A{}'.format(current_row)] = "Free Cash Flow before income"
     dcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
 
     for i in range(financial.analysis_years):
@@ -2254,7 +2254,7 @@ def generate_proforma(scenariomodel, output_file_path):
         )
         capital_recovery_factor_cell = 'B{}'.format(current_row)
         make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
-                           number_format='#,##0', border=no_border)
+                           number_format='0.000', border=no_border)
 
         current_row += 1
         dcs['A{}'.format(current_row)] = "Income from Host"
@@ -2281,6 +2281,7 @@ def generate_proforma(scenariomodel, output_file_path):
         income_from_host_after_tax_cell = "\'{}\'!C{}".format(developer_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
+        income_after_tax_row = current_row
 
         current_row += 1
         dcs['A{}'.format(current_row)] = "Discounted Income from Host"
@@ -2306,6 +2307,23 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
         dcs['A{}'.format(current_row)].font = title_font
         dcs['B{}'.format(current_row)].font = title_font
+
+        current_row += 1
+        dcs['A{}'.format(current_row)] = "Free Cash Flow after income"
+        dcs['B{}'.format(current_row)] = "=B{}".format(optimal_fcf_row)
+
+        for i in range(financial.analysis_years):
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+                "={col}{fcf} + {col}{income}"
+                ).format(
+                col=upper_case_letters[i+2],
+                fcf=optimal_fcf_row,
+                income=income_after_tax_row,
+            )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        developer_fcf_row = current_row
+        fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
 
     ####################################################################################################################
@@ -2727,6 +2745,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row, length=2, offset=3, number_format="#,##0")
     fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
+
     if not financial.two_party_ownership:
         current_row += 1
         ws['D{}'.format(current_row)] = "IRR, %"
@@ -2741,8 +2760,34 @@ def generate_proforma(scenariomodel, output_file_path):
         make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
         fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
-        current_row = free_cash_flow_row
-        ws['A{}'.format(current_row)] = "Free Cash Flow"
+        if not financial.two_party_ownership:
+            current_row = free_cash_flow_row
+            ws['A{}'.format(current_row)] = "Free Cash Flow"
+
+            for year in range(financial.analysis_years+1):
+                ws['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    "={optimal_fcf} - {bau_fcf}"
+                ).format(
+                    optimal_fcf="\'{}\'!{}{}".format(
+                        developer_cashflow_sheet_name, upper_case_letters[year + 1], optimal_fcf_row),
+                    bau_fcf="\'{}\'!{}{}".format(
+                        host_cashflow_sheet_name, upper_case_letters[year + 1], bau_fcf_row),
+                )
+            fill_in_annual_values(current_row)
+    else:
+        current_row += 1
+        ws['D{}'.format(current_row)] = "Developer IRR, %"
+        ws['E{}'.format(current_row)] = (
+            "=IRR({optimal_fcf_B}:{optimal_fcf_N}, {discount_rate_cell}/100)"
+            ).format(
+            optimal_fcf_B="\'{}\'!B{}".format(
+                developer_cashflow_sheet_name, developer_fcf_row),
+            optimal_fcf_N="\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[financial.analysis_years + 1], developer_fcf_row),
+            discount_rate_cell=discount_rate_cell,
+        )
+        make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
+        fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
 
     ####################################################################################################################
