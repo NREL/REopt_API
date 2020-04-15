@@ -57,12 +57,14 @@ class ProcessResultsTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
         if isinstance(exc, REoptError):
             exc.save_to_db()
-        self.data["messages"]["error"] = exc.message
+            msg = exc.message
+        else:
+            msg = exc.args[0]
+        self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
@@ -83,6 +85,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     :return: None
     """
     profiler = Profiler()
+    self.run_uuid = data['outputs']['Scenario']['run_uuid']
+    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
+    self.data = data
+
+    if len(ScenarioModel.objects.filter(run_uuid=self.run_uuid)) == 0:
+        msg = "Scenario was not found in database. No results will be saved."
+        log.info("Results.py for run_uuid={} raising REoptError: {}".format(self.run_uuid, msg))
+        raise REoptError(task='callback', name='results.py', run_uuid=self.run_uuid, message=msg, traceback='',
+                         user_uuid=self.user_uuid)
+
+    paths = dfm_list[0]['paths']  # dfm_list = [dfm, dfm], one each from the two REopt jobs
 
     class Results:
 
@@ -469,9 +482,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             power = [sum(x) for x in zip(*power_lists)]
             return power
 
-    self.data = data
-    self.run_uuid = data['outputs']['Scenario']['run_uuid']
-    self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
     try:
         results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'],
