@@ -1102,7 +1102,7 @@ def generate_proforma(scenariomodel, output_file_path):
                 '={pv_energy} * (1 - {pv_degradation_rate}/100)^{year}'.format(
                     pv_energy=pv_cell_locations[idx]["pv_energy_cell"],
                     pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
-                    year=year,
+                    year=year-1,
                 )
             pv_cell_locations[idx]["pv_production_series"].append("\'{}\'!{}{}".format(
                 inandout_sheet_name, upper_case_letters[year+1], current_row))
