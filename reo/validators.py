@@ -790,7 +790,7 @@ class ValidateNestedInput:
         def check_special_cases(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             checks special input requirements not otherwise programatically captured by nested input definitions
-            
+
             :param object_name_path: list of str, location of an object in self.input_dict being validated,
                 eg. ["Scenario", "Site", "PV"]
             :param template_values: reference dictionary for checking real_values, for example
@@ -810,12 +810,12 @@ class ValidateNestedInput:
                     self.validate_text_fields(str = real_values['description'],
                                               pattern = r'^[-0-9a-zA-Z.  $:;)(*&#_!@]*$',
                               err_msg = "description can include enlisted special characters: [-0-9a-zA-Z.  $:;)(*&#_!@] and can have 0-9, a-z, A-Z, periods, and spaces.")
-            
+
             if object_name_path[-1] == "Site":
                 if real_values.get('address') is not None:
                     self.validate_text_fields(str = real_values['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                               err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
-            
+
             if object_name_path[-1] == "Wind":
                 if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                     if real_values['max_kw'] > 0:
@@ -839,8 +839,8 @@ class ValidateNestedInput:
                                 """
                                 size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
                                 climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
-                                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the 
-                                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be 
+                                In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
+                                BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
                                 handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
                                 modified.
                                 """
@@ -871,7 +871,7 @@ class ValidateNestedInput:
                                     self.input_dict['Scenario']['Site']['Wind']['size_class'] = 'large'
                             try:
                                 get_conic_coords(
-                                    lat=self.input_dict['Scenario']['Site']['latitude'],   
+                                    lat=self.input_dict['Scenario']['Site']['latitude'],
                                     lng=self.input_dict['Scenario']['Site']['longitude'])
                             except Exception as e:
                                 self.input_data_errors.append(e.args[0])
@@ -923,7 +923,7 @@ class ValidateNestedInput:
                         self.validate_urdb_response()
 
                 if electric_tariff['add_blended_rates_to_urdb_rate']:
-                    monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True) 
+                    monthly_energy = electric_tariff.get('blended_monthly_rates_us_dollars_per_kwh', True)
                     monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
                     urdb_rate = electric_tariff.get('urdb_response', True)
 
@@ -942,7 +942,7 @@ class ValidateNestedInput:
                     if electric_tariff.get(blended, False):
                         if len(electric_tariff.get(blended)) != 12:
                             self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
-            
+
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
@@ -956,10 +956,10 @@ class ValidateNestedInput:
                                 if min(real_values.get(lp)) < 0:
                                     self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
-
-                if (real_values.get('doe_reference_name') is not None) and (real_values.get('year') is None):
+                if real_values.get('doe_reference_name') is not None:
                     real_values['year'] = 2017
-
+                    # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
+                    # Sunday
 
         def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
