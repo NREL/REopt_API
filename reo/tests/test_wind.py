@@ -33,7 +33,7 @@ import os
 import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from django.test import TestCase
 from unittest import skip
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
