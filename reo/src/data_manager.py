@@ -159,7 +159,7 @@ class DataManager:
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
-        if sr.two_party_ownership:
+        if sf.two_party_ownership:
             two_party_factor = (pwf_offtaker * (1 - sf.offtaker_tax_pct)) \
                                 / (pwf_owner * (1 - sf.owner_tax_pct))
         else:
