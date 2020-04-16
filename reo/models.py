@@ -135,6 +135,9 @@ class FinancialModel(models.Model):
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs = models.FloatField(null=True, blank=True)
     net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
+    initial_capital_costs = models.FloatField(null=True, blank=True)
+    replacement_costs = models.FloatField(null=True, blank=True)
+    initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

@@ -27,13 +27,14 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-from django.db import models
-from django.contrib.postgres.fields import ArrayField, HStoreField
-from reo.models import ScenarioModel
 import sys
 import logging
-log = logging.getLogger(__name__)
+from django.db import models
+from django.contrib.postgres.fields import ArrayField
+from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
+log = logging.getLogger(__name__)
+
 
 class ResilienceModel(models.Model):
 
@@ -45,7 +46,7 @@ class ResilienceModel(models.Model):
         null=True,
         blank=True
     )
-
+    # WITH TECH
     resilience_by_timestep = ArrayField(models.FloatField(null=True), null=True)
     resilience_hours_min = models.FloatField(null=True)
     resilience_hours_max = models.FloatField(null=True)
@@ -54,6 +55,7 @@ class ResilienceModel(models.Model):
     probs_of_surviving = ArrayField(models.FloatField(null=True), null=True)
     probs_of_surviving_by_month = ArrayField(ArrayField(models.FloatField(null=True), null=True), null=True)
     probs_of_surviving_by_hour_of_the_day = ArrayField(ArrayField(models.FloatField(null=True), null=True), null=True)
+    # BAU
     resilience_by_timestep_bau = ArrayField(models.FloatField(null=True), null=True)
     resilience_hours_min_bau = models.FloatField(null=True)
     resilience_hours_max_bau = models.FloatField(null=True)
@@ -65,7 +67,6 @@ class ResilienceModel(models.Model):
                                                            null=True)
     present_worth_factor = models.FloatField(null=True)
     avg_critical_load = models.FloatField(null=True)
-    survives_specified_outage = models.NullBooleanField()
 
     @classmethod
     def create(cls, scenariomodel, **kwargs):

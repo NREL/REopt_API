@@ -33,7 +33,7 @@ from tastypie.test import ResourceTestCaseMixin
 from reo.nested_inputs import nested_input_definitions
 from reo.validators import ValidateNestedInput
 from reo.nested_to_flat_output import nested_to_flat
-from django.test import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
+from django.test import TestCase
 from reo.models import ModelManager, ScenarioModel
 from reo.utilities import check_common_outputs
 from functools import reduce  # forward compatibility for Python 3
@@ -138,7 +138,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         response = self.get_response(data)
         err_msg = str(json.loads(response.content)['messages']['input_errors'])
         self.assertTrue("Missing Required for Scenario>Site>LoadProfile: (outage_start_hour)" in err_msg)
-        
+
 
         data['Scenario']['Site']['LoadProfile']['outage_start_hour'] = 0
         data['Scenario']['Site']['LoadProfile']['outage_end_hour'] = 0
