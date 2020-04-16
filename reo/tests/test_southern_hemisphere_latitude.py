@@ -33,7 +33,6 @@ from django.test import TestCase
 from reo.models import ModelManager
 
 
-
 class NegativeLatitudeTest(ResourceTestCaseMixin, TestCase):
     REopt_tol = 1e-2
 

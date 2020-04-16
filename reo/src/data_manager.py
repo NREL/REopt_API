@@ -694,6 +694,7 @@ class DataManager:
                     min_turn_down.append(0.0)
 
                 beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')
+
                 if tech.startswith('pv'):  # has acres_per_kw and kw_per_square_foot attributes, as well as location
                     if eval('self.' + tech + '.location') == 'both':
                         both_existing_pv_kw += existing_kw                        
@@ -727,6 +728,14 @@ class DataManager:
                                 roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
                                 land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
                                 beyond_existing_cap_kw = min(roof_max_kw + land_max_kw, beyond_existing_cap_kw)
+
+                if tech.startswith('wind'):  # has acres_per_kw attribute
+                    if self.site.land_acres is not None:
+                        site_constraint_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
+                        if site_constraint_kw < 1500:
+                            # turbines less than 1.5 MW aren't subject to the acres/kW limit
+                            site_constraint_kw = 1500
+                        beyond_existing_cap_kw = min(site_constraint_kw, beyond_existing_cap_kw)
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(float(existing_kw))
