@@ -165,7 +165,6 @@ def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
     tax_savings_array = [0]
     for idx, macrs_rate in enumerate(macrs_schedule):
         depreciation_amount = macrs_rate * depr_basis
-        taxable_income = depreciation_amount
         if idx == 0:
             depreciation_amount += bonus_depreciation
         taxable_income = depreciation_amount
