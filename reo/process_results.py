@@ -176,9 +176,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                  * (self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
                                  - self.inputs["Generator"]["existing_kw"]), 0)
 
-            upfront_capex += max(self.inputs["PV"]["installed_cost_us_dollars_per_kw"]
-                                 * (self.nested_outputs["Scenario"]["Site"]["PV"]["size_kw"]
-                                 - self.inputs["PV"]["existing_kw"]), 0)
+            for pv in self.inputs["PV"]:
+                upfront_capex += max(pv["installed_cost_us_dollars_per_kw"]
+                                 * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
+                                 - pv["existing_kw"]), 0)
 
             for tech in ["Storage", "Wind"]:
                 upfront_capex += self.inputs[tech]["installed_cost_us_dollars_per_kw"] * \
