@@ -30,6 +30,7 @@
 from resilience_stats.outage_simulator_LF import simulate_outages
 from resilience_stats.models import ResilienceModel
 from reo.models import ScenarioModel
+import numpy as np
 import logging
 log = logging.getLogger(__name__)
 
