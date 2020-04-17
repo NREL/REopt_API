@@ -30,6 +30,7 @@
 from resilience_stats.outage_simulator_LF import simulate_outages
 from resilience_stats.models import ResilienceModel
 from reo.models import ScenarioModel
+import numpy as np
 import logging
 log = logging.getLogger(__name__)
 
@@ -55,7 +56,7 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     """
     site_inputs = data['inputs']['Scenario']['Site']
     site_outputs = data['outputs']['Scenario']['Site']
-    pv = site_outputs['PV']
+    pvs = site_outputs['PV']
     wind = site_outputs['Wind']
     generator = site_outputs['Generator']
     load_profile = site_inputs['LoadProfile']
@@ -63,6 +64,17 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
                                 * site_inputs['Storage']['inverter_efficiency_pct'] \
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
+    
+    pv_production = []
+    for p in pvs:
+        add_prod = p.get('year_one_power_production_series_kw') or []
+        if add_prod != []:
+            if pv_production == []:
+                pv_production = add_prod
+            else:
+                pv_production += np.array(add_prod)
+    if sum(pv_production) == 0:
+        pv_production = []
 
     celery_eager = True
     """ nlaws 200229
@@ -79,7 +91,7 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     results = simulate_outages(
         batt_kwh=site_outputs['Storage'].get('size_kwh') or 0,
         batt_kw=site_outputs['Storage'].get('size_kw') or 0,
-        pv_kw_ac_hourly=pv['year_one_power_production_series_kw'],
+        pv_kw_ac_hourly=list(pv_production),
         wind_kw_ac_hourly=wind['year_one_power_production_series_kw'],
         init_soc=site_outputs['Storage'].get('year_one_soc_series_pct'),
         critical_loads_kw=critical_load,

@@ -366,7 +366,7 @@ class ValidateNestedInput:
         #     }
 
         def __init__(self, input_dict):
-
+            self.list_or_dict_objects = ['PV']
             self.nested_input_definitions = nested_input_definitions
             self.input_data_errors = []
             self.urdb_errors = []
@@ -380,14 +380,22 @@ class ValidateNestedInput:
             for k,v in input_dict.items():
                 if k != 'Scenario':
                     self.invalid_inputs.append([k, ["Top Level"]])
-
-            self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
-            self.recursively_check_input_dict(self.input_dict, self.remove_nones)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
-            self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
+                    
+            self.check_object_types(self.input_dict)
+            if self.isValid:
+                self.recursively_check_input_dict(self.nested_input_definitions, self.remove_invalid_keys)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.remove_nones)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.convert_data_types)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.fillin_defaults)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.check_min_max_restrictions)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.check_required_attributes)
+                self.recursively_check_input_dict(self.nested_input_definitions, self.check_special_cases)
+                
+                self.recursively_check_input_dict(self.nested_input_definitions, self.add_number_to_listed_inputs)
+                
+                if type(self.input_dict['Scenario']['Site']['PV']) == dict:
+                    self.input_dict['Scenario']['Site']['PV']['pv_number'] = 1
+                    self.input_dict['Scenario']['Site']['PV'] = [self.input_dict['Scenario']['Site']['PV']]
 
         @property
         def isValid(self):
@@ -399,7 +407,7 @@ class ValidateNestedInput:
         @property
         def messages(self):
             output = {}
-
+           
             if self.errors != {}:
                 output = self.errors
 
@@ -433,14 +441,14 @@ class ValidateNestedInput:
 
             if self.urdb_errors and self.input_data_errors:
                 output["input_errors"] += self.urdb_errors
-
+            
             elif self.urdb_errors:
                 output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.urdb_errors
 
             return output
 
-        @property
+        @property 
         def warnings(self):
             output = {}
 
@@ -469,6 +477,66 @@ class ValidateNestedInput:
         def isAttribute(self, k):
             return k[0] == k[0].lower()
 
+        
+        def check_object_types(self, nested_dictionary_to_check, object_name_path=[]):
+            """
+            Checks that all keys (i.e. Scenario, Site) are valid dicts or lists. This function only checks object names
+            and does not validate attributes
+            
+            :param nested_dictionary_to_check: data to be validated; default is self.input_dict
+            :param object_name_path: list of str, used to keep track of keys necessary to access a value to check in the
+                  nested_template / nested_dictionary_to_check
+            :return: None
+            """
+            
+            # Loop through all keys in the dictionary
+            for name in nested_dictionary_to_check.keys():
+                # If the key is an object name (i.e. Scnenario, Wind) continue 
+                if self.isSingularKey(name):
+                    # get the value of the key
+                    real_input_value = nested_dictionary_to_check.get(name)
+                    
+                    # assume the value is fine until we catch an error
+                    continue_checking = True
+
+                    # Assess all possible value data type scenartio
+                    # catch the case were the value is ok:
+                    #     dicts are always allowed
+                    #     Nones are ok too, they will get filled in with default values at first then later checked for required attributes
+                    if type(real_input_value) == dict or real_input_value is None:
+                        pass
+                    # catch list case
+                    elif type(real_input_value) == list:
+                        # if the object is not one that support a list input flag an error 
+                        if name not in self.list_or_dict_objects:
+                            message = "A list of inputs is not allowed for {}".format(">".join(object_name_path + [name]))
+                            self.input_data_errors.append(message)
+                            continue_checking = False
+                        else:
+                            # if the object supports list input, but contains anything other than dicts flag an error
+                            if len(real_input_value) > 0:
+                                if False in [type(x)==dict for x in real_input_value]:
+                                    message = "Lists for {} must only contain hashes of key/value pairs. No other data types are allowed (i.e. list, float, int) ".format(">".join(object_name_path + [name]))
+                                    self.input_data_errors.append(message)
+                                    continue_checking = False
+                    # catch all other data types and flag them as an error
+                    else:
+                        valid_types = "hash of key and value pairs,"
+                        if name not in self.list_or_dict_objects:
+                            valid_types += " or a list"
+                        message = "Invalid data type ({}) for {}. Must be {}".format(type(real_input_value).__name__, ">".join(object_name_path + [name]), valid_types)
+                        self.input_data_errors.append(message)
+                        continue_checking = False
+                    
+                    # if no error has been thrown continue recursively checking the nested dict
+                    if continue_checking:
+                            if type(real_input_value) == list:
+                                for rv in real_input_value:
+                                    self.check_object_types(rv or {}, object_name_path=object_name_path + [name])
+                            else:
+                                self.check_object_types(real_input_value or {}, object_name_path=object_name_path + [name])
+
+                                    
         def recursively_check_input_dict(self, nested_template, comparison_function, nested_dictionary_to_check=None,
                                          object_name_path=[]):
             """
@@ -489,39 +557,109 @@ class ValidateNestedInput:
                   nested_template / nested_dictionary_to_check
             :return: None
             """
+            # this is a dict of input values from the user
             if nested_dictionary_to_check is None:
                 nested_dictionary_to_check = self.input_dict
+            
+            # this is a corresponding dict from the input definitions used to validate structure and content
+            # template is a list to handle cases where the input is a list
+            if type(nested_template) == dict:
+                nested_template = [nested_template]
 
-            for template_k, template_values in nested_template.items():
-                real_values = nested_dictionary_to_check.get(template_k)
+            # catch case there there is no nested template
+            if nested_template is None:
+                nested_template = [{}]
 
-                if self.isSingularKey(template_k):  # True if template_k is upper case and does not end in "s"
-                    comparison_function(object_name_path=object_name_path + [template_k],
-                                        template_values=template_values, real_values=real_values)
+            # Loop through template structure so we catch all possible keys even if the user does not provide them
+            for template in nested_template:
+                for template_k, template_values in template.items():
+                    # at a key value pair, get the real value a user input (can be None)
+                    real_input_values = nested_dictionary_to_check.get(template_k)
+                    
+                    # start checking assuming that the input is fine and a list
+                    # for each of coding we will populate real_values_list with a list
+                    continue_checking = True
+                    input_isDict = False
+                    real_values_list = None
+                    
+                    # if the value is a dict make it a list and update the dict or list indicator
+                    if type(real_input_values) == dict:
+                        input_isDict = True
+                        real_values_list = [real_input_values]
+                    # if the value is a list just update the real_values_list variable
+                    if type(real_input_values) == list:
+                        real_values_list = real_input_values
+                    
+                    # if the value is a None make it a list with one dict in it
+                    if real_input_values is None:
+                        input_isDict = True
+                        real_values_list = [{}]
 
-                    self.recursively_check_input_dict(nested_template[template_k], comparison_function,
-                                                      real_values or {},
-                                                      object_name_path=object_name_path + [template_k])
+                    # if the key is an object name apply the comparison function to all key/value pairs in each dict in the list of values
+                    if self.isSingularKey(template_k): 
 
-        def update_attribute_value(self, object_name_path, attribute, value):
+                        # number is indexed on 1, used currently only for telling PV's apart
+                        for number, real_values in enumerate(real_values_list):
+                            number += 1
+                            # real values will always be a list per validation above
+                            comparison_function(object_name_path=object_name_path + [template_k],
+                                                template_values=template_values, real_values=real_values,
+                                                number=number, input_isDict=input_isDict)
+                            
+                            # recursively apply this function to the real values dict
+                            self.recursively_check_input_dict(template[template_k], comparison_function,
+                                                              real_values or {},
+                                                              object_name_path=object_name_path + [template_k])
+                        
+                        # if at the end of validation we are left with a list containing one dict, convert the entry fot the object back to 
+                        # a dict from a list                                
+                        if len(real_values_list) == 1:
+                            nested_dictionary_to_check[template_k] = real_values_list[0]
 
-            dictionary = self.input_dict
+
+        def update_attribute_value(self, object_name_path, number, attribute, value):
+            """
+            updates an attribute in the user input dictionary
+            :param definition_attribute: str, key for input parameter validation dict, eg. {'type':'float', ... }
+            :param object_name_path: list of str, used to keep track of keys necessary to access a value in a nested dict
+            :param number: int, used to keep track of order in list inputs (i.e. PV))
+            :param attribute: str, this is the name of the key to update
+            :param number: int, this is the order of the object in a list, defaulted to 1 in recursively_check_input_dict function
+            :param value: any, new value for the attribute
+            """
+            to_update = self.input_dict
+            
+            for name in object_name_path:
+                name = name.split(' ')[0]
+                to_update = to_update[name]
+            
+            if number == 1 and type(to_update) == dict:
+                to_update[attribute] = value
+            else:
+                to_update[number-1][attribute] = value
+
+        def delete_attribute(self, object_name_path, number, attribute):
+            """
+            deletes an attribute in the user input dictionary
+            :param definition_attribute: str, key for input parameter validation dict, eg. {'type':'float', ... }
+            :param object_name_path: list of str, used to keep track of keys necessary to access a value in a nested dict
+            :param number: int, used to keep track of order in list inputs (i.e. PV))
+            :param attribute: str, this is the name of the key to delete
+            :param number: int, this is the order of the object in a list, defaulted to 1 in recursively_check_input_dict function
+            """
+            to_update = self.input_dict
 
             for name in object_name_path:
-                dictionary = dictionary[name]
+                name = name.split(' ')[0]
+                to_update = to_update[name]
 
-            dictionary[attribute] = value
-
-        def delete_attribute(self, object_name_path, key):
-
-            dictionary = self.input_dict
-
-            for name in object_name_path:
-                dictionary = dictionary[name]
-
-            if key in dictionary.keys():
-                del dictionary[key]
-
+            if number == 1 and type(to_update) == dict:
+                if attribute in to_update.keys():
+                    del to_update[attribute]
+            else:
+                if attribute in to_update[number-1].keys():
+                    del to_update[number-1][attribute]   
+        
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
@@ -533,8 +671,8 @@ class ValidateNestedInput:
                 where the str is an input param, dict is an entire post with a bad value for that input param
             """
             test_data_list = []
-
-            def swap_logic(object_name_path, name, definition, good_val, validation_attribute):
+            number = 1
+            def swap_logic(object_name_path, name, definition, good_val, validation_attribute, number =1):
                 """
                 append `name` and a nested-dict (post) to test_data_list with a bad value inserted into the post for
                 the input at object_name_path: name
@@ -559,22 +697,40 @@ class ValidateNestedInput:
                             bad_val = "OOPS"
 
                     if bad_val is not None:
-                        self.update_attribute_value(object_name_path, name, bad_val)
+                        self.update_attribute_value(object_name_path, number, name, bad_val)
                         test_data_list.append([name, copy.deepcopy(self.input_dict)])
-                        self.update_attribute_value(object_name_path, name, good_val)
+                        self.update_attribute_value(object_name_path, number, name, good_val)
 
-            def add_invalid_data(object_name_path, template_values=None, real_values=None):
+            def add_invalid_data(object_name_path, template_values=None, real_values=None, number=number, input_isDict=None):
                 if real_values is not None:
                     for name, value in template_values.items():
                         if self.isAttribute(name):
                             swap_logic(object_name_path, name, value, real_values.get(name),
-                                       validation_attribute=definition_attribute)
+                                       validation_attribute=definition_attribute, number=number)
 
             self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
 
             return test_data_list
 
-        def remove_nones(self, object_name_path, template_values=None, real_values=None):
+        def add_number_to_listed_inputs(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
+            """
+            comparison function to add a number to each dict in a list (i.e. pv_number to each PV)
+            :param object_name_path: list of str, location of an object in self.input_dict being validated,
+                eg. ["Scenario", "Site", "PV"]
+            :param template_values: reference dictionary for checking real_values, for example
+                {'latitude':{'type':'float',...}...}, which comes from nested_input_definitions
+            :param real_values: dict, the attributes corresponding to the object at object_name_path within the
+                input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
+                 the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
+            :return: None
+            """ 
+            if real_values is not None and input_isDict==False:
+                object_name_path[-1].lower()
+                self.update_attribute_value(object_name_path, number, object_name_path[-1].lower() + '_number', number)
+
+        def remove_nones(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             remove any `None` values from the input_dict.
@@ -586,17 +742,22 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
-            """
+            """ 
             if real_values is not None:
                 rv = copy.deepcopy(real_values)
                 for name, value in rv.items():
                     if self.isAttribute(name):
                         if value is None:
-                            self.delete_attribute(object_name_path, name)
-                            self.input_as_none.append([name, object_name_path[-1]])
+                            self.delete_attribute(object_name_path, number, name)
+                            if input_isDict == True or input_isDict==None:
+                                self.input_as_none.append([name, object_name_path[-1]])
+                            if input_isDict == False:
+                                self.input_as_none.append([name, object_name_path[-1] + ' (number {})'.format(number)])
 
-        def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None):
+        def remove_invalid_keys(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             remove any input values provided by user that are not included in nested_input_definitions.
@@ -608,6 +769,8 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             if real_values is not None:
@@ -615,11 +778,16 @@ class ValidateNestedInput:
                 for name, value in rv.items():
                     if self.isAttribute(name):
                         if name not in template_values.keys():
-                            self.delete_attribute(object_name_path, name)
-                            self.invalid_inputs.append([name, object_name_path])
+                            self.delete_attribute(object_name_path, number, name)
+                            if input_isDict == True or input_isDict==None:
+                                self.invalid_inputs.append([name, object_name_path])
+                            if input_isDict == False:
+                                object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                                self.invalid_inputs.append([name, object_name_path])
 
+        
 
-        def check_special_cases(self, object_name_path, template_values=None, real_values=None):
+        def check_special_cases(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             checks special input requirements not otherwise programatically captured by nested input definitions
 
@@ -630,6 +798,8 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
 
@@ -652,16 +822,16 @@ class ValidateNestedInput:
 
                         if real_values.get("wind_meters_per_sec"):
                             self.validate_8760(real_values.get("wind_meters_per_sec"),
-                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("wind_direction_degrees"),
-                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("temperature_celsius"),
-                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
 
                             self.validate_8760(real_values.get("pressure_atmospheres"),
-                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
+                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
                         else:
                             from reo.src.wind_resource import get_conic_coords
 
@@ -718,7 +888,6 @@ class ValidateNestedInput:
                         if gen["fuel_intercept_gal_per_hr"] == 0:
                             gen["fuel_intercept_gal_per_hr"] = b
 
-
             if object_name_path[-1] == "LoadProfile":
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
@@ -732,7 +901,6 @@ class ValidateNestedInput:
 
                 elif electric_tariff.get('urdb_label','') != '':
                     rate = Rate(rate=electric_tariff.get('urdb_label'))
-
                     if rate.urdb_dict is None:
                         self.urdb_errors.append(
                             "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
@@ -778,7 +946,7 @@ class ValidateNestedInput:
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
-                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],number=number, input_isDict=input_isDict)
                         isnet = real_values.get(lp + '_is_net')
                         if isnet is None:
                             isnet = True
@@ -793,7 +961,7 @@ class ValidateNestedInput:
                     # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
                     # Sunday
 
-        def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None):
+        def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             check all min/max constraints for input values defined in nested_input_definitions.
@@ -805,6 +973,8 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             if real_values is not None:
@@ -815,15 +985,25 @@ class ValidateNestedInput:
                         if "list_of_float" in data_validators['type'] and isinstance(value, list):
                             if data_validators.get('min') is not None:
                                 if any([v < data_validators['min'] for v in value]):
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds allowable min of %s' % (
-                                         name, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) exceeds allowable min of %s' % (
+                                             name, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
+                                             name, self.object_name_string(object_name_path), number, data_validators['min']))
 
                             if data_validators.get('max') is not None:
                                 if any([v < data_validators['max'] for v in value]):
-                                    self.input_data_errors.append(
-                                        'At least one value in %s (from %s) exceeds the allowable max of %s' % (
-                                         name, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s) exceeds the allowable max of %s' % (
+                                             name, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append(
+                                            'At least one value in %s (from %s number %s) exceeds the allowable max of %s' % (
+                                             name, self.object_name_string(object_name_path), number, data_validators['max']))
                             continue
                         elif isinstance(data_validators['type'], list):
                             data_type = float
@@ -835,23 +1015,35 @@ class ValidateNestedInput:
                         except:
                             self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
                             name, value, self.object_name_string(object_name_path)))
-                        else:
+                        else:                
                             if data_validators.get('min') is not None:
                                 if value < data_validators['min']:
-                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
 
                             if data_validators.get('max') is not None:
                                 if value > data_validators['max']:
-                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
                         if data_validators.get('restrict_to') is not None:
                             if value not in data_validators['restrict_to']:
-                                self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (
-                                name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
+                                if input_isDict==True or input_isDict==None:
+                                    self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (
+                                    name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
+                                if input_isDict==False:
+                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
-        def convert_data_types(self, object_name_path, template_values=None, real_values=None):
+        def convert_data_types(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             try to convert input values to the expected python data type, create error message if conversion fails.
@@ -862,6 +1054,8 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             if real_values is not None:
@@ -878,21 +1072,33 @@ class ValidateNestedInput:
                                         raise NotImplementedError
                                     new_value = list_of_float(value)
                                 except ValueError:
-                                    self.input_data_errors.append(
-                                        'Could not convert %s (%s) in %s to list of floats' % (name, value,
-                                                         self.object_name_string(object_name_path))
-                                    )
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s to list of floats' % (name, value,
+                                                             self.object_name_string(object_name_path))
+                                        )
+                                    if input_isDict==False:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s (number %s) to list of floats' % (name, value,
+                                                             self.object_name_string(object_name_path), number)
+                                        )
                                     continue  # both continue statements should be in a finally clause, ...
                                 except NotImplementedError:
-                                    self.input_data_errors.append(
-                                        '%s in %s contains at least one NaN value.' % (name,
-                                        self.object_name_string(object_name_path))
-                                    )
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append(
+                                            '%s in %s contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path))
+                                        )
+                                    if input_isDict==False:
+                                        self.input_data_errors.append(
+                                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                                            self.object_name_string(object_name_path), number)
+                                        )
                                     continue  # both continue statements should be in a finally clause, ...
                                 else:
-                                    self.update_attribute_value(object_name_path, name, new_value)
+                                    self.update_attribute_value(object_name_path, number, name, new_value)
                                     self.validate_8760(attr=new_value, obj_name=object_name_path[-1], attr_name=name,
-                                                       time_steps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
+                                                       time_steps_per_hour=self.input_dict['Scenario'].get('time_steps_per_hour') or self.nested_input_definitions['Scenario']['time_steps_per_hour']['default'], number=number, input_isDict=input_isDict)
                                     continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
                                 attribute_type = 'float'
@@ -901,20 +1107,30 @@ class ValidateNestedInput:
                         try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
                         except:  # if fails for any reason record that the conversion failed
-                            self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
-                                     self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                            if input_isDict==True or input_isDict==None:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (name, value,
+                                         self.object_name_string(object_name_path), str(attribute_type).split(' ')[1]))
+                            if input_isDict==False:
+                                self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (name, value,
+                                         self.object_name_string(object_name_path), number , str(attribute_type).split(' ')[1]))
                         else:
                             if not isinstance(new_value, bool):
                                 if make_array:
                                     new_value = [new_value]
-                                self.update_attribute_value(object_name_path, name, new_value)
+                                self.update_attribute_value(object_name_path, number, name, new_value)
                             else:
                                 if value not in [True, False, 1, 0]:
-                                    self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
-                                    name, value, self.object_name_string(object_name_path),
-                                    str(attribute_type).split(' ')[1]))
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
+                                        name, value, self.object_name_string(object_name_path),
+                                        str(attribute_type).split(' ')[1]))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('Could not convert %s (%s) in %s (number %s) to %s' % (
+                                        name, value, self.object_name_string(object_name_path), number,
+                                        str(attribute_type).split(' ')[1]))
+                                    
 
-        def fillin_defaults(self, object_name_path, template_values=None, real_values=None):
+        def fillin_defaults(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             fills in default values for inputs that user does not provide.
@@ -925,13 +1141,16 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             if real_values is None:
                 real_values = {}
-                self.update_attribute_value(object_name_path[:-1], object_name_path[-1], real_values)
+                self.update_attribute_value(object_name_path[:-1], number, object_name_path[-1], real_values)
 
             for template_key, template_value in template_values.items():
+
                 if self.isAttribute(template_key):
                     default = template_value.get('default')
                     if default is not None and real_values.get(template_key) is None:
@@ -944,15 +1163,22 @@ class ValidateNestedInput:
                         if isinstance(template_value.get('type'), list) and "list_of_float" in template_value.get('type'):
                             # then input can be float or list_of_float, but for database we have to use only one type
                             default = [default]
-                        self.update_attribute_value(object_name_path, template_key, default)
-                        self.defaults_inserted.append([template_key, object_name_path])
-
+                        self.update_attribute_value(object_name_path, number, template_key, default)
+                        if input_isDict==True or input_isDict==None:
+                            self.defaults_inserted.append([template_key, object_name_path])
+                        if input_isDict==False:
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                            self.defaults_inserted.append([template_key, object_name_path])
                 if self.isSingularKey(template_key):
                     if template_key not in real_values.keys():
-                        self.update_attribute_value(object_name_path, template_key, {})
-                        self.defaults_inserted.append([template_key, object_name_path])
+                        self.update_attribute_value(object_name_path, number, template_key, {})
+                        if input_isDict==True or input_isDict==None:
+                            self.defaults_inserted.append([template_key, object_name_path])
+                        if input_isDict==False:
+                            object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
+                            self.defaults_inserted.append([template_key, object_name_path])
 
-        def check_required_attributes(self, object_name_path, template_values=None, real_values=None):
+        def check_required_attributes(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
             """
             comparison_function for recursively_check_input_dict.
             confirm that required inputs were provided by user. If not, create message to provide to user.
@@ -963,15 +1189,17 @@ class ValidateNestedInput:
             :param real_values: dict, the attributes corresponding to the object at object_name_path within the
                 input_dict to check and/or modify. For example, with a object_name_path of ["Scenario", "Site", "PV"]
                  the real_values would look like: {'latitude': 39.345678, 'longitude': -90.3, ... }
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             final_message = ''
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
             all_missing_attribute_sets = []
-
+            
             for key,value in template_values.items():
-
+                
                 if self.isAttribute(key):
 
                     missing_attribute_sets = []
@@ -980,27 +1208,27 @@ class ValidateNestedInput:
 
                     if replacements is not None:
                         current_set = [key] + depends_on
-
+                        
                         if list(set(current_set)-set(real_values.keys())) != []:
                             for replace in replacements:
                                 missing = list(set(replace)-set(real_values.keys()))
-
+                                
                                 if missing == []:
                                     missing_attribute_sets = []
                                     break
-
+                                
                                 else:
                                     replace = sorted(replace)
                                     if replace not in missing_attribute_sets:
                                         missing_attribute_sets.append(replace)
-
+                        
                     else:
                         if real_values.get(key) is not None:
                             missing = []
                             for dependent_key in depends_on:
                                 if real_values.get(dependent_key) is None:
                                     missing.append(dependent_key)
-
+                            
                             if missing !=[]:
                                 missing_attribute_sets.append(missing)
 
@@ -1029,18 +1257,20 @@ class ValidateNestedInput:
                     final_message = message
 
             if final_message != '':
-                self.input_data_errors.append('Missing Required for %s: %s' % (self.object_name_string(object_name_path), final_message))
-
-
-        def validate_urdb_response(self):
+                if input_isDict==True or input_isDict==None:
+                    self.input_data_errors.append('Missing Required for %s: %s' % (self.object_name_string(object_name_path), final_message))
+                if input_isDict==False:
+                    self.input_data_errors.append('Missing Required for %s (number %s): %s' % (self.object_name_string(object_name_path), number,  final_message))
+        
+        def validate_urdb_response(self, number=1):
             urdb_response = self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_response')
 
             if type(urdb_response) == dict:
                 if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_utility_name') is None:
-                    self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], 'urdb_utility_name', urdb_response.get('utility'))
+                    self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], number, 'urdb_utility_name', urdb_response.get('utility'))
 
                 if self.input_dict['Scenario']['Site']['ElectricTariff'].get('urdb_rate_name') is None:
-                    self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], 'urdb_rate_name', urdb_response.get('name'))
+                    self.update_attribute_value(["Scenario", "Site", "ElectricTariff"], number,  'urdb_rate_name', urdb_response.get('name'))
 
                 try:
                     rate_checker = URDB_RateValidator(**urdb_response)
@@ -1049,7 +1279,7 @@ class ValidateNestedInput:
                 except:
                    self.urdb_errors.append('Error parsing urdb rate in %s ' % (["Scenario", "Site", "ElectricTariff"]))
 
-        def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour):
+        def validate_8760(self, attr, obj_name, attr_name, time_steps_per_hour, number=1, input_isDict=None):
             """
             This method is for the case that a user uploads a time-series that has either 30 minute or 15 minute
             resolution, but wants to run an hourly REopt model. If time_steps_per_hour = 1 then we downsample the user's
@@ -1059,6 +1289,8 @@ class ValidateNestedInput:
             :param obj_name: str, parent object name from nested_inputs (eg. "LoadProfile")
             :param attr_name: str, name of time-series (eg. "critical_loads_kw")
             :param time_steps_per_hour: int, [1, 2, 4]
+            :param number: int, order of the dict in the list
+            :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
             """
             n = len(attr)
@@ -1072,40 +1304,68 @@ class ValidateNestedInput:
                 elif attr_name in ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
                     if time_steps_per_hour != n/8760:
                         if time_steps_per_hour == 2 and n/8760 == 4:
-                            self.resampled_inputs.append(
-                                ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
+                            if input_isDict==True or input_isDict==None:
+                                self.resampled_inputs.append(
+                                    ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name]])
+                            if input_isDict==False:
+                                self.resampled_inputs.append(
+                                    ["Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(attr_name), [obj_name + ' (number %s)'.format(number)]])
                             index = pd.date_range('1/1/2000', periods=n, freq='15T')
                             series = pd.Series(attr, index=index)
                             series = series.resample('30T').mean()
                             resampled_val = series.tolist()
                         elif time_steps_per_hour == 4 and n/8760 == 2:
-                            self.resampled_inputs.append(
-                                ["Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==True or input_isDict==None:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==False:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name + ' (number %s)'.format(number)]])
+
                             resampled_val = [x for x in attr for _ in [1, 2]]
                         elif time_steps_per_hour == 4 and n/8760 == 1:
-                            self.resampled_inputs.append(
-                                ["Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==True or input_isDict==None:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==False:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name + ' (number %s)'.format(number)]])
+
                             resampled_val = [x for x in attr for _ in [1, 2, 3, 4]]
                         else:  # time_steps_per_hour == 2 and n/8760 == 1:
-                            self.resampled_inputs.append(
-                                ["Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==True or input_isDict==None:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name]])
+                            if input_isDict==False:
+                                self.resampled_inputs.append(
+                                    ["Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(attr_name), [obj_name + ' (number %s)'.format(number)]])
+
                             resampled_val = [x for x in attr for _ in [1, 2]]
-                        self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, resampled_val)
+                        self.update_attribute_value(["Scenario", "Site", obj_name], number, attr_name, resampled_val)
 
             elif n == 8760:
                 pass  # because n/8760 == time_steps_per_hour ( = 1 )
 
             elif n in [17520, 35040]:
                 resolution_minutes = int(60/(n/8760))
-                self.resampled_inputs.append(
-                    ["Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
+                if input_isDict==True or input_isDict==None:
+                    self.resampled_inputs.append(
+                        ["Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
                             attr_name, resolution_minutes), [obj_name]])
+                if input_isDict==False:
+                    self.resampled_inputs.append(
+                        ["Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
+                            attr_name, resolution_minutes), [obj_name + ' (number {})'.format(number)]])
+
                 index = pd.date_range('1/1/2000', periods=n, freq='{}T'.format(resolution_minutes))
                 series = pd.Series(attr, index=index)
                 series = series.resample('1H').mean()
-                self.update_attribute_value(["Scenario", "Site", obj_name], attr_name, series.tolist())
+                self.update_attribute_value(["Scenario", "Site", obj_name], number, attr_name, series.tolist())
             else:
-                self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
+                if input_isDict==True or input_isDict==None:
+                    self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name))
+                if input_isDict==False:
+                    self.input_data_errors.append("Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(attr_name + ' (number {})'.format(number)))
 
         def validate_text_fields(self, pattern=r'^[-0-9a-zA-Z  $:;)(*&#!@]*$', str="", err_msg=""):
             match = re.search(pattern, str)
