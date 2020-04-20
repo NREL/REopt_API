@@ -32,7 +32,7 @@ function reopt_all_scens()
 	paths = [
 				#"./scenarios/pv.jld2",
 				#"./scenarios/pv_storage.jld2",
-				#"./scenarios/tiered_pv.jld2",
+				"./scenarios/tiered_pv.jld2",
 				"./scenarios/tiered_pv_storage.jld2",
 				"./scenarios/tou_pv.jld2",
 				"./scenarios/tou_pv_storage.jld2"
@@ -869,7 +869,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     else
         status = "not optimal"
     end
+	print("status:")
 	println(status)
+	print("objective value: ")
+	println(JuMP.objective_value(REopt))
     
 	##############################################################################
     #############  		Outputs    									 #############
@@ -933,13 +936,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	@expression(REopt, ExportedElecPV,
                 p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-                    for t in PVTechs, u in TempPricingTiers, ts in p.TimeStep))
+                    for t in PVTechs, u in TempPricingTiersByTech[t], ts in p.TimeStep))
     @expression(REopt, ExportedElecWIND,
                 p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-                    for t in WindTechs, u in TempPricingTiers, ts in p.TimeStep))
+                    for t in WindTechs, u in TempPricingTiersByTech[t], ts in p.TimeStep))
     @expression(REopt, ExportedElecGEN,
                 p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-                    for t in GeneratorTechs, u in TempPricingTiers, ts in p.TimeStep))
+                    for t in GeneratorTechs, u in TempPricingTiersByTech[t], ts in p.TimeStep))
                     
     # Needs levelization factor?
     @expression(REopt, ExportBenefitYr1,
@@ -1048,7 +1051,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	results["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
 
 		@expression(REopt, GENERATORtoGrid[ts in p.TimeStep],
-					sum(dvProductionToGrid[t,u,ts] for t in GeneratorTechs, u in TempPricingTiers))
+					sum(dvProductionToGrid[t,u,ts] for t in GeneratorTechs, u in TempPricingTiersByTech[t]))
 		results["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
 
 		@expression(REopt, GENERATORtoLoad[ts in p.TimeStep],
@@ -1066,13 +1069,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	if !isempty(PVTechs)
 		@expression(REopt, PVtoLoad[ts in p.TimeStep],
 					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in PVTechs) - sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiers)
+						for t in PVTechs) - sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiersByTech[t])
 						- sum(dvProductionToStorage["Elec",t,ts] for t in PVTechs)
 						)
     	results["PVtoLoad"] = round.(value.(PVtoLoad), digits=3)
 
 		@expression(REopt, PVtoGrid[ts in p.TimeStep],
-					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiers))
+					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiersByTech[t]))
     	results["PVtoGrid"] = round.(value.(PVtoGrid), digits=3)
 
 		@expression(REopt, PVPerUnitSizeOMCosts,
@@ -1096,12 +1099,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	if !isempty(WindTechs)
 		@expression(REopt, WINDtoLoad[ts in p.TimeStep],
 					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in WindTechs) - sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in TempPricingTiers)
+						for t in WindTechs) - sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in TempPricingTiersByTech[t])
 						- sum(dvProductionToStorage["Elec",t,ts] for t in WindTechs) )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
 		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
-					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiers))
+					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiersByTech[t]))
 		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 	else
 		results["WINDtoLoad"] = []
