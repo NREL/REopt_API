@@ -11,7 +11,7 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/pv.jld2", "p")
+    p = load("./scenarios/tiered_pv.jld2", "p")
 
     MAXTIME = 100000
 
@@ -30,8 +30,8 @@ end
 
 function reopt_all_scens()
 	paths = [
-				#"./scenarios/pv.jld2",
-				#"./scenarios/pv_storage.jld2",
+				"./scenarios/pv.jld2",
+				"./scenarios/pv_storage.jld2",
 				"./scenarios/tiered_pv.jld2",
 				"./scenarios/tiered_pv_storage.jld2",
 				"./scenarios/tou_pv.jld2",
@@ -704,7 +704,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					)
 		
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-		@constraint(REopt, [r in p.Ratchets],
+		@constraint(REopt, [r in p.DemandLookbackMonths],
 					sum( dvPeakDemandEMonth[r,e] for e in p.DemandBin ) >= 
 					p.DemandLookbackPercent * dvPeakDemandELookback )
 	#end
