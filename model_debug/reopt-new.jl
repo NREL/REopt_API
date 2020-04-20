@@ -30,9 +30,9 @@ end
 
 function reopt_all_scens()
 	paths = [
-				"./scenarios/pv.jld2",
-				"./scenarios/pv_storage.jld2",
-				"./scenarios/tiered_pv.jld2",
+				#"./scenarios/pv.jld2",
+				#"./scenarios/pv_storage.jld2",
+				#"./scenarios/tiered_pv.jld2",
 				"./scenarios/tiered_pv_storage.jld2",
 				"./scenarios/tou_pv.jld2",
 				"./scenarios/tou_pv_storage.jld2"
@@ -640,7 +640,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        binEnergyTier[m, u] - binEnergyTier[m, u-1] <= 0)
 	## Constraint (10c): One tier must be full before any usage in next tier 
 	@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
-    	        binEnergyTier[m, u] * p.MaxUsageInTier[u-1] - UsageInTier[m, u-1] <= 0)
+    	        binEnergyTier[m, u] * p.MaxUsageInTier[u-1] - sum( dvGridPurchase[u, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= 0)
 	
 	#End constraint set (10)
 
