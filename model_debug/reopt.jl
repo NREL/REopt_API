@@ -11,18 +11,48 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/pv_storage.jld2", "p")
+    p = load("./scenarios/tiered_pv.jld2", "p")
 
     MAXTIME = 100000
 
     return reopt_run(reo_model, MAXTIME, p)
 end
 
+function reopt_scen(filepath)
+	reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
+
+    p = load(filepath, "p")
+
+    MAXTIME = 100000
+
+    return reopt_run(reo_model, MAXTIME, p)
+end
+
+function reopt_all_scens()
+	paths = [
+				"./scenarios/pv.jld2",
+				"./scenarios/pv_storage.jld2",
+				"./scenarios/tiered_pv.jld2",
+				"./scenarios/tiered_pv_storage.jld2",
+				"./scenarios/tou_pv.jld2",
+				"./scenarios/tou_pv_storage.jld2"
+				]
+	objs = []
+	for path in paths
+		results = reopt_scen(path)
+		push!(objs,results["lcc"])
+	end
+	for i in 1:6
+		println(paths[i])
+		println(objs[i])
+	end
+	return objs
+end
 
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
-    Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
+    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 
     @variables REopt begin
 		# Continuous Variables
@@ -99,8 +129,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
 	
-	
-    ##############################################################################
+	##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
     #TODO: account for exist formatting
@@ -111,7 +140,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                     for ts in p.TimeStep
                         if p.LoadProfile[LD,ts] == 0
                             for s in p.Seg, fb in p.FuelBin
-                            @constraint(REopt, dvRatedProd[t, LD, ts, s, fb] == 0)
+                            fix(dvRatedProd[t, LD, ts, s, fb], 0, force=true)
                             end
                         end
                     end
@@ -119,6 +148,17 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
             end
         end
     end
+	
+	for LD in ["1W","1X"]
+		for ts in p.TimeStep
+			for s in p.Seg
+				for fb in p.FuelBin
+					fix(dvRatedProd["UTIL1", LD, ts, s, fb], 0, force=true)
+				end
+			end
+		end
+	end
+	
 
     ## Fuel Tracking Constraints
     @constraint(REopt, [t in p.Tech, fb in p.FuelBin],
@@ -169,7 +209,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### Section 4: Storage System Constraints
 	### 
 	### Boundary Conditions and Size Limits
-    @constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH / p.TimeStepScaling)
+    @constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH )
     @constraint(REopt, p.MinStorageSizeKWH <= dvStorageSizeKWH)
     @constraint(REopt, dvStorageSizeKWH <=  p.MaxStorageSizeKWH)
     @constraint(REopt, p.MinStorageSizeKW <= dvStorageSizeKW)
@@ -197,7 +237,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [ts in p.TimeStep],
     	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH / p.TimeStepScaling)
+    	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH)
 
 	### New Storage Operations
 	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
@@ -973,6 +1013,35 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	## Parameter values
 	results["p"] = p
+	results["model"] = REopt
+	results["dvSystemSize"] = value.(dvSystemSize)
+	results["dvStorageSizeKW"] = value.(dvStorageSizeKW)
+	results["dvStorageSizeKWH"] = value.(dvStorageSizeKWH)
+	results["dvPeakDemandE"] = value.(dvPeakDemandE)
+	results["dvPeakDemandEMonth"] = value.(dvPeakDemandEMonth)
+	results["dvRatedProd"] = value.(dvRatedProd)
+	results["UsageInTier"] = value.(UsageInTier)
 	
+	print("TotalTechCapCosts:")
+	println(value(TotalTechCapCosts))
+	print("TotalStorageCapCosts:")
+	println(value(TotalStorageCapCosts))
+	print("TotalPerUnitSizeOMCosts:")
+	println(value(TotalPerUnitSizeOMCosts))
+	print("TotalPerUnitProdOMCosts:")
+	println(value(TotalPerUnitProdOMCosts))
+	print("TotalEnergyCharges:")
+	println(value(TotalEnergyCharges))
+	print("TotalEnergyExports:")
+	println(value(TotalEnergyExports))
+	print("TotalFixedCharges:")
+	println(value(TotalFixedCharges))
+	print("MinChargeAdder:")
+	println(value(MinChargeAdder))
+	print("TotalProductionIncentive:")
+	println(value(TotalProductionIncentive))
+	print("Usage by Tier by Month:")
+	println(results["UsageInTier"])
+		
     return results
 end
