@@ -201,11 +201,11 @@ class DataManager:
                         pwf_prod_incent.append(
                             annuity_escalation(eval('self.' + tech + '.incentives.production_based.years'),
                                                -1 * eval('self.' + tech + '.degradation_pct'),
-                                               sf.offtaker_discount_pct))
+                                               sf.owner_discount_pct))
                     else:
                         pwf_prod_incent.append(
                             annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                    0, sf.offtaker_discount_pct))
+                                    0, sf.owner_discount_pct))
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_year')
                     )
