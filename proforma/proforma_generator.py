@@ -310,52 +310,60 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 utility bill without system ($/year)"
+    ws['A{}'.format(current_row)] = "Year 1 BAU utility bill ($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_bau_us_dollars or 0
     year_one_bau_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 utility bill with system ($/year)"
+    ws['A{}'.format(current_row)] = "Year 1 BAU export credits ($/year)"
+    ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_bau_us_dollars or 0
+    year_one_bau_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Year 1 optimal utility bill($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_us_dollars or 0
     year_one_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 export credits with system ($/year)"
-    ws['B{}'.format(current_row)] = electric_tariff.year_one_export_benefit_us_dollars or 0
+    ws['A{}'.format(current_row)] = "Year 1 optimal export credits ($/year)"
+    ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_us_dollars or 0
     year_one_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
+
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Year 1 {} energy produced with system (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Year 1 {} BAU energy produced (kWh/year)".format(pv['name'])
+        ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
+        pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        make_attribute_row(ws, current_row)
+
+        current_row += 1
+
+    for i, pv in enumerate(pv_data):
+        ws['A{}'.format(current_row)] = "Year 1 {} optimal energy produced (kWh/year)".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy"]
         pv_cell_locations[i]["pv_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
 
-    for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Year 1 {} energy produced with existing system (kWh/year)".format(pv['name'])
-        ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
-        pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-        make_attribute_row(ws, current_row)
-
-        current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 wind energy produced with system (kWh/year)"
+    ws['A{}'.format(current_row)] = "Year 1 optimal wind energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy
     wind_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 net Generator energy produced with system (kWh/year)"
+    ws['A{}'.format(current_row)] = "Year 1 optimal generator energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = generator_energy
     generator_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 net energy produced with system (kWh/year)"
+    ws['A{}'.format(current_row)] = "Year 1 total optimal energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data])
     make_attribute_row(ws, current_row)
     current_row += 1
@@ -1275,11 +1283,10 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
 
     dcs['A{}'.format(current_row)] = "Export credits with system"
-    # TODO CHECK EXPORT CREDIT ACCOUNTING (SHOULD WE HAVE PV DEGRADATION?)
 
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'.format(
+            '={year_one_credits} * (1 + {escalation_pct}/100)^{year}'.format(
                 year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
                 pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -2368,6 +2375,20 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     bau_bill_row = current_row
 
+    current_row += 1
+    hcs['A{}'.format(current_row)] = "BAU export credits ($)"
+
+    for year in range(1, financial.analysis_years + 1):
+        hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = \
+            '={year_one_bau_credits} * (1 + {escalation_pct}/100)^{year}'.format(
+                year_one_bau_credits=year_one_bau_credits_cell,
+                escalation_pct=escalation_pct_cell,
+                year=year,
+            )
+    make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    bau_export_credit_row = current_row
+
     if not financial.two_party_ownership:
         """
         BAU O&M costs do not matter in two party proforma. They are sunk costs. They are shown for single party model
@@ -2475,7 +2496,7 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
     else:
         current_row += 1
-        hcs['A{}'.format(current_row)] = "Electricity bill with system before export credits"
+        hcs['A{}'.format(current_row)] = "Electricity bill with optimal system before export credits"
 
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = \
@@ -2487,12 +2508,11 @@ def generate_proforma(scenariomodel, output_file_path):
         bill_with_sys_row = current_row
     
         current_row += 1
-        hcs['A{}'.format(current_row)] = "Export credits with system"
-        # TODO CHECK EXPORT CREDIT ACCOUNTING (SHOULD WE HAVE PV DEGRADATION?)
-    
+        hcs['A{}'.format(current_row)] = "Export credits with optimal system"
+
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '={year_one_credits} * (1 + {escalation_pct}/100)^{year} * (1 - {pv_degradation_rate}/100)^{year}'
+                '={year_one_credits} * (1 + {escalation_pct}/100)^{year}'
                 ).format(
                     year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
                     pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
@@ -2512,9 +2532,10 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['A{}'.format(current_row)] = "Net Electricity Costs"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-                "=-{bau_bill} + {with_sys_bill} + {export_credits} +  {developer_payment} "
+                "=-{bau_bill} -{bau_export_credit} + {with_sys_bill} + {export_credits} +  {developer_payment} "
                 ).format(
                 bau_bill="{}{}".format(upper_case_letters[year+1], bau_bill_row),
+                bau_export_credit="{}{}".format(upper_case_letters[year+1], bau_export_credit_row),
                 with_sys_bill="{}{}".format(upper_case_letters[year+1], bill_with_sys_row),
                 export_credits="{}{}".format(upper_case_letters[year+1], export_credits_row),
                 developer_payment="{}{}".format(upper_case_letters[year+1], developer_payment_row),
