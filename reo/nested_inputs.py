@@ -687,10 +687,10 @@ nested_input_definitions = {
         },
         "pbi_max_us_dollars": {
           "type": "float",
-          "min": 0.0,
-          "max": 1.0e9,
-          "default": 1.0e9,
-          "description": "Maximum annual value of production-based incentives"
+          "min": 0,
+          "max": 1e9,
+          "default": 1e9,
+          "description": "Maximum annual value in present terms of production-based incentives"
         },
         "pbi_years": {
           "type": "float",
