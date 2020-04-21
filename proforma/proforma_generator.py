@@ -690,7 +690,7 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         ws['A{}'.format(current_row)] = "Production based incentive (PBI)"
         ws['A{}'.format(current_row)].font = bold_font
-        ws['B{}'.format(current_row)] = "Amount ($/W)"
+        ws['B{}'.format(current_row)] = "Amount ($/kWh)"
         ws['B{}'.format(current_row)].border = attribute_border_left_and_right
         ws['C{}'.format(current_row)] = "Maximum ($/year)"
         ws['C{}'.format(current_row)].border = attribute_border_left_and_right
@@ -849,7 +849,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Production based incentive (PBI)"
     ws['A{}'.format(current_row)].font = bold_font
-    ws['B{}'.format(current_row)] = "Amount ($/W)"
+    ws['B{}'.format(current_row)] = "Amount ($/kWh)"
     ws['B{}'.format(current_row)].border = attribute_border_left_and_right
     ws['C{}'.format(current_row)] = "Maximum ($/year)"
     ws['C{}'.format(current_row)].border = attribute_border_left_and_right
@@ -1633,7 +1633,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Production-based incentives (PBI)"
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    # TODO: remove existing PBI for financial.two_party?
+
     current_row += 1
     start_pbi_total_row = current_row
     for idx, pv in enumerate(pv_data):
@@ -1642,14 +1642,18 @@ def generate_proforma(scenariomodel, output_file_path):
         for year in range(financial.analysis_years):
             dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
-                "MIN({dol_per_kwh} * {pv_kwh}, {pbi_max}), 0)"
+                "MIN({dol_per_kwh} * ({pv_kwh} - {existing_pv_kwh}), "
+                "{pbi_max} * (1 - {pv_degradation_rate}/100)^{year}), 0)"
                 ).format(
                 year=year, 
                 pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"], 
                 dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
                 col=upper_case_letters[year + 2],
                 pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
+                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]
+                                 if financial.two_party_ownership else 0),
                 pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+                pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -2591,6 +2595,7 @@ def generate_proforma(scenariomodel, output_file_path):
                     col=upper_case_letters[year + 2],
                     pv_kwh=pv_cell_locations[idx]['pv_production_series_bau'][year],
                     pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+                    pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
                 )
             make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                                number_format='#,##0', border=no_border)
