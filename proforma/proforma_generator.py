@@ -303,32 +303,32 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
-    # Year 1 Results
+    # Present value of annual Results
     ####################################################################################################################
 
-    ws['A{}'.format(current_row)] = "YEAR 1 RESULTS"
+    ws['A{}'.format(current_row)] = "ANNUAL RESULTS"
     make_title_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 BAU utility bill ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual BAU utility bill ($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_bau_us_dollars or 0
     year_one_bau_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 BAU export credits ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual BAU export credits ($/year)"
     ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_bau_us_dollars or 0
     year_one_bau_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 optimal utility bill($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual optimal utility bill($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_us_dollars or 0
     year_one_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 optimal export credits ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual optimal export credits ($/year)"
     ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_us_dollars or 0
     year_one_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
@@ -336,7 +336,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Year 1 {} BAU energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Present value of annual {} BAU energy produced (kWh/year)".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
         pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
@@ -344,26 +344,26 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
 
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Year 1 {} optimal energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Nominal annual {} optimal energy produced (kWh/year)".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy"]
         pv_cell_locations[i]["pv_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
 
-    ws['A{}'.format(current_row)] = "Year 1 optimal wind energy produced (kWh/year)"
+    ws['A{}'.format(current_row)] = "Nominal annual optimal wind energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy
     wind_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 optimal generator energy produced (kWh/year)"
+    ws['A{}'.format(current_row)] = "Nominal annual optimal generator energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = generator_energy
     generator_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Year 1 total optimal energy produced (kWh/year)"
+    ws['A{}'.format(current_row)] = "Nominal total optimal energy produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data])
     make_attribute_row(ws, current_row)
     current_row += 1
