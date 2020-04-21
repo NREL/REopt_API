@@ -215,14 +215,14 @@ class ElectricTariffModel(models.Model):
     total_demand_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
+    total_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                                blank=True)
-    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                               blank=True)
+    year_one_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
