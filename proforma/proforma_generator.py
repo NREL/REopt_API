@@ -2583,7 +2583,7 @@ def generate_proforma(scenariomodel, output_file_path):
             for year in range(financial.analysis_years):
                 hcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                     "=IF({year} < {pbi_year_limit}, "
-                    "MIN({dol_per_kwh} * {pv_kwh}, {pbi_max}), 0)"
+                    "MIN({dol_per_kwh} * {pv_kwh}, {pbi_max} * (1 - {pv_degradation_rate}/100)^{year}), 0)"
                 ).format(
                     year=year,
                     pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"],
