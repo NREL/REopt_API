@@ -53,6 +53,75 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
+	
+	
+	### Big-M Adjustments (should provide faster solutions and help with numerical instability issues)
+	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.FuelBinCount)
+	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
+	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
+	NewMaxSizeByHour = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
+
+	# NewMaxDemandMonthsInTier sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
+	for n in p.DemandMonthsBin
+		for m in p.Month 
+			if n > 1
+				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
+					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					for ts in p.TimeStepRatchetsMonth[m]])  - 
+					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
+				)
+			else 
+				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
+					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					for ts in p.TimeStepRatchetsMonth[m]])   ])
+			end
+		end
+	end
+
+	# NewMaxDemandInTier sets a new minimum if the new peak demand for the ratchet, minus the size of all previous bins for the ratchet, is less than the existing bin size.
+	for e in p.DemandBin
+		for r in p.Ratchets 
+			if e > 1
+				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
+				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					for ts in p.TimeStep])  - 
+				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
+				])
+			else
+				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
+				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					for ts in p.TimeStep])  
+				])
+			end
+		end
+	end
+
+	# NewMaxUsageInTier sets a new minumum if the total demand for the month, minus the size of all previous bins, is less than the existing bin size.
+	for u in p.FuelBin
+		for m in p.Month 
+			if u > 1
+				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
+					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
+				])
+			else
+				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
+					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					for ts in p.TimeStepRatchetsMonth[m]) 
+				])
+			end
+		end
+	end
+
+	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
+	#for t in NonUtilTechs 
+	#	for ts in p.TimeStep
+	#		NewMaxSizeByHour[t,ts] = minimum([p.MaxSize[t],
+	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * p.MaxSize[t],
+	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)  
+	#		])
+	#	end
+	#end
 
     @variables REopt begin
 		# Continuous Variables
@@ -509,41 +578,29 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Fuel Bins
     @constraint(REopt, [fb in p.FuelBin, m in p.Month],
-                UsageInTier[m, fb] <= binUsageTier[m, fb] * p.MaxUsageInTier[fb])
+                UsageInTier[m, fb] <= binUsageTier[m, fb] * NewMaxUsageInTier[m,fb])
     @constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
     	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
     @constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
-    	        binUsageTier[m, fb] * p.MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0)
+    	        binUsageTier[m, fb] * NewMaxUsageInTier[m,fb-1] - UsageInTier[m, fb-1] <= 0)
 				
-	### Constraint set (10): Electrical Energy Demand Pricing Tiers
-	##Constraint (10a): Usage limits by pricing tier, by month
-	#@constraint(REopt, [u in p.PricingTier, m in p.Month],
-    #            Delta * sum( dvGridPurchase[u, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= binUsageTier[m, u] * p.MaxUsageInTier[u])
-	##Constraint (10b): Ordering of pricing tiers
-	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
-    #	        binUsageTier[m, u] - binUsageTier[m, u-1] <= 0)
-	## Constraint (10c): One tier must be full before any usage in next tier 
-	#@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
-    #	        binUsageTier[m, u] * p.MaxUsageInTier[u-1] - UsageInTier[m, u-1] <= 0)
-	#
-	#End constraint set (10)
 
     ### Peak Demand Energy Rates
     for db in p.DemandBin
         @constraint(REopt, [r in p.Ratchets],
-                    dvPeakDemandE[r, db] <= binDemandTier[r,db] * p.MaxDemandInTier[db])
+                    dvPeakDemandE[r, db] <= binDemandTier[r,db] * NewMaxDemandInTier[r,db])
         if db >= 2
             @constraint(REopt, [r in p.Ratchets],
                         binDemandTier[r, db] - binDemandTier[r, db-1] <= 0)
             @constraint(REopt, [r in p.Ratchets],
-                        binDemandTier[r, db] * p.MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0)
+                        binDemandTier[r, db] * NewMaxDemandInTier[r,db-1] - dvPeakDemandE[r, db-1] <= 0)
         end
     end
 	### Constraint set (11): Peak Electrical Power Demand Charges: Months
 	
 	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
 	#@constraint(REopt, [n in p.DemandMonthsBin, m in p.Month],
-    #            dvPeakDemandEMonth[m,n] <= p.MaxDemandMonthsInTier[n] * binDemandMonthsTier[m,n])
+    #            dvPeakDemandEMonth[m,n] <= NewMaxDemandMonthsInTier[m,n] * binDemandMonthsTier[m,n])
 	
 	## Constraint (11b): Monthly peak electrical power demand tier ordering
 	@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
@@ -551,7 +608,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
 	#@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
-    #    	 binDemandMonthsTier[m, n] * p.MaxDemandMonthsInTier[n-1] <= dvPeakDemandEMonth[m, n-1])
+    #    	 binDemandMonthsTier[m, n] * NewMaxDemandMonthsInTier[m,n-1] <= dvPeakDemandEMonth[m, n-1])
 	
 	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
 	#@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
@@ -602,12 +659,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### Peak Demand Energy Ratchets
     for dbm in p.DemandMonthsBin
         @constraint(REopt, [m in p.Month],
-        	        dvPeakDemandEMonth[m, dbm] <= binDemandMonthsTier[m,dbm] * p.MaxDemandMonthsInTier[dbm])
+        	        dvPeakDemandEMonth[m, dbm] <= binDemandMonthsTier[m,dbm] * NewMaxDemandMonthsInTier[m,dbm])
         if dbm >= 2
         @constraint(REopt, [m in p.Month],
         	        binDemandMonthsTier[m, dbm] - binDemandMonthsTier[m, dbm-1] <= 0)
         @constraint(REopt, [m in p.Month],
-        	        binDemandMonthsTier[m, dbm] * p.MaxDemandMonthsInTier[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
+        	        binDemandMonthsTier[m, dbm] * NewMaxDemandMonthsInTier[m,dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
         end
     end
     @constraint(REopt, [dbm in p.DemandMonthsBin, m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
@@ -777,7 +834,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		#r_tax_fraction_offtaker * p.pwf_e * (
 		
 		## Total Production Costs
-		#p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+		#  p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 		
 		#
 		## Total Demand Charges
@@ -1021,6 +1078,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["dvPeakDemandEMonth"] = value.(dvPeakDemandEMonth)
 	results["dvRatedProd"] = value.(dvRatedProd)
 	results["UsageInTier"] = value.(UsageInTier)
+	results["dvMeanSOC"] = value.(UsageInTier)
 	
 	print("TotalTechCapCosts:")
 	println(value(TotalTechCapCosts))
@@ -1028,18 +1086,25 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	println(value(TotalStorageCapCosts))
 	print("TotalPerUnitSizeOMCosts:")
 	println(value(TotalPerUnitSizeOMCosts))
+	println(value( TotalPerUnitSizeOMCosts * r_tax_fraction_owner ))
 	print("TotalPerUnitProdOMCosts:")
 	println(value(TotalPerUnitProdOMCosts))
+	println(value( TotalPerUnitProdOMCosts * r_tax_fraction_owner ))
 	print("TotalEnergyCharges:")
 	println(value(TotalEnergyCharges))
+	println(value( TotalEnergyCharges * r_tax_fraction_offtaker ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
+	println(value( TotalEnergyExports * r_tax_fraction_offtaker  ))
 	print("TotalFixedCharges:")
 	println(value(TotalFixedCharges))
+	println(value( TotalFixedCharges * r_tax_fraction_offtaker ))
 	print("MinChargeAdder:")
 	println(value(MinChargeAdder))
+	println(value( MinChargeAdder * r_tax_fraction_offtaker ))
 	print("TotalProductionIncentive:")
 	println(value(TotalProductionIncentive))
+	println(value( TotalProductionIncentive * r_tax_fraction_owner ))
 	print("Usage by Tier by Month:")
 	println(results["UsageInTier"])
 		
