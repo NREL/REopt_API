@@ -11,7 +11,7 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/tiered_pv.jld2", "p")
+    p = load("./scenarios/tou_pv.jld2", "p")
 
     MAXTIME = 100000
 
@@ -282,7 +282,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # ADDED for modeling
         #binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
-	
 	
     ##############################################################################
 	#############  		Constraints									 #############
@@ -778,9 +777,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		    	 binDemandTier[r, e] * NewMaxDemandInTier[r,e-1] <= dvPeakDemandE[r, e-1])
 		
 		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
-		@constraint(REopt, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
 		    	 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
-				 sum( dvGridPurchase[u, h] for u in TempPricingTiers )
+				 sum( dvGridPurchase[u, ts] for u in TempPricingTiers )
 		)
 		
 		##Constraint (12e): Peak demand used in percent lookback calculation 
@@ -792,7 +791,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@constraint(REopt, [r in p.DemandLookbackMonths],
 					sum( dvPeakDemandEMonth[r,e] for e in p.DemandBin ) >= 
 					p.DemandLookbackPercent * dvPeakDemandELookback )
-	#end
+	end
 	### End Constraint Set (12)
 
     #if !isempty(p.TimeStepRatchets)
@@ -853,8 +852,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         TotalMinCharge = 12 * p.MonthlyMinCharge
     end
 	
-	#if TotalMinCharge > 0
-        @constraint(REopt, MinChargeAdder >= TotalMinCharge - (
+	if TotalMinCharge >= 1e-2
+        @constraint(REopt, MinChargeAddCon, MinChargeAdder >= TotalMinCharge - (
 			#Demand Charges
 			p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in TempPricingTiers ) +
 			#Peak Ratchet Charges
@@ -862,12 +861,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			#Preak Monthly Demand Charges
 			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
 			# Energy Exports
-			p.TimeStepScaling * sum( sum(TempGridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in TempStorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in TempSalesTiers, t in TempTechsByPricingTier[u]) for ts in p.TimeStep ) - 
+			p.TimeStepScaling * sum( sum(TempGridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in TempStorageSalesTiers) + sum(TempGridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in TempSalesTiers, t in TempTechsByPricingTier[u]) for ts in p.TimeStep ) - 
 			p.FixedMonthlyCharge * 12 )
 		)
 	else
-		@constraint(REopt, MinChargeAdder == 0)
+		@constraint(REopt, MinChargeAddCon, MinChargeAdder == 0)
     end
+	print("Total Min Charge: ")
+	println(TotalMinCharge)
+	print("Min Charge Adder Con: ")
+	println(MinChargeAddCon)
 	
 	### Alternate constraint (13): Monthly minimum charge adder
 	
