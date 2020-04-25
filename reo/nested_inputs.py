@@ -315,7 +315,7 @@ nested_input_definitions = {
         "tou_energy_rates_us_dollars_per_kwh": {
           "type": "list_of_float",
           "replacement_sets": electric_tariff_possible_sets,
-          "description": "Time-of-use energy rates, provided by user. Must be an array with length equal to number of timesteps per year."
+          "description": "Time-of-use energy rates, provided by user. Must be an array with length equal to number of timesteps per year. Hourly or 15 minute rates allowed."
         },
         "net_metering_limit_kw": {
           "type": "float",
