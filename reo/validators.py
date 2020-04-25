@@ -947,6 +947,8 @@ class ValidateNestedInput:
                 self.validate_8760(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh'), "ElectricTariff",
                                    'tou_energy_rates_us_dollars_per_kwh',
                                    self.input_dict['Scenario']['time_steps_per_hour'])
+                if len(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh')) not in [8760, 35040]:
+                    self.input_data_errors.append("length of tou_energy_rates_us_dollars_per_kwh must be 8760 or 35040")
 
             if electric_tariff['add_tou_energy_rates_to_urdb_rate']:
                 tou_energy = electric_tariff.get('tou_energy_rates_us_dollars_per_kwh', True)
