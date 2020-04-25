@@ -822,16 +822,16 @@ class ValidateNestedInput:
 
                         if real_values.get("wind_meters_per_sec"):
                             self.validate_8760(real_values.get("wind_meters_per_sec"),
-                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                               "Wind", "wind_meters_per_sec", self.input_dict['Scenario']['time_steps_per_hour'])
 
                             self.validate_8760(real_values.get("wind_direction_degrees"),
-                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                               "Wind", "wind_direction_degrees", self.input_dict['Scenario']['time_steps_per_hour'])
 
                             self.validate_8760(real_values.get("temperature_celsius"),
-                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                               "Wind", "temperature_celsius", self.input_dict['Scenario']['time_steps_per_hour'])
 
                             self.validate_8760(real_values.get("pressure_atmospheres"),
-                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'], number=number, input_isDict=input_isDict)
+                                               "Wind", "pressure_atmospheres", self.input_dict['Scenario']['time_steps_per_hour'])
                         else:
                             from reo.src.wind_resource import get_conic_coords
 
@@ -946,7 +946,7 @@ class ValidateNestedInput:
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
-                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],number=number, input_isDict=input_isDict)
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
                         isnet = real_values.get(lp + '_is_net')
                         if isnet is None:
                             isnet = True
