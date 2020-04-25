@@ -63,15 +63,19 @@ load_profile_possible_sets = [["loads_kw"],
             ["doe_reference_name"]
             ]
 
-electric_tariff_possible_sets = [["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utility_name", "urdb_rate_name"]]
+electric_tariff_possible_sets = [
+  ["urdb_response"],
+  ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
+  ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
+  ["urdb_label"],
+  ["urdb_utility_name", "urdb_rate_name"],
+  ["tou_energy_rates_us_dollars_per_kwh"]
+]
 
 
 def list_of_float(input):
     return [float(i) for i in input]
+
 
 nested_input_definitions = {
 
@@ -292,17 +296,28 @@ nested_input_definitions = {
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
         "blended_annual_rates_us_dollars_per_kwh": {
-              "type": "float",
-              "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
-              "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
+          "type": "float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
+          "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
           },
         "blended_annual_demand_charges_us_dollars_per_kw": {
-              "type": "float",
-              "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
-              "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
+          "type": "float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
+          "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
           },
+        "add_tou_energy_rates_to_urdb_rate": {
+          "type": "bool",
+          "default": False,
+          "description": "Set to 'true' to add the tou  energy rates to the URDB rate schedule. Otherwise, tou energy rates will only be considered if a URDB rate is not provided. "
+        },
+        "tou_energy_rates_us_dollars_per_kwh": {
+          "type": "list_of_float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
+          "description": "Time-of-use energy rates, provided by user. Must be an array with length equal to number of timesteps per year."
+        },
         "net_metering_limit_kw": {
           "type": "float",
           "min": 0.0,
@@ -741,7 +756,7 @@ nested_input_definitions = {
           "restrict_to": "['roof', 'ground', 'both']",
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
-         }           
+         }
       },
 
       "Storage": {
