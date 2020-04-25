@@ -270,10 +270,10 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
 
         post["Scenario"]["Site"]["ElectricTariff"]["tou_energy_rates_us_dollars_per_kwh"] = [.1] * 8760
         post["Scenario"]["Site"]["ElectricTariff"]["add_tou_energy_rates_to_urdb_rate"] = False
-        # response = self.get_response(post)
-        # tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
-        # self.assertEqual(tariff.year_one_bill_us_dollars, 1.0e5, places=1)
-        # self.assertEqual(tariff.year_one_bill_bau_us_dollars, 1.0e5, places=1)
+        response = self.get_response(post)
+        tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
+        self.assertAlmostEqual(tariff.year_one_bill_us_dollars, 1.0e5, places=1)
+        self.assertAlmostEqual(tariff.year_one_bill_bau_us_dollars, 1.0e5, places=1)
 
         post["Scenario"]["Site"]["ElectricTariff"]["add_tou_energy_rates_to_urdb_rate"] = True
         response = self.get_response(post)
