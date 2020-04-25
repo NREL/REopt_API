@@ -39,7 +39,8 @@ class ElecTariff(object):
                  net_metering_limit_kw, interconnection_limit_kw, load_year, time_steps_per_hour,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
-                 blended_annual_demand_charges_us_dollars_per_kw=None,
+                 blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
+                 tou_energy_rates_us_dollars_per_kwh=None,
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
@@ -63,6 +64,8 @@ class ElecTariff(object):
         self.wholesale_rate_above_site_load = wholesale_rate_above_site_load_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
+        self.tou_energy_rates_us_dollars_per_kwh = tou_energy_rates_us_dollars_per_kwh
+        self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
 
         self.net_metering = False
         if net_metering_limit_kw > 0:
