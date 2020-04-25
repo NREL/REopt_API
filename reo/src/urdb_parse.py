@@ -161,8 +161,9 @@ class UrdbParse:
         self.techs = techs
         self.bau_techs = bau_techs
         self.loads = loads
-        self.custom_tou_energy_rates = elec_tariff.tou_energy_rates_us_dollars_per_kwh
+        self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
+        self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
         if gen is not None:
             self.generator_fuel_slope = gen.fuel_slope
             self.generator_fuel_intercept = gen.fuel_intercept
@@ -199,9 +200,17 @@ class UrdbParse:
         log.info("Processing: " + utility + ", " + rate)
 
         current_rate = RateData(self.urdb_rate)
-        self.prepare_summary(current_rate)
-        self.prepare_demand_periods(current_rate)  # makes demand rates too
-        self.prepare_energy_costs(current_rate)
+
+        if self.override_urdb_rate_with_tou_energy_rates:
+            self.has_tou_energy = "yes"  # all that we need from prepare_summary
+            self.demand_rates_summary = self.ts_per_year * [0]  # all that we need from prepare_demand_periods
+            self.energy_costs = self.custom_tou_energy_rates  # all that we need from prepare_energy_costs
+            # assume no fixed charges
+        else:
+            self.prepare_summary(current_rate)
+            self.prepare_demand_periods(current_rate)  # makes demand rates too
+            self.prepare_energy_costs(current_rate)
+            self.prepare_fixed_charges(current_rate)
 
         self.reopt_args.energy_rates, \
         self.reopt_args.energy_avail,  \
@@ -214,8 +223,6 @@ class UrdbParse:
         self.reopt_args.export_rates_bau, \
         self.reopt_args.energy_burn_rate_bau, \
         self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
-
-        self.prepare_fixed_charges(current_rate)
 
         return self.reopt_args
 

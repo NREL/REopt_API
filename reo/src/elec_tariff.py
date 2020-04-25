@@ -64,8 +64,9 @@ class ElecTariff(object):
         self.wholesale_rate_above_site_load = wholesale_rate_above_site_load_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
-        self.tou_energy_rates_us_dollars_per_kwh = tou_energy_rates_us_dollars_per_kwh
+        self.tou_energy_rates = tou_energy_rates_us_dollars_per_kwh
         self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
+        self.override_urdb_rate_with_tou_energy_rates = False
 
         self.net_metering = False
         if net_metering_limit_kw > 0:
@@ -73,19 +74,25 @@ class ElecTariff(object):
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
-            if add_blended_rates_to_urdb_rate:
+            if self.tou_energy_rates is not None and self.add_tou_energy_rates_to_urdb_rate is False:
+                self.override_urdb_rate_with_tou_energy_rates = True
+                # option of adding tou energy rate to urdb rate is implemented in UrdbParse.prepare_energy_costs
+            elif add_blended_rates_to_urdb_rate:
+                self.add_tou_energy_rates_to_urdb_rate = False
                 urdb_response = self.update_urdb_with_monthly_energy_and_demand(
                     urdb_response, blended_monthly_rates_us_dollars_per_kwh,
                     blended_monthly_demand_charges_us_dollars_per_kw)
 
         elif blended_monthly_rates_us_dollars_per_kwh is not None \
                 and blended_monthly_demand_charges_us_dollars_per_kw is not None:
+            self.add_tou_energy_rates_to_urdb_rate = False
             log.info("Making URDB rate from monthly blended data")
             urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
                                                 blended_monthly_demand_charges_us_dollars_per_kw)
 
         elif blended_annual_rates_us_dollars_per_kwh is not None \
                 and blended_annual_demand_charges_us_dollars_per_kw is not None:
+            self.add_tou_energy_rates_to_urdb_rate = False
             blended_monthly_rates_us_dollars_per_kwh = 12 * [blended_annual_rates_us_dollars_per_kwh]
             blended_monthly_demand_charges_us_dollars_per_kw = 12 * [blended_annual_demand_charges_us_dollars_per_kw]
             log.info("Making URDB rate from annual blended data")
