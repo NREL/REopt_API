@@ -943,6 +943,25 @@ class ValidateNestedInput:
                         if len(electric_tariff.get(blended)) != 12:
                             self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
 
+            if electric_tariff.get('tou_energy_rates_us_dollars_per_kwh') is not None:
+                self.validate_8760(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh'), "ElectricTariff",
+                                   'tou_energy_rates_us_dollars_per_kwh',
+                                   self.input_dict['Scenario']['time_steps_per_hour'])
+
+            if electric_tariff['add_tou_energy_rates_to_urdb_rate']:
+                tou_energy = electric_tariff.get('tou_energy_rates_us_dollars_per_kwh', True)
+                urdb_rate = electric_tariff.get('urdb_response', True)
+
+                if tou_energy is True or urdb_rate is True:
+                    missing_keys = []
+                    if tou_energy is True:
+                        missing_keys.append('tou_energy_rates_us_dollars_per_kwh')
+                    if urdb_rate is True:
+                        missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
+                    self.input_data_errors.append((
+                        'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
+                        'following inputs: {}').format(', '.join(missing_keys)))
+
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
