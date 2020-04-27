@@ -356,15 +356,15 @@ class UrdbParse:
                             rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
 
                         adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
+                        total_rate = rate + adj
 
                         for step in range(0, self.time_steps_per_hour):
                             if self.add_tou_energy_rates_to_urdb_rate:
                                 idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
                                 if len(self.custom_tou_energy_rates) == 35040:
-                                    idx += step
-                                rate += self.custom_tou_energy_rates[idx]
-                            self.energy_costs.append(rate + adj)
-
+                                    idx = hour_of_year * 4 + step
+                                total_rate = rate + adj + self.custom_tou_energy_rates[idx]
+                            self.energy_costs.append(total_rate)
                         hour_of_year += 1
 
     def prepare_techs_and_loads(self, techs):
