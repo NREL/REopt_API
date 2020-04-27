@@ -387,7 +387,7 @@ class BuiltInProfile(object):
         self.monthly_kwh = monthly_totals_kwh
         self.doe_reference_name = doe_reference_name
         self.nearest_city = None
-        self.year = year
+        self.year = year or 2017
         self.tried_developer_reo_api = False
 
         self.annual_kwh = annual_kwh if annual_kwh else (sum(monthly_totals_kwh) if monthly_totals_kwh else self.default_annual_kwh)
@@ -500,7 +500,7 @@ class LoadProfile(BuiltInProfile):
             it is determined as either "loads_kw" or built-in profile times the "critical_load_pct".
     """
 
-    def __init__(self, dfm, user_profile=None, pv=None, critical_loads_kw=None, critical_load_pct=None,
+    def __init__(self, dfm, user_profile=None, pvs=None, critical_loads_kw=None, critical_load_pct=None,
                  outage_start_hour=None, outage_end_hour=None, loads_kw_is_net=True, critical_loads_kw_is_net=False,
                  analysis_years=1, time_steps_per_hour=1, gen_existing_kw=0, gen_min_turn_down=0,
                  fuel_avail_before_outage=0, fuel_slope=1, fuel_intercept=0, **kwargs):
@@ -523,22 +523,29 @@ class LoadProfile(BuiltInProfile):
 
         # account for existing PV in load profile if loads_kw_is_net
         existing_pv_kw_list = None
-        if pv is not None:
-            if pv.existing_kw > 0:
-                """
-                Create existing PV profile.
-                Must account for levelization factor to align with how PV is modeled in REopt:
-                    Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
-                    that accounts for the PV capacity degradation over the analysis_years. In other words, by
-                    multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
-                """
-                levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
-                existing_pv_kw_list = [pv.existing_kw * x * levelization_factor for x in pv.prod_factor]
-                if loads_kw_is_net:
-                    # add existing pv if net load provided
-                    native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
-                    self.load_list = copy.deepcopy(native_load)
-                    self.bau_load_list = copy.deepcopy(native_load)
+        for pv in pvs:  # get all of the existing production
+            if pv is not None:
+                if pv.existing_kw > 0:
+                    """
+                        Create existing PV profile.
+                        Must account for levelization factor to align with how PV is modeled in REopt:
+                        Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
+                        that accounts for the PV capacity degradation over the analysis_years. In other words, by
+                        multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+                    """
+                    levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
+                    # for first PV just override the existing_pv_kw_list, otherwise add to existing production
+                    new_existing_pv_kw_list = [pv.existing_kw * x * levelization_factor for x in pv.prod_factor]
+                    if existing_pv_kw_list is None:
+                        existing_pv_kw_list = new_existing_pv_kw_list
+                    else:
+                        existing_pv_kw_list = [i + j for i, j in zip(new_existing_pv_kw_list, existing_pv_kw_list)]
+
+        if loads_kw_is_net and existing_pv_kw_list is not None:
+            # add existing pv to load profile to create native load from net load
+            native_load = [i + j for i, j in zip(self.load_list, existing_pv_kw_list)]
+            self.load_list = copy.deepcopy(native_load)
+            self.bau_load_list = copy.deepcopy(native_load)
 
         """
         Account for outage in load_list (loads_kw).
@@ -632,8 +639,6 @@ class LoadProfile(BuiltInProfile):
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
             sustain_hours = 0  # no outage
-
-        # create new attribute - remaining unmet load during outage
 
         # resilience_check_flag: True if existing diesel can sustain critical load during outage
         self.resilience_check_flag = resilience_check_flag

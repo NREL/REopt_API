@@ -205,7 +205,7 @@ nested_input_definitions = {
           "type": "int",
           "min": 1,
           "max": 9999,
-          "default": 2018,
+          "default": 2019,
           "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka 'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday."
         },
         "monthly_totals_kwh": {
@@ -516,6 +516,10 @@ nested_input_definitions = {
       },
 
       "PV": {
+        "pv_name": {
+          "type": "str",
+          "description": "Site name/description"
+        },
         "existing_kw": {
           "type": "float",
           "min": 0.0,
@@ -739,7 +743,13 @@ nested_input_definitions = {
         "prod_factor_series_kw": {
           "type": "list_of_float",
           "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
-        }
+        },
+        "location": {
+          "type": "str",
+          "restrict_to": "['roof', 'ground', 'both']",
+          "default": 'both',
+          "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
+         }           
       },
 
       "Storage": {

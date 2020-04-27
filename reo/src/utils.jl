@@ -24,6 +24,7 @@ struct Parameter
      TechClass::Array{String,1}
      TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
      TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     TechToLocation::AxisArray{Int,2,Array{Int,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
      TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
      NMILRegime::Array{String,1}
@@ -43,6 +44,7 @@ struct Parameter
      ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
      MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      MaxSizeForProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MaxSizesLocation::AxisArray{Float64,1,Array{Float64,1}, Tuple{Axis{:row,UnitRange{Int64}}}}
      two_party_factor::Float64
      analysis_years::Int64
      AnnualElecLoad::Float64
@@ -98,74 +100,76 @@ end
 
 
 function build_param(args...;
-          Tech,
-          Load,
-          TechClass,
-          TechIsGrid,
-          TechToLoadMatrix,
-          TurbineDerate,
-          TechToTechClassMatrix,
-          NMILRegime,
-          r_tax_owner,
-          r_tax_offtaker,
-          pwf_om,
-          pwf_e,
-          pwf_prod_incent,
-          LevelizationFactor,
-          LevelizationFactorProdIncent,
-          StorageCostPerKW,
-          StorageCostPerKWH,
-          OMperUnitSize,
-          CapCostSlope,
-          CapCostYInt,
-          CapCostX,
-          ProdIncentRate,
-          MaxProdIncent,
-          MaxSizeForProdIncent,
-          two_party_factor,
-          analysis_years,
-          AnnualElecLoad,
-          LoadProfile,
-          ProdFactor,
-          StorageMinChargePcent,
-          EtaStorIn,
-          EtaStorOut,
-          InitSOC,
-          MaxSize,
-          MinStorageSizeKW,
-          MaxStorageSizeKW,
-          MinStorageSizeKWH,
-          MaxStorageSizeKWH,
-          TechClassMinSize,
-          MinTurndown,
-          FuelRate,
-          FuelAvail,
-          FixedMonthlyCharge,
-          AnnualMinCharge,
-          MonthlyMinCharge,
-          ExportRates,
-          TimeStepRatchetsMonth,
-          DemandRatesMonth,
-          DemandLookbackPercent,
-          MaxDemandInTier,
-          MaxDemandMonthsInTier,
-          MaxUsageInTier,
-          FuelBurnRateM,
-          FuelBurnRateB,
-          NMILLimits,
-          TechToNMILMapping,
-          DemandRates,
-          TimeStepRatchets,
-          DemandLookbackMonths,
-          CapCostSegCount,
-          FuelBinCount,
-          DemandBinCount ,
-          DemandMonthsBinCount,
-          TimeStepCount,
-          NumRatchets,
-          TimeStepScaling,
-          OMcostPerUnitProd,
-          kwargs...
+        Tech,
+        Load,
+        TechClass,
+        TechIsGrid,
+        TechToLoadMatrix,
+        TechToLocation,
+        TurbineDerate,
+        TechToTechClassMatrix,
+        NMILRegime,
+        r_tax_owner,
+        r_tax_offtaker,
+        pwf_om,
+        pwf_e,
+        pwf_prod_incent,
+        LevelizationFactor,
+        LevelizationFactorProdIncent,
+        StorageCostPerKW,
+        StorageCostPerKWH,
+        OMperUnitSize,
+        CapCostSlope,
+        CapCostYInt,
+        CapCostX,
+        ProdIncentRate,
+        MaxProdIncent,
+        MaxSizeForProdIncent,
+        MaxSizesLocation,
+        two_party_factor,
+        analysis_years,
+        AnnualElecLoad,
+        LoadProfile,
+        ProdFactor,
+        StorageMinChargePcent,
+        EtaStorIn,
+        EtaStorOut,
+        InitSOC,
+        MaxSize,
+        MinStorageSizeKW,
+        MaxStorageSizeKW,
+        MinStorageSizeKWH,
+        MaxStorageSizeKWH,
+        TechClassMinSize,
+        MinTurndown,
+        FuelRate,
+        FuelAvail,
+        FixedMonthlyCharge,
+        AnnualMinCharge,
+        MonthlyMinCharge,
+        ExportRates,
+        TimeStepRatchetsMonth,
+        DemandRatesMonth,
+        DemandLookbackPercent,
+        MaxDemandInTier,
+        MaxDemandMonthsInTier,
+        MaxUsageInTier,
+        FuelBurnRateM,
+        FuelBurnRateB,
+        NMILLimits,
+        TechToNMILMapping,
+        DemandRates,
+        TimeStepRatchets,
+        DemandLookbackMonths,
+        CapCostSegCount,
+        FuelBinCount,
+        DemandBinCount ,
+        DemandMonthsBinCount,
+        TimeStepCount,
+        NumRatchets,
+        TimeStepScaling,
+        OMcostPerUnitProd,
+        kwargs...
     )
 
 
@@ -178,11 +182,13 @@ function build_param(args...;
     DemandMonthsBin = 1:DemandMonthsBinCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
+    Location = 1:3
 
     TechIsGrid = parameter(Tech, TechIsGrid)
     TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
     TurbineDerate = parameter(Tech, TurbineDerate)
     TechToTechClassMatrix = parameter((Tech, TechClass), TechToTechClassMatrix)
+    TechToLocation = parameter((Tech, Location), TechToLocation)
     pwf_prod_incent = parameter(Tech, pwf_prod_incent)
     LevelizationFactor = parameter(Tech, LevelizationFactor)
     LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
@@ -193,6 +199,7 @@ function build_param(args...;
     ProdIncentRate = parameter((Tech, Load), ProdIncentRate)
     MaxProdIncent = parameter(Tech, MaxProdIncent)
     MaxSizeForProdIncent = parameter(Tech, MaxSizeForProdIncent)
+    MaxSizesLocation = parameter(Location, MaxSizesLocation)
     LoadProfile = parameter((Load, TimeStep), LoadProfile)
     ProdFactor = parameter((Tech, Load, TimeStep), ProdFactor)
     EtaStorIn = parameter((Tech, Load), EtaStorIn)
@@ -222,6 +229,7 @@ function build_param(args...;
                       TechClass,
                       TechIsGrid,
                       TechToLoadMatrix,
+                      TechToLocation,
                       TurbineDerate,
                       TechToTechClassMatrix,
                       NMILRegime,
@@ -241,6 +249,7 @@ function build_param(args...;
                       ProdIncentRate,
                       MaxProdIncent,
                       MaxSizeForProdIncent,
+                      MaxSizesLocation,
                       two_party_factor,
                       analysis_years,
                       AnnualElecLoad,
@@ -297,7 +306,7 @@ function build_param(args...;
 
 end
 
-# Code for paramter() function
+# Code for parameter() function
 function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
     shapedData = reshape(data, reverseTupleAxis)
