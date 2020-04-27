@@ -51,8 +51,10 @@ class DataManager:
     """
 
     def __init__(self, run_id, n_timesteps=8760):
-        self.pv = None
-        self.pvnm = None
+        self.pvs = []
+        self.pvnms = []
+        self.pv1 = None
+        self.pv1nm = None
         self.wind = None
         self.windnm = None
         self.generator = None
@@ -69,8 +71,8 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
-        self.available_techs = ['pv', 'pvnm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt!
-        self.available_tech_classes = ['PV', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
+        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = ['util']
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
@@ -92,13 +94,27 @@ class DataManager:
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
-        self.pv = pv
-        self.pvnm = copy.deepcopy(pv)
-        self.pvnm.nmil_regime = 'NMtoIL'
+        self.pvs.append(pv)
+        self.pvnms.append(copy.deepcopy(pv))
+        self.pvnms[-1].nmil_regime = 'NMtoIL'
 
-        if self.pv.existing_kw > 0:
-            tmp_tech = ['pv', 'pvnm']
-            self.bau_techs = tmp_tech+self.bau_techs
+        pv_number = len(self.pvs)
+
+        if pv.existing_kw > 0:
+            self.bau_techs = ["pv"+str(pv_number), "pv"+str(pv_number)+"nm"] + self.bau_techs
+
+        # update self.available_techs (baseline is ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util'])
+        if pv_number > 1:
+            i = pv_number - 1
+            self.available_techs = self.available_techs[:i*2] + ["pv"+str(pv_number), "pv"+str(pv_number)+"nm"] + \
+                                   self.available_techs[i*2:]
+            self.available_tech_classes = self.available_tech_classes[:i] + ["PV" + str(pv_number)] + \
+                                   self.available_tech_classes[i:]
+            # eg. ['pv1', 'pvnm1', 'pv2', 'pvnm2', 'wind', 'windnm', 'generator', 'util']
+
+        # for backwards compatibility with all self._get* methods we need to attach the individual PV objects to self:
+        exec("self.pv" + str(pv_number) + " = self.pvs[{}]".format(pv_number-1))
+        exec("self.pv" + str(pv_number) + "nm" + " = self.pvnms[{}]".format(pv_number - 1))
 
     def add_wind(self, wind):
 
@@ -156,7 +172,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                if tech in ['pv', 'pvnm']:  # pv has degradation
+                if tech.startswith("pv"):  # pv has degradation
 
                     #################
                     # NOTE: I don't think that levelization factors should include an escalation rate.  The degradation
@@ -545,6 +561,7 @@ class DataManager:
         prod_factor = list()
         tech_to_load = list()
         tech_is_grid = list()
+        tech_to_location = list()
         derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
@@ -588,6 +605,15 @@ class DataManager:
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
                         tech_to_load[-1] = int(self.storage.canGridCharge)
+                
+                for location in ['roof', 'ground', 'both']:
+                    if tech.startswith('pv'):
+                        if eval('self.' + tech + '.location') == location:
+                            tech_to_location.append(1)
+                        else:
+                            tech_to_location.append(0)
+                    else:
+                        tech_to_location.append(0)
 
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
@@ -596,7 +622,7 @@ class DataManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
+        return prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh
 
     def _get_REopt_techs(self, techs):
@@ -612,23 +638,24 @@ class DataManager:
     def _get_REopt_tech_classes(self, techs, bau):
         """
 
-        :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
+        :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
         for tc in self.available_tech_classes:
-            if eval('self.' + tc.lower()) is not None and tc.lower() in techs:
-                if hasattr(eval('self.' + tc.lower()), 'existing_kw'):
-                    if bau:
-                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0.0)
+            min_sizes = [0.0]
+            for tech in (x for x in techs if x.startswith(tc.lower()) and 'nm' not in x):
+                if eval('self.' + tech) is not None:
+                    if hasattr(eval('self.' + tech), 'existing_kw'):
+                        if bau:
+                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0))
+                        else:
+                            min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0) + (eval('self.' + tech + '.min_kw') or 0.0))
                     else:
-                        new_value = (eval('self.' + tc.lower() + '.existing_kw') or 0.0) + (eval('self.' + tc.lower() + '.min_kw') or 0.0)
-                else:
-                    new_value = (eval('self.' + tc.lower() + '.min_kw') or 0.0)
-                tech_class_min_size.append(new_value)
-            else:
-                tech_class_min_size.append(0.0)
+                        min_sizes.append((eval('self.' + tech + '.min_kw') or 0.0))
+
+            tech_class_min_size.append(max(min_sizes))
 
         for tech in techs:
 
@@ -647,6 +674,12 @@ class DataManager:
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
+        # default to large max size per location. Max size by roof, ground, both
+        max_sizes_location = [1.0e9, 1.0e9, 1.0e9]
+        pv_roof_limited, pv_ground_limited, pv_space_limited = False, False, False
+        roof_existing_pv_kw = 0.0
+        ground_existing_pv_kw = 0.0
+        both_existing_pv_kw = 0.0
         for tech in techs:
 
             if eval('self.' + tech) is not None:
@@ -661,21 +694,63 @@ class DataManager:
                     min_turn_down.append(0.0)
 
                 beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')
-                if eval('self.' + tech + '.acres_per_kw') is not None:
-                    if eval('self.' + tech + '.kw_per_square_foot') is not None:
+
+                if tech.startswith('pv'):  # has acres_per_kw and kw_per_square_foot attributes, as well as location
+                    if eval('self.' + tech + '.location') == 'both':
+                        both_existing_pv_kw += existing_kw                        
                         if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
                             # don't restrict unless they specify both land_area and roof_area,
                             # otherwise one of them is "unlimited" in UI
                             roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
                             land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
                             beyond_existing_cap_kw = min(roof_max_kw + land_max_kw, beyond_existing_cap_kw)
+                            pv_space_limited = True
+                    elif eval('self.' + tech + '.location') == 'roof':
+                        roof_existing_pv_kw += existing_kw
+                        if self.site.roof_squarefeet is not None:
+                            roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
+                            beyond_existing_cap_kw = min(roof_max_kw, beyond_existing_cap_kw)
+                            pv_roof_limited = True
+
+                    elif eval('self.' + tech + '.location') == 'ground':
+                        ground_existing_pv_kw += existing_kw
+                        if self.site.land_acres is not None:
+                            land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
+                            beyond_existing_cap_kw = min(land_max_kw, beyond_existing_cap_kw)
+                            pv_ground_limited = True
+
+                else:
+                    if eval('self.' + tech + '.acres_per_kw') is not None:
+                        if eval('self.' + tech + '.kw_per_square_foot') is not None:
+                            if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
+                                # don't restrict unless they specify both land_area and roof_area,
+                                # otherwise one of them is "unlimited" in UI
+                                roof_max_kw = self.site.roof_squarefeet * eval('self.' + tech + '.kw_per_square_foot')
+                                land_max_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
+                                beyond_existing_cap_kw = min(roof_max_kw + land_max_kw, beyond_existing_cap_kw)
+
+                if tech.startswith('wind'):  # has acres_per_kw attribute
+                    if self.site.land_acres is not None:
+                        site_constraint_kw = self.site.land_acres / eval('self.' + tech + '.acres_per_kw')
+                        if site_constraint_kw < 1500:
+                            # turbines less than 1.5 MW aren't subject to the acres/kW limit
+                            site_constraint_kw = 1500
+                        beyond_existing_cap_kw = min(site_constraint_kw, beyond_existing_cap_kw)
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(float(existing_kw))
                 else:
                     max_sizes.append(float(existing_kw + beyond_existing_cap_kw))
 
-        return max_sizes, min_turn_down
+        if pv_roof_limited is True:
+            max_sizes_location[0] = float(roof_existing_pv_kw/2 + roof_max_kw)
+        if pv_ground_limited is True:
+            max_sizes_location[1] = float(ground_existing_pv_kw/2 + land_max_kw)
+        if pv_space_limited is True:
+            max_sizes_location[2] = float(both_existing_pv_kw/2 + roof_max_kw + land_max_kw)
+        # existing PV kW's divided by 2 b/c of the duplicate existing capacity created by `pv*nm`
+
+        return max_sizes, min_turn_down, max_sizes_location
 
     def finalize(self):
         """
@@ -692,13 +767,13 @@ class DataManager:
         tech_class_min_size, tech_to_tech_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        prod_factor, tech_to_load, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh= self._get_REopt_array_tech_load(self.available_techs)
-        prod_factor_bau, tech_to_load_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        prod_factor_bau, tech_to_load_bau, tech_to_location_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
-        max_sizes, min_turn_down = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
-        max_sizes_bau, min_turn_down_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
+        max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
+        max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
 
         levelization_factor, production_incentive_levelization_factor, pwf_e, pwf_om, two_party_factor \
             = self._get_REopt_pwfs(self.available_techs)
@@ -748,6 +823,8 @@ class DataManager:
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
+            'TechToLocation': tech_to_location,
+            'MaxSizesLocation': max_sizes_location,
             'Load': load_list,
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
@@ -829,6 +906,8 @@ class DataManager:
         }
         self.reopt_inputs_bau = {
             'Tech': reopt_techs_bau,
+            'TechToLocation': tech_to_location_bau,
+            'MaxSizesLocation': max_sizes_location_bau,
             'TechIsGrid': tech_is_grid_bau,
             'Load': load_list,
             'TechToLoadMatrix': tech_to_load_bau,

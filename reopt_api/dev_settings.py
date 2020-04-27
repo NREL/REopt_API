@@ -190,6 +190,7 @@ CELERY_IMPORTS = (
     'reo.scenario',
     'reo.process_results',
     'reo.src.run_jump_model',
+    'resilience_stats.outage_simulator_LF',
 )
 
 if 'test' in sys.argv:
