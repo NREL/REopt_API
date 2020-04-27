@@ -1325,8 +1325,8 @@ class ValidateNestedInput:
                 if n not in length_list:
                     self.input_data_errors.append((
                         "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), "
-                        "or 15 minute (35,040 samples)".format(attr_name)"
-                    ))
+                        "or 15 minute (35,040 samples)").format(attr_name)
+                    )
                 elif attr_name in ["wholesale_rate_us_dollars_per_kwh", "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
                     if time_steps_per_hour != n/8760:
                         if time_steps_per_hour == 2 and n/8760 == 4:
