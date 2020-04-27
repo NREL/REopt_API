@@ -135,6 +135,9 @@ class FinancialModel(models.Model):
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs = models.FloatField(null=True, blank=True)
     net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
+    initial_capital_costs = models.FloatField(null=True, blank=True)
+    replacement_costs = models.FloatField(null=True, blank=True)
+    initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -232,7 +235,7 @@ class ElectricTariffModel(models.Model):
 
 class PVModel(models.Model):
     # Inputs
-    run_uuid = models.UUIDField(unique=True)
+    run_uuid = models.UUIDField(unique=False)
     existing_kw = models.FloatField()
     min_kw = models.FloatField()
     max_kw = models.FloatField()
@@ -266,6 +269,9 @@ class PVModel(models.Model):
     radius = models.FloatField()
     tilt = models.FloatField()
     prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    pv_number = models.IntegerField(default=1, null=True, blank=True)
+    pv_name = models.TextField(null=True, blank=True, default='')
+    location = models.TextField(null=True, blank=True, default='both')
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -527,7 +533,12 @@ class ModelManager(object):
                                                      **attribute_inputs(d['Site']['LoadProfile']))
         self.electric_tariffM = ElectricTariffModel.create(run_uuid=self.scenarioM.run_uuid,
                                                            **attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV'])==list:
+            self.pvM = [PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV'][0]))]
+            for pv in d['Site']['PV'][1:]:
+                self.pvM.append(PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(pv)))
+        if type(d['Site']['PV'])==dict:
+            self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
         self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
         self.generatorM = GeneratorModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Generator']))
@@ -535,8 +546,13 @@ class ModelManager(object):
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
     @staticmethod
-    def updateModel(modelName, modelData, run_uuid):
-        eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+    def updateModel(modelName, modelData, run_uuid, number=None):
+        if number==None:
+            eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+        else:
+            if 'PV' in modelName:
+                eval(modelName).objects.filter(run_uuid=run_uuid, pv_number=number).update(**attribute_inputs(modelData))
+        
 
     @staticmethod
     def remove(run_uuid):
@@ -573,7 +589,11 @@ class ModelManager(object):
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
         LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
         ElectricTariffModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricTariff']))
-        PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV']) == dict:
+            PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV']) == list:
+            for pv in d['Site']['PV']:
+                PVModel.objects.filter(run_uuid=run_uuid, pv_number=pv['pv_number']).update(**attribute_inputs(pv))
         WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
@@ -622,7 +642,11 @@ class ModelManager(object):
         :param run_uuid:
         :return: nested dictionary matching nested_output_definitions
         """
-
+        def remove_number(k, d):
+            if k in d.keys():
+                del d[k]
+            return d
+        
         def remove_ids(d):
             del d['run_uuid']
             del d['id']
@@ -633,16 +657,37 @@ class ModelManager(object):
             resp['inputs']['Scenario']['Site'][site_key] = dict()
 
             for k in nested_input_definitions['Scenario']['Site'][site_key].keys():
-
                 try:
-                    resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    if site_key == "PV":
+                        if type(resp['outputs']['Scenario']['Site'][site_key])==dict:
+                            resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                            del resp['outputs']['Scenario']['Site'][site_key][k]
+                        
+                        elif type(resp['outputs']['Scenario']['Site'][site_key])==list:
+                            max_order = max([p.get('pv_number') for p in resp['outputs']['Scenario']['Site'][site_key]])
+                            if resp['inputs']['Scenario']['Site'].get(site_key) == {}:
+                                resp['inputs']['Scenario']['Site'][site_key] = []
+                            if len(resp['inputs']['Scenario']['Site'][site_key]) == 0 :
+                                for _ in range(max_order):
+                                    resp['inputs']['Scenario']['Site'][site_key].append({})
+                            for i in range(max_order):
+                                resp['inputs']['Scenario']['Site'][site_key][i][k] = resp['outputs']['Scenario']['Site'][site_key][i][k]
+                                if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
+                                    if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
+                                        resp['inputs']['Scenario']['Site'][site_key][i][k] = \
+                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]
+                                if k not in ['pv_name']:
+                                    del resp['outputs']['Scenario']['Site'][site_key][i][k]
+
                     # special handling for inputs that can be scalar or array,
                     # (which we have to make an array in database)
-                    if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
-                        if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
-                            resp['inputs']['Scenario']['Site'][site_key][k] = \
-                                resp['inputs']['Scenario']['Site'][site_key][k][0]
-                    del resp['outputs']['Scenario']['Site'][site_key][k]
+                    else:
+                        resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                        if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
+                            if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
+                                resp['inputs']['Scenario']['Site'][site_key][k] = \
+                                    resp['inputs']['Scenario']['Site'][site_key][k][0]
+                        del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
 
@@ -680,7 +725,7 @@ class ModelManager(object):
             model_to_dict(LoadProfileModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(
             model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
-        resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['PV'] = [remove_ids(model_to_dict(x)) for x in PVModel.objects.filter(run_uuid=run_uuid).order_by('pv_number')]
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(
             model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(
@@ -706,8 +751,12 @@ class ModelManager(object):
                 del resp['outputs']['Scenario']['Site'][site_key]
 
             elif site_key in site_keys:
-
                 move_outs_to_ins(site_key, resp=resp)
+        if len(resp['inputs']['Scenario']['Site']['PV']) == 1:
+            resp['inputs']['Scenario']['Site']['PV'] = resp['inputs']['Scenario']['Site']['PV'][0]
+        resp['outputs']['Scenario']['Site']['PV'] = [remove_number('pv_number', x) for x in resp['outputs']['Scenario']['Site']['PV']]
+        if len(resp['outputs']['Scenario']['Site']['PV']) == 1:
+            resp['outputs']['Scenario']['Site']['PV'] = resp['outputs']['Scenario']['Site']['PV'][0]
 
         if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
             del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']
