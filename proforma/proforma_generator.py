@@ -1357,14 +1357,16 @@ def generate_proforma(scenariomodel, output_file_path):
                 generator_energy_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+
+    if not financial.two_party_ownership:  # otherwise on Host's cash flow
+        current_row += 1
+        dcs['A{}'.format(current_row)] = "Generator diesel fuel cost ($)"
+        dcs['A{}'.format(current_row)].alignment = one_tab_indent
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
+                diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
     current_row += 1
     dcs['A{}'.format(current_row)] = "Battery kW replacement cost "
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
@@ -2393,7 +2395,7 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     bau_export_credit_row = current_row
 
-    if not financial.two_party_ownership:
+    if not financial.two_party_ownership:  # Show BAU costs
         """
         BAU O&M costs do not matter in two party proforma. They are sunk costs. They are shown for single party model
         to account for BAU LCC. However, in the two party proforma we don't show optimal and BAU LCC's; instead we show
@@ -2498,7 +2500,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
         current_row += 1
         current_row += 1
-    else:
+    else:  # show Host's costs
         current_row += 1
         hcs['A{}'.format(current_row)] = "Electricity bill with optimal system before export credits"
 
@@ -2533,16 +2535,37 @@ def generate_proforma(scenariomodel, output_file_path):
         developer_payment_row = current_row
 
         current_row += 1
-        hcs['A{}'.format(current_row)] = "Net Electricity Costs"
+        hcs['A{}'.format(current_row)] = "Existing Generator fuel cost ($)"
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{}'.format(
+                gen_fuel_used_cost_bau_cell, om_escalation_rate_cell, year)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        bau_gen_fuel_costs_row = current_row
+        
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Generator fuel cost ($)"
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
+                diesel_fuel_used_cost_cell, om_escalation_rate_cell, year)
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        gen_fuel_costs_row = current_row
+
+        current_row += 1
+        hcs['A{}'.format(current_row)] = "Net Energy Costs"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
-                "=-{bau_bill} -{bau_export_credit} + {with_sys_bill} + {export_credits} +  {developer_payment} "
+                "=-{bau_bill} - {bau_export_credit} + {with_sys_bill} + {export_credits} + {developer_payment} "
+                " - {bau_gen_fuel} + {gen_fuel}"
                 ).format(
                 bau_bill="{}{}".format(upper_case_letters[year+1], bau_bill_row),
                 bau_export_credit="{}{}".format(upper_case_letters[year+1], bau_export_credit_row),
                 with_sys_bill="{}{}".format(upper_case_letters[year+1], bill_with_sys_row),
                 export_credits="{}{}".format(upper_case_letters[year+1], export_credits_row),
                 developer_payment="{}{}".format(upper_case_letters[year+1], developer_payment_row),
+                gen_fuel="{}{}".format(upper_case_letters[year+1], gen_fuel_costs_row),
+                bau_gen_fuel="{}{}".format(upper_case_letters[year+1], bau_gen_fuel_costs_row),
             )
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
