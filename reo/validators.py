@@ -894,7 +894,7 @@ class ValidateNestedInput:
                         self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
 
             if object_name_path[-1] == "ElectricTariff":
-                electric_tariff =real_values
+                electric_tariff = real_values
 
                 if electric_tariff.get('urdb_response') is not None:
                     self.validate_urdb_response()
@@ -943,30 +943,30 @@ class ValidateNestedInput:
                         if len(electric_tariff.get(blended)) != 12:
                             self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
 
-            if electric_tariff.get('tou_energy_rates_us_dollars_per_kwh') is not None:
-                self.validate_8760(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh'), "ElectricTariff",
-                                   'tou_energy_rates_us_dollars_per_kwh',
-                                   self.input_dict['Scenario']['time_steps_per_hour'])
-                if len(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh')) not in [8760, 35040]:
-                    self.input_data_errors.append("length of tou_energy_rates_us_dollars_per_kwh must be 8760 or 35040")
-                if len(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh')) == 35040 \
-                    and self.input_dict['Scenario']['time_steps_per_hour'] != 4:
-                    self.input_data_errors.append(("tou_energy_rates_us_dollars_per_kwh has 35040 time steps but "
-                            "Scenario.time_steps_per_hour is not 4. These values must be aligned."))
+                if electric_tariff.get('tou_energy_rates_us_dollars_per_kwh') is not None:
+                    self.validate_8760(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh'), "ElectricTariff",
+                                       'tou_energy_rates_us_dollars_per_kwh',
+                                       self.input_dict['Scenario']['time_steps_per_hour'])
+                    if len(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh')) not in [8760, 35040]:
+                        self.input_data_errors.append("length of tou_energy_rates_us_dollars_per_kwh must be 8760 or 35040")
+                    if len(electric_tariff.get('tou_energy_rates_us_dollars_per_kwh')) == 35040 \
+                        and self.input_dict['Scenario']['time_steps_per_hour'] != 4:
+                        self.input_data_errors.append(("tou_energy_rates_us_dollars_per_kwh has 35040 time steps but "
+                                "Scenario.time_steps_per_hour is not 4. These values must be aligned."))
 
-            if electric_tariff['add_tou_energy_rates_to_urdb_rate']:
-                tou_energy = electric_tariff.get('tou_energy_rates_us_dollars_per_kwh', True)
-                urdb_rate = electric_tariff.get('urdb_response', True)
+                if electric_tariff['add_tou_energy_rates_to_urdb_rate']:
+                    tou_energy = electric_tariff.get('tou_energy_rates_us_dollars_per_kwh', True)
+                    urdb_rate = electric_tariff.get('urdb_response', True)
 
-                if tou_energy is True or urdb_rate is True:
-                    missing_keys = []
-                    if tou_energy is True:
-                        missing_keys.append('tou_energy_rates_us_dollars_per_kwh')
-                    if urdb_rate is True:
-                        missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
-                    self.input_data_errors.append((
-                        'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
-                        'following inputs: {}').format(', '.join(missing_keys)))
+                    if tou_energy is True or urdb_rate is True:
+                        missing_keys = []
+                        if tou_energy is True:
+                            missing_keys.append('tou_energy_rates_us_dollars_per_kwh')
+                        if urdb_rate is True:
+                            missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
+                        self.input_data_errors.append((
+                            'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
+                            'following inputs: {}').format(', '.join(missing_keys)))
 
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
