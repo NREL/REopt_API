@@ -42,8 +42,6 @@ services:
       - db
       - redis
     mac_address: 02:42:ac:12:00:04
-    mem_limit: 5000m
-    memswap_limit: 5000m
 
   django:
     container_name: django
@@ -64,8 +62,6 @@ services:
       - 8000:8000
     volumes:
       - .:/opt/reopt
-    mem_limit: 5000m
-    memswap_limit: 5000m
 
 volumes:
   pgdata:
