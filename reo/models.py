@@ -194,6 +194,8 @@ class ElectricTariffModel(models.Model):
     wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
+    add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=False, default=False)
+    tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
