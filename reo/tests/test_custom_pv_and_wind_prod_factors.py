@@ -35,9 +35,9 @@ class TestPVWindProdFactor(ResourceTestCaseMixin, TestCase):
 
     def test_custom_prod_factors(self):
         """
-        Pass in a PV and Wind each with min_kw constraints and existing_kw capacity. Set each prod_factor_series_kw to zero so 
-        and then expect the generation output of each to be zero. Tests the the custom prod_factor is being used, not one
-        one from PV Watts or the Wind SAM Sdk
+        Pass in a PV and Wind each with min_kw and max_kw constraints set to 2 kW. 
+        Set each prod_factor_series_kw to [1]*8760 and then expect the year_one_energy_produced_kwh to be 2 * 8760. 
+        Tests the the custom prod_factor is being used, not one one from PV Watts or the Wind SAM Sdk
         """
         response = self.get_response(self.post)
         pv_out = response['outputs']['Scenario']['Site']['PV']
@@ -48,10 +48,10 @@ class TestPVWindProdFactor(ResourceTestCaseMixin, TestCase):
                          .format(pv_out['size_kw'], 2))
         self.assertEqual(pv_out['year_one_energy_produced_kwh'], 2 * 8760,
                          "PV energy produced ({} kWh) does not equal expected value({} kWh)."
-                         .format(pv_out['average_yearly_energy_produced_kwh'], 2 * 8760))
+                         .format(pv_out['year_one_energy_produced_kwh'], 2 * 8760))
         self.assertEqual(wind_out['size_kw'], 2,
                          "Wind size ({} kW) does not equal expected value ({} kW)."
                          .format(wind_out['size_kw'], 2))
         self.assertEqual(wind_out['year_one_energy_produced_kwh'], 2 * 8760,
                          "Wind energy produced ({} kWh) does not equal expected value({} kWh)."
-                         .format(wind_out['average_yearly_energy_produced_kwh'], 2 * 8760))
+                         .format(wind_out['year_one_energy_produced_kwh'], 2 * 8760))
