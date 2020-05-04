@@ -259,6 +259,32 @@ struct Parameter
      ElectricTechs
      FuelBurningTechs
      TechsNoTurndown
+	 
+	 ## Old CHP Parameters - will load to new math in Julia
+	 #LoadProfileBoilerFuel
+	 #LoadProfileChillerElectric
+	 #TechIsCHP
+	 #CHPThermalProdSlope
+	 #CHPThermalProdIntercept
+	 #dvCHPThermalProdIntercept
+	 #AbsorptionChillerCOP
+	 #ElectricChillerCOP
+	 #BoilerEfficiency
+	 #TechIsGrid
+	 #TechIsHot
+	 #TechIsCool
+	 #EtaTESIn     #: array(Tech, Load, TESs) of real  ! 1 - thermal loss due to mixing when putting thermal into TES
+     #EtaTESOut    #: array(Load, TESs) of real  ! 1 - thermal loss due to mixing when taking thermal out of TES
+     #MaxTESSizeENERGY    #: array(TESs) of real  ! Energy-based (thermal) max size of TES
+     #MinTESSizeENERGY    #: array(TESs) of real  ! Energy-based (thermal) min size of TES
+     #MaxTESSizePOWER    #:  array(TESs) of real ! Power-based (thermal) max size of TES
+     #MinTESSizePOWER    #: array(TESs) of real  ! Power-based (thermal) min size of TES
+     #TESCostPerENERGY    #: array(TESs) of real  ! Energy-based capital cost of TES
+     #TESCostPerPOWER    #: array(TESs) of real  ! Power-based capital cost of TES
+     #TESOMCostPerENERGY    #: array(TESs) of real  ! Fixed O&M of TES - yearly energy_size-specific cost
+     #TESMinChargePcent    #: array(TESs) of real  ! Min charge level (SOC) as a percentage of the total energy capacity
+     #TESInitSOC    #: array(TESs) of real  ! Initial SOC of the TES
+     #TESThermalDecayFraction    #: array(TESs) of real  ! Percent of energy stored lost in every timestep
 end
 
 
