@@ -120,10 +120,10 @@ struct Parameter
 	 ###  Technology-specific Time-series Factor Parameters ###
 	 ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}   # to eb replaced by production factor 
 	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-     # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
-	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
-	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
-	 # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+     #FuelBurnAmbientFactor   # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+	 #HotWaterAmbientFactor   # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
+	 #HotWaterThermalFactor   # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
+	 #ElectricDerateFactor   # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
 	 
 	 ###  Technology-specific Factor Parameters ###
 	 TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # f^{d}_{t}: Derate factor for turbine technologyt [unitless]
@@ -261,8 +261,8 @@ struct Parameter
      TechsNoTurndown
 	 
 	 ## Old CHP Parameters - will load to new math in Julia
-	 #LoadProfileBoilerFuel
-	 #LoadProfileChillerElectric
+	 #LoadProfileBoilerFuel       #Replaced by HeatingLoad
+	 #LoadProfileChillerElectric  #Replaced by CoolingLoad
 	 #TechIsCHP
 	 #CHPThermalProdSlope
 	 #CHPThermalProdIntercept
@@ -285,6 +285,13 @@ struct Parameter
      #TESMinChargePcent    #: array(TESs) of real  ! Min charge level (SOC) as a percentage of the total energy capacity
      #TESInitSOC    #: array(TESs) of real  ! Initial SOC of the TES
      #TESThermalDecayFraction    #: array(TESs) of real  ! Percent of energy stored lost in every timestep
+	 
+	 ##New CHP parameters 
+	 #FuelBurnAmbientFactor   # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+	 #HotWaterAmbientFactor   # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
+	 #HotWaterThermalFactor   # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
+	 #ElectricDerateFactor   # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+	 
 end
 
 
