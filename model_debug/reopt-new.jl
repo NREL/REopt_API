@@ -366,38 +366,43 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
 	
-	#Constraint (1c): Total Fuel burn for CHP
-	#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
-	#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
-	#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
-	#			)
-				
-	#Constraint (1d): Y-intercept fuel burn for CHP
-	#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-	#			p.FuelBurnYIntRate[t] * dvSize[t] - p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
-	#			)
+	#if !isempty(CHPTechs)
+		#Constraint (1c): Total Fuel burn for CHP
+		#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
+		#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
+		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
+		#			)
+					
+		#Constraint (1d): Y-intercept fuel burn for CHP
+		#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+		#			p.FuelBurnYIntRate[t] * dvSize[t] - p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+		#			)
+	#end
 	
-	#Constraint (1e): Total Fuel burn for Boiler
-	#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
-	#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
-	#			)
+	#if !isempty(NonCHPHeatingTechs)
+		#Constraint (1e): Total Fuel burn for Boiler
+		#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
+		#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
+		#			)
+	#end
 	
 	### Constraint set (2): CHP Thermal Production Constraints
-	# Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
-	#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-	#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
-	#			)
-	# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
-	#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-	#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * p.MaxSize[t] * binTechIsOnInTS[t,ts]
-	#			)
-	# Constraint (2b): Thermal Production of CHP 
-	#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
-	#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
-	#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
-	#				)
-	#			)
-
+	#if !isempty(CHPTechs)
+		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
+		#			)
+		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * p.MaxSize[t] * binTechIsOnInTS[t,ts]
+		#			)
+		# Constraint (2b): Thermal Production of CHP 
+		#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
+		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
+		#				)
+		#			)
+	#end
 
     ### Switch Constraints
     #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
