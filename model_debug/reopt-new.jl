@@ -256,6 +256,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		dvFuelUsage[NonUtilTechs, p.TimeStep]  # Fuel burned by technology t in time step h
 		#dvFuelBurnYIntercept[NonUtilTechs, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		#dvThermalProduction[NonUtilTechs, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
+		#dvThermalProductionYIntercept[CHPTechs, p.TimeStep]  #X^{tpb}_{th}: Thermal production y-intercept by technology t in time step h
 		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		
@@ -381,7 +382,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
 	#			)
 	
-	### Thermal Production Constraints (Placeholder for constraint set (2) until CHP is implemented)
+	### Constraint set (2): CHP Thermal Production Constraints
+	# Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
+	#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+	#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
+	#			)
+	# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
+	#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+	#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * p.MaxSize[t] * binTechIsOnInTS[t,ts]
+	#			)
+	# Constraint (2b): Thermal Production of CHP 
+	#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
+	#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
+	#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
+	#				)
+	#			)
+
 
     ### Switch Constraints
     #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
