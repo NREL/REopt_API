@@ -43,7 +43,6 @@ from reo.exceptions import UnexpectedError  #, RequestError  # should we save ba
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator
-
 from django.http import HttpResponse
 from django.template import  loader
 
@@ -52,6 +51,7 @@ from django.template import  loader
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
 
+
 def make_error_resp(msg):
         resp = dict()
         resp['messages'] = {'error': msg}
@@ -59,6 +59,7 @@ def make_error_resp(msg):
         resp['outputs']['Scenario'] = dict()
         resp['outputs']['Scenario']['status'] = 'error'
         return resp
+
 
 def errors(request, page_uuid):
     
@@ -72,8 +73,8 @@ def help(request):
         response = copy.deepcopy(nested_input_definitions)
         return JsonResponse(response)
 
-    except Exception:
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])})
 
 
 def invalid_urdb(request):
@@ -83,8 +84,8 @@ def invalid_urdb(request):
         invalid_set = list(set([i.label for i in URDBError.objects.filter(type='Error')]))
         return JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
         
-    except Exception:
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+    except Exception as e:
+        return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])})
 
 
 def annual_kwh(request):
@@ -120,13 +121,13 @@ def annual_kwh(request):
     except ValueError as e:
         return JsonResponse({"Error": str(e.args[0])})
 
-    except Exception:
+    except Exception as e:
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+        return JsonResponse({"Error": "Unexpected error in annual_kwh endpoint. Check log for more."})
 
 
 def remove(request, run_uuid):
@@ -140,6 +141,7 @@ def remove(request, run_uuid):
         err.save_to_db()
         resp = make_error_resp(err.message)
         return JsonResponse(resp)
+
 
 def results(request, run_uuid):
     try:
@@ -182,7 +184,11 @@ def simulated_load(request):
             annual_kwh = None
 
         try:  # monthly_totals_kwh is optional. if not provided, then DOE reference value is used.
-            monthly_totals_kwh = float(request.GET['monthly_totals_kwh'])
+            string_array = request.GET.get('monthly_totals_kwh')
+            if string_array is not None:
+                monthly_totals_kwh = [float(v) for v in string_array.strip('[]').split(',')]
+            else:
+                monthly_totals_kwh = None
         except KeyError:
             monthly_totals_kwh = None
 
@@ -222,7 +228,7 @@ def simulated_load(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
+        return JsonResponse({"Error": "Unexpected error in simulated_load endpoint. Check log for more."})
 
 
 def generator_efficiency(request):
@@ -262,4 +268,4 @@ def generator_efficiency(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})
+        return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."})

@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
+import copy
 from django.test import TestCase
 from tastypie.test import ResourceTestCaseMixin
 
@@ -47,10 +48,12 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         self.results_url = '/v1/job/<run_uuid>/results/'
         self.post = {
           "Scenario": {
-            "webtool_uuid": None,
-            "description": "name_with_underscore",
-            "timeout_seconds": 295,
+            "time_steps_per_hour": 1,
             "Site": {
+              "longitude": -91.7337,
+              "latitude": 35.2468,
+              "roof_squarefeet": None,
+              "land_acres": None,
               "PV": {
                 "pbi_years": 1.0,
                 "macrs_bonus_pct": 0.0,
@@ -131,7 +134,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "doe_reference_name": "MidriseApartment",
                 "annual_kwh": 259525.0
               },
-              "address": "",
               "Storage": {
                 "max_kwh": 0.0,
                 "rectifier_efficiency_pct": 0.96,
@@ -155,7 +157,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "soc_init_pct": 0.5,
                 "inverter_replacement_year": 10
               },
-              "land_acres": None,
               "ElectricTariff": {
                 "add_blended_rates_to_urdb_rate": False,
                 "wholesale_rate_us_dollars_per_kwh": 0.0,
@@ -169,9 +170,6 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "blended_monthly_rates_us_dollars_per_kwh": [0.15, 0.2, 0.21, 0.23, 0.27, 0.19, 0.22, 0.17, 0.24, 0.26, 0.18, 0.2],
                 "blended_monthly_demand_charges_us_dollars_per_kw": [0.08, 0.11, 0, 0, 0.15, 0.14, 0.09, 0.06, 0, 0, 0.05, 0]
               },
-              "longitude": -91.7337,
-              "roof_squarefeet": None,
-              "latitude": 35.2468,
               "Financial": {
                 "escalation_pct": 0.026,
                 "offtaker_discount_pct": 0.081,
@@ -209,24 +207,23 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
                 "macrs_itc_reduction": 0.5,
                 "federal_rebate_us_dollars_per_kw": 0.0
               }
-            },
-            "time_steps_per_hour": 1,
-            "user_uuid": None
+            }
           }
         }
 
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
+        print("UUID: {}".format(uuid))
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
         return response
 
     def test_blended_rate_and_pv_station(self):
         """
-        Test that self.post scenario, with monthly rates, returns the expected LCC and PV station attributes
+        Test that self.post scenario with monthly rates returns the expected LCC and PV station attributes
         """
-        response = self.get_response(self.post)
-        
+        post = copy.deepcopy(self.post)
+        response = self.get_response(post)
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         self.assertEqual(pv_out.station_distance_km, 0.7)  # increased accuracy with Python 3??? (was 0.0)
@@ -239,15 +236,47 @@ class TestBlendedRate(ResourceTestCaseMixin, TestCase):
         add a time-of-export rate that is greater than retail rate for the month of January,
         check to see if PV is exported for whole month of January.
         """
-        jan_rate = self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"][0]
-
-        self.post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_us_dollars_per_kwh"] = \
+        post = copy.deepcopy(self.post)
+        jan_rate = post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_rates_us_dollars_per_kwh"][0]
+        post["Scenario"]["Site"]["ElectricTariff"]["wholesale_rate_us_dollars_per_kwh"] = \
             [jan_rate + 0.1] * 31 * 24 + [0.0] * (8760 - 31*24)
 
-        self.post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = [0]*12
-        response = self.get_response(self.post)
+        post["Scenario"]["Site"]["ElectricTariff"]["blended_monthly_demand_charges_us_dollars_per_kw"] = [0]*12
+        response = self.get_response(post)
         pv_out = ClassAttributes(response['outputs']['Scenario']['Site']['PV'])
         financial = ClassAttributes(response['outputs']['Scenario']['Site']['Financial'])
         self.assertTrue(all(x == 0 for x in pv_out.year_one_to_load_series_kw[:744]))
         self.assertEqual(pv_out.size_kw, 70.2846)
         self.assertAlmostEqual(financial.lcc_us_dollars, 431483, -1)
+
+    def test_time_of_use_energy_rate(self):
+        """
+        test custom time-of-use energy rate
+        two use cases:
+        1. modeling just TOU energy rate
+        2. modeling TOU energy rate + URDB rate
+        Setting all max Tech sizes to zero to evaluate just the ElectricTariff
+        """
+        post = copy.deepcopy(self.post)
+        post["Scenario"]["Site"]["PV"]["max_kw"] = 0  # rest of Techs already set to zero
+        post["Scenario"]["Site"]["ElectricTariff"]["urdb_label"] = "5a592c995457a3371c423a7d"
+        post["Scenario"]["Site"]["LoadProfile"]["doe_reference_name"] = "FlatLoad"
+        post["Scenario"]["Site"]["LoadProfile"]["annual_kwh"] = 1.0e6
+        response = self.get_response(post)  # to get baseline util costs
+        tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
+        baseline_bill = tariff.year_one_bill_us_dollars
+        # make sure we really turned off all techs:
+        self.assertEqual(tariff.year_one_bill_us_dollars, tariff.year_one_bill_bau_us_dollars)
+
+        post["Scenario"]["Site"]["ElectricTariff"]["tou_energy_rates_us_dollars_per_kwh"] = [.1] * 8760
+        post["Scenario"]["Site"]["ElectricTariff"]["add_tou_energy_rates_to_urdb_rate"] = False
+        response = self.get_response(post)
+        tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
+        self.assertAlmostEqual(tariff.year_one_bill_us_dollars, 1.0e5, places=1)
+        self.assertAlmostEqual(tariff.year_one_bill_bau_us_dollars, 1.0e5, places=1)
+
+        post["Scenario"]["Site"]["ElectricTariff"]["add_tou_energy_rates_to_urdb_rate"] = True
+        response = self.get_response(post)
+        tariff = ClassAttributes(response['outputs']['Scenario']['Site']['ElectricTariff'])
+        self.assertAlmostEqual(tariff.year_one_bill_us_dollars, 1.0e5 + baseline_bill, places=1)
+        self.assertAlmostEqual(tariff.year_one_bill_bau_us_dollars, 1.0e5 + baseline_bill, places=1)

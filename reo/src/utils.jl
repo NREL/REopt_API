@@ -256,6 +256,10 @@ struct Parameter
      ElectricTechs
      FuelBurningTechs
      TechsNoTurndown
+
+    # Feature Additions
+     TechToLocation::AxisArray{Int,2,Array{Int,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     MaxSizesLocation::AxisArray{Float64,1,Array{Float64,1}, Tuple{Axis{:row,UnitRange{Int64}}}}
 end
 
 
@@ -265,6 +269,8 @@ function build_param(args...;
           TechClass,
           TechIsGrid,
           TechToLoadMatrix,
+          TechToLocation,
+          MaxSizesLocation,
           TurbineDerate,
           TechToTechClassMatrix,
           NMILRegime,
@@ -327,27 +333,27 @@ function build_param(args...;
           NumRatchets,
           TimeStepScaling,
           OMcostPerUnitProd,
-	  StoragePowerCost,
-	  StorageEnergyCost,
-	  FuelCost,
-	  ElecRate,
-	  GridExportRates,
-	  FuelBurnSlope,
-	  FuelBurnYInt,
-	  MaxGridSales,
-	  ProductionIncentiveRate,
-	  ProductionFactor,
-	  ElecLoad,
-	  FuelLimit,
-	  ChargeEfficiency,
-	  GridChargeEfficiency,
-	  DischargeEfficiency,
-	  StorageMinSizeEnergy,
-	  StorageMaxSizeEnergy,
-	  StorageMinSizePower,
-	  StorageMaxSizePower,
-	  StorageMinSOC,
-	  StorageInitSOC,
+	      StoragePowerCost,
+	      StorageEnergyCost,
+	      FuelCost,
+	      ElecRate,
+	      GridExportRates,
+	      FuelBurnSlope,
+	      FuelBurnYInt,
+	      MaxGridSales,
+	      ProductionIncentiveRate,
+	      ProductionFactor,
+	      ElecLoad,
+	      FuelLimit,
+	      ChargeEfficiency,
+	      GridChargeEfficiency,
+	      DischargeEfficiency,
+	      StorageMinSizeEnergy,
+	      StorageMaxSizeEnergy,
+	      StorageMinSizePower,
+	      StorageMaxSizePower,
+	      StorageMinSOC,
+	      StorageInitSOC,
           Storage,
           FuelType,
           Subdivision,
@@ -380,11 +386,13 @@ function build_param(args...;
 	#FuelType = 1:FuelBinCount
 	PricingTier = 1:FuelBinCount
 	#Storage = 1:1
+    Location = 1:3
 
     TechIsGrid = parameter(Tech, TechIsGrid)
     TechToLoadMatrix = parameter((Tech, Load), TechToLoadMatrix)
     TurbineDerate = parameter(Tech, TurbineDerate)
     TechToTechClassMatrix = parameter((Tech, TechClass), TechToTechClassMatrix)
+    TechToLocation = parameter((Tech, Location), TechToLocation)
     pwf_prod_incent = parameter(Tech, pwf_prod_incent)
     LevelizationFactor = parameter(Tech, LevelizationFactor)
     LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
@@ -395,6 +403,7 @@ function build_param(args...;
     ProdIncentRate = parameter((Tech, Load), ProdIncentRate)
     MaxProdIncent = parameter(Tech, MaxProdIncent)
     MaxSizeForProdIncent = parameter(Tech, MaxSizeForProdIncent)
+    MaxSizesLocation = parameter(Location, MaxSizesLocation)
     LoadProfile = parameter((Load, TimeStep), LoadProfile)
     ProdFactor = parameter((Tech, Load, TimeStep), ProdFactor)
     EtaStorIn = parameter((Tech, Load), EtaStorIn)
@@ -558,14 +567,17 @@ function build_param(args...;
                 TechsByFuelType,
                 ElectricTechs,
                 FuelBurningTechs,
-                TechsNoTurndown
+                TechsNoTurndown,
+                TechToLocation,
+                MaxSizesLocation
         )
+
 
     return param
 
 end
 
-# Code for paramter() function
+# Code for parameter() function
 function paramDataFormatter(setTup::Tuple, data::AbstractArray)
     reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
     shapedData = reshape(data, reverseTupleAxis)

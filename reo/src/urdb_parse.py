@@ -100,9 +100,9 @@ class REoptArgs:
 
 
 class RateData:
-    
+
     def __init__(self, rate):
-        
+
         possible_URDB_keys = (
             'utility',
             'rate',
@@ -155,17 +155,15 @@ class RateData:
 
 class UrdbParse:
     """
-    Sub-function of DatFileManager.
+    Sub-function of DataManager.
     Makes all REopt args for dat files in Inputs/Utility directory
 
     Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in
     utility rate.
     """
-
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
     def __init__(self, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
-
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
@@ -180,6 +178,9 @@ class UrdbParse:
         self.techs = techs
         self.bau_techs = bau_techs
         self.loads = loads
+        self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
+        self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
+        self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
         if gen is not None:
             self.generator_fuel_slope = gen.fuel_slope
             self.generator_fuel_intercept = gen.fuel_intercept
@@ -216,9 +217,17 @@ class UrdbParse:
         log.info("Processing: " + utility + ", " + rate)
 
         current_rate = RateData(self.urdb_rate)
-        self.prepare_summary(current_rate)
-        self.prepare_demand_periods(current_rate)  # makes demand rates too
-        self.prepare_energy_costs(current_rate)
+
+        if self.override_urdb_rate_with_tou_energy_rates:
+            self.has_tou_energy = "yes"  # all that we need from prepare_summary
+            self.demand_rates_summary = self.ts_per_year * [0]  # all that we need from prepare_demand_periods
+            self.energy_costs = self.custom_tou_energy_rates  # all that we need from prepare_energy_costs
+            # assume no fixed charges
+        else:
+            self.prepare_summary(current_rate)
+            self.prepare_demand_periods(current_rate)  # makes demand rates too
+            self.prepare_energy_costs(current_rate)
+            self.prepare_fixed_charges(current_rate)
 
         self.reopt_args.energy_rates, \
         self.reopt_args.energy_avail,  \
@@ -246,8 +255,6 @@ class UrdbParse:
         self.reopt_args.fuel_limit_bau \
         = self.prepare_techs_and_loads(self.bau_techs)
 
-        self.prepare_fixed_charges(current_rate)
-        
         return self.reopt_args
 
     def prepare_summary(self, current_rate):
@@ -349,7 +356,7 @@ class UrdbParse:
             log.warning("Cannot handle max usage units of " + energy_tier_unit + "! Using average rate")
 
         for tier in range(0, self.reopt_args.energy_tiers_num):
-            hour_of_year = 1
+            hour_of_year = 0
             for month in range(0, 12):
                 for day in range(0, self.days_in_month[month]):
 
@@ -380,14 +387,19 @@ class UrdbParse:
                             rate = float(current_rate.energyratestructure[period][tier_use].get('rate') or 0)
 
                         adj = float(current_rate.energyratestructure[period][tier_use].get('adj') or 0)
+                        total_rate = rate + adj
 
                         for step in range(0, self.time_steps_per_hour):
-                            self.energy_costs.append(rate + adj)
-
+                            if self.add_tou_energy_rates_to_urdb_rate:
+                                idx = hour_of_year  # len(self.custom_tou_energy_rates) == 8760:
+                                if len(self.custom_tou_energy_rates) == 35040:
+                                    idx = hour_of_year * 4 + step
+                                total_rate = rate + adj + self.custom_tou_energy_rates[idx]
+                            self.energy_costs.append(total_rate)
                         hour_of_year += 1
 
     def prepare_techs_and_loads(self, techs):
-        
+
         energy_costs = [round(cost, 5) for cost in self.energy_costs]
         # len(self.energy_costs) = self.ts_per_year * self.reopt_args.energy_tiers_num
 
