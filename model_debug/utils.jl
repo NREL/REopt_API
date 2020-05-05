@@ -172,10 +172,11 @@ struct Parameter
      #StorageInitSOC::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  #Initial state of charge of storage system b [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
-     FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-     FuelBurnRateB::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-	 #FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 #FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
+     FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}   # m^\text{fmm}_{t}: Fuel burn rate slope parameter for technology t
+     FuelBurnRateB::AxisArray{  Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  
+	 #FuelBurnSlope::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fmm}_{t}: Fuel burn rate slope parameter for technology t
+	 #FuelBurnYInt::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fmb}_{t}: Fuel burn rate slope parameter for technology t
+	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t
 	 
 	 ###  CHP Thermal Performance Parameters ###
 	 
@@ -291,6 +292,7 @@ struct Parameter
 	 #HotWaterAmbientFactor   # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
 	 #HotWaterThermalFactor   # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
 	 #ElectricDerateFactor   # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t  (to be pulled from FuelRateB in model code, but these are separate varables in the math)s
 	 
 end
 

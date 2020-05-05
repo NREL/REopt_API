@@ -62,6 +62,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
+	CHPTechs = []   #will be pulled from parameter p, but we'll populate here for now for testing
+	NonCHPFuelBurningTechs = String[]
+	for t in p.FuelBurningTechs
+		if !(t == "CHP")
+			push!(NonCHPFuelBurningTechs,t)
+		else
+			push!(CHPTechs,t)
+		end
+	end
+	
+	NonCHPHeatingTechs = String[]
+	for t in p.HeatingTechs
+		if !(t == "CHP")
+			push!(NonCHPHeatingTechs,t)
+		end
+	end
+	
+	
 	TempElectricTechs = NonUtilTechs[:]  #replaces p.ElectricTechs
 	
 	SegmentMinSize = Dict()   #replaces p.SegmentMinSize
@@ -102,8 +120,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempGridExportRates = Dict()
 	for ts in p.TimeStep
-		TempGridExportRates[1,ts] = maximum(p.ExportRates[:,"1W",ts])
-		TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
+		TempGridExportRates[1,ts] = -1.0*maximum(p.ExportRates[:,"1W",ts])
+		TempGridExportRates[2,ts] = -1.0*maximum(p.ExportRates[:,"1X",ts])	
 	end
 	
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
@@ -140,7 +158,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] > 0.5]
 	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] < 0.5]
-
+	
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
@@ -297,11 +315,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			fix(dvStorageToGrid[u,ts], 0.0, force=true)
 		end
 		
-		for t in NonUtilTechs
-			for u in TempPricingTiersByTech[t]
-				fix(dvProductionToGrid[t,u,ts],0,force=true)
-			end
-		end
+		#for t in NonUtilTechs
+		#	for u in TempPricingTiersByTech[t]
+		#		fix(dvProductionToGrid[t,u,ts],0,force=true)
+		#	end
+		#end
 	end
 	
     #TODO: account for exist formatting
@@ -342,11 +360,26 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
-	@constraint(REopt, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	@constraint(REopt, FuelBurnCon[t in NonCHPFuelBurningTechs, ts in p.TimeStep],
 				dvFuelUsage[t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
-	#Skipping (1c)-(1f) until CHP implementation
+	
+	#Constraint (1c): Total Fuel burn for CHP
+	#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
+	#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
+	#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
+	#			)
+				
+	#Constraint (1d): Y-intercept fuel burn for CHP
+	#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+	#			p.FuelBurnYIntRate[t] * dvSize[t] - p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+	#			)
+	
+	#Constraint (1e): Total Fuel burn for Boiler
+	#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
+	#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
+	#			)
 	
 	### Thermal Production Constraints (Placeholder for constraint set (2) until CHP is implemented)
 
@@ -688,12 +721,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Constraint set (9): Net Meter Module (copied directly from legacy model)
 	#Constraint (9a): exactly one net-metering regime must be selected
-    @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
+    @constraint(REopt, NetMeteringRegimeSelect, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
 	
 	##Constraint (9b): Maximum system sizes for each net-metering regime
-	@constraint(REopt, [n in p.NMILRegime],
+	@constraint(REopt, MaxSizesByRegime[n in p.NMILRegime],
                 sum(p.TurbineDerate[t] * dvSize[t]
                     for t in TempTechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
+					
+	##Constraint (9c): Net metering only -- can't sell more than you purchase
+	@constraint(REopt, GridSalesLimit, 
+				sum(dvProductionToGrid[t,1,ts] for t in TempTechsByPricingTier[1], ts in p.TimeStep)  + 
+				sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers, ts in p.TimeStep) <=
+				sum(dvGridPurchase[u,ts] for u in TempPricingTiers, ts in p.TimeStep)
+			)
+	
+	
 	###End constraint set (9)
 	
 	##Previous analog to (9b)
@@ -1263,6 +1305,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	println(value(TotalEnergyCharges))
 	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
 	println(value( r_tax_fraction_offtaker * TotalEnergyChargesUtil ))
+	print("TotalDemandCharges:")
+	println(value(TotalDemandCharges))
+	println(value( TotalDemandCharges * r_tax_fraction_offtaker ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
 	println(value( r_tax_fraction_offtaker * TotalEnergyExports ))
