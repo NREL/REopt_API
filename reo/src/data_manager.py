@@ -904,11 +904,11 @@ class DataManager:
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
         
-        segment_min_size = [[0. for _ in reopt_techs] for __ in subdivisions]
-        segment_min_size_bau = [[0. for _ in reopt_techs_bau] for __ in subdivisions]
+        segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments]
+        segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments]
         
-        segment_max_size = [[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions]
-        segment_max_size_bau = [[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions]
+        segment_max_size = [[[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions] for ___ in n_segments]
+        segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments]
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
