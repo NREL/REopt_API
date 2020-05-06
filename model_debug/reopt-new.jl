@@ -62,21 +62,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	NonCHPFuelBurningTechs = String[]
-	for t in p.FuelBurningTechs
-		if !(t == "CHP")
-			push!(NonCHPFuelBurningTechs,t)
-		end
-	end
-	
-	#NonCHPHeatingTechs = String[]
-	#for t in p.HeatingTechs
-	#	if !(t == "CHP")
-	#		push!(NonCHPHeatingTechs,t)
-	#	end
-	#end
-	
-	
 	TempElectricTechs = NonUtilTechs[:]  #replaces p.ElectricTechs
 	
 	SegmentMinSize = Dict()   #replaces p.SegmentMinSize
@@ -117,8 +102,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempGridExportRates = Dict()
 	for ts in p.TimeStep
-		TempGridExportRates[1,ts] = -1.0*maximum(p.ExportRates[:,"1W",ts])
-		TempGridExportRates[2,ts] = -1.0*maximum(p.ExportRates[:,"1X",ts])	
+		TempGridExportRates[1,ts] = maximum(p.ExportRates[:,"1W",ts])
+		TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
 	end
 	
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
@@ -155,7 +140,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] > 0.5]
 	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] < 0.5]
-	
+
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
@@ -166,13 +151,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if n > 1
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					p.StorageMaxSizePower["Elec"] + maximum([p.LoadProfile["1R",ts] ##  add ColdTES max power rating, battery max power #+ LoadProfileChillerElectric[ts]
+					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])  - 
 					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
 				)
 			else 
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					p.StorageMaxSizePower["Elec"] + 
 					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])   ])
 			end
@@ -184,15 +168,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for r in p.Ratchets 
 			if e > 1
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-					p.StorageMaxSizePower["Elec"] + 
-					maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  - 
 				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
 				])
 			else
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				    p.StorageMaxSizePower["Elec"] + 
-					maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -204,13 +186,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					p.StorageMaxSizeEnergy["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					p.StorageMaxSizeEnergy["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) 
 				])
@@ -258,7 +238,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		dvFuelUsage[NonUtilTechs, p.TimeStep]  # Fuel burned by technology t in time step h
 		#dvFuelBurnYIntercept[NonUtilTechs, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		#dvThermalProduction[NonUtilTechs, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
-		#dvThermalProductionYIntercept[CHPTechs, p.TimeStep]  #X^{tpb}_{th}: Thermal production y-intercept by technology t in time step h
 		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
 		
@@ -318,11 +297,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			fix(dvStorageToGrid[u,ts], 0.0, force=true)
 		end
 		
-		#for t in NonUtilTechs
-		#	for u in TempPricingTiersByTech[t]
-		#		fix(dvProductionToGrid[t,u,ts],0,force=true)
-		#	end
-		#end
+		for t in NonUtilTechs
+			for u in TempPricingTiersByTech[t]
+				fix(dvProductionToGrid[t,u,ts],0,force=true)
+			end
+		end
 	end
 	
     #TODO: account for exist formatting
@@ -363,48 +342,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
-	@constraint(REopt, FuelBurnCon[t in NonCHPFuelBurningTechs, ts in p.TimeStep],
+	@constraint(REopt, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 				dvFuelUsage[t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
+	#Skipping (1c)-(1f) until CHP implementation
 	
-	#if !isempty(CHPTechs)
-		#Constraint (1c): Total Fuel burn for CHP
-		#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
-		#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
-		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
-		#			)
-					
-		#Constraint (1d): Y-intercept fuel burn for CHP
-		#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-		#			p.FuelBurnYIntRate[t] * dvSize[t] - p.MaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
-		#			)
-	#end
-	
-	#if !isempty(NonCHPHeatingTechs)
-		#Constraint (1e): Total Fuel burn for Boiler
-		#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
-		#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
-		#			)
-	#end
-	
-	### Constraint set (2): CHP Thermal Production Constraints
-	#if !isempty(CHPTechs)
-		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
-		#			)
-		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * p.MaxSize[t] * binTechIsOnInTS[t,ts]
-		#			)
-		# Constraint (2b): Thermal Production of CHP 
-		#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
-		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
-		#				)
-		#			)
-	#end
+	### Thermal Production Constraints (Placeholder for constraint set (2) until CHP is implemented)
 
     ### Switch Constraints
     #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
@@ -528,65 +472,45 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #                                 for ts in p.TimeStep, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
 
     #New operational nuance
-	#Constraint (4k)-1: Dispatch to and from electrical storage is no greater than power capacity
-	@constraint(REopt, ElecChargeLEQCapCon[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
+	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
+	@constraint(REopt, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= (  
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + TempGridChargeEff * dvGridToStorage[ts]
 					)
 				)
 	
-	#Constraint (4k)-2: Dispatch to hot storage is no greater than power capacity
+	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
 	#@constraint(REopt, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= (  
 	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
 	#				)
 	#			)
 	
-	#Constraint (4k)-3: Dispatch to cold storage is no greater than power capacity
+	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
 	#@constraint(REopt, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= (  
 	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#				)
 	#			)
 	
-	#Constraint (4l): Dispatch from electrical storage is no greater than power capacity
-	@constraint(REopt, DischargeLEQCapConNoGrid[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
+	#Constraint (4j): Dispatch from storage is no greater than power capacity
+	@constraint(REopt, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
 				)
-				
-				
-	#Constraint (4m): Dispatch from thermal storage is no greater than power capacity
-	#@constraint(REopt, DischargeLEQCapCon[b in p.ThermalStorage, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
-	#			)
 	
-	#Constraint (4n): State of charge is no greater than energy capacity
+	#Constraint (4k): State of charge is no greater than energy capacity
 	@constraint(REopt, StorageEnergyMinCapCon[b in p.Storage, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
 					
-	#Constraint (4o): State of charge upper bound is storage system size
+	#Constraint (4l): State of charge upper bound is storage system size
 	@constraint(REopt, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
 				dvStorageSOC[b,ts] <= dvStorageCapEnergy[b]
 					)
 	
 	
-	### Constraint set (5) - hot and cold thermal loads
-	# Constraint (5a): Cold Thermal Loads
-	#@constraint(REopt, ColdThermalLoadCon[ts in p.TimeStep],
-	#			sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
-	#			sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) ==
-	#			p.CoolingLoad[ts] * p.ProductionFactor["ELECCHL",ts] * p.ElectricChillerCOP + 
-	#			sum(dvProductionToStorage[b,ts] for b in p.ColdTES)
-	#			)
+	### Constraint set (5) - hot and cold thermal loads - reserved for later
 	
-	# Constraint (5b): Hot Thermal Loads
-	#@constraint(REopt, HotThermalLoadCon[ts in p.TimeStep],
-	#			sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.HeatingTechs) + 
-	#			sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) ==
-	#			p.HeatingLoad[ts] + 
-	#			sum(dvProductionToStorage[b,ts] for b in p.HotTES)
-	#			)
 	
 	### Binary Bookkeeping
     #@constraint(REopt, [t in p.Tech],
@@ -693,7 +617,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiersByTech[t]) for t in TempElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers) + dvGridToStorage[ts] + 
-		## sum(dvThermalProduction[t,ts] for t in p.ElectricChillers ) / p.ElectricChillerEfficiency +
+		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
 		p.ElecLoad[ts]
 	)
 	#println("ElecLoadBalanceCon:")
@@ -764,21 +688,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Constraint set (9): Net Meter Module (copied directly from legacy model)
 	#Constraint (9a): exactly one net-metering regime must be selected
-    @constraint(REopt, NetMeteringRegimeSelect, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
+    @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
 	
 	##Constraint (9b): Maximum system sizes for each net-metering regime
-	@constraint(REopt, MaxSizesByRegime[n in p.NMILRegime],
+	@constraint(REopt, [n in p.NMILRegime],
                 sum(p.TurbineDerate[t] * dvSize[t]
                     for t in TempTechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
-					
-	##Constraint (9c): Net metering only -- can't sell more than you purchase
-	@constraint(REopt, GridSalesLimit, 
-				sum(dvProductionToGrid[t,1,ts] for t in TempTechsByPricingTier[1], ts in p.TimeStep)  + 
-				sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers, ts in p.TimeStep) <=
-				sum(dvGridPurchase[u,ts] for u in TempPricingTiers, ts in p.TimeStep)
-			)
-	
-	
 	###End constraint set (9)
 	
 	##Previous analog to (9b)
@@ -1348,9 +1263,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	println(value(TotalEnergyCharges))
 	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
 	println(value( r_tax_fraction_offtaker * TotalEnergyChargesUtil ))
-	print("TotalDemandCharges:")
-	println(value(TotalDemandCharges))
-	println(value( TotalDemandCharges * r_tax_fraction_offtaker ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
 	println(value( r_tax_fraction_offtaker * TotalEnergyExports ))
