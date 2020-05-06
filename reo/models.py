@@ -123,8 +123,9 @@ class FinancialModel(models.Model):
     offtaker_tax_pct = models.FloatField()
     value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_pct = models.FloatField(null=True, blank=True)
-    # owner_discount_pct = models.FloatField(null=True)
-    # owner_tax_pct = models.FloatField(null=True)
+    two_party_ownership = models.BooleanField(default=False)
+    owner_discount_pct = models.FloatField(null=True, blank=True)
+    owner_tax_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
