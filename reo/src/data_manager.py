@@ -72,12 +72,12 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
-        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
-        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'UTIL']  # this is a REopt 'class', not a python class
+        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
-        self.bau_techs = ['util']
+        self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.electic_producing_techs = ['PV', 'PVNM', 'WIND', 'WINDNM', 'GENERATOR', 'UTIL1']
+        self.electic_producing_techs = ['PV', 'PVNM', 'WIND', 'WINDNM', 'GENERATOR']
         self.fuel_burning_techs = ['GENERATOR']
         self.no_turndown_techs = ['PV', 'PVNM', 'WIND', 'WINDNM']
 
@@ -517,16 +517,6 @@ class DataManager:
                 n_segments_max = max(n_segments, n_segments_max)
                 n_segments_list.append(n_segments)
 
-            elif eval('self.' + tech) is not None and tech in ['util']:
-
-                cap_cost_slope.append(0.0)
-                cap_cost_yint.append(0.0)
-                cap_cost_x += [0.0, big_number]
-
-                # Have to take n_segments as the maximum number across all technologies
-                n_segments_max = max(n_segments, n_segments_max)
-                n_segments_list.append(n_segments)
-
         """
         Last step in creating cost curve is filling in the curves for each tech that does not have
         n_segments == n_segments_max. The filling in is achieved by duplicating the origin with zero cap_cost_slope for
@@ -579,7 +569,7 @@ class DataManager:
     def _get_REopt_array_tech_load(self, techs):
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
-        :param techs: list of strings, eg. ['pv', 'pvnm', 'util']
+        :param techs: list of strings, eg. ['pv', 'pvnm']
         :return: prod_factor, tech_to_load, tech_is_grid, derate, etaStorIn, etaStorOut
         """
         prod_factor = list()
@@ -594,7 +584,6 @@ class DataManager:
         om_cost_us_dollars_per_kwh = list()
 
         charge_efficiency = list()
-        grid_charge_efficiency = list()
         discharge_efficiency = list()
         techs_charging_storage = list()
 
@@ -609,9 +598,6 @@ class DataManager:
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
 
-                if tech == 'util':
-                        grid_charge_efficiency.append(self.storage.rectifier_efficiency_pct *
-                                                 self.storage.internal_efficiency_pct**0.5)
                 else:
                         charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
@@ -669,7 +655,7 @@ class DataManager:
 
         return prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               grid_charge_efficiency, discharge_efficiency, techs_charging_storage
+               discharge_efficiency, techs_charging_storage
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -843,10 +829,10 @@ class DataManager:
 
         prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            grid_charge_efficiency, discharge_efficiency, techs_charging_storage = self._get_REopt_array_tech_load(self.available_techs)
+            discharge_efficiency, techs_charging_storage = self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_to_location_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            grid_charge_efficiency_bau, discharge_efficiency_bau, techs_charging_storage_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            discharge_efficiency_bau, techs_charging_storage_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -923,6 +909,8 @@ class DataManager:
         
         segment_max_size = [[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions]
         segment_max_size_bau = [[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions]
+
+        grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
 
         self.reopt_inputs = {
@@ -1125,7 +1113,7 @@ class DataManager:
 	    'ElecLoad': self.elec_load,
 	    'FuelLimit': fuel_limit_bau,
 	    'ChargeEfficiency': charge_efficiency_bau,
-	    'GridChargeEfficiency': grid_charge_efficiency_bau,
+	    'GridChargeEfficiency': grid_charge_efficiency,
 	    'DischargeEfficiency': discharge_efficiency_bau,
 	    'StorageMinSizeEnergy':0,
 	    'StorageMaxSizeEnergy':0,
