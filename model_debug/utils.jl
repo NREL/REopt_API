@@ -100,7 +100,7 @@ struct Parameter
 	 ###  Demand Parameters ###
 	 LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}   # Covers Electrical Load and Thermal Load Profiles; this is to be split into three parameters in the math
 	 # ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
-	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
+	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [kW] equal to: 
 	 # CoolingLoad::Array{Float64,1}  # \delta^{c}_{h}: Cooling load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
@@ -152,9 +152,9 @@ struct Parameter
 	 #GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # To be replaced by DischargeEfficiency (Index Change)
      #DischargeEfficiency::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 # \eta^{bo}: Boiler efficiency [fraction]
-	 # \eta^{ecop}: Electric chiller efficiency [fraction]
-	 # \eta^{acop}: Absorption chiller efficiency [fraction]
+	 #BoilerEfficiency \eta^{bo}: Boiler efficiency [fraction]
+	 #ElectricChillerCOP \eta^{ecop}: Electric chiller efficiency [fraction]
+	 #AbsorptionChillerCOP \eta^{acop}: Absorption chiller efficiency [fraction]
 	 
 	 
 	 ###  Storage Parameters ###
@@ -179,7 +179,8 @@ struct Parameter
 	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t
 	 
 	 ###  CHP Thermal Performance Parameters ###
-	 
+	 #CHPThermalProdSlope    #k^{te}_{t}: Thermal energy production of CHP technology t per unit electrical output [unitless]
+	 #CHPThermalProdIntercept   #k^{tp}_{t}: Thermal energy production of CHP technology t per unit power rating [unitless]
 	 
 	 ### New parameters (commented copies above ###
 	 #StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
@@ -288,11 +289,12 @@ struct Parameter
      #TESThermalDecayFraction    #: array(TESs) of real  ! Percent of energy stored lost in every timestep
 	 
 	 ##New CHP parameters 
-	 #FuelBurnAmbientFactor   # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
-	 #HotWaterAmbientFactor   # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
-	 #HotWaterThermalFactor   # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
-	 #ElectricDerateFactor   # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
-	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t  (to be pulled from FuelRateB in model code, but these are separate varables in the math)s
+	 #FuelBurnAmbientFactor   # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] -- default to 1 if we don't have elsewhere
+	 #HotWaterAmbientFactor   # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] -- default to 1 if we don't have elsewhere
+	 #HotWaterThermalFactor   # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] -- default to 1 if we don't have elsewhere
+	 #ElectricDerateFactor   # f^{ed}_{th}: electric derate factor of technology t at time step h [unitless] -- default to 1 if we don't have elsewhere
+	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t  (to be pulled from FuelRateB in model code, but these are separate variables in the math)
+	 #CoolingLoad  #delta^{c}_{h}: Cooling load in time period $h$.  Equal to: p.ProductionFactor["ELECCHL",ts] * p.ElectricChillerCOP * p.LoadProfileChillerElectric
 	 
 end
 

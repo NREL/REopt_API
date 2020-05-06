@@ -62,22 +62,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	CHPTechs = []   #will be pulled from parameter p, but we'll populate here for now for testing
 	NonCHPFuelBurningTechs = String[]
 	for t in p.FuelBurningTechs
 		if !(t == "CHP")
 			push!(NonCHPFuelBurningTechs,t)
-		else
-			push!(CHPTechs,t)
 		end
 	end
 	
-	NonCHPHeatingTechs = String[]
-	for t in p.HeatingTechs
-		if !(t == "CHP")
-			push!(NonCHPHeatingTechs,t)
-		end
-	end
+	#NonCHPHeatingTechs = String[]
+	#for t in p.HeatingTechs
+	#	if !(t == "CHP")
+	#		push!(NonCHPHeatingTechs,t)
+	#	end
+	#end
 	
 	
 	TempElectricTechs = NonUtilTechs[:]  #replaces p.ElectricTechs
@@ -169,12 +166,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if n > 1
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					p.StorageMaxSizePower["Elec"] + maximum([p.LoadProfile["1R",ts] ##  add ColdTES max power rating, battery max power #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])  - 
 					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
 				)
 			else 
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
+					p.StorageMaxSizePower["Elec"] + 
 					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])   ])
 			end
@@ -186,13 +184,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for r in p.Ratchets 
 			if e > 1
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					p.StorageMaxSizePower["Elec"] + 
+					maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  - 
 				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
 				])
 			else
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				    p.StorageMaxSizePower["Elec"] + 
+					maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -204,11 +204,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
+					p.StorageMaxSizePower["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
+					p.StorageMaxSizePower["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) 
 				])
@@ -563,8 +565,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					)
 	
 	
-	### Constraint set (5) - hot and cold thermal loads - reserved for later
+	### Constraint set (5) - hot and cold thermal loads
+	# Constraint (5a): Cold Thermal Loads
+	#@constraint(REopt, ColdThermalLoadCon[ts in p.TimeStep],
+	#			sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
+	#			sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) ==
+	#			p.CoolingLoad[ts] * p.ProductionFactor["ELECCHL",ts] * p.ElectricChillerCOP + 
+	#			sum(dvProductionToStorage[b,ts] for b in p.ColdTES)
+	#			)
 	
+	# Constraint (5b): Hot Thermal Loads
+	#@constraint(REopt, HotThermalLoadCon[ts in p.TimeStep],
+	#			sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.HeatingTechs) + 
+	#			sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) ==
+	#			p.HeatingLoad[ts] + 
+	#			sum(dvProductionToStorage[b,ts] for b in p.HotTES)
+	#			)
 	
 	### Binary Bookkeeping
     #@constraint(REopt, [t in p.Tech],
@@ -671,7 +687,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiersByTech[t]) for t in TempElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers) + dvGridToStorage[ts] + 
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		## sum(dvThermalProduction[t,ts] for t in p.ElectricChillers ) / p.ElectricChillerEfficiency +
 		p.ElecLoad[ts]
 	)
 	#println("ElecLoadBalanceCon:")
