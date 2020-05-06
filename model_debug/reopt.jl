@@ -11,7 +11,7 @@ function reopt()
 
     reo_model = direct_model(Xpress.Optimizer(OUTPUTLOG=1))
 
-    p = load("./scenarios/tiered_pv.jld2", "p")
+    p = load("./scenarios/tou_pv.jld2", "p")
 
     MAXTIME = 100000
 
@@ -198,6 +198,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
 	
+	
+	
 	##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
@@ -304,7 +306,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + sum(dvElecToStor[t,ts] * p.EtaStorIn[t,"1S"] for t in p.Tech) - dvElecFromStor[ts] / p.EtaStorOut["1S"])
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
+    	        p.TimeStepScaling * dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH)
 
@@ -360,10 +362,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # Storage inverter is AC rated. Following constrains the energy / timestep throughput of the inverter
     #     to the sum of the energy in and energy out of the battery.
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStorageSizeKW * p.TimeStepScaling >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
+    	        dvStorageSizeKW >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
     @constraint(REopt, dvMeanSOC == sum(dvStoredEnergy[ts] for ts in p.TimeStep) / p.TimeStepCount)
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStorageSizeKWH >=  dvStoredEnergy[ts] * p.TimeStepScaling)
+    	        dvStorageSizeKWH >=  dvStoredEnergy[ts])
     @constraint(REopt, [t in p.Tech],
     	        ElecToBatt[t] == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
                                      for ts in p.TimeStep, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
@@ -762,6 +764,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	else
 		@constraint(REopt, MinChargeAdder == 0)
     end
+	
+	
+	
     #= Note: 0.999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.001*MinChargeAdder is added back into LCC when writing to results.  =#
@@ -1093,6 +1098,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	print("TotalEnergyCharges:")
 	println(value(TotalEnergyCharges))
 	println(value( TotalEnergyCharges * r_tax_fraction_offtaker ))
+	print("TotalDemandCharges:")
+	println(value(TotalDemandCharges))
+	println(value( TotalDemandCharges * r_tax_fraction_offtaker ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
 	println(value( TotalEnergyExports * r_tax_fraction_offtaker  ))
