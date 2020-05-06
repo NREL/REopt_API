@@ -204,13 +204,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					p.StorageMaxSizePower["Elec"] + 
+					p.StorageMaxSizeEnergy["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					p.StorageMaxSizePower["Elec"] + 
+					p.StorageMaxSizeEnergy["Elec"] + 
 					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) 
 				])

@@ -66,13 +66,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if n > 1
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					p.MaxStorageSizeKW + maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])  - 
 					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
 				)
 			else 
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					p.MaxStorageSizeKW + maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])   ])
 			end
 		end
@@ -83,13 +83,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for r in p.Ratchets 
 			if e > 1
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				p.MaxStorageSizeKW + maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  - 
 				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
 				])
 			else
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				p.MaxStorageSizeKW + maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -101,12 +101,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					p.MaxStorageSizeKWH + sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					p.MaxStorageSizeKWH + sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) 
 				])
 			end
