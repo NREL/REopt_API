@@ -1,36 +1,34 @@
 import json
 from copy import deepcopy
 from tastypie.test import ResourceTestCaseMixin
-from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase
+from django.test import TestCase
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs
 import logging
 logging.disable(logging.CRITICAL)
 
 
 post = {"Scenario":
            {"Site": {
-                "latitude": 30.382,
-                "longitude": -97.7218,
+                "longitude": -105.2348,
+                "latitude": 39.91065,
                 "PV": {
-                   "max_kw": 0
+                   "max_kw": 1000
                },
                "LoadProfile": {
-                   "doe_reference_name": "LargeHotel",
-                   "annual_kwh": 1000000.0
+                   "doe_reference_name": "MidriseApartment",
+                   "annual_kwh": 100000.0,
+                   "year": 2017
                },
                "ElectricTariff": {
-                   "blended_monthly_demand_charges_us_dollars_per_kw": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                   "blended_monthly_demand_charges_us_dollars_per_kw": [10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0],
                    "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2]
                },
                "Financial": {
                    "two_party_ownership": False,
-                   "offtaker_discount_pct": 0.083,
-                   "om_cost_escalation_pct": 0.006,
-                   "escalation_pct": 0.006
-               #    "owner_tax_pct": 0.1,
-               #    "owner_discount_pct": 0.09
+                   "offtaker_tax_pct": 0,
+                   "offtaker_discount_pct": 0.08,
+                   "owner_tax_pct": 0.26,
+                   "owner_discount_pct": 0.12
                }
            }
            }
@@ -66,5 +64,5 @@ class TwoPartyTests(ResourceTestCaseMixin, TestCase):
         d = direct['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         t = two_party['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
 
-        self.assertAlmostEqual(t - d,  0.0, places=1,
+        self.assertAlmostEqual(t - d,  11961.0, places=1,
            msg='Difference between two party and direct ownership LCCs has changed.')
