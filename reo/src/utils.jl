@@ -249,6 +249,7 @@ struct Parameter
      FuelType
      Subdivision
      PricingTierCount
+     PricingTier
      ElecStorage
      FuelTypeByTech
      SubdivisionByTech
@@ -361,6 +362,7 @@ function build_param(args...;
           FuelType,
           Subdivision,
           PricingTierCount,
+          PricingTier,
           ElecStorage,
           FuelTypeByTech,
           SubdivisionByTech,
@@ -387,7 +389,7 @@ function build_param(args...;
     TimeStepBat=0:TimeStepCount
 	#Subdivision=1:1
 	#FuelType = 1:FuelBinCount
-	PricingTier = 1:FuelBinCount
+	PricingTier = 1:PricingTierCount
 	#Storage = 1:1
     Location = 1:3
 
