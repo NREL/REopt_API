@@ -296,6 +296,10 @@ struct Parameter
 	 #FuelBurnYIntRate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} # m^\text{fbm}_{t}: Fuel burn rate y-intercept per unit power rating for technology t  (to be pulled from FuelRateB in model code, but these are separate variables in the math)
 	 #CoolingLoad  #delta^{c}_{h}: Cooling load in time period $h$.  Equal to: p.ProductionFactor["ELECCHL",ts] * p.ElectricChillerCOP * p.LoadProfileChillerElectric
 	 
+	 ##New Sets for CHP and TES cases
+	 #ThermalStorage  #  B^{th}: Thermal Storage - intersection of p.Storage and elements = ["Hot", "Cold"]
+	 #ColdTES   # B^{c}: Cold TES - intersection of p.Storage and ["Cold"]
+	 #HotTES   # B^{h}: Hot TES - intersection of p.Storage and ["Hot"]
 end
 
 
