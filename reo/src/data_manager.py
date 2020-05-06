@@ -903,15 +903,18 @@ class DataManager:
 
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
-        
+
         segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments]
         segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments]
-        
+
         segment_max_size = [[[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions] for ___ in n_segments]
         segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments]
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
+        sales_tiers = [1, 2]
+        non_storage_sales_tiers = [1]
+        storage_sales_tiers = [2]
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -986,29 +989,29 @@ class DataManager:
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
             'StoragePowerCost': StorageCostPerKW,
-	    'StorageEnergyCost': StorageCostPerKWH,
-	    'FuelCost': tariff_args.fuel_costs,
-	    'ElecRate': tariff_args.energy_costs,
-	    'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-	    'FuelBurnSlope': tariff_args.fuel_burn_rate,
-	    'FuelBurnYInt': tariff_args.fuel_burn_intercept,
-	    'MaxGridSales': self.load.annual_kwh,
-	    'ProductionIncentiveRate': production_incentive_rate,
-	    'ProductionFactor': production_factor,
-	    'ElecLoad': self.elec_load, # Needed to copy make sure that changed
-	    #'FuelLimit': tariff_args.fuel_limit,
-	    'FuelLimit': fuel_limit,
-	    'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
-	    'GridChargeEfficiency': grid_charge_efficiency,
-	    'DischargeEfficiency': discharge_efficiency,
-	    'StorageMinSizeEnergy':self.storage.min_kwh,
-	    'StorageMaxSizeEnergy':self.storage.max_kwh,
-	    'StorageMinSizePower':self.storage.min_kw,
-	    'StorageMaxSizePower':self.storage.max_kw,
-	    'StorageMinSOC':self.storage.soc_min_pct,
-	    'StorageInitSOC':self.storage.soc_init_pct,
-        'SegmentMinSize':segment_min_size,
-        'SegmentMaxSize':segment_max_size,
+	        'StorageEnergyCost': StorageCostPerKWH,
+	        'FuelCost': tariff_args.fuel_costs,
+	        'ElecRate': tariff_args.energy_costs,
+	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
+	        'FuelBurnSlope': tariff_args.fuel_burn_rate,
+	        'FuelBurnYInt': tariff_args.fuel_burn_intercept,
+	        'MaxGridSales': self.load.annual_kwh,
+	        'ProductionIncentiveRate': production_incentive_rate,
+	        'ProductionFactor': production_factor,
+	        'ElecLoad': self.elec_load, # Needed to copy make sure that changed
+	        #'FuelLimit': tariff_args.fuel_limit,
+	        'FuelLimit': fuel_limit,
+	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
+	        'GridChargeEfficiency': grid_charge_efficiency,
+	        'DischargeEfficiency': discharge_efficiency,
+	        'StorageMinSizeEnergy':self.storage.min_kwh,
+	        'StorageMaxSizeEnergy':self.storage.max_kwh,
+	        'StorageMinSizePower':self.storage.min_kw,
+	        'StorageMaxSizePower':self.storage.max_kw,
+	        'StorageMinSOC':self.storage.soc_min_pct,
+	        'StorageInitSOC':self.storage.soc_init_pct,
+            'SegmentMinSize':segment_min_size,
+            'SegmentMaxSize':segment_max_size,
             # Sets that need to be populated
             'Storage':['Elec'],
             'FuelType': fuel_type,
@@ -1024,8 +1027,9 @@ class DataManager:
             'ElectricTechs':reopt_techs,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
-
-            # ask about pricing tiers in general I think it only applies to UTIL1
+            'SalesTiers':sales_tiers,
+            'StorageSalesTiers':storage_sales_tiers,
+            'NonStorageSalesTiers':non_storage_sales_tiers
             }
 
         self.reopt_inputs_bau = {
@@ -1101,28 +1105,28 @@ class DataManager:
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
             'StoragePowerCost': StorageCostPerKW,
-	    'StorageEnergyCost': StorageCostPerKWH,
-	    'FuelCost': tariff_args.fuel_costs_bau,
-	    'ElecRate': tariff_args.energy_costs_bau,
-	    'GridExportRates': tariff_args.grid_export_rates_bau,
-	    'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
-	    'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
-	    'MaxGridSales': self.load.annual_kwh,
-	    'ProductionIncentiveRate': production_incentive_rate_bau,
-	    'ProductionFactor': production_factor_bau,
-	    'ElecLoad': self.elec_load,
-	    'FuelLimit': fuel_limit_bau,
-	    'ChargeEfficiency': charge_efficiency_bau,
-	    'GridChargeEfficiency': grid_charge_efficiency,
-	    'DischargeEfficiency': discharge_efficiency_bau,
-	    'StorageMinSizeEnergy':0,
-	    'StorageMaxSizeEnergy':0,
-	    'StorageMinSizePower':0,
-	    'StorageMaxSizePower':0,
-	    'StorageMinSOC':self.storage.soc_min_pct,
-	    'StorageInitSOC':self.storage.soc_init_pct,
-        'SegmentMinSize':segment_min_size_bau,
-        'SegmentMaxSize':segment_max_size_bau,
+	        'StorageEnergyCost': StorageCostPerKWH,
+	        'FuelCost': tariff_args.fuel_costs_bau,
+	        'ElecRate': tariff_args.energy_costs_bau,
+	        'GridExportRates': tariff_args.grid_export_rates_bau,
+	        'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
+	        'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
+	        'MaxGridSales': self.load.annual_kwh,
+	        'ProductionIncentiveRate': production_incentive_rate_bau,
+	        'ProductionFactor': production_factor_bau,
+	        'ElecLoad': self.elec_load,
+	        'FuelLimit': fuel_limit_bau,
+	        'ChargeEfficiency': charge_efficiency_bau,
+	        'GridChargeEfficiency': grid_charge_efficiency,
+	        'DischargeEfficiency': discharge_efficiency_bau,
+	        'StorageMinSizeEnergy':0,
+	        'StorageMaxSizeEnergy':0,
+	        'StorageMinSizePower':0,
+	        'StorageMaxSizePower':0,
+	        'StorageMinSOC':self.storage.soc_min_pct,
+	        'StorageInitSOC':self.storage.soc_init_pct,
+            'SegmentMinSize':segment_min_size_bau,
+            'SegmentMaxSize':segment_max_size_bau,
             # Sets that need to be populated
             'Storage':['Elec'],
             'FuelType':fuel_type_bau,
@@ -1138,6 +1142,7 @@ class DataManager:
             'ElectricTechs':reopt_techs_bau,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
+            'SalesTiers':sales_tiers,
+            'StorageSalesTiers':storage_sales_tiers,
+            'NonStorageSalesTiers':non_storage_sales_tiers
             }
-
-        #import ipdb; ipdb.set_trace()

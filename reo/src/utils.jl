@@ -260,6 +260,9 @@ struct Parameter
      ElectricTechs
      FuelBurningTechs
      TechsNoTurndown
+     SalesTiers
+     StorageSalesTiers
+     NonStorageSalesTiers
 
     # Feature Additions
      TechToLocation::AxisArray{Int,2,Array{Int,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
@@ -373,6 +376,9 @@ function build_param(args...;
           ElectricTechs,
           FuelBurningTechs,
           TechsNoTurndown,
+          SalesTiers,
+          StorageSalesTiers,
+          NonStorageSalesTiers,
           kwargs...
     )
 
@@ -577,6 +583,9 @@ function build_param(args...;
                 ElectricTechs,
                 FuelBurningTechs,
                 TechsNoTurndown,
+                SalesTiers,
+                StorageSalesTiers,
+                NonStorageSalesTiers,
                 TechToLocation,
                 MaxSizesLocation
         )
