@@ -86,7 +86,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
     """
 
     profiler = Profiler()
-    paths = vars(Paths(run_uuid=run_uuid))
+    inputs_path = os.path.join(os.getcwd(), "input_files")
     self.run_uuid = run_uuid
     self.data = data
 
