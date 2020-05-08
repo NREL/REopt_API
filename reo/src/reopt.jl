@@ -23,7 +23,6 @@ function reopt(reo_model, data, model_inputs)
         pwf_e = model_inputs["pwf_e"],
         pwf_prod_incent = model_inputs["pwf_prod_incent"],
         LevelizationFactor = model_inputs["LevelizationFactor"],
-        LevelizationFactorProdIncent = model_inputs["LevelizationFactorProdIncent"],
         StorageCostPerKW = model_inputs["StorageCostPerKW"],
         StorageCostPerKWH = model_inputs["StorageCostPerKWH"],
         OMperUnitSize = model_inputs["OMperUnitSize"],
@@ -216,8 +215,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @constraint(REopt, [t in p.Tech],
                 dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
     @constraint(REopt, [t in p.Tech],
-                dvProdIncent[t] <= sum(p.ProdFactor[t, LD, ts] * p.LevelizationFactorProdIncent[t] * dvRatedProd[t,LD,ts,s,fb] *
-                                       p.TimeStepScaling * p.ProdIncentRate[t, LD] * p.pwf_prod_incent[t]
+                dvProdIncent[t] <= sum(p.ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdIncentRate[t, LD] * p.pwf_prod_incent[t]
                                        for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @constraint(REopt, [t in p.Tech, LD in p.Load,ts in p.TimeStep],
                 sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
