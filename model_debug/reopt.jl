@@ -304,7 +304,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        dvElecToStor[t,ts] == sum(p.ProdFactor[t,"1S",ts] * p.LevelizationFactor[t] * dvRatedProd[t,"1S",ts,s,fb]
                                         for s in p.Seg, fb in p.FuelBin))
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + sum(dvElecToStor[t,ts] * p.EtaStorIn[t,"1S"] for t in p.Tech) - dvElecFromStor[ts] / p.EtaStorOut["1S"])
+    	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + p.TimeStepScaling * (sum(dvElecToStor[t,ts] * p.EtaStorIn[t,"1S"] for t in p.Tech) - dvElecFromStor[ts] / p.EtaStorOut["1S"]))
     @constraint(REopt, [ts in p.TimeStep],
     	        p.TimeStepScaling * dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
     @constraint(REopt, [ts in p.TimeStep],
