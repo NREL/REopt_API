@@ -422,7 +422,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 	#			)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
-	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStep],
+	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + 
 					TempGridChargeEff*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
@@ -430,7 +430,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 				
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
-	@constraint(REopt, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStep],
+	@constraint(REopt, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
 					)
@@ -620,8 +620,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		
 	
 	##Constraint (7h): At most one segment allowed
-	@constraint(REopt, SegmentSelectCon[t in NonUtilTechs, k in p.Subdivision],
-		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k])  <= 1
+	@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
+		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) == binSingleBasicTech[t,c]
 	)
 		
  
