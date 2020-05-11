@@ -498,6 +498,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
 				)
 	
+	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
+	@constraint(REopt, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
+    	        dvStorageCapPower[b] >=   dvDischargeFromStorage[b,ts] + 
+					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + TempGridChargeEff * dvGridToStorage[ts]
+					+ sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers)
+				)	
+	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
+	@constraint(REopt, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
+    	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts] + 
+					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs)
+				)
+				
+				
+	#Constraint (4m): Dispatch from thermal storage is no greater than power capacity
+	#@constraint(REopt, DischargeLEQCapCon[b in p.ThermalStorage, ts in p.TimeStep],
+    #	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
+	#			)
+	
 	#Constraint (4k): State of charge is no greater than energy capacity
 	@constraint(REopt, StorageEnergyMinCapCon[b in p.Storage, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
