@@ -213,9 +213,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Production Incentive Cap Module
     @constraint(REopt, [t in p.Tech],
-                dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
+                dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor)
     @constraint(REopt, [t in p.Tech],
-                dvProdIncent[t] <= sum(p.ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdIncentRate[t, LD] * p.pwf_prod_incent[t]
+                dvProdIncent[t] <= sum(p.ProdFactor[t, LD, ts] * dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdIncentRate[t, LD] * p.pwf_prod_incent[t] * p.two_party_factor
                                        for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     @constraint(REopt, [t in p.Tech, LD in p.Load,ts in p.TimeStep],
                 sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
@@ -329,20 +329,20 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     ### Parts of Objective
 
-    @expression(REopt, TotalTechCapCosts, sum(p.CapCostSlope[t, s] * dvSystemSize[t, s] + p.CapCostYInt[t,s] * binSegChosen[t,s]
+    @expression(REopt, TotalTechCapCosts, p.two_party_factor * sum(p.CapCostSlope[t, s] * dvSystemSize[t, s] + p.CapCostYInt[t,s] * binSegChosen[t,s]
                                                 for t in p.Tech, s in p.Seg))
-    @expression(REopt, TotalStorageCapCosts, dvStorageSizeKWH * p.StorageCostPerKWH + dvStorageSizeKW * p.StorageCostPerKW)
-    @expression(REopt, TotalPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in p.Tech, s in p.Seg))
+    @expression(REopt, TotalStorageCapCosts, p.two_party_factor * (dvStorageSizeKWH * p.StorageCostPerKWH + dvStorageSizeKW * p.StorageCostPerKW))
+    @expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in p.Tech, s in p.Seg))
 
     if !isempty(GeneratorTechs)
-        @expression(REopt, TotalPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+        @expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
                                                     for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
     else
         @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
     end
 
-    @expression(REopt, GenPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in GeneratorTechs, s in p.Seg))
-    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+    @expression(REopt, GenPerUnitSizeOMCosts, p.two_party_factor * sum(p.OMperUnitSize[t] * p.pwf_om * dvSystemSize[t, s] for t in GeneratorTechs, s in p.Seg))
+    @expression(REopt, GenPerUnitProdOMCosts, p.two_party_factor * sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling * p.ProdFactor[t,LD,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
                                               for t in GeneratorTechs, LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
 
     ### Aggregates of definitions
@@ -508,7 +508,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
 	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
 	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker / p.pwf_e, digits=2)
-	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om, digits=0)
+	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
+	        results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 		end
     end
     @expression(REopt, Year1GenProd, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.TimeStepScaling
