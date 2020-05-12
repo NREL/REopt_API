@@ -144,6 +144,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
+	NewMaxSize = Dict()
 	NewMaxSizeByHour = Array{Float64,2}(undef,length(NonUtilTechs),p.TimeStepCount)
 
 	# NewMaxDemandMonthsInTier sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
@@ -197,12 +198,37 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			end
 		end
 	end
+	
+	
+	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
+	TempHeatingTechs = [] #temporarily replace p.HeatingTechs which is undefined
+	TempCoolingTechs = [] #temporarily replace p.CoolingTechs which is undefined
+	
+	for t in TempHeatingTechs
+		NewMaxSize[t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
+		end
+	end
+	for t in TempCoolingTechs
+		NewMaxSize[t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
+		end
+	end
+	for t in TempElectricTechs
+		NewMaxSize[t] = maximum([sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
+		end
+	end
+	
 
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
-	#for t in NonUtilTechs 
+	#for t in TempElectricTechs 
 	#	for ts in p.TimeStep
-	#		NewMaxSizeByHour[t,ts] = minimum([p.MaxSize[t],
-	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * p.MaxSize[t],
+	#		NewMaxSizeByHour[t,ts] = minimum([NewMaxSize[t],
+	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * NewMaxSize[t],
 	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)  
 	#		])
 	#	end
@@ -346,9 +372,44 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				dvFuelUsage[t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
-	#Skipping (1c)-(1f) until CHP implementation
 	
-	### Thermal Production Constraints (Placeholder for constraint set (2) until CHP is implemented)
+	#if !isempty(CHPTechs)
+		#Constraint (1c): Total Fuel burn for CHP
+		#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
+		#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
+		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
+		#			)
+					
+		#Constraint (1d): Y-intercept fuel burn for CHP
+		#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+		#			p.FuelBurnYIntRate[t] * dvSize[t] - NewMaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+		#			)
+	#end
+	
+	#if !isempty(NonCHPHeatingTechs)
+		#Constraint (1e): Total Fuel burn for Boiler
+		#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
+		#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
+		#			)
+	#end
+	
+	### Constraint set (2): CHP Thermal Production Constraints
+	#if !isempty(CHPTechs)
+		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
+		#			)
+		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * NewMaxSize[t] * binTechIsOnInTS[t,ts]
+		#			)
+		# Constraint (2b): Thermal Production of CHP 
+		#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
+		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
+		#				)
+		#			)
+	#end
 
     ### Switch Constraints
     #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
@@ -362,10 +423,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	### Section 3: New Switch Constraints
 	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
 	@constraint(REopt, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-				dvRatedProduction[t,ts] <= p.MaxSize[t] * binTechIsOnInTS[t,ts])
+				dvRatedProduction[t,ts] <= NewMaxSize[t] * binTechIsOnInTS[t,ts])
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(REopt, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-			  p.MinTurndown[t] * dvSize[t] - dvRatedProduction[t,ts] <= p.MaxSize[t] * (1-binTechIsOnInTS[t,ts]) )
+			  p.MinTurndown[t] * dvSize[t] - dvRatedProduction[t,ts] <= NewMaxSize[t] * (1-binTechIsOnInTS[t,ts]) )
 
     ### Section 4: Storage System Constraints
 	### 
@@ -563,7 +624,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 )
 	##Constraint (6b): System size max to achieve production incentive
 	@constraint(REopt, IncentBySystemSizeCon[t in NonUtilTechs],
-                dvSize[t]  <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
+                dvSize[t]  <= p.MaxSizeForProdIncent[t] + NewMaxSize[t] * (1 - binProdIncent[t]))
 
     ### System Size and Production Constraints
     #@constraint(REopt, [t in p.Tech, s in p.Seg],
@@ -575,7 +636,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	###Constraint set (7): System Size is zero unless single basic tech is selected for class
 	#Constraint (7a): Single Basic Technology Constraints
 	@constraint(REopt, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
-		dvSize[t] <= p.MaxSize[t] * binSingleBasicTech[t,c]
+		dvSize[t] <= NewMaxSize[t] * binSingleBasicTech[t,c]
 		)
 	##Constraint (7b): At most one Single Basic Technology per Class
 	@constraint(REopt, TechClassMinSelectCon[c in p.TechClass],
