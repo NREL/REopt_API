@@ -502,7 +502,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
     	        dvStorageCapPower[b] >=   dvDischargeFromStorage[b,ts] + 
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + TempGridChargeEff * dvGridToStorage[ts]
-					+ sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers)
 				)	
 	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
 	@constraint(REopt, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
@@ -557,7 +556,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
 	@constraint(REopt, ProdIncentUBCon[t in NonUtilTechs],
-                dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
+                dvProdIncent[t] <= p.MaxProdIncent[t] * p.pwf_prod_incent[t] * binProdIncent[t])
 	##Constraint (6a)-2: Production Incentive According to Production (updated)
 	@constraint(REopt, IncentByProductionCon[t in NonUtilTechs],
                 dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t]  * p.LevelizationFactorProdIncent[t] *  sum(p.ProductionFactor[t, ts] *   dvRatedProduction[t,ts] for ts in p.TimeStep)
