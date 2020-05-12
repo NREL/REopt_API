@@ -78,6 +78,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	TempSalesTiers = 1:2    #1 = "1W", 2 = "1X"
 	TempStorageSalesTiers = [2]  #Storage cannot sell to grid
 	TempNonStorageSalesTiers = [1]
+	TempCurtailmentTiers = [2]  #equal to "1X", allowable when grid not available
 	
 	TempMaxGridSales = [p.MaxGridSales[1],10*p.MaxGridSales[1]]
 	
@@ -330,6 +331,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
+	
+	
     #TODO: account for exist formatting
     #for t in p.Tech
     #    if p.MaxSize == 0
@@ -571,17 +574,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 				
 				
-	#Constraint (4m): Dispatch from thermal storage is no greater than power capacity
-	#@constraint(REopt, DischargeLEQCapCon[b in p.ThermalStorage, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts]
+	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
+	#@constraint(REopt, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    #	        dvStorageCapPower[b] >= sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+	#			)
+	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
+	#@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    #	        dvStorageCapPower[b] >= sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#			)
 	
-	#Constraint (4k): State of charge is no greater than energy capacity
-	@constraint(REopt, StorageEnergyMinCapCon[b in p.Storage, ts in p.TimeStep],
-    	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
+
+	#Constraint (4n): Discharge no greater than power capacity
+	@constraint(REopt, StoragePowerCapCon[b in p.Storage, ts in p.TimeStep],
+    	        dvDischargeFromStorage[b,ts] <= dvStorageCapPower[b]
 					)
 					
-	#Constraint (4l): State of charge upper bound is storage system size
+	#Constraint (4n): State of charge upper bound is storage system size
 	@constraint(REopt, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
 				dvStorageSOC[b,ts] <= dvStorageCapEnergy[b]
 					)
@@ -681,7 +689,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Constraint (7h): At most one segment allowed
 	@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
-		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) == binSingleBasicTech[t,c]
+		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) <= binSingleBasicTech[t,c]
 	)
 		
  
@@ -705,7 +713,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, ElecLoadBalanceNoGridCon[ts in TempTimeStepsWithoutGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in TempElectricTechs) +  
 		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage )  ==
-		sum( dvProductionToStorage[b,t,ts] for b in p.ElecStorage, t in TempElectricTechs) +
+		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
+			sum(dvProductionToGrid[t,u,ts] for u in TempCurtailmentTiers) for t in TempElectricTechs) +
 		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
 		p.ElecLoad[ts]
 	)
