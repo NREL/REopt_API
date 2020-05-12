@@ -142,6 +142,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] > 0.5]
 	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] < 0.5]
 
+	TempElectricDerateFactor = Dict()
+	for t in NonUtilTechs
+		for ts in p.TimeStep
+			TempElectricDerateFactor[t,ts] = 1.0
+		end
+	end
+	
+	## Big-M adjustments; these need not be replaced in the parameter object.
+	
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
@@ -665,7 +674,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
 	@constraint(REopt, TurbineRatedProductionCon[t in TempTechsTurndown, ts in p.TimeStep],
-		dvRatedProduction[t,ts]  <= p.TurbineDerate[t] * dvSize[t]
+		dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
 	)
 		
 	
