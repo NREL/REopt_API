@@ -739,12 +739,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
 	@constraint(REopt, AnnualSalesByTierStorageCon[u in TempStorageSalesTiers],
-	 sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u]) for ts in TempTimeStepsWithGrid) <= TempMaxGridSales[u]
+	 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u]) for ts in TempTimeStepsWithGrid) <= TempMaxGridSales[u]
 	)
 	
 	##Constraint (8g): Total sales to grid no greater than annual allocation - non-storage tiers
 	@constraint(REopt, AnnualSalesByTierNonStorageCon[u in TempNonStorageSalesTiers],
-	  sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u], ts in TempTimeStepsWithGrid)  <= TempMaxGridSales[u]
+	  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u], ts in TempTimeStepsWithGrid)  <= TempMaxGridSales[u]
 	)
 	## End constraint (8)
 	
@@ -781,6 +781,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, [n in p.NMILRegime],
                 sum(p.TurbineDerate[t] * dvSize[t]
                     for t in TempTechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
+					
+	##Constraint (9c): Net metering only -- can't sell more than you purchase
+	@constraint(REopt, GridSalesLimit, 
+				p.TimeStepScaling * sum(dvProductionToGrid[t,1,ts] for t in TempTechsByPricingTier[1], ts in p.TimeStep)  + 
+				sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling * 
+				sum(dvGridPurchase[u,ts] for u in TempPricingTiers, ts in p.TimeStep)
+			)
 	###End constraint set (9)
 	
 	##Previous analog to (9b)
