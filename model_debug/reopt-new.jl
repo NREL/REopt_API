@@ -553,21 +553,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
 	@constraint(REopt, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= (  
-					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + TempGridChargeEff * dvGridToStorage[ts]
+					sum(dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + dvGridToStorage[ts]
 					)
 				)
 	
 	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
 	#@constraint(REopt, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= (  
-	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+	#				sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
 	#				)
 	#			)
 	
 	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
 	#@constraint(REopt, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= (  
-	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
+	#				sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#				)
 	#			)
 	
@@ -579,22 +579,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
 	@constraint(REopt, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
     	        dvStorageCapPower[b] >=   dvDischargeFromStorage[b,ts] + 
-					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + TempGridChargeEff * dvGridToStorage[ts]
+					sum(dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + dvGridToStorage[ts]
 				)	
 	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
 	@constraint(REopt, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
     	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts] + 
-					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs)
+					sum(dvProductionToStorage[b,t,ts] for t in TempElectricTechs)
 				)
 				
 				
 	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
 	#@constraint(REopt, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+    #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
 	#			)
 	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
 	#@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
+    #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#			)
 	
 
