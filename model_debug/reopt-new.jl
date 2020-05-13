@@ -145,7 +145,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	TempElectricDerateFactor = Dict()
 	for t in NonUtilTechs
 		for ts in p.TimeStep
-			TempElectricDerateFactor[t,ts] = 1.0
+			TempElectricDerateFactor[t,ts] = p.TurbineDerate[t]
 		end
 	end
 	
@@ -329,9 +329,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for u in TempPricingTiers
 			fix(dvGridPurchase[u,ts], 0.0, force=true)
 		end
-		for u in TempStorageSalesTiers
-			fix(dvStorageToGrid[u,ts], 0.0, force=true)
-		end
+		#for u in TempStorageSalesTiers  #don't allow curtailment of storage either
+		#	fix(dvStorageToGrid[u,ts], 0.0, force=true)
+		#end
 		
 		for t in NonUtilTechs
 			for u in TempPricingTiersByTech[t]
@@ -340,7 +340,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	
+	#don't allow curtailment or sales of stroage 
+	for ts in p.TimeStep
+		for u in TempStorageSalesTiers
+			fix(dvStorageToGrid[u,ts], 0.0, force=true)
+		end
+	end
 	
     #TODO: account for exist formatting
     #for t in p.Tech
@@ -1276,9 +1281,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, PVNMSize, dvSize["PVNM"])
 		results["pv_nm_size"] = round(value(PVNMSize),digits=2)
 		
+		results["PVtoBatt"] = round.(value.(PVtoBatt), digits=3)
+		
 	else
 		results["PVtoLoad"] = []
 		results["PVtoGrid"] = []
+		results["PVtoBatt"] = []
 		results["pv_net_fixed_om_costs"] = 0
 		results["pv_size"] = 0
 		results["pv_nm_size"] = 0
