@@ -33,6 +33,7 @@ import os
 import datetime, tzlocal
 from reo.models import ScenarioModel
 import logging
+from proforma.proforma_generator import generate_proforma
 log = logging.getLogger(__name__)
 
 
