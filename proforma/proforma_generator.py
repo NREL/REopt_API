@@ -1,6 +1,6 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
+from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -105,8 +105,8 @@ def generate_proforma(scenariomodel, output_file_path):
     generator_installed_cost_us_dollars_per_kw = generator.installed_cost_us_dollars_per_kw or 0
     generator_energy = generator.year_one_energy_produced_kwh or 0
     generator_cost = generator_installed_kw * generator_installed_cost_us_dollars_per_kw
-    diesel_fuel_used_cost = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal
-    diesel_fuel_used_cost_bau = generator.diesel_fuel_cost_us_dollars_per_gallon * gen_fuel_used_gal_bau
+    diesel_fuel_used_cost = (generator.diesel_fuel_cost_us_dollars_per_gallon or 0) * gen_fuel_used_gal
+    diesel_fuel_used_cost_bau = (generator.diesel_fuel_cost_us_dollars_per_gallon or 0) * gen_fuel_used_gal_bau
 
     ####################################################################################################################
     # Set up styling
@@ -250,7 +250,7 @@ def generate_proforma(scenariomodel, output_file_path):
     # System Design
     ####################################################################################################################
 
-    ws['A{}'.format(current_row)] = "SYSTEM DESIGN"
+    ws['A{}'.format(current_row)] = "OPTIMAL SYSTEM DESIGN (with existing)"
     make_title_row(ws, current_row)
     current_row += 1
 
@@ -310,25 +310,25 @@ def generate_proforma(scenariomodel, output_file_path):
     make_title_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Present value of annual BAU utility bill ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual Business as Usual utility bill ($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_bau_us_dollars or 0
     year_one_bau_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Present value of annual BAU export credits ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual Business as Usual export credits ($/year)"
     ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_bau_us_dollars or 0
     year_one_bau_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Present value of annual optimal utility bill($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual Optimal utility bill($/year)"
     ws['B{}'.format(current_row)] = electric_tariff.year_one_bill_us_dollars or 0
     year_one_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Present value of annual optimal export credits ($/year)"
+    ws['A{}'.format(current_row)] = "Present value of annual Optimal export credits ($/year)"
     ws['B{}'.format(current_row)] = -1 * electric_tariff.year_one_export_benefit_us_dollars or 0
     year_one_credits_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
@@ -336,7 +336,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Present value of annual {} BAU energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Present value of annual existing {} energy produced (kWh/year)".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
         pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
@@ -499,7 +499,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "O&M cost escalation rate (nominal) (%/year)"
+    ws['A{}'.format(current_row)] = "Nominal O&M cost escalation rate (%/year)"
     ws['B{}'.format(current_row)] = financial.om_cost_escalation_pct * 100
     om_escalation_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
@@ -568,7 +568,7 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         ws['A{}'.format(current_row)] = "Investment tax credit (ITC)"
         ws['A{}'.format(current_row)].font = bold_font
-        ws['D{}'.format(current_row)] = "Reduces depreciation and ITC basis"
+        ws['D{}'.format(current_row)] = "Reduces depreciation"
         ws['D{}'.format(current_row)].border = attribute_border_left
         ws['D{}'.format(current_row)].font = attribute_font
 
@@ -1223,18 +1223,6 @@ def generate_proforma(scenariomodel, output_file_path):
     fill_cols(ws, range(1, 2), current_row, grey_fill)
     free_cash_flow_row = current_row + 1
 
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Outage expected to occur"
-    ws['B{}'.format(current_row)] = 0
-    ws['C{}'.format(current_row)] = 1
-    ws['D{}'.format(current_row)] = int(not loadprofile.outage_is_major_event)
-    outage_cell_series = ["\'{}\'!{}{}".format(inandout_sheet_name, "B", current_row), "\'{}\'!{}{}".format(
-        inandout_sheet_name, "C", current_row), "\'{}\'!{}{}".format(inandout_sheet_name, "D", current_row)]
-    for i in range(3, financial.analysis_years + 1):
-        ws[upper_case_letters[1 + i] + str(current_row)] = '=D{}'.format(current_row)
-        outage_cell_series.append("\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[1 + i], current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
-    current_row += 1
 
     ####################################################################################################################
     ####################################################################################################################
@@ -2215,7 +2203,7 @@ def generate_proforma(scenariomodel, output_file_path):
         )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
-    fcf_row = current_row
+    optimal_fcf_row = current_row
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
     current_row += 1
@@ -2226,7 +2214,7 @@ def generate_proforma(scenariomodel, output_file_path):
             "={col}{fcf} / (1 + {disc_rate}/100)^{year}"
             ).format(
             col=upper_case_letters[year+2],
-            fcf=fcf_row,
+            fcf=optimal_fcf_row,
             disc_rate=discount_rate_cell,
             year=year+1,
         )
@@ -2368,7 +2356,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     start_om_row = current_row
-    hcs['A{}'.format(current_row)] = "BAU electricity bill ($)"
+    hcs['A{}'.format(current_row)] = "Business as Usual electricity bill ($)"
 
     for year in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
@@ -2382,7 +2370,7 @@ def generate_proforma(scenariomodel, output_file_path):
     bau_bill_row = current_row
 
     current_row += 1
-    hcs['A{}'.format(current_row)] = "BAU export credits ($)"
+    hcs['A{}'.format(current_row)] = "Business as Usual export credits ($)"
 
     for year in range(1, financial.analysis_years + 1):
         hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = \
@@ -2602,7 +2590,6 @@ def generate_proforma(scenariomodel, output_file_path):
         make_title_row(hcs, current_row, length=financial.analysis_years + 2)
 
         current_row += 1
-        print("\n\n{}\n\n".format(pv_data))
         for idx, pv in enumerate(pv_data):
             hcs['A{}'.format(current_row)] = "Existing {} Combined PBI".format(pv['name'])
             hcs['A{}'.format(current_row)].alignment = one_tab_indent
@@ -2777,8 +2764,8 @@ def generate_proforma(scenariomodel, output_file_path):
     )
 
     current_row += 1
-    ws['D{}'.format(current_row)] = "NPV, $"
     if not financial.two_party_ownership:
+        ws['D{}'.format(current_row)] = "NPV, $"
         ws['E{}'.format(current_row)] = (
             "=E{} - E{}"
         ).format(
@@ -2786,6 +2773,7 @@ def generate_proforma(scenariomodel, output_file_path):
             current_row - 1,
         )
     else:
+        ws['D{}'.format(current_row)] = "Host's NPV, $"
         ws['E{}'.format(current_row)] = "={}".format(bau_LCC_cell)
     ws['F{}'.format(current_row)] = (
         'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
