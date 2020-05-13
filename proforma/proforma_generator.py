@@ -43,7 +43,6 @@ def generate_proforma(scenariomodel, output_file_path):
     generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
     electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
     financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    loadprofile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
     if financial.two_party_ownership is True:
