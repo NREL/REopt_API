@@ -2,7 +2,7 @@ import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
 from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
-from reo.src.dat_file_manager import big_number
+from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
 
 one_party_workbook = os.path.join('proforma', 'REoptCashFlowTemplateOneParty.xlsx')
