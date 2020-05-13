@@ -59,6 +59,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.FuelBinCount)
 	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
+	NewMaxSize = Dict()
 	NewMaxSizeByHour = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
 
 	# NewMaxDemandMonthsInTier sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
@@ -110,6 +111,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					for ts in p.TimeStepRatchetsMonth[m]) 
 				])
 			end
+		end
+	end
+
+	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
+	
+	for t in p.Tech
+		NewMaxSize[t] = maximum([sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
 		end
 	end
 
@@ -362,7 +372,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # Storage inverter is AC rated. Following constrains the energy / timestep throughput of the inverter
     #     to the sum of the energy in and energy out of the battery.
     @constraint(REopt, [ts in p.TimeStep],
-    	        dvStorageSizeKW >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
+    	        dvStorageSizeKW >=  dvElecFromStor[ts] + sum(p.EtaStorIn[t,"1S"] * dvElecToStor[t,ts] for t in p.Tech))
     @constraint(REopt, dvMeanSOC == sum(dvStoredEnergy[ts] for ts in p.TimeStep) / p.TimeStepCount)
     @constraint(REopt, [ts in p.TimeStep],
     	        dvStorageSizeKWH >=  dvStoredEnergy[ts])
@@ -1038,9 +1048,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(dvSystemSize["PVNM",s] for s in p.Seg) )
 		results["pv_nm_size"] = round(value(PVNMSize),digits=2)
 		
+		results["PVtoBatt"] = round.(value.(PVtoBatt), digits=3)
+		
 	else
 		results["PVtoLoad"] = []
 		results["PVtoGrid"] = []
+		results["PVtoBatt"] = []
 		results["pv_net_fixed_om_costs"] = 0
 		results["pv_size"] = 0
 		results["pv_nm_size"] = 0
@@ -1082,8 +1095,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["dvPeakDemandE"] = value.(dvPeakDemandE)
 	results["dvPeakDemandEMonth"] = value.(dvPeakDemandEMonth)
 	results["dvRatedProd"] = value.(dvRatedProd)
+	results["dvElecToStor"] = value.(dvElecToStor)
+	results["dvElecFromStor"] = value.(dvElecFromStor)
 	results["UsageInTier"] = value.(UsageInTier)
-	results["dvMeanSOC"] = value.(UsageInTier)
+	results["dvMeanSOC"] = value.(dvMeanSOC)
 	
 	print("TotalTechCapCosts:")
 	println(value(TotalTechCapCosts))
