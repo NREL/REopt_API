@@ -136,12 +136,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             for i in range(len(self.inputs["PV"])):
                 # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
-                if results_dict.get('PV' + str(i+1) + '_kw') is None:
-                    results_dict['PV' + str(i+1) + '_kw'] = 0
-                pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
-                               "average_yearly_PV" + str(i+1) + "_energy_produced",
-                               "year_one_PV" + str(i+1) + "_energy_produced",
-                               ]
+                i += 1
+                if results_dict.get('PV{}_kw'.format(i)) is None:
+                    results_dict['PV{}_kw'.format(i)] = 0
+                pv_bau_keys = ["PV{}_net_fixed_om_costs".format(i),
+                               "average_yearly_PV{}_energy_produced".format(i),
+                               "year_one_PV{}_energy_produced".format(i),
+                               "average_yearly_energy_produced_PV{}".format(i),
+                              ]
                 for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
