@@ -68,9 +68,9 @@ class ScenarioTask(Task):
             msg = exc.message
         else:
             msg = exc.args[0]
-        #self.data["messages"]["error"] = msg
-        #self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
-        #ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
+        self.data["messages"]["error"] = msg
+        self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
+        ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
         # self.request.chain = None  # stop the chain?
         # self.request.callback = None
