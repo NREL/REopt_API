@@ -33,13 +33,12 @@ import copy
 import numpy as np
 from reo.nested_outputs import nested_output_definitions
 import logging
-log = logging.getLogger(__name__)
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-# TODO: remove PVModel
+log = logging.getLogger(__name__)
 
 class ProcessResultsTask(Task):
     """
@@ -58,7 +57,6 @@ class ProcessResultsTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
         if isinstance(exc, REoptError):
@@ -96,10 +94,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_min_charge_adder",
             "year_one_bill",
             "year_one_utility_kwh",
+            "year_one_export_benefit",
             "total_energy_cost",
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
+            "total_export_benefit",
             "net_capital_costs_plus_om",
             "gen_net_fixed_om_costs",
             "gen_net_variable_om_costs",
@@ -136,10 +136,14 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             for i in range(len(self.inputs["PV"])):
                 # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
-                if results_dict.get('PV' + str(i+1) + '_kw') is None:
-                    results_dict['PV' + str(i+1) + '_kw'] = 0
-                pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
-                               "average_yearly_energy_produced_PV" + str(i+1)]
+                i += 1
+                if results_dict.get('PV{}_kw'.format(i)) is None:
+                    results_dict['PV{}_kw'.format(i)] = 0
+                pv_bau_keys = ["PV{}_net_fixed_om_costs".format(i),
+                               "average_yearly_PV{}_energy_produced".format(i),
+                               "year_one_PV{}_energy_produced".format(i),
+                               "average_yearly_energy_produced_PV{}".format(i),
+                              ]
                 for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
@@ -250,7 +254,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
-            # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
@@ -373,6 +376,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_export_benefit_bau_us_dollars"] = self.results_dict.get("year_one_export_benefit_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_series_us_dollars_per_kwh"] = \
@@ -414,6 +419,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_fixed_om_costs_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_net_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_year_one_fixed_om_costs")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")

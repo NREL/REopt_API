@@ -165,7 +165,26 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "default": 0.083,
-          "description": "Nominal host discount rate"
+          "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
+        },
+        "two_party_ownership": {
+          "default": False,
+          "type": "bool",
+          "description": "Specify if ownership model is direct ownership or two party. In two party model the offtaker does not purcharse the generation technologies, but pays the generation owner for energy from the generator(s)."
+        },
+        "owner_tax_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.26,
+          "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
+        },
+        "owner_discount_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.083,
+          "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
         "analysis_years": {
           "type": "int",
@@ -522,6 +541,10 @@ nested_input_definitions = {
           "max": 1.0e9,
           "default": 1.0e9,
           "description": "Maximum system size for which production-based incentives apply"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       },
 
@@ -664,10 +687,10 @@ nested_input_definitions = {
         },
         "pbi_max_us_dollars": {
           "type": "float",
-          "min": 0.0,
-          "max": 1.0e9,
-          "default": 1.0e9,
-          "description": "Maximum annual value of production-based incentives"
+          "min": 0,
+          "max": 1e9,
+          "default": 1e9,
+          "description": "Maximum annual value in present terms of production-based incentives"
         },
         "pbi_years": {
           "type": "float",
@@ -755,7 +778,12 @@ nested_input_definitions = {
           "restrict_to": "['roof', 'ground', 'both']",
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
-         }
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
+
       },
 
       "Storage": {
