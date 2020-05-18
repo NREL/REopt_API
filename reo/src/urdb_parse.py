@@ -74,6 +74,23 @@ class REoptArgs:
         self.energy_burn_intercept = []
         self.energy_burn_intercept_bau = []
 
+        self.energy_costs = []
+        self.energy_costs_bau = []
+        self.fuel_costs = []
+        self.fuel_costs_bau = []
+        self.grid_export_rates = []
+        self.grid_export_rates_bau = []
+        self.fuel_burn_rate = []
+        self.fuel_burn_rate_bau = []
+        self.fuel_burn_intercept = []
+        self.fuel_burn_intercept_bau = []
+        self.fuel_burn_rate = []
+        self.fuel_burn_rate_bau = []
+        self.fuel_burn_intercept = []
+        self.fuel_burn_intercept_bau = []
+        self.fuel_limit = []
+        self.fuel_limit_bau = []
+
         self.export_rates = []
         self.export_rates_bau = []
 
@@ -216,13 +233,27 @@ class UrdbParse:
         self.reopt_args.energy_avail,  \
         self.reopt_args.export_rates, \
         self.reopt_args.energy_burn_rate, \
-        self.reopt_args.energy_burn_intercept = self.prepare_techs_and_loads(self.techs)
+        self.reopt_args.energy_burn_intercept, \
+        self.reopt_args.energy_costs, \
+        self.reopt_args.fuel_costs, \
+        self.reopt_args.grid_export_rates, \
+        self.reopt_args.fuel_burn_rate, \
+        self.reopt_args.fuel_burn_intercept, \
+        self.reopt_args.fuel_limit \
+        = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_rates_bau, \
         self.reopt_args.energy_avail_bau, \
         self.reopt_args.export_rates_bau, \
         self.reopt_args.energy_burn_rate_bau, \
-        self.reopt_args.energy_burn_intercept_bau = self.prepare_techs_and_loads(self.bau_techs)
+        self.reopt_args.energy_burn_intercept_bau, \
+        self.reopt_args.energy_costs_bau, \
+        self.reopt_args.fuel_costs_bau, \
+        self.reopt_args.grid_export_rates_bau, \
+        self.reopt_args.fuel_burn_rate_bau, \
+        self.reopt_args.fuel_burn_intercept_bau, \
+        self.reopt_args.fuel_limit_bau \
+        = self.prepare_techs_and_loads(self.bau_techs)
 
         return self.reopt_args
 
@@ -405,6 +436,9 @@ class UrdbParse:
         energy_rates = []
         # FuelAvail: array(Tech, FuelBin)
         energy_avail = []
+        # FuelCost(FuelType)
+        fuel_costs = []
+        fuel_limit = []
 
         for tech in techs:
             if tech.lower() == 'util':
@@ -417,6 +451,9 @@ class UrdbParse:
                         # generator fuel is not free anymore since generator is also a design variable
                         energy_rates = operator.add(energy_rates, self.diesel_cost_array)
                         energy_avail.append(self.generator_fuel_avail)
+                        # TODO figure out how to populate fuel costs for all fb techs
+                        fuel_costs.append(self.diesel_fuel_cost_us_dollars_per_gallon)
+                        fuel_limit.append(self.generator_fuel_avail)
                     else:
                         # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
                         energy_rates = operator.add(energy_rates, self.zero_array)
@@ -425,11 +462,14 @@ class UrdbParse:
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         export_rates = []
+        grid_export_rates = []
         for tech in techs:
             for load in self.loads:
                 if tech.lower() == 'util':
                     export_rates = operator.add(export_rates, self.zero_array)
-
+                    if load == 'wholesale' or load == 'export':
+                        grid_export_rates = operator.add(grid_export_rates, self.zero_array)
+                
                 elif not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
                     if load == 'wholesale':
@@ -453,7 +493,19 @@ class UrdbParse:
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
         energy_burn_intercept = []
+        fuel_burn_rate = []
+        fuel_burn_intercept = []
         for tech in techs:
+            if tech.lower() == 'util':
+                fuel_burn_rate.append(1.0)
+                fuel_burn_intercept.append(0.0)
+            elif tech.lower() == 'generator':
+                fuel_burn_rate.append(self.generator_fuel_slope)
+                fuel_burn_intercept.append(self.generator_fuel_intercept)
+            else:
+                fuel_burn_rate.append(0.0)
+                fuel_burn_intercept.append(0.0)
+
             for load in self.loads:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'util':
@@ -466,7 +518,8 @@ class UrdbParse:
                         energy_burn_rate.append(0.0)
                         energy_burn_intercept.append(0.0)
 
-        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept
+        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept, \
+                energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit
 
     def prepare_demand_periods(self, current_rate):
 
