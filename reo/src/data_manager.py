@@ -849,6 +849,8 @@ class DataManager:
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
         cap_cost_slope_bau, cap_cost_x_bau, cap_cost_yint_bau, n_segments_bau = self._get_REopt_cost_curve(self.bau_techs)
+        n_segments_list = [x for x in range(n_segments)]
+        n_segments_list_bau = [x for x in range(n_segments_bau)]
 
         sf = self.site.financial
         StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
@@ -904,11 +906,11 @@ class DataManager:
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
 
-        segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments]
-        segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments]
+        segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments_list]
+        segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments_list_bau]
 
-        segment_max_size = [[[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions] for ___ in n_segments]
-        segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments]
+        segment_max_size = [[[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions] for ___ in n_segments_list]
+        segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments_list_bau]
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
