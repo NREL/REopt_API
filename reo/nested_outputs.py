@@ -391,6 +391,11 @@ nested_output_definitions = {
                   "description": "Total export benefit cost over the lifecycle, after-tax",
                   "units": "$"
                 },
+                "total_export_benefit_bau_us_dollars": {
+                  "type": float,
+                  "description": "BAU export benefit cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
                 "total_min_charge_adder_bau_us_dollars": {
                   "type": float,
                   "description": "Business as usual total utility minimum charge adder",
@@ -409,6 +414,11 @@ nested_output_definitions = {
                 "year_one_export_benefit_us_dollars": {
                   "type": float,
                   "description": "Optimal year one value of exported energy",
+                  "units": "$"
+                },
+                "year_one_export_benefit_bau_us_dollars": {
+                  "type": float,
+                  "description": "BAU year one value of exported energy",
                   "units": "$"
                 },
                 "year_one_energy_cost_series_us_dollars_per_kwh": {
@@ -509,14 +519,24 @@ nested_output_definitions = {
                   "description": "Year one variable (based on kwh produced) O&M cost for existing diesel generator system.",
                   "units": "$"
                 },
+                "total_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
+                  "units": "$"
+                },
                 "total_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Total lifecycle variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "description": "Total lifecycle variable (based on kWh produced) O&M cost for existing + recommended diesel generator system",
                   "units": "$"
                 },
                 "year_one_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Year one variable (based on kwh produced) O&M cost for existing + newly recommended diesel generator system",
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing + recommended diesel generator system",
+                  "units": "$"
+                },
+                "year_one_fixed_om_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one fixed (based on kW capacity) O&M cost for existing + recommended diesel generator system.",
                   "units": "$"
                 },
                 "total_fuel_cost_us_dollars": {
