@@ -681,7 +681,7 @@ class ModelManager(object):
                                 if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
                                     if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
                                         resp['inputs']['Scenario']['Site'][site_key][i][k] = \
-                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]
+                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]                                    
                                 if k not in ['pv_name']:
                                     del resp['outputs']['Scenario']['Site'][site_key][i][k]
 
@@ -693,6 +693,8 @@ class ModelManager(object):
                             if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
                                 resp['inputs']['Scenario']['Site'][site_key][k] = \
                                     resp['inputs']['Scenario']['Site'][site_key][k][0]
+                            elif len(resp['inputs']['Scenario']['Site'][site_key][k]) == 0:
+                                del resp['inputs']['Scenario']['Site'][site_key][k] 
                         del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
