@@ -77,9 +77,9 @@ class DataManager:
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.electic_producing_techs = ['PV', 'PVNM', 'WIND', 'WINDNM', 'GENERATOR']
+        self.electic_producing_techs = ['PV1', 'PV1NM', 'WIND', 'WINDNM', 'GENERATOR']
         self.fuel_burning_techs = ['GENERATOR']
-        self.no_turndown_techs = ['PV', 'PVNM', 'WIND', 'WINDNM']
+        self.no_turndown_techs = ['PV1', 'PV1NM', 'WIND', 'WINDNM']
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps

@@ -198,8 +198,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	TempTechsNoTurndown = [t for t in NonUtilTechs if t in ["PV","PVNM","WIND","WINDNM"]]  #To replace p.TechsNoTurndown, which needs to filter out any technologies not also in p.Tech
-	TempTechsTurndown = [t for t in NonUtilTechs if !(t in ["PV","PVNM","WIND","WINDNM"])]  #To be p.TechsTurndown, which isn't explicitly in math but we need to add 
+	TempTechsNoTurndown = [t for t in NonUtilTechs if t in ["PV1","PV1NM","WIND","WINDNM"]]  #To replace p.TechsNoTurndown, which needs to filter out any technologies not also in p.Tech
+	TempTechsTurndown = [t for t in NonUtilTechs if !(t in ["PV1","PV1NM","WIND","WINDNM"])]  #To be p.TechsTurndown, which isn't explicitly in math but we need to add 
 	
 	TempSegBySubTech = Dict()  # to replace p.SegByTechSubdivision[t,k], which is transposed
 	for t in NonUtilTechs
@@ -1015,7 +1015,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #            sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t, b] for s in p.Seg) <= p.MaxSize[t] * binSingleBasicTech[t, b])
 
     #for t in p.Tech
-    #    if p.TechToTechClassMatrix[t, "PV"] == 1 || p.TechToTechClassMatrix[t, "WIND"] == 1
+    #    if p.TechToTechClassMatrix[t, "PV1"] == 1 || p.TechToTechClassMatrix[t, "WIND"] == 1
     #        @constraint(REopt, [ts in p.TimeStep, s in p.Seg],
     #        	        sum(dvRatedProd[t,LD,ts,s,fb] for fb in p.FuelBin,
     #                        LD in ["1R", "1W", "1X", "1S"]) ==  dvSystemSize[t, s])
@@ -1242,7 +1242,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     end
 	
     if !isempty(PVTechs)
-        results["PV"] = Dict()
+        results["PV1"] = Dict()
         results["pv_kw"] = round(value(sum(dvSize[t] for t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[t in PVTechs, ts in p.TimeStep],
                     sum(dvProductionToStorage[b, t, ts] for b in p.ElecStorage))
