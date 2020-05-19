@@ -481,6 +481,23 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'],
                                  dm=dfm_list[0], inputs=data['inputs']['Scenario']['Site'])
         results = results_object.get_output()
+        
+        # Move PV exported to grid during an outage to the curtailed PV series, doing this here so we have access to input data
+        # Get outage start and end hour
+        outage_start_hour= data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_hour')
+        outage_end_hour = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_hour')
+        for pv in results['Scenario']['Site']['PV']:
+            # If there is an outage move the PV exported to the grid to the curtailment series
+            if len(pv["year_one_to_grid_series_kw"] or [])>0:
+                pv['year_one_curtailed_production_series_kw'] = [0.0] * len(pv["year_one_to_grid_series_kw"])
+                if (outage_start_hour is not None) and (outage_end_hour is not None):
+                    outage_start_time_step = outage_start_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                    outage_end_time_step = outage_end_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                    pv['year_one_curtailed_production_series_kw'][outage_start_time_step : outage_end_time_step] = \
+                        pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step]
+                    pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step] = \
+                        [0.0] * (outage_end_time_step - outage_start_time_step)
+
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
