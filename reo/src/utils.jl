@@ -34,7 +34,6 @@ struct Parameter
      pwf_e::Float64
      pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     LevelizationFactorProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
      StorageCostPerKW::Float64
      StorageCostPerKWH::Float64
      OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
@@ -115,7 +114,6 @@ function build_param(args...;
         pwf_e,
         pwf_prod_incent,
         LevelizationFactor,
-        LevelizationFactorProdIncent,
         StorageCostPerKW,
         StorageCostPerKWH,
         OMperUnitSize,
@@ -191,7 +189,6 @@ function build_param(args...;
     TechToLocation = parameter((Tech, Location), TechToLocation)
     pwf_prod_incent = parameter(Tech, pwf_prod_incent)
     LevelizationFactor = parameter(Tech, LevelizationFactor)
-    LevelizationFactorProdIncent = parameter(Tech, LevelizationFactorProdIncent)
     OMperUnitSize = parameter(Tech, OMperUnitSize)
     CapCostSlope = parameter((Tech, Seg), CapCostSlope)
     CapCostYInt = parameter((Tech, Seg), CapCostYInt)
@@ -239,7 +236,6 @@ function build_param(args...;
                       pwf_e,
                       pwf_prod_incent,
                       LevelizationFactor,
-                      LevelizationFactorProdIncent,
                       StorageCostPerKW,
                       StorageCostPerKWH,
                       OMperUnitSize,
