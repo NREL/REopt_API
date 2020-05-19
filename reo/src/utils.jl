@@ -33,7 +33,7 @@ struct Parameter
      Seg::UnitRange{Int64}	       # Set S
 	 Tech::Array{String,1}         # Set T in math
 	 FuelBin::UnitRange{Int64}	   # To be removed
-	 #PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision) #new
+	 PricingTier::UnitRange{Int64}  # Set U: Pricing Tiers (proposed revision) #new
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
 	 
 	 ###  Subsets and Indexed Sets  ####
@@ -213,12 +213,13 @@ struct Parameter
      analysis_years::Int64     # Used to calculate present worth factors maybe?
      AnnualElecLoad::Float64   # Not used anymore (can just sum LoadProfile["1R",h] for all h in TimeStep
      CapCostSegCount::Int64    # Size of set S 
-     FuelBinCount::Int64       # Size of set U  (but should be F now)
+     FuelBinCount::Int64       # Size of set F  
      DemandBinCount ::Int64    # Size of set E
      DemandMonthsBinCount::Int64   # Size of set N
      TimeStepCount::Int64          # Size of set H
      Points::UnitRange{Int64}      # CapCostSegCount+1; this is going to be the size of set S^{c} now
-
+     PricingTierCount::Int64    # Size of set U
+	 
      # new parameters for reformulation
      StoragePowerCost
      StorageEnergyCost
@@ -248,8 +249,6 @@ struct Parameter
      Storage
      FuelType
      Subdivision
-     PricingTierCount
-     PricingTier
      ElecStorage
      FuelTypeByTech
      SubdivisionByTech
@@ -334,6 +333,7 @@ function build_param(args...;
           DemandLookbackMonths,
           CapCostSegCount,
           FuelBinCount,
+          PricingTierCount,
           DemandBinCount ,
           DemandMonthsBinCount,
           TimeStepCount,
@@ -364,8 +364,6 @@ function build_param(args...;
           Storage,
           FuelType,
           Subdivision,
-          PricingTierCount,
-          PricingTier,
           ElecStorage,
           FuelTypeByTech,
           SubdivisionByTech,
@@ -389,13 +387,13 @@ function build_param(args...;
     Month = 1:12
     Ratchets = 1:NumRatchets
     FuelBin = 1:FuelBinCount
+	PricingTier = 1:PricingTierCount
     DemandBin = 1:DemandBinCount
     DemandMonthsBin = 1:DemandMonthsBinCount
     TimeStep=1:TimeStepCount
     TimeStepBat=0:TimeStepCount
 	#Subdivision=1:1
 	#FuelType = 1:FuelBinCount
-	PricingTier = 1:PricingTierCount
 	#Storage = 1:1
     Location = 1:3
 
@@ -573,6 +571,7 @@ function build_param(args...;
                 FuelType,
                 Subdivision,
                 PricingTierCount,
+				PricingTier,
                 ElecStorage,
                 FuelTypeByTech,
                 SubdivisionByTech,
