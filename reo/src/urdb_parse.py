@@ -106,6 +106,7 @@ class RateData:
             'flatdemandmonths',
             'demandrateunit',
             'demandratestructure',
+            'demandunits',
             'demandweekdayschedule',
             'demandweekendschedule',
             'demandratchetpercentage',
@@ -124,6 +125,10 @@ class RateData:
             'energyweekendschedule',
             'energycomments',
             # other charges
+            'fixedchargefirstmeter',
+            'fixedchargeunits',
+            'mincharge',
+            'minchargeunits',
             'fixedmonthlycharge',
             'minmonthlycharge',
             'annualmincharge',
@@ -134,6 +139,14 @@ class RateData:
                 setattr(self, k, rate.get(k))
             else:
                 setattr(self, k, list())
+        
+        if self.demandunits == 'hp': #convert hp to KW, assume PF is 1 so no need to convert kVA to kW, as of 01/28/2020 only 3 rates in URDB with hp units
+            for period in self.demandratestructure:
+                for tier in period:
+                    if tier.get('rate') or False != False:
+                        tier['rate'] = float(tier['rate']) * 0.7457
+                    if tier.get('adj') or False != False:
+                        tier['adj'] = float(tier['adj']) * 0.7457
 
 
 class UrdbParse:
@@ -297,7 +310,8 @@ class UrdbParse:
             energy_tier_max = self.big_number
 
             if 'max' in energy_tier:
-                energy_tier_max = float(energy_tier['max'])
+                if energy_tier['max'] is not None:
+                    energy_tier_max = float(energy_tier['max'])
 
             if 'rate' in energy_tier or 'adj' in energy_tier:
                 self.reopt_args.energy_max_in_tiers.append(energy_tier_max)
@@ -546,7 +560,8 @@ class UrdbParse:
                     demand_tier = demand_rate_structure[period][tier]
                     demand_tier_max = self.big_number
                     if 'max' in demand_tier:
-                        demand_tier_max = float(demand_tier['max'])
+                        if demand_tier['max'] is not None:
+                            demand_tier_max = float(demand_tier['max'])
                     demand_max.append(demand_tier_max)
                 demand_tiers[period] = demand_max
                 demand_maxes.append(demand_max[-1])
@@ -628,12 +643,22 @@ class UrdbParse:
         self.reopt_args.demand_num_ratchets = len(demand_periods)
 
     def prepare_fixed_charges(self, current_rate):
-        if not isinstance(current_rate.fixedmonthlycharge, list):
-            self.reopt_args.fixed_monthly_charge = float(current_rate.fixedmonthlycharge)
-        if not isinstance(current_rate.annualmincharge, list):
-            self.reopt_args.annual_min_charge = float(current_rate.annualmincharge)
-        if not isinstance(current_rate.minmonthlycharge, list):
-            self.reopt_args.min_monthly_charge = float(current_rate.minmonthlycharge)
+        if not isinstance(current_rate.fixedchargefirstmeter, list):      #URDB v7
+            if not isinstance(current_rate.fixedmonthlycharge, list):     
+                self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
+
+        if current_rate.mincharge  != []:                               #URDB v7
+            if current_rate.minchargeunits == '$/month': 
+                self.reopt_args.min_monthly_charge = current_rate.mincharge # first try $/month, then check if $/day or $/year exists, as of 1/28/2020 these were the only unit types in the urdb
+            if current_rate.minchargeunits == '$/day': 
+                self.reopt_args.fixed_monthly_charge = current_rate.mincharge*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
+            if current_rate.minchargeunits == '$/year': 
+                self.reopt_args.annual_min_charge = current_rate.mincharge 
+        else:                                                           #URDB v3, preserve backwards compatability
+            if not isinstance(current_rate.annualmincharge, list):
+                self.reopt_args.annual_min_charge = current_rate.annualmincharge
+            if not isinstance(current_rate.minmonthlycharge, list):
+                self.reopt_args.min_monthly_charge = current_rate.minmonthlycharge
 
     def get_hours_in_month(self, month):
 
