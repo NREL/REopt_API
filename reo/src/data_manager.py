@@ -811,6 +811,29 @@ class DataManager:
 
         return tech_subdivisions
 
+    def _get_time_steps_with_grid(self):
+        """
+        Obtains the subdivision of time steps with a grid connection and those
+        without (i.e., under an outage).  Uses the utility's prod_factor value
+        (1=connected, 0 o.w.) at each time step to obtain these sets, which
+        are presented as lists.
+        
+        Parameters
+            None
+        Returns
+            time_steps_with_grid -- list of ints indicating grid-connected 
+                time steps
+            time_steps_without_grid -- list of ints indicating outage time 
+                steps
+        """
+        time_steps_with_grid = list()
+        time_steps_without_grid = list()
+        for i, pf in enumerate(self.util.prod_factor):
+            if pf > 0.5: 
+                time_steps_with_grid.append(i+1)
+            else:
+                time_steps_without_grid.append(i+1)
+        return time_steps_with_grid, time_steps_without_grid
 
     def finalize(self):
         """
@@ -917,6 +940,8 @@ class DataManager:
         sales_tiers = [1, 2]
         non_storage_sales_tiers = [1]
         storage_sales_tiers = [2]
+        
+        time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1031,7 +1056,9 @@ class DataManager:
             'TechsNoTurndown':self.no_turndown_techs,
             'SalesTiers':sales_tiers,
             'StorageSalesTiers':storage_sales_tiers,
-            'NonStorageSalesTiers':non_storage_sales_tiers
+            'NonStorageSalesTiers':non_storage_sales_tiers,
+            'TimeStepsWithGrid':time_steps_with_grid,
+            'TimeStepsWithoutGrid':time_steps_without_grid
             }
 
         self.reopt_inputs_bau = {
@@ -1146,5 +1173,7 @@ class DataManager:
             'TechsNoTurndown':self.no_turndown_techs,
             'SalesTiers':sales_tiers,
             'StorageSalesTiers':storage_sales_tiers,
-            'NonStorageSalesTiers':non_storage_sales_tiers
+            'NonStorageSalesTiers':non_storage_sales_tiers,
+            'TimeStepsWithGrid':time_steps_with_grid,
+            'TimeStepsWithoutGrid':time_steps_without_grid
             }

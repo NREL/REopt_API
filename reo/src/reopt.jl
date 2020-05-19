@@ -68,6 +68,8 @@ function reopt(reo_model, data, model_inputs)
           DemandRates = model_inputs["DemandRates"],
           TimeStepRatchets = model_inputs["TimeStepRatchets"],
           DemandLookbackMonths = model_inputs["DemandLookbackMonths"],
+		  TimeStepsWithGrid = model_inputs["TimeStepsWithGrid"],
+          TimeStepsWithoutGrid = model_inputs["TimeStepsWithoutGrid"],
           CapCostSegCount = model_inputs["CapCostSegCount"],
           FuelBinCount = model_inputs["FuelBinCount"],
           DemandBinCount  = model_inputs["DemandBinCount"],
@@ -216,8 +218,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	TempTimeStepsWithGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] > 0.5]
-	TempTimeStepsWithoutGrid = [ts for ts in p.TimeStep if p.ProdFactor["UTIL1","1R",ts] < 0.5]
 
 	TempElectricDerateFactor = Dict()
 	for t in NonUtilTechs
@@ -400,8 +400,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#############  		Constraints									 #############
 	##############################################################################
 	
-	## Temporary workaround for outages TempTimeStepsWithoutGrid
-	for ts in TempTimeStepsWithoutGrid
+	## Temporary workaround for outages TimeStepsWithoutGrid
+	for ts in p.TimeStepsWithoutGrid
 		fix(dvGridToStorage[ts], 0.0, force=true)
 		for u in TempPricingTiers
 			fix(dvGridPurchase[u,ts], 0.0, force=true)
@@ -557,12 +557,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	### New Storage Operations
 	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
-	@constraint(REopt, ElecTechProductionFlowCon[b in p.ElecStorage, t in TempElectricTechs, ts in TempTimeStepsWithGrid],
+	@constraint(REopt, ElecTechProductionFlowCon[b in p.ElecStorage, t in TempElectricTechs, ts in p.TimeStepsWithGrid],
     	        dvProductionToStorage[b,t,ts] + sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiersByTech[t]) <= 
 				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
-	@constraint(REopt, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in TempElectricTechs, ts in TempTimeStepsWithoutGrid],
+	@constraint(REopt, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in TempElectricTechs, ts in p.TimeStepsWithoutGrid],
     	        dvProductionToStorage[b,t,ts]  <= 
 				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
@@ -577,7 +577,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 	#			)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
-	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
+	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + 
 					TempGridChargeEff*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
@@ -585,7 +585,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 				
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
-	@constraint(REopt, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
+	@constraint(REopt, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in TempElectricTechs) - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
 					)
@@ -654,12 +654,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
-	@constraint(REopt, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in TempTimeStepsWithGrid],
+	@constraint(REopt, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
     	        dvStorageCapPower[b] >=   dvDischargeFromStorage[b,ts] + 
 					sum(dvProductionToStorage[b,t,ts] for t in TempElectricTechs) + dvGridToStorage[ts]
 				)	
 	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
-	@constraint(REopt, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in TempTimeStepsWithoutGrid],
+	@constraint(REopt, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
     	        dvStorageCapPower[b] >= dvDischargeFromStorage[b,ts] + 
 					sum(dvProductionToStorage[b,t,ts] for t in TempElectricTechs)
 				)
@@ -787,7 +787,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	
 	##Constraint (8a): Electrical Load Balancing with Grid
-	@constraint(REopt, ElecLoadBalanceCon[ts in TempTimeStepsWithGrid],
+	@constraint(REopt, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in TempElectricTechs) +  
 		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage ) + 
 		sum( dvGridPurchase[u,ts] for u in TempPricingTiers ) ==
@@ -801,7 +801,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#sprintln(ElecLoadBalanceCon[156])
 	
 	##Constraint (8b): Electrical Load Balancing without Grid
-	@constraint(REopt, ElecLoadBalanceNoGridCon[ts in TempTimeStepsWithoutGrid],
+	@constraint(REopt, ElecLoadBalanceNoGridCon[ts in p.TimeStepsWithoutGrid],
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in TempElectricTechs) +  
 		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage )  ==
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
@@ -811,18 +811,18 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	)
 	
 	##Constraint (8c): Grid-to-storage no greater than grid purchases 
-	@constraint(REopt, GridToStorageCon[ts in TempTimeStepsWithGrid],
+	@constraint(REopt, GridToStorageCon[ts in p.TimeStepsWithGrid],
 		sum( dvGridPurchase[u,ts] for u in TempPricingTiers)  >= dvGridToStorage[ts]
 	)
 		
 	##Constraint (8d): Storage-to-grid no greater than discharge from Storage
-	@constraint(REopt, StorageToGridCon[ts in TempTimeStepsWithGrid],
+	@constraint(REopt, StorageToGridCon[ts in p.TimeStepsWithGrid],
 		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage)  >= sum(dvStorageToGrid[u,ts] for u in TempStorageSalesTiers)
 	)
 		
 	
 	##Constraint (8e): Production-to-grid no greater than production
-	@constraint(REopt, ProductionToGridCon[t in NonUtilTechs, ts in TempTimeStepsWithGrid],
+	@constraint(REopt, ProductionToGridCon[t in NonUtilTechs, ts in p.TimeStepsWithGrid],
 	 p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] >= sum(dvProductionToGrid[t,u,ts] for u in TempPricingTiersByTech[t])
 	)
 	#println("ProductionToGridCon:")
@@ -830,12 +830,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
 	@constraint(REopt, AnnualSalesByTierStorageCon[u in TempStorageSalesTiers],
-	 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u]) for ts in TempTimeStepsWithGrid) <= TempMaxGridSales[u]
+	 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u]) for ts in p.TimeStepsWithGrid) <= TempMaxGridSales[u]
 	)
 	
 	##Constraint (8g): Total sales to grid no greater than annual allocation - non-storage tiers
 	@constraint(REopt, AnnualSalesByTierNonStorageCon[u in TempNonStorageSalesTiers],
-	  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u], ts in TempTimeStepsWithGrid)  <= TempMaxGridSales[u]
+	  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in TempTechsByPricingTier[u], ts in p.TimeStepsWithGrid)  <= TempMaxGridSales[u]
 	)
 	## End constraint (8)
 	
@@ -1154,7 +1154,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     #ProdLoad = ["1R", "1W", "1X", "1S"]
 
-    PVTechs = p.TechsInClass["PV"]
+    PVTechs = p.TechsInClass["PV1"]
     @expression(REopt, Year1PvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in PVTechs, ts in p.TimeStep))
     @expression(REopt, AveragePvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] 
@@ -1352,10 +1352,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in PVTechs))
 		results["pv_net_fixed_om_costs"] = round(value(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
 		
-		@expression(REopt, PVSize, dvSize["PV"])
+		@expression(REopt, PVSize, dvSize["PV1"])
 		results["pv_size"] = round(value(PVSize),digits=2)
 		
-		@expression(REopt, PVNMSize, dvSize["PVNM"])
+		@expression(REopt, PVNMSize, dvSize["PV1NM"])
 		results["pv_nm_size"] = round(value(PVNMSize),digits=2)
 		
 		results["PVtoBatt"] = round.(value.(PVtoBatt), digits=3)
@@ -1408,7 +1408,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	results["np"]["TempTechsNoTurndown"] = TempTechsNoTurndown
 	results["np"]["TempTechsTurndown"] = TempTechsTurndown
 	results["np"]["TempTechsByPricingTier"] = TempTechsByPricingTier
-	results["np"]["TempTimeStepsWithoutGrid"] = TempTimeStepsWithoutGrid
 	results["np"]["TempPricingTiersByTech"] = TempPricingTiersByTech
 	results["np"]["TempElectricTechs"] = TempElectricTechs
 	results["np"]["TempGridExportRates"] = TempGridExportRates

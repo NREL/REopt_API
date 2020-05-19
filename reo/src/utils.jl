@@ -44,6 +44,8 @@ struct Parameter
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}    #  H_r: Time steps in ratchet r
+     TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
+     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
 	 #SubdivsionByTech K_t \subset K: Subdivisions applied to technology t
 	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Subdivisions
 	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions   (IGNORE)
@@ -331,6 +333,8 @@ function build_param(args...;
           DemandRates,
           TimeStepRatchets,
           DemandLookbackMonths,
+		  TimeStepsWithGrid,
+          TimeStepsWithoutGrid,
           CapCostSegCount,
           FuelBinCount,
           DemandBinCount ,
@@ -485,6 +489,8 @@ function build_param(args...;
                 NMILRegime,
                 TimeStepRatchetsMonth,
                 TimeStepRatchets,
+				TimeStepsWithGrid,
+				TimeStepsWithoutGrid,
                 DemandLookbackMonths,
                 TechToTechClassMatrix,
                 TechToLoadMatrix,
