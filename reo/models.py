@@ -271,6 +271,7 @@ class PVModel(models.Model):
     inv_eff = models.FloatField()
     radius = models.FloatField()
     tilt = models.FloatField()
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
     pv_number = models.IntegerField(default=1, null=True, blank=True)
     pv_name = models.TextField(null=True, blank=True, default='')
     location = models.TextField(null=True, blank=True, default='both')
