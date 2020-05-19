@@ -356,10 +356,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		
 		# Binary Variables
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
-        binProdIncent[p.Tech], Bin # 1 If production incentive is available for technology t; 0 otherwise 
-        #binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
+        binProdIncent[NonUtilTechs], Bin # Z^{pi}_{t}:  1 If production incentive is available for technology t; 0 otherwise 
+		#binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
 		binSegmentSelect[NonUtilTechs, p.Subdivision, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
-        binProdIncent[NonUtilTechs], Bin # 1 If production incentive is available for technology t; 0 otherwise 
         binSingleBasicTech[NonUtilTechs,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[NonUtilTechs, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
