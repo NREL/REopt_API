@@ -279,7 +279,12 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one wind to grid time series",
                   "units": "kW"
-                }
+                },
+                "year_one_curtailed_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one PV power curtailed during outage time series",
+                  "units": "kW"
+                },
               },
 
               "Storage": {
