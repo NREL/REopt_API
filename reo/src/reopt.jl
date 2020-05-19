@@ -97,6 +97,8 @@ function reopt(reo_model, data, model_inputs)
           StorageMaxSizePower = model_inputs["StorageMaxSizePower"],
           StorageMinSOC = model_inputs["StorageMinSOC"],
           StorageInitSOC = model_inputs["StorageInitSOC"],
+		  SegmentMinSize = model_inputs["SegmentMinSize"],
+		  SegmentMaxSize = model_inputs["SegmentMaxSize"],
           Storage = model_inputs["Storage"],
           FuelType = model_inputs["FuelType"],
           Subdivision = model_inputs["Subdivision"],
