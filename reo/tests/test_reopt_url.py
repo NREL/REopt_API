@@ -217,9 +217,9 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         d_expected['lcc'] = 10972574
         d_expected['npv'] = 11257165 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
-        d_expected['batt_kw'] = 29.416
-        d_expected['batt_kwh'] = 38.8
-        d_expected['year_one_utility_kwh'] = 9612970
+        d_expected['batt_kw'] = 43.5127
+        d_expected['batt_kwh'] = 57.3789
+        d_expected['year_one_utility_kwh'] = 9613429.5298
 
         try:
             check_common_outputs(self, c, d_expected)
