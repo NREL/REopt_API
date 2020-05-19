@@ -63,11 +63,12 @@ class ScenarioTask(Task):
         :param einfo: ExceptionInfo instance, containing the traceback.
         :return: None, The return value of this handler is ignored.
         """
-        if isinstance(exc, REoptError):
-            exc.save_to_db()
-            msg = exc.message
-        else:
-            msg = exc.args[0]
+        if not isinstance(exc, REoptError):
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exc = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=kwargs['run_uuid'],
+                              user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
+        msg = exc.message
+        exc.save_to_db()
         self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
