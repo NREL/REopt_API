@@ -123,8 +123,9 @@ class FinancialModel(models.Model):
     offtaker_tax_pct = models.FloatField()
     value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_pct = models.FloatField(null=True, blank=True)
-    # owner_discount_pct = models.FloatField(null=True)
-    # owner_tax_pct = models.FloatField(null=True)
+    two_party_ownership = models.BooleanField(default=False)
+    owner_discount_pct = models.FloatField(null=True, blank=True)
+    owner_tax_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -214,14 +215,14 @@ class ElectricTariffModel(models.Model):
     total_demand_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
+    total_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                                blank=True)
-    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                               blank=True)
+    year_one_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
@@ -274,6 +275,7 @@ class PVModel(models.Model):
     pv_number = models.IntegerField(default=1, null=True, blank=True)
     pv_name = models.TextField(null=True, blank=True, default='')
     location = models.TextField(null=True, blank=True, default='both')
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -284,6 +286,7 @@ class PVModel(models.Model):
     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
@@ -388,67 +391,68 @@ class StorageModel(models.Model):
 
 
 class GeneratorModel(models.Model):
-        # Inputs
-        run_uuid = models.UUIDField(unique=True)
-        existing_kw = models.FloatField(null=True, blank=True, default=0)
-        min_kw = models.FloatField(default=0)
-        max_kw = models.FloatField(null=True, blank=True)
-        installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-        om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-        om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
-        diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
-        fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
-        fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
-        fuel_avail_gal = models.FloatField(null=True, blank=True,)
-        min_turn_down_pct = models.FloatField(null=True, blank=True)
-        generator_only_runs_during_grid_outage = models.BooleanField(default=True)
-        generator_sells_energy_back_to_grid = models.BooleanField(default=False)
-        macrs_option_years = models.IntegerField(null=True, blank=True)
-        macrs_bonus_pct = models.FloatField(null=True, blank=True)
-        macrs_itc_reduction = models.FloatField(null=True, blank=True)
-        federal_itc_pct = models.FloatField(null=True, blank=True)
-        state_ibi_pct = models.FloatField(null=True, blank=True)
-        state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-        utility_ibi_pct = models.FloatField(null=True, blank=True)
-        utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-        federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-        utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-        pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-        pbi_max_us_dollars = models.FloatField(null=True, blank=True)
-        pbi_years = models.FloatField(null=True, blank=True)
-        pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    min_kw = models.FloatField(default=0)
+    max_kw = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
+    diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
+    fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
+    fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
+    fuel_avail_gal = models.FloatField(null=True, blank=True,)
+    min_turn_down_pct = models.FloatField(null=True, blank=True)
+    generator_only_runs_during_grid_outage = models.BooleanField(default=True)
+    generator_sells_energy_back_to_grid = models.BooleanField(default=False)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
+    macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    federal_itc_pct = models.FloatField(null=True, blank=True)
+    state_ibi_pct = models.FloatField(null=True, blank=True)
+    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_ibi_pct = models.FloatField(null=True, blank=True)
+    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    pbi_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_years = models.FloatField(null=True, blank=True)
+    pbi_system_max_kw = models.FloatField(null=True, blank=True)
 
-        # Outputs
-        fuel_used_gal = models.FloatField(null=True, blank=True)
-        fuel_used_gal_bau = models.FloatField(null=True, blank=True)
-        size_kw = models.FloatField(null=True, blank=True)
-        average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
-        average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
-        year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-        year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                         blank=True)
-        year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    # Outputs
+    fuel_used_gal = models.FloatField(null=True, blank=True)
+    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    size_kw = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                     blank=True)
+    year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
-        @classmethod
-        def create(cls, **kwargs):
-            obj = cls(**kwargs)
-            obj.save()
-
-            return obj
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 
 class MessageModel(models.Model):
@@ -692,10 +696,8 @@ class ModelManager(object):
                         del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
-
-        # add try/except for get fail / bad run_uuid
+        
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator', 'Wind']
-
         resp = dict()
         resp['outputs'] = dict()
         resp['outputs']['Scenario'] = dict()
@@ -709,9 +711,10 @@ class ModelManager(object):
             scenario_model = ScenarioModel.objects.get(run_uuid=run_uuid)
         except Exception as e:
             if isinstance(e, models.ObjectDoesNotExist):
-                resp['messages']['error'] = "run_uuid {} not in database. "\
-                                            "You may have hit the results endpoint too quickly after POST'ing scenario, "\
-                                            "you may have a typo in your run_uuid, or the scenario was deleted.".format(run_uuid)
+                resp['messages']['error'] = (
+                    "run_uuid {} not in database. "
+                    "You may have hit the results endpoint too quickly after POST'ing scenario, "
+                    "you may have a typo in your run_uuid, or the scenario was deleted.").format(run_uuid)
                 resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
