@@ -59,7 +59,6 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         super(CashFlowTest, self).setUp()
-
         self.example_reopt_request_data = json.loads(open('proforma/tests/test_data.json').read())
         self.submit_url = '/v1/job/'
         self.results_url = '/v1/job/<run_uuid>/results/'
@@ -68,8 +67,8 @@ class CashFlowTest(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         initial_post = self.api_client.post(self.submit_url, format='json', data=data)
         uuid = json.loads(initial_post.content)['run_uuid']
-
         response = json.loads(self.api_client.get(self.results_url.replace('<run_uuid>', str(uuid))).content)
+        return response
 
     def test_bad_run_uuid(self):
         run_uuid = "5"

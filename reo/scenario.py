@@ -48,7 +48,6 @@ class ScenarioTask(Task):
     """
     Used to define custom Error handling for celery task
     """
-
     name = 'scenario'
     max_retries = 0
 
@@ -62,7 +61,6 @@ class ScenarioTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
         if isinstance(exc, REoptError):
@@ -87,7 +85,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
     :param inputs_dict: validated POST of input parameters
     """
 
-    self.profiler = Profiler()
+    profiler = Profiler()
     inputs_path = os.path.join(os.getcwd(), "input_files")
     self.run_uuid = run_uuid
     self.data = data
@@ -246,14 +244,14 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm_dict = vars(dfm)  # serialize for celery
 
         # delete python objects, which are not serializable
-        for k in ['storage', 'site', 'elec_tariff', 'pvs', 'pvnms'] + dfm.available_techs:
+        for k in ['storage', 'site', 'elec_tariff', 'pvs', 'pvnms', 'load'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 
         self.data = data
-        self.profiler.profileEnd()
+        profiler.profileEnd()
         tmp = dict()
-        tmp['setup_scenario_seconds'] = self.profiler.getDuration()
+        tmp['setup_scenario_seconds'] = profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
         # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
