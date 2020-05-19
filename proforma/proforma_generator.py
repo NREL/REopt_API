@@ -1,6 +1,6 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel, LoadProfileModel
+from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -43,7 +43,6 @@ def generate_proforma(scenariomodel, output_file_path):
     generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
     electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
     financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
-    loadprofile = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
     if financial.two_party_ownership is True:
@@ -1258,7 +1257,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     start_om_row = current_row
 
-    if not financial.two_party_ownership:  # Bill moves to Host cashflow for two party
+    if not financial.two_party_ownership:  # Bill and export credit move to Host cashflow for two party
         dcs['A{}'.format(current_row)] = "Electricity bill with system before export credits"
 
         for year in range(1, financial.analysis_years + 1):
@@ -1270,17 +1269,17 @@ def generate_proforma(scenariomodel, output_file_path):
                            number_format='#,##0', border=no_border)
         current_row += 1
 
-    dcs['A{}'.format(current_row)] = "Export credits with system"
+        dcs['A{}'.format(current_row)] = "Export credits with system"
 
-    for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
-            '={year_one_credits} * (1 + {escalation_pct}/100)^{year}'.format(
-                year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
-                pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '={year_one_credits} * (1 + {escalation_pct}/100)^{year}'.format(
+                    year_one_credits=year_one_credits_cell, year=year, escalation_pct=escalation_pct_cell,
+                    pv_degradation_rate=pv_cell_locations[0]["pv_degradation_rate_cell"])
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
 
-    current_row += 1
     dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)

@@ -35,15 +35,5 @@ class Migration(migrations.Migration):
             model_name='generatormodel',
             name='year_one_fixed_om_cost_us_dollars',
             field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='pvmodel',
-            name='prod_factor_series_kw',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True), default=list, size=None),
-        ),
-        migrations.AddField(
-            model_name='windmodel',
-            name='prod_factor_series_kw',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True), default=list, size=None),
-        ),
+        )
     ]

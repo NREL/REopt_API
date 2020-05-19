@@ -270,7 +270,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
                         message = 'PV Watts could not locate a dataset station within the search radius'
                         radius = data['inputs']['Scenario']["Site"]["PV"][0].get("radius") or 0
                         if radius > 0:
-                            message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                            message += (". A search radius of {} miles was used for the NSRDB dataset (covering the "
+                                "continental US, HI and parts of AK). A search radius twice as large ({} miles) was also used "
+                                "to query an international dataset. See https://maps.nrel.gov/nsrdb-viewer/ for a map of "
+                                "dataset availability or https://nsrdb.nrel.gov/ for dataset documentation.").format(radius, radius*2)
+                        else:
+                            message += (" from the NSRDB or international datasets. No search threshold was specified when "
+                                        "attempting to pull solar resource data from either dataset.")
                         raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
