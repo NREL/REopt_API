@@ -292,6 +292,7 @@ class PVModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -588,8 +589,7 @@ class ModelManager(object):
         :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
         :return: None
         """
-        d = data["outputs"]["Scenario"]
-        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        d = data["outputs"]["Scenario"] 
         ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
@@ -603,7 +603,8 @@ class ModelManager(object):
         WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
-
+        # Do this last so that the status does not change to optimal before the rest of the results are filled in
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
@@ -681,7 +682,7 @@ class ModelManager(object):
                                 if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
                                     if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
                                         resp['inputs']['Scenario']['Site'][site_key][i][k] = \
-                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]
+                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]                                    
                                 if k not in ['pv_name']:
                                     del resp['outputs']['Scenario']['Site'][site_key][i][k]
 
@@ -693,6 +694,8 @@ class ModelManager(object):
                             if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
                                 resp['inputs']['Scenario']['Site'][site_key][k] = \
                                     resp['inputs']['Scenario']['Site'][site_key][k][0]
+                            elif len(resp['inputs']['Scenario']['Site'][site_key][k]) == 0:
+                                del resp['inputs']['Scenario']['Site'][site_key][k] 
                         del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
