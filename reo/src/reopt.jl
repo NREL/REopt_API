@@ -437,12 +437,18 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum( dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep ) <= 
 				p.FuelLimit[f]
 				)
+	#print("Fuel Limit Con: ")	
+	#println(TotalFuelConsumptionCon[:])
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
 	@constraint(REopt, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 				dvFuelUsage[t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts]) + 
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
+	#print("Fuel Burn Con: ")		
+	#println(FuelBurnCon[:,17])
+	#print("Time steps without grid:")
+	#println(p.TimeStepsWithoutGrid)
 	
 	#if !isempty(CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
@@ -1029,10 +1035,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	else
 		@constraint(REopt, MinChargeAddCon, MinChargeAdder == 0)
     end
-	print("Total Min Charge: ")
-	println(TotalMinCharge)
-	print("Min Charge Adder Con: ")
-	println(MinChargeAddCon)
+	#print("Total Min Charge: ")
+	#println(TotalMinCharge)
+	#print("Min Charge Adder Con: ")
+	#println(MinChargeAddCon)
 	
 	### Alternate constraint (13): Monthly minimum charge adder
 	
@@ -1222,14 +1228,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         results["PV1"] = Dict()
         results["pv_kw"] = round(value(sum(dvSize[t] for t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[ts in p.TimeStep],
-                    sum(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage))
+                    sum(vec(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage)))
     end
 
     if !isempty(WindTechs)
         results["Wind"] = Dict()
         results["wind_kw"] = round(value(sum(dvSize[t] for t in WindTechs)), digits=4)
         @expression(REopt, WINDtoBatt[ts in p.TimeStep],
-                    sum(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage))
+                    sum(vec(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage)))
     end
 
 	results["gen_net_fixed_om_costs"] = 0
