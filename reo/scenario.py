@@ -63,11 +63,12 @@ class ScenarioTask(Task):
         :param einfo: ExceptionInfo instance, containing the traceback.
         :return: None, The return value of this handler is ignored.
         """
-        if isinstance(exc, REoptError):
-            exc.save_to_db()
-            msg = exc.message
-        else:
-            msg = exc.args[0]
+        if not isinstance(exc, REoptError):
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exc = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=kwargs['run_uuid'],
+                              user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
+        msg = exc.message
+        exc.save_to_db()
         self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
@@ -151,66 +152,61 @@ def setup_scenario(self, run_uuid, data, raw_post):
                             **inputs_dict["Site"]["Generator"])
 
 
-        try:
-            if 'gen' in locals():
-                lp = LoadProfile(dfm=dfm,
-                                 user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                                 latitude=inputs_dict['Site'].get('latitude'),
-                                 longitude=inputs_dict['Site'].get('longitude'),
-                                 pvs=pvs,
-                                 analysis_years=site.financial.analysis_years,
-                                 time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                                 fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
-                                 gen_existing_kw=gen.existing_kw,
-                                 gen_min_turn_down=gen.min_turn_down,
-                                 fuel_slope=gen.fuel_slope,
-                                 fuel_intercept=gen.fuel_intercept,
-                                 **inputs_dict['Site']['LoadProfile'])
-            else:
-                lp = LoadProfile(dfm=dfm,
-                                 user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
-                                 latitude=inputs_dict['Site'].get('latitude'),
-                                 longitude=inputs_dict['Site'].get('longitude'),
-                                 pvs=pvs,
-                                 analysis_years=site.financial.analysis_years,
-                                 time_steps_per_hour=inputs_dict['time_steps_per_hour'],
-                                 fuel_avail_before_outage=0,
-                                 gen_existing_kw=0,
-                                 gen_min_turn_down=0,
-                                 fuel_slope=0,
-                                 fuel_intercept=0,
-                                 **inputs_dict['Site']['LoadProfile'])
+        if 'gen' in locals():
+            lp = LoadProfile(dfm=dfm,
+                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                             latitude=inputs_dict['Site'].get('latitude'),
+                             longitude=inputs_dict['Site'].get('longitude'),
+                             pvs=pvs,
+                             analysis_years=site.financial.analysis_years,
+                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                             fuel_avail_before_outage=gen.fuel_avail*gen.fuel_avail_before_outage_pct,
+                             gen_existing_kw=gen.existing_kw,
+                             gen_min_turn_down=gen.min_turn_down,
+                             fuel_slope=gen.fuel_slope,
+                             fuel_intercept=gen.fuel_intercept,
+                             **inputs_dict['Site']['LoadProfile'])
+        else:
+            lp = LoadProfile(dfm=dfm,
+                             user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
+                             latitude=inputs_dict['Site'].get('latitude'),
+                             longitude=inputs_dict['Site'].get('longitude'),
+                             pvs=pvs,
+                             analysis_years=site.financial.analysis_years,
+                             time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                             fuel_avail_before_outage=0,
+                             gen_existing_kw=0,
+                             gen_min_turn_down=0,
+                             fuel_slope=0,
+                             fuel_intercept=0,
+                             **inputs_dict['Site']['LoadProfile'])
 
-            # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
-            # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
-            # correct loads falling between the threshold and zero.
+        # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
+        # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
+        # correct loads falling between the threshold and zero.
 
-            #Default tolerance +
-            negative_load_tolerance = -0.1 
-            # If there is existing PV update the default tolerance based on capacity
-            if pvs is not None: 
-                existing_pv_kw = 0
-                for pv in pvs:
-                    if getattr(pv,'existing_kw',0) > 0:
-                        existing_pv_kw += pv.existing_kw
-                
-                negative_load_tolerance = min(negative_load_tolerance, existing_pv_kw * -0.005) #kw
+        #Default tolerance +
+        negative_load_tolerance = -0.1 
+        # If there is existing PV update the default tolerance based on capacity
+        if pvs is not None: 
+            existing_pv_kw = 0
+            for pv in pvs:
+                if getattr(pv,'existing_kw',0) > 0:
+                    existing_pv_kw += pv.existing_kw
+            
+            negative_load_tolerance = min(negative_load_tolerance, existing_pv_kw * -0.005) #kw
 
-            # If values in the load profile fall below the tolerance, raise an exception
-            if min(lp.load_list) < negative_load_tolerance:
-                message = ("After adding existing generation to the load profile there were still negative electricity "
-                           "loads. Loads (non-net) must be equal to or greater than 0.")
-                raise LoadProfileError(message, None, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
-     
-            # Correct load profile values that fall between the tolerance and 0
-            lp.load_list = [0 if ((x>negative_load_tolerance) and (x<0)) else x for x in lp.load_list]
-
-        except Exception as lp_error:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            log.error("Scenario.py raising error: " + exc_value.args[0])
-            lp_error = LoadProfileError(exc_value.args[0], exc_traceback, self.name, run_uuid, user_uuid=inputs_dict.get('user_uuid'))
+        # If values in the load profile fall below the tolerance, raise an exception
+        if min(lp.load_list) < negative_load_tolerance:
+            message = ("After adding existing generation to the load profile there were still negative electricity "
+                       "loads. Loads (non-net) must be equal to or greater than 0.")
+            log.error("Scenario.py raising error: " + message)
+            lp_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
             lp_error.save_to_db()
             raise lp_error
+ 
+        # Correct load profile values that fall between the tolerance and 0
+        lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
@@ -259,7 +255,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception as e:
         if isinstance(e, LoadProfileError):
-                raise e
+            raise e
 
         if hasattr(e, 'args'):
             if len(e.args) > 0:
