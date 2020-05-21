@@ -135,6 +135,7 @@ class DataManager:
         self.generator = generator
 
         if self.generator.existing_kw > 0:
+                
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
             # bau_techs will never have more than 1 entry for 'generator'
@@ -588,18 +589,14 @@ class DataManager:
         techs_charging_storage = list()
 
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
                 om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
-
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
-
-                else:
-                        charge_efficiency.append(self.storage.rectifier_efficiency_pct *
+                    
+                charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
 
                 if eval('self.' + tech + '.can_serve("storage")'):
@@ -617,14 +614,14 @@ class DataManager:
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-
+                        
                         for pf in eval('self.' + tech + '.prod_factor'):
                             prod_factor.append(float(pf))
-
+                            
                         tech_to_load.append(1)
 
                     else:
-
+                        
                         for _ in range(self.n_timesteps):
                             prod_factor.append(float(0.0))
 
@@ -643,7 +640,7 @@ class DataManager:
                             tech_to_location.append(0)
                     else:
                         tech_to_location.append(0)
-
+        
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
@@ -909,7 +906,7 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
 
-        subdivisions = ['CapCost','FuelBurn']
+        subdivisions = ['CapCost']
         fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
         fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
@@ -928,7 +925,7 @@ class DataManager:
 
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
-
+        
         segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments_list]
         segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments_list_bau]
 
