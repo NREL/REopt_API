@@ -151,8 +151,9 @@ class FinancialModel(models.Model):
 class LoadProfileModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    doe_reference_name = models.TextField(null=True, blank=True, default='')
-    annual_kwh = models.FloatField(null=True, blank=True)
+    doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
+    annual_kwh = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list)
     year = models.IntegerField(default=2018)
     monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=list)
     loads_kw = ArrayField(models.FloatField(blank=True), default=list)
