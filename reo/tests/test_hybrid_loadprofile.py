@@ -7,11 +7,9 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         """
-        Testing space-constrained ground and roof mount PV systems.
-        A site with 0.25 acre translates to room for 41.67 kW
-        and 1,000 SF of roof translates to room for 10 kW,
-            plus 5 kW of existing roof mount we should get a total of 15 kW on the roof
-        (using acres_per_kw = 6e-3, kw_per_square_foot = 0.01).
+        Testing electric hybrid load profile funtionality where `annual_kwh` and
+        'doe_reference` are sent as list inputs with `percent_share` for calculating
+        weighted average based hybrid load profile
         """
         super(TestHybridLoadProfile, self).setUp()
 

@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
 from .nested_inputs import nested_input_definitions, list_of_float, list_of_str
+# Note: list_of_float is actually needed
 import os
 import csv
 import copy
@@ -51,7 +52,9 @@ class URDB_RateValidator:
         """
         Takes a dictionary parsed from a URDB Rate Json response
         - See http://en.openei.org/services/doc/rest/util_rates/?version=3
+
         Rates may or mat not have the following keys:
+
             label                       Type: string
             utility                     Type: string
             name                        Type: string
@@ -480,6 +483,7 @@ class ValidateNestedInput:
         """
         Checks that all keys (i.e. Scenario, Site) are valid dicts or lists. This function only checks object names
         and does not validate attributes
+
         :param nested_dictionary_to_check: data to be validated; default is self.input_dict
         :param object_name_path: list of str, used to keep track of keys necessary to access a value to check in the
               nested_template / nested_dictionary_to_check
@@ -795,6 +799,7 @@ class ValidateNestedInput:
                             input_isDict=None):
         """
         checks special input requirements not otherwise programatically captured by nested input definitions
+
         :param object_name_path: list of str, location of an object in self.input_dict being validated,
             eg. ["Scenario", "Site", "PV"]
         :param template_values: reference dictionary for checking real_values, for example
@@ -826,17 +831,12 @@ class ValidateNestedInput:
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
                                            "PV", "prod_factor_series_kw",
-                                           self.input_dict['Scenario']['time_steps_per_hour'], number=number,
-                                           input_isDict=input_isDict)
+                                           self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "Wind":
-            if real_values['max_kw'] is None and real_values['min_kw'] is not None:
-                # If user set a non-default min_kw for Wind assume they want to run Wind and reset the max_kw so that wind will be run
-                if real_values['min_kw'] > 0:
-                    self.update_attribute_value(object_name_path, number, 'max_kw', max_big_number)
-
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
+
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
                                            "Wind", "prod_factor_series_kw",
@@ -865,8 +865,8 @@ class ValidateNestedInput:
                             """
                             size_class is determined by average load. If using simulated load, then we have to get the ASHRAE
                             climate zone from the DeveloperREOapi in order to determine the load profile (done in BuiltInProfile).
-                            In order to avoid redundant external API calls, when using the BuiltInProfile here we save the 
-                            BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be 
+                            In order to avoid redundant external API calls, when using the BuiltInProfile here we save the
+                            BuiltInProfile in the inputs as though a user passed in the profile as their own. This logic used to be
                             handled in reo.src.load_profile, but due to the need for the average load here, the work-flow has been
                             modified.
                             """
@@ -932,7 +932,7 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Generator":
             if self.isValid:
-                if real_values["max_kw"] > 0 or real_values["existing_kw"] > 0:
+                if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
                     gen = real_values
@@ -943,7 +943,6 @@ class ValidateNestedInput:
                         gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
-
             if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                 if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
                     self.input_data_errors.append(
@@ -952,8 +951,8 @@ class ValidateNestedInput:
             if len(real_values.get('percent_share')) > 0:
                 percent_share_sum = sum(real_values['percent_share'])
                 if percent_share_sum != 100.0:
-                    self.input_data_errors.append(
-                        'The sum of elements of percent share list for hybrid load profile should be 100.')
+                    self.input_data_errors.append('The sum of elements of percent share list for hybrid load profile should be 100.')
+
 
             if real_values.get('annual_kwh') is not None:
                 if type(real_values['annual_kwh']) is not list:
@@ -961,13 +960,11 @@ class ValidateNestedInput:
 
             if real_values.get('doe_reference_name') is not None:
                 if type(real_values['doe_reference_name']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name',
-                                                [real_values['doe_reference_name']])
+                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
 
                 if len(real_values.get('doe_reference_name')) > 1:
                     if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
-                        self.input_data_errors.append(
-                            'The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
+                        self.input_data_errors.append('The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
 
                     if real_values.get('annual_kwh') is not None:
                         if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
@@ -1008,17 +1005,18 @@ class ValidateNestedInput:
                 monthly_demand = electric_tariff.get('blended_monthly_demand_charges_us_dollars_per_kw', True)
                 urdb_rate = electric_tariff.get('urdb_response', True)
 
-                if monthly_demand is True or monthly_energy is True or urdb_rate is True:
+                if monthly_demand == True or monthly_energy == True or urdb_rate == True:
                     missing_keys = []
-                    if monthly_demand is True:
+                    if monthly_demand == True:
                         missing_keys.append('blended_monthly_demand_charges_us_dollars_per_kw')
-                    if monthly_energy is True:
+                    if monthly_energy == True:
                         missing_keys.append('blended_monthly_rates_us_dollars_per_kwh')
-                    if urdb_rate is True:
+                    if urdb_rate == True:
                         missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
-                    self.input_data_errors.append((
-                                                      'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
-                                                      'following inputs: {}').format(', '.join(missing_keys)))
+
+                    self.input_data_errors.append(
+                        'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the following inputs: {}'.format(
+                            ', '.join(missing_keys)))
 
             for blended in ['blended_monthly_demand_charges_us_dollars_per_kw',
                             'blended_monthly_rates_us_dollars_per_kwh']:
@@ -1048,28 +1046,24 @@ class ValidateNestedInput:
                     if urdb_rate is True:
                         missing_keys.append("urdb_response OR urdb_label OR urdb_utility_name and urdb_rate_name")
                     self.input_data_errors.append((
-                                                      'add_tou_energy_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
+                                                      'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                                                       'following inputs: {}').format(', '.join(missing_keys)))
 
             for key_name in ['wholesale_rate_us_dollars_per_kwh', 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
                 if type(electric_tariff.get(key_name)) == list:
-                    ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
-                                  self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
-                    if len(electric_tariff.get(key_name)) == 1:
-                        self.update_attribute_value(object_name_path, number, key_name,
-                                                    electric_tariff.get(key_name) * 8760 * ts_per_hour)
+                    ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
+                    if len(electric_tariff.get(key_name)) ==1:
+                        self.update_attribute_value(object_name_path, number, key_name, electric_tariff.get(key_name) * 8760 * ts_per_hour)
                     else:
-                        self.validate_8760(attr=electric_tariff.get(key_name), obj_name=object_name_path[-1],
-                                           attr_name=key_name,
-                                           time_steps_per_hour=ts_per_hour, number=number,
-                                           input_isDict=input_isDict)
+                        self.validate_8760(attr=electric_tariff.get(key_name), obj_name=object_name_path[-1], attr_name=key_name,
+                                                   time_steps_per_hour=ts_per_hour, number=number,
+                                                   input_isDict=input_isDict)
 
         if object_name_path[-1] == "LoadProfile":
             for lp in ['critical_loads_kw', 'loads_kw']:
                 if real_values.get(lp) not in [None, []]:
                     self.validate_8760(real_values.get(lp), "LoadProfile", lp,
-                                       self.input_dict['Scenario']['time_steps_per_hour'],
-                                       number=number, input_isDict=input_isDict)
+                                       self.input_dict['Scenario']['time_steps_per_hour'])
                     isnet = real_values.get(lp + '_is_net')
                     if isnet is None:
                         isnet = True
@@ -1110,11 +1104,11 @@ class ValidateNestedInput:
                     if "list_of_float" in data_validators['type'] and isinstance(value, list):
                         if data_validators.get('min') is not None:
                             if any([v < data_validators['min'] for v in value]):
-                                if input_isDict == True or input_isDict == None:
+                                if input_isDict or input_isDict is None:
                                     self.input_data_errors.append(
                                         'At least one value in %s (from %s) exceeds allowable min of %s' % (
                                             name, self.object_name_string(object_name_path), data_validators['min']))
-                                if input_isDict == False:
+                                if input_isDict is False:
                                     self.input_data_errors.append(
                                         'At least one value in %s (from %s number %s) exceeds allowable min of %s' % (
                                             name, self.object_name_string(object_name_path), number,
@@ -1122,11 +1116,11 @@ class ValidateNestedInput:
 
                         if data_validators.get('max') is not None:
                             if any([v > data_validators['max'] for v in value]):
-                                if input_isDict == True or input_isDict == None:
+                                if input_isDict or input_isDict is None:
                                     self.input_data_errors.append(
                                         'At least one value in %s (from %s) exceeds allowable max of %s' % (
                                             name, self.object_name_string(object_name_path), data_validators['max']))
-                                if input_isDict == False:
+                                if input_isDict is False:
                                     self.input_data_errors.append(
                                         'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                             name, self.object_name_string(object_name_path), number,
@@ -1213,7 +1207,6 @@ class ValidateNestedInput:
                                 series = pd.Series(value)
                                 if series.isnull().values.any():
                                     raise NotImplementedError
-
                                 new_value = list_of_float(value)
                             except ValueError:
                                 if input_isDict or input_isDict is None:
@@ -1252,6 +1245,7 @@ class ValidateNestedInput:
                             attribute_type = 'float'
                             make_array = True
 
+
                     if isinstance(attribute_type, list) and \
                             all([x in attribute_type for x in ['str', 'list_of_str']]):
                         if isinstance(value, list):
@@ -1265,30 +1259,24 @@ class ValidateNestedInput:
                                 if input_isDict or input_isDict is None:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s to list of strings' % (name, value,
-                                                                                                self.object_name_string(
-                                                                                                    object_name_path))
+                                                         self.object_name_string(object_name_path))
                                     )
                                 if input_isDict is False:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s (number %s) to list of strings' % (name, value,
-                                                                                                            self.object_name_string(
-                                                                                                                object_name_path),
-                                                                                                            number)
+                                                         self.object_name_string(object_name_path), number)
                                     )
                                 continue  # both continue statements should be in a finally clause, ...
                             except NotImplementedError:
                                 if input_isDict or input_isDict is None:
                                     self.input_data_errors.append(
                                         '%s in %s contains at least one NaN value.' % (name,
-                                                                                       self.object_name_string(
-                                                                                           object_name_path))
+                                        self.object_name_string(object_name_path))
                                     )
                                 if input_isDict is False:
                                     self.input_data_errors.append(
                                         '%s in %s (number %s) contains at least one NaN value.' % (name,
-                                                                                                   self.object_name_string(
-                                                                                                       object_name_path),
-                                                                                                   number)
+                                        self.object_name_string(object_name_path), number)
                                     )
                                 continue  # both continue statements should be in a finally clause, ...
                             else:
@@ -1323,11 +1311,11 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number, name, new_value)
                         else:
                             if value not in [True, False, 1, 0]:
-                                if input_isDict == True or input_isDict == None:
+                                if input_isDict or input_isDict is None:
                                     self.input_data_errors.append('Could not convert %s (%s) in %s to %s' % (
                                         name, value, self.object_name_string(object_name_path),
                                         str(attribute_type).split(' ')[1]))
-                                if input_isDict == False:
+                                if input_isDict is False:
                                     self.input_data_errors.append(
                                         'Could not convert %s (%s) in %s (number %s) to %s' % (
                                             name, value, self.object_name_string(object_name_path), number,
@@ -1399,8 +1387,7 @@ class ValidateNestedInput:
         """
         final_message = ''
 
-        # conditional check for complex cases where replacements are available for attributes and there are
-        # dependent attributes (annual_kwh and doe_reference_building_name)
+        # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
         all_missing_attribute_sets = []
 
         for key, value in template_values.items():
@@ -1463,10 +1450,10 @@ class ValidateNestedInput:
                 final_message = message
 
         if final_message != '':
-            if input_isDict == True or input_isDict == None:
+            if input_isDict or input_isDict is None:
                 self.input_data_errors.append(
                     'Missing Required for %s: %s' % (self.object_name_string(object_name_path), final_message))
-            if input_isDict == False:
+            if input_isDict is False:
                 self.input_data_errors.append('Missing Required for %s (number %s): %s' % (
                 self.object_name_string(object_name_path), number, final_message))
 
@@ -1516,7 +1503,7 @@ class ValidateNestedInput:
                                "wholesale_rate_above_site_load_us_dollars_per_kwh"]:
                 if time_steps_per_hour != n / 8760:
                     if time_steps_per_hour == 2 and n / 8760 == 4:
-                        if input_isDict is True or input_isDict is None:
+                        if input_isDict or input_isDict is None:
                             self.resampled_inputs.append(
                                 [
                                     "Downsampled {} from 15 minute resolution to 30 minute resolution to match time_steps_per_hour via average.".format(
@@ -1531,7 +1518,7 @@ class ValidateNestedInput:
                         series = series.resample('30T').mean()
                         resampled_val = series.tolist()
                     elif time_steps_per_hour == 4 and n / 8760 == 2:
-                        if input_isDict is True or input_isDict is None:
+                        if input_isDict or input_isDict is None:
                             self.resampled_inputs.append(
                                 [
                                     "Upsampled {} from 30 minute resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(
@@ -1544,7 +1531,7 @@ class ValidateNestedInput:
 
                         resampled_val = [x for x in attr for _ in [1, 2]]
                     elif time_steps_per_hour == 4 and n / 8760 == 1:
-                        if input_isDict is True or input_isDict is None:
+                        if input_isDict or input_isDict is None:
                             self.resampled_inputs.append(
                                 [
                                     "Upsampled {} from hourly resolution to 15 minute resolution to match time_steps_per_hour via forward-fill.".format(
@@ -1557,7 +1544,7 @@ class ValidateNestedInput:
 
                         resampled_val = [x for x in attr for _ in [1, 2, 3, 4]]
                     else:  # time_steps_per_hour == 2 and n/8760 == 1:
-                        if input_isDict is True or input_isDict is None:
+                        if input_isDict or input_isDict is None:
                             self.resampled_inputs.append(
                                 [
                                     "Upsampled {} from hourly resolution to 30 minute resolution to match time_steps_per_hour via forward-fill.".format(
@@ -1576,7 +1563,7 @@ class ValidateNestedInput:
 
         elif n in [17520, 35040]:
             resolution_minutes = int(60 / (n / 8760))
-            if input_isDict is True or input_isDict is None:
+            if input_isDict or input_isDict is None:
                 self.resampled_inputs.append(
                     [
                         "Downsampled {} from {} minute resolution to hourly resolution to match time_steps_per_hour via average.".format(
@@ -1592,7 +1579,7 @@ class ValidateNestedInput:
             series = series.resample('1H').mean()
             self.update_attribute_value(["Scenario", "Site", obj_name], number, attr_name, series.tolist())
         else:
-            if input_isDict is True or input_isDict is None:
+            if input_isDict or input_isDict is None:
                 self.input_data_errors.append(
                     "Invalid length for {}. Samples must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)".format(
                         attr_name))
