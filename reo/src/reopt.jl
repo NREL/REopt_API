@@ -47,9 +47,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	end
 	
 	TempGridExportRates = Dict()
-	for ts in p.TimeStep
-		TempGridExportRates[1,ts] = maximum(p.ExportRates[:,"1W",ts])
-		TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
+	if !isempty(p.Tech)
+		for ts in p.TimeStep
+			TempGridExportRates[1,ts] = maximum(p.ExportRates[:,"1W",ts])
+			TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
+		end
+	else
+		TempGridExportRates[1,ts] = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
+		TempGridExportRates[2,ts] = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 	end
 	
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
