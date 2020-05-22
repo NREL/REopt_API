@@ -45,7 +45,7 @@ struct Parameter
 	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
 	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
-	 TimeStepRatchetsMonth   #  H_m: Time steps in month m
+	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
      TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
@@ -300,11 +300,11 @@ function build_param(d::Dict)
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
 	#Storage = 1:1
-    Location = 1:3
+    Location = 1:length(d["MaxSizesLocation"])
 
     TurbineDerate = AxisArray(d["TurbineDerate"], d["Tech"])
     TechToLocation = parameter((d["Tech"], Location), d["TechToLocation"])
-    pwf_prod_incent = parameter(d["Tech"], d["pwf_prod_incent"])
+    pwf_prod_incent = AxisArray(d["pwf_prod_incent"], d["Tech"])
     LevelizationFactor = AxisArray(d["LevelizationFactor"], d["Tech"])
     LevelizationFactorProdIncent = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
     OMperUnitSize = AxisArray(d["OMperUnitSize"], d["Tech"])
@@ -313,7 +313,6 @@ function build_param(d::Dict)
     CapCostX = parameter((d["Tech"],Points), d["CapCostX"])
     MaxProdIncent = AxisArray(d["MaxProdIncent"], d["Tech"])
     MaxSizeForProdIncent = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
-    MaxSizesLocation = parameter(Location, d["MaxSizesLocation"])
     LoadProfile = parameter((d["Load"], TimeStep), d["LoadProfile"])
     MaxSize = AxisArray(d["MaxSize"], d["Tech"])
     TechClassMinSize = AxisArray(d["TechClassMinSize"], d["TechClass"])
@@ -321,11 +320,7 @@ function build_param(d::Dict)
     TimeStepRatchets = emptySetException(Ratchets, d["TimeStepRatchets"])
     DemandRates = emptySetException((Ratchets, DemandBin), d["DemandRates"], true)
     ExportRates = parameter((d["Tech"], d["Load"], TimeStep), d["ExportRates"])
-    TimeStepRatchetsMonth = parameter(Month, d["TimeStepRatchetsMonth"])
     DemandRatesMonth = parameter((Month, DemandMonthsBin), d["DemandRatesMonth"])
-    MaxDemandInTier = parameter(DemandBin, d["MaxDemandInTier"])
-    MaxDemandMonthsInTier = parameter(DemandMonthsBin, d["MaxDemandMonthsInTier"])
-    MaxUsageInTier = parameter(FuelBin, d["MaxUsageInTier"])
     NMILLimits = AxisArray(d["NMILLimits"], d["NMILRegime"])
     TechToNMILMapping = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
     OMcostPerUnitProd = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
@@ -340,7 +335,6 @@ function build_param(d::Dict)
     FuelBurnYInt = AxisArray(d["FuelBurnYInt"], d["Tech"])
     ProductionFactor = parameter((d["Tech"], TimeStep), d["ProductionFactor"])
     ProductionIncentiveRate = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
-    ElecLoad = parameter(TimeStep, d["ElecLoad"])
     FuelLimit = AxisArray(d["FuelLimit"], d["FuelType"])
     ChargeEfficiency = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
     GridChargeEfficiency = AxisArray(d["GridChargeEfficiency"], d["Storage"])
@@ -375,7 +369,7 @@ function build_param(d::Dict)
 				PricingTier,
                 d["NMILRegime"],
 
-                TimeStepRatchetsMonth,
+                d["TimeStepRatchetsMonth"],
                 TimeStepRatchets,
 				d["TimeStepsWithGrid"],
                 d["TimeStepsWithoutGrid"],
@@ -403,9 +397,9 @@ function build_param(d::Dict)
 
                 LoadProfile,
                 d["DemandLookbackPercent"],
-                MaxDemandInTier,
-                MaxDemandMonthsInTier,
-                MaxUsageInTier,
+                d["MaxDemandInTier"],
+                d["MaxDemandMonthsInTier"],
+                d["MaxUsageInTier"],
 
                 NMILLimits,
                 MaxProdIncent,
@@ -455,7 +449,7 @@ function build_param(d::Dict)
                 [d["MaxGridSales"]],  # TODO does MaxGridSales need to be an Array?
                 ProductionIncentiveRate,
                 ProductionFactor,
-                ElecLoad,
+                d["ElecLoad"],
                 FuelLimit,
                 ChargeEfficiency,
                 GridChargeEfficiency,
@@ -487,7 +481,7 @@ function build_param(d::Dict)
                 d["NonStorageSalesTiers"],
 
                 TechToLocation,
-                MaxSizesLocation
+                d["MaxSizesLocation"]
         )
 
     return param
@@ -533,18 +527,12 @@ function parameter(setTup::Tuple, data::AbstractArray)
     end
 end
 
-function parameter(set::UnitRange{Int64}, data::Float64)
-    return [data]
-end
 
 function parameter(setTup::Tuple{Array{Symbol,1}, UnitRange{Int64}}, data::Number)
     newTup = ([setTup[1][1], :FAKE], 1:2)
     return AxisArray(fill(data, 2, 2), newTup)
 end
 
-function parameter(set::Symbol, data::Int64)
-    return AxisArray([data], set)
-end
 
 """
     function parameter(set::Array{Any, 1}, data::Array{Any, 1})
