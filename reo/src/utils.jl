@@ -201,7 +201,6 @@ struct Parameter
 
 	 ### To be replaced  ###
 	 Load::Array{String,1}
-	 TechIsGrid
 	 
 	 ### Not used or used for calculation of other parameters ###
 	 two_party_factor::Float64 # Not used (?)
@@ -265,108 +264,6 @@ end
 
 
 function build_param(d::Dict)
-#           Tech,
-#           Load,
-#           TechClass,
-#           TechIsGrid,
-#           TechToLocation,
-#           MaxSizesLocation,
-#           TurbineDerate,
-#           NMILRegime,
-#           r_tax_owner,
-#           r_tax_offtaker,
-#           pwf_om,
-#           pwf_e,
-#           pwf_prod_incent,
-#           LevelizationFactor,
-#           LevelizationFactorProdIncent,
-#           StorageCostPerKW,
-#           StorageCostPerKWH,
-#           OMperUnitSize,
-#           CapCostSlope,
-#           CapCostYInt,
-#           CapCostX,
-#           MaxProdIncent,
-#           MaxSizeForProdIncent,
-#           two_party_factor,
-#           analysis_years,
-#           AnnualElecLoad,
-#           LoadProfile,
-#           StorageMinChargePcent,
-#           InitSOC,
-#           MaxSize,
-#           MinStorageSizeKW,
-#           MaxStorageSizeKW,
-#           MinStorageSizeKWH,
-#           MaxStorageSizeKWH,
-#           TechClassMinSize,
-#           MinTurndown,
-#           FixedMonthlyCharge,
-#           AnnualMinCharge,
-#           MonthlyMinCharge,
-#           ExportRates,
-#           TimeStepRatchetsMonth,
-#           DemandRatesMonth,
-#           DemandLookbackPercent,
-#           MaxDemandInTier,
-#           MaxDemandMonthsInTier,
-#           MaxUsageInTier,
-#           NMILLimits,
-#           TechToNMILMapping,
-#           DemandRates,
-#           TimeStepRatchets,
-#           DemandLookbackMonths,
-# 		  TimeStepsWithGrid,
-#           TimeStepsWithoutGrid,
-#           CapCostSegCount,
-#           FuelBinCount,
-#           DemandBinCount ,
-#           DemandMonthsBinCount,
-#           TimeStepCount,
-#           NumRatchets,
-#           TimeStepScaling,
-#           OMcostPerUnitProd,
-# 	      StoragePowerCost,
-# 	      StorageEnergyCost,
-# 	      FuelCost,
-# 	      ElecRate,
-# 	      GridExportRates,
-# 	      FuelBurnSlope,
-# 	      FuelBurnYInt,
-# 	      MaxGridSales,
-# 	      ProductionIncentiveRate,
-# 	      ProductionFactor,
-# 	      ElecLoad,
-# 	      FuelLimit,
-# 	      ChargeEfficiency,
-# 	      GridChargeEfficiency,
-# 	      DischargeEfficiency,
-# 	      StorageMinSizeEnergy,
-# 	      StorageMaxSizeEnergy,
-# 	      StorageMinSizePower,
-# 	      StorageMaxSizePower,
-# 	      StorageMinSOC,
-# 	      StorageInitSOC,
-# 		  SegmentMinSize,
-#           SegmentMaxSize,
-#           Storage,
-#           FuelType,
-#           Subdivision,
-#           PricingTierCount,
-#           ElecStorage,
-#           FuelTypeByTech,
-#           SubdivisionByTech,
-#           SegByTechSubdivision,
-#           TechsChargingStorage,
-#           TechsInClass,
-#           TechsByFuelType,
-#           ElectricTechs,
-#           FuelBurningTechs,
-#           TechsNoTurndown,
-#           SalesTiers,
-#           StorageSalesTiers,
-#           NonStorageSalesTiers,
-#           kwargs...
     can_be_empty = (
         "MaxSize",
         "OMperUnitSize",
@@ -405,8 +302,7 @@ function build_param(d::Dict)
 	#Storage = 1:1
     Location = 1:3
 
-    TechIsGrid = parameter(d["Tech"], d["TechIsGrid"])
-    TurbineDerate = parameter(d["Tech"], d["TurbineDerate"])
+    TurbineDerate = AxisArray(d["TurbineDerate"], d["Tech"])
     TechToLocation = parameter((d["Tech"], Location), d["TechToLocation"])
     pwf_prod_incent = parameter(d["Tech"], d["pwf_prod_incent"])
     LevelizationFactor = parameter(d["Tech"], d["LevelizationFactor"])
@@ -538,7 +434,6 @@ function build_param(d::Dict)
                 d["InitSOC"],
 
                 d["Load"],
-                TechIsGrid,
 
                 d["two_party_factor"],
                 d["analysis_years"],
