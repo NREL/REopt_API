@@ -538,15 +538,7 @@ function length(::Symbol)
     return 1
 end
 
-function AxisArray(data::Number, index::Array{Symbol, 1})
-    return AxisArray([float(data)], index)
-end
-
-function AxisArray(data::Float64, index::Array{String, 1})
-    return AxisArray([float(data)], index)
-end
-
-function AxisArray(data::Int64, index::Array{String, 1})
+function AxisArray(data::Number, index::Array{T, 1}) where T <: Union{Symbol, String}
     return AxisArray([float(data)], index)
 end
 
