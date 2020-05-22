@@ -1332,7 +1332,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     results["Load"] = p.ElecLoad
 	
-	results["model"] = REopt
+	#results["model"] = REopt
 
 	if termination_status(REopt) == MOI.TIME_LIMIT
 		status = "timed-out"
@@ -1344,42 +1344,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     results["status"] = status
 	
-	## Parameter values
-	results["p"] = p
-	results["np"] = Dict()
-	results["np"]["p.Tech"] = p.Tech
-	results["np"]["TempTechsByNMILRegime"] = TempTechsByNMILRegime
-	results["np"]["TempTechsNoTurndown"] = TempTechsNoTurndown
-	results["np"]["TempTechsTurndown"] = TempTechsTurndown
-	results["np"]["TempTechsByPricingTier"] = TempTechsByPricingTier
-	results["np"]["TempPricingTiersByTech"] = TempPricingTiersByTech
-	results["np"]["ElectricTechs"] = p.ElectricTechs
-	results["np"]["TempGridExportRates"] = TempGridExportRates
-	results["np"]["SalesTiers"] = p.SalesTiers
-	results["np"]["StorageSalesTiers"] = p.SalesTiers
-	results["dvSize"] = value.(dvSize)
-	results["dvRatedProduction"] = value.(dvRatedProduction)
-	results["dvGridPurchase"] = value.(dvGridPurchase)
-	results["dvProductionToGrid"] = value.(dvProductionToGrid)
-	results["dvProductionToStorage"] = value.(dvProductionToStorage)
-	results["dvStorageToGrid"] = value.(dvStorageToGrid)
-	results["dvGridToStorage"] = value.(dvGridToStorage)
-	results["dvDischargeFromStorage"] = value.(dvDischargeFromStorage)
-	results["dvStorageCapEnergy"] = value.(dvStorageCapEnergy)
-    results["dvStorageCapPower"] = value.(dvStorageCapPower)
-	results["dvStorageSOC"] = value.(dvStorageSOC)
-    results["dvProdIncent"] = value.(dvProdIncent)
-	results["dvPeakDemandE"] = value.(dvPeakDemandE)
-	results["dvPeakDemandEMonth"] = value.(dvPeakDemandEMonth)
-	
-	UseInTier = Array{Float64,2}(undef,12,4)
-	for m in p.Month
-		for u in p.PricingTier
-			UseInTier[m,u] = value(sum(dvGridPurchase[u,ts] for ts in p.TimeStepRatchetsMonth[m]))
-		end
-	end
-	
-	
+	#=
 	print("TotalTechCapCosts:")
 	println(value(TotalTechCapCosts))
 	print("TotalStorageCapCosts:")
@@ -1410,5 +1375,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	for m in 1:12
 		println(UseInTier[m,:])
 	end
+	=#
 	return results
 end
