@@ -1117,14 +1117,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         results["PV1"] = Dict()
         results["pv_kw"] = round(value(sum(dvSize[t] for t in PVTechs)), digits=4)
         @expression(REopt, PVtoBatt[ts in p.TimeStep],
-                    sum(vec(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage)))
+                    sum(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage))
     end
 
     if !isempty(WindTechs)
         results["Wind"] = Dict()
         results["wind_kw"] = round(value(sum(dvSize[t] for t in WindTechs)), digits=4)
         @expression(REopt, WINDtoBatt[ts in p.TimeStep],
-                    sum(vec(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage)))
+                    sum(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage))
     end
 
 	results["gen_net_fixed_om_costs"] = 0

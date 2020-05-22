@@ -222,7 +222,7 @@ struct Parameter
      GridExportRates
      FuelBurnSlope
      FuelBurnYInt
-     MaxGridSales
+     MaxGridSales::Array{<:Real, 1}
      ProductionIncentiveRate
      ProductionFactor
      ElecLoad
@@ -305,19 +305,19 @@ function build_param(d::Dict)
     TurbineDerate = AxisArray(d["TurbineDerate"], d["Tech"])
     TechToLocation = parameter((d["Tech"], Location), d["TechToLocation"])
     pwf_prod_incent = parameter(d["Tech"], d["pwf_prod_incent"])
-    LevelizationFactor = parameter(d["Tech"], d["LevelizationFactor"])
-    LevelizationFactorProdIncent = parameter(d["Tech"], d["LevelizationFactorProdIncent"])
-    OMperUnitSize = parameter(d["Tech"], d["OMperUnitSize"])
+    LevelizationFactor = AxisArray(d["LevelizationFactor"], d["Tech"])
+    LevelizationFactorProdIncent = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
+    OMperUnitSize = AxisArray(d["OMperUnitSize"], d["Tech"])
     CapCostSlope = parameter((d["Tech"], Seg), d["CapCostSlope"])
     CapCostYInt = parameter((d["Tech"], Seg), d["CapCostYInt"])
     CapCostX = parameter((d["Tech"],Points), d["CapCostX"])
-    MaxProdIncent = parameter(d["Tech"], d["MaxProdIncent"])
-    MaxSizeForProdIncent = parameter(d["Tech"], d["MaxSizeForProdIncent"])
+    MaxProdIncent = AxisArray(d["MaxProdIncent"], d["Tech"])
+    MaxSizeForProdIncent = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
     MaxSizesLocation = parameter(Location, d["MaxSizesLocation"])
     LoadProfile = parameter((d["Load"], TimeStep), d["LoadProfile"])
-    MaxSize = parameter(d["Tech"], d["MaxSize"])
-    TechClassMinSize = parameter(d["TechClass"], d["TechClassMinSize"])
-    MinTurndown = parameter(d["Tech"], d["MinTurndown"])
+    MaxSize = AxisArray(d["MaxSize"], d["Tech"])
+    TechClassMinSize = AxisArray(d["TechClassMinSize"], d["TechClass"])
+    MinTurndown = AxisArray(d["MinTurndown"], d["Tech"])
     TimeStepRatchets = emptySetException(Ratchets, d["TimeStepRatchets"])
     DemandRates = emptySetException((Ratchets, DemandBin), d["DemandRates"], true)
     ExportRates = parameter((d["Tech"], d["Load"], TimeStep), d["ExportRates"])
@@ -326,32 +326,31 @@ function build_param(d::Dict)
     MaxDemandInTier = parameter(DemandBin, d["MaxDemandInTier"])
     MaxDemandMonthsInTier = parameter(DemandMonthsBin, d["MaxDemandMonthsInTier"])
     MaxUsageInTier = parameter(FuelBin, d["MaxUsageInTier"])
-    NMILLimits = parameter(d["NMILRegime"], d["NMILLimits"])
+    NMILLimits = AxisArray(d["NMILLimits"], d["NMILRegime"])
     TechToNMILMapping = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
-    OMcostPerUnitProd = parameter(d["Tech"], d["OMcostPerUnitProd"])
+    OMcostPerUnitProd = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
 
     # Reformulation additions
-    StoragePowerCost = parameter(d["Storage"], d["StoragePowerCost"])
-    StorageEnergyCost = parameter(d["Storage"], d["StorageEnergyCost"])
-    FuelCost = parameter(d["FuelType"], d["FuelCost"])
+    StoragePowerCost = AxisArray(d["StoragePowerCost"], d["Storage"])
+    StorageEnergyCost = AxisArray(d["StorageEnergyCost"], d["Storage"])
+    FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
     ElecRate = parameter((PricingTier, TimeStep), d["ElecRate"])
     GridExportRates = parameter((PricingTier, TimeStep), d["GridExportRates"])
-    FuelBurnSlope = parameter(d["Tech"], d["FuelBurnSlope"])
-    FuelBurnYInt = parameter(d["Tech"], d["FuelBurnYInt"])
-    MaxGridSales = parameter(PricingTier, d["MaxGridSales"])
+    FuelBurnSlope = AxisArray(d["FuelBurnSlope"], d["Tech"])
+    FuelBurnYInt = AxisArray(d["FuelBurnYInt"], d["Tech"])
     ProductionFactor = parameter((d["Tech"], TimeStep), d["ProductionFactor"])
-    ProductionIncentiveRate = parameter(d["Tech"], d["ProductionIncentiveRate"])
+    ProductionIncentiveRate = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     ElecLoad = parameter(TimeStep, d["ElecLoad"])
-    FuelLimit = parameter(d["FuelType"], d["FuelLimit"])
+    FuelLimit = AxisArray(d["FuelLimit"], d["FuelType"])
     ChargeEfficiency = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
-    GridChargeEfficiency = parameter(d["Storage"], d["GridChargeEfficiency"])
-    DischargeEfficiency = parameter(d["Storage"], d["DischargeEfficiency"])
-    StorageMinSizeEnergy = parameter(d["Storage"], d["StorageMinSizeEnergy"])
-    StorageMaxSizeEnergy = parameter(d["Storage"], d["StorageMaxSizeEnergy"])
-    StorageMinSizePower = parameter(d["Storage"], d["StorageMinSizePower"])
-    StorageMaxSizePower = parameter(d["Storage"], d["StorageMaxSizePower"])
-    StorageMinSOC = parameter(d["Storage"], d["StorageMinSOC"])
-    StorageInitSOC = parameter(d["Storage"], d["StorageInitSOC"])
+    GridChargeEfficiency = AxisArray(d["GridChargeEfficiency"], d["Storage"])
+    DischargeEfficiency = AxisArray(d["DischargeEfficiency"], d["Storage"])
+    StorageMinSizeEnergy = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
+    StorageMaxSizeEnergy = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
+    StorageMinSizePower = AxisArray(d["StorageMinSizePower"], d["Storage"])
+    StorageMaxSizePower = AxisArray(d["StorageMaxSizePower"], d["Storage"])
+    StorageMinSOC = AxisArray(d["StorageMinSOC"], d["Storage"])
+    StorageInitSOC = AxisArray(d["StorageInitSOC"], d["Storage"])
     SegmentMinSize = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMinSize"])
     SegmentMaxSize = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMaxSize"])
 
@@ -453,7 +452,7 @@ function build_param(d::Dict)
                 GridExportRates,
                 FuelBurnSlope,
                 FuelBurnYInt,
-                MaxGridSales,
+                [d["MaxGridSales"]],  # TODO does MaxGridSales need to be an Array?
                 ProductionIncentiveRate,
                 ProductionFactor,
                 ElecLoad,
