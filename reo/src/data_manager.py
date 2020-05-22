@@ -1019,34 +1019,34 @@ class DataManager:
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency,
-	        'StorageMinSizeEnergy':self.storage.min_kwh,
-	        'StorageMaxSizeEnergy':self.storage.max_kwh,
-	        'StorageMinSizePower':self.storage.min_kw,
-	        'StorageMaxSizePower':self.storage.max_kw,
-	        'StorageMinSOC':self.storage.soc_min_pct,
-	        'StorageInitSOC':self.storage.soc_init_pct,
-            'SegmentMinSize':segment_min_size,
-            'SegmentMaxSize':segment_max_size,
+	        'StorageMinSizeEnergy': self.storage.min_kwh,
+	        'StorageMaxSizeEnergy': self.storage.max_kwh,
+	        'StorageMinSizePower': self.storage.min_kw,
+	        'StorageMaxSizePower': self.storage.max_kw,
+	        'StorageMinSOC': self.storage.soc_min_pct,
+	        'StorageInitSOC': self.storage.soc_init_pct,
+            'SegmentMinSize': segment_min_size,
+            'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
-            'Storage':['Elec'],
+            'Storage': ['Elec'],
             'FuelType': fuel_type,
-            'Subdivision':subdivisions,
-            'PricingTierCount':tariff_args.energy_tiers_num,
-            'ElecStorage':['Elec'],
+            'Subdivision': subdivisions,
+            'PricingTierCount': tariff_args.energy_tiers_num,
+            'ElecStorage': ['Elec'],
             'FuelTypeByTech': fuel_type_by_tech,
-            'SubdivisionByTech':subdivisions_by_tech,
-            'SegByTechSubdivision':seg_by_tech_subdivision,
-            'TechsChargingStorage':techs_charging_storage,
-            'TechsInClass':techs_in_class,
-            'TechsByFuelType':techs_by_fuel_type,
-            'ElectricTechs':reopt_techs,
-            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
-            'TechsNoTurndown':self.no_turndown_techs,
-            'SalesTiers':sales_tiers,
-            'StorageSalesTiers':storage_sales_tiers,
-            'NonStorageSalesTiers':non_storage_sales_tiers,
-            'TimeStepsWithGrid':time_steps_with_grid,
-            'TimeStepsWithoutGrid':time_steps_without_grid
+            'SubdivisionByTech': subdivisions_by_tech,
+            'SegByTechSubdivision': seg_by_tech_subdivision,
+            'TechsChargingStorage': techs_charging_storage,
+            'TechsInClass': techs_in_class,
+            'TechsByFuelType': techs_by_fuel_type,
+            'ElectricTechs': reopt_techs,
+            'FuelBurningTechs': [t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'TechsNoTurndown': self.no_turndown_techs,
+            'SalesTiers': sales_tiers,
+            'StorageSalesTiers': storage_sales_tiers,
+            'NonStorageSalesTiers': non_storage_sales_tiers,
+            'TimeStepsWithGrid': time_steps_with_grid,
+            'TimeStepsWithoutGrid': time_steps_without_grid
             }
 
         self.reopt_inputs_bau = {
@@ -1156,4 +1156,8 @@ class DataManager:
             'NonStorageSalesTiers':non_storage_sales_tiers,
             'TimeStepsWithGrid':time_steps_with_grid,
             'TimeStepsWithoutGrid':time_steps_without_grid
-            }
+        }
+        import json
+        json.dump(self.reopt_inputs, open("reopt_inputs.json", 'w'))
+
+        json.dump(self.reopt_inputs_bau, open("reopt_inputs_bau.json", 'w'))
