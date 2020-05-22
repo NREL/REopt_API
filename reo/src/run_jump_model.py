@@ -78,6 +78,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     self.profiler = Profiler()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
+    data["inputs"]["Scenario"]["timeout_seconds"] = int(data["inputs"]["Scenario"]["timeout_seconds"])
     self.data = data
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
