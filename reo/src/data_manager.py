@@ -1154,7 +1154,3 @@ class DataManager:
             'TimeStepsWithGrid':time_steps_with_grid,
             'TimeStepsWithoutGrid':time_steps_without_grid
         }
-        import json
-        json.dump(self.reopt_inputs, open("reopt_inputs.json", 'w'))
-
-        json.dump(self.reopt_inputs_bau, open("reopt_inputs_bau.json", 'w'))
