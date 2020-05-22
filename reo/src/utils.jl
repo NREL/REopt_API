@@ -533,31 +533,9 @@ function parameter(setTup::Tuple{Array{Symbol,1}, UnitRange{Int64}}, data::Numbe
     return AxisArray(fill(data, 2, 2), newTup)
 end
 
-
-"""
-    function parameter(set::Array{Any, 1}, data::Array{Any, 1})
-
-For empty data and set, convert to appropriate types for Parameter struct
-"""
-function parameter(set::Array{Any, 1}, data::Array{Any, 1})
-    data = convert(Array{Float64,1}, data)
-    set = convert(Array{String,1}, set)
-    shapedData = reshape(data, length(set))
-    return AxisArray(shapedData, set)
-end
-
-function parameter(set, data)
-    shapedData = reshape(data, length(set))
-    return AxisArray(shapedData, set)
-end
-
 # Additional dispatches to make things easier
 function length(::Symbol)
     return 1
-end
-
-function reshape(data::Number, axes::Int64)
-    return data
 end
 
 function AxisArray(data::Number, index::Array{Symbol, 1})
@@ -585,9 +563,9 @@ function len_zero_param(sets, arr::Array)
         if length(arr) == 0
             dims = setdiff(size(arr), 0)
             zero_array = Array{Array}(undef, dims...)
-            return parameter(sets, zero_array)
+            return AxisArray(zero_array, sets)
         else
-            return parameter(sets, arr)
+            return AxisArray(arr, sets)
         end
     catch
         println("Empty Array Created")
