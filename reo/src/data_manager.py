@@ -135,7 +135,7 @@ class DataManager:
         self.generator = generator
 
         if self.generator.existing_kw > 0:
-                
+
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
             # bau_techs will never have more than 1 entry for 'generator'
@@ -595,7 +595,7 @@ class DataManager:
                 om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
-                    
+
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
 
@@ -614,24 +614,20 @@ class DataManager:
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-                        
                         for pf in eval('self.' + tech + '.prod_factor'):
                             prod_factor.append(float(pf))
-                            
                         tech_to_load.append(1)
 
                     else:
-                        
                         for _ in range(self.n_timesteps):
                             prod_factor.append(float(0.0))
-
                         tech_to_load.append(0)
 
                     # By default, util can serve storage load.
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
                         tech_to_load[-1] = int(self.storage.canGridCharge)
-                
+
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -640,7 +636,7 @@ class DataManager:
                             tech_to_location.append(0)
                     else:
                         tech_to_location.append(0)
-        
+
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
@@ -735,7 +731,7 @@ class DataManager:
 
                 if tech.startswith('pv'):  # has acres_per_kw and kw_per_square_foot attributes, as well as location
                     if eval('self.' + tech + '.location') == 'both':
-                        both_existing_pv_kw += existing_kw                        
+                        both_existing_pv_kw += existing_kw
                         if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
                             # don't restrict unless they specify both land_area and roof_area,
                             # otherwise one of them is "unlimited" in UI
@@ -814,19 +810,19 @@ class DataManager:
         without (i.e., under an outage).  Uses the utility's prod_factor value
         (1=connected, 0 o.w.) at each time step to obtain these sets, which
         are presented as lists.
-        
+
         Parameters
             None
         Returns
-            time_steps_with_grid -- list of ints indicating grid-connected 
+            time_steps_with_grid -- list of ints indicating grid-connected
                 time steps
-            time_steps_without_grid -- list of ints indicating outage time 
+            time_steps_without_grid -- list of ints indicating outage time
                 steps
         """
         time_steps_with_grid = list()
         time_steps_without_grid = list()
         for i, pf in enumerate(self.util.prod_factor):
-            if pf > 0.5: 
+            if pf > 0.5:
                 time_steps_with_grid.append(i+1)
             else:
                 time_steps_without_grid.append(i+1)
@@ -925,7 +921,7 @@ class DataManager:
 
         fuel_limit = [big_number for x in fuel_type]
         fuel_limit_bau = [big_number for x in fuel_type_bau]
-        
+
         segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments_list]
         segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments_list_bau]
 
@@ -937,7 +933,7 @@ class DataManager:
         sales_tiers = [1, 2]
         non_storage_sales_tiers = [1]
         storage_sales_tiers = [2]
-        
+
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
         self.reopt_inputs = {
@@ -947,13 +943,9 @@ class DataManager:
             'Load': load_list,
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
-            'TechToLoadMatrix': tech_to_load,
             'TurbineDerate': derate,
-            'TechToTechClassMatrix': tech_to_tech_class,
             'NMILRegime': self.NMILRegime,
             'ProdFactor': prod_factor,
-            'EtaStorIn': eta_storage_in,
-            'EtaStorOut': eta_storage_out,
             'MaxSize': max_sizes,
             'MinStorageSizeKW': self.storage.min_kw,
             'MaxStorageSizeKW': self.storage.max_kw,
@@ -967,7 +959,6 @@ class DataManager:
             'pwf_om': pwf_om,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
-            'ProdIncentRate': prod_incent_rate,
             'MaxProdIncent': max_prod_incent,
             'MaxSizeForProdIncent': max_size_for_prod_incent,
             'CapCostSlope': cap_cost_slope,
@@ -991,7 +982,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelRate': tariff_args.energy_rates,
             'FuelAvail': tariff_args.energy_avail,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
@@ -1000,8 +990,6 @@ class DataManager:
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-            'FuelBurnRateM': tariff_args.energy_burn_rate,
-            'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
@@ -1028,34 +1016,34 @@ class DataManager:
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency,
-	        'StorageMinSizeEnergy':self.storage.min_kwh,
-	        'StorageMaxSizeEnergy':self.storage.max_kwh,
-	        'StorageMinSizePower':self.storage.min_kw,
-	        'StorageMaxSizePower':self.storage.max_kw,
-	        'StorageMinSOC':self.storage.soc_min_pct,
-	        'StorageInitSOC':self.storage.soc_init_pct,
-            'SegmentMinSize':segment_min_size,
-            'SegmentMaxSize':segment_max_size,
+	        'StorageMinSizeEnergy': self.storage.min_kwh,
+	        'StorageMaxSizeEnergy': self.storage.max_kwh,
+	        'StorageMinSizePower': self.storage.min_kw,
+	        'StorageMaxSizePower': self.storage.max_kw,
+	        'StorageMinSOC': self.storage.soc_min_pct,
+	        'StorageInitSOC': self.storage.soc_init_pct,
+            'SegmentMinSize': segment_min_size,
+            'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
-            'Storage':['Elec'],
+            'Storage': ['Elec'],
             'FuelType': fuel_type,
-            'Subdivision':subdivisions,
-            'PricingTierCount':tariff_args.energy_tiers_num,
-            'ElecStorage':['Elec'],
+            'Subdivision': subdivisions,
+            'PricingTierCount': tariff_args.energy_tiers_num,
+            'ElecStorage': ['Elec'],
             'FuelTypeByTech': fuel_type_by_tech,
-            'SubdivisionByTech':subdivisions_by_tech,
-            'SegByTechSubdivision':seg_by_tech_subdivision,
-            'TechsChargingStorage':techs_charging_storage,
-            'TechsInClass':techs_in_class,
-            'TechsByFuelType':techs_by_fuel_type,
-            'ElectricTechs':reopt_techs,
-            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
-            'TechsNoTurndown':self.no_turndown_techs,
-            'SalesTiers':sales_tiers,
-            'StorageSalesTiers':storage_sales_tiers,
-            'NonStorageSalesTiers':non_storage_sales_tiers,
-            'TimeStepsWithGrid':time_steps_with_grid,
-            'TimeStepsWithoutGrid':time_steps_without_grid
+            'SubdivisionByTech': subdivisions_by_tech,
+            'SegByTechSubdivision': seg_by_tech_subdivision,
+            'TechsChargingStorage': techs_charging_storage,
+            'TechsInClass': techs_in_class,
+            'TechsByFuelType': techs_by_fuel_type,
+            'ElectricTechs': reopt_techs,
+            'FuelBurningTechs': [t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'TechsNoTurndown': self.no_turndown_techs,
+            'SalesTiers': sales_tiers,
+            'StorageSalesTiers': storage_sales_tiers,
+            'NonStorageSalesTiers': non_storage_sales_tiers,
+            'TimeStepsWithGrid': time_steps_with_grid,
+            'TimeStepsWithoutGrid': time_steps_without_grid
             }
 
         self.reopt_inputs_bau = {
@@ -1064,14 +1052,10 @@ class DataManager:
             'MaxSizesLocation': max_sizes_location_bau,
             'TechIsGrid': tech_is_grid_bau,
             'Load': load_list,
-            'TechToLoadMatrix': tech_to_load_bau,
             'TechClass': self.available_tech_classes,
             'NMILRegime': self.NMILRegime,
             'TurbineDerate': derate_bau,
-            'TechToTechClassMatrix': tech_to_tech_class_bau,
             'ProdFactor': prod_factor_bau,
-            'EtaStorIn': eta_storage_in_bau,
-            'EtaStorOut': eta_storage_out_bau,
             'MaxSize': max_sizes_bau,
             'MinStorageSizeKW': 0.0,
             'MaxStorageSizeKW': 0.0,
@@ -1085,7 +1069,6 @@ class DataManager:
             'pwf_om': pwf_om_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
-            'ProdIncentRate': prod_incent_rate_bau,
             'MaxProdIncent': max_prod_incent_bau,
             'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
             'CapCostSlope': cap_cost_slope_bau,
@@ -1109,7 +1092,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelRate': tariff_args.energy_rates_bau,
             'FuelAvail': tariff_args.energy_avail_bau,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
@@ -1118,8 +1100,6 @@ class DataManager:
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-            'FuelBurnRateM': tariff_args.energy_burn_rate_bau,
-            'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
@@ -1173,4 +1153,4 @@ class DataManager:
             'NonStorageSalesTiers':non_storage_sales_tiers,
             'TimeStepsWithGrid':time_steps_with_grid,
             'TimeStepsWithoutGrid':time_steps_without_grid
-            }
+        }
