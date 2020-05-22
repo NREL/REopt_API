@@ -1091,7 +1091,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12 
 
     ### Utility and Taxable Costs
-	TotalEnergyExports = p.pwf_e * p.TimeStepScaling * sum( sum(TempGridExportRates[u,ts] * value(dvStorageToGrid[u,ts]) for u in p.StorageSalesTiers) + sum(TempGridExportRates[u,ts] * value(dvProductionToGrid[t,u,ts]) for u in p.SalesTiers, t in TempTechsByPricingTier[u]) for ts in p.TimeStep ) 
+	TotalEnergyExports = 0.0
+	for u in p.StorageSalesTiers
+		TotalEnergyExports += sum(TempGridExportRates[u,ts] * value(dvStorageToGrid[u,ts]) for ts in p.TimeStep)
+	end
+	for u in p.SalesTiers
+		for t in TempTechsByPricingTier[u]
+			TotalEnergyExports += sum(TempGridExportRates[u,ts] * value(dvProductionToGrid[t,u,ts]) for ts in p.TimeStep)
+		end
+	end
+	TotalEnergyExports *= p.pwf_e * p.TimeStepScaling
     
 	TotalProductionIncentive = sum(value.(dvProdIncent))
 
@@ -1200,33 +1209,33 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                                 (TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
                                 (TotalGenFuelCharges) * r_tax_fraction_offtaker
 
-    push!(results, Dict("year_one_utility_kwh" => round((Year1UtilityEnergy), digits=2),
-						 "year_one_energy_cost" => round((Year1EnergyCost), digits=2),
-						 "year_one_demand_cost" => round((Year1DemandCost), digits=2),
-						 "year_one_demand_tou_cost" => round((Year1DemandTOUCost), digits=2),
-						 "year_one_demand_flat_cost" => round((Year1DemandFlatCost), digits=2),
-						 "year_one_export_benefit" => round((ExportBenefitYr1), digits=0),
-						 "year_one_fixed_cost" => round((Year1FixedCharges), digits=0),
-						 "year_one_min_charge_adder" => round((Year1MinCharges), digits=2),
-						 "year_one_bill" => round((Year1Bill), digits=2),
-						 "year_one_payments_to_third_party_owner" => round((TotalDemandCharges) / p.pwf_e, digits=0),
-						 "total_energy_cost" => round((TotalEnergyCharges) * r_tax_fraction_offtaker, digits=2),
-						 "total_demand_cost" => round((TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
-						 "total_fixed_cost" => round((TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
-						 "total_export_benefit" => round((TotalEnergyExports) * r_tax_fraction_offtaker, digits=2),
-						 "total_min_charge_adder" => round((MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
+    push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
+						 "year_one_energy_cost" => round(value(Year1EnergyCost), digits=2),
+						 "year_one_demand_cost" => round(value(Year1DemandCost), digits=2),
+						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
+						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
+						 "year_one_export_benefit" => round(value(ExportBenefitYr1), digits=0),
+						 "year_one_fixed_cost" => round(value(Year1FixedCharges), digits=0),
+						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
+						 "year_one_bill" => round(value(Year1Bill), digits=2),
+						 "year_one_payments_to_third_party_owner" => round(value(TotalDemandCharges) / p.pwf_e, digits=0),
+						 "total_energy_cost" => round(value(TotalEnergyCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_demand_cost" => round(value(TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_fixed_cost" => round(value(TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_export_benefit" => round(value(TotalEnergyExports) * r_tax_fraction_offtaker, digits=2),
+						 "total_min_charge_adder" => round(value(MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
 						 "total_payments_to_third_party_owner" => 0,
-						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-						 "year_one_energy_produced" => round(Year1PvProd, digits=0),
-                         "average_yearly_pv_energy_produced" => round(AveragePvProd, digits=0),
-						 "average_annual_energy_exported_pv" => round((ExportedElecPV), digits=0),
-						 "year_one_wind_energy_produced" => round(Year1WindProd, digits=0),
-						 "average_wind_energy_produced" => round(AverageWindProd, digits=0),
-						 "average_annual_energy_exported_wind" => round((ExportedElecWIND), digits=0),
-                         "year_one_gen_energy_produced" => round(Year1GenProd, digits=0),
-                         "average_yearly_gen_energy_produced" => round(AverageGenProd, digits=0),
-                         "average_annual_energy_exported_gen" => round((ExportedElecGEN), digits=0),
-						 "net_capital_costs" => round((TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
+						 "net_capital_costs_plus_om" => round(value(net_capital_costs_plus_om), digits=0),
+						 "year_one_energy_produced" => round(value(Year1PvProd), digits=0),
+                         "average_yearly_pv_energy_produced" => round(value(AveragePvProd), digits=0),
+						 "average_annual_energy_exported_pv" => round(value(ExportedElecPV), digits=0),
+						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=0),
+						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=0),
+						 "average_annual_energy_exported_wind" => round(value(ExportedElecWIND), digits=0),
+                         "year_one_gen_energy_produced" => round(value(Year1GenProd), digits=0),
+                         "average_yearly_gen_energy_produced" => round(value(AverageGenProd), digits=0),
+                         "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=0),
+						 "net_capital_costs" => round(value(TotalTechCapCosts + TotalStorageCapCosts), digits=2))...)
 	
 	if !isempty(GeneratorTechs)
 		GeneratorFuelUsed = sum(value(dvFuelUsage[t, ts]) for t in GeneratorTechs, ts in p.TimeStep)
@@ -1240,7 +1249,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
     GridToLoad = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 	for ts in p.TimeStep
-        GridToLoad += sum(value(dvGridPurchase[u,ts]) for u in p.PricingTier) - dvGridToStorage[ts] 
+        GridToLoad[ts] += sum(value(dvGridPurchase[u,ts]) for u in p.PricingTier) - GridToBatt[ts]
 	end
     results["GridToLoad"] = round.((GridToLoad), digits=3)
 
@@ -1250,7 +1259,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		GENERATORtoLoad = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 		for ts in p.TimeStep
 			GENERATORtoBatt[ts] += sum(value(dvProductionToStorage["Elec",t,ts]) for t in GeneratorTechs)
-			GENERATORtoGrid[ts] += sum(value(dvProductionToGrid[t,u,ts]) for t in GeneratorTechs, u in TempPricingTiersByTech[t])
+			for t in GeneratorTechs
+				for u in TempPricingTiersByTech[t]
+					GENERATORtoGrid[ts] += value(dvProductionToGrid[t,u,ts])
+				end
+			end		
 			GENERATORtoLoad[ts] += (sum(value(dvRatedProduction[t, ts]) * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 						for t in GeneratorTechs) - GENERATORtoBatt[ts] - GENERATORtoGrid[ts])
 		end
@@ -1267,22 +1280,23 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		PVtoLoad = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 		PVtoGrid = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 		for ts in p.TimeStep
-			PVtoGrid[ts] += sum(value(dvProductionToGrid[t,u,ts]) for t in PVTechs, u in TempPricingTiersByTech[t])
+			for t in PVTechs
+				for u in TempPricingTiersByTech[t]
+					PVtoGrid[ts] += value(dvProductionToGrid[t,u,ts])
+				end
+			end
 			PVtoLoad[ts] += (sum(value(dvRatedProduction[t, ts]) * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 						for t in PVTechs) - PVtoGrid[ts] - PVtoBatt[ts])
 		end
     	results["PVtoLoad"] = round.((PVtoLoad), digits=3)
     	results["PVtoGrid"] = round.((PVtoGrid), digits=3)
 
-		PVPerUnitSizeOMCosts = 
-					sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in PVTechs)
-		results["pv_net_fixed_om_costs"] = round((PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
+		PVPerUnitSizeOMCosts =  sum(p.OMperUnitSize[t] * p.pwf_om * value(dvSize[t]) for t in PVTechs)
+		results["pv_net_fixed_om_costs"] = round(value(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
 		
-		@expression(REopt, PVSize, dvSize["PV1"])
-		results["pv_size"] = round((PVSize),digits=2)
+		results["pv_size"] = round(value(dvSize["PV1"]),digits=2)
 		
-		@expression(REopt, PVNMSize, dvSize["PV1NM"])
-		results["pv_nm_size"] = round((PVNMSize),digits=2)
+		results["pv_nm_size"] = round(value(dvSize["PV1NM"]),digits=2)
 
 		results["PVtoBatt"] = PVtoBatt
 
@@ -1299,9 +1313,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		WINDtoLoad = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 		WINDtoGrid = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
 		for ts in p.TimeStep
-			WINDtoGrid[ts] += sum(value(dvProductionToGrid[t,u,ts]) for t in WindTechschs, u in TempPricingTiersByTech[t])
+			for t in WindTechs
+				for u in TempPricingTiersByTech[t]
+					WINDtoGrid[ts] += value(dvProductionToGrid[t,u,ts])
+				end
+			end
 			WINDtoLoad[ts] += (sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in WindTechs) - WINDtoGrid[ts] - WINDtoBatt[ts])
+							for t in WindTechs) - WINDtoGrid[ts] - WINDtoBatt[ts])
 		end
 		results["WINDtoLoad"] = round.((WINDtoLoad), digits=3)
 		results["WINDtoGrid"] = round.((WINDtoGrid), digits=3)
