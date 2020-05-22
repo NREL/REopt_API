@@ -617,17 +617,13 @@ class DataManager:
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-
                         for pf in eval('self.' + tech + '.prod_factor'):
                             prod_factor.append(float(pf))
-
                         tech_to_load.append(1)
 
                     else:
-
                         for _ in range(self.n_timesteps):
                             prod_factor.append(float(0.0))
-
                         tech_to_load.append(0)
 
                     # By default, util can serve storage load.
@@ -950,13 +946,9 @@ class DataManager:
             'Load': load_list,
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
-            'TechToLoadMatrix': tech_to_load,
             'TurbineDerate': derate,
-            'TechToTechClassMatrix': tech_to_tech_class,
             'NMILRegime': self.NMILRegime,
             'ProdFactor': prod_factor,
-            'EtaStorIn': eta_storage_in,
-            'EtaStorOut': eta_storage_out,
             'MaxSize': max_sizes,
             'MinStorageSizeKW': self.storage.min_kw,
             'MaxStorageSizeKW': self.storage.max_kw,
@@ -970,7 +962,6 @@ class DataManager:
             'pwf_om': pwf_om,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
-            'ProdIncentRate': prod_incent_rate,
             'MaxProdIncent': max_prod_incent,
             'MaxSizeForProdIncent': max_size_for_prod_incent,
             'CapCostSlope': cap_cost_slope,
@@ -994,7 +985,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelRate': tariff_args.energy_rates,
             'FuelAvail': tariff_args.energy_avail,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
@@ -1003,8 +993,6 @@ class DataManager:
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-            'FuelBurnRateM': tariff_args.energy_burn_rate,
-            'FuelBurnRateB': tariff_args.energy_burn_intercept,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
@@ -1067,14 +1055,10 @@ class DataManager:
             'MaxSizesLocation': max_sizes_location_bau,
             'TechIsGrid': tech_is_grid_bau,
             'Load': load_list,
-            'TechToLoadMatrix': tech_to_load_bau,
             'TechClass': self.available_tech_classes,
             'NMILRegime': self.NMILRegime,
             'TurbineDerate': derate_bau,
-            'TechToTechClassMatrix': tech_to_tech_class_bau,
             'ProdFactor': prod_factor_bau,
-            'EtaStorIn': eta_storage_in_bau,
-            'EtaStorOut': eta_storage_out_bau,
             'MaxSize': max_sizes_bau,
             'MinStorageSizeKW': 0.0,
             'MaxStorageSizeKW': 0.0,
@@ -1088,7 +1072,6 @@ class DataManager:
             'pwf_om': pwf_om_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
-            'ProdIncentRate': prod_incent_rate_bau,
             'MaxProdIncent': max_prod_incent_bau,
             'MaxSizeForProdIncent': max_size_for_prod_incent_bau,
             'CapCostSlope': cap_cost_slope_bau,
@@ -1112,7 +1095,6 @@ class DataManager:
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
             'MaxDemandMonthsInTier': tariff_args.demand_month_max_in_tiers,
-            'FuelRate': tariff_args.energy_rates_bau,
             'FuelAvail': tariff_args.energy_avail_bau,
             'FixedMonthlyCharge': tariff_args.fixed_monthly_charge,
             'AnnualMinCharge': tariff_args.annual_min_charge,
@@ -1121,8 +1103,6 @@ class DataManager:
             'DemandLookbackMonths': tariff_args.demand_lookback_months,
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
-            'FuelBurnRateM': tariff_args.energy_burn_rate_bau,
-            'FuelBurnRateB': tariff_args.energy_burn_intercept_bau,
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
