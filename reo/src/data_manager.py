@@ -135,6 +135,7 @@ class DataManager:
         self.generator = generator
 
         if self.generator.existing_kw > 0:
+
             # following if-clause is to avoid appending generator twice in the bau_techs list
             # for the test-case when two tests are run under same class definition (e.g. test_diesel_generator.py)
             # bau_techs will never have more than 1 entry for 'generator'
@@ -588,18 +589,14 @@ class DataManager:
         techs_charging_storage = list()
 
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
                 tech_is_grid.append(int(eval('self.' + tech + '.is_grid')))
                 derate.append(eval('self.' + tech + '.derate'))
                 om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
-
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
 
-                else:
-                        charge_efficiency.append(self.storage.rectifier_efficiency_pct *
+                charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
 
                 if eval('self.' + tech + '.can_serve("storage")'):
@@ -630,7 +627,7 @@ class DataManager:
                     # However, if storage is being modeled it can override grid-charging
                     if tech == 'util' and load == 'storage' and self.storage is not None:
                         tech_to_load[-1] = int(self.storage.canGridCharge)
-                
+
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -734,7 +731,7 @@ class DataManager:
 
                 if tech.startswith('pv'):  # has acres_per_kw and kw_per_square_foot attributes, as well as location
                     if eval('self.' + tech + '.location') == 'both':
-                        both_existing_pv_kw += existing_kw                        
+                        both_existing_pv_kw += existing_kw
                         if self.site.roof_squarefeet is not None and self.site.land_acres is not None:
                             # don't restrict unless they specify both land_area and roof_area,
                             # otherwise one of them is "unlimited" in UI
@@ -813,19 +810,19 @@ class DataManager:
         without (i.e., under an outage).  Uses the utility's prod_factor value
         (1=connected, 0 o.w.) at each time step to obtain these sets, which
         are presented as lists.
-        
+
         Parameters
             None
         Returns
-            time_steps_with_grid -- list of ints indicating grid-connected 
+            time_steps_with_grid -- list of ints indicating grid-connected
                 time steps
-            time_steps_without_grid -- list of ints indicating outage time 
+            time_steps_without_grid -- list of ints indicating outage time
                 steps
         """
         time_steps_with_grid = list()
         time_steps_without_grid = list()
         for i, pf in enumerate(self.util.prod_factor):
-            if pf > 0.5: 
+            if pf > 0.5:
                 time_steps_with_grid.append(i+1)
             else:
                 time_steps_without_grid.append(i+1)
@@ -905,7 +902,7 @@ class DataManager:
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
 
 
-        subdivisions = ['CapCost','FuelBurn']
+        subdivisions = ['CapCost']
         fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
         fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
@@ -936,7 +933,7 @@ class DataManager:
         sales_tiers = [1, 2]
         non_storage_sales_tiers = [1]
         storage_sales_tiers = [2]
-        
+
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
 
         self.reopt_inputs = {
