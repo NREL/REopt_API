@@ -4,6 +4,8 @@ import AxisArrays.AxisArray
 import JuMP.value
 using AxisArrays
 using JuMP
+using Printf
+
 
 function emptySetException(sets, values, floatbool=false)
     try
@@ -24,6 +26,20 @@ function string_dictkeys_tosymbols(d::Dict)
     end
     return d2
 end
+
+function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
+    f = fieldnames(s)
+    d2 = Dict()
+    for k in f
+        if haskey(d, k)
+            d2[k] = d[k]
+        else
+            @sprintf "\nWARNING: dict is missing struct field %s !\n" k
+        end
+    end
+    return d2
+end
+
 
 ##TODO Get rid of union types
 Base.@kwdef struct Parameter
@@ -296,6 +312,8 @@ function Parameter(d::Dict)
         end
     end
 
+    # got unsupported keyword arguments "NumRatchets", "FuelAvail", "TechIsGrid", "ProdFactor"
+
     d[:Seg] = 1:d["CapCostSegCount"]
     d[:Points] = 0:d["CapCostSegCount"]
     d[:Month] = 1:12
@@ -357,6 +375,7 @@ function Parameter(d::Dict)
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
     d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
     d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
+    d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
     d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
@@ -365,7 +384,9 @@ function Parameter(d::Dict)
     d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
     d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
 
+
     d = string_dictkeys_tosymbols(d)
+    d = filter_dict_to_match_struct_field_names(d, Parameter)
     param = Parameter(;d...)
 end
 
