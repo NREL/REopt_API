@@ -17,6 +17,14 @@ function emptySetException(sets, values, floatbool=false)
     end
 end
 
+function string_dictkeys_tosymbols(d::Dict)
+    d2 = Dict()
+    for (k, v) in d
+        d2[Symbol(k)] = v
+    end
+    return d2
+end
+
 ##TODO Get rid of union types
 Base.@kwdef struct Parameter
     # TODO: change AxisArray types back to heavily specified types like:
@@ -357,6 +365,7 @@ function Parameter(d::Dict)
     d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
     d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
 
+    d = string_dictkeys_tosymbols(d)
     param = Parameter(;d...)
 end
 
