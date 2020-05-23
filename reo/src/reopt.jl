@@ -1102,16 +1102,32 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     if !isempty(PVTechs)
         results["PV1"] = Dict()
         results["pv_kw"] = round(value(sum(dvSize[t] for t in PVTechs)), digits=4)
-        @expression(REopt, PVtoBatt[ts in p.TimeStep],
-                    sum(vec(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage)))
-    end
+        #@expression(REopt, PVtoBatt[ts in p.TimeStep],
+        #            sum(dvProductionToStorage[b, t, ts] for t in PVTechs, b in p.ElecStorage))
+		PVtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
+		for ts in p.TimeStep
+			for t in PVTechs
+				for b in p.ElecStorage
+					PVtoBatt[ts] += value(dvProductionToStorage[b, t, ts]) 
+				end
+			end
+		end
+	end
 	
     if !isempty(WindTechs)
         results["Wind"] = Dict()
         results["wind_kw"] = round(value(sum(dvSize[t] for t in WindTechs)), digits=4)
-        @expression(REopt, WINDtoBatt[ts in p.TimeStep],
-                    sum(vec(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage)))
-    end
+        #@expression(REopt, WINDtoBatt[ts in p.TimeStep],
+        #            sum(dvProductionToStorage[b, t, ts] for t in WindTechs, b in p.ElecStorage))
+		WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
+		for ts in p.TimeStep
+			for t in WindTechs
+				for b in p.ElecStorage
+					WINDtoBatt[ts] += value(dvProductionToStorage[b, t, ts]) 
+				end
+			end
+		end
+	end
 
 	results["gen_net_fixed_om_costs"] = 0
 	results["gen_net_variable_om_costs"] = 0
