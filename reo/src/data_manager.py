@@ -919,8 +919,16 @@ class DataManager:
         fuel_type_by_tech = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs]
         fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
 
-        fuel_limit = [big_number for x in fuel_type]
-        fuel_limit_bau = [big_number for x in fuel_type_bau]
+        fuel_limit = [0.0 for _ in fuel_type]
+        fuel_limit_bau = [0.0 for _ in fuel_type]
+        for f in range(len(fuel_type)):
+            for t in techs_by_fuel_type[f]:
+                tech_idx = reopt_techs.index(t)
+                fuel_limit[f] += tariff_args.energy_avail[tech_idx]
+        for f in range(len(fuel_type_bau)):
+            for t in techs_by_fuel_type_bau[f]:
+                tech_idx = reopt_techs_bau.index(t)
+                fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
 
         segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments_list]
         segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments_list_bau]
@@ -935,7 +943,7 @@ class DataManager:
         storage_sales_tiers = [2]
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
-
+        
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
