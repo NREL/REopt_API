@@ -296,16 +296,16 @@ function Parameter(d::Dict)
         end
     end
 
-    Seg = 1:d["CapCostSegCount"]
-    Points = 0:d["CapCostSegCount"]
-    Month = 1:12
-    Ratchets = 1:d["NumRatchets"]
-    FuelBin = 1:d["FuelBinCount"]
-	PricingTier = 1:d["PricingTierCount"]
-    DemandBin = 1:d["DemandBinCount"]
-    DemandMonthsBin = 1:d["DemandMonthsBinCount"]
-    TimeStep = 1:d["TimeStepCount"]
-    TimeStepBat = 0:d["TimeStepCount"]
+    d[:Seg] = 1:d["CapCostSegCount"]
+    d[:Points] = 0:d["CapCostSegCount"]
+    d[:Month] = 1:12
+    d[:Ratchets] = 1:d["NumRatchets"]
+    d[:FuelBin] = 1:d["FuelBinCount"]
+	d[:PricingTier] = 1:d["PricingTierCount"]
+    d[:DemandBin] = 1:d["DemandBinCount"]
+    d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
+    d[:TimeStep] = 1:d["TimeStepCount"]
+    d[:TimeStepBat] = 0:d["TimeStepCount"]
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
 	#Storage = 1:1
@@ -318,19 +318,19 @@ function Parameter(d::Dict)
     d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
     d["LevelizationFactorProdIncent"] = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
     d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
-    d["CapCostSlope"] = parameter((d["Tech"], Seg), d["CapCostSlope"])
-    d["CapCostYInt"] = parameter((d["Tech"], Seg), d["CapCostYInt"])
-    d["CapCostX"] = parameter((d["Tech"],Points), d["CapCostX"])
+    d["CapCostSlope"] = parameter((d["Tech"], d[:Seg]), d["CapCostSlope"])
+    d["CapCostYInt"] = parameter((d["Tech"], d[:Seg]), d["CapCostYInt"])
+    d["CapCostX"] = parameter((d["Tech"],d[:Points]), d["CapCostX"])
     d["MaxProdIncent"] = AxisArray(d["MaxProdIncent"], d["Tech"])
     d["MaxSizeForProdIncent"] = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
-    d["LoadProfile"] = parameter((d["Load"], TimeStep), d["LoadProfile"])
+    d["LoadProfile"] = parameter((d["Load"], d[:TimeStep]), d["LoadProfile"])
     d["MaxSize"] = AxisArray(d["MaxSize"], d["Tech"])
     d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
     d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])
-    d["TimeStepRatchets"] = emptySetException(Ratchets, d["TimeStepRatchets"])
-    d["DemandRates"] = emptySetException((Ratchets, DemandBin), d["DemandRates"], true)
-    d["ExportRates"] = parameter((d["Tech"], d["Load"], TimeStep), d["ExportRates"])
-    d["DemandRatesMonth"] = parameter((Month, DemandMonthsBin), d["DemandRatesMonth"])
+    d["TimeStepRatchets"] = emptySetException(d[:Ratchets], d["TimeStepRatchets"])
+    d["DemandRates"] = emptySetException((d[:Ratchets], d[:DemandBin]), d["DemandRates"], true)
+    d["ExportRates"] = parameter((d["Tech"], d["Load"], d[:TimeStep]), d["ExportRates"])
+    d["DemandRatesMonth"] = parameter((d[:Month], d[:DemandMonthsBin]), d["DemandRatesMonth"])
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
@@ -339,11 +339,11 @@ function Parameter(d::Dict)
     d["StoragePowerCost"] = AxisArray(d["StoragePowerCost"], d["Storage"])
     d["StorageEnergyCost"] = AxisArray(d["StorageEnergyCost"], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
-    d["ElecRate"] = parameter((PricingTier, TimeStep), d["ElecRate"])
-    d["GridExportRates"] = parameter((PricingTier, TimeStep), d["GridExportRates"])
+    d["ElecRate"] = parameter((d[:PricingTier], d[:TimeStep]), d["ElecRate"])
+    d["GridExportRates"] = parameter((d[:PricingTier], d[:TimeStep]), d["GridExportRates"])
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
-    d["ProductionFactor"] = parameter((d["Tech"], TimeStep), d["ProductionFactor"])
+    d["ProductionFactor"] = parameter((d["Tech"], d[:TimeStep]), d["ProductionFactor"])
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
     d["ChargeEfficiency"] = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
@@ -355,8 +355,8 @@ function Parameter(d::Dict)
     d["StorageMaxSizePower"] = AxisArray(d["StorageMaxSizePower"], d["Storage"])
     d["StorageMinSOC"] = AxisArray(d["StorageMinSOC"], d["Storage"])
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
-    d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMinSize"])
-    d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMaxSize"])
+    d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
+    d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
 
     # Indexed Sets
     d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
