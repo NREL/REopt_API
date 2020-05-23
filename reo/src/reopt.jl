@@ -7,7 +7,7 @@ include("utils.jl")
 
 function reopt(reo_model, data, model_inputs)
 
-    p = build_param(model_inputs)
+    p = Parameter(model_inputs)
 
     if length(model_inputs["Tech"]) > 1
         @save "scen.jld2" p
