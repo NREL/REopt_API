@@ -18,7 +18,7 @@ function emptySetException(sets, values, floatbool=false)
 end
 
 ##TODO Get rid of union types
-struct Parameter
+Base.@kwdef struct Parameter
     # TODO: change AxisArray types back to heavily specified types like:
     #       AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ?
     #       Problem is that many Array{Float64, 1} can be empty so PyCall makes them Array{Any, 1}
@@ -263,7 +263,7 @@ struct Parameter
 end
 
 
-function build_param(d::Dict)
+function Parameter(d::Dict)
     can_be_empty = (
         "MaxSize",
         "OMperUnitSize",
@@ -287,6 +287,7 @@ function build_param(d::Dict)
             d[x] = convert(Array{Float64, 1}, d[x])
         end
     end
+
     Seg = 1:d["CapCostSegCount"]
     Points = 0:d["CapCostSegCount"]
     Month = 1:12
@@ -302,190 +303,61 @@ function build_param(d::Dict)
 	#Storage = 1:1
     Location = 1:length(d["MaxSizesLocation"])
 
-    TurbineDerate = AxisArray(d["TurbineDerate"], d["Tech"])
-    TechToLocation = parameter((d["Tech"], Location), d["TechToLocation"])
-    pwf_prod_incent = AxisArray(d["pwf_prod_incent"], d["Tech"])
-    LevelizationFactor = AxisArray(d["LevelizationFactor"], d["Tech"])
-    LevelizationFactorProdIncent = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
-    OMperUnitSize = AxisArray(d["OMperUnitSize"], d["Tech"])
-    CapCostSlope = parameter((d["Tech"], Seg), d["CapCostSlope"])
-    CapCostYInt = parameter((d["Tech"], Seg), d["CapCostYInt"])
-    CapCostX = parameter((d["Tech"],Points), d["CapCostX"])
-    MaxProdIncent = AxisArray(d["MaxProdIncent"], d["Tech"])
-    MaxSizeForProdIncent = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
-    LoadProfile = parameter((d["Load"], TimeStep), d["LoadProfile"])
-    MaxSize = AxisArray(d["MaxSize"], d["Tech"])
-    TechClassMinSize = AxisArray(d["TechClassMinSize"], d["TechClass"])
-    MinTurndown = AxisArray(d["MinTurndown"], d["Tech"])
-    TimeStepRatchets = emptySetException(Ratchets, d["TimeStepRatchets"])
-    DemandRates = emptySetException((Ratchets, DemandBin), d["DemandRates"], true)
-    ExportRates = parameter((d["Tech"], d["Load"], TimeStep), d["ExportRates"])
-    DemandRatesMonth = parameter((Month, DemandMonthsBin), d["DemandRatesMonth"])
-    NMILLimits = AxisArray(d["NMILLimits"], d["NMILRegime"])
-    TechToNMILMapping = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
-    OMcostPerUnitProd = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
+    # convert vectors to AxisArray's with axes for REopt JuMP model
+    d["TurbineDerate"] = AxisArray(d["TurbineDerate"], d["Tech"])
+    d["TechToLocation"] = parameter((d["Tech"], Location), d["TechToLocation"])
+    d["pwf_prod_incent"] = AxisArray(d["pwf_prod_incent"], d["Tech"])
+    d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
+    d["LevelizationFactorProdIncent"] = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
+    d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
+    d["CapCostSlope"] = parameter((d["Tech"], Seg), d["CapCostSlope"])
+    d["CapCostYInt"] = parameter((d["Tech"], Seg), d["CapCostYInt"])
+    d["CapCostX"] = parameter((d["Tech"],Points), d["CapCostX"])
+    d["MaxProdIncent"] = AxisArray(d["MaxProdIncent"], d["Tech"])
+    d["MaxSizeForProdIncent"] = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
+    d["LoadProfile"] = parameter((d["Load"], TimeStep), d["LoadProfile"])
+    d["MaxSize"] = AxisArray(d["MaxSize"], d["Tech"])
+    d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
+    d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])
+    d["TimeStepRatchets"] = emptySetException(Ratchets, d["TimeStepRatchets"])
+    d["DemandRates"] = emptySetException((Ratchets, DemandBin), d["DemandRates"], true)
+    d["ExportRates"] = parameter((d["Tech"], d["Load"], TimeStep), d["ExportRates"])
+    d["DemandRatesMonth"] = parameter((Month, DemandMonthsBin), d["DemandRatesMonth"])
+    d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
+    d["TechToNMILMapping"] = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
+    d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
 
     # Reformulation additions
-    StoragePowerCost = AxisArray(d["StoragePowerCost"], d["Storage"])
-    StorageEnergyCost = AxisArray(d["StorageEnergyCost"], d["Storage"])
-    FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
-    ElecRate = parameter((PricingTier, TimeStep), d["ElecRate"])
-    GridExportRates = parameter((PricingTier, TimeStep), d["GridExportRates"])
-    FuelBurnSlope = AxisArray(d["FuelBurnSlope"], d["Tech"])
-    FuelBurnYInt = AxisArray(d["FuelBurnYInt"], d["Tech"])
-    ProductionFactor = parameter((d["Tech"], TimeStep), d["ProductionFactor"])
-    ProductionIncentiveRate = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
-    FuelLimit = AxisArray(d["FuelLimit"], d["FuelType"])
-    ChargeEfficiency = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
-    GridChargeEfficiency = AxisArray(d["GridChargeEfficiency"], d["Storage"])
-    DischargeEfficiency = AxisArray(d["DischargeEfficiency"], d["Storage"])
-    StorageMinSizeEnergy = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
-    StorageMaxSizeEnergy = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
-    StorageMinSizePower = AxisArray(d["StorageMinSizePower"], d["Storage"])
-    StorageMaxSizePower = AxisArray(d["StorageMaxSizePower"], d["Storage"])
-    StorageMinSOC = AxisArray(d["StorageMinSOC"], d["Storage"])
-    StorageInitSOC = AxisArray(d["StorageInitSOC"], d["Storage"])
-    SegmentMinSize = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMinSize"])
-    SegmentMaxSize = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMaxSize"])
+    d["StoragePowerCost"] = AxisArray(d["StoragePowerCost"], d["Storage"])
+    d["StorageEnergyCost"] = AxisArray(d["StorageEnergyCost"], d["Storage"])
+    d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
+    d["ElecRate"] = parameter((PricingTier, TimeStep), d["ElecRate"])
+    d["GridExportRates"] = parameter((PricingTier, TimeStep), d["GridExportRates"])
+    d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
+    d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
+    d["ProductionFactor"] = parameter((d["Tech"], TimeStep), d["ProductionFactor"])
+    d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
+    d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
+    d["ChargeEfficiency"] = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
+    d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
+    d["DischargeEfficiency"] = AxisArray(d["DischargeEfficiency"], d["Storage"])
+    d["StorageMinSizeEnergy"] = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
+    d["StorageMaxSizeEnergy"] = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
+    d["StorageMinSizePower"] = AxisArray(d["StorageMinSizePower"], d["Storage"])
+    d["StorageMaxSizePower"] = AxisArray(d["StorageMaxSizePower"], d["Storage"])
+    d["StorageMinSOC"] = AxisArray(d["StorageMinSOC"], d["Storage"])
+    d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
+    d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMinSize"])
+    d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], Seg), d["SegmentMaxSize"])
 
     # Indexed Sets
-    SegByTechSubdivision = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
-    TechsByFuelType = len_zero_param(d["FuelType"], d["TechsByFuelType"])
-    FuelTypeByTech = len_zero_param(d["Tech"], d["FuelTypeByTech"])
-    SubdivisionByTech = len_zero_param(d["Tech"], d["SubdivisionByTech"])
-    TechsInClass = len_zero_param(d["TechClass"], d["TechsInClass"])
+    d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
+    d["TechsByFuelType"] = len_zero_param(d["FuelType"], d["TechsByFuelType"])
+    d["FuelTypeByTech"] = len_zero_param(d["Tech"], d["FuelTypeByTech"])
+    d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
+    d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
 
-    param = Parameter(
-                d["TechClass"],
-                DemandBin,
-                TimeStep,
-                TimeStepBat,
-                Month,
-                DemandMonthsBin,
-                Ratchets,
-                Seg,
-                d["Tech"],
-                FuelBin,
-				PricingTier,
-                d["NMILRegime"],
-
-                d["TimeStepRatchetsMonth"],
-                TimeStepRatchets,
-				d["TimeStepsWithGrid"],
-                d["TimeStepsWithoutGrid"],
-                
-                d["DemandLookbackMonths"],
-
-                TechToNMILMapping,
-                d["TimeStepScaling"],
-
-                d["AnnualMinCharge"],
-                d["MonthlyMinCharge"],
-                d["FixedMonthlyCharge"],
-                d["StorageCostPerKW"],
-                d["StorageCostPerKWH"],
-
-                OMperUnitSize,
-                OMcostPerUnitProd,
-
-                ExportRates,
-                CapCostSlope,
-                CapCostYInt,
-                CapCostX,
-                DemandRates,
-                DemandRatesMonth,
-
-                LoadProfile,
-                d["DemandLookbackPercent"],
-                d["MaxDemandInTier"],
-                d["MaxDemandMonthsInTier"],
-                d["MaxUsageInTier"],
-
-                NMILLimits,
-                MaxProdIncent,
-                MaxSizeForProdIncent,
-
-                TurbineDerate,
-                MinTurndown,
-                pwf_prod_incent,
-                LevelizationFactor,
-                LevelizationFactorProdIncent,
-
-                d["pwf_om"],
-                d["pwf_e"],
-                d["r_tax_owner"],
-                d["r_tax_offtaker"],
-
-                TechClassMinSize,
-                MaxSize,
-
-                d["MinStorageSizeKWH"],
-                d["MaxStorageSizeKWH"],
-                d["MinStorageSizeKW"],
-                d["MaxStorageSizeKW"],
-                d["StorageMinChargePcent"],
-                d["InitSOC"],
-
-                d["Load"],
-
-                d["two_party_factor"],
-                d["analysis_years"],
-                d["AnnualElecLoad"],
-                d["CapCostSegCount"],
-                d["FuelBinCount"],
-                d["DemandBinCount"],
-                d["DemandMonthsBinCount"],
-                d["TimeStepCount"],
-                Points,
-                d["PricingTierCount"],
-
-                StoragePowerCost,
-                StorageEnergyCost,
-                FuelCost,
-                ElecRate,
-                GridExportRates,
-                FuelBurnSlope,
-                FuelBurnYInt,
-                [d["MaxGridSales"]],  # TODO does MaxGridSales need to be an Array?
-                ProductionIncentiveRate,
-                ProductionFactor,
-                d["ElecLoad"],
-                FuelLimit,
-                ChargeEfficiency,
-                GridChargeEfficiency,
-                DischargeEfficiency,
-                StorageMinSizeEnergy,
-                StorageMaxSizeEnergy,
-                StorageMinSizePower,
-                StorageMaxSizePower,
-                StorageMinSOC,
-                StorageInitSOC,
-                SegmentMinSize,
-                SegmentMaxSize,
-
-                d["Storage"],
-                d["FuelType"],
-                d["Subdivision"],
-                d["ElecStorage"],
-                FuelTypeByTech,
-                SubdivisionByTech,
-                SegByTechSubdivision,
-                d["TechsChargingStorage"],
-                TechsInClass,
-                TechsByFuelType,
-                d["ElectricTechs"],
-                d["FuelBurningTechs"],
-                d["TechsNoTurndown"],
-                d["SalesTiers"],
-                d["StorageSalesTiers"],
-                d["NonStorageSalesTiers"],
-
-                TechToLocation,
-                d["MaxSizesLocation"]
-        )
-
-    return param
-
+    param = Parameter(;d...)
 end
 
 # Code for parameter() function
