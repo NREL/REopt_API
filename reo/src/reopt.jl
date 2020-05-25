@@ -9,9 +9,11 @@ function reopt(reo_model, data, model_inputs)
 
     p = Parameter(model_inputs)
 
-    if length(model_inputs["Tech"]) > 1
+    if length(model_inputs["Tech"]) >= 1
         @save "scen.jld2" p
-    end
+    else
+		@save "scen0.jld2" p
+	end
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
@@ -53,8 +55,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			TempGridExportRates[2,ts] = maximum(p.ExportRates[:,"1X",ts])	
 		end
 	else
-		TempGridExportRates[1,ts] = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
-		TempGridExportRates[2,ts] = 0.0 * Array{Float64,1}(undef,p.TimeStepCount)
+		for ts in p.TimeStep
+			TempGridExportRates[1,ts] = 0.0
+			TempGridExportRates[2,ts] = 0.0
+		end
 	end
 	
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
@@ -121,7 +125,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			end
 		end
 	end
-
+	
 	# NewMaxDemandInTier sets a new minimum if the new peak demand for the ratchet, minus the size of all previous bins for the ratchet, is less than the existing bin size.
 	for e in p.DemandBin
 		for r in p.Ratchets 
@@ -139,7 +143,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			end
 		end
 	end
-
+	
 	# NewMaxUsageInTier sets a new minumum if the total demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	for u in p.PricingTier
 		for m in p.Month 
@@ -392,7 +396,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(REopt, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 			  p.MinTurndown[t] * dvSize[t] - dvRatedProduction[t,ts] <= NewMaxSize[t] * (1-binTechIsOnInTS[t,ts]) )
-
+	
     ### Section 4: Storage System Constraints
 	### 
 	### Boundary Conditions and Size Limits
@@ -583,7 +587,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #@constraint(REopt, [t in p.Tech, LD in p.Load,ts in p.TimeStep],
     #            sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
 
-
+	
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
 	@constraint(REopt, ProdIncentUBCon[t in p.Tech],
@@ -604,52 +608,53 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #NEED to tighten bound and check logic
 	
 	###Constraint set (7): System Size is zero unless single basic tech is selected for class
-	#Constraint (7a): Single Basic Technology Constraints
-	@constraint(REopt, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
-		dvSize[t] <= NewMaxSize[t] * binSingleBasicTech[t,c]
-		)
-	##Constraint (7b): At most one Single Basic Technology per Class
-	@constraint(REopt, TechClassMinSelectCon[c in p.TechClass],
-		sum( binSingleBasicTech[t,c] for t in p.TechsInClass[c] ) <= 1
-		)
-	##Constraint (7c): Minimum size for each tech class
-	@constraint(REopt, TechClassMinSizeCon[c in p.TechClass],
-				sum( dvSize[t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
+	if !isempty(p.Tech)
+		#Constraint (7a): Single Basic Technology Constraints
+		@constraint(REopt, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
+			dvSize[t] <= NewMaxSize[t] * binSingleBasicTech[t,c]
 			)
-	
-	## Constraint (7d): Non-turndown technologies are always at rated production
-	@constraint(REopt, RenewableRatedProductionCon[t in TempTechsNoTurndown, ts in p.TimeStep],
-		dvRatedProduction[t,ts] == dvSize[t]  
-	)
+		##Constraint (7b): At most one Single Basic Technology per Class
+		@constraint(REopt, TechClassMinSelectCon[c in p.TechClass],
+			sum( binSingleBasicTech[t,c] for t in p.TechsInClass[c] ) <= 1
+			)
+		##Constraint (7c): Minimum size for each tech class
+		@constraint(REopt, TechClassMinSizeCon[c in p.TechClass],
+					sum( dvSize[t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
+				)
 		
-	
-	##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
-	@constraint(REopt, TurbineRatedProductionCon[t in TempTechsTurndown, ts in p.TimeStep],
-		dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
-	)
+		## Constraint (7d): Non-turndown technologies are always at rated production
+		@constraint(REopt, RenewableRatedProductionCon[t in TempTechsNoTurndown, ts in p.TimeStep],
+			dvRatedProduction[t,ts] == dvSize[t]  
+		)
+			
 		
-	
-	##Constraint (7f)-1: Minimum segment size
-	@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
-		dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,k,s] * binSegmentSelect[t,k,s]
-	)
-	
-	##Constraint (7f)-2: Maximum segment size
-	@constraint(REopt, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
-		dvSystemSizeSegment[t,k,s]  <= p.SegmentMaxSize[t,k,s] * binSegmentSelect[t,k,s]
-	)
-	
-	##Constraint (7g):  Segments add up to system size 
-	@constraint(REopt, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
-		sum(dvSystemSizeSegment[t,k,s] for s in TempSegBySubTech[t,k])  == dvSize[t]
-	)
+		##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
+		@constraint(REopt, TurbineRatedProductionCon[t in TempTechsTurndown, ts in p.TimeStep],
+			dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
+		)
+			
 		
-	
-	##Constraint (7h): At most one segment allowed
-	@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
-		sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) <= binSingleBasicTech[t,c]
-	)
- 
+		##Constraint (7f)-1: Minimum segment size
+		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+			dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,k,s] * binSegmentSelect[t,k,s]
+		)
+		
+		##Constraint (7f)-2: Maximum segment size
+		@constraint(REopt, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+			dvSystemSizeSegment[t,k,s]  <= p.SegmentMaxSize[t,k,s] * binSegmentSelect[t,k,s]
+		)
+		
+		##Constraint (7g):  Segments add up to system size 
+		@constraint(REopt, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
+			sum(dvSystemSizeSegment[t,k,s] for s in TempSegBySubTech[t,k])  == dvSize[t]
+		)
+			
+		
+		##Constraint (7h): At most one segment allowed
+		@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
+			sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) <= binSingleBasicTech[t,c]
+		)
+	end
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	
 	##Constraint (8a): Electrical Load Balancing with Grid
@@ -840,7 +845,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					p.DemandLookbackPercent * dvPeakDemandELookback )
 	end
 	### End Constraint Set (12)
-
+	
     #if !isempty(p.TimeStepRatchets)
     #    @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
     #                dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, fb in p.FuelBin, dbm in p.DemandMonthsBin))
@@ -992,6 +997,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	elseif Obj == 2  # Keep SOC high
 		@objective(REopt, Min, REcosts - sum(dvStorageSOC["Elec",ts] for ts in p.TimeStep)/8760.)
 	end
+	
 	optimize!(REopt)
 	if termination_status(REopt) == MOI.TIME_LIMIT
 		status = "timed-out"
@@ -1011,27 +1017,39 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### Parts of Objective
 
     #ProdLoad = ["1R", "1W", "1X", "1S"]
-
-    PVTechs = p.TechsInClass["PV1"]
+	
+	if !isempty(p.Tech)
+		PVTechs = p.TechsInClass["PV1"]
+		WindTechs = p.TechsInClass["WIND"]
+		GeneratorTechs = p.TechsInClass["GENERATOR"]
+	else
+		PVTechs = []
+		WindTechs = []
+		GeneratorTechs = []
+	end
     @expression(REopt, Year1PvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in PVTechs, ts in p.TimeStep))
     @expression(REopt, AveragePvProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] 
                                               for t in PVTechs, ts in p.TimeStep))
 
-    WindTechs = p.TechsInClass["WIND"]
+    
     @expression(REopt, Year1WindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in WindTechs, ts in p.TimeStep))
     @expression(REopt, AverageWindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
                                               for t in WindTechs, ts in p.TimeStep))
 
-    GeneratorTechs = p.TechsInClass["GENERATOR"]
+    
     @expression(REopt, Year1GenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                        for t in GeneratorTechs, ts in p.TimeStep))
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
                        for t in GeneratorTechs, ts in p.TimeStep))
 
-    @expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
-		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) )
+    if !isempty(p.Tech)
+		@expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
+			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) )
+	else
+		@expression(REopt, TotalTechCapCosts, 0.0)
+	end
     @expression(REopt, TotalStorageCapCosts, sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ))
     @expression(REopt, TotalPerUnitSizeOMCosts, p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) )
 
@@ -1146,7 +1164,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om, digits=0)
 		end
     end
-
+	
     net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) +
                                 value(TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
                                 value(TotalGenFuelCharges) * r_tax_fraction_offtaker
