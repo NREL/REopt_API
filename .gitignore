@@ -113,3 +113,6 @@ results_processing/*
 # Math Forumlation Latex
 docs/formulation/*aux
 docs/formulation/*log
+reo/src/scen.jld2
+reo/src/scen0.jld2
+scen.jld2

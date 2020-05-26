@@ -254,7 +254,7 @@ class UrdbParse:
         self.reopt_args.fuel_burn_intercept_bau, \
         self.reopt_args.fuel_limit_bau \
         = self.prepare_techs_and_loads(self.bau_techs)
-
+        
         return self.reopt_args
 
     def prepare_summary(self, current_rate):
@@ -465,11 +465,9 @@ class UrdbParse:
         grid_export_rates = []
         for tech in techs:
             for load in self.loads:
+                print(tech,load)
                 if tech.lower() == 'util':
-                    export_rates = operator.add(export_rates, self.zero_array)
-                    if load == 'wholesale' or load == 'export':
-                        grid_export_rates = operator.add(grid_export_rates, self.zero_array)
-                
+                    export_rates = operator.add(export_rates, self.zero_array)     
                 elif not tech.lower().endswith('nm'):
                     # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
                     if load == 'wholesale':
@@ -489,6 +487,17 @@ class UrdbParse:
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
                         export_rates = operator.add(export_rates, self.zero_array)
+        if 'wholesale' in self.loads:
+            if self.net_metering:
+                grid_export_rates.append([-1.0*x for x in negative_energy_costs])
+            else:
+                grid_export_rates.append([-1.0*x for x in negative_wholesale_rate_costs])
+        else:
+            grid_export_rates.append(self.zero_array)
+        if 'export' in self.loads and len(self.techs) > 0:
+            grid_export_rates.append([-1.0*x for x in negative_excess_rate_costs])
+        else:
+            grid_export_rates.append(self.zero_array)
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []

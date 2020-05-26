@@ -324,6 +324,7 @@ function Parameter(d::Dict)
     d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
+	d[:SalesTiers] = 1:2
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
 	#Storage = 1:1
@@ -358,7 +359,7 @@ function Parameter(d::Dict)
     d["StorageEnergyCost"] = AxisArray(d["StorageEnergyCost"], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = parameter((d[:PricingTier], d[:TimeStep]), d["ElecRate"])
-    d["GridExportRates"] = parameter((d[:PricingTier], d[:TimeStep]), d["GridExportRates"])
+    d["GridExportRates"] = parameter((d[:SalesTiers], d[:TimeStep]), d["GridExportRates"])
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
     d["ProductionFactor"] = parameter((d["Tech"], d[:TimeStep]), d["ProductionFactor"])
