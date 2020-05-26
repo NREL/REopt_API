@@ -1269,7 +1269,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
 		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
-					sum(dvProductionToGrid[t,u,ts] for t in PVTechs, u in TempPricingTiersByTech[t]))
+					sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in TempPricingTiersByTech[t]))
 		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 	else
 		results["WINDtoLoad"] = []
