@@ -666,6 +666,8 @@ class DataManager:
         :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
+        if len(techs) == 0:
+            return [0.0 for _ in self.available_tech_classes], [], [[] for _ in self.available_tech_classes]
         tech_class_min_size = list()  # array(TechClass)
         tech_to_tech_class = list()  # array(Tech, TechClass)
         techs_in_class = list()  # array(TechClass)
@@ -792,7 +794,6 @@ class DataManager:
         fb_techs=self.fuel_burning_techs
 
         tech_subdivisions = list()
-        tech_by = list()
         for tech in techs:
             tech_sub = list()
             if tech in cc_techs:
@@ -913,8 +914,14 @@ class DataManager:
         seg_by_tech_subdivision = [[1 for _ in reopt_techs] for __ in subdivisions]
         seg_by_tech_subdivision_bau = [[1 for _ in reopt_techs_bau] for __ in subdivisions]
 
-        techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
-        techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
+        if len(reopt_techs) == 0:
+            techs_by_fuel_type = []
+        else:
+            techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
+        if len(reopt_techs_bau) == 0:
+            techs_by_fuel_type_bau = []
+        else:
+            techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
 
         fuel_type_by_tech = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs]
         fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
