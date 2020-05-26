@@ -135,7 +135,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     results_dict[k + '_bau'] = results_dict_bau[k]
 
             for i in range(len(self.inputs["PV"])):
-                # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
                 if results_dict.get('PV' + str(i+1) + '_kw') is None:
                     results_dict['PV' + str(i+1) + '_kw'] = 0
                 pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
