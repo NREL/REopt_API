@@ -280,6 +280,9 @@ Base.@kwdef struct Parameter
      SalesTiers
      StorageSalesTiers
      NonStorageSalesTiers
+	 SalesTiersByTech
+	 TechsBySalesTier
+	 CurtailmentTiers
 
     # Feature Additions
      TechToLocation
@@ -301,7 +304,9 @@ function Parameter(d::Dict)
         "LevelizationFactorProdIncent",
         "NMILLimits",
         "TurbineDerate",
-        "TechClassMinSize"
+        "TechClassMinSize",
+		"TechsBySalesTier",
+		"SalesTiersByTech"
      )
     if typeof(d["Tech"]) === Array{Any, 1}  # came from Python as empty array
         d["Tech"] = convert(Array{String, 1}, d["Tech"])
@@ -324,7 +329,7 @@ function Parameter(d::Dict)
     d[:DemandMonthsBin] = 1:d["DemandMonthsBinCount"]
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
-	d[:SalesTiers] = 1:2
+	d[:SalesTiers] = 1:d["SalesTierCount"]
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
 	#Storage = 1:1
@@ -384,7 +389,8 @@ function Parameter(d::Dict)
     d["FuelTypeByTech"] = len_zero_param(d["Tech"], d["FuelTypeByTech"])
     d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
     d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
-
+	d["SalesTiersByTech"] = len_zero_param(d["Tech"], d["SalesTiersByTech"])
+	d["TechsBySalesTier"] = len_zero_param(d[:SalesTiers], d["TechsBySalesTier"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)

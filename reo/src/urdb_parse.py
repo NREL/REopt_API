@@ -239,7 +239,10 @@ class UrdbParse:
         self.reopt_args.grid_export_rates, \
         self.reopt_args.fuel_burn_rate, \
         self.reopt_args.fuel_burn_intercept, \
-        self.reopt_args.fuel_limit \
+        self.reopt_args.fuel_limit,   \
+        self.reopt_args.rates_by_tech,   \
+        self.reopt_args.techs_by_rate,   \
+        self.reopt_args.num_sales_tiers  \
         = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_rates_bau, \
@@ -252,7 +255,10 @@ class UrdbParse:
         self.reopt_args.grid_export_rates_bau, \
         self.reopt_args.fuel_burn_rate_bau, \
         self.reopt_args.fuel_burn_intercept_bau, \
-        self.reopt_args.fuel_limit_bau \
+        self.reopt_args.fuel_limit_bau,   \
+        self.reopt_args.rates_by_tech_bau,   \
+        self.reopt_args.techs_by_rate_bau,   \
+        self.reopt_args.num_sales_tiers_bau  \
         = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
@@ -421,16 +427,22 @@ class UrdbParse:
 
         negative_energy_costs = [cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
+        positive_energy_costs = [cost * 0.999 for cost in
+                                 energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
         # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
         if len(self.wholesale_rate) == 1:
             negative_wholesale_rate_costs = self.ts_per_year * [-1.0 * self.wholesale_rate[0]]
+            wholesale_rate_costs = self.ts_per_year * [1.0 * self.wholesale_rate[0]]
         else:
             negative_wholesale_rate_costs = [-1.0 * x for x in self.wholesale_rate]
+            wholesale_rate_costs = [1.0 * x for x in self.wholesale_rate]
         if len(self.excess_rate) == 1:
             negative_excess_rate_costs = self.ts_per_year * [-1.0 * self.excess_rate[0]]
+            excess_rate_costs = self.ts_per_year * [1.0 * self.excess_rate[0]]
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
+            excess_rate_costs = [1.0 * x for x in self.excess_rate]
 
         # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
@@ -461,11 +473,28 @@ class UrdbParse:
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
-        export_rates = []
-        grid_export_rates = []
+        export_rates = list()
+        grid_export_rates = list()
+        rates_by_tech = list()
+        if len(techs) > 0:
+            num_sales_tiers = 3
+            techs_by_rate = [list(), list(), list()]
+            grid_export_rates = operator.add(grid_export_rates, positive_energy_costs)
+            grid_export_rates = operator.add(grid_export_rates, wholesale_rate_costs)
+            grid_export_rates = operator.add(grid_export_rates, excess_rate_costs)
+        else: 
+            num_sales_tiers = 0
+            techs_by_rate = []
         for tech in techs:
+            if self.net_metering and not tech.lower().endswith('nm'):
+                rates_by_tech.append([1,3])
+                techs_by_rate[0].append(tech.upper())
+                techs_by_rate[2].append(tech.upper())
+            else:     
+                rates_by_tech.append([2,3])
+                techs_by_rate[1].append(tech.upper())
+                techs_by_rate[2].append(tech.upper())
             for load in self.loads:
-                print(tech,load)
                 if tech.lower() == 'util':
                     export_rates = operator.add(export_rates, self.zero_array)     
                 elif not tech.lower().endswith('nm'):
@@ -473,6 +502,7 @@ class UrdbParse:
                     if load == 'wholesale':
                         if self.net_metering:
                             export_rates = operator.add(export_rates, negative_energy_costs)
+                           
                         else:
                             export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
                     elif load == 'export':
@@ -487,17 +517,6 @@ class UrdbParse:
                         export_rates = operator.add(export_rates, negative_excess_rate_costs)
                     else:
                         export_rates = operator.add(export_rates, self.zero_array)
-        if 'wholesale' in self.loads:
-            if self.net_metering:
-                grid_export_rates.append([-1.0*x for x in negative_energy_costs])
-            else:
-                grid_export_rates.append([-1.0*x for x in negative_wholesale_rate_costs])
-        else:
-            grid_export_rates.append(self.zero_array)
-        if 'export' in self.loads and len(self.techs) > 0:
-            grid_export_rates.append([-1.0*x for x in negative_excess_rate_costs])
-        else:
-            grid_export_rates.append(self.zero_array)
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
@@ -528,7 +547,8 @@ class UrdbParse:
                         energy_burn_intercept.append(0.0)
 
         return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept, \
-                energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit
+                energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit, \
+                rates_by_tech, techs_by_rate, num_sales_tiers
 
     def prepare_demand_periods(self, current_rate):
 

@@ -945,9 +945,23 @@ class DataManager:
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
-        sales_tiers = [1, 2]
-        non_storage_sales_tiers = [1]
-        storage_sales_tiers = [2]
+        if len(reopt_techs) > 0:
+            non_storage_sales_tiers = [1, 2]
+            storage_sales_tiers = [3]
+            curtailment_tiers = [3]
+        else:
+            non_storage_sales_tiers = []
+            storage_sales_tiers = []
+            curtailment_tiers = []
+            
+        if len(reopt_techs_bau) > 0:
+            non_storage_sales_tiers_bau = [1, 2]
+            storage_sales_tiers_bau = [3]
+            curtailment_tiers_bau = [3]
+        else:
+            non_storage_sales_tiers_bau = []
+            storage_sales_tiers_bau = []
+            curtailment_tiers_bau = []
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
@@ -1054,11 +1068,14 @@ class DataManager:
             'ElectricTechs': reopt_techs,
             'FuelBurningTechs': [t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown': self.no_turndown_techs,
-            'SalesTiers': sales_tiers,
+            'SalesTierCount': tariff_args.num_sales_tiers,
             'StorageSalesTiers': storage_sales_tiers,
             'NonStorageSalesTiers': non_storage_sales_tiers,
             'TimeStepsWithGrid': time_steps_with_grid,
-            'TimeStepsWithoutGrid': time_steps_without_grid
+            'TimeStepsWithoutGrid': time_steps_without_grid,
+            'SalesTiersByTech': tariff_args.rates_by_tech,
+            'TechsBySalesTier':tariff_args.techs_by_rate,
+            'CurtailmentTiers':curtailment_tiers
             }
 
         self.reopt_inputs_bau = {
@@ -1163,9 +1180,12 @@ class DataManager:
             'ElectricTechs':reopt_techs_bau,
             'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
             'TechsNoTurndown':self.no_turndown_techs,
-            'SalesTiers':sales_tiers,
-            'StorageSalesTiers':storage_sales_tiers,
-            'NonStorageSalesTiers':non_storage_sales_tiers,
+            'SalesTierCount':tariff_args.num_sales_tiers_bau,
+            'StorageSalesTiers':storage_sales_tiers_bau,
+            'NonStorageSalesTiers':non_storage_sales_tiers_bau,
             'TimeStepsWithGrid':time_steps_with_grid,
-            'TimeStepsWithoutGrid':time_steps_without_grid
+            'TimeStepsWithoutGrid':time_steps_without_grid,
+            'SalesTiersByTech': tariff_args.rates_by_tech_bau,
+            'TechsBySalesTier':tariff_args.techs_by_rate_bau,
+            'CurtailmentTiers':curtailment_tiers_bau
         }
