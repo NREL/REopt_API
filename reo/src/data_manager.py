@@ -791,15 +791,12 @@ class DataManager:
 
 
     def _get_tech_subsets(self, techs):
-        cc_techs=self.available_techs
-        fb_techs=self.fuel_burning_techs
-
         tech_subdivisions = list()
         for tech in techs:
             tech_sub = list()
-            if tech in cc_techs:
+            if tech in self.available_techs:
                 tech_sub.append('CapCost')
-            if tech in fb_techs:
+            if tech in self.fuel_burning_techs:
                 tech_sub.append('FuelBurn')
 
             tech_subdivisions.append(tech_sub)
