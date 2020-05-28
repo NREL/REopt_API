@@ -1187,7 +1187,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			# NOTE: must use anonymous expressions in this loop to overwrite values for cases with multiple PV
             if !isempty(p.ElecStorage)			
 				PVtoBatt = @expression(REopt, [ts in p.TimeStep],
-					sum(vec(dvProductionToStorage[b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage)))
+					sum(dvProductionToStorage[b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage))
 			else
 				PVtoBatt = @expression(REopt, [ts in p.TimeStep], 0.0)
             end
