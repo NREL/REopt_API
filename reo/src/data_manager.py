@@ -944,7 +944,16 @@ class DataManager:
         segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments_list_bau]
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-
+        
+        fb_techs = [t for t in reopt_techs if t in self.fuel_burning_techs]
+        fb_techs_bau = [t for t in reopt_techs_bau if t in self.fuel_burning_techs]
+        
+        techs_no_turndown = [t for t in reopt_techs if t in self.no_turndown_techs]
+        techs_no_turndown_bau = [t for t in reopt_techs_bau if t in self.no_turndown_techs]
+        
+        electric_techs = [t for t in reopt_techs if t in self.electic_producing_techs]
+        electric_techs_bau = [t for t in reopt_techs_bau if t in self.electic_producing_techs]
+        
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
@@ -1065,9 +1074,9 @@ class DataManager:
             'TechsChargingStorage': techs_charging_storage,
             'TechsInClass': techs_in_class,
             'TechsByFuelType': techs_by_fuel_type,
-            'ElectricTechs': reopt_techs,
-            'FuelBurningTechs': [t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
-            'TechsNoTurndown': self.no_turndown_techs,
+            'ElectricTechs': electric_techs,
+            'FuelBurningTechs': fb_techs,
+            'TechsNoTurndown': techs_no_turndown,
             'SalesTierCount': tariff_args.num_sales_tiers,
             'StorageSalesTiers': storage_sales_tiers,
             'NonStorageSalesTiers': non_storage_sales_tiers,
@@ -1177,9 +1186,9 @@ class DataManager:
             'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':techs_in_class_bau,
             'TechsByFuelType':techs_by_fuel_type_bau,
-            'ElectricTechs':reopt_techs_bau,
-            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
-            'TechsNoTurndown':self.no_turndown_techs,
+            'ElectricTechs':electric_techs_bau,
+            'FuelBurningTechs':fb_techs_bau,
+            'TechsNoTurndown':techs_no_turndown_bau,
             'SalesTierCount':tariff_args.num_sales_tiers_bau,
             'StorageSalesTiers':storage_sales_tiers_bau,
             'NonStorageSalesTiers':non_storage_sales_tiers_bau,

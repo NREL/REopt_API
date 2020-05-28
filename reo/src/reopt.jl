@@ -42,9 +42,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	TempTechsNoTurndown = [t for t in p.Tech if t in ["PV1","PV1NM","WIND","WINDNM"]]  #To replace p.TechsNoTurndown, which needs to filter out any technologies not also in p.Tech
-	TempTechsTurndown = [t for t in p.Tech if !(t in ["PV1","PV1NM","WIND","WINDNM"])]  #To be p.TechsTurndown, which isn't explicitly in math but we need to add 
-	
 	TempSegBySubTech = Dict()  # to replace p.SegByTechSubdivision[t,k], which is transposed
 	for t in p.Tech
 		for k in p.Subdivision
@@ -595,13 +592,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 		
 		## Constraint (7d): Non-turndown technologies are always at rated production
-		@constraint(REopt, RenewableRatedProductionCon[t in TempTechsNoTurndown, ts in p.TimeStep],
+		@constraint(REopt, RenewableRatedProductionCon[t in p.TechsNoTurndown, ts in p.TimeStep],
 			dvRatedProduction[t,ts] == dvSize[t]  
 		)
 			
 		
 		##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
-		@constraint(REopt, TurbineRatedProductionCon[t in TempTechsTurndown, ts in p.TimeStep],
+		@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
 			dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
 		)
 			
