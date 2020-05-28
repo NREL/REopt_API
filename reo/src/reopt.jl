@@ -268,6 +268,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
+	
     #TODO: account for exist formatting
     #for t in p.Tech
     #    if p.MaxSize == 0
@@ -925,8 +926,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#)
 	
 	###  New Objective Function
-	if !isempty(p.Tech)
-		@expression(REopt, REcosts,
+	@expression(REopt, REcosts,
 			## Non-Storage Technology Capital Costs
 			sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
 			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) +
@@ -967,34 +967,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			## Production Incentives
 			r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
 			
-		)
-	else
-		@expression(REopt, REcosts,
-					
-			## Storage capital costs
-			sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
-			
-			r_tax_fraction_offtaker * p.pwf_e * (
-			
-			## Total Demand Charges
-					p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-			
-			## Peak Ratchet Charges
-			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-			
-			## Peak Monthly Demand Charges
-			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-			
-			## Fixed Charges
-			 p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
-			
-			) -
-			
-			## Production Incentives
-			r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
-			
-		)
-	end
+	)
 	
     if Obj == 1
 		@objective(REopt, Min, REcosts)
@@ -1077,7 +1050,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, ExportedElecGEN,
 					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
 						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))        
-    # Needs levelization factor?
+		# Needs levelization factor?
 		@expression(REopt, ExportBenefitYr1,
                 p.TimeStepScaling * sum( sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
 	else
@@ -1088,7 +1061,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, ExportBenefitYr1,0.0)
 	end
     Year1UtilityEnergy = TotalEnergyChargesUtil / p.pwf_e
-
 
     ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
@@ -1203,7 +1175,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["GENERATORtoGrid"] = []
 		results["GENERATORtoLoad"] = []
 	end
-
+	
 	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
     for PVclass in PVclasses
 		PVtechs_in_class = filter(t->startswith(t, PVclass), PVTechs)
@@ -1213,20 +1185,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			results[string(PVclass, "_kw")] = round(value(sum(dvSize[t] for t in PVtechs_in_class)), digits=4)
 			
 			# NOTE: must use anonymous expressions in this loop to overwrite values for cases with multiple PV
-            PVtoBatt = @expression(REopt, [ts in p.TimeStep],
-                sum(dvProductionToStorage[b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage))
-            results[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
-
-			PVtoLoad = @expression(REopt, [ts in p.TimeStep],
-				sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
-				- sum(dvProductionToGrid[t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t])
-				- sum(dvProductionToStorage["Elec",t,ts] for t in PVtechs_in_class)
-				)
-            results[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
+            if !isempty(p.ElecStorage)			
+				PVtoBatt = @expression(REopt, [ts in p.TimeStep],
+					sum(vec(dvProductionToStorage[b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage)))
+			else
+				PVtoBatt = @expression(REopt, [ts in p.TimeStep], 0.0)
+            end
+			results[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
 			
-            PVtoGrid = @expression(REopt, [ts in p.TimeStep],
+			PVtoGrid = @expression(REopt, [ts in p.TimeStep],
 					sum(dvProductionToGrid[t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]))
     	    results[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
+			
+			PVtoLoad = @expression(REopt, [ts in p.TimeStep],
+				sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				- PVtoGrid[ts] - PVtoBatt[ts]
+				)
+			
+            results[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
 			
 			Year1PvProd = @expression(REopt, sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
 				for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
@@ -1244,22 +1220,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
             results[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
         end
     end
-
+	
 	if !isempty(WindTechs)
+		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
+					sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in p.SalesTiers))
+		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 		@expression(REopt, WINDtoLoad[ts in p.TimeStep],
 					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in WindTechs) - sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in p.SalesTiersByTech[t])
-						- sum(dvProductionToStorage["Elec",t,ts] for t in WindTechs) )
+						for t in WindTechs) - WINDtoGrid[t] - WINDtoBatt[t] )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
-		@expression(REopt, WINDtoGrid[ts in p.TimeStep],
-					sum(dvProductionToGrid[t,u,ts] for t in WindTechs, u in p.SalesTiersByTech[t]))
-		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+		
 	else
 		results["WINDtoLoad"] = []
     	results["WINDtoGrid"] = []
 	end
-
+	
     results["Load"] = p.LoadProfile["1R", :]
 	
 	#results["model"] = REopt
