@@ -928,7 +928,7 @@ class DataManager:
         fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
 
         fuel_limit = [0.0 for _ in fuel_type]
-        fuel_limit_bau = [0.0 for _ in fuel_type]
+        fuel_limit_bau = [0.0 for _ in fuel_type_bau]
         for f in range(len(fuel_type)):
             for t in techs_by_fuel_type[f]:
                 tech_idx = reopt_techs.index(t)
@@ -1067,7 +1067,7 @@ class DataManager:
             'TechsInClass': techs_in_class,
             'TechsByFuelType': techs_by_fuel_type,
             'ElectricTechs': reopt_techs,
-            'FuelBurningTechs': [t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'FuelBurningTechs': [t for t in self.fuel_burning_techs if t.upper() in reopt_techs],
             'TechsNoTurndown': self.no_turndown_techs,
             'SalesTierCount': tariff_args.num_sales_tiers,
             'StorageSalesTiers': storage_sales_tiers,
@@ -1179,7 +1179,7 @@ class DataManager:
             'TechsInClass':techs_in_class_bau,
             'TechsByFuelType':techs_by_fuel_type_bau,
             'ElectricTechs':reopt_techs_bau,
-            'FuelBurningTechs':[t for t in self.fuel_burning_techs if (t.upper() if t is not 'util' else t.upper() + '1') in reopt_techs],
+            'FuelBurningTechs':[t for t in self.fuel_burning_techs if t.upper() in reopt_techs_bau],
             'TechsNoTurndown':self.no_turndown_techs,
             'SalesTierCount':tariff_args.num_sales_tiers_bau,
             'StorageSalesTiers':storage_sales_tiers_bau,
