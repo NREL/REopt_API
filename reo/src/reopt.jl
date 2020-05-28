@@ -253,12 +253,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		#for u in p.StorageSalesTiers  #don't allow curtailment of storage either
 		#	fix(dvStorageToGrid[u,ts], 0.0, force=true)
 		#end
-		
-		for t in p.Tech
-			for u in p.SalesTiersByTech[t]
-				fix(dvProductionToGrid[t,u,ts],0,force=true)
-			end
-		end
 	end
 	
 	#don't allow curtailment or sales of stroage 
@@ -678,7 +672,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@constraint(REopt, AnnualSalesByTierNonStorageCon[u in p.NonStorageSalesTiers],
 		  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid)  <= TempMaxGridSales[u]
 		)
-		
+        
+        # existing PV is making problem infeasible or unbounded in BAU
+
 	end
 	## End constraint (8)
 	
