@@ -88,6 +88,7 @@ class DataManager:
     def add_load(self, load):
         #  fill in W, X, S bins
         self.elec_load = copy.deepcopy(load.load_list)
+        self.elec_load_bau = copy.deepcopy(load.bau_load_list)
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
@@ -1152,7 +1153,7 @@ class DataManager:
 	        'MaxGridSales': self.load.annual_kwh,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': self.elec_load,
+	        'ElecLoad': self.elec_load_bau,
 	        'FuelLimit': fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
