@@ -160,7 +160,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
         binProdIncent[p.Tech], Bin # Z^{pi}_{t}:  1 If production incentive is available for technology t; 0 otherwise 
 		#binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
-		binSegmentSelect[p.Tech, p.Subdivision, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
+		binSegmentSelect[p.Tech, p.Subdivision, p.Seg], Bin # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
         binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
@@ -556,7 +556,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
 		)
 			
-		
 		##Constraint (7f)-1: Minimum segment size
 		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
 			dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,k,s] * binSegmentSelect[t,k,s]
@@ -572,7 +571,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(dvSystemSizeSegment[t,k,s] for s in 1:p.SegByTechSubdivision[k,t])  == dvSize[t]
 		)
 			
-		
 		##Constraint (7h): At most one segment allowed
 		@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
 			sum(binSegmentSelect[t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= binSingleBasicTech[t,c]
@@ -880,46 +878,46 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
-			## Non-Storage Technology Capital Costs
-			sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
-			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-			
-			## Storage capital costs
-			sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
-			
-			## Fixed O&M, tax deductible for owner
-			r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
+		## Non-Storage Technology Capital Costs
+		sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
+		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
+		
+		## Storage capital costs
+		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+		
+		## Fixed O&M, tax deductible for owner
+		r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
 
-			## Variable O&M, tax deductible for owner
-			r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
 
-			
-			r_tax_fraction_offtaker * p.pwf_e * (
-			
-			## Total Production Costs
-			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
-			
-			#
-			## Total Energy Charges
-					p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-			
-			## TOU Demand Charges
-			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-			
-			## Peak Monthly Demand Charges
-			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-			
-			## Energy Exports
-					p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep )  + 
-			
-			## Fixed Charges
-			 p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
-			
-			) -
-			
-			## Production Incentives
-			r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
-			
+        ## Variable O&M, tax deductible for owner
+        r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
+
+        r_tax_fraction_offtaker * p.pwf_e * (
+        
+        ## Total Production Costs
+        p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+        
+        ## Total Energy Charges
+                p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+        
+        ## TOU Demand Charges
+        sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+        
+        ## Peak Monthly Demand Charges
+        sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+        
+        ## Energy Exports
+                p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep )  + 
+        
+        ## Fixed Charges
+            p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
+        
+        ) -
+        
+        ## Production Incentives
+        r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
+
+
 	)
 	
     if Obj == 1
@@ -1062,10 +1060,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			results["Generator"] = Dict()
             results["generator_kw"] = value(sum(dvSize[t] for t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
+			results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / p.pwf_om, digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
+	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / p.pwf_om, digits=0)
 	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
-	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker / p.pwf_e, digits=2)
-	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om, digits=0)
+	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) / p.pwf_e, digits=2)
 		end
     end
 	
