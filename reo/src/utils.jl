@@ -2,22 +2,11 @@ import Base.length
 import Base.reshape
 import AxisArrays.AxisArray
 import JuMP.value
+import LinearAlgebra: transpose
 using AxisArrays
 using JuMP
 using Printf
 
-
-function emptySetException(sets, values, floatbool=false)
-    try
-        return parameter(sets, values)
-    catch
-        if floatbool
-            return Float64[]
-        else
-            return Int64[]
-        end
-    end
-end
 
 function string_dictkeys_tosymbols(d::Dict)
     d2 = Dict()
@@ -70,7 +59,7 @@ Base.@kwdef struct Parameter
 	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
 	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
-	 TimeStepRatchets   #  H_r: Time steps in ratchet r
+	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
      TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
 	 #SubdivsionByTech K_t \subset K: Subdivisions applied to technology t
@@ -317,8 +306,6 @@ function Parameter(d::Dict)
         end
     end
 
-    # got unsupported keyword arguments "NumRatchets", "FuelAvail", "TechIsGrid", "ProdFactor"
-
     d[:Seg] = 1:d["CapCostSegCount"]
     d[:Points] = 0:d["CapCostSegCount"]
     d[:Month] = 1:12
@@ -351,8 +338,7 @@ function Parameter(d::Dict)
     d["MaxSize"] = AxisArray(d["MaxSize"], d["Tech"])
     d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
     d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])
-    d["TimeStepRatchets"] = emptySetException(d[:Ratchets], d["TimeStepRatchets"])
-    d["DemandRates"] = emptySetException((d[:Ratchets], d[:DemandBin]), d["DemandRates"], true)
+    d["DemandRates"] = transpose(reshape(d["DemandRates"], d["DemandBinCount"], d["NumRatchets"]))
     d["ExportRates"] = parameter((d["Tech"], d["Load"], d[:TimeStep]), d["ExportRates"])
     d["DemandRatesMonth"] = parameter((d[:Month], d[:DemandMonthsBin]), d["DemandRatesMonth"])
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])

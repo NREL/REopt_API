@@ -88,6 +88,7 @@ class DataManager:
     def add_load(self, load):
         #  fill in W, X, S bins
         self.elec_load = copy.deepcopy(load.load_list)
+        self.elec_load_bau = copy.deepcopy(load.bau_load_list)
         for _ in range(self.n_timesteps * 3):
             load.load_list.append(big_number)
             load.bau_load_list.append(big_number)
@@ -790,15 +791,12 @@ class DataManager:
 
 
     def _get_tech_subsets(self, techs):
-        cc_techs=self.available_techs
-        fb_techs=self.fuel_burning_techs
-
         tech_subdivisions = list()
         for tech in techs:
             tech_sub = list()
-            if tech in cc_techs:
+            if tech in self.available_techs:
                 tech_sub.append('CapCost')
-            if tech in fb_techs:
+            if tech in self.fuel_burning_techs:
                 tech_sub.append('FuelBurn')
 
             tech_subdivisions.append(tech_sub)
@@ -927,7 +925,7 @@ class DataManager:
         fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
 
         fuel_limit = [0.0 for _ in fuel_type]
-        fuel_limit_bau = [0.0 for _ in fuel_type]
+        fuel_limit_bau = [0.0 for _ in fuel_type_bau]
         for f in range(len(fuel_type)):
             for t in techs_by_fuel_type[f]:
                 tech_idx = reopt_techs.index(t)
@@ -1161,7 +1159,7 @@ class DataManager:
 	        'MaxGridSales': self.load.annual_kwh,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': self.elec_load,
+	        'ElecLoad': self.elec_load_bau,
 	        'FuelLimit': fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,

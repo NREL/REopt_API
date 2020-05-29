@@ -241,12 +241,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		#for u in p.StorageSalesTiers  #don't allow curtailment of storage either
 		#	fix(dvStorageToGrid[u,ts], 0.0, force=true)
 		#end
-		
-		for t in p.Tech
-			for u in p.SalesTiersByTech[t]
-				fix(dvProductionToGrid[t,u,ts],0,force=true)
-			end
-		end
 	end
 	
 	#don't allow curtailment or sales of stroage 
@@ -666,7 +660,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@constraint(REopt, AnnualSalesByTierNonStorageCon[u in p.NonStorageSalesTiers],
 		  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid)  <= TempMaxGridSales[u]
 		)
-		
+        
+        # existing PV is making problem infeasible or unbounded in BAU
+
 	end
 	## End constraint (8)
 	
@@ -935,10 +931,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 			
 			#
-			## Total Demand Charges
+			## Total Energy Charges
 					p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
 			
-			## Peak Ratchet Charges
+			## TOU Demand Charges
 			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
 			
 			## Peak Monthly Demand Charges

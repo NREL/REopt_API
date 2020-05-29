@@ -244,3 +244,5 @@ def check_common_outputs(Test, d_calculated, d_expected):
                 traceback: \t {}
                 """.format(em.task, em.message, em.traceback)
             )
+        else:
+            raise e

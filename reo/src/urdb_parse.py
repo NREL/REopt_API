@@ -54,7 +54,7 @@ class REoptArgs:
                 self.demand_ratchets_monthly[month].append(hour)
         self.demand_rates_tou = []
         self.demand_ratchets_tou = []
-        self.demand_num_ratchets = 12
+        self.demand_num_ratchets = 0
         self.demand_tiers_num = 1
         self.demand_month_tiers_num = 1
         self.demand_max_in_tiers = 1 * [big_number]
@@ -211,7 +211,7 @@ class UrdbParse:
         self.last_hour_in_month = []
         for month in range(0, 12):
             days_elapsed = sum(self.days_in_month[0:month + 1])
-            self.last_hour_in_month.append(days_elapsed * 24)
+            self.last_hour_in_month.append((days_elapsed * 24)-1)
 
     def parse_rate(self, utility, rate):
         log.info("Processing: " + utility + ", " + rate)
@@ -701,9 +701,9 @@ class UrdbParse:
                         tou_adj = float(tier.get('adj') or 0)
 
                         demand_rates.append(tou_rate + tou_adj)
-
+                        
                         for step in time_steps:
-                            self.demand_rates_summary[step - 1] += tou_rate + tou_adj
+                            self.demand_rates_summary[step ] += tou_rate + tou_adj
 
         self.reopt_args.demand_ratchets_tou = demand_periods
         self.reopt_args.demand_rates_tou = demand_rates
@@ -757,5 +757,4 @@ class UrdbParse:
                         step_array.append(step_of_year)
                     step_of_year += 1
                 hour_of_year += 1
-
         return step_array
