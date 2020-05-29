@@ -1102,10 +1102,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			results["Generator"] = Dict()
             results["generator_kw"] = value(sum(dvSize[t] for t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
+			results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / p.pwf_om, digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
+	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / p.pwf_om, digits=0)
 	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
-	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker / p.pwf_e, digits=2)
-	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner / p.pwf_om, digits=0)
+	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) / p.pwf_e, digits=2)
 		end
     end
 	

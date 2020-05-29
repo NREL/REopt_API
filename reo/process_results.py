@@ -414,6 +414,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_fixed_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_net_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_year_one_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
