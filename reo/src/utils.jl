@@ -235,7 +235,7 @@ Base.@kwdef struct Parameter
      GridExportRates
      FuelBurnSlope
      FuelBurnYInt
-     MaxGridSales::Array{<:Real, 1}
+     MaxGridSales
      ProductionIncentiveRate
      ProductionFactor
      ElecLoad
@@ -367,7 +367,7 @@ function Parameter(d::Dict)
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
     d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
     d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
-    d["MaxGridSales"] = [d["MaxGridSales"]]
+    d["MaxGridSales"] = len_zero_param(d[:SalesTiers], d["MaxGridSales"])
 
     # Indexed Sets
     d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])

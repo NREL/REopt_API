@@ -956,19 +956,23 @@ class DataManager:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
             curtailment_tiers = [3]
+            max_grid_sales = [self.load.annual_kwh,self.load.annual_kwh,10*self.load.annual_kwh]
         else:
             non_storage_sales_tiers = []
             storage_sales_tiers = []
             curtailment_tiers = []
+            max_grid_sales = []
             
         if len(reopt_techs_bau) > 0:
             non_storage_sales_tiers_bau = [1, 2]
             storage_sales_tiers_bau = [3]
             curtailment_tiers_bau = [3]
+            max_grid_sales_bau = [self.load.annual_kwh,self.load.annual_kwh,10*self.load.annual_kwh]
         else:
             non_storage_sales_tiers_bau = []
             storage_sales_tiers_bau = []
             curtailment_tiers_bau = []
+            max_grid_sales_bau = []
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
@@ -1043,7 +1047,7 @@ class DataManager:
 	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
 	        'FuelBurnSlope': tariff_args.fuel_burn_rate,
 	        'FuelBurnYInt': tariff_args.fuel_burn_intercept,
-	        'MaxGridSales': self.load.annual_kwh,
+	        'MaxGridSales': max_grid_sales,
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
 	        'ElecLoad': self.elec_load, # Needed to copy make sure that changed
@@ -1156,7 +1160,7 @@ class DataManager:
 	        'GridExportRates': tariff_args.grid_export_rates_bau,
 	        'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
 	        'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
-	        'MaxGridSales': self.load.annual_kwh,
+	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
 	        'ElecLoad': self.elec_load_bau,

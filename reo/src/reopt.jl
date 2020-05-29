@@ -25,7 +25,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
-	TempMaxGridSales = [p.MaxGridSales[1],p.MaxGridSales[1],10*p.MaxGridSales[1]]
 	
 		
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
@@ -652,13 +651,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		
 		##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
 		@constraint(REopt, AnnualSalesByTierStorageCon[u in p.StorageSalesTiers],
-		 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u]) for ts in p.TimeStepsWithGrid) <= TempMaxGridSales[u]
+		 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u]) for ts in p.TimeStepsWithGrid) <= p.MaxGridSales[u]
 		)
 		
 		
 		##Constraint (8g): Total sales to grid no greater than annual allocation - non-storage tiers
 		@constraint(REopt, AnnualSalesByTierNonStorageCon[u in p.NonStorageSalesTiers],
-		  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid)  <= TempMaxGridSales[u]
+		  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid)  <= p.MaxGridSales[u]
 		)
         
         # existing PV is making problem infeasible or unbounded in BAU
