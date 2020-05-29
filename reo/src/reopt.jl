@@ -26,10 +26,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
 	TempMaxGridSales = [p.MaxGridSales[1],p.MaxGridSales[1],10*p.MaxGridSales[1]]
-
-	TempTechByFuelType = Dict()
-	TempTechByFuelType["DIESEL"] = ["GENERATOR"]
 	
+		
 	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
 	TempDischargeEff = Dict()  # replaces p.DischargeEfficiency[b] -- indexing is numeric
 	TempGridChargeEff = p.GridChargeEfficiency[1]  # replaces p.GridChargeEfficiency[b] -- should be scalar
@@ -299,7 +297,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					
 	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
 	@constraint(REopt, TotalFuelConsumptionCon[f in p.FuelType],
-				sum( dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep ) <= 
+				sum( dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep ) <= 
 				p.FuelLimit[f]
 				)
 	
@@ -941,7 +939,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			r_tax_fraction_offtaker * p.pwf_e * (
 			
 			## Total Production Costs
-			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 			
 			#
 			## Total Demand Charges
@@ -1028,7 +1026,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                                               for t in GeneratorTechs, ts in p.TimeStep))
 
     @expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) )
-    @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
+    @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
     @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
 	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
     @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
