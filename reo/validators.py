@@ -700,8 +700,12 @@ class ValidateNestedInput:
                 if validation_attribute == 'restrict_to':
                     bad_val = "OOPS"
                 if validation_attribute == 'type':
-                    if any(isinstance(good_val, x) for x in [float, int, dict, bool, list]):
-                        bad_val = "OOPS"
+                    if type(attribute) != list and 'list_of_float' != attribute:
+                        if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
+                            bad_val = "OOPS"
+                    elif 'list_of_float' in attribute or 'list_of_float' == attribute:
+                        if isinstance(good_val, list):
+                            bad_val = "OOPS"
 
                 if bad_val is not None:
                     self.update_attribute_value(object_name_path, number, name, bad_val)
@@ -717,7 +721,7 @@ class ValidateNestedInput:
                                    validation_attribute=definition_attribute, number=number)
 
         self.recursively_check_input_dict(self.nested_input_definitions, add_invalid_data)
-
+        
         return test_data_list
 
     def add_number_to_listed_inputs(self, object_name_path, template_values=None, real_values=None, number=1,
@@ -943,33 +947,34 @@ class ValidateNestedInput:
                         gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
-            if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                    self.input_data_errors.append(
-                        'LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+            if self.isValid:
+                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append(
+                            'LoadProfile outage_start_hour and outage_end_hour cannot be the same')
 
-            if len(real_values.get('percent_share')) > 0:
-                percent_share_sum = sum(real_values['percent_share'])
-                if percent_share_sum != 100.0:
-                    self.input_data_errors.append('The sum of elements of percent share list for hybrid load profile should be 100.')
+                if len(real_values.get('percent_share')) > 0:
+                    percent_share_sum = sum(real_values['percent_share'])
+                    if percent_share_sum != 100.0:
+                        self.input_data_errors.append('The sum of elements of percent share list for hybrid load profile should be 100.')
 
 
-            if real_values.get('annual_kwh') is not None:
-                if type(real_values['annual_kwh']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
+                if real_values.get('annual_kwh') is not None:
+                    if type(real_values['annual_kwh']) is not list:
+                        self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
 
-            if real_values.get('doe_reference_name') is not None:
-                if type(real_values['doe_reference_name']) is not list:
-                    self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
+                if real_values.get('doe_reference_name') is not None:
+                    if type(real_values['doe_reference_name']) is not list:
+                        self.update_attribute_value(object_name_path, number, 'doe_reference_name', [real_values['doe_reference_name']])
 
-                if len(real_values.get('doe_reference_name')) > 1:
-                    if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
-                        self.input_data_errors.append('The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
+                    if len(real_values.get('doe_reference_name')) > 1:
+                        if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
+                            self.input_data_errors.append('The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
 
-                    if real_values.get('annual_kwh') is not None:
-                        if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
-                            self.input_data_errors.append(
-                                'The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid load profile')
+                        if real_values.get('annual_kwh') is not None:
+                            if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
+                                self.input_data_errors.append(
+                                    'The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid load profile')
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
