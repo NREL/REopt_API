@@ -26,19 +26,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
 	
-		
-	TempChargeEff = Dict()    # replaces p.ChargeEfficiency[b,t] -- indexing is numeric
-	TempDischargeEff = Dict()  # replaces p.DischargeEfficiency[b] -- indexing is numeric
-	TempGridChargeEff = p.GridChargeEfficiency[1]  # replaces p.GridChargeEfficiency[b] -- should be scalar
-	for b in p.Storage
-		TempDischargeEff[b] = p.DischargeEfficiency[1]
-		idx = 1
-		for t in p.Tech
-			TempChargeEff[b,t] = p.ChargeEfficiency[idx,1]    #needs to be transposed
-			idx += 1
-		end
-	end
-	
 	TempTechsByNMILRegime = Dict()  #replaces p.TechsByNMILRegime which isn't loaded
 	for v in p.NMILRegime
 		TempTechsByNMILRegime[v] = []
@@ -407,31 +394,31 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.ElectricTechs) + 
-					TempGridChargeEff*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
+					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.ElectricTechs) + 
+					p.GridChargeEfficiency*dvGridToStorage[ts] - dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
 					)
 				)
 				
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
 	@constraint(REopt, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-					sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.ElectricTechs) - dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
+					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.ElectricTechs) - dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
 					)
 				)
 	
 	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
 	#@constraint(REopt, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
     #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
+	#				sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
 	#				)
 	#			)
 				
 	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
 	#@constraint(REopt, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(TempChargeEff[b,t] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/TempDischargeEff[b]
+	#				sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
+	#				dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
 	#				)
 	#			)
 	

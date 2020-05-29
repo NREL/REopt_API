@@ -241,7 +241,7 @@ Base.@kwdef struct Parameter
      ElecLoad
      FuelLimit
      ChargeEfficiency
-     GridChargeEfficiency
+     GridChargeEfficiency::Float64
      DischargeEfficiency
      StorageMinSizeEnergy
      StorageMaxSizeEnergy
@@ -357,7 +357,7 @@ function Parameter(d::Dict)
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
     d["ChargeEfficiency"] = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
-    d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
+    #d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
     d["DischargeEfficiency"] = AxisArray(d["DischargeEfficiency"], d["Storage"])
     d["StorageMinSizeEnergy"] = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
     d["StorageMaxSizeEnergy"] = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
