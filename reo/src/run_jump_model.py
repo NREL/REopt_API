@@ -83,6 +83,16 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
+    reopt_inputs['FuelRate'] = [float(val) for val in reopt_inputs['FuelRate']]
+    reopt_inputs['CapCostYInt'] = [int(val) for val in reopt_inputs['CapCostYInt']]
+    reopt_inputs['CapCostSlope'] = [int(val) for val in reopt_inputs['CapCostSlope']]
+    reopt_inputs['TechToLocation'] = [int(val) for val in reopt_inputs['TechToLocation']]
+    reopt_inputs['TechIsGrid'] = [int(val) for val in reopt_inputs['TechIsGrid']]
+    reopt_inputs['TechToLoadMatrix'] = [int(val) for val in reopt_inputs['TechToLoadMatrix']]
+    reopt_inputs['TechToTechClassMatrix'] = [int(val) for val in reopt_inputs['TechToTechClassMatrix']]
+    reopt_inputs['TechToNMILMapping'] = [int(val) for val in reopt_inputs['TechToNMILMapping']]
+    #reopt_inputs['TimeStepRatchetsMonth'] = [[float(val) for val in i] for i in reopt_inputs['TimeStepRatchetsMonth']]
+
     logger.info("Running JuMP model ...")
     try:
         j = julia.Julia()
