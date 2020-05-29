@@ -923,46 +923,44 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
-			## Non-Storage Technology Capital Costs
-			sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
-			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) +
-			
-			## Storage capital costs
-			sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
-			
-			## Fixed O&M, tax deductible for owner
-			r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
+        ## Non-Storage Technology Capital Costs
+        sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
+        sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) +
+        
+        ## Storage capital costs
+        sum( p.StoragePowerCost[b] * dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+        
+        ## Fixed O&M, tax deductible for owner
+        r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
 
-			## Variable O&M, tax deductible for owner
-			r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
+        ## Variable O&M, tax deductible for owner
+        r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
 
-			
-			r_tax_fraction_offtaker * p.pwf_e * (
-			
-			## Total Production Costs
-			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
-			
-			#
-			## Total Energy Charges
-					p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-			
-			## TOU Demand Charges
-			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-			
-			## Peak Monthly Demand Charges
-			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-			
-			## Energy Exports
-					p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep )  + 
-			
-			## Fixed Charges
-			 p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
-			
-			) -
-			
-			## Production Incentives
-			r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
-			
+        r_tax_fraction_offtaker * p.pwf_e * (
+        
+        ## Total Production Costs
+        p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+        
+        ## Total Energy Charges
+                p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
+        
+        ## TOU Demand Charges
+        sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
+        
+        ## Peak Monthly Demand Charges
+        sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
+        
+        ## Energy Exports
+                p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep )  + 
+        
+        ## Fixed Charges
+            p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
+        
+        ) -
+        
+        ## Production Incentives
+        r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
+
 	)
 	
     if Obj == 1
@@ -1008,7 +1006,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                        for t in GeneratorTechs, ts in p.TimeStep))
 
     if !isempty(p.Tech)
-		@expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
+        @expression(REopt, TotalTechCapCosts, 
+            sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) + 
 			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in TempSegBySubTech[t,"CapCost"] ) )
 	else
 		@expression(REopt, TotalTechCapCosts, 0.0)
