@@ -202,7 +202,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
         binProdIncent[p.Tech], Bin # Z^{pi}_{t}:  1 If production incentive is available for technology t; 0 otherwise 
 		#binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
-		binSegmentSelect[p.Tech, p.Subdivision, p.Seg] # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
+		binSegmentSelect[p.Tech, p.Subdivision, p.Seg], Bin # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
         binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
@@ -599,7 +599,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
 		)
 			
-		
 		##Constraint (7f)-1: Minimum segment size
 		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
 			dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,k,s] * binSegmentSelect[t,k,s]
@@ -615,7 +614,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(dvSystemSizeSegment[t,k,s] for s in TempSegBySubTech[t,k])  == dvSize[t]
 		)
 			
-		
 		##Constraint (7h): At most one segment allowed
 		@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
 			sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) <= binSingleBasicTech[t,c]

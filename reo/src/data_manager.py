@@ -789,7 +789,6 @@ class DataManager:
 
         return max_sizes, min_turn_down, max_sizes_location
 
-
     def _get_tech_subsets(self, techs):
         tech_subdivisions = list()
         for tech in techs:
@@ -798,9 +797,7 @@ class DataManager:
                 tech_sub.append('CapCost')
             if tech in self.fuel_burning_techs:
                 tech_sub.append('FuelBurn')
-
             tech_subdivisions.append(tech_sub)
-
         return tech_subdivisions
 
     def _get_time_steps_with_grid(self):
@@ -908,9 +905,10 @@ class DataManager:
         subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
         subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
 
-        # There are no cost curves yet
-        seg_by_tech_subdivision = [[1 for _ in reopt_techs] for __ in subdivisions]
-        seg_by_tech_subdivision_bau = [[1 for _ in reopt_techs_bau] for __ in subdivisions]
+        # There are no cost curves yet, but incentive size limits and existing techs require cost curve segments
+        # TODO: create this array in _get_REopt_cost_curve?
+        seg_by_tech_subdivision = [[n_segments for _ in reopt_techs] for __ in subdivisions]
+        seg_by_tech_subdivision_bau = [[n_segments_bau for _ in reopt_techs_bau] for __ in subdivisions]
 
         if len(reopt_techs) == 0:
             techs_by_fuel_type = []
@@ -935,11 +933,11 @@ class DataManager:
                 tech_idx = reopt_techs_bau.index(t)
                 fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
 
-        segment_min_size = [[[0. for _ in reopt_techs] for __ in subdivisions] for ___ in n_segments_list]
-        segment_min_size_bau = [[[0. for _ in reopt_techs_bau] for __ in subdivisions]for ___ in n_segments_list_bau]
+        segment_min_size = [[[cap_cost_x[i] for i in range(j, n_segments+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x), n_segments+1)] 
+        segment_min_size_bau = [[[cap_cost_x_bau[i] for i in range(j, n_segments_bau+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x_bau), n_segments_bau+1)] 
 
-        segment_max_size = [[[max_sizes[i] for i in range(len(reopt_techs))] for __ in subdivisions] for ___ in n_segments_list]
-        segment_max_size_bau = [[[max_sizes_bau[i] for i in range(len(reopt_techs_bau))] for __ in subdivisions] for ___ in n_segments_list_bau]
+        segment_max_size = [[[cap_cost_x[i+1] for i in range(j, n_segments+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x), n_segments+1)] 
+        segment_max_size_bau = [[[cap_cost_x_bau[i+1] for i in range(j, n_segments_bau+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x_bau), n_segments_bau+1)] 
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
 
