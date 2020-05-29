@@ -28,7 +28,7 @@ class TestHybridLoadProfile(ResourceTestCaseMixin, TestCase):
                         "escalation_pct": 0.023,
                         "offtaker_tax_pct": 0.26,
                         "offtaker_discount_pct": 0.083,
-                        "analysis_years": 25,
+                        "analysis_years": 25.0,
                         "value_of_lost_load_us_dollars_per_kwh": 100.0,
                         "microgrid_upgrade_cost_pct": 0.3
                     },

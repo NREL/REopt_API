@@ -177,15 +177,15 @@ nested_input_definitions = {
         },
         "owner_tax_pct": {
           "type": "float",
-          "min": 0,
-          "max": 1,
+          "min": 0.0,
+          "max": 1.0,
           "default": 0.26,
           "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
         "owner_discount_pct": {
           "type": "float",
-          "min": 0,
-          "max": 1,
+          "min": 0.0,
+          "max": 1.0,
           "default": 0.083,
           "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
@@ -410,14 +410,14 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0,
+          "default": 0.0,
           "description": "Minimum wind power capacity constraint for optimization"
         },
         "max_kw": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0,
+          "default": 0.0,
           "description": "Maximum wind power capacity constraint for optimization. Set to zero to disable Wind. Enabled by default"
         },
         "installed_cost_us_dollars_per_kw": {
@@ -493,14 +493,14 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0,
+          "default": 0.0,
           "description": "Federal rebate based on installed capacity"
         },
         "state_rebate_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0,
+          "default": 0.0,
           "description": "State rebates based on installed capacity"
         },
         "state_rebate_max_us_dollars": {
@@ -1078,15 +1078,15 @@ nested_input_definitions = {
         "pbi_years": {
           "type": "float",
           "min": 0.0,
-          "max": 1e9,
-          "default": 0,
+          "max": 1.0e9,
+          "default": 0.0,
           "description": "Duration of production-based incentives from installation date"
         },
         "pbi_system_max_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1e9,
-          "default": 0,
+          "max": 1.0e9,
+          "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
         }
       }
