@@ -943,10 +943,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
 			
 			#
-			## Total Demand Charges
+			## Total Energy Charges
 					p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
 			
-			## Peak Ratchet Charges
+			## TOU Demand Charges
 			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
 			
 			## Peak Monthly Demand Charges

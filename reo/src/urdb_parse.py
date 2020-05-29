@@ -54,7 +54,7 @@ class REoptArgs:
                 self.demand_ratchets_monthly[month].append(hour)
         self.demand_rates_tou = []
         self.demand_ratchets_tou = []
-        self.demand_num_ratchets = 12
+        self.demand_num_ratchets = 0
         self.demand_tiers_num = 1
         self.demand_month_tiers_num = 1
         self.demand_max_in_tiers = 1 * [big_number]
