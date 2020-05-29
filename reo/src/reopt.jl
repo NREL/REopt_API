@@ -21,29 +21,13 @@ function reopt(reo_model, data, model_inputs)
 end
 
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
-
+	println(p.NMILRegime)
+	println(p.TechsByNMILRegime)
+	println(p.Tech)
+	
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
-	
-	TempTechsByNMILRegime = Dict()  #replaces p.TechsByNMILRegime which isn't loaded
-	for v in p.NMILRegime
-		TempTechsByNMILRegime[v] = []
-		for t in p.Tech
-			if p.TechToNMILMapping[t,v] > 0.5
-				push!(TempTechsByNMILRegime[v],t)
-			end
-		end
-	end
-	
-
-	TempElectricDerateFactor = Dict()
-	for t in p.Tech
-		for ts in p.TimeStep
-			TempElectricDerateFactor[t,ts] = 1.0  
-		end
-	end
-		
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	
 	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
@@ -479,7 +463,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					sum(dvProductionToStorage[b,t,ts] for t in p.ElectricTechs)
 				)
 				
-				
 	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
 	#@constraint(REopt, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
@@ -570,7 +553,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		
 		##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
 		@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-			dvRatedProduction[t,ts]  <= TempElectricDerateFactor[t,ts] * dvSize[t]
+			dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
 		)
 			
 		
@@ -684,7 +667,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	##Constraint (9b): Maximum system sizes for each net-metering regime
 	@constraint(REopt, NetMeterSizeLimit[n in p.NMILRegime],
                 sum(p.TurbineDerate[t] * dvSize[t]
-                    for t in TempTechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
+                    for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
 			
 	##Constraint (9c): Net metering only -- can't sell more than you purchase
 	if !isempty(p.SalesTiers)
@@ -1234,7 +1217,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	print("TotalEnergyCharges:")
 	println(value(TotalEnergyCharges))
 	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
-	println(value( r_tax_fraction_offtaker * TotalEnergyChargesUtil ))
+	#rintln(value( r_tax_fraction_offtaker * TotalEnergyChargesUtil ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
 	println(value( r_tax_fraction_offtaker * TotalEnergyExports ))
