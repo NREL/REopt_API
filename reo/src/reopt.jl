@@ -659,14 +659,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #                for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
 	
     ### Constraint set (9): Net Meter Module (copied directly from legacy model)
-	#Constraint (9a): exactly one net-metering regime must be selected
-    @constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
-	
-	##Constraint (9b): Maximum system sizes for each net-metering regime
-	@constraint(REopt, NetMeterSizeLimit[n in p.NMILRegime],
-                sum(p.TurbineDerate[t] * dvSize[t]
+	if !isempty(p.Tech)
+		#Constraint (9a): exactly one net-metering regime must be selected
+		@constraint(REopt, sum(binNMLorIL[n] for n in p.NMILRegime) == 1)
+		
+		##Constraint (9b): Maximum system sizes for each net-metering regime
+		@constraint(REopt, NetMeterSizeLimit[n in p.NMILRegime],
+					sum(p.TurbineDerate[t] * dvSize[t]
                     for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * binNMLorIL[n])
-			
+	end
 	##Constraint (9c): Net metering only -- can't sell more than you purchase
 	if !isempty(p.SalesTiers)
 		@constraint(REopt, GridSalesLimit, 
