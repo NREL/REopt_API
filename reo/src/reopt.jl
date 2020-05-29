@@ -40,13 +40,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	TempSegBySubTech = Dict()  # to replace p.SegByTechSubdivision[t,k], which is transposed
-	for t in p.Tech
-		for k in p.Subdivision
-			TempSegBySubTech[t,k] = 1:p.SegByTechSubdivision[k,t]
-		end
-	end
-	
 	TempTechsByNMILRegime = Dict()  #replaces p.TechsByNMILRegime which isn't loaded
 	for v in p.NMILRegime
 		TempTechsByNMILRegime[v] = []
@@ -602,24 +595,24 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			
 		
 		##Constraint (7f)-1: Minimum segment size
-		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
 			dvSystemSizeSegment[t,k,s]  >= p.SegmentMinSize[t,k,s] * binSegmentSelect[t,k,s]
 		)
 		
 		##Constraint (7f)-2: Maximum segment size
-		@constraint(REopt, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in TempSegBySubTech[t,k]],
+		@constraint(REopt, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
 			dvSystemSizeSegment[t,k,s]  <= p.SegmentMaxSize[t,k,s] * binSegmentSelect[t,k,s]
 		)
 		
 		##Constraint (7g):  Segments add up to system size 
 		@constraint(REopt, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
-			sum(dvSystemSizeSegment[t,k,s] for s in TempSegBySubTech[t,k])  == dvSize[t]
+			sum(dvSystemSizeSegment[t,k,s] for s in 1:p.SegByTechSubdivision[k,t])  == dvSize[t]
 		)
 			
 		
 		##Constraint (7h): At most one segment allowed
 		@constraint(REopt, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
-			sum(binSegmentSelect[t,k,s] for s in TempSegBySubTech[t,k]) <= binSingleBasicTech[t,c]
+			sum(binSegmentSelect[t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= binSingleBasicTech[t,c]
 		)
 	end
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
