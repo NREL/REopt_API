@@ -635,6 +635,13 @@ class LoadProfile(BuiltInProfile):
 
             self.bau_load_list[outage_start_hour:outage_start_hour+sustain_hours] = critical_loads_kw[outage_start_hour:outage_start_hour+sustain_hours]
 
+        elif (critical_loads_kw not in [None, []]):
+            """
+            This elif is handling the case when a user uploads a critical load profile for resilience analysis and the financial run needs to pick up on the same critical load series for apple-to-apple comparison in the outage-simulation stage
+            """
+            resilience_check_flag = True
+            sustain_hours = 0 #no outage
+            
         else:  # missing outage_start_hour, outage_end_hour, or critical_load_kw => no specified outage
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
