@@ -21,9 +21,6 @@ function reopt(reo_model, data, model_inputs)
 end
 
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
-	println(p.NMILRegime)
-	println(p.TechsByNMILRegime)
-	println(p.Tech)
 	
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
