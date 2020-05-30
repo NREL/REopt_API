@@ -978,7 +978,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, GenPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in GeneratorTechs))
     @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProduction[t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
                                               for t in GeneratorTechs, ts in p.TimeStep))
-
+	
     @expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) )
     @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
     @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
@@ -1009,7 +1009,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, ExportedElecGEN, 0.0)
 		@expression(REopt, ExportBenefitYr1,0.0)
 	end
-    Year1UtilityEnergy = TotalEnergyChargesUtil / p.pwf_e
+    @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
+		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
+		)	
 
     ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
