@@ -991,8 +991,6 @@ class DataManager:
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
-        print(NMIL_regime)
-        print(NMIL_regime_bau)
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
