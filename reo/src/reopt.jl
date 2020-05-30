@@ -893,7 +893,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         r_tax_fraction_offtaker * p.pwf_e * (
         
         ## Total Production Costs
-        p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in TempTechByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
+        p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
         
         ## Total Energy Charges
                 p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
