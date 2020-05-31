@@ -10,9 +10,9 @@ function reopt(reo_model, data, model_inputs)
     p = Parameter(model_inputs)
 
     if length(model_inputs["Tech"]) >= 1
-        @save "scen.jld2" p
+        @save "./reo/src/scen.jld2" p
     else
-		@save "scen0.jld2" p
+		@save "./reo/src/scen0.jld2" p
 	end
 
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
@@ -32,19 +32,26 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
 	NewMaxSize = Dict()
 	NewMaxSizeByHour = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
-
 	# NewMaxDemandMonthsInTier sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
+	if !isempty(p.ElecStorage)
+		added_power = p.StorageMaxSizePower["Elec"]
+		added_energy = p.StorageMaxSizeEnergy["Elec"]
+	else
+		added_power = 1.0e-3
+		added_energy = 1.0e-3
+	end
+	
 	for n in p.DemandMonthsBin
 		for m in p.Month 
 			if n > 1
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])  - 
 					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
 				)
 			else 
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.LoadProfile["1R",ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])   ])
 			end
 		end
@@ -55,13 +62,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for r in p.Ratchets 
 			if e > 1
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  - 
 				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
 				])
 			else
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -73,13 +80,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					added_energy + sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
-					for ts in p.TimeStepRatchetsMonth[m]) 
+					added_energy + sum(p.LoadProfile["1R",ts] #+ p.LoadProfileChillerElectric[ts]
+					for ts in p.TimeStepRatchetsMonth[m])  
 				])
 			end
 		end
@@ -194,7 +201,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     # ADDED for modeling
         #binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
-	
+		
     ##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
@@ -703,7 +710,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        binEnergyTier[m, u] - binEnergyTier[m, u-1] <= 0)
 	## Constraint (10c): One tier must be full before any usage in next tier 
 	@constraint(REopt, [u in 2:p.FuelBinCount, m in p.Month],
-    	        binEnergyTier[m, u] * NewMaxUsageInTier[m,u-1] - sum( dvGridPurchase[u, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= 0)
+    	        binEnergyTier[m, u] * NewMaxUsageInTier[m,u-1] - sum( dvGridPurchase[u-1, ts] for ts in p.TimeStepRatchetsMonth[m] ) <= 0)
 	
 	#End constraint set (10)
 
@@ -1209,14 +1216,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	println(value(TotalStorageCapCosts))
 	print("TotalPerUnitSizeOMCosts:")
 	println(value(TotalPerUnitSizeOMCosts))
-	println(value(r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech )))
 	print("TotalPerUnitProdOMCosts:")
 	println(value(TotalPerUnitProdOMCosts))
 	println(value( r_tax_fraction_owner * TotalPerUnitProdOMCosts ))
 	print("TotalEnergyCharges:")
 	println(value(TotalEnergyCharges))
 	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
-	#rintln(value( r_tax_fraction_offtaker * TotalEnergyChargesUtil ))
 	print("TotalEnergyExports:")
 	println(value(TotalEnergyExports))
 	println(value( r_tax_fraction_offtaker * TotalEnergyExports ))
@@ -1228,12 +1233,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	println(value(r_tax_fraction_offtaker * p.pwf_e * ( MinChargeAdder ) ) )
 	print("TotalProductionIncentive:")
 	println(value(TotalProductionIncentive))
-	println(value( r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech  ))) 
-	print("Usage by Tier by Month:")
-	for m in 1:12
-		println(UseInTier[m,:])
-	end
 	=#
-	
 	return results
 end
