@@ -573,7 +573,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		
 		##Constraint (7g):  Segments add up to system size 
 		@constraint(REopt, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
-			sum(dvSystemSizeSegment[t,k,s] for s in 1:p.SegByTechSubdivision[k,t])  == dvSize[t]
+			sum(dvSystemSizeSegment[t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) == dvSize[t]
 		)
 			
 		##Constraint (7h): At most one segment allowed
@@ -880,11 +880,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	###  New Objective Function
 	@expression(REopt, REcosts,
 		## Non-Storage Technology Capital Costs
-		sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
+		sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
 		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
 		
 		## Storage capital costs
-		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+		sum( p.StoragePowerCost[b] * dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
 		
 		## Fixed O&M, tax deductible for owner
 		r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
@@ -964,7 +964,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                        for t in GeneratorTechs, ts in p.TimeStep))
 
     if !isempty(p.Tech)
-		@expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s]*dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
+		@expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
 			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) )
 	else
 		@expression(REopt, TotalTechCapCosts, 0.0)
