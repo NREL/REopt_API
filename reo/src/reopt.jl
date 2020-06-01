@@ -622,14 +622,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		)
 		
 		##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
-		@constraint(REopt, AnnualSalesByTierStorageCon[u in p.StorageSalesTiers],
-		 p.TimeStepScaling * sum(  dvStorageToGrid[u,ts] +  sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u]) for ts in p.TimeStepsWithGrid) <= p.MaxGridSales[u]
-		)
-		
-		
-		##Constraint (8g): Total sales to grid no greater than annual allocation - non-storage tiers
-		@constraint(REopt, AnnualSalesByTierNonStorageCon[u in p.NonStorageSalesTiers],
-		  p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] for t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid)  <= p.MaxGridSales[u]
+		@constraint(REopt,  AnnualGridSalesLimitCon,
+		 p.TimeStepScaling * ( 
+			sum( dvStorageToGrid[u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
 		)
         
         # existing PV is making problem infeasible or unbounded in BAU

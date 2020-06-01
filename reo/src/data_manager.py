@@ -971,23 +971,23 @@ class DataManager:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
             curtailment_tiers = [3]
-            max_grid_sales = [self.load.annual_kwh,self.load.annual_kwh,10*self.load.annual_kwh]
+            max_grid_sales = self.load.annual_kwh
         else:
             non_storage_sales_tiers = []
             storage_sales_tiers = []
             curtailment_tiers = []
-            max_grid_sales = []
+            max_grid_sales = 0
             
         if len(reopt_techs_bau) > 0:
             non_storage_sales_tiers_bau = [1, 2]
             storage_sales_tiers_bau = [3]
             curtailment_tiers_bau = [3]
-            max_grid_sales_bau = [self.load.annual_kwh,self.load.annual_kwh,10*self.load.annual_kwh]
+            max_grid_sales_bau = self.load.annual_kwh
         else:
             non_storage_sales_tiers_bau = []
             storage_sales_tiers_bau = []
             curtailment_tiers_bau = []
-            max_grid_sales_bau = []
+            max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         

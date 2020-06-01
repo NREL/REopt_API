@@ -235,7 +235,7 @@ Base.@kwdef struct Parameter
      GridExportRates
      FuelBurnSlope
      FuelBurnYInt
-     MaxGridSales
+     MaxGridSales::Array{<:Real, 1}
      ProductionIncentiveRate
      ProductionFactor
      ElecLoad
@@ -373,7 +373,7 @@ function Parameter(d::Dict)
     d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
     d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
 	d["ElectricDerate"] = parameter((d["Tech"], d[:TimeStep]), d["ElectricDerate"])
-    d["MaxGridSales"] = len_zero_param(d[:SalesTiers], d["MaxGridSales"])
+    d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
     d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
