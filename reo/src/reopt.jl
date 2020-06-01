@@ -1182,7 +1182,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 		@expression(REopt, WINDtoLoad[ts in p.TimeStep],
 					sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in WindTechs) - WINDtoGrid[t] - WINDtoBatt[t] )
+						for t in WindTechs) - WINDtoGrid[ts] - WINDtoBatt[ts] )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
 		

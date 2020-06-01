@@ -136,7 +136,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
                 check_common_outputs(self, c, d_expected)
             except:
                 print("Run {} expected outputs may have changed.".format(run_uuid))
-                print("Error message: {}".format(d['messages']))
+                print("Error message: {}".format(d['messages'].get('error')))
                 raise
 
     def test_wind_sam_sdk(self):
