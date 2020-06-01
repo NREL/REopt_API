@@ -542,31 +542,38 @@ class DataManager:
 
     def _get_REopt_techToNMILMapping(self, techs):
         TechToNMILMapping = list()
-        TechsByNMILRegime = list()
-
+        
+        if len(techs) == 0:
+            TechsByNMILRegime = []
+            NMIL_regime = []
+        else:
+            TechsByNMILRegime = [[] for _ in self.NMILRegime]
+            NMIL_regime = self.NMILRegime
+            
         for tech in techs:
 
             if eval('self.' + tech) is not None:
 
                 tech_regime = eval('self.' + tech + '.nmil_regime')
 
-                for regime in self.NMILRegime:
+                for i,regime in enumerate(self.NMILRegime):
                     if regime == tech_regime:
                         TechToNMILMapping.append(1)
+                        TechsByNMILRegime[i].append(tech.upper())
                     else:
                         TechToNMILMapping.append(0)
 
-        for regime in self.NMILRegime:
-            tech_nmil_reg = list()
-            for tech in techs:
-                if eval('self.' + tech) is not None:
-                    tech_regime = eval('self.' + tech + '.nmil_regime')
-                    if regime == tech_regime:
-                        TechsByNMILRegime.append(tech)
+#        for regime in self.NMILRegime:
+#            tech_nmil_reg = list()
+#            for tech in techs:
+#                if eval('self.' + tech) is not None:
+#                    tech_regime = eval('self.' + tech + '.nmil_regime')
+#                    if regime == tech_regime:
+#                        TechsByNMILRegime.append(tech)
+#
+#            TechsByNMILRegime.append(tech_nmil_reg)
 
-            TechsByNMILRegime.append(tech_nmil_reg)
-
-        return TechToNMILMapping, TechsByNMILRegime
+        return TechToNMILMapping, TechsByNMILRegime, NMIL_regime
 
     def _get_REopt_array_tech_load(self, techs):
         """
@@ -580,6 +587,7 @@ class DataManager:
         tech_is_grid = list()
         tech_to_location = list()
         derate = list()
+        electric_derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
         om_cost_us_dollars_per_kw = list()
@@ -596,6 +604,7 @@ class DataManager:
                 om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
+                    electric_derate.append(1.0)
 
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
@@ -649,7 +658,7 @@ class DataManager:
 
         return prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               discharge_efficiency, techs_charging_storage
+               discharge_efficiency, techs_charging_storage, electric_derate
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -841,10 +850,10 @@ class DataManager:
 
         prod_factor, tech_to_load, tech_to_location, tech_is_grid, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            discharge_efficiency, techs_charging_storage = self._get_REopt_array_tech_load(self.available_techs)
+            discharge_efficiency, techs_charging_storage, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
         prod_factor_bau, tech_to_load_bau, tech_to_location_bau, tech_is_grid_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            discharge_efficiency_bau, techs_charging_storage_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            discharge_efficiency_bau, techs_charging_storage_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -890,9 +899,17 @@ class DataManager:
                            bau_techs=get_techs_not_none(self.bau_techs, self),
                            loads=self.available_loads, gen=self.generator)
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
-        TechToNMILMapping, TechsByNMILRegime = self._get_REopt_techToNMILMapping(self.available_techs)
-        TechToNMILMapping_bau, TechsByNMILRegime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
-        NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
+        TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
+        TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
+        if len(NMIL_regime) == 0:
+            NMILLimits = []
+        else:
+            NMILLimits = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
+                      self.elec_tariff.interconnection_limit_kw * 10]
+        if len(NMIL_regime_bau) == 0:
+            NMILLimits_bau = []
+        else:
+            NMILLimits_bau = [self.elec_tariff.net_metering_limit_kw, self.elec_tariff.interconnection_limit_kw,
                       self.elec_tariff.interconnection_limit_kw * 10]
         self.year_one_energy_cost_series_us_dollars_per_kwh = parser.energy_rates_summary
         self.year_one_demand_cost_series_us_dollars_per_kw = parser.demand_rates_summary
@@ -940,24 +957,37 @@ class DataManager:
         segment_max_size_bau = [[[cap_cost_x_bau[i+1] for i in range(j, n_segments_bau+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x_bau), n_segments_bau+1)] 
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-
+        
+        fb_techs = [t for t in reopt_techs if t in self.fuel_burning_techs]
+        fb_techs_bau = [t for t in reopt_techs_bau if t in self.fuel_burning_techs]
+        
+        techs_no_turndown = [t for t in reopt_techs if t in self.no_turndown_techs]
+        techs_no_turndown_bau = [t for t in reopt_techs_bau if t in self.no_turndown_techs]
+        
+        electric_techs = [t for t in reopt_techs if t in self.electic_producing_techs]
+        electric_techs_bau = [t for t in reopt_techs_bau if t in self.electic_producing_techs]
+        
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
             storage_sales_tiers = [3]
             curtailment_tiers = [3]
+            max_grid_sales = self.load.annual_kwh
         else:
             non_storage_sales_tiers = []
             storage_sales_tiers = []
             curtailment_tiers = []
+            max_grid_sales = 0
             
         if len(reopt_techs_bau) > 0:
             non_storage_sales_tiers_bau = [1, 2]
             storage_sales_tiers_bau = [3]
             curtailment_tiers_bau = [3]
+            max_grid_sales_bau = self.load.annual_kwh
         else:
             non_storage_sales_tiers_bau = []
             storage_sales_tiers_bau = []
             curtailment_tiers_bau = []
+            max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
@@ -969,7 +999,7 @@ class DataManager:
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
             'TurbineDerate': derate,
-            'NMILRegime': self.NMILRegime,
+            'NMILRegime': NMIL_regime,
             'ProdFactor': prod_factor,
             'MaxSize': max_sizes,
             'MinStorageSizeKW': self.storage.min_kw,
@@ -1032,7 +1062,7 @@ class DataManager:
 	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
 	        'FuelBurnSlope': tariff_args.fuel_burn_rate,
 	        'FuelBurnYInt': tariff_args.fuel_burn_intercept,
-	        'MaxGridSales': self.load.annual_kwh,
+	        'MaxGridSales': max_grid_sales,
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
 	        'ElecLoad': self.elec_load, # Needed to copy make sure that changed
@@ -1061,9 +1091,9 @@ class DataManager:
             'TechsChargingStorage': techs_charging_storage,
             'TechsInClass': techs_in_class,
             'TechsByFuelType': techs_by_fuel_type,
-            'ElectricTechs': reopt_techs,
-            'FuelBurningTechs': [t for t in self.fuel_burning_techs if t.upper() in reopt_techs],
-            'TechsNoTurndown': self.no_turndown_techs,
+            'ElectricTechs': electric_techs,
+            'FuelBurningTechs': fb_techs,
+            'TechsNoTurndown': techs_no_turndown,
             'SalesTierCount': tariff_args.num_sales_tiers,
             'StorageSalesTiers': storage_sales_tiers,
             'NonStorageSalesTiers': non_storage_sales_tiers,
@@ -1071,7 +1101,9 @@ class DataManager:
             'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech,
             'TechsBySalesTier':tariff_args.techs_by_rate,
-            'CurtailmentTiers':curtailment_tiers
+            'CurtailmentTiers':curtailment_tiers,
+            'ElectricDerate':electric_derate,
+            'TechsByNMILRegime':TechsByNMILRegime
             }
 
         self.reopt_inputs_bau = {
@@ -1081,7 +1113,7 @@ class DataManager:
             'TechIsGrid': tech_is_grid_bau,
             'Load': load_list,
             'TechClass': self.available_tech_classes,
-            'NMILRegime': self.NMILRegime,
+            'NMILRegime': NMIL_regime_bau,
             'TurbineDerate': derate_bau,
             'ProdFactor': prod_factor_bau,
             'MaxSize': max_sizes_bau,
@@ -1134,7 +1166,7 @@ class DataManager:
             'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
-            'NMILLimits': NMILLimits,
+            'NMILLimits': NMILLimits_bau,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
@@ -1145,7 +1177,7 @@ class DataManager:
 	        'GridExportRates': tariff_args.grid_export_rates_bau,
 	        'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
 	        'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
-	        'MaxGridSales': self.load.annual_kwh,
+	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
 	        'ElecLoad': self.elec_load_bau,
@@ -1173,9 +1205,9 @@ class DataManager:
             'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':techs_in_class_bau,
             'TechsByFuelType':techs_by_fuel_type_bau,
-            'ElectricTechs':reopt_techs_bau,
-            'FuelBurningTechs':[t for t in self.fuel_burning_techs if t.upper() in reopt_techs_bau],
-            'TechsNoTurndown':self.no_turndown_techs,
+            'ElectricTechs':electric_techs_bau,
+            'FuelBurningTechs':fb_techs_bau,
+            'TechsNoTurndown':techs_no_turndown_bau,
             'SalesTierCount':tariff_args.num_sales_tiers_bau,
             'StorageSalesTiers':storage_sales_tiers_bau,
             'NonStorageSalesTiers':non_storage_sales_tiers_bau,
@@ -1183,5 +1215,7 @@ class DataManager:
             'TimeStepsWithoutGrid':time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech_bau,
             'TechsBySalesTier':tariff_args.techs_by_rate_bau,
-            'CurtailmentTiers':curtailment_tiers_bau
+            'CurtailmentTiers':curtailment_tiers_bau,
+            'ElectricDerate':electric_derate_bau,
+            'TechsByNMILRegime':TechsByNMILRegime_bau
         }

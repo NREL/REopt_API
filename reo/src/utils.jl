@@ -241,7 +241,7 @@ Base.@kwdef struct Parameter
      ElecLoad
      FuelLimit
      ChargeEfficiency
-     GridChargeEfficiency
+     GridChargeEfficiency::Float64
      DischargeEfficiency
      StorageMinSizeEnergy
      StorageMaxSizeEnergy
@@ -251,6 +251,7 @@ Base.@kwdef struct Parameter
      StorageInitSOC
      SegmentMinSize
      SegmentMaxSize
+	 ElectricDerate
 
      # New Sets
      Storage
@@ -272,6 +273,7 @@ Base.@kwdef struct Parameter
 	 SalesTiersByTech
 	 TechsBySalesTier
 	 CurtailmentTiers
+	 TechsByNMILRegime
 
     # Feature Additions
      TechToLocation
@@ -295,7 +297,10 @@ function Parameter(d::Dict)
         "TurbineDerate",
         "TechClassMinSize",
 		"TechsBySalesTier",
-		"SalesTiersByTech"
+		"SalesTiersByTech",
+		"NMILRegime",
+		"NMILLimits",
+		"TechsByNMILRegime"
      )
     if typeof(d["Tech"]) === Array{Any, 1}  # came from Python as empty array
         d["Tech"] = convert(Array{String, 1}, d["Tech"])
@@ -357,7 +362,7 @@ function Parameter(d::Dict)
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
     d["ChargeEfficiency"] = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
-    d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
+    #d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
     d["DischargeEfficiency"] = AxisArray(d["DischargeEfficiency"], d["Storage"])
     d["StorageMinSizeEnergy"] = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
     d["StorageMaxSizeEnergy"] = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
@@ -367,6 +372,7 @@ function Parameter(d::Dict)
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
     d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
     d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
+	d["ElectricDerate"] = parameter((d["Tech"], d[:TimeStep]), d["ElectricDerate"])
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
@@ -377,6 +383,7 @@ function Parameter(d::Dict)
     d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
 	d["SalesTiersByTech"] = len_zero_param(d["Tech"], d["SalesTiersByTech"])
 	d["TechsBySalesTier"] = len_zero_param(d[:SalesTiers], d["TechsBySalesTier"])
+	d["TechsByNMILRegime"] = len_zero_param(d["NMILRegime"], d["TechsByNMILRegime"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
