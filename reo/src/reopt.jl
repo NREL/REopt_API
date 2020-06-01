@@ -521,7 +521,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 dvProdIncent[t] <= p.MaxProdIncent[t] * p.pwf_prod_incent[t] * binProdIncent[t])
 	##Constraint (6a)-2: Production Incentive According to Production (updated)
 	@constraint(REopt, IncentByProductionCon[t in p.Tech],
-                dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t]  * p.LevelizationFactorProdIncent[t] *  sum(p.ProductionFactor[t, ts] *   dvRatedProduction[t,ts] for ts in p.TimeStep)
+                dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * 
+                                   sum(p.ProductionFactor[t, ts] * dvRatedProduction[t,ts] for ts in p.TimeStep)
                 )
 	##Constraint (6b): System size max to achieve production incentive
 	@constraint(REopt, IncentBySystemSizeCon[t in p.Tech],

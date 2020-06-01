@@ -143,7 +143,6 @@ Base.@kwdef struct Parameter
      MinTurndown     # f^{td}_{t}:  Minimum turn down for technology t [unitless]
      pwf_prod_incent   # f^{pi}_t: Present worth factor for incentives for technology t [unitless] 
 	 LevelizationFactor    # f^{l}_{t}: Levelization factor of technology t [unitless]
-     LevelizationFactorProdIncent   # f^{pi}_{t}: Levelization factor of production incentive for technology t [unitless]
 	 
 	 ###  Generic Factor Parameters ###
 	 pwf_om::Float64  # f^{om}: Operations and maintenance present worth factor [unitless] 
@@ -292,7 +291,6 @@ function Parameter(d::Dict)
         "MinTurndown",
         "pwf_prod_incent",
         "LevelizationFactor",
-        "LevelizationFactorProdIncent",
         "NMILLimits",
         "TurbineDerate",
         "TechClassMinSize",
@@ -332,7 +330,6 @@ function Parameter(d::Dict)
     d["TechToLocation"] = parameter((d["Tech"], Location), d["TechToLocation"])
     d["pwf_prod_incent"] = AxisArray(d["pwf_prod_incent"], d["Tech"])
     d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
-    d["LevelizationFactorProdIncent"] = AxisArray(d["LevelizationFactorProdIncent"], d["Tech"])
     d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
     d["CapCostSlope"] = parameter((d["Tech"], d[:Seg]), d["CapCostSlope"])
     d["CapCostYInt"] = parameter((d["Tech"], d[:Seg]), d["CapCostYInt"])
