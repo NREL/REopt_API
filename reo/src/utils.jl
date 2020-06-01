@@ -248,8 +248,8 @@ Base.@kwdef struct Parameter
      StorageMaxSizePower
      StorageMinSOC
      StorageInitSOC
-     SegmentMinSize
-     SegmentMaxSize
+     SegmentMinSize::AxisArray
+     SegmentMaxSize::AxisArray
 	 ElectricDerate
 
      # New Sets
@@ -325,6 +325,12 @@ function Parameter(d::Dict)
 	#Storage = 1:1
     Location = 1:length(d["MaxSizesLocation"])
 
+    # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
+    seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))), 
+                                 length(d["Tech"]), length(d["Subdivision"]), length(d[:Seg]))
+    seg_max_size_array = reshape(transpose(reshape(d["SegmentMaxSize"], length(d[:Seg]), length(d["Tech"]))), 
+                                length(d["Tech"]), length(d["Subdivision"]), length(d[:Seg]))
+
     # convert vectors to AxisArray's with axes for REopt JuMP model
     d["TurbineDerate"] = AxisArray(d["TurbineDerate"], d["Tech"])
     d["TechToLocation"] = parameter((d["Tech"], Location), d["TechToLocation"])
@@ -367,8 +373,8 @@ function Parameter(d::Dict)
     d["StorageMaxSizePower"] = AxisArray(d["StorageMaxSizePower"], d["Storage"])
     d["StorageMinSOC"] = AxisArray(d["StorageMinSOC"], d["Storage"])
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
-    d["SegmentMinSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMinSize"])
-    d["SegmentMaxSize"] = parameter((d["Tech"], d["Subdivision"], d[:Seg]), d["SegmentMaxSize"])
+    d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
+    d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = parameter((d["Tech"], d[:TimeStep]), d["ElectricDerate"])
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
@@ -459,7 +465,6 @@ function len_zero_param(sets, arr::Array)
             return AxisArray(arr, sets)
         end
     catch
-        println("Empty Array Created")
         return []
     end
 end

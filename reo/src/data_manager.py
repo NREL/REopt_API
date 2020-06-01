@@ -943,11 +943,30 @@ class DataManager:
                 tech_idx = reopt_techs_bau.index(t)
                 fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
 
-        segment_min_size = [[[cap_cost_x[i] for i in range(j, n_segments+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x), n_segments+1)] 
-        segment_min_size_bau = [[[cap_cost_x_bau[i] for i in range(j, n_segments_bau+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x_bau), n_segments_bau+1)] 
+        # TODO: switch back to cap_cost_x input since we are just repeating its values?
+        segment_min_size = []
+        for j in range(0, len(cap_cost_x), n_segments+1):
+            for _ in subdivisions:
+                for i in range(j, n_segments+j):
+                    segment_min_size.append(cap_cost_x[i])
 
-        segment_max_size = [[[cap_cost_x[i+1] for i in range(j, n_segments+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x), n_segments+1)] 
-        segment_max_size_bau = [[[cap_cost_x_bau[i+1] for i in range(j, n_segments_bau+j)] for _ in subdivisions] for j in range(0, len(cap_cost_x_bau), n_segments_bau+1)] 
+        segment_min_size_bau = []
+        for j in range(0, len(cap_cost_x_bau), n_segments_bau+1):
+            for _ in subdivisions:
+                for i in range(j, n_segments_bau+j):
+                    segment_min_size_bau.append(cap_cost_x_bau[i])
+
+        segment_max_size = [] 
+        for j in range(0, len(cap_cost_x), n_segments+1):
+            for _ in subdivisions:
+                for i in range(j, n_segments+j):
+                    segment_max_size.append(cap_cost_x[i+1])
+
+        segment_max_size_bau = []
+        for j in range(0, len(cap_cost_x_bau), n_segments_bau+1):
+            for _ in subdivisions:
+                for i in range(j, n_segments_bau+j):
+                    segment_max_size_bau.append(cap_cost_x_bau[i+1])
 
         grid_charge_efficiency = self.storage.rectifier_efficiency_pct * self.storage.internal_efficiency_pct**0.5
         
