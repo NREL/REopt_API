@@ -682,12 +682,12 @@ class DataManager:
                 if eval('self.' + tech) is not None:
                     if hasattr(eval('self.' + tech), 'existing_kw'):
                         if bau:
-                            print(tech, eval('self.' + tech + '.existing_kw'))
                             min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0))
                         else:
                             min_sizes.append(max((eval('self.' + tech + '.existing_kw') or 0.0), (eval('self.' + tech + '.min_kw') or 0.0)))
                     else:
                         min_sizes.append((eval('self.' + tech + '.min_kw') or 0.0))
+
             tech_class_min_size.append(max(min_sizes))
 
         for tech in techs:
