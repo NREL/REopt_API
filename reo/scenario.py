@@ -48,7 +48,6 @@ class ScenarioTask(Task):
     """
     Used to define custom Error handling for celery task
     """
-
     name = 'scenario'
     max_retries = 0
 
@@ -62,14 +61,14 @@ class ScenarioTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
-        if isinstance(exc, REoptError):
-            exc.save_to_db()
-            msg = exc.message
-        else:
-            msg = exc.args[0]
+        if not isinstance(exc, REoptError):
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            exc = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task=self.name, run_uuid=kwargs['run_uuid'],
+                              user_uuid=kwargs['data']['inputs']['Scenario'].get('user_uuid'))
+        msg = exc.message
+        exc.save_to_db()
         self.data["messages"]["error"] = msg
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
@@ -261,7 +260,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
     except Exception as e:
         if isinstance(e, LoadProfileError):
-                raise e
+            raise e
 
         if hasattr(e, 'args'):
             if len(e.args) > 0:
@@ -272,7 +271,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
                         message = 'PV Watts could not locate a dataset station within the search radius'
                         radius = data['inputs']['Scenario']["Site"]["PV"][0].get("radius") or 0
                         if radius > 0:
-                            message += " ({} miles for nsrsb, {} miles for international)".format(radius, radius*2)
+                            message += (". A search radius of {} miles was used for the NSRDB dataset (covering the "
+                                "continental US, HI and parts of AK). A search radius twice as large ({} miles) was also used "
+                                "to query an international dataset. See https://maps.nrel.gov/nsrdb-viewer/ for a map of "
+                                "dataset availability or https://nsrdb.nrel.gov/ for dataset documentation.").format(radius, radius*2)
+                        else:
+                            message += (" from the NSRDB or international datasets. No search threshold was specified when "
+                                        "attempting to pull solar resource data from either dataset.")
                         raise PVWattsDownloadError(message=message, task=self.name, run_uuid=run_uuid, user_uuid=self.data['inputs']['Scenario'].get('user_uuid'), traceback=e.args[0])
 
         exc_type, exc_value, exc_traceback = sys.exc_info()
