@@ -165,11 +165,11 @@ class DataManager:
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
-        if pwf_owner == 0 or sf.owner_tax_pct == 0:
-            two_party_factor = 0
+        if sf.two_party_ownership:
+            two_party_factor = (pwf_offtaker * (1 - sf.offtaker_tax_pct)) \
+                                / (pwf_owner * (1 - sf.owner_tax_pct))
         else:
-            two_party_factor = (pwf_offtaker * sf.offtaker_tax_pct) \
-                                / (pwf_owner * sf.owner_tax_pct)
+            two_party_factor = 1
 
         levelization_factor = list()
 
@@ -186,7 +186,6 @@ class DataManager:
                     degradation_pct = eval('self.' + tech + '.degradation_pct')
                     levelization_factor.append(round(degradation_factor(sf.analysis_years, degradation_pct), 5))
                 else:
-
                     levelization_factor.append(1.0)
 
         return levelization_factor, pwf_e, pwf_om, two_party_factor
@@ -212,11 +211,11 @@ class DataManager:
                         pwf_prod_incent.append(
                             annuity_escalation(eval('self.' + tech + '.incentives.production_based.years'),
                                                -1 * eval('self.' + tech + '.degradation_pct'),
-                                               sf.offtaker_discount_pct))
+                                               sf.owner_discount_pct))
                     else:
                         pwf_prod_incent.append(
                             annuity(eval('self.' + tech + '.incentives.production_based.years'),
-                                    0, sf.offtaker_discount_pct))
+                                    0, sf.owner_discount_pct))
                     max_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
                     )
@@ -456,16 +455,17 @@ class DataManager:
                         itc_unit_basis = (tmp_cap_cost_slope[s] + rebate_federal) / (1 - itc)
 
                     sf = self.site.financial
-                    updated_slope = setup_capital_cost_incentive(itc_unit_basis,  # input tech cost with incentives, but no ITC
-                                                                 0,
-                                                                 sf.analysis_years,
-                                                                 sf.owner_discount_pct,
-                                                                 sf.owner_tax_pct,
-                                                                 itc,
-                                                                 eval('self.' + tech + '.incentives.macrs_schedule'),
-                                                                 eval('self.' + tech + '.incentives.macrs_bonus_pct'),
-                                                                 eval('self.' + tech + '.incentives.macrs_itc_reduction'))
-
+                    updated_slope = setup_capital_cost_incentive(
+                        itc_basis=itc_unit_basis,  # input tech cost with incentives, but no ITC
+                        replacement_cost=0,
+                        replacement_year=sf.analysis_years,
+                        discount_rate=sf.owner_discount_pct,
+                        tax_rate=sf.owner_tax_pct,
+                        itc=itc,
+                        macrs_schedule=eval('self.' + tech + '.incentives.macrs_schedule'),
+                        macrs_bonus_pct=eval('self.' + tech + '.incentives.macrs_bonus_pct'),
+                        macrs_itc_reduction=eval('self.' + tech + '.incentives.macrs_itc_reduction')
+                    )
                     # The way REopt incentives currently work, the federal rebate is the only incentive that doesn't reduce ITC basis
                     updated_slope -= rebate_federal
                     updated_cap_cost_slope.append(updated_slope)
