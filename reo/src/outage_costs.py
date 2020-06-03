@@ -58,12 +58,47 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
     site_outputs = data['outputs']['Scenario']['Site']
     pvs = site_outputs['PV']
     wind = site_outputs['Wind']
-    generator = site_outputs['Generator']
+
     load_profile = site_inputs['LoadProfile']
     batt_roundtrip_efficiency = site_inputs['Storage']['internal_efficiency_pct'] \
                                 * site_inputs['Storage']['inverter_efficiency_pct'] \
                                 * site_inputs['Storage']['rectifier_efficiency_pct']
     critical_load = site_outputs['LoadProfile']['critical_load_series_kw']
+
+    """
+    smishra 200515
+    For enabling existing diesel generator for the financial scenario of resilience
+    analysis, the following block is being added. Since the code-flow is same for 
+    both financial and resilience scenarios in a resilience analysis, this block makes
+    sure that existing_kw gets captured for financial case. For resilience scenario, 
+    on the other hand, the generator sizing input to the simulate_outages function must 
+    [capture existing_kw + new_capacity_kw ]
+     
+    Note: "generator_only_runs_during_grid_outage" is set to true by default
+    """
+
+
+    generator_in = site_inputs['Generator']
+    generator_out = site_outputs['Generator']
+
+  # Generator is not allowed to run during normal time
+
+    if generator_in["generator_only_runs_during_grid_outage"]:
+
+        if load_profile.get('outage_start_hour') is None and load_profile.get('outage_end_hour') is None:
+            # handles financial scenario where there will only be non-zero input kw
+            diesel_kw_for_case = generator_in.get('existing_kw')
+
+        elif load_profile.get('outage_start_hour') is not None and load_profile.get('outage_end_hour') is not None:
+    # handles resilience scenarion where output will have existing_kw embedded
+            diesel_kw_for_case = generator_out.get('size_kw')
+
+    # works for financial scenario when the generator is allowed to run
+    # year-long, which means model can recommend new generator capacity)
+    else:
+        diesel_kw_for_case = generator_out.get('size_kw')
+
+
     
     pv_production = []
     for p in pvs:
@@ -96,11 +131,11 @@ def calc_avoided_outage_costs(data, present_worth_factor, run_uuid):
         init_soc=site_outputs['Storage'].get('year_one_soc_series_pct'),
         critical_loads_kw=critical_load,
         batt_roundtrip_efficiency=batt_roundtrip_efficiency,
-        diesel_kw=generator['size_kw'],
-        fuel_available=site_inputs['Generator']['fuel_avail_gal'],
-        b=site_inputs['Generator']['fuel_intercept_gal_per_hr'],
-        m=site_inputs['Generator']['fuel_slope_gal_per_kwh'],
-        diesel_min_turndown=site_inputs['Generator']['min_turn_down_pct'],
+        diesel_kw=diesel_kw_for_case,
+        fuel_available=generator_in['fuel_avail_gal'],
+        b=generator_in['fuel_intercept_gal_per_hr'],
+        m=generator_in['fuel_slope_gal_per_kwh'],
+        diesel_min_turndown=generator_in['min_turn_down_pct'],
         celery_eager=celery_eager,
     )
 
