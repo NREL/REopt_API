@@ -518,10 +518,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
 	@constraint(REopt, ProdIncentUBCon[t in p.Tech],
-                dvProdIncent[t] <= p.MaxProdIncent[t] * p.pwf_prod_incent[t] * binProdIncent[t])
+                dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor)
 	##Constraint (6a)-2: Production Incentive According to Production (updated)
 	@constraint(REopt, IncentByProductionCon[t in p.Tech],
-                dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * 
+                dvProdIncent[t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
                                    sum(p.ProductionFactor[t, ts] * dvRatedProduction[t,ts] for ts in p.TimeStep)
                 )
 	##Constraint (6b): System size max to achieve production incentive
@@ -876,22 +876,43 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Subtract Incentives, which are taxable
 	#	r_tax_fraction_owner * TotalProductionIncentive 
 	#)
+    PVTechs = filter(t->startswith(t, "PV"), p.Tech)
+	if !isempty(p.Tech)
+		WindTechs = p.TechsInClass["WIND"]
+		GeneratorTechs = p.TechsInClass["GENERATOR"]
+	else
+		WindTechs = []
+		GeneratorTechs = []
+	end
+
+	@expression(REopt, TotalTechCapCosts, p.two_party_factor * (
+		sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
+		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) 
+	))
+	@expression(REopt, TotalStorageCapCosts, p.two_party_factor * 
+		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage )
+	)
+	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
+		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
+	)
+    if !isempty(GeneratorTechs)
+		@expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * p.pwf_om * 
+			sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
+		)
+    else
+        @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
+    end
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
-		## Non-Storage Technology Capital Costs
-		sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
-		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) +
-		
-		## Storage capital costs
-		sum( p.StoragePowerCost[b] * dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ) +  
+		# Capital Costs
+		TotalTechCapCosts + TotalStorageCapCosts +  
 		
 		## Fixed O&M, tax deductible for owner
-		r_tax_fraction_owner * p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) +
-
+		TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
 
         ## Variable O&M, tax deductible for owner
-        r_tax_fraction_owner * p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) +
+        TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
         r_tax_fraction_offtaker * p.pwf_e * (
         
@@ -944,15 +965,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     #############  		Outputs    									 #############
     ##############################################################################
     #ProdLoad = ["1R", "1W", "1X", "1S"]
-    PVTechs = filter(t->startswith(t, "PV"), p.Tech)
-	if !isempty(p.Tech)
-		WindTechs = p.TechsInClass["WIND"]
-		GeneratorTechs = p.TechsInClass["GENERATOR"]
-	else
-		WindTechs = []
-		GeneratorTechs = []
-	end
-
     @expression(REopt, Year1WindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                                             for t in WindTechs, ts in p.TimeStep))
     @expression(REopt, AverageWindProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
@@ -961,27 +973,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, Year1GenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] 
                        for t in GeneratorTechs, ts in p.TimeStep))
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-                       for t in GeneratorTechs, ts in p.TimeStep))
+					   for t in GeneratorTechs, ts in p.TimeStep))
+						
 
-    if !isempty(p.Tech)
-		@expression(REopt, TotalTechCapCosts, sum( p.CapCostSlope[t,s] * dvSystemSizeSegment[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
-			sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) )
-	else
-		@expression(REopt, TotalTechCapCosts, 0.0)
-	end
-    @expression(REopt, TotalStorageCapCosts, sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage ))
-    @expression(REopt, TotalPerUnitSizeOMCosts, p.pwf_om * sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) )
-
-    if !isempty(GeneratorTechs)
-        @expression(REopt, TotalPerUnitProdOMCosts, p.pwf_om * sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) )
-    else
-        @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
-    end
-
-    @expression(REopt, GenPerUnitSizeOMCosts, sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in GeneratorTechs))
-    @expression(REopt, GenPerUnitProdOMCosts, sum(dvRatedProduction[t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
-                                              for t in GeneratorTechs, ts in p.TimeStep))
-	
+	@expression(REopt, GenPerUnitSizeOMCosts, p.two_party_factor * 
+		sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in GeneratorTechs)
+	)
+	@expression(REopt, GenPerUnitProdOMCosts, p.two_party_factor * 
+		sum(dvRatedProduction[t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+			for t in GeneratorTechs, ts in p.TimeStep)
+	)
     @expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) )
     @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
     @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
@@ -1063,11 +1064,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			results["Generator"] = Dict()
             results["generator_kw"] = value(sum(dvSize[t] for t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
-			results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / p.pwf_om, digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
-	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / p.pwf_om, digits=0)
 	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
 	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) / p.pwf_e, digits=2)
+	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
+	        results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 		end
     end
 	
