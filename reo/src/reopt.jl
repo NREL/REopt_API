@@ -965,10 +965,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     else
         status = "not optimal"
     end
-	print("status:")
-	println(status)
-	print("objective value: ")
-	println(JuMP.objective_value(REopt))
     
 	##############################################################################
     #############  		Outputs    									 #############
