@@ -815,10 +815,21 @@ class ValidateNestedInput:
                 if real_values.get('address') is not None:
                     self.validate_text_fields(str = real_values['address'], pattern = r'^[0-9a-zA-Z. ]*$',
                               err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
-
+            
+            if object_name_path[-1] == "PV":
+                if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
+                    if real_values['max_kw'] > 0:
+                        if real_values.get("prod_factor_series_kw"):
+                            self.validate_8760(real_values.get("prod_factor_series_kw"),
+                                                                "PV", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
+     
             if object_name_path[-1] == "Wind":
                 if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                     if real_values['max_kw'] > 0:
+
+                        if real_values.get("prod_factor_series_kw"):
+                            self.validate_8760(real_values.get("prod_factor_series_kw"),
+                                                "Wind", "prod_factor_series_kw", self.input_dict['Scenario']['time_steps_per_hour'])
 
                         if real_values.get("wind_meters_per_sec"):
                             self.validate_8760(real_values.get("wind_meters_per_sec"),

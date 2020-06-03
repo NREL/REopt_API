@@ -522,6 +522,10 @@ nested_input_definitions = {
           "max": 1.0e9,
           "default": 1.0e9,
           "description": "Maximum system size for which production-based incentives apply"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       },
 
@@ -756,7 +760,11 @@ nested_input_definitions = {
           "restrict_to": "['roof', 'ground', 'both']",
           "default": 'both',
           "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
-         }
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        }
       },
 
       "Storage": {

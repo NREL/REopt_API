@@ -273,6 +273,7 @@ class PVModel(models.Model):
     pv_number = models.IntegerField(default=1, null=True, blank=True)
     pv_name = models.TextField(null=True, blank=True, default='')
     location = models.TextField(null=True, blank=True, default='both')
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -326,6 +327,7 @@ class WindModel(models.Model):
     pbi_max_us_dollars = models.FloatField()
     pbi_years = models.FloatField()
     pbi_system_max_kw = models.FloatField()
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
