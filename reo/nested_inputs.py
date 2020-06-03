@@ -77,6 +77,10 @@ def list_of_float(input):
     return [float(i) for i in input]
 
 
+def list_of_str(input):
+  return [str(i) for i in input]
+
+
 nested_input_definitions = {
 
   "Scenario": {
@@ -211,18 +215,25 @@ nested_input_definitions = {
 
       "LoadProfile": {
         "doe_reference_name": {
-          "type": "str",
+          "type": ["str", "list_of_str"],
           "restrict_to": default_buildings,
           "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 1.0,
           "max": 1.0e12,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
+        },
+        "percent_share": {
+                 "type": "list_of_float",
+                  "min": 1.0,
+                  "max": 100.0,
+                  "default": [100.0],
+                 "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
         "year": {
           "type": "int",
