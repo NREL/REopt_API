@@ -57,7 +57,6 @@ class ProcessResultsTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
         if isinstance(exc, REoptError):
@@ -136,10 +135,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     results_dict[k + '_bau'] = results_dict_bau[k]
 
             for i in range(len(self.inputs["PV"])):
-                if results_dict.get('PV' + str(i+1) + '_kw') is None:
-                    results_dict['PV' + str(i+1) + '_kw'] = 0
-                pv_bau_keys = ["PV" + str(i+1) + "_net_fixed_om_costs",
-                               "average_yearly_energy_produced_PV" + str(i+1)]
+                # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
+                i += 1
+                if results_dict.get('PV{}_kw'.format(i)) is None:
+                    results_dict['PV{}_kw'.format(i)] = 0
+                pv_bau_keys = ["PV{}_net_fixed_om_costs".format(i),
+                               "average_yearly_PV{}_energy_produced".format(i),
+                               "year_one_PV{}_energy_produced".format(i),
+                               "average_yearly_energy_produced_PV{}".format(i),
+                              ]
                 for k in pv_bau_keys:
                     if results_dict_bau.get(k) is None:
                         results_dict[k + '_bau'] = 0
@@ -250,7 +254,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
-            # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
