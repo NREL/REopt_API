@@ -86,7 +86,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
     :param inputs_dict: validated POST of input parameters
     """
 
-    self.profiler = Profiler()
+    profiler = Profiler()
     inputs_path = os.path.join(os.getcwd(), "input_files")
     self.run_uuid = run_uuid
     self.data = data
@@ -250,9 +250,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                 del dfm_dict[k]
 
         self.data = data
-        self.profiler.profileEnd()
+        profiler.profileEnd()
         tmp = dict()
-        tmp['setup_scenario_seconds'] = self.profiler.getDuration()
+        tmp['setup_scenario_seconds'] = profiler.getDuration()
         ModelManager.updateModel('ProfileModel', tmp, run_uuid)
         # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
