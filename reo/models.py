@@ -454,7 +454,6 @@ class GeneratorModel(models.Model):
     def create(cls, **kwargs):
         obj = cls(**kwargs)
         obj.save()
-
         return obj
 
 
@@ -591,8 +590,7 @@ class ModelManager(object):
         :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
         :return: None
         """
-        d = data["outputs"]["Scenario"]
-        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        d = data["outputs"]["Scenario"] 
         ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
@@ -606,7 +604,8 @@ class ModelManager(object):
         WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
-
+        # Do this last so that the status does not change to optimal before the rest of the results are filled in
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
@@ -684,7 +683,7 @@ class ModelManager(object):
                                 if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
                                     if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
                                         resp['inputs']['Scenario']['Site'][site_key][i][k] = \
-                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]
+                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]                                    
                                 if k not in ['pv_name']:
                                     del resp['outputs']['Scenario']['Site'][site_key][i][k]
 
@@ -696,13 +695,13 @@ class ModelManager(object):
                             if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
                                 resp['inputs']['Scenario']['Site'][site_key][k] = \
                                     resp['inputs']['Scenario']['Site'][site_key][k][0]
+                            elif len(resp['inputs']['Scenario']['Site'][site_key][k]) == 0:
+                                del resp['inputs']['Scenario']['Site'][site_key][k] 
                         del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
-
-        # add try/except for get fail / bad run_uuid
+        
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator', 'Wind']
-
         resp = dict()
         resp['outputs'] = dict()
         resp['outputs']['Scenario'] = dict()
@@ -716,9 +715,10 @@ class ModelManager(object):
             scenario_model = ScenarioModel.objects.get(run_uuid=run_uuid)
         except Exception as e:
             if isinstance(e, models.ObjectDoesNotExist):
-                resp['messages']['error'] = "run_uuid {} not in database. "\
-                                            "You may have hit the results endpoint too quickly after POST'ing scenario, "\
-                                            "you may have a typo in your run_uuid, or the scenario was deleted.".format(run_uuid)
+                resp['messages']['error'] = (
+                    "run_uuid {} not in database. "
+                    "You may have hit the results endpoint too quickly after POST'ing scenario, "
+                    "you may have a typo in your run_uuid, or the scenario was deleted.").format(run_uuid)
                 resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
