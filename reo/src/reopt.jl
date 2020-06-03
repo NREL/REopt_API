@@ -1078,7 +1078,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
 						 "year_one_bill" => round(value(Year1Bill), digits=2),
 						 "year_one_payments_to_third_party_owner" => round(value(TotalDemandCharges) / p.pwf_e, digits=0),
-						 "total_energy_cost" => round(value(TotalEnergyCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_energy_cost" => round(value(TotalEnergyChargesUtil) * r_tax_fraction_offtaker, digits=2),
 						 "total_demand_cost" => round(value(TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
 						 "total_fixed_cost" => round(value(TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
 						 "total_export_benefit" => round(value(TotalEnergyExports) * r_tax_fraction_offtaker, digits=2),
