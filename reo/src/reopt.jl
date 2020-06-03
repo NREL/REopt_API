@@ -1,5 +1,4 @@
 using JuMP
-using JLD2
 import MathOptInterface
 const MOI = MathOptInterface
 include("utils.jl")
@@ -8,13 +7,6 @@ include("utils.jl")
 function reopt(reo_model, data, model_inputs)
 
     p = Parameter(model_inputs)
-
-    if length(model_inputs["Tech"]) >= 1
-        @save "./reo/src/scen.jld2" p
-    else
-		@save "./reo/src/scen0.jld2" p
-	end
-
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
     return reopt_run(reo_model, MAXTIME, p)
