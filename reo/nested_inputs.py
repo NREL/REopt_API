@@ -690,7 +690,6 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e9,
           "default": 1.0e9,
-          "description": "Maximum annual value of production-based incentives"
           "description": "Maximum annual value in present terms of production-based incentives"
         },
         "pbi_years": {

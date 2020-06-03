@@ -279,7 +279,12 @@ nested_output_definitions = {
                   "type": list_of_float,
                   "description": "Year one wind to grid time series",
                   "units": "kW"
-                }
+                },
+                "year_one_curtailed_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one PV power curtailed during outage time series",
+                  "units": "kW"
+                },
               },
 
               "Storage": {
@@ -531,7 +536,7 @@ nested_output_definitions = {
                 },
                 "year_one_variable_om_cost_us_dollars": {
                   "type": float,
-                  "description": "Year one variable (based on kWh produced) O&M cost for existing + recommended diesel generator system",
+                  "description": "Year one variable (based on kwh produced) O&M cost for existing + recommended diesel generator system",
                   "units": "$"
                 },
                 "year_one_fixed_om_cost_us_dollars": {

@@ -287,11 +287,13 @@ class PVModel(models.Model):
     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -432,7 +434,7 @@ class GeneratorModel(models.Model):
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                        blank=True)
+                                                     blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
