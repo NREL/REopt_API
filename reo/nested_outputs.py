@@ -391,6 +391,11 @@ nested_output_definitions = {
                   "description": "Total export benefit cost over the lifecycle, after-tax",
                   "units": "$"
                 },
+                "total_export_benefit_bau_us_dollars": {
+                  "type": float,
+                  "description": "BAU export benefit cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
                 "total_min_charge_adder_bau_us_dollars": {
                   "type": float,
                   "description": "Business as usual total utility minimum charge adder",
@@ -409,6 +414,11 @@ nested_output_definitions = {
                 "year_one_export_benefit_us_dollars": {
                   "type": float,
                   "description": "Optimal year one value of exported energy",
+                  "units": "$"
+                },
+                "year_one_export_benefit_bau_us_dollars": {
+                  "type": float,
+                  "description": "BAU year one value of exported energy",
                   "units": "$"
                 },
                 "year_one_energy_cost_series_us_dollars_per_kwh": {

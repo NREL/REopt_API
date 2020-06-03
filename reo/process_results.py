@@ -33,13 +33,12 @@ import copy
 import numpy as np
 from reo.nested_outputs import nested_output_definitions
 import logging
-log = logging.getLogger(__name__)
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-# TODO: remove PVModel
+log = logging.getLogger(__name__)
 
 class ProcessResultsTask(Task):
     """
@@ -96,10 +95,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_min_charge_adder",
             "year_one_bill",
             "year_one_utility_kwh",
+            "year_one_export_benefit",
             "total_energy_cost",
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
+            "total_export_benefit",
             "net_capital_costs_plus_om",
             "gen_net_fixed_om_costs",
             "gen_net_variable_om_costs",
@@ -371,6 +372,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_bill_bau_us_dollars"] = self.results_dict.get("year_one_bill_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_export_benefit_bau_us_dollars"] = self.results_dict.get("year_one_export_benefit_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
