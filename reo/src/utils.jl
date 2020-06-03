@@ -215,7 +215,7 @@ Base.@kwdef struct Parameter
 	 Load::Array{String,1}
 	 
 	 ### Not used or used for calculation of other parameters ###
-	 two_party_factor::Float64 # Not used (?)
+	 two_party_factor::Float64
      analysis_years::Int64     # Used to calculate present worth factors maybe?
      AnnualElecLoad::Float64   # Not used anymore (can just sum LoadProfile["1R",h] for all h in TimeStep
      CapCostSegCount::Int64    # Size of set S 

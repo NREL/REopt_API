@@ -180,7 +180,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         #DemandFlatCharges >= 0
         #TotalDemandCharges >= 0
         #TotalFixedCharges >= 0
-        #TotalEnergyExports <= 0
+        #TotalExportBenefit <= 0
         #TotalProductionIncentive >= 0
         #TotalMinCharge >= 0
 
@@ -815,7 +815,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 
     
-    #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges)
+    #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
 		
@@ -844,30 +844,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	### Alternate constraint (13): Monthly minimum charge adder
 	
-	
-	
-	
-    # Define Rates
     r_tax_fraction_owner = (1 - p.r_tax_owner)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
 
-    ### Objective Function
-    #@expression(REopt, REcosts,
-	#	# Capital Costs
-	#	TotalTechCapCosts + TotalStorageCapCosts +
-
-		# Fixed O&M, tax deductible for owner
-	#	r_tax_fraction_owner * p.pwf_om * TotalPerUnitSizeOMCosts  +
-
-		# Variable O&M, tax deductible for owner
-	#	p.pwf_e * r_tax_fraction_owner * TotalPerUnitProdOMCosts  +
-
-		# Utility Bill, tax deductible for offtaker
-	#	r_tax_fraction_offtaker * p.pwf_e * (TotalEnergyCharges + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) -
-
-		# Subtract Incentives, which are taxable
-	#	r_tax_fraction_owner * TotalProductionIncentive 
-	#)
     PVTechs = filter(t->startswith(t, "PV"), p.Tech)
 	if !isempty(p.Tech)
 		WindTechs = p.TechsInClass["WIND"]
@@ -897,8 +876,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	### Utility and Taxable Costs
 	if !isempty(p.Tech)
-		@expression(REopt, TotalEnergyExports, p.pwf_e * p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
-		
+		@expression(REopt, TotalExportBenefit, -1 *p.pwf_e * p.TimeStepScaling * sum( 
+			sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) 
+			+ sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
+			for ts in p.TimeStep ) 
+		)
 		@expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
 
 		@expression(REopt, ExportedElecWIND,
@@ -911,7 +893,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, ExportBenefitYr1,
 				p.TimeStepScaling * sum( sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
 	else
-		@expression(REopt, TotalEnergyExports, 0.0)
+		@expression(REopt, TotalExportBenefit, 0.0)
 		@expression(REopt, TotalProductionIncentive, 0.0)
 		@expression(REopt, ExportedElecWIND, 0.0)
 		@expression(REopt, ExportedElecGEN, 0.0)
@@ -942,7 +924,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         TotalGenFuelCharges * r_tax_fraction_offtaker -
@@ -1065,7 +1047,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						 "total_energy_cost" => round(value(TotalEnergyChargesUtil) * r_tax_fraction_offtaker, digits=2),
 						 "total_demand_cost" => round(value(TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
 						 "total_fixed_cost" => round(value(TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
-						 "total_export_benefit" => round(value(TotalEnergyExports) * r_tax_fraction_offtaker, digits=2),
+						 "total_export_benefit" => round(value(TotalExportBenefit) * r_tax_fraction_offtaker, digits=2),
 						 "total_min_charge_adder" => round(value(MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
 						 "total_payments_to_third_party_owner" => 0,
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
@@ -1195,9 +1177,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	print("TotalEnergyCharges:")
 	println(value(TotalEnergyCharges))
 	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
-	print("TotalEnergyExports:")
-	println(value(TotalEnergyExports))
-	println(value( r_tax_fraction_offtaker * TotalEnergyExports ))
+	print("TotalExportBenefit:")
+	println(value(TotalExportBenefit))
+	println(value( r_tax_fraction_offtaker * TotalExportBenefit ))
 	print("TotalFixedCharges:")
 	println(value(TotalFixedCharges))
 	println(value(r_tax_fraction_offtaker * p.pwf_e * ( p.FixedMonthlyCharge * 12 ) ) )
