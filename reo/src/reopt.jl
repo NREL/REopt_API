@@ -893,7 +893,42 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		)
     else
         @expression(REopt, TotalPerUnitProdOMCosts, 0.0)
-    end
+	end
+
+	### Utility and Taxable Costs
+	if !isempty(p.Tech)
+		@expression(REopt, TotalEnergyExports, p.pwf_e * p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
+		
+		@expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
+
+		@expression(REopt, ExportedElecWIND,
+					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
+						for t in WindTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))
+		@expression(REopt, ExportedElecGEN,
+					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
+						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))        
+		# Needs levelization factor?
+		@expression(REopt, ExportBenefitYr1,
+				p.TimeStepScaling * sum( sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
+	else
+		@expression(REopt, TotalEnergyExports, 0.0)
+		@expression(REopt, TotalProductionIncentive, 0.0)
+		@expression(REopt, ExportedElecWIND, 0.0)
+		@expression(REopt, ExportedElecGEN, 0.0)
+		@expression(REopt, ExportBenefitYr1,0.0)
+	end
+	
+	@expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * 
+		sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) 
+	)
+	@expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
+		sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
+		for f in p.FuelType)
+	)
+	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
+    @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
+    @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
+    @expression(REopt, TotalFixedCharges, p.pwf_e * p.FixedMonthlyCharge * 12 )
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
@@ -904,34 +939,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		TotalPerUnitSizeOMCosts * r_tax_fraction_owner +
 
         ## Variable O&M, tax deductible for owner
-        TotalPerUnitProdOMCosts * r_tax_fraction_owner +
+		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
-        r_tax_fraction_offtaker * p.pwf_e * (
+		# Utility Bill, tax deductible for offtaker
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalEnergyExports + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
         
-        ## Total Production Costs
-        p.TimeStepScaling * sum( p.FuelCost[f] * sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) for f in p.FuelType ) + 
-        
-        ## Total Energy Charges
-                p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-        
-        ## TOU Demand Charges
-        sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-        
-        ## Peak Monthly Demand Charges
-        sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-        
-        ## Energy Exports
-                p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep )  + 
-        
-        ## Fixed Charges
-            p.FixedMonthlyCharge * 12 + 0.9999 * MinChargeAdder
-        
-        ) -
-        
-        ## Production Incentives
-        r_tax_fraction_owner * sum( dvProdIncent[t] for t in p.Tech )
-
-
+        ## Total Generator Fuel Costs, tax deductible for offtaker
+        TotalGenFuelCharges * r_tax_fraction_offtaker -
+                
+        # Subtract Incentives, which are taxable
+		TotalProductionIncentive * r_tax_fraction_owner
 	)
 	
     if Obj == 1
@@ -975,36 +992,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum(dvRatedProduction[t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
 			for t in GeneratorTechs, ts in p.TimeStep)
 	)
-    @expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) )
-    @expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling *  sum(sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep) * p.FuelCost[f] for f in p.FuelType))
-    @expression(REopt, TotalEnergyCharges, TotalEnergyChargesUtil + TotalGenFuelCharges )
-	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
-    @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
-    @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
-    @expression(REopt, TotalFixedCharges, p.pwf_e * p.FixedMonthlyCharge * 12 )
 
-    ### Utility and Taxable Costs
-	if !isempty(p.Tech)
-		@expression(REopt, TotalEnergyExports, p.pwf_e * p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
-		
-		@expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
-
-		@expression(REopt, ExportedElecWIND,
-					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-						for t in WindTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))
-		@expression(REopt, ExportedElecGEN,
-					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))        
-		# Needs levelization factor?
-		@expression(REopt, ExportBenefitYr1,
-                p.TimeStepScaling * sum( sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
-	else
-		@expression(REopt, TotalEnergyExports, 0.0)
-		@expression(REopt, TotalProductionIncentive, 0.0)
-		@expression(REopt, ExportedElecWIND, 0.0)
-		@expression(REopt, ExportedElecGEN, 0.0)
-		@expression(REopt, ExportBenefitYr1,0.0)
-	end
     @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
