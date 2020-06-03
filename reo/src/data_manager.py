@@ -217,7 +217,7 @@ class DataManager:
                             annuity(eval('self.' + tech + '.incentives.production_based.years'),
                                     0, sf.owner_discount_pct))
                     max_prod_incent.append(
-                        eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_kw')
+                        eval('self.' + tech + '.incentives.production_based.max_us_dollars_per_year')
                     )
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
