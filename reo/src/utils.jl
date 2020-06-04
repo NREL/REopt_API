@@ -176,10 +176,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Fuel Burn Parameters ###
 	 #FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t	 
-
-	 ### To be replaced  ###
-	 Load::Array{String,1}
+	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t	
 	 
 	 ### Not used or used for calculation of other parameters ###
 	 two_party_factor::Float64
