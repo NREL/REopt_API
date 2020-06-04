@@ -384,6 +384,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### System Size and Production Constraints
 	### Constraint set (7): System Size is zero unless single basic tech is selected for class
 	if !isempty(p.Tech)
+
+		# PV techs can be constrained by space available based on location at site (roof, ground, both)
+		@constraint(REopt, TechMaxSizeByLocCon[loc in p.Location],
+			sum( dvSize[t] * p.TechToLocation[t, loc] for t in p.Tech) <= p.MaxSizesLocation[loc]
+		)
+
 		#Constraint (7a): Single Basic Technology Constraints
 		@constraint(REopt, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
 			dvSize[t] <= NewMaxSize[t] * binSingleBasicTech[t,c]

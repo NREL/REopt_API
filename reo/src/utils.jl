@@ -246,6 +246,7 @@ Base.@kwdef struct Parameter
     # Feature Additions
      TechToLocation
      MaxSizesLocation
+     Location::UnitRange
 end
 
 
@@ -292,7 +293,7 @@ function Parameter(d::Dict)
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
 	#Storage = 1:1
-    Location = 1:length(d["MaxSizesLocation"])
+    d[:Location] = 1:length(d["MaxSizesLocation"])
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))), 
@@ -302,7 +303,7 @@ function Parameter(d::Dict)
 
     # convert vectors to AxisArray's with axes for REopt JuMP model
     d["TurbineDerate"] = AxisArray(d["TurbineDerate"], d["Tech"])
-    d["TechToLocation"] = parameter((d["Tech"], Location), d["TechToLocation"])
+    d["TechToLocation"] = parameter((d["Tech"], d[:Location]), d["TechToLocation"])
     d["pwf_prod_incent"] = AxisArray(d["pwf_prod_incent"], d["Tech"])
     d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
     d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
