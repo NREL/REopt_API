@@ -134,7 +134,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Technology-specific Factor Parameters ###
 	 TurbineDerate::AxisArray  # f^{d}_{t}: Derate factor for turbine technologyt [unitless]
-     MinTurndown     # f^{td}_{t}:  Minimum turn down for technology t [unitless]
+     MinTurndown::AxisArray    # f^{td}_{t}:  Minimum turn down for technology t [unitless]
      pwf_prod_incent   # f^{pi}_t: Present worth factor for incentives for technology t [unitless] 
 	 LevelizationFactor    # f^{l}_{t}: Levelization factor of technology t [unitless]
 	 
