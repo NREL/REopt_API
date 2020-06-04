@@ -971,11 +971,11 @@ class DataManager:
         fb_techs = [t for t in reopt_techs if t in self.fuel_burning_techs]
         fb_techs_bau = [t for t in reopt_techs_bau if t in self.fuel_burning_techs]
         
-        techs_no_turndown = [t for t in reopt_techs if t.startswith("PV" or "WIND")]
-        techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV" or "WIND")]
+        techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
+        techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
         
-        electric_techs = [t for t in reopt_techs if t.startswith("PV" or "WIND" or "GENERATOR")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV" or "WIND" or "GENERATOR")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
         
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
