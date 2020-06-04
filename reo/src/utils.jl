@@ -53,7 +53,7 @@ Base.@kwdef struct Parameter
 	 NMILRegime::Array{String,1}	# Set V: Net-metering Regimes
 	 
 	 ###  Subsets and Indexed Sets  ####
-	 #ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
+	 ElecStorage::Array{String,1}  # B^{e} \subset B: Electrical energy storage systems
 	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems (IGNORE)
 	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
 	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
@@ -210,7 +210,6 @@ Base.@kwdef struct Parameter
 	 ElectricDerate
 
      # New Sets
-     ElecStorage
      FuelTypeByTech
      SubdivisionByTech
      SegByTechSubdivision
