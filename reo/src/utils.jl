@@ -123,7 +123,7 @@ Base.@kwdef struct Parameter
      
      MaxProdIncent::AxisArray      # \bar{i}_t: Upper incentive limit for technology t [$]
 	 #ProductionIncentiveRate::AxisArray  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
-	 MaxSizeForProdIncent    # \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
+	 MaxSizeForProdIncent::AxisArray  # \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
 	 
 	 ###  Technology-specific Time-series Factor Parameters ###
 	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
