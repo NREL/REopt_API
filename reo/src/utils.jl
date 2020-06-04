@@ -244,8 +244,8 @@ Base.@kwdef struct Parameter
 	 TechsByNMILRegime
 
     # Feature Additions
-     TechToLocation
-     MaxSizesLocation
+     TechToLocation::AxisArray
+     MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
 end
 
@@ -292,8 +292,10 @@ function Parameter(d::Dict)
 	d[:SalesTiers] = 1:d["SalesTierCount"]
 	#Subdivision=1:1
 	#FuelType = 1:d["FuelBinCount"]
-	#Storage = 1:1
-    d[:Location] = 1:length(d["MaxSizesLocation"])
+    #Storage = 1:1
+    n_location = length(d["MaxSizesLocation"])
+    d[:Location] = 1:n_location
+    d["TechToLocation"] = transpose(reshape(d["TechToLocation"], n_location, length(d["Tech"])))
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))), 
@@ -303,7 +305,7 @@ function Parameter(d::Dict)
 
     # convert vectors to AxisArray's with axes for REopt JuMP model
     d["TurbineDerate"] = AxisArray(d["TurbineDerate"], d["Tech"])
-    d["TechToLocation"] = parameter((d["Tech"], d[:Location]), d["TechToLocation"])
+    d["TechToLocation"] = AxisArray(d["TechToLocation"], d["Tech"], d[:Location])
     d["pwf_prod_incent"] = AxisArray(d["pwf_prod_incent"], d["Tech"])
     d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
     d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
