@@ -121,7 +121,7 @@ Base.@kwdef struct Parameter
 	 ###  Incentive Parameters ###
 	 NMILLimits   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
      
-     MaxProdIncent           # \bar{i}_t: Upper incentive limit for technology t [$]
+     MaxProdIncent::AxisArray      # \bar{i}_t: Upper incentive limit for technology t [$]
 	 #ProductionIncentiveRate::AxisArray  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
 	 MaxSizeForProdIncent    # \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
 	 
