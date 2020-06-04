@@ -30,7 +30,7 @@
 import numpy as np
 import pandas as pd
 from .urdb_logger import log_urdb_errors
-from .nested_inputs import nested_input_definitions, list_of_float
+from .nested_inputs import nested_input_definitions, list_of_float, list_of_str
 #Note: list_of_float is actually needed
 import os
 import csv
@@ -689,13 +689,21 @@ class ValidateNestedInput:
                     bad_val = None
                     if validation_attribute == 'min':
                         bad_val = attribute - 1
+                        if isinstance(good_val, list):
+                            bad_val= [bad_val]
                     if validation_attribute == 'max':
                         bad_val = attribute + 1
+                        if isinstance(good_val, list):
+                            bad_val = [bad_val]
                     if validation_attribute == 'restrict_to':
                         bad_val = "OOPS"
                     if validation_attribute == 'type':
-                        if any(isinstance(good_val, x) for x in [float, int, dict, bool, list]):
-                            bad_val = "OOPS"
+                        if type(attribute) != list and 'list_of_float' != attribute:
+                            if any(isinstance(good_val, x) for x in [float, int, dict, bool]):
+                                bad_val = "OOPS"
+                        elif 'list_of_float' in attribute or 'list_of_float' == attribute:
+                            if isinstance(good_val, list):
+                                bad_val = "OOPS"
 
                     if bad_val is not None:
                         self.update_attribute_value(object_name_path, number, name, bad_val)
@@ -859,10 +867,28 @@ class ValidateNestedInput:
 
                                 avg_load_kw = 0
                                 if self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is not None:
-                                    avg_load_kw = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') / 8760
+                                    annual_kwh_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh')
+                                    percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile'].get('percent_share')
+                                    # Find weighted avg for hybrid load profile
+                                    avg_load_kw = sum(
+                                        [annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
 
-                                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None, []]:
+                                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
+                                    from reo.src.load_profile import BuiltInProfile
+                                    default_annual_kwh_list = []
+                                    doe_reference_name_list = self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']
+                                    percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile']['percent_share']
+                                    for i in range(len(doe_reference_name_list)):
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = doe_reference_name_list[i]
+                                        b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],longitude=self.input_dict['Scenario']['Site']['longitude'], **self.input_dict['Scenario']['Site']['LoadProfile'])
+                                        default_annual_kwh_list.append(b.default_annual_kwh)
+                                    avg_load_kw = sum([default_annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
+                                    # resetting the doe_reference_name key to its original list
+                                    # form for further processing in loadprofile.py file
+                                    self.input_dict['Scenario']['Site']['LoadProfile'][
+                                        'doe_reference_name'] = doe_reference_name_list
 
+                                elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None,[]]:
                                     from reo.src.load_profile import BuiltInProfile
                                     b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
                                                        longitude=self.input_dict['Scenario']['Site']['longitude'],
@@ -901,9 +927,33 @@ class ValidateNestedInput:
                             gen["fuel_intercept_gal_per_hr"] = b
 
             if object_name_path[-1] == "LoadProfile":
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                if self.isValid:
+                    if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                        if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                            self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+
+                    if len(real_values.get('percent_share')) > 0:
+                        percent_share_sum = sum(real_values['percent_share'])
+                        if percent_share_sum != 100.0:
+                            self.input_data_errors.append(
+                            'The sum of elements of percent share list for hybrid load profile should be 100.')
+
+                    if real_values.get('annual_kwh') is not None:
+                        if type(real_values['annual_kwh']) is not list:
+                            self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
+
+                    if real_values.get('doe_reference_name') is not None:
+                        if type(real_values['doe_reference_name']) is not list:
+                            self.update_attribute_value(object_name_path, number, 'doe_reference_name',[real_values['doe_reference_name']])
+
+                        if len(real_values.get('doe_reference_name')) > 1:
+                            if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
+                                self.input_data_errors.append(
+                                'The length of doe_reference_name and percent_share lists should be equal for constructing hybrid load profile')
+
+                    if real_values.get('annual_kwh') is not None:
+                        if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
+                            self.input_data_errors.append('The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid load profile')
 
             if object_name_path[-1] == "ElectricTariff":
                 electric_tariff = real_values
@@ -979,6 +1029,19 @@ class ValidateNestedInput:
                         self.input_data_errors.append((
                             'add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the '
                             'following inputs: {}').format(', '.join(missing_keys)))
+                for key_name in ['wholesale_rate_us_dollars_per_kwh',
+                                 'wholesale_rate_above_site_load_us_dollars_per_kwh']:
+                    if type(electric_tariff.get(key_name)) == list:
+                        ts_per_hour = self.input_dict['Scenario'].get('time_steps_per_hour') or \
+                                      self.nested_input_definitions['Scenario']['time_steps_per_hour']['default']
+                        if len(electric_tariff.get(key_name)) == 1:
+                            self.update_attribute_value(object_name_path, number, key_name,
+                                                        electric_tariff.get(key_name) * 8760 * ts_per_hour)
+                        else:
+                            self.validate_8760(attr=electric_tariff.get(key_name), obj_name=object_name_path[-1],
+                                               attr_name=key_name,
+                                               time_steps_per_hour=ts_per_hour, number=number,
+                                               input_isDict=input_isDict)
 
             if object_name_path[-1] == "LoadProfile":
                 for lp in ['critical_loads_kw', 'loads_kw']:
@@ -1032,18 +1095,22 @@ class ValidateNestedInput:
                                              name, self.object_name_string(object_name_path), number, data_validators['min']))
 
                             if data_validators.get('max') is not None:
-                                if any([v < data_validators['max'] for v in value]):
+                                if any([v > data_validators['max'] for v in value]):
                                     if input_isDict or input_isDict is None:
                                         self.input_data_errors.append(
-                                            'At least one value in %s (from %s) exceeds the allowable max of %s' % (
+                                            'At least one value in %s (from %s) exceeds allowable max of %s' % (
                                              name, self.object_name_string(object_name_path), data_validators['max']))
                                     if input_isDict is False:
                                         self.input_data_errors.append(
-                                            'At least one value in %s (from %s number %s) exceeds the allowable max of %s' % (
+                                            'At least one value in %s (from %s number %s) exceeds allowable max of %s' % (
                                              name, self.object_name_string(object_name_path), number, data_validators['max']))
                             continue
-                        elif isinstance(data_validators['type'], list):
+                        elif "list_of_str" in data_validators['type'] and isinstance(value, list):
+                            data_type = list
+                        elif isinstance(data_validators['type'], list) and 'float' in data_validators['type']:
                             data_type = float
+                        elif isinstance(data_validators['type'], list) and 'str' in data_validators['type']:
+                            data_type = str
                         else:
                             data_type = eval(data_validators['type'])
 
@@ -1072,13 +1139,21 @@ class ValidateNestedInput:
                                         name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
                         if data_validators.get('restrict_to') is not None:
-                            if value not in data_validators['restrict_to']:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append('%s value (%s) in %s not in allowable inputs - %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['restrict_to']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
+                            # Handle both cases: 1. val is of 'type' 2. List('type')
+                            # Approach: Convert case 1 into case 2
+                            value = [value] if not isinstance(value, list) else value
+                            for val in value:
+                                if val not in data_validators['restrict_to']:
+                                    if input_isDict == True or input_isDict == None:
+                                        self.input_data_errors.append(
+                                            '%s value (%s) in %s not in allowable inputs - %s' % (
+                                                name, value, self.object_name_string(object_name_path),
+                                                data_validators['restrict_to']))
+                                    if input_isDict == False:
+                                        self.input_data_errors.append(
+                                            '%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                                name, value, self.object_name_string(object_name_path), number,
+                                                data_validators['max']))
 
         def convert_data_types(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
             """
@@ -1134,12 +1209,57 @@ class ValidateNestedInput:
                                     continue  # both continue statements should be in a finally clause, ...
                                 else:
                                     self.update_attribute_value(object_name_path, number, name, new_value)
-                                    self.validate_8760(attr=new_value, obj_name=object_name_path[-1], attr_name=name,
-                                                       time_steps_per_hour=self.input_dict['Scenario'].get('time_steps_per_hour') or self.nested_input_definitions['Scenario']['time_steps_per_hour']['default'], number=number, input_isDict=input_isDict)
                                     continue  # ... but python 2.7  does not support continue in finally clauses
                             else:
                                 attribute_type = 'float'
                                 make_array = True
+
+
+                        if isinstance(attribute_type, list) and \
+                                all([x in attribute_type for x in ['str', 'list_of_str']]):
+                            if isinstance(value, list):
+                                try:
+                                    series = pd.Series(value)
+                                    if series.isnull().values.any():
+                                        raise NotImplementedError
+
+                                    new_value = list_of_str(value)
+                                except ValueError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s to list of strings' % (name, value,
+                                                                                                    self.object_name_string(
+                                                                                                        object_name_path))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            'Could not convert %s (%s) in %s (number %s) to list of strings' % (
+                                            name, value,
+                                            self.object_name_string(object_name_path), number)
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                except NotImplementedError:
+                                    if input_isDict or input_isDict is None:
+                                        self.input_data_errors.append(
+                                            '%s in %s contains at least one NaN value.' % (name,
+                                                                                           self.object_name_string(
+                                                                                               object_name_path))
+                                        )
+                                    if input_isDict is False:
+                                        self.input_data_errors.append(
+                                            '%s in %s (number %s) contains at least one NaN value.' % (name,
+                                                                                                       self.object_name_string(
+                                                                                                           object_name_path),
+                                                                                                       number)
+                                        )
+                                    continue  # both continue statements should be in a finally clause, ...
+                                else:
+                                    self.update_attribute_value(object_name_path, number, name, new_value)
+                                    continue  # ... but python 2.7  does not support continue in finally clauses
+                            else:
+                                attribute_type = 'str'
+                                make_array = True
+
                         attribute_type = eval(attribute_type)  # convert string to python type
                         try:  # to convert input value to type defined in nested_input_definitions
                             new_value = attribute_type(value)
