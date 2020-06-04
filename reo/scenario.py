@@ -196,7 +196,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             negative_load_tolerance = min(negative_load_tolerance, existing_pv_kw * -0.005) #kw
 
         # If values in the load profile fall below the tolerance, raise an exception
-        # If values in the load profile fall below the tolerance, raise an exception
         if min(lp.load_list) < negative_load_tolerance:
             message = ("After adding existing generation to the load profile there were still negative electricity "
                        "loads. Loads (non-net) must be equal to or greater than 0.")
@@ -204,9 +203,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
             lp_error = LoadProfileError(task=self.name, run_uuid=run_uuid, user_uuid=inputs_dict.get('user_uuid'), message=message)
             lp_error.save_to_db()
             raise lp_error
-        
+
         # Correct load profile values that fall between the tolerance and 0
-        lp.load_list = [0 if ((x>negative_load_tolerance) and (x<0)) else x for x in lp.load_list]
+        lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],

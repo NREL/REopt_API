@@ -405,7 +405,7 @@ class ValidateNestedInput:
         @property
         def messages(self):
             output = {}
-           
+
             if self.errors != {}:
                 output = self.errors
 
@@ -439,14 +439,14 @@ class ValidateNestedInput:
 
             if self.urdb_errors and self.input_data_errors:
                 output["input_errors"] += self.urdb_errors
-            
+
             elif self.urdb_errors:
                 output["error"] = "Invalid inputs. See 'input_errors'."
                 output["input_errors"] = self.urdb_errors
 
             return output
 
-        @property 
+        @property
         def warnings(self):
             output = {}
 
@@ -488,7 +488,7 @@ class ValidateNestedInput:
 
             # Loop through all keys in the dictionary
             for name in nested_dictionary_to_check.keys():
-                # If the key is an object name (i.e. Scnenario, Wind) continue 
+                # If the key is an object name (i.e. Scnenario, Wind) continue
                 if self.isSingularKey(name):
                     # get the value of the key
                     real_input_value = nested_dictionary_to_check.get(name)
@@ -504,7 +504,7 @@ class ValidateNestedInput:
                         pass
                     # catch list case
                     elif type(real_input_value) == list:
-                        # if the object is not one that support a list input flag an error 
+                        # if the object is not one that support a list input flag an error
                         if name not in self.list_or_dict_objects:
                             message = "A list of inputs is not allowed for {}".format(">".join(object_name_path + [name]))
                             self.input_data_errors.append(message)
@@ -609,7 +609,7 @@ class ValidateNestedInput:
                                                               object_name_path=object_name_path + [template_k])
 
                         # if at the end of validation we are left with a list containing one dict, convert the entry fot the object back to 
-                        # a dict from a list                                
+                        # a dict from a list
                         if len(real_values_list) == 1:
                             nested_dictionary_to_check[template_k] = real_values_list[0]
 
@@ -655,8 +655,8 @@ class ValidateNestedInput:
                     del to_update[attribute]
             else:
                 if attribute in to_update[number-1].keys():
-                    del to_update[number-1][attribute]   
-        
+                    del to_update[number-1][attribute]
+
         def object_name_string(self, object_name_path):
             return '>'.join(object_name_path)
 
@@ -744,7 +744,7 @@ class ValidateNestedInput:
             :param number: int, order of the dict in the list
             :param input_isDict: bool, indicates if the object input came in as a dict or list
             :return: None
-            """ 
+            """
             if real_values is not None:
                 rv = copy.deepcopy(real_values)
                 for name, value in rv.items():
@@ -1049,7 +1049,7 @@ class ValidateNestedInput:
                         except:
                             self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
                             name, value, self.object_name_string(object_name_path)))
-                        else:                
+                        else:
                             if data_validators.get('min') is not None:
                                 if value < data_validators['min']:
                                     if input_isDict or input_isDict is None:
@@ -1230,9 +1230,9 @@ class ValidateNestedInput:
 
             # conditional check for complex cases where replacements are available for attributes and there are dependent attributes (annual_kwh and doe_reference_building_name)
             all_missing_attribute_sets = []
-            
+
             for key,value in template_values.items():
-                
+
                 if self.isAttribute(key):
 
                     missing_attribute_sets = []
@@ -1241,7 +1241,7 @@ class ValidateNestedInput:
 
                     if replacements is not None:
                         current_set = [key] + depends_on
-                        
+
                         if list(set(current_set)-set(real_values.keys())) != []:
                             for replace in replacements:
                                 missing = list(set(replace)-set(real_values.keys()))
@@ -1249,12 +1249,12 @@ class ValidateNestedInput:
                                 if missing == []:
                                     missing_attribute_sets = []
                                     break
-                                
+
                                 else:
                                     replace = sorted(replace)
                                     if replace not in missing_attribute_sets:
                                         missing_attribute_sets.append(replace)
-                        
+
                     else:
                         if real_values.get(key) is not None:
                             missing = []
