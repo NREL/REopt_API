@@ -207,26 +207,6 @@ class Wind(Tech):
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
-        """
-        # restricting max_kw based on size_class constraints reo to consider just 1 turbine per simulation.
-        # residential <= 2.5 kW
-        # commercial <= 100  kW
-        # medium <= 1000 kW
-        # Large <= 2500 kW (2.5 MW)
-
-        if kwargs.get('size_class') == 'residential':
-            self.max_kw = 2.5
-        elif kwargs.get('size_class') == 'commercial':
-            self.max_kw = 100
-        elif kwargs.get('size_class') == 'medium':
-            self.max_kw = 250
-        elif kwargs.get('size_class') == 'large':
-            self.max_kw = 1000
-
-        if self.min_kw > self.max_kw:
-            self.min_kw = self.max_kw
-        """
-
     @property
     def prod_factor(self):
         """

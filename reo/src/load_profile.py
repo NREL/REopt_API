@@ -30,6 +30,7 @@
 import os
 import copy
 import math
+import numpy as np
 from datetime import datetime, timedelta
 from collections import namedtuple
 from reo.utilities import degradation_factor
@@ -432,7 +433,11 @@ class BuiltInProfile(object):
 
     @property
     def building_type(self):
-        name = self.doe_reference_name.replace(' ','')
+        if isinstance(self.doe_reference_name, str):
+            name = self.doe_reference_name.replace(' ', '')
+        else:
+            name = self.doe_reference_name[0].replace(' ', '')
+
         if name not in self.default_buildings:
             raise AttributeError("load_profile error. Invalid doe_reference_name. Select from the following:\n{}".format(self.default_buildings))
         return name
@@ -507,19 +512,57 @@ class LoadProfile(BuiltInProfile):
 
         self.time_steps_per_hour = time_steps_per_hour
         self.n_timesteps = self.time_steps_per_hour*8760
+        self.percent_share_list = kwargs.get("percent_share")
+        # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
+        doe_reference_name_list = kwargs.pop("doe_reference_name", None)
+        self.annual_kwh_list = kwargs.pop("annual_kwh", None)
 
         if user_profile:
             self.load_list = user_profile
+            self.unmodified_load_list = copy.copy(self.load_list)
+            self.bau_load_list = copy.copy(self.load_list)
 
         else:  # building type and (annual_kwh OR monthly_totals_kwh) defined by user
-            super(LoadProfile, self).__init__(**kwargs)
-            self.load_list = self.built_in_profile
-            self.load_list_original = copy.deepcopy(self.load_list)
+            if len(doe_reference_name_list) == 1:
+                kwargs["doe_reference_name"] = doe_reference_name_list[0]
+                if self.annual_kwh_list is not None:
+                    kwargs["annual_kwh"] = self.annual_kwh_list[0]
+                super(LoadProfile, self).__init__(**kwargs)
 
-            self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
+                self.load_list = self.built_in_profile
+                self.load_list_original = copy.deepcopy(self.load_list)
 
-        self.unmodified_load_list = copy.copy(self.load_list)
-        self.bau_load_list = copy.copy(self.load_list)
+
+                self.load_list = [val for val in self.load_list_original for _ in
+                                           range(self.time_steps_per_hour)]
+                self.unmodified_load_list = copy.copy(self.load_list)
+                self.bau_load_list = copy.copy(self.load_list)
+
+            else:  # build hybrid BuiltInProfile
+                combine_loadlist = []
+
+                for i in range(len(doe_reference_name_list)):
+                    percent_share = self.percent_share_list[i]
+                    kwargs["doe_reference_name"] = doe_reference_name_list[i]
+
+                    if self.annual_kwh_list is not None:
+                        kwargs["annual_kwh"] = self.annual_kwh_list[i]
+
+                    super(LoadProfile, self).__init__(**kwargs)
+                    self.load_list = self.built_in_profile
+                    self.load_list_original = copy.deepcopy(self.load_list)
+                    self.load_list = [val for val in self.load_list_original for _ in range(self.time_steps_per_hour)]
+
+            # appending the weighted load at every timestep, for making hybrid loadlist
+                    combine_loadlist.append([load * (percent_share / 100) for load in self.load_list])
+            
+            # combine_loadlist and combine_critical_loads_kw list are both "list of lists", now summing up the loads from individual list-elements completing the hybrid load and critical load profile
+            # using ndarray for faster operations
+                hybrid_loadlist_np = list(np.sum(np.array(combine_loadlist), 0))
+                hybrid_loadlist = [val.item() for val in hybrid_loadlist_np]
+                self.unmodified_load_list = copy.copy(hybrid_loadlist)
+                self.bau_load_list = copy.copy(hybrid_loadlist)
+                self.load_list = copy.copy(hybrid_loadlist)
 
         # account for existing PV in load profile if loads_kw_is_net
         existing_pv_kw_list = None
