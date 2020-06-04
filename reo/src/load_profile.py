@@ -558,7 +558,8 @@ class LoadProfile(BuiltInProfile):
             
             # combine_loadlist and combine_critical_loads_kw list are both "list of lists", now summing up the loads from individual list-elements completing the hybrid load and critical load profile
             # using ndarray for faster operations
-                hybrid_loadlist = list(np.sum(np.array(combine_loadlist), 0))
+                hybrid_loadlist_np = list(np.sum(np.array(combine_loadlist), 0))
+                hybrid_loadlist = [val.item() for val in hybrid_loadlist_np]
                 self.unmodified_load_list = copy.copy(hybrid_loadlist)
                 self.bau_load_list = copy.copy(hybrid_loadlist)
                 self.load_list = copy.copy(hybrid_loadlist)
