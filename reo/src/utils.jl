@@ -22,60 +22,60 @@ struct Parameter
      Tech::Array{String,1}
      Load::Array{String,1}
      TechClass::Array{String,1}
-     TechIsGrid::AxisArray{Int64,1,Array{Int64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToLoadMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     TechToLocation::AxisArray{Int,2,Array{Int,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
-     TurbineDerate::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToTechClassMatrix::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     TechIsGrid::AxisArray
+     TechToLoadMatrix::AxisArray
+     TechToLocation::AxisArray
+     TurbineDerate::AxisArray
+     TechToTechClassMatrix::AxisArray
      NMILRegime::Array{String,1}
      r_tax_owner::Float64
      r_tax_offtaker::Float64
      pwf_om::Float64
      pwf_e::Float64
-     pwf_prod_incent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     LevelizationFactor::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     pwf_prod_incent::AxisArray
+     LevelizationFactor::AxisArray
      StorageCostPerKW::Float64
      StorageCostPerKWH::Float64
-     OMperUnitSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     CapCostSlope::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
-     CapCostYInt::Union{AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}},AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}}
-     CapCostX::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
-     ProdIncentRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     MaxProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     MaxSizeForProdIncent::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     MaxSizesLocation::AxisArray{Float64,1,Array{Float64,1}, Tuple{Axis{:row,UnitRange{Int64}}}}
+     OMperUnitSize::AxisArray
+     CapCostSlope::AxisArray
+     CapCostYInt::AxisArray
+     CapCostX::AxisArray
+     ProdIncentRate::AxisArray
+     MaxProdIncent::AxisArray
+     MaxSizeForProdIncent::AxisArray
+     MaxSizesLocation::AxisArray
      two_party_factor::Float64
      analysis_years::Int64
      AnnualElecLoad::Float64
-     LoadProfile::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
-     ProdFactor::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
+     LoadProfile::AxisArray
+     ProdFactor::AxisArray
      StorageMinChargePcent::Float64
-     EtaStorIn::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
-     EtaStorOut::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     EtaStorIn::AxisArray
+     EtaStorOut::AxisArray
      InitSOC::Float64
-     MaxSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     MaxSize::AxisArray
      MinStorageSizeKW::Float64
      MaxStorageSizeKW::Float64
      MinStorageSizeKWH::Float64
      MaxStorageSizeKWH::Float64
-     TechClassMinSize::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     MinTurndown::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     FuelRate::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}},Axis{:page,UnitRange{Int64}}}}
-     FuelAvail::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}
+     TechClassMinSize::AxisArray
+     MinTurndown::AxisArray
+     FuelRate::AxisArray
+     FuelAvail::AxisArray
      FixedMonthlyCharge::Float64
      AnnualMinCharge::Float64
      MonthlyMinCharge::Float64
-     ExportRates::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-     TimeStepRatchetsMonth::AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}
-     DemandRatesMonth::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}
+     ExportRates::AxisArray
+     TimeStepRatchetsMonth::AxisArray
+     DemandRatesMonth::AxisArray
      DemandLookbackPercent::Float64
      MaxDemandInTier::Array{Float64,1}
      MaxDemandMonthsInTier::Array{Float64,1}
      MaxUsageInTier::Array{Float64,1}
-     FuelBurnRateM::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-     FuelBurnRateB::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}
-     NMILLimits::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
-     TechToNMILMapping::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}
+     FuelBurnRateM::AxisArray
+     FuelBurnRateB::AxisArray
+     NMILLimits::AxisArray
+     TechToNMILMapping::AxisArray
      DemandRates::Union{Array{Float64,1},AxisArray{Any,2,Array{Any,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}},AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,UnitRange{Int64}},Axis{:col,UnitRange{Int64}}}}}
      TimeStepRatchets::Union{Array{Int64,1},AxisArray{Array{Any,1},1,Array{Array{Any,1},1},Tuple{Axis{:row,UnitRange{Int64}}}},AxisArray{Array{Int64,1},1,Array{Array{Int64,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}}
      DemandLookbackMonths::Array{Any,1}
@@ -94,7 +94,7 @@ struct Parameter
      TimeStep::UnitRange{Int64}
      TimeStepBat::UnitRange{Int64}
      TimeStepScaling::Float64
-     OMcostPerUnitProd::AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}}
+     OMcostPerUnitProd::AxisArray
 end
 
 
