@@ -1245,7 +1245,7 @@ class ValidateNestedInput:
                         if list(set(current_set)-set(real_values.keys())) != []:
                             for replace in replacements:
                                 missing = list(set(replace)-set(real_values.keys()))
-                                
+
                                 if missing == []:
                                     missing_attribute_sets = []
                                     break
@@ -1261,7 +1261,7 @@ class ValidateNestedInput:
                             for dependent_key in depends_on:
                                 if real_values.get(dependent_key) is None:
                                     missing.append(dependent_key)
-                            
+
                             if missing !=[]:
                                 missing_attribute_sets.append(missing)
 

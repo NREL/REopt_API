@@ -643,15 +643,6 @@ class DataManager:
                     else:
                         tech_to_location.append(0)
 
-                for location in ['roof', 'ground', 'both']:
-                    if tech.startswith('pv'):
-                        if eval('self.' + tech + '.location') == location:
-                            tech_to_location.append(1)
-                        else:
-                            tech_to_location.append(0)
-                    else:
-                        tech_to_location.append(0)
-
         for load in self.available_loads:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
