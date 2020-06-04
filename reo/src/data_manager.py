@@ -901,8 +901,13 @@ class DataManager:
 
         # There are no cost curves yet, but incentive size limits and existing techs require cost curve segments
         # TODO: create this array in _get_REopt_cost_curve?
-        seg_by_tech_subdivision = [[n_segments for _ in reopt_techs] for __ in subdivisions]
-        seg_by_tech_subdivision_bau = [[n_segments_bau for _ in reopt_techs_bau] for __ in subdivisions]
+        seg_by_tech_subdivision = list()
+        seg_by_tech_subdivision_bau = list()
+        for _ in subdivisions:
+            for _ in reopt_techs:
+                seg_by_tech_subdivision.append(n_segments)
+            for  _ in reopt_techs_bau:
+                seg_by_tech_subdivision_bau.append(n_segments_bau)
 
         if len(reopt_techs) == 0:
             techs_by_fuel_type = []

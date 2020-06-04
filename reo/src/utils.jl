@@ -99,13 +99,13 @@ Base.@kwdef struct Parameter
 	 OMperUnitSize # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd
      
-	 GridExportRates::AxisArray  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
      CapCostYInt  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
      CapCostX    # X-value of inflection point (will be changed)
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
-	 DemandRates  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
-	 DemandRatesMonth   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
+	 DemandRates::Array{Float64, 2}  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
+	 DemandRatesMonth::Array{Float64, 2}   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
 	 
 	 ###  Demand Parameters ###
 	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
@@ -153,7 +153,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Efficiency Parameters ###
 	 #ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
-	 #GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
+	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      #DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
 	 # \eta^{bo}: Boiler efficiency [fraction]
 	 # \eta^{ecop}: Electric chiller efficiency [fraction]
@@ -190,7 +190,7 @@ Base.@kwdef struct Parameter
      StorageCostPerKW::AxisArray
      StorageCostPerKWH::AxisArray
      FuelCost
-     ElecRate
+     ElecRate::Array{Float64, 2}
      FuelBurnSlope
      FuelBurnYInt
      MaxGridSales::Array{<:Real, 1}
@@ -198,7 +198,6 @@ Base.@kwdef struct Parameter
      ProductionFactor
      FuelLimit
      ChargeEfficiency
-     GridChargeEfficiency::Float64
      DischargeEfficiency
      StorageMinSizeEnergy
      StorageMaxSizeEnergy
@@ -283,7 +282,6 @@ function Parameter(d::Dict)
     #Storage = 1:1
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
-    d["TechToLocation"] = transpose(reshape(d["TechToLocation"], n_location, length(d["Tech"])))
 
     # the following array manipulation may have to adapt once length(d["Subdivision"]) > 1
     seg_min_size_array = reshape(transpose(reshape(d["SegmentMinSize"], length(d[:Seg]), length(d["Tech"]))), 
@@ -293,37 +291,36 @@ function Parameter(d::Dict)
 
     # convert vectors to AxisArray's with axes for REopt JuMP model
     d["TurbineDerate"] = AxisArray(d["TurbineDerate"], d["Tech"])
-    d["TechToLocation"] = AxisArray(d["TechToLocation"], d["Tech"], d[:Location])
+    d["TechToLocation"] = vector_to_axisarray(d["TechToLocation"], d["Tech"], d[:Location])
     d["pwf_prod_incent"] = AxisArray(d["pwf_prod_incent"], d["Tech"])
     d["LevelizationFactor"] = AxisArray(d["LevelizationFactor"], d["Tech"])
     d["OMperUnitSize"] = AxisArray(d["OMperUnitSize"], d["Tech"])
-    d["CapCostSlope"] = parameter((d["Tech"], d[:Seg]), d["CapCostSlope"])
-    d["CapCostYInt"] = parameter((d["Tech"], d[:Seg]), d["CapCostYInt"])
-    d["CapCostX"] = parameter((d["Tech"],d[:Points]), d["CapCostX"])
+    d["CapCostSlope"] = vector_to_axisarray(d["CapCostSlope"], d["Tech"], d[:Seg])
+    d["CapCostYInt"] = vector_to_axisarray(d["CapCostYInt"], d["Tech"], d[:Seg])
+    d["CapCostX"] = vector_to_axisarray(d["CapCostX"], d["Tech"], d[:Points])
     d["MaxProdIncent"] = AxisArray(d["MaxProdIncent"], d["Tech"])
     d["MaxSizeForProdIncent"] = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
     d["MaxSize"] = AxisArray(d["MaxSize"], d["Tech"])
     d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
     d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])
     d["DemandRates"] = transpose(reshape(d["DemandRates"], d["DemandBinCount"], d["NumRatchets"]))
-    d["DemandRatesMonth"] = parameter((d[:Month], d[:DemandMonthsBin]), d["DemandRatesMonth"])
+    d["DemandRatesMonth"] = transpose(reshape(d["DemandRatesMonth"], d["DemandMonthsBinCount"], 12))
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
-    d["TechToNMILMapping"] = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])
+    d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
 
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
     d["StorageCostPerKWH"] = AxisArray(d["StorageCostPerKWH"], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
-    d["ElecRate"] = parameter((d[:PricingTier], d[:TimeStep]), d["ElecRate"])
-    d["GridExportRates"] = parameter((d[:SalesTiers], d[:TimeStep]), d["GridExportRates"])
+    d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
+    d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
     d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
-    d["ProductionFactor"] = parameter((d["Tech"], d[:TimeStep]), d["ProductionFactor"])
+    d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
-    d["ChargeEfficiency"] = parameter((d["Tech"], d["Storage"]), d["ChargeEfficiency"]) # does this need to be indexed on techs?
-    #d["GridChargeEfficiency"] = AxisArray(d["GridChargeEfficiency"], d["Storage"])
+    d["ChargeEfficiency"] = vector_to_axisarray(d["ChargeEfficiency"], d["Tech"], d["Storage"])
     d["DischargeEfficiency"] = AxisArray(d["DischargeEfficiency"], d["Storage"])
     d["StorageMinSizeEnergy"] = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
     d["StorageMaxSizeEnergy"] = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
@@ -333,11 +330,11 @@ function Parameter(d::Dict)
     d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
     d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
-	d["ElectricDerate"] = parameter((d["Tech"], d[:TimeStep]), d["ElectricDerate"])
+	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
-    d["SegByTechSubdivision"] = parameter((d["Subdivision"], d["Tech"]), d["SegByTechSubdivision"])
+    d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = len_zero_param(d["FuelType"], d["TechsByFuelType"])
     d["FuelTypeByTech"] = len_zero_param(d["Tech"], d["FuelTypeByTech"])
     d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
@@ -349,51 +346,6 @@ function Parameter(d::Dict)
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
     param = Parameter(;d...)
-end
-
-# Code for parameter() function
-function paramDataFormatter(setTup::Tuple, data::AbstractArray)
-    if typeof(data) === Array{Any, 1}
-        data = convert(Array{Float64, 1}, data)
-    end
-    reverseTupleAxis = Tuple([length(set) for set in setTup][end:-1:1])
-    shapedData = reshape(data, reverseTupleAxis)
-    reverseDataAxis = [length(setTup)+1 - n for n in 1:length(setTup)]
-    shapedDataT = permutedims(shapedData, reverseDataAxis)
-    return AxisArray(shapedDataT, setTup)
-end
-
-function parameter(setTup::Tuple, data::AbstractArray)
-    #data = retype(nondata)
-    try
-        formattedParam = paramDataFormatter(setTup, data)
-        return formattedParam
-    catch
-        correctLength = prod([length(x) for x in setTup])
-        if length(data) < correctLength
-            let x = 1
-                for set in setTup
-                    x = x * length(set)
-                end
-                numZeros = x - length(data)
-                for zero in 1:numZeros
-                    append!(data, 0)
-                end
-                formattedParam = paramDataFormatter(setTup, data)
-                return formattedParam
-            end
-        else
-            data = data[1:correctLength]
-            formattedParam = paramDataFormatter(setTup, data)
-            return formattedParam
-        end
-    end
-end
-
-
-function parameter(setTup::Tuple{Array{Symbol,1}, UnitRange{Int64}}, data::Number)
-    newTup = ([setTup[1][1], :FAKE], 1:2)
-    return AxisArray(fill(data, 2, 2), newTup)
 end
 
 # Additional dispatches to make things easier
@@ -425,4 +377,11 @@ function len_zero_param(sets, arr::Array)
     catch
         return []
     end
+end
+
+function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{String, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
+    l1 = length(ax1)
+    l2 = length(ax2)
+    a = transpose(reshape(v, l2, l1))
+    return AxisArray(a, ax1, ax2)
 end
