@@ -81,8 +81,6 @@ class TestMultiplePV(ResourceTestCaseMixin, TestCase):
                     "urdb_utility_name": "",
                     "urdb_rate_name": "",
                     "add_blended_rates_to_urdb_rate": False,
-                    "blended_monthly_rates_us_dollars_per_kwh": [],
-                    "blended_monthly_demand_charges_us_dollars_per_kw": [],
                     "blended_annual_rates_us_dollars_per_kwh": 0.3,
                     "blended_annual_demand_charges_us_dollars_per_kw": 20.0,
                     "net_metering_limit_kw": 0.0,
