@@ -36,13 +36,13 @@ Base.@kwdef struct Parameter
     #       AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ?
     #       Problem is that many Array{Float64, 1} can be empty so PyCall makes them Array{Any, 1}
 	 ###  Sets  ###
-	 #Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
+	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
 	 DemandBin::UnitRange{Int64}   # Set E
-	 #FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
+	 FuelType::Array{String,1}     # Set F; new; F = {"NaturalGas"} for CHP and whatever fuel source is used for Boiler
      TimeStep::UnitRange{Int64}    # Set H
      TimeStepBat::UnitRange{Int64} # Set H union {0}
-	 #Subdivision::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
+	 Subdivision::Array{String,1}	# Set K; new; elements = { "CapCost", "FuelBurn" }
 	 Month::UnitRange{Int64} 	    # Set M
 	 DemandMonthsBin::UnitRange{Int64}	# Set N
 	 Ratchets::UnitRange{Int64}	   # Set R
@@ -210,9 +210,6 @@ Base.@kwdef struct Parameter
 	 ElectricDerate
 
      # New Sets
-     Storage::Array{String, 1}
-     FuelType::Array{String, 1}
-     Subdivision
      ElecStorage
      FuelTypeByTech
      SubdivisionByTech
@@ -277,7 +274,6 @@ function Parameter(d::Dict)
     d[:TimeStep] = 1:d["TimeStepCount"]
     d[:TimeStepBat] = 0:d["TimeStepCount"]
 	d[:SalesTiers] = 1:d["SalesTierCount"]
-	#Subdivision=1:1
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
 
