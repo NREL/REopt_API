@@ -96,8 +96,8 @@ Base.@kwdef struct Parameter
 	 FixedMonthlyCharge::Float64  # c^{fmc}: Utility monthly fixed charge
 	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
 	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
-	 OMperUnitSize # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
-     OMcostPerUnitProd
+	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
+     OMcostPerUnitProd::AxisArray
      
 	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
@@ -197,14 +197,14 @@ Base.@kwdef struct Parameter
      ProductionIncentiveRate
      ProductionFactor
      FuelLimit
-     ChargeEfficiency
-     DischargeEfficiency
-     StorageMinSizeEnergy
-     StorageMaxSizeEnergy
-     StorageMinSizePower
-     StorageMaxSizePower
-     StorageMinSOC
-     StorageInitSOC
+     ChargeEfficiency::AxisArray
+     DischargeEfficiency::AxisArray
+     StorageMinSizeEnergy::AxisArray
+     StorageMaxSizeEnergy::AxisArray
+     StorageMinSizePower::AxisArray
+     StorageMaxSizePower::AxisArray
+     StorageMinSOC::AxisArray
+     StorageInitSOC::AxisArray
      SegmentMinSize::AxisArray
      SegmentMaxSize::AxisArray
 	 ElectricDerate
@@ -310,8 +310,8 @@ function Parameter(d::Dict)
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
 
     # Reformulation additions
-    d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
-    d["StorageCostPerKWH"] = AxisArray(d["StorageCostPerKWH"], d["Storage"])
+    d["StorageCostPerKW"] = AxisArray([d["StorageCostPerKW"]], d["Storage"])
+    d["StorageCostPerKWH"] = AxisArray([d["StorageCostPerKWH"]], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
     d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
@@ -322,12 +322,12 @@ function Parameter(d::Dict)
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
     d["ChargeEfficiency"] = vector_to_axisarray(d["ChargeEfficiency"], d["Tech"], d["Storage"])
     d["DischargeEfficiency"] = AxisArray(d["DischargeEfficiency"], d["Storage"])
-    d["StorageMinSizeEnergy"] = AxisArray(d["StorageMinSizeEnergy"], d["Storage"])
-    d["StorageMaxSizeEnergy"] = AxisArray(d["StorageMaxSizeEnergy"], d["Storage"])
-    d["StorageMinSizePower"] = AxisArray(d["StorageMinSizePower"], d["Storage"])
-    d["StorageMaxSizePower"] = AxisArray(d["StorageMaxSizePower"], d["Storage"])
-    d["StorageMinSOC"] = AxisArray(d["StorageMinSOC"], d["Storage"])
-    d["StorageInitSOC"] = AxisArray(d["StorageInitSOC"], d["Storage"])
+    d["StorageMinSizeEnergy"] = AxisArray([d["StorageMinSizeEnergy"]], d["Storage"])
+    d["StorageMaxSizeEnergy"] = AxisArray([d["StorageMaxSizeEnergy"]], d["Storage"])
+    d["StorageMinSizePower"] = AxisArray([d["StorageMinSizePower"]], d["Storage"])
+    d["StorageMaxSizePower"] = AxisArray([d["StorageMaxSizePower"]], d["Storage"])
+    d["StorageMinSOC"] = AxisArray([d["StorageMinSOC"]], d["Storage"])
+    d["StorageInitSOC"] = AxisArray([d["StorageInitSOC"]], d["Storage"])
     d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
@@ -351,10 +351,6 @@ end
 # Additional dispatches to make things easier
 function length(::Symbol)
     return 1
-end
-
-function AxisArray(data::Number, index::Array{T, 1}) where T <: Union{Symbol, String}
-    return AxisArray([float(data)], index)
 end
 
 function JuMP.value(::Val{false})
