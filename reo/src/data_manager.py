@@ -830,8 +830,6 @@ class DataManager:
         reopt_techs = self._get_REopt_techs(self.available_techs)
         reopt_techs_bau = self._get_REopt_techs(self.bau_techs)
 
-        load_list = ['1R', '1W', '1X', '1S']  # same for BAU
-
         tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
@@ -999,7 +997,6 @@ class DataManager:
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
             'MaxSizesLocation': max_sizes_location,
-            'Load': load_list,
             'TechClass': self.available_tech_classes,
             'TechIsGrid': tech_is_grid,
             'TurbineDerate': derate,
@@ -1110,7 +1107,6 @@ class DataManager:
             'TechToLocation': tech_to_location_bau,
             'MaxSizesLocation': max_sizes_location_bau,
             'TechIsGrid': tech_is_grid_bau,
-            'Load': load_list,
             'TechClass': self.available_tech_classes,
             'NMILRegime': NMIL_regime_bau,
             'TurbineDerate': derate_bau,
