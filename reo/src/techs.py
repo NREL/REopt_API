@@ -49,7 +49,6 @@ class Tech(object):
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
         self.reopt_class = ""
-        self.is_grid = False
         self.derate = 1.0
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
@@ -78,7 +77,6 @@ class Util(Tech):
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
         self.loads_served = ['retail', 'storage']
-        self.is_grid = True
         self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
