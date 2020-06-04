@@ -99,8 +99,7 @@ Base.@kwdef struct Parameter
 	 OMperUnitSize # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd
      
-	 ExportRates    # to be replaced by GridExportRates
-	 #GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
+	 GridExportRates::AxisArray  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
      CapCostYInt  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
      CapCostX    # X-value of inflection point (will be changed)
@@ -199,7 +198,6 @@ Base.@kwdef struct Parameter
      StorageCostPerKWH::AxisArray
      FuelCost
      ElecRate
-     GridExportRates
      FuelBurnSlope
      FuelBurnYInt
      MaxGridSales::Array{<:Real, 1}
@@ -316,7 +314,6 @@ function Parameter(d::Dict)
     d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
     d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])
     d["DemandRates"] = transpose(reshape(d["DemandRates"], d["DemandBinCount"], d["NumRatchets"]))
-    d["ExportRates"] = parameter((d["Tech"], d["Load"], d[:TimeStep]), d["ExportRates"])
     d["DemandRatesMonth"] = parameter((d[:Month], d[:DemandMonthsBin]), d["DemandRatesMonth"])
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = parameter((d["Tech"], d["NMILRegime"]), d["TechToNMILMapping"])

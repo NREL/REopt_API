@@ -91,9 +91,6 @@ class REoptArgs:
         self.fuel_limit = []
         self.fuel_limit_bau = []
 
-        self.export_rates = []
-        self.export_rates_bau = []
-
         self.fixed_monthly_charge = 0
         self.annual_min_charge = 0
         self.min_monthly_charge = 0
@@ -252,7 +249,6 @@ class UrdbParse:
 
         self.reopt_args.energy_rates, \
         self.reopt_args.energy_avail,  \
-        self.reopt_args.export_rates, \
         self.reopt_args.energy_burn_rate, \
         self.reopt_args.energy_burn_intercept, \
         self.reopt_args.energy_costs, \
@@ -268,7 +264,6 @@ class UrdbParse:
 
         self.reopt_args.energy_rates_bau, \
         self.reopt_args.energy_avail_bau, \
-        self.reopt_args.export_rates_bau, \
         self.reopt_args.energy_burn_rate_bau, \
         self.reopt_args.energy_burn_intercept_bau, \
         self.reopt_args.energy_costs_bau, \
@@ -495,7 +490,6 @@ class UrdbParse:
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
-        export_rates = list()
         grid_export_rates = list()
         rates_by_tech = list()
         if len(techs) > 0:
@@ -516,29 +510,6 @@ class UrdbParse:
                 rates_by_tech.append([2,3])
                 techs_by_rate[1].append(tech.upper())
                 techs_by_rate[2].append(tech.upper())
-            for load in self.loads:
-                if tech.lower() == 'util':
-                    export_rates = operator.add(export_rates, self.zero_array)     
-                elif not tech.lower().endswith('nm'):
-                    # techs that end with 'nm' are for ABOVE net_metering_limit; yeah, I know...
-                    if load == 'wholesale':
-                        if self.net_metering:
-                            export_rates = operator.add(export_rates, negative_energy_costs)
-                           
-                        else:
-                            export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
-                    elif load == 'export':
-                        export_rates = operator.add(export_rates, negative_excess_rate_costs)
-                    else:
-                        export_rates = operator.add(export_rates, self.zero_array)
-
-                elif tech.lower().endswith('nm'):
-                    if load == 'wholesale':
-                        export_rates = operator.add(export_rates, negative_wholesale_rate_costs)
-                    elif load == 'export':
-                        export_rates = operator.add(export_rates, negative_excess_rate_costs)
-                    else:
-                        export_rates = operator.add(export_rates, self.zero_array)
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
@@ -568,7 +539,7 @@ class UrdbParse:
                         energy_burn_rate.append(0.0)
                         energy_burn_intercept.append(0.0)
 
-        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept, \
+        return energy_rates, energy_avail, energy_burn_rate, energy_burn_intercept, \
                 energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit, \
                 rates_by_tech, techs_by_rate, num_sales_tiers
 
