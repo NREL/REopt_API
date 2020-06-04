@@ -94,10 +94,6 @@ Base.@kwdef struct Parameter
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
      MonthlyMinCharge::Float64    # c^{mmc}: Utility monthly minimum charge  (not in math; will use this in min charge calculation)
 	 FixedMonthlyCharge::Float64  # c^{fmc}: Utility monthly fixed charge
-	 StorageCostPerKW::Float64    # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]    NOTE: Needs to be updated for set B
-     StorageCostPerKWH::Float64   # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  NOTE: Needs to be updated for set B 
-	 #StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
-	 #StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
 	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
 	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
@@ -182,34 +178,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Fuel Burn Parameters ###
 	 #FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
-	 
-	 ###  CHP Thermal Performance Parameters ###
-	 
-	 
-	 ### New parameters (commented copies above ###
-	 #StoragePowerCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kW}_{b}:  Capital cost per unit power capacity of storage system b [$/kW]  (NEW)
-	 #StorageEnergyCost::AxisArray{Float64,1,Array{Float64,1},Axis{:row,Array{String,1}}}  # c^{kWh}_{b}:  Capital cost per unit energy capacity of storage system b [$/kWh]  (NEW)
-	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
-	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
-	 #GridExportRates::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{Int64,1}}, Axis{:col,UnitRange{Int64}}}}    # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
-	 #FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t
-	 #MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
-	 #ProductionIncentiveRate::AxisArray  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
-	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-	 #ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
-	 #FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
-	 #ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
-	 #GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
-	 #DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 #StorageMinSizeEnergy::AxisArray     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh] (NEW)
-     #StorageMaxSizeEnergy::AxisArray     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh] (NEW)
-	 #StorageMinSizePower::AxisArray     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW] (NEW)
-     #StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW] (NEW)
-     #StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction] (NEW)
-     #StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction] (NEW)
-	 
+	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t	 
 
 	 ### To be replaced  ###
 	 Load::Array{String,1}
@@ -227,8 +196,8 @@ Base.@kwdef struct Parameter
      PricingTierCount::Int64    # Size of set U
 	 
      # new parameters for reformulation
-     StoragePowerCost
-     StorageEnergyCost
+     StorageCostPerKW::AxisArray
+     StorageCostPerKWH::AxisArray
      FuelCost
      ElecRate
      GridExportRates
@@ -354,8 +323,8 @@ function Parameter(d::Dict)
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
 
     # Reformulation additions
-    d["StoragePowerCost"] = AxisArray(d["StoragePowerCost"], d["Storage"])
-    d["StorageEnergyCost"] = AxisArray(d["StorageEnergyCost"], d["Storage"])
+    d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
+    d["StorageCostPerKWH"] = AxisArray(d["StorageCostPerKWH"], d["Storage"])
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = parameter((d[:PricingTier], d[:TimeStep]), d["ElecRate"])
     d["GridExportRates"] = parameter((d[:SalesTiers], d[:TimeStep]), d["GridExportRates"])

@@ -109,14 +109,14 @@ class DataManager:
         if pv.existing_kw > 0:
             self.bau_techs = ["pv"+str(pv_number), "pv"+str(pv_number)+"nm"] + self.bau_techs
 
-        # update self.available_techs (baseline is ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'util'])
+        # update self.available_techs (baseline is ['pv1', 'pv1nm', 'wind', 'windnm', 'generator'])
         if pv_number > 1:
             i = pv_number - 1
             self.available_techs = self.available_techs[:i*2] + ["pv"+str(pv_number), "pv"+str(pv_number)+"nm"] + \
                                    self.available_techs[i*2:]
             self.available_tech_classes = self.available_tech_classes[:i] + ["PV" + str(pv_number)] + \
                                    self.available_tech_classes[i:]
-            # eg. ['pv1', 'pvnm1', 'pv2', 'pvnm2', 'wind', 'windnm', 'generator', 'util']
+            # eg. ['pv1', 'pvnm1', 'pv2', 'pvnm2', 'wind', 'windnm', 'generator']
 
         # for backwards compatibility with all self._get* methods we need to attach the individual PV objects to self:
         exec("self.pv" + str(pv_number) + " = self.pvs[{}]".format(pv_number-1))
@@ -1043,7 +1043,6 @@ class DataManager:
             'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
             'DemandRatesMonth': tariff_args.demand_rates_monthly,
             'DemandRates': tariff_args.demand_rates_tou,
-            # 'MinDemand': tariff_args.demand_min  # not used in REopt,
             'TimeStepRatchets': tariff_args.demand_ratchets_tou,
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
@@ -1066,8 +1065,8 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'StoragePowerCost': StorageCostPerKW,
-	        'StorageEnergyCost': StorageCostPerKWH,
+            'StorageCostPerKW': StorageCostPerKW,
+	        'StorageCostPerKWH': StorageCostPerKWH,
 	        'FuelCost': tariff_args.fuel_costs,
 	        'ElecRate': tariff_args.energy_costs,
 	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
@@ -1077,7 +1076,6 @@ class DataManager:
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
 	        'ElecLoad': self.elec_load, # Needed to copy make sure that changed
-	        #'FuelLimit': tariff_args.fuel_limit,
 	        'FuelLimit': fuel_limit,
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
@@ -1157,7 +1155,6 @@ class DataManager:
             'DemandMonthsBinCount': tariff_args.demand_month_tiers_num,
             'DemandRatesMonth': tariff_args.demand_rates_monthly,
             'DemandRates': tariff_args.demand_rates_tou,
-            # 'MinDemand': tariff_args.demand_min  # not used in REopt,
             'TimeStepRatchets': tariff_args.demand_ratchets_tou,
             'MaxDemandInTier': tariff_args.demand_max_in_tiers,
             'MaxUsageInTier': tariff_args.energy_max_in_tiers,
@@ -1180,8 +1177,8 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-            'StoragePowerCost': StorageCostPerKW,
-	        'StorageEnergyCost': StorageCostPerKWH,
+            'StorageCostPerKW': StorageCostPerKW,
+	        'StorageCostPerKWH': StorageCostPerKWH,
 	        'FuelCost': tariff_args.fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,
 	        'GridExportRates': tariff_args.grid_export_rates_bau,

@@ -603,7 +603,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( p.CapCostYInt[t,s] * binSegmentSelect[t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) 
 	))
 	@expression(REopt, TotalStorageCapCosts, p.two_party_factor * 
-		sum( p.StoragePowerCost[b]*dvStorageCapPower[b] + p.StorageEnergyCost[b]*dvStorageCapEnergy[b] for b in p.Storage )
+		sum( p.StorageCostPerKW[b]*dvStorageCapPower[b] + p.StorageCostPerKWH[b]*dvStorageCapEnergy[b] for b in p.Storage )
 	)
 	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
