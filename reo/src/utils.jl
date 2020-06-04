@@ -146,7 +146,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
-	 MaxSize    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
+	 MaxSize::AxisArray    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
 	 #SegmentMinSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \ubar{b}^{\sigma s}_{tks}: Minimum system size for technology t, subdivision k, segments
 	 #SegmentMaxSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \bar{b}^{\sigma s}_{tks}: Maximum system size for technology t, subdivision k, segments
 	 #FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
