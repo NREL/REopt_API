@@ -408,7 +408,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			dvRatedProduction[t,ts] == dvSize[t]  
 		)
 			
-		##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
+		##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
 		@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
 			dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
 		)
