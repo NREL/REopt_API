@@ -995,7 +995,7 @@ class ValidateNestedInput:
                     self.input_data_errors.append('add_blended_rates_to_urdb_rate is set to "true" yet missing valid entries for the following inputs: {}'.format(', '.join(missing_keys)))
 
             for blended in ['blended_monthly_demand_charges_us_dollars_per_kw','blended_monthly_rates_us_dollars_per_kwh']:
-                if electric_tariff.get(blended, False):
+                if electric_tariff.get(blended) is not None:
                     if len(electric_tariff.get(blended)) != 12:
                         self.input_data_errors.append('{} array needs to contain 12 valid numbers.'.format(blended) )
 
