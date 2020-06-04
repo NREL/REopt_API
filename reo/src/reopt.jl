@@ -767,57 +767,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					p.DemandLookbackPercent * dvPeakDemandELookback )
 	end
 	### End Constraint Set (12)
-	
-    #if !isempty(p.TimeStepRatchets)
-    #    @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
-    #                dvPeakDemandE[r,db] >= sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, fb in p.FuelBin, dbm in p.DemandMonthsBin))
-    #    @constraint(REopt, [db in p.DemandBin, r in p.Ratchets, ts in p.TimeStepRatchets[r]],
-    #                dvPeakDemandE[r,db] >= p.DemandLookbackPercent * dvPeakDemandELookback)
-    #end
-
-    ### Peak Demand Energy Ratchets
-    #for dbm in p.DemandMonthsBin
-    #    @constraint(REopt, [m in p.Month],
-    #    	        dvPeakDemandEMonth[m, dbm] <= binDemandMonthsTier[m,dbm] * p.MaxDemandMonthsInTier[dbm])
-    #    if dbm >= 2
-    #    @constraint(REopt, [m in p.Month],
-    #    	        binDemandMonthsTier[m, dbm] - binDemandMonthsTier[m, dbm-1] <= 0)
-    #    @constraint(REopt, [m in p.Month],
-    #    	        binDemandMonthsTier[m, dbm] * p.MaxDemandMonthsInTier[dbm-1] <= dvPeakDemandEMonth[m, dbm-1])
-    #    end
-    #end
-    #@constraint(REopt, [dbm in p.DemandMonthsBin, m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
-    #	        dvPeakDemandEMonth[m, dbm] >=  sum(dvGrid[LD,ts,db,fb,dbm] for LD in p.Load, db in p.DemandBin, fb in p.FuelBin))
-    #@constraint(REopt, [LD in p.Load, lbm in p.DemandLookbackMonths],
-    #            dvPeakDemandELookback >= sum(dvPeakDemandEMonth[lbm, dbm] for dbm in p.DemandMonthsBin))
-
-    #= Annual energy produced by Tech's' (except UTIL) used to meet the 1R, 1W, and 1S loads must
-    be less than the annual site load (in kWh) =#
-    #TechIsNotGridSet = filter(t->p.TechIsGrid[t] == 0, p.Tech)
-    #@constraint(REopt, sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] *  p.TimeStepScaling
-    #                       for t in TechIsNotGridSet, LD in ["1R", "1W", "1S"],
-    #                       ts in p.TimeStep, s in p.Seg, fb in p.FuelBin) <=  p.AnnualElecLoad)
-
-    ###
-    #Added, but has awful bounds
-    #@constraint(REopt, [t in p.Tech, b in p.TechClass],
-    #            sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t, b] for s in p.Seg) <= p.MaxSize[t] * binSingleBasicTech[t, b])
-
-    #for t in p.Tech
-    #    if p.TechToTechClassMatrix[t, "PV1"] == 1 || p.TechToTechClassMatrix[t, "WIND"] == 1
-    #        @constraint(REopt, [ts in p.TimeStep, s in p.Seg],
-    #        	        sum(dvRatedProd[t,LD,ts,s,fb] for fb in p.FuelBin,
-    #                        LD in ["1R", "1W", "1X", "1S"]) ==  dvSystemSize[t, s])
-    #    end
-    #end
-
-
-
-
-    
-    #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
-		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
-		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
 		
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
@@ -932,6 +881,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         # Subtract Incentives, which are taxable
 		TotalProductionIncentive * r_tax_fraction_owner
 	)
+	 
+    #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
+		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
+		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
 	
     if Obj == 1
 		@objective(REopt, Min, REcosts)
