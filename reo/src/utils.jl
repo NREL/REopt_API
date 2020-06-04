@@ -109,8 +109,7 @@ Base.@kwdef struct Parameter
 	 DemandRatesMonth   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
 	 
 	 ###  Demand Parameters ###
-	 LoadProfile   # Covers Electrical Load and Thermal Load Profiles; this is to be split into three parameters in the math
-	 # ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
+	 ElecLoad::Array{Float64,1}  # \delta^{d}_{h}: Electrical load in time step h   [kW]
 	 # HeatingLoad::Array{Float64,1}  # \delta^{bo}_{h}: Heating load in time step h   [MMBTU/hr]
 	 # CoolingLoad::Array{Float64,1}  # \delta^{c}_{h}: Cooling load in time step h   [kW]
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
@@ -206,7 +205,6 @@ Base.@kwdef struct Parameter
      MaxGridSales::Array{<:Real, 1}
      ProductionIncentiveRate
      ProductionFactor
-     ElecLoad
      FuelLimit
      ChargeEfficiency
      GridChargeEfficiency::Float64
@@ -314,7 +312,6 @@ function Parameter(d::Dict)
     d["CapCostX"] = parameter((d["Tech"],d[:Points]), d["CapCostX"])
     d["MaxProdIncent"] = AxisArray(d["MaxProdIncent"], d["Tech"])
     d["MaxSizeForProdIncent"] = AxisArray(d["MaxSizeForProdIncent"], d["Tech"])
-    d["LoadProfile"] = parameter((d["Load"], d[:TimeStep]), d["LoadProfile"])
     d["MaxSize"] = AxisArray(d["MaxSize"], d["Tech"])
     d["TechClassMinSize"] = AxisArray(d["TechClassMinSize"], d["TechClass"])
     d["MinTurndown"] = AxisArray(d["MinTurndown"], d["Tech"])

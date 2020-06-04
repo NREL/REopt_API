@@ -63,7 +63,6 @@ class DataManager:
         self.site = None
         self.elec_tariff = None
         self.load = None
-        self.elec_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
@@ -84,12 +83,7 @@ class DataManager:
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
 
     def add_load(self, load):
-        #  fill in W, X, S bins
-        self.elec_load = copy.deepcopy(load.load_list)
-        self.elec_load_bau = copy.deepcopy(load.bau_load_list)
-        for _ in range(self.n_timesteps * 3):
-            load.load_list.append(big_number)
-            load.bau_load_list.append(big_number)
+        self.LoadProfile["year_one_electric_load_series_kw"] = load.load_list
         self.LoadProfile["critical_load_series_kw"] = load.critical_load_series_kw
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["sustain_hours"] = load.sustain_hours
@@ -1056,7 +1050,6 @@ class DataManager:
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
-            'LoadProfile': self.load.load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits,
@@ -1073,7 +1066,7 @@ class DataManager:
 	        'MaxGridSales': max_grid_sales,
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
-	        'ElecLoad': self.elec_load, # Needed to copy make sure that changed
+	        'ElecLoad': self.load.load_list,
 	        'FuelLimit': fuel_limit,
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
@@ -1168,7 +1161,6 @@ class DataManager:
             'TimeStepCount': self.n_timesteps,
             'TimeStepScaling': 8760.0 / self.n_timesteps,
             'AnnualElecLoad': self.load.annual_kwh,
-            'LoadProfile': self.load.bau_load_list,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
             'NMILLimits': NMILLimits_bau,
@@ -1185,7 +1177,7 @@ class DataManager:
 	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': self.elec_load_bau,
+	        'ElecLoad': self.load.bau_load_list,
 	        'FuelLimit': fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
