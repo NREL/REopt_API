@@ -64,5 +64,5 @@ class TwoPartyTests(ResourceTestCaseMixin, TestCase):
         d = direct['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
         t = two_party['outputs']['Scenario']['Site']['Financial']['lcc_us_dollars']
 
-        self.assertAlmostEqual(t - d,  11976.0, places=1,
+        self.assertTrue(((t - d) - 11976) / 11976 < 0.005,  # less than 0.5% change from expected difference
            msg='Difference between two party and direct ownership LCCs has changed.')
