@@ -77,9 +77,7 @@ class DataManager:
         self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.electic_producing_techs = ['PV1', 'PV1NM', 'WIND', 'WINDNM', 'GENERATOR']
         self.fuel_burning_techs = ['GENERATOR']
-        self.no_turndown_techs = ['PV1', 'PV1NM', 'WIND', 'WINDNM']
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps
@@ -973,11 +971,11 @@ class DataManager:
         fb_techs = [t for t in reopt_techs if t in self.fuel_burning_techs]
         fb_techs_bau = [t for t in reopt_techs_bau if t in self.fuel_burning_techs]
         
-        techs_no_turndown = [t for t in reopt_techs if t in self.no_turndown_techs]
-        techs_no_turndown_bau = [t for t in reopt_techs_bau if t in self.no_turndown_techs]
+        techs_no_turndown = [t for t in reopt_techs if t.startswith("PV" or "WIND")]
+        techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV" or "WIND")]
         
-        electric_techs = [t for t in reopt_techs if t in self.electic_producing_techs]
-        electric_techs_bau = [t for t in reopt_techs_bau if t in self.electic_producing_techs]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV" or "WIND" or "GENERATOR")]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV" or "WIND" or "GENERATOR")]
         
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
