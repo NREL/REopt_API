@@ -84,7 +84,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-	
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
 	TempHeatingTechs = [] #temporarily replace p.HeatingTechs which is undefined
 	TempCoolingTechs = [] #temporarily replace p.CoolingTechs which is undefined
@@ -108,7 +107,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		end
 	end
 	
-
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs 
 	#	for ts in p.TimeStep
@@ -121,22 +119,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
     @variables REopt begin
 		# Continuous Variables
-	    #dvSystemSize[p.Tech, p.Seg] >= 0   #to be replaced
 	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
     	dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
-	    #dvGrid[p.Load, p.TimeStep, p.DemandBin, p.FuelBin, p.DemandMonthsBin] >= 0  #to be replaced
 		dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
-	    #dvRatedProd[p.Tech, p.Load, p.TimeStep, p.Seg, p.FuelBin] >= 0  #to be replaced
 	    dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
 	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
-	    #dvStoredEnergy[p.TimeStepBat] >= 0  # To be replaced
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
-	    #dvStorageSizeKW >= 0        # to be removed
-	    #dvStorageSizeKWH >= 0       # to be removed
 	    dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
 	    dvStorageCapEnergy[p.Storage] >= 0   # X^{bkWh}_b: Energy capacity of storage system b [kWh]  (NEW)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
@@ -155,43 +147,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Binary Variables
         binNMLorIL[p.NMILRegime], Bin    # Z^{nmil}_{v}: 1 If generation is in net metering interconnect limit regime v; 0 otherwise
         binProdIncent[p.Tech], Bin # Z^{pi}_{t}:  1 If production incentive is available for technology t; 0 otherwise 
-		#binSegChosen[p.Tech, p.Seg], Bin  # to be replaced
 		binSegmentSelect[p.Tech, p.Subdivision, p.Seg], Bin # Z^{\sigma s}_{tks} 1 if technology t, segmentation k is in segment s; 0 ow. (NEW)
         binSingleBasicTech[p.Tech,p.TechClass], Bin   #  Z^\text{sbt}_{tc}: 1 If technology t is used for technology class c; 0 otherwise
         binTechIsOnInTS[p.Tech, p.TimeStep], Bin  # 1 Z^{to}_{th}: If technology t is operating in time step h; 0 otherwise
 		binDemandTier[p.Ratchets, p.DemandBin], Bin  # 1 If tier e has allocated demand during ratchet r; 0 otherwise
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
-        #binUsageTier[p.Month, p.FuelBin], Bin    #  to be replaced
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
-			
-        #dvElecToStor[p.Tech, p.TimeStep] >= 0  #to be removed
-        #dvElecFromStor[p.TimeStep] >= 0        #to be removed
-        #dvMeanSOC >= 0  # to be removed 
-        #dvFuelCost[p.Tech, p.FuelBin]   #to be removed
-        #dvFuelUsed[p.Tech, p.FuelBin]   #to be removed
-
-    # ADDED due to implied types
-        #ElecToBatt[p.Tech] >= 0    # to be removed
-        #UsageInTier[p.Month, p.FuelBin] >= 0   # to be removed
-        #TotalTechCapCosts >= 0
-        #TotalStorageCapCosts >= 0
-        #TotalEnergyCharges >= 0
-        #DemandTOUCharges >= 0
-        #DemandFlatCharges >= 0
-        #TotalDemandCharges >= 0
-        #TotalFixedCharges >= 0
-        #TotalExportBenefit <= 0
-        #TotalProductionIncentive >= 0
-        #TotalMinCharge >= 0
-
-    # ADDED due to calculations
-        #Year1ElecProd
-        #AverageElecProd
-        #Year1WindProd
-        #AverageWindProd
-
-    # ADDED for modeling
-        #binMinTurndown[p.Tech, p.TimeStep], Bin   # to be removed
     end
 		
     ##############################################################################
@@ -215,38 +176,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			fix(dvStorageToGrid[u,ts], 0.0, force=true)
 		end
 	end
-	
-	
-    #TODO: account for exist formatting
-    #for t in p.Tech
-    #    if p.MaxSize == 0
-    #        for LD in p.Load
-    #            if p.TechToLoadMatrix[t,LD] == 0
-    #                for ts in p.TimeStep
-    #                    if p.LoadProfile[LD,ts] == 0
-    #                        for s in p.Seg, fb in p.FuelBin
-    #                        @constraint(REopt, dvRatedProd[t, LD, ts, s, fb] == 0)
-    #                        end
-    #                    end
-    #                end
-    #            end
-    #        end
-    #    end
-    #end
 
-    ## Fuel Tracking Constraints
-    #@constraint(REopt, [t in p.Tech, fb in p.FuelBin],
-    #            sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * #p.FuelBurnRateM[t,LD,fb] * p.TimeStepScaling
-    #                for ts in p.TimeStep, LD in p.Load, s in p.Seg) +
-    #            sum(binTechIsOnInTS[t,ts] * p.FuelBurnRateB[t,LD,fb] * p.TimeStepScaling
-    #                for ts in p.TimeStep, LD in p.Load) == dvFuelUsed[t,fb])
-    #@constraint(REopt, FuelCont[t in p.Tech, fb in p.FuelBin],
-    #            dvFuelUsed[t,fb] <= p.FuelAvail[t,fb])
-    #@constraint(REopt, [t in p.Tech, fb in p.FuelBin],
-    #            sum(p.ProdFactor[t, LD, ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb] * #p.FuelBurnRateM[t,LD,fb] * p.TimeStepScaling * p.FuelRate[t,fb,ts] * p.pwf_e
-    #                for ts in p.TimeStep, LD in p.Load, s in p.Seg) +
-    #            sum(binTechIsOnInTS[t,ts] * p.FuelBurnRateB[t,LD,fb] * p.TimeStepScaling * p.FuelRate[t,fb,ts] * p.pwf_e
-    #                for ts in p.TimeStep, LD in p.Load) == dvFuelCost[t,fb])
 					
 	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
 	@constraint(REopt, TotalFuelConsumptionCon[f in p.FuelType],
@@ -298,18 +228,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		#				)
 		#			)
 	#end
-
-    ### Switch Constraints
-    #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
-    #            sum(p.ProdFactor[t,LD,ts] * dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, s in p.Seg, fb in p.FuelBin) <=
-    #            p.MaxSize[t] * 100 * binTechIsOnInTS[t,ts])
-    #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
-    #            sum(p.MinTurndown[t] * dvSystemSize[t,s] for s in p.Seg) -
-    #  		    sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, s in p.Seg, fb in p.FuelBin) <=
-    #            p.MaxSize[t] * (1 - binTechIsOnInTS[t, ts]))
 	
 	
-	### Section 3: New Switch Constraints
+	### Section 3: Switch Constraints
 	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
 	@constraint(REopt, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
 				dvRatedProduction[t,ts] <= NewMaxSize[t] * binTechIsOnInTS[t,ts])
@@ -320,13 +241,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     ### Section 4: Storage System Constraints
 	### 
 	### Boundary Conditions and Size Limits
-    #@constraint(REopt, dvStoredEnergy[0] == p.InitSOC * dvStorageSizeKWH )
-    #@constraint(REopt, p.MinStorageSizeKWH <= dvStorageSizeKWH)
-    #@constraint(REopt, dvStorageSizeKWH <=  p.MaxStorageSizeKWH)
-    #@constraint(REopt, p.MinStorageSizeKW <= dvStorageSizeKW)
-    #@constraint(REopt, dvStorageSizeKW <=  p.MaxStorageSizeKW)
-	
-	### New Boundary Conditions and Size Limits
 	# Constraint (4a): Reconcile initial state of charge for storage systems
 	@constraint(REopt, InitStorageCon[b in p.Storage], dvStorageSOC[b,0] == p.StorageInitSOC[b] * dvStorageCapEnergy[b])
 	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
@@ -339,18 +253,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, StoragePowerUBCon[b in p.Storage], dvStorageCapPower[b] <= p.StorageMaxSizePower[b])
 	
 	### Battery Operations
-    # AC electricity to be stored, generated by each Tech, applied to the storage load, for each timestep
-    #@constraint(REopt, [t in p.Tech, ts in p.TimeStep],
-    #	        dvElecToStor[t,ts] == sum(p.ProdFactor[t,"1S",ts] * p.LevelizationFactor[t] * dvRatedProd[t,"1S",ts,s,fb]
-    #                                    for s in p.Seg, fb in p.FuelBin))
-    #@constraint(REopt, [ts in p.TimeStep],
-    #	        dvStoredEnergy[ts] == dvStoredEnergy[ts-1] + sum(dvElecToStor[t,ts] * p.EtaStorIn[t,"1S"] for t in p.Tech) - dvElecFromStor[ts] / p.EtaStorOut["1S"])
-    #@constraint(REopt, [ts in p.TimeStep],
-    #	        dvElecFromStor[ts] / p.EtaStorOut["1S"] <=  dvStoredEnergy[ts-1])
-    #@constraint(REopt, [ts in p.TimeStep],
-    #	        dvStoredEnergy[ts] >=  p.StorageMinChargePcent * dvStorageSizeKWH / p.TimeStepScaling)
-
-	### New Storage Operations
 	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
 	@constraint(REopt, ElecTechProductionFlowCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
     	        dvProductionToStorage[b,t,ts] + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) <= 
@@ -407,21 +309,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        dvStorageSOC[b,ts] >= p.StorageMinSOC[b] * dvStorageCapEnergy[b]
 					)
 	
-				
-				
-    ### Operational Nuance
-    # Storage inverter is AC rated. Following constrains the energy / timestep throughput of the inverter
-    #     to the sum of the energy in and energy out of the battery.
-    #@constraint(REopt, [ts in p.TimeStep],
-    #	        dvStorageSizeKW * p.TimeStepScaling >=  dvElecFromStor[ts] + sum(dvElecToStor[t,ts] for t in p.Tech))
-    #@constraint(REopt, dvMeanSOC == sum(dvStoredEnergy[ts] for ts in p.TimeStep) / p.TimeStepCount)
-    #@constraint(REopt, [ts in p.TimeStep],
-    #	        dvStorageSizeKWH >=  dvStoredEnergy[ts] * p.TimeStepScaling)
-    #@constraint(REopt, [t in p.Tech],
-    #	        ElecToBatt[t] == sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
-    #                                 for ts in p.TimeStep, LD in ["1S"], s in p.Seg, fb in p.FuelBin))
-
-    #New operational nuance
 	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
 	@constraint(REopt, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
     	        dvStorageCapPower[b] >= (  
@@ -479,33 +366,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				dvStorageSOC[b,ts] <= dvStorageCapEnergy[b]
 					)
 	
-	
 	### Constraint set (5) - hot and cold thermal loads - reserved for later
-	
-	
-	### Binary Bookkeeping
-    #@constraint(REopt, [t in p.Tech],
-    #            sum(binSegChosen[t,s] for s in p.Seg) == 1)
-    #@constraint(REopt, [b in p.TechClass],
-    #            sum(binSingleBasicTech[t,b] for t in p.Tech) <= 1)
-
-
-    ### Capital Cost Constraints (NEED Had to modify b/c AxisArrays doesn't do well with range 0:20
-    #@constraint(REopt, [t in p.Tech, s in p.Seg],
-    #            dvSystemSize[t,s] <= p.CapCostX[t,s+1] * binSegChosen[t,s])
-    #@constraint(REopt, [t in p.Tech, s in p.Seg],
-    #            dvSystemSize[t,s] >= p.CapCostX[t,s] * binSegChosen[t,s])
-
-    ### Production Incentive Cap Module
-    #@constraint(REopt, [t in p.Tech],
-    #            dvProdIncent[t] <= binProdIncent[t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t])
-    #@constraint(REopt, [t in p.Tech],
-    #            dvProdIncent[t] <= sum(p.ProdFactor[t, LD, ts] * p.LevelizationFactorProdIncent[t] * dvRatedProd[t,LD,ts,s,fb] *
-    #                                   p.TimeStepScaling * p.ProdIncentRate[t, LD] * p.pwf_prod_incent[t]
-    #                                   for LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin))
-    #@constraint(REopt, [t in p.Tech, LD in p.Load,ts in p.TimeStep],
-    #            sum(dvSystemSize[t,s] for s in p.Seg) <= p.MaxSizeForProdIncent[t] + p.MaxSize[t] * (1 - binProdIncent[t]))
-
 	
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
@@ -521,13 +382,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                 dvSize[t]  <= p.MaxSizeForProdIncent[t] + NewMaxSize[t] * (1 - binProdIncent[t]))
 
     ### System Size and Production Constraints
-    #@constraint(REopt, [t in p.Tech, s in p.Seg],
-    #            dvSystemSize[t,s] <=  p.MaxSize[t])
-    #@constraint(REopt, [b in p.TechClass],
-    #            sum(dvSystemSize[t, s] * p.TechToTechClassMatrix[t,b] for t in p.Tech, s in p.Seg) >= p.TechClassMinSize[b])
-    #NEED to tighten bound and check logic
-	
-	###Constraint set (7): System Size is zero unless single basic tech is selected for class
+	### Constraint set (7): System Size is zero unless single basic tech is selected for class
 	if !isempty(p.Tech)
 		#Constraint (7a): Single Basic Technology Constraints
 		@constraint(REopt, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
@@ -547,7 +402,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			dvRatedProduction[t,ts] == dvSize[t]  
 		)
 			
-		
 		##Constraint (7e): Derate factor limits production variable (separate from ProdFactor)
 		@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
 			dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
@@ -573,8 +427,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(binSegmentSelect[t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= binSingleBasicTech[t,c]
 		)
 	end
+
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
-	
 	##Constraint (8a): Electrical Load Balancing with Grid
 	
 	@constraint(REopt, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
@@ -619,37 +473,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		 p.TimeStepScaling * ( 
 			sum( dvStorageToGrid[u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
 		)
-        
-        # existing PV is making problem infeasible or unbounded in BAU
-
 	end
 	## End constraint (8)
-	
-    #for t in p.Tech
-    #    if p.MinTurndown[t] > 0
-    #        @constraint(REopt, [LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin],
-    #                    binMinTurndown[t,ts] * p.MinTurndown[t] <= dvRatedProd[t,LD,ts,s,fb])
-    #        @constraint(REopt, [LD in p.Load, ts in p.TimeStep, s in p.Seg, fb in p.FuelBin],
-    #                    dvRatedProd[t,LD,ts,s,fb] <= binMinTurndown[t,ts] * p.AnnualElecLoad)
-    #    end
-    #end
 
-    #@constraint(REopt, [t in p.Tech, s in p.Seg, ts in p.TimeStep],
-    #            sum(dvRatedProd[t,LD,ts,s,fb] for LD in p.Load, fb in p.FuelBin) <= dvSystemSize[t, s])
-
-
-    #for LD in p.Load
-    #    if LD != "1R" && LD != "1S"
-    #        @constraint(REopt, [ts in p.TimeStep],
-    #                    sum(p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t] * dvRatedProd[t,LD,ts,s,fb]
-    #                        for t in p.Tech, s in p.Seg, fb in p.FuelBin) <= p.LoadProfile[LD,ts])
-    #    end
-    #end
-
-    #@constraint(REopt, [LD in ["1R"], ts in p.TimeStep],
-    #            sum(dvRatedProd[t,LD,ts,s,fb] * p.ProdFactor[t,LD,ts] * p.LevelizationFactor[t]
-    #                for t in p.Tech, s in p.Seg, fb in p.FuelBin) + dvElecFromStor[ts] >= p.LoadProfile[LD,ts])
-	
     ### Constraint set (9): Net Meter Module (copied directly from legacy model)
 	if !isempty(p.Tech)
 		#Constraint (9a): exactly one net-metering regime must be selected
@@ -670,25 +496,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	end
 	###End constraint set (9)
 	
-	##Previous analog to (9b)
-    #@constraint(REopt, [n in p.NMILRegime],
-    #            sum(p.TechToNMILMapping[t,n] * p.TurbineDerate[t] * dvSystemSize[t,s]
-    #                for t in p.Tech, s in p.Seg) <= p.NMILLimits[n] * binNMLorIL[n])
-
-    ###  Rate Variable Definitions
-    #@constraint(REopt, [t in ["UTIL1"], LD in p.Load, fb in p.FuelBin, ts in p.TimeStep],
-    #	        sum(dvRatedProd[t,LD,ts,s,fb] for s in p.Seg) == sum(dvGrid[LD,ts,db,fb,dbm] for db in p.DemandBin, dbm in p.DemandMonthsBin))
-    #@constraint(REopt, [t in ["UTIL1"], fb in p.FuelBin, m in p.Month],
-    #	        UsageInTier[m, fb] ==  sum(dvRatedProd[t,LD,ts,s,fb] * p.TimeStepScaling for LD in p.Load, ts in p.TimeStepRatchetsMonth[m], s in p.Seg))
-
-    ### Fuel Bins
-    #@constraint(REopt, [fb in p.FuelBin, m in p.Month],
-    #            UsageInTier[m, fb] <= binUsageTier[m, fb] * p.MaxUsageInTier[fb])
-    #@constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
-    #	        binUsageTier[m, fb] - binUsageTier[m, fb-1] <= 0)
-    #@constraint(REopt, [fb in 2:p.FuelBinCount, m in p.Month],
-    #	        binUsageTier[m, fb] * p.MaxUsageInTier[fb-1] - UsageInTier[m, fb-1] <= 0)
-				
 	### Constraint set (10): Electrical Energy Demand Pricing Tiers
 	##Constraint (10a): Usage limits by pricing tier, by month
 	@constraint(REopt, [u in p.PricingTier, m in p.Month],
@@ -702,20 +509,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	#End constraint set (10)
 
-    ### Peak Demand Energy Rates
-    #for db in p.DemandBin
-    #    @constraint(REopt, [r in p.Ratchets],
-    #                dvPeakDemandE[r, db] <= binDemandTier[r,db] * p.MaxDemandInTier[db])
-    #    if db >= 2
-    #        @constraint(REopt, [r in p.Ratchets],
-    #                    binDemandTier[r, db] - binDemandTier[r, db-1] <= 0)
-    #        @constraint(REopt, [r in p.Ratchets],
-    #                    binDemandTier[r, db] * p.MaxDemandInTier[db-1] - dvPeakDemandE[r, db-1] <= 0)
-    #    end
-    #end
-	
 	### Constraint set (11): Peak Electrical Power Demand Charges: Months
-	
 	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
 	@constraint(REopt, [n in p.DemandMonthsBin, m in p.Month],
                 dvPeakDemandEMonth[m,n] <= NewMaxDemandMonthsInTier[m,n] * binDemandMonthsTier[m,n])
@@ -733,7 +527,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         	 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin ) >= 
 			 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
 	)
-	
 	### End Constraint Set (11)
 	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
@@ -881,7 +674,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         # Subtract Incentives, which are taxable
 		TotalProductionIncentive * r_tax_fraction_owner
 	)
-	 
     #= Note: 0.9999*MinChargeAdder in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or MinChargeAdder).
 		0.0001*MinChargeAdder is added back into LCC when writing to results.  =#
