@@ -210,8 +210,8 @@ Base.@kwdef struct Parameter
 	 ElectricDerate
 
      # New Sets
-     FuelType
      Storage::Array{String, 1}
+     FuelType::Array{String, 1}
      Subdivision
      ElecStorage
      FuelTypeByTech
@@ -278,7 +278,6 @@ function Parameter(d::Dict)
     d[:TimeStepBat] = 0:d["TimeStepCount"]
 	d[:SalesTiers] = 1:d["SalesTierCount"]
 	#Subdivision=1:1
-	#FuelType = 1:d["FuelBinCount"]
     n_location = length(d["MaxSizesLocation"])
     d[:Location] = 1:n_location
 
