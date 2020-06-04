@@ -566,9 +566,10 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: prod_factor, tech_to_load, derate, etaStorIn, etaStorOut
+        :return: tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
+               discharge_efficiency, techs_charging_storage, electric_derate
         """
-        prod_factor = list()
         production_factor = list()
         tech_to_load = list()
         tech_to_location = list()
@@ -609,13 +610,8 @@ class DataManager:
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-                        for pf in eval('self.' + tech + '.prod_factor'):
-                            prod_factor.append(float(pf))
                         tech_to_load.append(1)
-
                     else:
-                        for _ in range(self.n_timesteps):
-                            prod_factor.append(float(0.0))
                         tech_to_load.append(0)
 
                     # By default, util can serve storage load.
@@ -641,7 +637,7 @@ class DataManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return prod_factor, tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
 
@@ -831,10 +827,10 @@ class DataManager:
         tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        prod_factor, tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
             discharge_efficiency, techs_charging_storage, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
-        prod_factor_bau, tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, techs_charging_storage_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
@@ -998,7 +994,6 @@ class DataManager:
             'TechClass': self.available_tech_classes,
             'TurbineDerate': derate,
             'NMILRegime': NMIL_regime,
-            'ProdFactor': prod_factor,
             'MaxSize': max_sizes,
             'MinStorageSizeKW': self.storage.min_kw,
             'MaxStorageSizeKW': self.storage.max_kw,
@@ -1106,7 +1101,6 @@ class DataManager:
             'TechClass': self.available_tech_classes,
             'NMILRegime': NMIL_regime_bau,
             'TurbineDerate': derate_bau,
-            'ProdFactor': prod_factor_bau,
             'MaxSize': max_sizes_bau,
             'MinStorageSizeKW': 0.0,
             'MaxStorageSizeKW': 0.0,
