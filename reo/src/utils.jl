@@ -57,7 +57,6 @@ Base.@kwdef struct Parameter
 	 #HotTES::Array{String,1}  # B^{h} \subset B: Hot thermal energy storage systems (IGNORE)
 	 #ColdTES::Array{String,1}  # B^{c} \subset B: Cold thermal energy storage systems (IGNORE)
 	 #ThermalStorage::Array{String,1}  # B^{th} \subset B: Thermal energy storage systems (IGNORE)
-	 #FuelTypeByTech::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # F_t: Fuel types accessible by technology t
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
@@ -210,7 +209,6 @@ Base.@kwdef struct Parameter
 	 ElectricDerate
 
      # New Sets
-     FuelTypeByTech
      SubdivisionByTech
      SegByTechSubdivision
      TechsChargingStorage
@@ -329,7 +327,6 @@ function Parameter(d::Dict)
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = len_zero_param(d["FuelType"], d["TechsByFuelType"])
-    d["FuelTypeByTech"] = len_zero_param(d["Tech"], d["FuelTypeByTech"])
     d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
     d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
 	d["SalesTiersByTech"] = len_zero_param(d["Tech"], d["SalesTiersByTech"])
