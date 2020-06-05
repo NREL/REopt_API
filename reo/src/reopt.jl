@@ -645,7 +645,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, TotalProductionIncentive, 0.0)
 		@expression(REopt, ExportedElecWIND, 0.0)
 		@expression(REopt, ExportedElecGEN, 0.0)
-		@expression(REopt, ExportBenefitYr1,0.0)
+		@expression(REopt, ExportBenefitYr1, 0.0)
 	end
 	
 	@expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * 
@@ -658,7 +658,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
     @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
-    @expression(REopt, TotalFixedCharges, p.pwf_e * p.FixedMonthlyCharge * 12 )
+    TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
@@ -791,13 +791,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
 						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
 						 "year_one_export_benefit" => round(value(ExportBenefitYr1), digits=0),
-						 "year_one_fixed_cost" => round(value(Year1FixedCharges), digits=0),
+						 "year_one_fixed_cost" => round(Year1FixedCharges, digits=0),
 						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
 						 "year_one_bill" => round(value(Year1Bill), digits=2),
 						 "year_one_payments_to_third_party_owner" => round(value(TotalDemandCharges) / p.pwf_e, digits=0),
 						 "total_energy_cost" => round(value(TotalEnergyChargesUtil) * r_tax_fraction_offtaker, digits=2),
 						 "total_demand_cost" => round(value(TotalDemandCharges) * r_tax_fraction_offtaker, digits=2),
-						 "total_fixed_cost" => round(value(TotalFixedCharges) * r_tax_fraction_offtaker, digits=2),
+						 "total_fixed_cost" => round(TotalFixedCharges * r_tax_fraction_offtaker, digits=2),
 						 "total_export_benefit" => round(value(TotalExportBenefit) * r_tax_fraction_offtaker, digits=2),
 						 "total_min_charge_adder" => round(value(MinChargeAdder) * r_tax_fraction_offtaker, digits=2),
 						 "total_payments_to_third_party_owner" => 0,
