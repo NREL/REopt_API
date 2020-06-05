@@ -73,7 +73,7 @@ Base.@kwdef struct Parameter
 	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers (IGNORE)
 	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
 	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
-	 #ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
+	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
 	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
 	 #FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
@@ -211,7 +211,6 @@ Base.@kwdef struct Parameter
      SubdivisionByTech
      TechsInClass
      TechsByFuelType
-     ElectricTechs
      FuelBurningTechs
      TechsNoTurndown
      SalesTiers
