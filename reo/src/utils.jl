@@ -30,11 +30,7 @@ function filter_dict_to_match_struct_field_names(d::Dict, s::DataType)
 end
 
 
-##TODO Get rid of union types
 Base.@kwdef struct Parameter
-    # TODO: change AxisArray types back to heavily specified types like:
-    #       AxisArray{Float64,1,Array{Float64,1},Tuple{Axis{:row,Array{String,1}}}} ?
-    #       Problem is that many Array{Float64, 1} can be empty so PyCall makes them Array{Any, 1}
 	 ###  Sets  ###
 	 Storage::Array{String,1}      # Set B in math; new; B = "Elec","HotThermal","ColdThermal"
      TechClass::Array{String,1}    # Set C
@@ -61,15 +57,11 @@ Base.@kwdef struct Parameter
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
      TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
-	 #SubdivsionByTech K_t \subset K: Subdivisions applied to technology t
-	 #CapCostSeg::UnitRange{Int64}  # K^c \subset K: Capital Cost Subdivisions
-	 #FuelBurnSlopeSeg::UnitRange{Int64} # K^f \subset K: Fuel Burn Subdivisions   (IGNORE)
 	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing 
 	 SegByTechSubdivision::AxisArray # S_{kt}: System size segments from segmentation k applied to technology t
-	 #TechsInClass::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}} # T_c \subset T: Technologies that are in class c
-	 #TechsByFuelType::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # T_f \subset T: Technologies that burn fuel type f
-	 #TechsByPricingTier::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # T_u  \subset T: Technologies that access pricing tier u
-	 #TechsByNMILRegime::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}} # T_v \subset T: Technologies that may acess net-meterng regime v 
+	 TechsInClass::AxisArray # T_c \subset T: Technologies that are in class c
+	 TechsByFuelType::AxisArray # T_f \subset T: Technologies that burn fuel type f
+	 TechsByNMILRegime::AxisArray # T_v \subset T: Technologies that may acess net-meterng regime v 
 	 #AbsorptionChillers::Array{String,1}  # T^{ac} \subset T: Absorption Chillers (IGNORE)
 	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
 	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
@@ -78,12 +70,9 @@ Base.@kwdef struct Parameter
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
-	 #TechsTurndown::Array{String,1}  # This is just T \setminus T^{ac}; not in the math
-	 #PricingTiersByTech::AxisArray{Array{Int64,1},1,Array{Array{String,1},1},Tuple{Axis{:row,UnitRange{Int64}}}}   # U_t \subset U:  Pricing tiers accessible by technology td
-	 #PricingTiersNM::Array{Int64}  # U^{nm} \subset U: Pricing Tiers Used in net-metering
 	 
 	 ###  Parameters and Tables supporting Indexed Sets ###
-	 TechToNMILMapping#::AxisArray{Int64,2,Array{Int64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # Defines set T_v: Technologies that may be access net-metering regime v 
+	 TechToNMILMapping::AxisArray  # Defines set T_v: Technologies that may be access net-metering regime v 
 	 
 	 ###  Scaling Parameters ###
 	 TimeStepScaling::Float64  # \Delta: Time step scaling [h]
@@ -92,15 +81,15 @@ Base.@kwdef struct Parameter
      AnnualMinCharge::Float64    # c^{amc}: Utility annual minimum charge
      MonthlyMinCharge::Float64    # c^{mmc}: Utility monthly minimum charge  (not in math; will use this in min charge calculation)
 	 FixedMonthlyCharge::Float64  # c^{fmc}: Utility monthly fixed charge
-	 #FuelCost::AxisArray{Float64} # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
-	 #ElecRate::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
+	 FuelCost::AxisArray # c^{u}_{f}: Unit cost of fuel type f [$/MMBTU]  in math  (NEW)
+	 ElecRate::Array{Float64, 2}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd::AxisArray
      
 	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
-	 CapCostSlope   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
-     CapCostYInt  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
-     CapCostX    # X-value of inflection point (will be changed)
+	 CapCostSlope::AxisArray   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
+     CapCostYInt::AxisArray  # c^{cb}_{ts}: Y-Intercept of capital cost curve for technology t in segment s 
+     CapCostX::AxisArray    # X-value of inflection point (will be changed)
 	 #For the replacement of CapCostX, see new parameters SegmentLB and SegmentUB in section "System size and fuel limit parameters"
 	 DemandRates::Array{Float64, 2}  # c^{r}_{re}: Cost per unit peak demand in tier e during ratchet r
 	 DemandRatesMonth::Array{Float64, 2}   # c^{rm}_{mn}: Cost per unit peak demand in tier n during month m
@@ -112,19 +101,18 @@ Base.@kwdef struct Parameter
      DemandLookbackPercent::Float64    # \delta^{lp}: Demand Lookback proportion [fraction]
      MaxDemandInTier::Array{Float64,1}  # \delta^{t}_{e}: Maximum power demand in ratchet e
      MaxDemandMonthsInTier::Array{Float64,1}   # \delta^{mt}_{n}: Maximum monthly power demand in tier n
-	 #MaxGridSales::Array{Float64,1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
+	 MaxGridSales::Array{<:Real, 1}   # \delta^{gs}_{u}: Maximum allowable energy sales in tier u in math; equal to sum of LoadProfile["1R",ts] on set TimeStep for tier 1 (analogous "1W") and unlimited for "1X"
      MaxUsageInTier::Array{Float64,1}   # \delta^{tu}_{u}: Maximum monthly energy demand in tier u
 	 
 	 
 	 ###  Incentive Parameters ###
-	 NMILLimits   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
-     
+	 NMILLimits::AxisArray   # i^{n}_{v}: Net metering and interconnect limits in net metering regime v [kW]
      MaxProdIncent::AxisArray      # \bar{i}_t: Upper incentive limit for technology t [$]
-	 #ProductionIncentiveRate::AxisArray  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
+	 ProductionIncentiveRate::AxisArray  # i^{r}_{t}: Incentive rate for technology t [$/kWh] (NEW)
 	 MaxSizeForProdIncent::AxisArray  # \bar{i}^{\sigma}_t: Maximum system size to obtain production incentive for technology t [kW]	 
 	 
 	 ###  Technology-specific Time-series Factor Parameters ###
-	 #ProductionFactor::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,UnitRange{Int64}}}}     #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
+	 ProductionFactor::AxisArray    #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
      # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
@@ -145,14 +133,14 @@ Base.@kwdef struct Parameter
 	 ###  System Size and Fuel Limit Parameters ###
 	 TechClassMinSize::AxisArray   #  \ubar{b}^{\sigma}_{c}: Minimum system size for technology class c [kW]
 	 MaxSize::AxisArray    #  \bar{b}^{\sigma}_{t}: Maximum system size for technology t [kW]
-	 #SegmentMinSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \ubar{b}^{\sigma s}_{tks}: Minimum system size for technology t, subdivision k, segments
-	 #SegmentMaxSize::AxisArray{Float64,3,Array{Float64,3},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}},Axis{:page,UnitRange{Int64}}}}  # \bar{b}^{\sigma s}_{tks}: Maximum system size for technology t, subdivision k, segments
-	 #FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
+	 SegmentMinSize::AxisArray # \ubar{b}^{\sigma s}_{tks}: Minimum system size for technology t, subdivision k, segments
+	 SegmentMaxSize::AxisArray  # \bar{b}^{\sigma s}_{tks}: Maximum system size for technology t, subdivision k, segments
+	 FuelLimit::AxisArray # b^{fa}_{f}: Amount of available fuel for type f [MMBTU]   (NEW)
 	 
 	 ###  Efficiency Parameters ###
-	 #ChargeEfficiency::AxisArray{Float64,2,Array{Float64,2},Tuple{Axis{:row,Array{String,1}},Axis{:col,Array{String,1}}}}  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
+	 ChargeEfficiency::AxisArray  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
-     #DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
+     DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
 	 # \eta^{bo}: Boiler efficiency [fraction]
 	 # \eta^{ecop}: Electric chiller efficiency [fraction]
 	 # \eta^{acop}: Absorption chiller efficiency [fraction]
@@ -161,16 +149,16 @@ Base.@kwdef struct Parameter
 	 ###  Storage Parameters ###   # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b (needs to be indexed on b )
      StorageMinChargePcent::Float64     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b
      InitSOC::Float64    # w^{i}_{b} Initial percent state of charge for storage system b
-     #StorageMinSizeEnergy::AxisArray     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
-     #StorageMaxSizeEnergy::AxisArray     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
-     #StorageMinSizePower::AxisArray     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
-     #StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
-     #StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
-     #StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction]
+     StorageMinSizeEnergy::AxisArray     # \bar{w}^{bkWh}_{b}: Maximum energy capacity of storage system b [kWh]
+     StorageMaxSizeEnergy::AxisArray     # \ubar{w}^{bkWh}_{b}: Minimum energy capacity of storage system b [kWh]
+     StorageMinSizePower::AxisArray     # \bar{w}^{bkW}_{b}: Maximum power capacity of storage system b [kW]
+     StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
+     StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
+     StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
-	 #FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
-	 #FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t	
+	 FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
+	 FuelBurnYInt::AxisArray # m^\text{fb}_{t}: Fuel burn rate slope parameter for technology t	
 	 
 	 ### Not used or used for calculation of other parameters ###
 	 two_party_factor::Float64
@@ -187,37 +175,16 @@ Base.@kwdef struct Parameter
      # new parameters for reformulation
      StorageCostPerKW::AxisArray
      StorageCostPerKWH::AxisArray
-     FuelCost
-     ElecRate::Array{Float64, 2}
-     FuelBurnSlope
-     FuelBurnYInt
-     MaxGridSales::Array{<:Real, 1}
-     ProductionIncentiveRate
-     ProductionFactor
-     FuelLimit
-     ChargeEfficiency::AxisArray
-     DischargeEfficiency::AxisArray
-     StorageMinSizeEnergy::AxisArray
-     StorageMaxSizeEnergy::AxisArray
-     StorageMinSizePower::AxisArray
-     StorageMaxSizePower::AxisArray
-     StorageMinSOC::AxisArray
-     StorageInitSOC::AxisArray
-     SegmentMinSize::AxisArray
-     SegmentMaxSize::AxisArray
 	 ElectricDerate::AxisArray
 
      # New Sets
-     SubdivisionByTech
-     TechsInClass
-     TechsByFuelType
+     SubdivisionByTech::AxisArray
      SalesTiers::UnitRange
      StorageSalesTiers::Array{Int, 1}
      NonStorageSalesTiers::Array{Int, 1}
-	 SalesTiersByTech
-	 TechsBySalesTier
+	 SalesTiersByTech::AxisArray
+	 TechsBySalesTier::AxisArray
 	 CurtailmentTiers::Array{Int, 1}
-	 TechsByNMILRegime
 
     # Feature Additions
      TechToLocation::AxisArray
@@ -242,7 +209,6 @@ function Parameter(d::Dict)
 		"TechsBySalesTier",
 		"SalesTiersByTech",
 		"NMILRegime",
-		"NMILLimits",
 		"TechsByNMILRegime"
      )
     if typeof(d["Tech"]) === Array{Any, 1}  # came from Python as empty array
