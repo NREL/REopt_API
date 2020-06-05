@@ -582,7 +582,6 @@ class DataManager:
 
         charge_efficiency = list()
         discharge_efficiency = list()
-        techs_charging_storage = list()
 
         for tech in techs:
             if eval('self.' + tech) is not None:
@@ -594,9 +593,6 @@ class DataManager:
 
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
-
-                if eval('self.' + tech + '.can_serve("storage")'):
-                    techs_charging_storage.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
 
                 # only generator tech has variable o&m cost
                 if tech.lower() == 'generator':
@@ -639,7 +635,7 @@ class DataManager:
 
         return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               discharge_efficiency, techs_charging_storage, electric_derate
+               discharge_efficiency, electric_derate
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -829,10 +825,10 @@ class DataManager:
 
         tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            discharge_efficiency, techs_charging_storage, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
+            discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            discharge_efficiency_bau, techs_charging_storage_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -1073,7 +1069,6 @@ class DataManager:
             'ElecStorage': ['Elec'],
             'SubdivisionByTech': subdivisions_by_tech,
             'SegByTechSubdivision': seg_by_tech_subdivision,
-            'TechsChargingStorage': techs_charging_storage,
             'TechsInClass': techs_in_class,
             'TechsByFuelType': techs_by_fuel_type,
             'ElectricTechs': electric_techs,
@@ -1175,7 +1170,6 @@ class DataManager:
             'ElecStorage':[],
             'SubdivisionByTech':subdivisions_by_tech_bau,
             'SegByTechSubdivision':seg_by_tech_subdivision_bau,
-            'TechsChargingStorage':techs_charging_storage,
             'TechsInClass':techs_in_class_bau,
             'TechsByFuelType':techs_by_fuel_type_bau,
             'ElectricTechs':electric_techs_bau,
