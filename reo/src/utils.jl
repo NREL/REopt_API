@@ -212,8 +212,8 @@ Base.@kwdef struct Parameter
      TechsInClass
      TechsByFuelType
      SalesTiers::UnitRange
-     StorageSalesTiers
-     NonStorageSalesTiers
+     StorageSalesTiers::Array{Int, 1}
+     NonStorageSalesTiers::Array{Int, 1}
 	 SalesTiersByTech
 	 TechsBySalesTier
 	 CurtailmentTiers
