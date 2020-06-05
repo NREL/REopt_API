@@ -211,7 +211,7 @@ Base.@kwdef struct Parameter
      SubdivisionByTech
      TechsInClass
      TechsByFuelType
-     SalesTiers
+     SalesTiers::UnitRange
      StorageSalesTiers
      NonStorageSalesTiers
 	 SalesTiersByTech
