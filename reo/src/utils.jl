@@ -303,13 +303,12 @@ function length(::Symbol)
     return 1
 end
 
-function JuMP.value(::Val{false})
-    return 0.0
-end
 
-function JuMP.value(x::Float64)
-    return x
-end
+JuMP.value(::Val{false}) = 0
+
+
+JuMP.value(x::Float64) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and similar
+
 
 function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{String, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
     l1 = length(ax1)
