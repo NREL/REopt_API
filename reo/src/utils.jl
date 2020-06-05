@@ -205,7 +205,7 @@ Base.@kwdef struct Parameter
      StorageInitSOC::AxisArray
      SegmentMinSize::AxisArray
      SegmentMaxSize::AxisArray
-	 ElectricDerate
+	 ElectricDerate::AxisArray
 
      # New Sets
      SubdivisionByTech
