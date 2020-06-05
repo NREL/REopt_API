@@ -216,7 +216,7 @@ Base.@kwdef struct Parameter
      NonStorageSalesTiers::Array{Int, 1}
 	 SalesTiersByTech
 	 TechsBySalesTier
-	 CurtailmentTiers
+	 CurtailmentTiers::Array{Int, 1}
 	 TechsByNMILRegime
 
     # Feature Additions
