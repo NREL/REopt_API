@@ -320,12 +320,12 @@ function Parameter(d::Dict)
 
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
-    d["TechsByFuelType"] = len_zero_param(d["FuelType"], d["TechsByFuelType"])
-    d["SubdivisionByTech"] = len_zero_param(d["Tech"], d["SubdivisionByTech"])
-    d["TechsInClass"] = len_zero_param(d["TechClass"], d["TechsInClass"])
-	d["SalesTiersByTech"] = len_zero_param(d["Tech"], d["SalesTiersByTech"])
-	d["TechsBySalesTier"] = len_zero_param(d[:SalesTiers], d["TechsBySalesTier"])
-	d["TechsByNMILRegime"] = len_zero_param(d["NMILRegime"], d["TechsByNMILRegime"])
+    d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
+    d["SubdivisionByTech"] = AxisArray(d["SubdivisionByTech"], d["Tech"])
+    d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
+	d["SalesTiersByTech"] = AxisArray(d["SalesTiersByTech"], d["Tech"])
+	d["TechsBySalesTier"] = AxisArray(d["TechsBySalesTier"], d[:SalesTiers])
+	d["TechsByNMILRegime"] = AxisArray(d["TechsByNMILRegime"], d["NMILRegime"])
 
     d = string_dictkeys_tosymbols(d)
     d = filter_dict_to_match_struct_field_names(d, Parameter)
@@ -343,20 +343,6 @@ end
 
 function JuMP.value(x::Float64)
     return x
-end
-
-function len_zero_param(sets, arr::Array)
-    try
-        if length(arr) == 0
-            dims = setdiff(size(arr), 0)
-            zero_array = Array{Array}(undef, dims...)
-            return AxisArray(zero_array, sets)
-        else
-            return AxisArray(arr, sets)
-        end
-    catch
-        return []
-    end
 end
 
 function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{String, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
