@@ -75,7 +75,7 @@ Base.@kwdef struct Parameter
 	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
 	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
-	 #FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
+	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 #TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
 	 #TechsTurndown::Array{String,1}  # This is just T \setminus T^{ac}; not in the math
@@ -211,7 +211,6 @@ Base.@kwdef struct Parameter
      SubdivisionByTech
      TechsInClass
      TechsByFuelType
-     FuelBurningTechs
      TechsNoTurndown
      SalesTiers
      StorageSalesTiers
