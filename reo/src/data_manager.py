@@ -918,9 +918,6 @@ class DataManager:
         else:
             techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
 
-        fuel_type_by_tech = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs]
-        fuel_type_by_tech_bau = [['DIESEL'] if t=='GENERATOR' else [] for t in reopt_techs_bau]
-
         fuel_limit = [0.0 for _ in fuel_type]
         fuel_limit_bau = [0.0 for _ in fuel_type_bau]
         for f in range(len(fuel_type)):
@@ -1074,7 +1071,6 @@ class DataManager:
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
-            'FuelTypeByTech': fuel_type_by_tech,
             'SubdivisionByTech': subdivisions_by_tech,
             'SegByTechSubdivision': seg_by_tech_subdivision,
             'TechsChargingStorage': techs_charging_storage,
@@ -1177,7 +1173,6 @@ class DataManager:
             'Subdivision':subdivisions,
             'PricingTierCount':tariff_args.energy_tiers_num,
             'ElecStorage':[],
-            'FuelTypeByTech': fuel_type_by_tech_bau,
             'SubdivisionByTech':subdivisions_by_tech_bau,
             'SegByTechSubdivision':seg_by_tech_subdivision_bau,
             'TechsChargingStorage':techs_charging_storage,
