@@ -601,6 +601,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	### Utility and Taxable Costs
 	if !isempty(p.Tech)
+		# NOTE: LevelizationFactor is baked into dvProductionToGrid
 		@expression(REopt, TotalExportBenefit, p.pwf_e * p.TimeStepScaling * sum( 
 			sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) 
 			+ sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] 
@@ -611,11 +612,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 		@expression(REopt, ExportedElecWIND,
 					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-						for t in WindTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))
+						for t in WindTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep)
+		)
 		@expression(REopt, ExportedElecGEN,
 					p.TimeStepScaling * sum(dvProductionToGrid[t,u,ts] 
-						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))        
-		# Needs levelization factor?
+						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep)
+		)        
 		@expression(REopt, ExportBenefitYr1,
 				p.TimeStepScaling * sum( 
 				sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) 
