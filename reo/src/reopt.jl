@@ -566,29 +566,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					p.DemandLookbackPercent * dvPeakDemandELookback )
 	end
 	### End Constraint Set (12)
-		
-	### Constraint (13): Annual minimum charge adder 
-	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
-        TotalMinCharge = p.AnnualMinCharge 
-    else
-        TotalMinCharge = 12 * p.MonthlyMinCharge
-    end
-	
-	if TotalMinCharge >= 1e-2
-        @constraint(REopt, MinChargeAddCon, MinChargeAdder >= TotalMinCharge - (
-			#Demand Charges
-			p.TimeStepScaling * sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) +
-			#Peak Ratchet Charges
-			sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) + 
-			#Preak Monthly Demand Charges
-			sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) -
-			# Energy Exports
-			p.TimeStepScaling * sum( sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) - 
-			p.FixedMonthlyCharge * 12 )
-		)
-	else
-		@constraint(REopt, MinChargeAddCon, MinChargeAdder == 0)
-    end
 	
 	### Alternate constraint (13): Monthly minimum charge adder
 	
@@ -665,6 +642,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
+		
+	### Constraint (13): Annual minimum charge adder 
+	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
+        TotalMinCharge = p.AnnualMinCharge 
+    else
+        TotalMinCharge = 12 * p.MonthlyMinCharge
+    end
+	
+	if TotalMinCharge >= 1e-2
+        @constraint(REopt, MinChargeAddCon, MinChargeAdder >= TotalMinCharge - ( 
+			TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
+		)
+	else
+		@constraint(REopt, MinChargeAddCon, MinChargeAdder == 0)
+    end
 	
 	###  New Objective Function
 	@expression(REopt, REcosts,
