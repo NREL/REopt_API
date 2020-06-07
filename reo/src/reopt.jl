@@ -624,10 +624,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	### Utility and Taxable Costs
 	if !isempty(p.Tech)
-		@expression(REopt, TotalExportBenefit, -1 *p.pwf_e * p.TimeStepScaling * sum( 
+		@expression(REopt, TotalExportBenefit, p.pwf_e * p.TimeStepScaling * sum( 
 			sum(p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) 
-			+ sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
-			for ts in p.TimeStep ) 
+			+ sum(p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] 
+				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
+			) for ts in p.TimeStep )
 		)
 		@expression(REopt, TotalProductionIncentive, sum(dvProdIncent[t] for t in p.Tech))
 
@@ -639,7 +640,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						for t in GeneratorTechs, u in p.SalesTiersByTech[t], ts in p.TimeStep))        
 		# Needs levelization factor?
 		@expression(REopt, ExportBenefitYr1,
-				p.TimeStepScaling * sum( sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u]) for ts in p.TimeStep ) )
+				p.TimeStepScaling * sum( 
+				sum( p.GridExportRates[u,ts] * dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) 
+				+ sum( p.GridExportRates[u,ts] * dvProductionToGrid[t,u,ts] 
+					  for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
+				for ts in p.TimeStep ) 
+		)
 	else
 		@expression(REopt, TotalExportBenefit, 0.0)
 		@expression(REopt, TotalProductionIncentive, 0.0)
