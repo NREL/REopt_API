@@ -953,14 +953,19 @@ class ValidateNestedInput:
                                     [annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(annual_kwh_list))]) / 8760
 
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get('annual_kwh') is None and self.input_dict['Scenario']['Site']['LoadProfile'].get('doe_reference_name') is not None:
-                                from reo.src.load_profile import BuiltInProfile
+                                from reo.src.load_profile import LoadProfile
                                 default_annual_kwh_list = []
                                 doe_reference_name_list = self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']
                                 percent_share_list = self.input_dict['Scenario']['Site']['LoadProfile']['percent_share']
                                 for i in range(len(doe_reference_name_list)):
                                     self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = doe_reference_name_list[i]
-                                    b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],longitude=self.input_dict['Scenario']['Site']['longitude'], **self.input_dict['Scenario']['Site']['LoadProfile'])
-                                    default_annual_kwh_list.append(b.default_annual_kwh)
+                                    if type(self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']) != list:
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']] 
+                                    b = LoadProfile(dfm = None, latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                                       longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                       **self.input_dict['Scenario']['Site']['LoadProfile']
+                                                       )
+                                    default_annual_kwh_list.append(b.annual_kwh)
                                 avg_load_kw = sum([default_annual_kwh_list[i] * percent_share_list[i] / 100 for i in range(len(default_annual_kwh_list))]) / 8760
                                 # resetting the doe_reference_name key to its original list
                                 # form for further processing in loadprofile.py file
@@ -968,11 +973,13 @@ class ValidateNestedInput:
                                     'doe_reference_name'] = doe_reference_name_list
 
                             elif self.input_dict['Scenario']['Site']['LoadProfile'].get('loads_kw') in [None,[]]:
-                                from reo.src.load_profile import BuiltInProfile
-                                b = BuiltInProfile(latitude=self.input_dict['Scenario']['Site']['latitude'],
-                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
-                                                    **self.input_dict['Scenario']['Site']['LoadProfile']
-                                                    )
+                                from reo.src.load_profile import LoadProfile
+                                if type(self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']) != list:
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']]
+                                b = LoadProfile(dfm = None, latitude=self.input_dict['Scenario']['Site']['latitude'],
+                                                   longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                   **self.input_dict['Scenario']['Site']['LoadProfile']
+                                                   )
                                 self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'] = b.built_in_profile
 
                                 avg_load_kw = sum(self.input_dict['Scenario']['Site']['LoadProfile']['loads_kw'])\
@@ -1077,10 +1084,23 @@ class ValidateNestedInput:
                         gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
-            if self.isValid:
-                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+            
+            for lp in ['critical_loads_kw', 'loads_kw']:
+                if real_values.get(lp) not in [None, []]:
+                    self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
+                                       number=number, input_isDict=input_isDict)
+                    isnet = real_values.get(lp + '_is_net')
+                    if isnet is None:
+                        isnet = True
+                    if not isnet:
+                        # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                        if self.isValid:
+                            if min(real_values.get(lp)) < 0:
+                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
+            
+            if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                    self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
 
                 if len(real_values.get('percent_share')) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
@@ -1089,12 +1109,18 @@ class ValidateNestedInput:
                         'The sum of elements of percent share list for hybrid load profile should be 100.')
 
                 if real_values.get('annual_kwh') is not None:
+                    real_values['year'] = 2017
+                    self.update_attribute_value(object_name_path, number, 'year', 2017)
+                    # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
+                    # Sunday
                     if type(real_values['annual_kwh']) is not list:
                         self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
+                    real_values['annual_kwh'] = [real_values['annual_kwh']]
 
                 if real_values.get('doe_reference_name') is not None:
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name',[real_values['doe_reference_name']])
+                        real_values['doe_reference_name'] = [real_values['doe_reference_name']]
 
                     if len(real_values.get('doe_reference_name')) > 1:
                         if len(real_values.get('doe_reference_name')) != len(real_values.get('percent_share')):
@@ -1107,6 +1133,22 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "ElectricTariff":
             electric_tariff = real_values
+            if type(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh')) == float:
+                emissions_series = [electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
+                electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] = emissions_series
+                self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', emissions_series)
+            elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
+                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
+                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
+                    try:
+                        ec = EmissionsCalculator(latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                            longitude=self.input_dict['Scenario']['Site']['longitude'], 
+                            timesteps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', ec.emissions_series)
+                    except AttributeError as e:
+                        self.emission_warning = str(e.args[0])
+            else:
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], "ElectricTariff", 'emissions_factor_series_lb_CO2_per_kwh', self.input_dict['Scenario']['time_steps_per_hour'])
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()
@@ -1411,27 +1453,27 @@ class ValidateNestedInput:
 
                     try:  # to convert input value to restricted type
                         value = data_type(value)
+                        if data_type in [float, int]:
+                            if data_validators.get('min') is not None:
+                                if value < data_validators['min']:
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['min']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable min %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['min']))
+
+                            if data_validators.get('max') is not None:
+                                if value > data_validators['max']:
+                                    if input_isDict==True or input_isDict==None:
+                                        self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), data_validators['max']))
+                                    if input_isDict==False:
+                                        self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
+                                        name, value, self.object_name_string(object_name_path), number, data_validators['max']))
                     except:
                         self.input_data_errors.append('Could not check min/max on %s (%s) in %s' % (
                         name, value, self.object_name_string(object_name_path)))
-                    else:
-                        if data_validators.get('min') is not None:
-                            if value < data_validators['min']:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable min %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['min']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable min %s' % (
-                                    name, value, self.object_name_string(object_name_path), number, data_validators['min']))
-
-                        if data_validators.get('max') is not None:
-                            if value > data_validators['max']:
-                                if input_isDict or input_isDict is None:
-                                    self.input_data_errors.append('%s value (%s) in %s exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), data_validators['max']))
-                                if input_isDict is False:
-                                    self.input_data_errors.append('%s value (%s) in %s (number %s) exceeds allowable max %s' % (
-                                    name, value, self.object_name_string(object_name_path), number, data_validators['max']))
 
                     if data_validators.get('restrict_to') is not None:
                         # Handle both cases: 1. val is of 'type' 2. List('type')
@@ -1630,7 +1672,8 @@ class ValidateNestedInput:
                         object_name_path[-1] = object_name_path[-1] + ' (number {})'.format(number)
                         self.defaults_inserted.append([template_key, object_name_path])
 
-    def check_required_attributes(self, object_name_path, template_values=None, real_values=None,  number=1, input_isDict=None):
+    def check_required_attributes(self, object_name_path, template_values=None, real_values=None, number=1,
+                                  input_isDict=None):
         """
         comparison_function for recursively_check_input_dict.
         confirm that required inputs were provided by user. If not, create message to provide to user.
