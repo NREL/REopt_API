@@ -1115,9 +1115,13 @@ class ValidateNestedInput:
                     # Sunday
                     if type(real_values['annual_kwh']) is not list:
                         self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
-                    real_values['annual_kwh'] = [real_values['annual_kwh']]
+                        real_values['annual_kwh'] = [real_values['annual_kwh']]
 
                 if real_values.get('doe_reference_name') is not None:
+                    real_values['year'] = 2017
+                    self.update_attribute_value(object_name_path, number, 'year', 2017)
+                    # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
+                    # Sunday
                     if type(real_values['doe_reference_name']) is not list:
                         self.update_attribute_value(object_name_path, number, 'doe_reference_name',[real_values['doe_reference_name']])
                         real_values['doe_reference_name'] = [real_values['doe_reference_name']]
@@ -1235,24 +1239,6 @@ class ValidateNestedInput:
                                             time_steps_per_hour=ts_per_hour, number=number,
                                             input_isDict=input_isDict)
 
-        #[az] is there a reason we have two if statements checking for "LoadProfile"?
-        if object_name_path[-1] == "LoadProfile":
-            for lp in ['critical_loads_kw', 'loads_kw']:
-                if real_values.get(lp) not in [None, []]:
-                    self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'])
-                    isnet = real_values.get(lp + '_is_net')
-                    if isnet is None:
-                        isnet = True
-                    if not isnet:
-                        # next line can fail if non-numeric values are passed in for (critical_)loads_kw
-                        if self.isValid:
-                            if min(real_values.get(lp)) < 0:
-                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-
-            if real_values.get('doe_reference_name') is not None:
-                real_values['year'] = 2017
-                # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
-                # Sunday
         if object_name_path[-1] == "LoadProfileChillerElectric":
             if self.isValid:
                 # If an empty dictionary comes in - assume no load by default
