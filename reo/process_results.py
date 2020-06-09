@@ -38,6 +38,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
+from reo.src.emissions_calculator import EmissionsCalculator
 log = logging.getLogger(__name__)
 
 class ProcessResultsTask(Task):
