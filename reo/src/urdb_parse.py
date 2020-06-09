@@ -95,6 +95,17 @@ class REoptArgs:
         self.annual_min_charge = 0
         self.min_monthly_charge = 0
 
+        self.chp_standby_rate_us_dollars_per_kw_per_month = 0
+        self.chp_does_not_reduce_demand_charges = 0
+
+        # Unique parameters for chp and new boiler/chiller efficiency/cop
+        self.chp_thermal_prod_slope = 0
+        self.chp_thermal_prod_intercept = 0
+        self.chp_derate = 0
+        self.boiler_efficiency = 0.32
+        self.electric_chiller_cop = 0.32
+        self.absorption_chiller_cop = 0.32
+
 
 class RateData:
 
@@ -181,7 +192,9 @@ class UrdbParse:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, big_number, elec_tariff, techs, bau_techs, loads, gen=None):
+    def __init__(self, paths, big_number, elec_tariff, fuel_tariff, techs, bau_techs, loads, gen=None, chp=None,
+                 boiler=None, electric_chiller=None, absorption_chiller=None):
+
         self.urdb_rate = elec_tariff.urdb_response
         self.year = elec_tariff.load_year
         self.time_steps_per_hour = elec_tariff.time_steps_per_hour
@@ -196,6 +209,8 @@ class UrdbParse:
         self.techs = techs
         self.bau_techs = bau_techs
         self.loads = loads
+        self.chp_standby_rate_us_dollars_per_kw_per_month = elec_tariff.chp_standby_rate_us_dollars_per_kw_per_month
+        self.chp_does_not_reduce_demand_charges = elec_tariff.chp_does_not_reduce_demand_charges
         self.custom_tou_energy_rates = elec_tariff.tou_energy_rates
         self.add_tou_energy_rates_to_urdb_rate = elec_tariff.add_tou_energy_rates_to_urdb_rate
         self.override_urdb_rate_with_tou_energy_rates = elec_tariff.override_urdb_rate_with_tou_energy_rates
@@ -209,6 +224,49 @@ class UrdbParse:
             self.generator_fuel_slope = 0.0
             self.generator_fuel_intercept = 0.0
             self.generator_fuel_avail = 0.0
+
+        # Assign monthly fuel rates for boiler and chp and then convert to timestep intervals
+        self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('boiler')
+        self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu = fuel_tariff.monthly_rates('chp')
+        self.chp_fuel_rate_array = []
+        self.boiler_fuel_rate_array = []
+        for month in range(0, 12):
+            # Create full length (timestep) array of NG cost in $/MMBtu
+            self.boiler_fuel_rate_array.extend([self.boiler_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
+                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
+            self.chp_fuel_rate_array.extend([self.chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu[month]] *
+                                      self.days_in_month[month] * 24 * self.time_steps_per_hour)
+
+        if chp is not None:
+            self.chp_fuel_slope = chp.fuel_burn_slope
+            self.chp_fuel_intercept = chp.fuel_burn_intercept
+            self.chp_thermal_prod_slope = chp.thermal_prod_slope
+            self.chp_thermal_prod_intercept = chp.thermal_prod_intercept
+            self.chp_derate = chp.chp_power_derate
+        else:
+            self.chp_fuel_slope = 0
+            self.chp_fuel_intercept = 0
+            self.chp_thermal_prod_slope = 0
+            self.chp_thermal_prod_intercept = 0
+            self.chp_derate = 0
+
+        if boiler is not None:
+            self.boiler_efficiency = boiler.boiler_efficiency
+        else:
+            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
+            self.boiler_efficiency = 0.314
+
+        if electric_chiller is not None:
+            self.electric_chiller_cop = electric_chiller.chiller_cop
+        else:
+            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
+            self.electric_chiller_cop = 0.314
+
+        if absorption_chiller is not None:
+            self.absorption_chiller_cop = absorption_chiller.chiller_cop
+        else:
+            # Make arbitrary non-zero value (pi/10) to avoid divide-by-zero issue
+            self.absorption_chiller_cop = 0.314
 
         log.info("URDB parse with year: " + str(self.year) + " net_metering: " + str(self.net_metering))
 
@@ -259,8 +317,15 @@ class UrdbParse:
         self.reopt_args.fuel_limit,   \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
-        self.reopt_args.num_sales_tiers  \
-        = self.prepare_techs_and_loads(self.techs)
+        self.reopt_args.num_sales_tiers, \
+        self.reopt_args.chp_thermal_prod_slope, \
+        self.reopt_args.chp_thermal_prod_intercept, \
+        self.reopt_args.chp_derate, \
+        self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month, \
+        self.reopt_args.chp_does_not_reduce_demand_charges, \
+        self.reopt_args.boiler_efficiency, \
+        self.reopt_args.electric_chiller_cop, \
+        self.reopt_args.absorption_chiller_cop = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_rates_bau, \
         self.reopt_args.energy_avail_bau, \
@@ -274,8 +339,15 @@ class UrdbParse:
         self.reopt_args.fuel_limit_bau,   \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
-        self.reopt_args.num_sales_tiers_bau  \
-        = self.prepare_techs_and_loads(self.bau_techs)
+        self.reopt_args.num_sales_tiers_bau, \
+        self.reopt_args.chp_thermal_prod_slope_bau, \
+        self.reopt_args.chp_thermal_prod_intercept_bau, \
+        self.reopt_args.chp_derate_bau, \
+        self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month_bau, \
+        self.reopt_args.chp_does_not_reduce_demand_charges_bau, \
+        self.reopt_args.boiler_efficiency_bau, \
+        self.reopt_args.electric_chiller_cop_bau, \
+        self.reopt_args.absorption_chiller_cop_bau = self.prepare_techs_and_loads(self.bau_techs)
         
         return self.reopt_args
 
@@ -483,6 +555,12 @@ class UrdbParse:
                         # TODO figure out how to populate fuel costs for all fb techs
                         fuel_costs.append(self.diesel_fuel_cost_us_dollars_per_gallon)
                         fuel_limit.append(self.generator_fuel_avail)
+                    elif tech.lower() == 'boiler':
+                        energy_rates = operator.add(energy_rates, self.boiler_fuel_rate_array)
+                        energy_avail.append(self.big_number)
+                    elif tech.lower() == 'chp':
+                        energy_rates = operator.add(energy_rates, self.chp_fuel_rate_array)
+                        energy_avail.append(self.big_number)
                     else:
                         # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
                         energy_rates = operator.add(energy_rates, self.zero_array)
@@ -513,35 +591,43 @@ class UrdbParse:
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
-        energy_burn_intercept = []
-        fuel_burn_rate = []
-        fuel_burn_intercept = []
         for tech in techs:
-            if tech.lower() == 'util':
-                fuel_burn_rate.append(1.0)
-                fuel_burn_intercept.append(0.0)
-            elif tech.lower() == 'generator':
-                fuel_burn_rate.append(self.generator_fuel_slope)
-                fuel_burn_intercept.append(self.generator_fuel_intercept)
-            else:
-                fuel_burn_rate.append(0.0)
-                fuel_burn_intercept.append(0.0)
-
             for load in self.loads:
                 for _ in range(self.reopt_args.energy_tiers_num):
                     if tech.lower() == 'util':
                         energy_burn_rate.append(1.0)
-                        energy_burn_intercept.append(0.0)
-                    elif tech.lower() == 'generator':
+                    elif tech.lower() == 'boiler':
+                        energy_burn_rate.append(1 / self.boiler_efficiency)
+                    elif tech.lower() == 'generator' and load != 'boiler' and load != 'tes':
                         energy_burn_rate.append(self.generator_fuel_slope)
-                        energy_burn_intercept.append(self.generator_fuel_intercept)
+                    elif tech.lower() == 'chp' and load != 'boiler' and load != 'tes':
+                        energy_burn_rate.append(self.chp_fuel_slope)
                     else:
                         energy_burn_rate.append(0.0)
-                        energy_burn_intercept.append(0.0)
 
-        return energy_rates, energy_avail, energy_burn_rate, energy_burn_intercept, \
-                energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit, \
-                rates_by_tech, techs_by_rate, num_sales_tiers
+        # FuelBurnRateB = array(Tech,FuelBin)
+        energy_burn_intercept = []
+        for tech in techs:
+            if tech.lower() == 'generator':
+                energy_burn_intercept.append(self.generator_fuel_intercept)
+            elif tech.lower() == 'chp':
+                energy_burn_intercept.append(self.chp_fuel_intercept)
+            else:
+                energy_burn_intercept.append(0)
+
+        # CHP-specific parameters
+        chp_thermal_prod_slope = self.chp_thermal_prod_slope
+        chp_thermal_prod_intercept = self.chp_thermal_prod_intercept
+        chp_derate = self.chp_derate
+        chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
+        chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
+        boiler_efficiency = self.boiler_efficiency
+        electric_chiller_cop = self.electric_chiller_cop
+        absorption_chiller_cop = self.absorption_chiller_cop
+
+        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept, \
+               chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate, chp_standby_rate, \
+               chp_does_not_reduce_demand_charges, boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
 
     def prepare_demand_periods(self, current_rate):
 
@@ -695,7 +781,7 @@ class UrdbParse:
                         tou_adj = float(tier.get('adj') or 0)
 
                         demand_rates.append(tou_rate + tou_adj)
-                        
+
                         for step in time_steps:
                             self.demand_rates_summary[step] += tou_rate + tou_adj
 
@@ -707,19 +793,19 @@ class UrdbParse:
         if not isinstance(current_rate.fixedchargefirstmeter, list):      #URDB v7
             if current_rate.fixedchargeunits == '$/month': # first try $/month, then check if $/day exists, as of 1/28/2020 there were only $/day and $month entries in the URDB
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter 
-            if current_rate.fixedchargeunits == '$/day': 
+            if current_rate.fixedchargeunits == '$/day':
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedchargefirstmeter*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
         else:                                                           #URDB v3, preserve backwards compatability
-            if not isinstance(current_rate.fixedmonthlycharge, list):     
+            if not isinstance(current_rate.fixedmonthlycharge, list):
                 self.reopt_args.fixed_monthly_charge = current_rate.fixedmonthlycharge
 
         if current_rate.mincharge  != []:                               #URDB v7
-            if current_rate.minchargeunits == '$/month': 
+            if current_rate.minchargeunits == '$/month':
                 self.reopt_args.min_monthly_charge = current_rate.mincharge # first try $/month, then check if $/day or $/year exists, as of 1/28/2020 these were the only unit types in the urdb
-            if current_rate.minchargeunits == '$/day': 
+            if current_rate.minchargeunits == '$/day':
                 self.reopt_args.fixed_monthly_charge = current_rate.mincharge*30.4375 # scalar intended to approximate annual charges over 12 month period, derived from 365.25/12
-            if current_rate.minchargeunits == '$/year': 
-                self.reopt_args.annual_min_charge = current_rate.mincharge 
+            if current_rate.minchargeunits == '$/year':
+                self.reopt_args.annual_min_charge = current_rate.mincharge
         else:                                                           #URDB v3, preserve backwards compatability
             if not isinstance(current_rate.annualmincharge, list):
                 self.reopt_args.annual_min_charge = current_rate.annualmincharge
