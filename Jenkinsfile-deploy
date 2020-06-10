@@ -29,6 +29,7 @@ pipeline {
   environment {
     PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
     C110P_URL = credentials("reopt-api-c110p-url")
+    XPRESSDIR = "/opt/xpressmp"
   }
 
   stages {
