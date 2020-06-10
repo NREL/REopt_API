@@ -15,7 +15,7 @@ set :file_permissions_users, ["www-data-local"]
 set :linked_dirs, fetch(:linked_dirs, []).push("static/files", "tmp")
 
 # Allow the web user to write files for Xpress
-set :file_permissions_paths, fetch(:file_permissions_paths, []).push("static/files", "Xpress")
+set :file_permissions_paths, fetch(:file_permissions_paths, []).push("static/files")
 
 namespace :app do
   task :pip_install do
