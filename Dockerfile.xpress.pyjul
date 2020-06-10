@@ -18,6 +18,7 @@ WORKDIR /opt/reopt/solver
 COPY solver/install.sh .
 COPY solver/xp8.0.4_linux_x86_64.tar.gz .
 COPY solver/xpauth.xpr .
+RUN sed -i -e 's/\r$//' install.sh
 RUN printf 's\n\nn\ny\n.\ny\n' | ./install.sh >> license_info.txt;
 
 
