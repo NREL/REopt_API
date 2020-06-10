@@ -192,7 +192,7 @@ class UrdbParse:
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
-    def __init__(self, paths, big_number, elec_tariff, fuel_tariff, techs, bau_techs, loads, gen=None, chp=None,
+    def __init__(self, big_number, elec_tariff, fuel_tariff, techs, bau_techs, loads, gen=None, chp=None,
                  boiler=None, electric_chiller=None, absorption_chiller=None):
 
         self.urdb_rate = elec_tariff.urdb_response

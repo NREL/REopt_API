@@ -927,12 +927,12 @@ class DataManager:
         tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
-            om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
+        tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+               eta_tes_in, eta_tes_out, om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
+               discharge_efficiency, electric_deratee = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
-            om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
+               eta_tes_in_bau, eta_tes_out_bau, om_cost_us_dollars_per_kw_bau, om_cost_us_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau, \
+               discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
