@@ -638,11 +638,9 @@ class DataManager:
                discharge_efficiency, techs_charging_storage, electric_derate
         """
         production_factor = list()
+        chp_thermal_prod_factor = list()
         tech_to_load = list()
         tech_to_location = list()
-        tech_is_chp = list()
-        tech_is_hot = list()
-        tech_is_cool = list()
         derate = list()
         electric_derate = list()
         eta_storage_in = list()
@@ -657,16 +655,23 @@ class DataManager:
 
         for tech in techs:
             if eval('self.' + tech) is not None:
-                tech_is_chp.append(int(eval('self.' + tech + '.is_chp')))
-                tech_is_hot.append(int(eval('self.' + tech + '.is_hot')))
-                tech_is_cool.append(int(eval('self.' + tech + '.is_cool')))
                 derate.append(eval('self.' + tech + '.derate'))
-                for pf in eval('self.' + tech + '.prod_factor'):
-                    production_factor.append(float(pf))
-                    electric_derate.append(1.0)
+                if tech.lower() != 'chp':
+                    for pf in eval('self.' + tech + '.prod_factor'):
+                        production_factor.append(float(pf))
+                        electric_derate.append(1.0)
+                else: 
+                    pf_electric, pf_hot_thermal = self.chp.prod_factor
+                    for pf in pf_electric:
+                        production_factor.append(float(pf))
+                        electric_derate.append(1.0)
+                    for pf in pf_hot_thermal:
+                        chp_thermal_prod_factor.append(float(pf))
 
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
+                charge_efficiency.append(self.hot_tes.internal_efficiency_pct)
+                charge_efficiency.append(self.cold_tes.internal_efficiency_pct)        
                 # Yearly fixed O&M per unit power
                 if tech.lower() == 'boiler' or tech.lower() == 'elec_chl':
                     om_cost_us_dollars_per_kw.append(0)
@@ -692,24 +697,9 @@ class DataManager:
 
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
 
-                        if tech.lower() != 'chp':
-                            for pf in eval('self.' + tech + '.prod_factor'):
-                                prod_factor.append(pf)
-                        else:
-                            pf_electric, pf_hot_thermal = self.chp.prod_factor
-                            if load != 'boiler':
-                                for pf in pf_electric:
-                                    prod_factor.append(pf)
-                            else:
-                                for pf in pf_hot_thermal:
-                                    prod_factor.append(pf)
-
                         tech_to_load.append(1)
 
                     else:
-                        #[az] Don't think we need this for loop, keeping as placeholder for now.
-                        #for _ in range(self.n_timesteps):
-                        #    prod_factor.append(0)
 
                         tech_to_load.append(0)
 
@@ -734,9 +724,13 @@ class DataManager:
             # Current TES efficiency input is just charging/in efficiency, so eta_tes_out is 1.
             eta_tes_out.append(1.0 if load == 'tes' else 1)
             eta_tes_out.append(1.0 if load == 'tes' else 1)
-
+            
+        # eta_storage_out is array(Load) of real
         discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
-
+        # Current TES efficiency input is just charging/in efficiency, so eta_tes_out is 1.
+        discharge_efficiency.append(1.0)
+        discharge_efficiency.append(1.0)
+                
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
         #[az] TODO: rm tech_is_hot/cool/chp, rm prod_factor, update prodction_factor, update finalize
         return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
