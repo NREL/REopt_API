@@ -58,10 +58,17 @@ class DataManager:
         self.wind = None
         self.windnm = None
         self.generator = None
+        self.chp = None
         self.util = None
+        self.boiler = None
+        self.elecchl = None
+        self.absorpchl = None
         self.storage = None
+        self.hot_tes = None
+        self.cold_tes = None
         self.site = None
         self.elec_tariff = None
+        self.fuel_tariff = None
         self.load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
@@ -71,12 +78,14 @@ class DataManager:
         self.year_one_energy_cost_series_us_dollars_per_kwh = []
         self.year_one_demand_cost_series_us_dollars_per_kw = []
 
-        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
-        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
-        self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
+        self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator', 'chp', 'boiler',
+                                'elecchl', 'absorpchl']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
+        self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR', 'CHP', 'BOILER',
+                                       'ELECCHL', 'ABSORPCHL']  # this is a REopt 'class', not a python class
+        self.available_loads = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
-        self.fuel_burning_techs = ['GENERATOR']
+        self.fuel_burning_techs = ['GENERATOR', 'CHP']
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps
@@ -89,6 +98,24 @@ class DataManager:
         self.LoadProfile["sustain_hours"] = load.sustain_hours
         self.LoadProfile["annual_kwh"] = load.annual_kwh
         self.load = load
+        
+    def add_load_boiler_fuel(self, load):
+        self.LoadProfile["year_one_heating_load_series_mmbtu"] = load.load_list
+        self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
+        self.heating_load = load
+        
+    def add_load_chiller_electric(self, load):
+        self.LoadProfile["year_one_cooling_load_series_mmbtu"] = load.load_list
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_mmbtu
+        self.cooling_load = load
+        
+    def add_boiler(self, boiler):
+        self.boiler = boiler
+        self.bau_techs.append('boiler')
+
+    def add_electric_chiller(self, electric_chiller):
+        self.elecchl = electric_chiller
+        self.bau_techs.append('elecchl')
 
     def add_pv(self, pv):
         junk = pv.prod_factor  # avoids redundant PVWatts call for pvnm
@@ -135,6 +162,12 @@ class DataManager:
             if 'generator' not in self.bau_techs:
                 self.bau_techs.append('generator')
 
+    def add_chp(self, chp):
+        self.chp = chp
+
+    def add_absorption_chiller(self, absorption_chiller):
+        self.absorpchl = absorption_chiller
+
     def add_site(self, site):
         self.site = site
 
@@ -145,8 +178,21 @@ class DataManager:
         # TODO: save reopt_inputs dictionary?
         # efficiencies are defined in finalize method because their arrays depend on which Techs are defined
 
+    def add_hot_tes(self, hot_tes):
+        self.hot_tes = hot_tes
+
+        # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
+
+    def add_cold_tes(self, cold_tes):
+        self.cold_tes = cold_tes
+
+        # All attributes are written in finalize method because they are stacked 1..2 for hot_tes..cold_tes storages
+
     def add_elec_tariff(self, elec_tariff):
         self.elec_tariff = elec_tariff
+
+    def add_fuel_tariff(self, fuel_tariff):
+        self.fuel_tariff = fuel_tariff
 
     def _get_REopt_pwfs(self, techs):
         sf = self.site.financial
@@ -154,6 +200,8 @@ class DataManager:
         pwf_offtaker = annuity(sf.analysis_years, 0, sf.offtaker_discount_pct)  # not used in REopt
         pwf_om = annuity(sf.analysis_years, sf.om_cost_escalation_pct, sf.owner_discount_pct)
         pwf_e = annuity(sf.analysis_years, sf.escalation_pct, sf.offtaker_discount_pct)
+        pwf_boiler_fuel = annuity(sf.analysis_years, sf.boiler_fuel_escalation_pct, sf.offtaker_discount_pct)
+        pwf_chp_fuel = annuity(sf.analysis_years, sf.chp_fuel_escalation_pct, sf.offtaker_discount_pct)
         self.pwf_e = pwf_e
         # pwf_op = annuity(sf.analysis_years, sf.escalation_pct, sf.owner_discount_pct)
 
@@ -164,6 +212,7 @@ class DataManager:
             two_party_factor = 1
 
         levelization_factor = list()
+        pwf_fuel_by_tech = list()
 
         for tech in techs:
 
@@ -180,7 +229,15 @@ class DataManager:
                 else:
                     levelization_factor.append(1.0)
 
-        return levelization_factor, pwf_e, pwf_om, two_party_factor
+                # Assign pwf_fuel_by_tech
+                if tech in ['chp', 'chpnm']:
+                    pwf_fuel_by_tech.append(round(pwf_chp_fuel, 5))
+                elif tech == 'boiler':
+                    pwf_fuel_by_tech.append(round(pwf_boiler_fuel, 5))
+                else:
+                    pwf_fuel_by_tech.append(round(pwf_e, 5))
+
+        return levelization_factor, pwf_e, pwf_om, two_party_factor, pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech
 
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
@@ -194,9 +251,8 @@ class DataManager:
         for tech in techs:
 
             if eval('self.' + tech) is not None:
-
-
-                if tech not in ['util', 'generator']:
+                
+                if tech not in ['util', 'generator', 'boiler', 'elecchl', 'absorpchl']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -246,7 +302,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util']:
+            if eval('self.' + tech) is not None and tech not in ['util', 'boiler', 'elecchl']:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -506,6 +562,17 @@ class DataManager:
                 n_segments_max = max(n_segments, n_segments_max)
                 n_segments_list.append(n_segments)
 
+            # [az] Not sure if we need this or not, first line is updated from DatFileManager and the rest may have been removed in this version
+            elif eval('self.' + tech) is not None and tech in ['util', 'boiler', 'elecchl']:
+
+                cap_cost_slope.append(0.0)
+                cap_cost_yint.append(0.0)
+                cap_cost_x += [0.0, big_number]
+
+                # Have to take n_segments as the maximum number across all technologies
+                n_segments_max = max(n_segments, n_segments_max)
+                n_segments_list.append(n_segments)
+
         """
         Last step in creating cost curve is filling in the curves for each tech that does not have
         n_segments == n_segments_max. The filling in is achieved by duplicating the origin with zero cap_cost_slope for
@@ -573,10 +640,15 @@ class DataManager:
         production_factor = list()
         tech_to_load = list()
         tech_to_location = list()
+        tech_is_chp = list()
+        tech_is_hot = list()
+        tech_is_cool = list()
         derate = list()
         electric_derate = list()
         eta_storage_in = list()
         eta_storage_out = list()
+        eta_tes_in = list()
+        eta_tes_out = list()
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
 
@@ -585,18 +657,28 @@ class DataManager:
 
         for tech in techs:
             if eval('self.' + tech) is not None:
+                tech_is_chp.append(int(eval('self.' + tech + '.is_chp')))
+                tech_is_hot.append(int(eval('self.' + tech + '.is_hot')))
+                tech_is_cool.append(int(eval('self.' + tech + '.is_cool')))
                 derate.append(eval('self.' + tech + '.derate'))
-                om_cost_us_dollars_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kw')))
                 for pf in eval('self.' + tech + '.prod_factor'):
                     production_factor.append(float(pf))
                     electric_derate.append(1.0)
 
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
+                # Yearly fixed O&M per unit power
+                if tech.lower() == 'boiler' or tech.lower() == 'elec_chl':
+                    om_cost_us_dollars_per_kw.append(0)
+                else:
+                    om_cost_us_dollars_per_kw.append(eval('self.' + tech + '.om_cost_us_dollars_per_kw'))
 
-                # only generator tech has variable o&m cost
+
+                # only generator and chp techs have variable o&m cost
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                elif tech.lower() == 'chp':
+                    om_cost_us_dollars_per_kwh.append(eval('self.' + tech + '.om_cost_us_dollars_per_kwh'))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
 
@@ -605,9 +687,30 @@ class DataManager:
                     eta_storage_in.append(self.storage.rectifier_efficiency_pct *
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
+                    eta_tes_in.append(self.hot_tes.internal_efficiency_pct if load == 'tes' else 1)
+                    eta_tes_in.append(self.cold_tes.internal_efficiency_pct if load == 'tes' else 1)
+
                     if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
+
+                        if tech.lower() != 'chp':
+                            for pf in eval('self.' + tech + '.prod_factor'):
+                                prod_factor.append(pf)
+                        else:
+                            pf_electric, pf_hot_thermal = self.chp.prod_factor
+                            if load != 'boiler':
+                                for pf in pf_electric:
+                                    prod_factor.append(pf)
+                            else:
+                                for pf in pf_hot_thermal:
+                                    prod_factor.append(pf)
+
                         tech_to_load.append(1)
+
                     else:
+                        #[az] Don't think we need this for loop, keeping as placeholder for now.
+                        #for _ in range(self.n_timesteps):
+                        #    prod_factor.append(0)
+
                         tech_to_load.append(0)
 
                     # By default, util can serve storage load.
@@ -628,13 +731,16 @@ class DataManager:
             # eta_storage_out is array(Load) of real
             eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
                                    if load == 'storage' else 1.0)
+            # Current TES efficiency input is just charging/in efficiency, so eta_tes_out is 1.
+            eta_tes_out.append(1.0 if load == 'tes' else 1)
+            eta_tes_out.append(1.0 if load == 'tes' else 1)
 
         discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
-
+        #[az] TODO: rm tech_is_hot/cool/chp, rm prod_factor, update prodction_factor, update finalize
         return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
-               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
+               eta_tes_in, eta_tes_out, om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, electric_derate
 
     def _get_REopt_techs(self, techs):
@@ -643,7 +749,7 @@ class DataManager:
 
             if eval('self.' + tech) is not None:
 
-                reopt_techs.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                reopt_techs.append(tech.upper() if tech not in ['util'] else tech.upper() + '1')
 
         return reopt_techs
 
@@ -667,6 +773,8 @@ class DataManager:
                             min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0))
                         else:
                             min_sizes.append((eval('self.' + tech + '.existing_kw') or 0.0) + (eval('self.' + tech + '.min_kw') or 0.0))
+                    elif tech.lower() == 'boiler':
+                        min_sizes.append(eval('self.' + tech + '.min_mmbtu_per_hr'))
                     else:
                         min_sizes.append((eval('self.' + tech + '.min_kw') or 0.0))
 
@@ -697,6 +805,7 @@ class DataManager:
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
         max_sizes = list()
         min_turn_down = list()
+        min_allowable_size = list()
         # default to large max size per location. Max size by roof, ground, both
         max_sizes_location = [1.0e9, 1.0e9, 1.0e9]
         pv_roof_limited, pv_ground_limited, pv_space_limited = False, False, False
@@ -711,13 +820,17 @@ class DataManager:
                     if eval('self.' + tech + '.existing_kw') is not None:
                         existing_kw = eval('self.' + tech + '.existing_kw')
 
-                if hasattr(eval('self.' + tech), 'min_turn_down'):
-                    min_turn_down.append(eval('self.' + tech + '.min_turn_down'))
+                if hasattr(eval('self.' + tech), 'min_turn_down_pct'):
+                    min_turn_down.append(eval('self.' + tech + '.min_turn_down_pct'))
                 else:
                     min_turn_down.append(0.0)
 
-                beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')
+                if hasattr(eval('self.' + tech), 'min_allowable_kw'):
+                    min_allowable_size.append(eval('self.' + tech + '.min_allowable_kw'))
+                else:
+                    min_allowable_size.append(0)
 
+                beyond_existing_cap_kw = eval('self.' + tech + '.max_kw')  # default is big_number
                 if tech.startswith('pv'):  # has acres_per_kw and kw_per_square_foot attributes, as well as location
                     if eval('self.' + tech + '.location') == 'both':
                         both_existing_pv_kw += existing_kw
@@ -762,6 +875,8 @@ class DataManager:
 
                 if bau and existing_kw > 0:  # existing PV in BAU scenario
                     max_sizes.append(float(existing_kw))
+                elif tech.lower() == 'boiler':
+                    max_sizes.append(eval('self.' + tech + '.max_mmbtu_per_hr'))
                 else:
                     max_sizes.append(float(existing_kw + beyond_existing_cap_kw))
 
@@ -773,7 +888,7 @@ class DataManager:
             max_sizes_location[2] = float(both_existing_pv_kw/2 + roof_max_kw + land_max_kw)
         # existing PV kW's divided by 2 b/c of the duplicate existing capacity created by `pv*nm`
 
-        return max_sizes, min_turn_down, max_sizes_location
+        return max_sizes, min_turn_down, max_sizes_location, min_allowable_size
 
     def _get_time_steps_with_grid(self):
         """
@@ -819,11 +934,13 @@ class DataManager:
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
-        max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
-        max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
+        max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
+        max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
 
-        levelization_factor, pwf_e, pwf_om, two_party_factor = self._get_REopt_pwfs(self.available_techs)
-        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau = self._get_REopt_pwfs(self.bau_techs)
+        levelization_factor, pwf_e, pwf_om, two_party_factor, \
+            pwf_boiler_fuel, pwf_chp_fuel, pwf_fuel_by_tech = self._get_REopt_pwfs(self.available_techs)
+        levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau, \
+            pwf_boiler_fuel_bau, pwf_chp_fuel_bau, pwf_fuel_by_tech_bau = self._get_REopt_pwfs(self.bau_techs)
         
         pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
             = self._get_REopt_production_incentives(self.available_techs)
@@ -856,10 +973,32 @@ class DataManager:
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
 
-        parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
+        HotTESCostPerMMBTU = setup_capital_cost_incentive(self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+                                                        0,
+                                                        0,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
+                                                        0,
+                                                        self.hot_tes.incentives.macrs_schedule,
+                                                        self.hot_tes.incentives.macrs_bonus_pct,
+                                                        0)
+
+        ColdTESCostPerKWHT = setup_capital_cost_incentive(self.cold_tes.installed_cost_us_dollars_per_kwht,  # use full cost as basis
+                                                        0,
+                                                        0,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
+                                                        0,
+                                                        self.cold_tes.incentives.macrs_schedule,
+                                                        self.cold_tes.incentives.macrs_bonus_pct,
+                                                        0)
+
+        parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
-                           loads=self.available_loads, gen=self.generator)
+                           loads=self.available_loads, gen=self.generator, chp=eval('self.chp'),
+                           boiler=eval('self.boiler'), electric_chiller=eval('self.elecchl'),
+                           absorption_chiller=eval('self.absorpchl'))
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
