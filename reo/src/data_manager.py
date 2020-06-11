@@ -714,7 +714,6 @@ class DataManager:
         discharge_efficiency.append(1.0)
                 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
-        #[az] TODO: rm tech_is_hot/cool/chp, rm prod_factor, update prodction_factor, update finalize
         return tech_to_load, tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, \
                production_factor, charge_efficiency, discharge_efficiency, \
@@ -1214,8 +1213,8 @@ class DataManager:
             'r_tax_offtaker': sf.offtaker_tax_pct,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
-            'OMperUnitSize': om_dollars_per_kw_bau,
-            'OMcostPerUnitProd': om_dollars_per_kwh_bau,
+            'OMperUnitSize': om_cost_us_dollars_per_kw,
+            'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
             'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
             'FuelBinCount': tariff_args.energy_tiers_num,
