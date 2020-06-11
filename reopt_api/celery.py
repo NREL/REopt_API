@@ -32,10 +32,28 @@ import os
 import logging
 from celery import Celery
 from celery.signals import after_setup_logger
+from keys import *
 
 # set the default Django settings module for the 'celery' program.
-raw_env = 'reopt_api.dev_settings'
-redis_host = os.environ.get('REDIS_HOST', 'localhost')
+try:
+    env = os.environ['APP_ENV']
+
+    if env == 'internal_c110p':
+        raw_env = 'reopt_api.internal_c110p_settings'
+        redis_host = ':' + dev_redis_password + '@localhost'
+    else:
+        raw_env = 'reopt_api.dev_settings'
+        redis_host = os.environ.get('REDIS_HOST', 'localhost')
+
+except KeyError:
+    """
+    This catch is necessary for running celery from command line when testing/developing locally.
+    APP_ENV is defined in config/deploy/[development, production, staging].rb files for servers.
+    For testing and local development, APP_ENV *can* be defined in .env file (see README.md),
+    which `honcho` or `foreman` loads before running Procfile.
+    """
+    raw_env = 'reopt_api.dev_settings'
+    redis_host = os.environ.get('REDIS_HOST', 'localhost')
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', raw_env)
 
