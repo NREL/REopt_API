@@ -25,7 +25,7 @@ namespace :app do
         execute "./env/bin/pip3", "install", "-r", "requirements.txt"
         execute "julia", "--project='./julia_envs/Xpress/'", "-e", "'import Pkg; Pkg.instantiate();'"
         execute "julia", "--project='./julia_envs/Xpress/'", "./julia_envs/Xpress/precompile.jl"
-        execute "julia", "--project='./julia_envs/Xpress/'", "-e", "'rm(joinpath(homedir(), ".julia", "conda"), recursive=true)'"
+        execute "rm", "-rf", "home/deploy/.julia/conda"
         execute "./env/bin/python", "-c", "'import julia; julia.install()'"
       end
     end
