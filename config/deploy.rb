@@ -27,6 +27,7 @@ namespace :app do
         execute "julia", "--project='./julia_envs/Xpress/'", "-e", "'import Pkg; Pkg.instantiate();'"
         execute "julia", "--project='./julia_envs/Xpress/'", "./julia_envs/Xpress/precompile.jl"
         execute "julia", "--project='./julia_envs/Xpress/'", "-e", "'ENV[\"PYTHON\"] = \"./env/bin/python3\"; import Pkg; Pkg.build(\"PyCall\")'"
+        execute "./env/bin/python", "-c", "'import julia; julia.install()'"
       end
     end
   end
