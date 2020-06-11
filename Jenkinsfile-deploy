@@ -30,6 +30,7 @@ pipeline {
     PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
     C110P_URL = credentials("reopt-api-c110p-url")
     XPRESSDIR = "/opt/xpressmp"
+    LD_PRELOAD = "/usr/local/julia-1.3.1/lib/julia/libstdc++.so.6"
   }
 
   stages {
