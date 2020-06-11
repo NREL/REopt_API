@@ -70,6 +70,8 @@ class DataManager:
         self.elec_tariff = None
         self.fuel_tariff = None
         self.load = None
+        self.heating_load = None
+        self.cooling_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
 
@@ -1103,6 +1105,31 @@ class DataManager:
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
+        #Storage types correspond to loads in model, i.e., if heating loads 
+        #exist, then HotTES is included.
+        storage = ['Elec']
+        if self.hot_tes != None:
+            storage.append('HotTES')
+        if self.cold_tes != None:
+            storage.append('ColdTES')
+        thermal_storage = storage[1:]
+        if self.heating_load != None:
+            heating_load = self.heating_load.load_list
+            heating_load_bau = self.heating_load.bau_load_list
+#            storage.append('HotTES')
+#            thermal_storage.append('HotTES')
+        else: 
+            heating_load = [0.0 for _ in self.load.load_list]
+            heating_load_bau = [0.0 for _ in self.load.load_list]
+        if self.cooling_load != None:
+            cooling_load = self.cooling_load.load_list
+            cooling_load_bau = self.cooling_load.bau_load_list
+#            storage.append('ColdTES')
+#            thermal_storage.append('ColdTES')
+        else: 
+            cooling_load = [0.0 for _ in self.load.load_list]
+            cooling_load_bau = [0.0 for _ in self.load.load_list]
+        
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1180,7 +1207,7 @@ class DataManager:
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
-            'Storage': ['Elec'],
+            'Storage': storage,
             'FuelType': fuel_type,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
@@ -1201,7 +1228,12 @@ class DataManager:
             'TechsBySalesTier':tariff_args.techs_by_rate,
             'CurtailmentTiers':curtailment_tiers,
             'ElectricDerate':electric_derate,
-            'TechsByNMILRegime':TechsByNMILRegime
+            'TechsByNMILRegime':TechsByNMILRegime,
+            'HeatingLoad':heating_load,
+            'CoolingLoad':cooling_load,
+            'ThermalStorage':thermal_storage,
+            'HotTES':['HotTES'] if self.hot_tes != None else [],
+            'ColdTES':['ColdTES'] if self.cold_tes != None else []
             }
 
         self.reopt_inputs_bau = {
@@ -1302,5 +1334,10 @@ class DataManager:
             'TechsBySalesTier':tariff_args.techs_by_rate_bau,
             'CurtailmentTiers':curtailment_tiers_bau,
             'ElectricDerate':electric_derate_bau,
-            'TechsByNMILRegime':TechsByNMILRegime_bau
+            'TechsByNMILRegime':TechsByNMILRegime_bau,
+            'HeatingLoad':heating_load,
+            'CoolingLoad':cooling_load,
+            'ThermalStorage':thermal_storage,
+            'HotTES':['HotTES'] if self.hot_tes != None else [],
+            'ColdTES':['ColdTES'] if self.cold_tes != None else []
         }
