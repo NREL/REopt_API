@@ -36,7 +36,7 @@ from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, Not
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
-# julia.install()  # needs to be run if it is the first time you are using julia package
+julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
 
