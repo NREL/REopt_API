@@ -36,7 +36,7 @@ from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, Not
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
-julia.install()  # needs to be run if it is the first time you are using julia package
+# julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
 
@@ -88,6 +88,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         j.using("Pkg")
         if os.environ.get("SOLVER") == "xpress":
             j.eval('Pkg.activate("./julia_envs/Xpress/")')
+            logger.warning("Julia Pkg.status(): ", j.eval('Pkg.status()'))
             j.include("reo/src/reopt_xpress_model.jl")
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
         elif os.environ.get("SOLVER") == "cbc":
