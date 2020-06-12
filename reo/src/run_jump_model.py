@@ -92,7 +92,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 j.include("reo/src/reopt_xpress_model.jl")
             except ImportError:
                 # should only need to instantiate once
-                j.eval('Pkg.instantiate("./julia_envs/Xpress")')
+                j.eval('Pkg.instantiate()')
                 j.include("reo/src/reopt_xpress_model.jl")
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
         elif os.environ.get("SOLVER") == "cbc":
