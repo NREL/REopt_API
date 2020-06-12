@@ -91,6 +91,7 @@ class DataManager:
 
         self.run_id = run_id
         self.n_timesteps = n_timesteps
+        self.steplength = 8760.0 / self.n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
 
     def add_load(self, load):
@@ -892,6 +893,88 @@ class DataManager:
             else:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
+    
+    def _get_REopt_storage_techs_and_params(self):
+        storage_techs = ['Elec']
+        storage_power_cost = list()
+        storage_energy_cost = list()
+        storage_min_power = [self.storage.min_kw]
+        storage_max_power = [self.storage.max_kw]
+        storage_min_energy = [self.storage.min_kwh]
+        storage_max_energy = [self.storage.max_kwh]
+        
+        #Obtain storage costs and params
+        sf = self.site.financial
+        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
+                                                        self.storage.replace_cost_us_dollars_per_kw,
+                                                        self.storage.inverter_replacement_year,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
+                                                        self.storage.incentives.itc_pct,
+                                                        self.storage.incentives.macrs_schedule,
+                                                        self.storage.incentives.macrs_bonus_pct,
+                                                        self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKW -= self.storage.incentives.rebate
+        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
+                                                         self.storage.replace_cost_us_dollars_per_kwh,
+                                                         self.storage.battery_replacement_year,
+                                                         sf.owner_discount_pct,
+                                                         sf.owner_tax_pct,
+                                                         self.storage.incentives.itc_pct,
+                                                         self.storage.incentives.macrs_schedule,
+                                                         self.storage.incentives.macrs_bonus_pct,
+                                                         self.storage.incentives.macrs_itc_reduction)
+        storage_power_cost.append(StorageCostPerKW)
+        storage_energy_cost.append(StorageCostPerKWH)
+        if self.hot_tes != None:
+            HotTESCostPerMMBTU = setup_capital_cost_incentive(self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
+                                                        0,
+                                                        0,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
+                                                        0,
+                                                        self.hot_tes.incentives.macrs_schedule,
+                                                        self.hot_tes.incentives.macrs_bonus_pct,
+                                                        0)
+            storage_techs.append('HotTES')
+            storage_power_cost.append(0.0)
+            storage_energy_cost.append(HotTESCostPerMMBTU)
+            #Note: power not sized in REopt; assume full charge or discharge in one timestep.
+            storage_min_power.append(self.hot_tes.min_mmbtu / self.steplength)
+            storage_max_power.append(self.hot_tes.max_mmbtu / self.steplength)
+            storage_min_energy.append(self.hot_tes.min_mmbtu)
+            storage_max_energy.append(self.hot_tes.max_mmbtu)
+            
+        
+
+        if self.cold_tes != None: 
+            ColdTESCostPerKWHT = setup_capital_cost_incentive(self.cold_tes.installed_cost_us_dollars_per_kwht,  # use full cost as basis
+                                                        0,
+                                                        0,
+                                                        sf.owner_discount_pct,
+                                                        sf.owner_tax_pct,
+                                                        0,
+                                                        self.cold_tes.incentives.macrs_schedule,
+                                                        self.cold_tes.incentives.macrs_bonus_pct,
+                                                        0)
+            storage_techs.append('ColdTES')
+            storage_power_cost.append(0.0)
+            storage_energy_cost.append(ColdTESCostPerKWHT)
+            #Note: power not sized in REopt; assume full charge or discharge in one timestep.
+            storage_min_power.append(self.cold_tes.min_kwht / self.steplength)
+            storage_max_power.append(self.cold_tes.max_kwht / self.steplength)
+            storage_min_energy.append(self.cold_tes.min_kwht)
+            storage_max_energy.append(self.cold_tes.max_kwht)
+        
+        thermal_storage_techs = storage_techs[1:]
+        hot_tes_techs = [] if self.hot_tes == None else ['HotTES']
+        cold_tes_techs = [] if self.cold_tes == None else ['ColdTES']
+        
+        return storage_techs, thermal_storage_techs, hot_tes_techs, \
+            cold_tes_techs, storage_power_cost, storage_energy_cost, \
+            storage_min_power, storage_max_power, storage_min_energy, \
+            storage_max_energy
+            
 
     def finalize(self):
         """
@@ -933,46 +1016,10 @@ class DataManager:
         n_segments_list = [x for x in range(n_segments)]
         n_segments_list_bau = [x for x in range(n_segments_bau)]
 
-        sf = self.site.financial
-        StorageCostPerKW = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kw,  # use full cost as basis
-                                                        self.storage.replace_cost_us_dollars_per_kw,
-                                                        self.storage.inverter_replacement_year,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        self.storage.incentives.itc_pct,
-                                                        self.storage.incentives.macrs_schedule,
-                                                        self.storage.incentives.macrs_bonus_pct,
-                                                        self.storage.incentives.macrs_itc_reduction)
-        StorageCostPerKW -= self.storage.incentives.rebate
-        StorageCostPerKWH = setup_capital_cost_incentive(self.storage.installed_cost_us_dollars_per_kwh,  # there are no cash incentives for kwh
-                                                         self.storage.replace_cost_us_dollars_per_kwh,
-                                                         self.storage.battery_replacement_year,
-                                                         sf.owner_discount_pct,
-                                                         sf.owner_tax_pct,
-                                                         self.storage.incentives.itc_pct,
-                                                         self.storage.incentives.macrs_schedule,
-                                                         self.storage.incentives.macrs_bonus_pct,
-                                                         self.storage.incentives.macrs_itc_reduction)
-
-        HotTESCostPerMMBTU = setup_capital_cost_incentive(self.hot_tes.installed_cost_us_dollars_per_mmbtu,  # use full cost as basis
-                                                        0,
-                                                        0,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        0,
-                                                        self.hot_tes.incentives.macrs_schedule,
-                                                        self.hot_tes.incentives.macrs_bonus_pct,
-                                                        0)
-
-        ColdTESCostPerKWHT = setup_capital_cost_incentive(self.cold_tes.installed_cost_us_dollars_per_kwht,  # use full cost as basis
-                                                        0,
-                                                        0,
-                                                        sf.owner_discount_pct,
-                                                        sf.owner_tax_pct,
-                                                        0,
-                                                        self.cold_tes.incentives.macrs_schedule,
-                                                        self.cold_tes.incentives.macrs_bonus_pct,
-                                                        0)
+        storage_techs, thermal_storage_techs, hot_tes_techs, \
+            cold_tes_techs, storage_power_cost, storage_energy_cost, \
+            storage_min_power, storage_max_power, storage_min_energy, \
+            storage_max_energy = self._get_REopt_storage_techs_and_params()
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
@@ -1091,30 +1138,21 @@ class DataManager:
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
         
-        #Storage types correspond to loads in model, i.e., if heating loads 
-        #exist, then HotTES is included.
-        storage = ['Elec']
-        if self.hot_tes != None:
-            storage.append('HotTES')
-        if self.cold_tes != None:
-            storage.append('ColdTES')
-        thermal_storage = storage[1:]
+        #populate heating and cooling loads with zeros if not included in model.
         if self.heating_load != None:
             heating_load = self.heating_load.load_list
             heating_load_bau = self.heating_load.bau_load_list
-#            storage.append('HotTES')
-#            thermal_storage.append('HotTES')
         else: 
             heating_load = [0.0 for _ in self.load.load_list]
-            heating_load_bau = [0.0 for _ in self.load.load_list]
+            heating_load_bau = [0.0 for _ in self.load.bau_load_list]
         if self.cooling_load != None:
             cooling_load = self.cooling_load.load_list
             cooling_load_bau = self.cooling_load.bau_load_list
-#            storage.append('ColdTES')
-#            thermal_storage.append('ColdTES')
         else: 
             cooling_load = [0.0 for _ in self.load.load_list]
-            cooling_load_bau = [0.0 for _ in self.load.load_list]
+            cooling_load_bau = [0.0 for _ in self.load.bau_load_list]
+            
+        sf = self.site.financial
         
         self.reopt_inputs = {
             'Tech': reopt_techs,
@@ -1138,8 +1176,8 @@ class DataManager:
             'CapCostYInt': cap_cost_yint,
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
-            'StorageCostPerKW': StorageCostPerKW,
-            'StorageCostPerKWH': StorageCostPerKWH,
+            'StorageCostPerKW': storage_power_cost,
+            'StorageCostPerKWH': storage_energy_cost,
             'OMperUnitSize': om_cost_us_dollars_per_kw,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
             'analysis_years': int(sf.analysis_years),
@@ -1161,7 +1199,7 @@ class DataManager:
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': 8760.0 / self.n_timesteps,
+            'TimeStepScaling': self.steplength,
             'AnnualElecLoad': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
@@ -1169,8 +1207,6 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'StorageCostPerKW': StorageCostPerKW,
-	        'StorageCostPerKWH': StorageCostPerKWH,
 	        'FuelCost': tariff_args.fuel_costs,
 	        'ElecRate': tariff_args.energy_costs,
 	        'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
@@ -1193,7 +1229,7 @@ class DataManager:
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
-            'Storage': storage,
+            'Storage': storage_techs,
             'FuelType': fuel_type,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
@@ -1216,7 +1252,7 @@ class DataManager:
             'TechsByNMILRegime':TechsByNMILRegime,
             'HeatingLoad':heating_load,
             'CoolingLoad':cooling_load,
-            'ThermalStorage':thermal_storage,
+            'ThermalStorage':thermal_storage_techs,
             'HotTES':['HotTES'] if self.hot_tes != None else [],
             'ColdTES':['ColdTES'] if self.cold_tes != None else []
             }
@@ -1243,8 +1279,8 @@ class DataManager:
             'CapCostYInt': cap_cost_yint_bau,
             'r_tax_owner': sf.owner_tax_pct,
             'r_tax_offtaker': sf.offtaker_tax_pct,
-            'StorageCostPerKW': StorageCostPerKW,
-            'StorageCostPerKWH': StorageCostPerKWH,
+            'StorageCostPerKW': storage_power_cost,
+            'StorageCostPerKWH': storage_energy_cost,
             'OMperUnitSize': om_cost_us_dollars_per_kw,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
             'analysis_years': int(sf.analysis_years),
@@ -1266,7 +1302,7 @@ class DataManager:
             'DemandLookbackPercent': tariff_args.demand_lookback_percent,
             'TimeStepRatchetsMonth': tariff_args.demand_ratchets_monthly,
             'TimeStepCount': self.n_timesteps,
-            'TimeStepScaling': 8760.0 / self.n_timesteps,
+            'TimeStepScaling': self.steplength,
             'AnnualElecLoad': self.load.annual_kwh,
             'StorageMinChargePcent': self.storage.soc_min_pct,
             'InitSOC': self.storage.soc_init_pct,
@@ -1274,8 +1310,6 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
             # new parameters for reformulation
-            'StorageCostPerKW': StorageCostPerKW,
-	        'StorageCostPerKWH': StorageCostPerKWH,
 	        'FuelCost': tariff_args.fuel_costs_bau,
 	        'ElecRate': tariff_args.energy_costs_bau,
 	        'GridExportRates': tariff_args.grid_export_rates_bau,
@@ -1298,7 +1332,7 @@ class DataManager:
             'SegmentMinSize':segment_min_size_bau,
             'SegmentMaxSize':segment_max_size_bau,
             # Sets that need to be populated
-            'Storage':['Elec'],
+            'Storage':storage_techs,
             'FuelType':fuel_type_bau,
             'Subdivision':subdivisions,
             'PricingTierCount':tariff_args.energy_tiers_num,
@@ -1319,9 +1353,9 @@ class DataManager:
             'CurtailmentTiers':curtailment_tiers_bau,
             'ElectricDerate':electric_derate_bau,
             'TechsByNMILRegime':TechsByNMILRegime_bau,
-            'HeatingLoad':heating_load,
-            'CoolingLoad':cooling_load,
-            'ThermalStorage':thermal_storage,
+            'HeatingLoad':heating_load_bau,
+            'CoolingLoad':cooling_load_bau,
+            'ThermalStorage':thermal_storage_techs,
             'HotTES':['HotTES'] if self.hot_tes != None else [],
             'ColdTES':['ColdTES'] if self.cold_tes != None else []
         }
