@@ -221,7 +221,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
 		@constraint(REopt, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
 					dvThermalProductionYIntercept[t,ts] <= p.CHPThermalProdIntercept[t] * NewMaxSize[t] * binTechIsOnInTS[t,ts]
-		#			)
+					)
 		# Constraint (2b): Thermal Production of CHP 
 		@constraint(REopt, CHPThermalProductionCpn[t in p.CHPTechs, ts in p.TimeStep],
 					dvThermalProduction[t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
@@ -374,7 +374,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) == 
 				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
-				sum(dvProductionToStorage[b,t,ts] b in p.ColdTES, for t in p.CoolingTechs) 
+				sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
 		)
 	end
 	
@@ -382,10 +382,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	if !isempty(p.HeatingTechs)
 		@constraint(REopt, HotThermalLoadCon[ts in p.TimeStep],
 				sum(dvThermalProduction[t,ts] for t in p.CHPTechs) +
-				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.HeatingTechs; !(t in p.CHPTechs)) + 
+				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(dvProductionToStorage[b,t,ts] b in p.HotTES, for t in p.CoolingTechs)  +
+				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.CoolingTechs)  +
 				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
