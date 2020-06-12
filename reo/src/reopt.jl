@@ -190,44 +190,45 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					(p.FuelBurnYInt[t] * binTechIsOnInTS[t,ts])
 				)
 	
-	#if !isempty(CHPTechs)
+	if !isempty(CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
-		#@constraint(REopt, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
-		#			dvFuelUsage[t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
-		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * dvRatedProduction[t,ts]) 					
-		#			)
+		@constraint(REopt, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
+					dvFuelUsage[t,ts]  == #p.FuelBurnAmbientFactor[t,ts] * 
+					    (dvFuelBurnYIntercept[t,th] +  
+						p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * dvRatedProduction[t,ts]) 					
+					)
 					
 		#Constraint (1d): Y-intercept fuel burn for CHP
-		#@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-		#			p.FuelBurnYIntRate[t] * dvSize[t] - NewMaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
-		#			)
-	#end
+		@constraint(REopt, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+					p.FuelBurnYIntRate[t] * dvSize[t] - NewMaxSize[t] * (1-binTechIsOnInTS[t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+					)
+	end
 	
-	#if !isempty(NonCHPHeatingTechs)
+	if !isempty(HeatingTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
-		#@constraint(REopt, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
-		#			dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
-		#			)
-	#end
+		@constraint(REopt, BoilerFuelBurnCon[t in p.HeatingTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
+					dvFuelUsage[t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
+					)
+	end
 	
 	
 	### Constraint set (2): CHP Thermal Production Constraints
-	#if !isempty(CHPTechs)
+	if !isempty(CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * dvSize[t]
-		#			)
+		@constraint(REopt, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
+					dvThermalProductionYIntercept[t,ts] <= p.CHPThermalProdIntercept[t] * dvSize[t]
+					)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(REopt, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * NewMaxSize[t] * binTechIsOnInTS[t,ts]
+		@constraint(REopt, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
+					dvThermalProductionYIntercept[t,ts] <= p.CHPThermalProdIntercept[t] * NewMaxSize[t] * binTechIsOnInTS[t,ts]
 		#			)
 		# Constraint (2b): Thermal Production of CHP 
-		#@constraint(REopt, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
-		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
+		@constraint(REopt, CHPThermalProductionCpn[t in p.CHPTechs, ts in p.TimeStep],
+					dvThermalProduction[t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
+					CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
 		#				)
-		#			)
-	#end
+					)
+	end
 	
 	
 	### Section 3: Switch Constraints
@@ -264,15 +265,15 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
-    #	        dvProductionToStorage[b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
+	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
+    	        dvProductionToStorage[b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+				)
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(REopt, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
-    #	        dvProductionToStorage[b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
+	@constraint(REopt, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
+    	        dvProductionToStorage[b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+				)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
@@ -289,20 +290,20 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
-	#@constraint(REopt, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
-    #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
+	@constraint(REopt, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
+    	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
+					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
+					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
+					)
+				)
 				
 	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
-	#@constraint(REopt, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
-	#				dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
+	@constraint(REopt, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
+    	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
+					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
+					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
+					)
+				)
 	
 	# Constraint (4j): Minimum state of charge
 	@constraint(REopt, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
@@ -317,18 +318,18 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
-	#@constraint(REopt, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= (  
-	#				sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
-	#				)
-	#			)
+	@constraint(REopt, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    	        dvStorageCapPower[b] >= (  
+					sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+					)
+				)
 	
 	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
-	#@constraint(REopt, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= (  
-	#				sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
-	#				)
-	#			)
+	@constraint(REopt, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    	        dvStorageCapPower[b] >= (  
+					sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
+					)
+				)
 	
 	#Constraint (4j): Dispatch from storage is no greater than power capacity
 	@constraint(REopt, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
@@ -347,13 +348,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 				
 	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(REopt, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
-	#			)
+	@constraint(REopt, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.HeatingTechs)
+				)
 	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
-	#			)
+	@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
+				)
 	
 
 	#Constraint (4n): Discharge no greater than power capacity
@@ -367,6 +368,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					)
 	
 	### Constraint set (5) - hot and cold thermal loads - reserved for later
+	
 	
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
