@@ -702,15 +702,6 @@ class LoadProfile(BuiltInProfile):
         self.critical_load_series_kw = critical_loads_kw
 
         if dfm is not None:
-            # Write the annual_kwh to Outputs/annual_kwh.csv to be read by ProcessOutputs & fed to results
-            fp = os.path.join(dfm.paths['outputs'], 'annual_kwh.csv')
-            with open(fp, 'w') as f:
-                f.write(str(self.annual_kwh))
-            # write csv for critical_load_series_kw. needed for outage sim
-            fp = os.path.join(dfm.paths['outputs'], 'critical_load_series_kw.csv')
-            with open(fp, 'w') as f:
-                for ld in critical_loads_kw:
-                    f.write((str(ld)+'\n'))
             dfm.add_load(self)
 
     def _account_for_existing_pv(self, pvs, years):
