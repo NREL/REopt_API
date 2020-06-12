@@ -657,7 +657,6 @@ function add_tou_demand_charge_constraints(m, p)
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
 	end
-
 end
 
 
@@ -677,12 +676,14 @@ function add_util_fixed_and_min_charges(m, p)
 		)
 	else
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
+
 	end
 end
 
 
 function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
+
 		# Capital Costs
 		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +  
 		
