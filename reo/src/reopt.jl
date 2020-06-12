@@ -368,7 +368,27 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					)
 	
 	### Constraint set (5) - hot and cold thermal loads - reserved for later
+	##Constraint (5a): Cold thermal loads
+	if !isempty(p.CoolingTechs)
+		@constraint(REopt, ColdThermalLoadCon[ts in p.TimeStep],
+				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
+				sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) == 
+				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
+				sum(dvProductionToStorage[b,t,ts] b in p.ColdTES, for t in p.CoolingTechs) 
+		)
+	end
 	
+	##Constraint (5b): Hot thermal loads
+	if !isempty(p.HeatingTechs)
+		@constraint(REopt, HotThermalLoadCon[ts in p.TimeStep],
+				sum(dvThermalProduction[t,ts] for t in p.CHPTechs) +
+				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.HeatingTechs; !(t in p.CHPTechs)) + 
+				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
+				p.HeatingLoad[ts] * p.BoilerEfficiency + 
+				sum(dvProductionToStorage[b,t,ts] b in p.HotTES, for t in p.CoolingTechs)  +
+				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+		)
+	end
 	
 	### Constraint set (6): Production Incentive Cap
 	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
@@ -446,7 +466,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
