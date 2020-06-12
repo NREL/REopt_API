@@ -310,10 +310,7 @@ class UrdbParse:
         self.reopt_args.energy_burn_rate, \
         self.reopt_args.energy_burn_intercept, \
         self.reopt_args.energy_costs, \
-        self.reopt_args.fuel_costs, \
         self.reopt_args.grid_export_rates, \
-        self.reopt_args.fuel_burn_rate, \
-        self.reopt_args.fuel_burn_intercept, \
         self.reopt_args.fuel_limit,   \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
@@ -332,10 +329,7 @@ class UrdbParse:
         self.reopt_args.energy_burn_rate_bau, \
         self.reopt_args.energy_burn_intercept_bau, \
         self.reopt_args.energy_costs_bau, \
-        self.reopt_args.fuel_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
-        self.reopt_args.fuel_burn_rate_bau, \
-        self.reopt_args.fuel_burn_intercept_bau, \
         self.reopt_args.fuel_limit_bau,   \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
@@ -625,9 +619,10 @@ class UrdbParse:
         electric_chiller_cop = self.electric_chiller_cop
         absorption_chiller_cop = self.absorption_chiller_cop
 
-        return energy_rates, energy_avail, export_rates, energy_burn_rate, energy_burn_intercept, \
-               chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate, chp_standby_rate, \
-               chp_does_not_reduce_demand_charges, boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
+        return energy_rates, energy_avail, energy_burn_rate, energy_burn_intercept, \
+            energy_costs, grid_export_rates, fuel_limit, rates_by_tech, techs_by_rate, num_sales_tiers, \
+            chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate, chp_standby_rate, \
+            chp_does_not_reduce_demand_charges, boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
 
     def prepare_demand_periods(self, current_rate):
 
