@@ -24,7 +24,7 @@ namespace :app do
         execute "virtualenv", "env", "--python=/bin/python3"
         execute "./env/bin/pip3", "install", "-r", "requirements.txt"
         execute "./env/bin/python", "-c", "'import julia; julia.install()'"
-        execute "julia", "--project='#{release_path}/julia_envs/Xpress/'", "-e", "'import Pkg; Pkg.instantiate();'"
+        execute "julia", "--project='#{release_path}/julia_envs/Xpress/'", "-e", "'import Pkg; Pkg.activate(); Pkg.instantiate();'"
         execute "julia", "--project='#{release_path}/julia_envs/Xpress/'", "./julia_envs/Xpress/precompile.jl"
         execute "julia", "--project='#{release_path}/julia_envs/Xpress/'", "-e", "'ENV[\"PYTHON\"]=\"#{release_path}\"*\"/env/bin/python\"; import Pkg; Pkg.build(\"PyCall\")'"
         execute "./env/bin/python", "-c", "'import julia; julia.install()'"
