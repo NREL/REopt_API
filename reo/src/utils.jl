@@ -114,7 +114,7 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Technology-specific Time-series Factor Parameters ###
 	 ProductionFactor::AxisArray    #f^{p}_{th}  Production factor of technology t and time step h  [unitless]  (NEW)
-     # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
+     #CHPThermalProdSlope # f^{fa}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ha}_{th}: Hot water ambient correction factor of technology t at time step h [unitless] 
 	 # f^{ht}_{th}: Hot water thermal grade correction factor t correction factor of technology t at time step h [unitless] 
 	 # f^{ed}_{th}: Fuel burn ambient correction factor of technology t at time step h [unitless] 
@@ -142,7 +142,7 @@ Base.@kwdef struct Parameter
 	 ChargeEfficiency::AxisArray  # \eta^{esi}_{bt}: Efficiency of charging storage system b using technology t  [fraction] (NEW)
 	 GridChargeEfficiency::Float64   # \eta^{esig}: Efficiency of charging electrical storage using grid power [fraction] (NEW)
      DischargeEfficiency::AxisArray  # \eta^{eso}_{b}: Efficiency of discharging storage system b [fraction] (NEW)
-	 # \eta^{bo}: Boiler efficiency [fraction]
+	 #BoilerEfficiency \eta^{bo}: Boiler efficiency [fraction]
 	 # \eta^{ecop}: Electric chiller efficiency [fraction]
 	 # \eta^{acop}: Absorption chiller efficiency [fraction]
 	 
@@ -190,6 +190,24 @@ Base.@kwdef struct Parameter
      TechToLocation::AxisArray
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
+	 
+	# Added for CHP
+	HotTES::Array{String,1}
+	ColdTES::Array{String,1}
+	ThermalStorage::Array{String,1}
+	CHPTechs::Array{String,1}
+	ElectricChillers::Array{String,1}
+	AbsorptionChillers::Array{String,1}
+	CoolingTechs::Array{String,1}
+	HeatingTechs::Array{String,1}
+	HeatingLoad::Array{Float64,1}
+	CoolingLoad::Array{Float64,1}
+	BoilerEfficiency::Float64
+	ElectricChillerCOP::Float64
+	AbsorptionChillerCOP::Float64
+	
+	
+	
 end
 
 
@@ -284,6 +302,12 @@ function Parameter(d::Dict)
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
     d["MaxGridSales"] = [d["MaxGridSales"]]
+	
+	# CHP Additions
+	
+	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
+	d["CCHPThermalProdIntercept"] = AxisArray(d["CCHPThermalProdIntercept"],d["CHPTechs"])
+	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
 
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
