@@ -277,7 +277,7 @@ end
 
 function add_thermal_production_constraints(m, p)	
 
-	if !isempty(CHPTechs)
+	if !isempty(p.CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
 		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:dvSize][t]
@@ -433,6 +433,29 @@ function add_storage_op_constraints(m, p)
 		m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
 	)
 	
+	### Constraint set (5) - hot and cold thermal loads - reserved for later
+	##Constraint (5a): Cold thermal loads
+	if !isempty(p.CoolingTechs)
+		@constraint(m, ColdThermalLoadCon[ts in p.TimeStep],
+				sum(p.ProductionFactor[t,ts] * m:[dvThermalProduction][t,ts] for t in p.CoolingTechs) + 
+				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) == 
+				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
+				sum(m[:dvProductionToStorage][[b,t,ts] b in p.ColdTES, for t in p.CoolingTechs) 
+		)
+	end
+	
+	##Constraint (5b): Hot thermal loads
+	if !isempty(p.HeatingTechs)
+		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
+				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
+				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs; !(t in p.CHPTechs)) + 
+				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
+				p.HeatingLoad[ts] * p.BoilerEfficiency + 
+				sum(m[:dvProductionToStorage][b,t,ts] b in p.HotTES, for t in p.CoolingTechs)  +
+				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+		)
+	end
+	
 end
 
 
@@ -510,13 +533,13 @@ end
 
 function add_load_balance_constraints(m, p)
 	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
-		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +  
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) + 
-		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
-		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
-			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] + 
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.ElectricTechs) +  
+		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage ) + 
+		sum( dvGridPurchase[u,ts] for u in p.PricingTier ) ==
+		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
+			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
+		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
+		 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
