@@ -248,43 +248,51 @@ function add_fuel_constraints(m, p)
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
-	#if !isempty(CHPTechs)
+	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+				m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
+					(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
+				)
+	
+	if !isempty(CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
-		#@constraint(m, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
-		#			m[:dvFuelUsage][t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
-		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * m[:dvRatedProduction][t,ts]) 					
-		#			)
+		@constraint(m, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
+					m[:dvFuelUsage][t,ts]  == #p.FuelBurnAmbientFactor[t,ts] * 
+					    (m[:dvFuelBurnYIntercept][t,th] +  
+						p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts]) 					
+					)
 					
 		#Constraint (1d): Y-intercept fuel burn for CHP
-		#@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-		#			p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= dvFuelBurnYIntercept[t,th]   					
-		#			)
-	#end
+		@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,th]   					
+					)
+	end
 	
-	#if !isempty(NonCHPHeatingTechs)
+	if !isempty(HeatingTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
-		#@constraint(m, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
-		#			m[:dvFuelUsage][t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
-		#			)
-	#end
-	
-	### Constraint set (2): CHP Thermal Production Constraints
-	#if !isempty(CHPTechs)
+		@constraint(m, BoilerFuelBurnCon[t in p.HeatingTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
+					m[:dvFuelUsage][t,ts]  ==  m[:dvThermalProduction][t,ts] / p.BoilerEfficiency 					
+					)
+	end
+end
+
+function add_thermal_production_constraints(m, p)	
+
+	if !isempty(CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:dvSize][t]
-		#			)
+		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
+					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:dvSize][t]
+					)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
-		#			)
+		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
+					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
+					)
 		# Constraint (2b): Thermal Production of CHP 
-		#@constraint(m, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
-		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + dvThermalProductionYIntercept[t,ts]
-		#				)
-		#			)
-	#end
+		@constraint(m, CHPThermalProductionCpn[t in p.CHPTechs, ts in p.TimeStep],
+					m[:dvThermalProduction][t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
+					CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
+						)
+					)
+	end
 end
 
 
@@ -328,15 +336,15 @@ function add_storage_op_constraints(m, p)
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
-    #	        m[:dvProductionToStorage][b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
+	@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
+    	        dvProductionToStorage[b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+				)
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
-    #	        m[:dvProductionToStorage][b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
+	@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
+    	        dvProductionToStorage[b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+				)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
 		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
@@ -353,20 +361,21 @@ function add_storage_op_constraints(m, p)
 	)
 	
 	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
-	#@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
-	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
+	@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
+    	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
+					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+					)
+				)
 				
 	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
-	#@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
-	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
+	@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
+    	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
+					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+					)
+				)
+
 	
 	# Constraint (4j): Minimum state of charge
 	@constraint(m, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
@@ -381,18 +390,18 @@ function add_storage_op_constraints(m, p)
 	)
 	
 	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
-	#@constraint(m, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= (  
-	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
-	#				)
-	#			)
+	@constraint(m, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    	        m[:dvStorageCapPower][b] >= (  
+					sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
+					)
+				)
 	
 	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
-	#@constraint(m, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= (  
-	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
-	#				)
-	#			)
+	@constraint(m, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    	        m[:dvStorageCapPower][b] >= (  
+					sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
+					)
+				)
 	
 	#Constraint (4j): Dispatch from storage is no greater than power capacity
 	@constraint(m, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
@@ -411,13 +420,13 @@ function add_storage_op_constraints(m, p)
 	)
 				
 	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(m, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
-	#			)
+	@constraint(m, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
+				)
 	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(m, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
-	#			)
+	@constraint(m, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
+				)
 					
 	#Constraint (4n): State of charge upper bound is storage system size
 	@constraint(m, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
