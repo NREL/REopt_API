@@ -1168,6 +1168,26 @@ class DataManager:
             
         sf = self.site.financial
         
+        ### Populate CHP, heatin, cooling load technologies
+        chp_techs = [t for t in reopt_techs if t.lower().startswith('chp')]
+        chp_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp')]
+        
+        electric_chillers = [t for t in reopt_techs if t.lower().startswith('elecchl')]
+        electric_chillers_bau = [t for t in reopt_techs_bau if t.lower().startswith('elecchl')]
+        
+        absorption_chillers = [t for t in reopt_techs if t.lower().startswith('absorpchl')]
+        absorption_chillers_bau = [t for t in reopt_techs_bau if t.lower().startswith('absorpchl')]
+        
+        cooling_techs = [t for t in reopt_techs if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
+        cooling_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('elecchl') or t.lower().startswith('absorpchl')]
+                
+        heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().startswith('boiler')]
+        heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().startswith('boiler')]
+        
+        boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
+        elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
+        absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
+        
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1269,7 +1289,15 @@ class DataManager:
             'CoolingLoad':cooling_load,
             'ThermalStorage':thermal_storage_techs,
             'HotTES':['HotTES'] if self.hot_tes != None else [],
-            'ColdTES':['ColdTES'] if self.cold_tes != None else []
+            'ColdTES':['ColdTES'] if self.cold_tes != None else [],
+            'CHPTechs':chp_techs,
+            'ElectricChillers':electric_chillers,
+            'AbsorptionChillers':absorption_chillers,
+            'CoolingTechs':cooling_techs,
+            'HeatingTechs':heating_techs,
+            	'BoilerEfficiency':boiler_efficiency,
+            	'ElectricChillerCOP':elec_chiller_cop,
+            	'AbsorptionChillerCOP':absorp_chiller_cop
             }
 
         self.reopt_inputs_bau = {
@@ -1373,5 +1401,13 @@ class DataManager:
             'CoolingLoad':cooling_load_bau,
             'ThermalStorage':thermal_storage_techs,
             'HotTES':['HotTES'] if self.hot_tes != None else [],
-            'ColdTES':['ColdTES'] if self.cold_tes != None else []
+            'ColdTES':['ColdTES'] if self.cold_tes != None else [],
+            'CHPTechs':chp_techs_bau,
+            'ElectricChillers':electric_chillers_bau,
+            'AbsorptionChillers':absorption_chillers_bau,
+            'CoolingTechs':cooling_techs_bau,
+            'HeatingTechs':heating_techs_bau,
+            	'BoilerEfficiency':boiler_efficiency,
+            	'ElectricChillerCOP':elec_chiller_cop,
+            	'AbsorptionChillerCOP':absorp_chiller_cop
         }
