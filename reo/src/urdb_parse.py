@@ -573,9 +573,9 @@ class UrdbParse:
         if len(techs) > 0:
             num_sales_tiers = 3
             techs_by_rate = [list(), list(), list()]
-            grid_export_rates = operator.add(grid_export_rates, positive_energy_costs)
-            grid_export_rates = operator.add(grid_export_rates, wholesale_rate_costs)
-            grid_export_rates = operator.add(grid_export_rates, excess_rate_costs)
+            grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
+            grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
+            grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
         else: 
             num_sales_tiers = 0
             techs_by_rate = []
