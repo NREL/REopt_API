@@ -337,13 +337,13 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts]  <= 
-				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+    	        m[:dvProductionToStorage][b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
 				)
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
 	@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts]  <= 
-				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+    	        m[:dvProductionToStorage][b,t,ts]  <= 
+				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
 				)
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
@@ -440,7 +440,7 @@ function add_storage_op_constraints(m, p)
 				sum(p.ProductionFactor[t,ts] * m:[dvThermalProduction][t,ts] for t in p.CoolingTechs) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) == 
 				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
-				sum(m[:dvProductionToStorage][[b,t,ts] b in p.ColdTES, for t in p.CoolingTechs) 
+				sum(m[:dvProductionToStorage][[b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
 		)
 	end
 	
@@ -448,7 +448,7 @@ function add_storage_op_constraints(m, p)
 	if !isempty(p.HeatingTechs)
 		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
 				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
-				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.HeatingTechs; !(t in p.CHPTechs)) + 
+				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
 				sum(m[:dvProductionToStorage][b,t,ts] b in p.HotTES, for t in p.CoolingTechs)  +
