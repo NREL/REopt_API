@@ -450,7 +450,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "total_chp_fuel_cost_us_dollars"] = self.results_dict.get("total_chp_fuel_cost")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_chp_fuel_cost_us_dollars"] = self.results_dict.get("year_one_chp_fuel_cost")    
-            elif name == "Generator":
+                elif name == "Generator":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("generator_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["fuel_used_gal"] = self.results_dict.get(
                         "fuel_used_gal")
