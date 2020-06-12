@@ -109,7 +109,7 @@ class DataManager:
         
     def add_load_chiller_electric(self, load):
         self.LoadProfile["year_one_cooling_load_series_mmbtu"] = load.load_list
-        self.LoadProfile["annual_cooling_kwh"] = load.annual_mmbtu
+        self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
         self.cooling_load = load
         
     def add_boiler(self, boiler):
@@ -1141,16 +1141,12 @@ class DataManager:
         #populate heating and cooling loads with zeros if not included in model.
         if self.heating_load != None:
             heating_load = self.heating_load.load_list
-            heating_load_bau = self.heating_load.bau_load_list
         else: 
             heating_load = [0.0 for _ in self.load.load_list]
-            heating_load_bau = [0.0 for _ in self.load.bau_load_list]
         if self.cooling_load != None:
             cooling_load = self.cooling_load.load_list
-            cooling_load_bau = self.cooling_load.bau_load_list
         else: 
             cooling_load = [0.0 for _ in self.load.load_list]
-            cooling_load_bau = [0.0 for _ in self.load.bau_load_list]
             
         sf = self.site.financial
         
@@ -1382,8 +1378,8 @@ class DataManager:
             'CurtailmentTiers': curtailment_tiers_bau,
             'ElectricDerate': electric_derate_bau,
             'TechsByNMILRegime': TechsByNMILRegime_bau,
-            'HeatingLoad': heating_load_bau,
-            'CoolingLoad': cooling_load_bau,
+            'HeatingLoad': heating_load,
+            'CoolingLoad': cooling_load,
             'ThermalStorage': thermal_storage_techs,
             'HotTES': hot_tes_techs,
             'ColdTES': cold_tes_techs,
