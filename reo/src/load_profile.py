@@ -331,7 +331,7 @@ default_annual_electric_loads = {
 
 class BuiltInProfile(object):
 
-    library_path = os.path.join('Xpress', 'DatLibrary', 'LoadProfiles')
+    library_path = os.path.join('input_files', 'LoadProfiles')
     Default_city = namedtuple("Default_city", "name lat lng tmyid zoneid")
     default_cities = [
         Default_city('Miami', 25.761680, -80.191790, 722020, '1A'),
