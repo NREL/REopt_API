@@ -641,13 +641,13 @@ class DataManager:
                discharge_efficiency, techs_charging_storage, electric_derate
         """
         production_factor = list()
-        chp_thermal_prod_factor = list()
         tech_to_load = list()
         tech_to_location = list()
         derate = list()
         electric_derate = list()
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
+        chp_thermal_prod_factor = list()
 
         charge_efficiency = list()
         discharge_efficiency = list()
@@ -655,7 +655,7 @@ class DataManager:
         for tech in techs:
             if eval('self.' + tech) is not None:
                 derate.append(eval('self.' + tech + '.derate'))
-                if tech.lower() != 'chp':
+                if not tech.lower().startswith('chp'):
                     for pf in eval('self.' + tech + '.prod_factor'):
                         production_factor.append(float(pf))
                         electric_derate.append(1.0)
@@ -663,9 +663,9 @@ class DataManager:
                     pf_electric, pf_hot_thermal = self.chp.prod_factor
                     for pf in pf_electric:
                         production_factor.append(float(pf))
-                        electric_derate.append(1.0)
-                    for pf in pf_hot_thermal:
-                        chp_thermal_prod_factor.append(float(pf))
+                    chp_thermal_prod_factor.append([float(pf) for pf in pf_hot_thermal])
+                    for pf in self.chp.chp_power_derate:
+                        electric_derate.append(float(pf))
 
                 charge_efficiency.append(self.storage.rectifier_efficiency_pct *
                                                  self.storage.internal_efficiency_pct**0.5)
@@ -720,7 +720,7 @@ class DataManager:
         return tech_to_load, tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, \
                production_factor, charge_efficiency, discharge_efficiency, \
-               electric_derate
+               electric_derate, chp_thermal_prod_factor
                
 
     def _get_REopt_techs(self, techs):
@@ -992,11 +992,11 @@ class DataManager:
         tech_to_load, tech_to_location, derate, om_cost_us_dollars_per_kw, \
                om_cost_us_dollars_per_kwh, production_factor, \
                charge_efficiency, discharge_efficiency, \
-               electric_derate = self._get_REopt_array_tech_load(self.available_techs)
+               electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_load_bau, tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
                om_cost_us_dollars_per_kwh_bau, production_factor_bau, \
                charge_efficiency_bau, discharge_efficiency_bau, \
-               electric_derate_bau  = self._get_REopt_array_tech_load(self.bau_techs)
+               electric_derate_bau, chp_thermal_prod_factor_bau  = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -1057,26 +1057,6 @@ class DataManager:
                 seg_by_tech_subdivision.append(n_segments)
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
-
-        if len(reopt_techs) == 0:
-            techs_by_fuel_type = []
-        else:
-            techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
-        if len(reopt_techs_bau) == 0:
-            techs_by_fuel_type_bau = []
-        else:
-            techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
-
-        fuel_limit = [0.0 for _ in fuel_type]
-        fuel_limit_bau = [0.0 for _ in fuel_type_bau]
-        for f in range(len(fuel_type)):
-            for t in techs_by_fuel_type[f]:
-                tech_idx = reopt_techs.index(t)
-                fuel_limit[f] += tariff_args.energy_avail[tech_idx]
-        for f in range(len(fuel_type_bau)):
-            for t in techs_by_fuel_type_bau[f]:
-                tech_idx = reopt_techs_bau.index(t)
-                fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -1232,7 +1212,7 @@ class DataManager:
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
 	        'ElecLoad': self.load.load_list,
-	        'FuelLimit': fuel_limit,
+	        'FuelLimit': tariff_args.fuel_limit,
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency,
@@ -1246,13 +1226,13 @@ class DataManager:
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
             'Storage': storage_techs,
-            'FuelType': fuel_type,
+            'FuelType': tariff_args.fuel_types,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
             'SegByTechSubdivision': seg_by_tech_subdivision,
             'TechsInClass': techs_in_class,
-            'TechsByFuelType': techs_by_fuel_type,
+            'TechsByFuelType': tariff_args.techs_by_fuel_type,
             'ElectricTechs': electric_techs,
             'FuelBurningTechs': fb_techs,
             'TechsNoTurndown': techs_no_turndown,
@@ -1278,7 +1258,8 @@ class DataManager:
             'HeatingTechs': heating_techs,
             	'BoilerEfficiency': boiler_efficiency,
             	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop
+            	'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdFactor': chp_thermal_prod_factor
             }
 
         self.reopt_inputs_bau = {
@@ -1343,7 +1324,7 @@ class DataManager:
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
 	        'ElecLoad': self.load.bau_load_list,
-	        'FuelLimit': fuel_limit_bau,
+	        'FuelLimit': tariff_args.fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency_bau,
@@ -1357,14 +1338,14 @@ class DataManager:
             'SegmentMaxSize': segment_max_size_bau,
             # Sets that need to be populated
             'Storage': storage_techs,
-            'FuelType': fuel_type_bau,
+            'FuelType': tariff_args.fuel_types_bau,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': [],
             'SubdivisionByTech': subdivisions_by_tech_bau,
             'SegByTechSubdivision': seg_by_tech_subdivision_bau,
             'TechsInClass': techs_in_class_bau,
-            'TechsByFuelType': techs_by_fuel_type_bau,
+            'TechsByFuelType': tariff_args.techs_by_fuel_type_bau,
             'ElectricTechs': electric_techs_bau,
             'FuelBurningTechs': fb_techs_bau,
             'TechsNoTurndown': techs_no_turndown_bau,
@@ -1390,5 +1371,9 @@ class DataManager:
             'HeatingTechs': heating_techs_bau,
             	'BoilerEfficiency': boiler_efficiency,
             	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop
+            	'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
+            'CCHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
+            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
+            'CHPThermalProdFactor': chp_thermal_prod_factor_bau
         }

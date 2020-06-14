@@ -99,9 +99,9 @@ class REoptArgs:
         self.chp_does_not_reduce_demand_charges = 0
 
         # Unique parameters for chp and new boiler/chiller efficiency/cop
-        self.chp_thermal_prod_slope = 0
-        self.chp_thermal_prod_intercept = 0
-        self.chp_derate = 0
+        self.chp_thermal_prod_slope = 0.0
+        self.chp_thermal_prod_intercept = 0.0
+        self.chp_derate = 0.0
         self.boiler_efficiency = 0.32
         self.electric_chiller_cop = 0.32
         self.absorption_chiller_cop = 0.32
@@ -238,17 +238,17 @@ class UrdbParse:
                                       self.days_in_month[month] * 24 * self.time_steps_per_hour)
 
         if chp is not None:
-            self.chp_fuel_slope = chp.fuel_burn_slope
-            self.chp_fuel_intercept = chp.fuel_burn_intercept
-            self.chp_thermal_prod_slope = chp.thermal_prod_slope
-            self.chp_thermal_prod_intercept = chp.thermal_prod_intercept
-            self.chp_derate = chp.chp_power_derate
+            self.chp_fuel_burn_slope = [chp.fuel_burn_slope]
+            self.chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
+            self.chp_thermal_prod_slope = [chp.thermal_prod_slope]
+            self.chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
+            self.chp_derate = [chp.derate]
         else:
-            self.chp_fuel_slope = 0
-            self.chp_fuel_intercept = 0
-            self.chp_thermal_prod_slope = 0
-            self.chp_thermal_prod_intercept = 0
-            self.chp_derate = 0
+            self.chp_fuel_burn_slope = list()
+            self.chp_fuel_burn_intercept = list()
+            self.chp_thermal_prod_slope = list()
+            self.chp_thermal_prod_intercept = list()
+            self.chp_derate = list()
 
         if boiler is not None:
             self.boiler_efficiency = boiler.boiler_efficiency
@@ -306,17 +306,19 @@ class UrdbParse:
             self.prepare_fixed_charges(current_rate)
 
         self.reopt_args.energy_rates, \
-        self.reopt_args.energy_avail,  \
+        self.reopt_args.fuel_limit,  \
+        self.reopt_args.fuel_types,  \
+        self.reopt_args.techs_by_fuel_type,  \
         self.reopt_args.energy_burn_rate, \
         self.reopt_args.energy_burn_intercept, \
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
-        self.reopt_args.fuel_limit,   \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
         self.reopt_args.num_sales_tiers, \
         self.reopt_args.chp_thermal_prod_slope, \
         self.reopt_args.chp_thermal_prod_intercept, \
+        self.reopt_args.chp_fuel_burn_intercept, \
         self.reopt_args.chp_derate, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month, \
         self.reopt_args.chp_does_not_reduce_demand_charges, \
@@ -325,17 +327,19 @@ class UrdbParse:
         self.reopt_args.absorption_chiller_cop = self.prepare_techs_and_loads(self.techs)
 
         self.reopt_args.energy_rates_bau, \
-        self.reopt_args.energy_avail_bau, \
+        self.reopt_args.fuel_limit_bau,  \
+        self.reopt_args.fuel_types_bau,  \
+        self.reopt_args.techs_by_fuel_type_bau,  \
         self.reopt_args.energy_burn_rate_bau, \
         self.reopt_args.energy_burn_intercept_bau, \
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
-        self.reopt_args.fuel_limit_bau,   \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
         self.reopt_args.num_sales_tiers_bau, \
         self.reopt_args.chp_thermal_prod_slope_bau, \
         self.reopt_args.chp_thermal_prod_intercept_bau, \
+        self.reopt_args.chp_fuel_burn_intercept_bau, \
         self.reopt_args.chp_derate_bau, \
         self.reopt_args.chp_standby_rate_us_dollars_per_kw_per_month_bau, \
         self.reopt_args.chp_does_not_reduce_demand_charges_bau, \
@@ -527,38 +531,33 @@ class UrdbParse:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
             excess_rate_costs = [1.0 * x for x in self.excess_rate]
 
-        # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        energy_rates = []
-        # FuelAvail: array(Tech, FuelBin)
-        energy_avail = []
-        # FuelCost(FuelType)
-        fuel_costs = []
-        fuel_limit = []
-
+        # FuelCost = array(FuelType, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
+        energy_rates = list()
+        # FuelLimit: array(FuelType)
+        fuel_limit = list()
+        # Set FuelType
+        fuel_types = list()
+        # Set TechsByFuelType(FuelType)
+        techs_by_fuel_type = list()
         for tech in techs:
-            if tech.lower() == 'util':
-                energy_rates += energy_costs
-                energy_avail += [self.big_number] * self.reopt_args.energy_tiers_num
-            else:
-                # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
-                for _ in range(self.reopt_args.energy_tiers_num):
-                    if tech.lower() == 'generator':
-                        # generator fuel is not free anymore since generator is also a design variable
-                        energy_rates = operator.add(energy_rates, self.diesel_cost_array)
-                        energy_avail.append(self.generator_fuel_avail)
-                        # TODO figure out how to populate fuel costs for all fb techs
-                        fuel_costs.append(self.diesel_fuel_cost_us_dollars_per_gallon)
-                        fuel_limit.append(self.generator_fuel_avail)
-                    elif tech.lower() == 'boiler':
-                        energy_rates = operator.add(energy_rates, self.boiler_fuel_rate_array)
-                        energy_avail.append(self.big_number)
-                    elif tech.lower() == 'chp':
-                        energy_rates = operator.add(energy_rates, self.chp_fuel_rate_array)
-                        energy_avail.append(self.big_number)
-                    else:
-                        # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
-                        energy_rates = operator.add(energy_rates, self.zero_array)
-                        energy_avail.append(0.0)
+            # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
+            if tech.lower() == 'generator':
+                # generator fuel is not free anymore since generator is also a design variable
+                energy_rates = operator.add(energy_rates, self.diesel_cost_array)
+                fuel_limit.append(self.generator_fuel_avail)
+                # TODO figure out how to populate fuel costs for all fb techs
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("DIESEL")
+            elif tech.lower() == 'boiler':
+                energy_rates = operator.add(energy_rates, self.boiler_fuel_rate_array)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("BOILERFUEL")
+            elif tech.lower() == 'chp':
+                energy_rates = operator.add(energy_rates, self.chp_fuel_rate_array)
+                fuel_limit.append(self.big_number)
+                techs_by_fuel_type.append([tech.upper()])
+                fuel_types.append("CHPGAS")
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
@@ -583,46 +582,48 @@ class UrdbParse:
                 techs_by_rate[1].append(tech.upper())
                 techs_by_rate[2].append(tech.upper())
 
-        # FuelBurnRateM = array(Tech,Load,FuelBin)
+        # FuelBurnSlope = array(Tech)
         energy_burn_rate = []
         for tech in techs:
-            for load in self.loads:
-                for _ in range(self.reopt_args.energy_tiers_num):
-                    if tech.lower() == 'util':
-                        energy_burn_rate.append(1.0)
-                    elif tech.lower() == 'boiler':
-                        energy_burn_rate.append(1 / self.boiler_efficiency)
-                    elif tech.lower() == 'generator' and load != 'boiler' and load != 'tes':
-                        energy_burn_rate.append(self.generator_fuel_slope)
-                    elif tech.lower() == 'chp' and load != 'boiler' and load != 'tes':
-                        energy_burn_rate.append(self.chp_fuel_slope)
-                    else:
-                        energy_burn_rate.append(0.0)
+            if tech.lower() == 'util':
+                energy_burn_rate.append(1.0)
+            elif tech.lower() == 'boiler':
+                energy_burn_rate.append(1 / self.boiler_efficiency)
+            elif tech.lower() == 'generator' and load != 'boiler' and load != 'tes':
+                energy_burn_rate.append(self.generator_fuel_slope)
+            elif tech.lower() == 'chp' and load != 'boiler' and load != 'tes':
+                energy_burn_rate.append(self.chp_fuel_slope)
+            else:
+                energy_burn_rate.append(0.0)
 
-        # FuelBurnRateB = array(Tech,FuelBin)
+        # FuelBurnYInt = array(Tech)
         energy_burn_intercept = []
+        chp_energy_burn_yint = []
         for tech in techs:
             if tech.lower() == 'generator':
                 energy_burn_intercept.append(self.generator_fuel_intercept)
             elif tech.lower() == 'chp':
                 energy_burn_intercept.append(self.chp_fuel_intercept)
+                chp_energy_burn_yint.append(self.chp.chp_fuel_intercept)
             else:
                 energy_burn_intercept.append(0)
 
         # CHP-specific parameters
         chp_thermal_prod_slope = self.chp_thermal_prod_slope
         chp_thermal_prod_intercept = self.chp_thermal_prod_intercept
-        chp_derate = self.chp_derate
+        chp_fuel_burn_intercept = self.chp_fuel_burn_intercept
+        chp_derate = self.chp_derate #[az] TODO: where is this used in mosel?
         chp_standby_rate = self.chp_standby_rate_us_dollars_per_kw_per_month
         chp_does_not_reduce_demand_charges = self.chp_does_not_reduce_demand_charges
         boiler_efficiency = self.boiler_efficiency
         electric_chiller_cop = self.electric_chiller_cop
         absorption_chiller_cop = self.absorption_chiller_cop
 
-        return energy_rates, energy_avail, energy_burn_rate, energy_burn_intercept, \
-            energy_costs, grid_export_rates, fuel_limit, rates_by_tech, techs_by_rate, num_sales_tiers, \
-            chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_derate, chp_standby_rate, \
-            chp_does_not_reduce_demand_charges, boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
+        return energy_rates, fuel_limit, fuel_types, techs_by_fuel_type, energy_burn_rate, energy_burn_intercept, \
+            energy_costs, grid_export_rates, rates_by_tech, techs_by_rate, num_sales_tiers, \
+            chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, \
+            chp_derate, chp_standby_rate, chp_does_not_reduce_demand_charges, \
+            boiler_efficiency, electric_chiller_cop, absorption_chiller_cop
 
     def prepare_demand_periods(self, current_rate):
 
