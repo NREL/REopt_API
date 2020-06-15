@@ -221,7 +221,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 					)
 		# Constraint (2b): Thermal Production of CHP 
 		@constraint(REopt, CHPThermalProductionCpn[t in p.CHPTechs, ts in p.TimeStep],
-					dvThermalProduction[t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
+					p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
 					CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
 		#				)
 					)
@@ -378,7 +378,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	##Constraint (5b): Hot thermal loads
 	if !isempty(p.HeatingTechs)
 		@constraint(REopt, HotThermalLoadCon[ts in p.TimeStep],
-				sum(dvThermalProduction[t,ts] for t in p.CHPTechs) +
+				sum(p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CHPTechs) +
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
@@ -1018,7 +1018,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     else
         status = "not optimal"
     end
-
+	results["status"] = status
+	
 	#=
 	print("TotalTechCapCosts:")
 	println(value(TotalTechCapCosts))

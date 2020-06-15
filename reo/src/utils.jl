@@ -208,7 +208,7 @@ Base.@kwdef struct Parameter
 	CHPThermalProdSlope::AxisArray
 	CHPThermalProdIntercept::AxisArray
 	FuelBurnYIntRate::AxisArray
-	
+	CHPThermalProdFactor::AxisArray
 	
 end
 
@@ -312,6 +312,7 @@ function Parameter(d::Dict)
 	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
 	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
 	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
+	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
 
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
