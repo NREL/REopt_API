@@ -282,13 +282,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "LoadProfileBoilerFuel":
                     lpbf = LoadProfileBoilerFuelModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = lpbf.annual_calculated_boiler_fuel_load_mmbtu_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.self.po.get_load_profile_boiler_fuel()
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = self.po.get_load_profile_boiler_thermal()
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = self.dm["LoadProfile"].get("year_one_boiler_thermal_load_series_mmbtu_per_hr")
                 elif name == "LoadProfileChillerElectric":
                     lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_heating_load_series_mmbtu")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = self.dm["LoadProfile"].get("year_one_cooling_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = self.dm["LoadProfile"].get("year_one_chiller_thermal_load_series_ton")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
@@ -502,22 +502,22 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_energy_produced_mmbtu"] = self.results_dict.get("year_one_chp_thermal_energy_produced")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_production_series_kw"] = self.po.get_chp_electric_production()
+                        "year_one_electric_production_series_kw"] = self.results_dict.get("chp_electric_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_battery_series_kw"] = self.po.get_chp_to_batt()
+                        "year_one_to_battery_series_kw"] = self.results_dict.get("chp_to_battery_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_load_series_kw"] = self.po.get_chp_to_load()
+                        "year_one_to_load_series_kw"] = self.results_dict.get("chp_electric_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_grid_series_kw"] = self.po.get_chp_to_grid()
+                        "year_one_to_grid_series_kw"] = self.results_dict.get("chp_to_grid_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_to_load_series_mmbtu_per_hour"] = self.po.get_chp_thermal_to_load()
+                        "year_one_thermal_to_load_series_mmbtu_per_hour"] = self.results_dict.get("chp_thermal_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_to_tes_series_mmbtu_per_hour"] = self.po.get_chp_thermal_to_tes()
+                        "year_one_thermal_to_tes_series_mmbtu_per_hour"] = self.results_dict.get("chp_thermal_to_tes_series")
                 elif name == "Boiler":
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_boiler_fuel_consumption_series_mmbtu_per_hr"] = self.po.get_fuel_to_boiler()
+                        "year_one_boiler_fuel_consumption_series_mmbtu_per_hr"] = self.results_dict.get("fuel_to_boiler_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_boiler_thermal_production_series_mmbtu_per_hr"] = self.po.get_boiler_thermal()
+                        "year_one_boiler_thermal_production_series_mmbtu_per_hr"] = self.results_dict.get("boiler_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -526,44 +526,44 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_thermal_production_bau_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_mmbtu_bau")
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_to_load_series_ton"] = self.po.get_elecchl_thermal_to_load()
+                        "year_one_electric_chiller_thermal_to_load_series_ton"] = self.results_dict.get("electric_chiller_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_to_tes_series_ton"] = self.po.get_elecchl_thermal_to_tes()
+                        "year_one_electric_chiller_thermal_to_tes_series_ton"] = self.results_dict.get("electric_chiller_to_tes_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_electric_consumption_series_kw"] = self.po.get_elecchl_elec_consum()
+                        "year_one_electric_chiller_electric_consumption_series_kw"] = self.results_dict.get("electric_chiller_consumption_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_electric_consumption_kwh"] = self.results_dict.get("year_one_electric_chiller_electric_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh") / 3.51685
+                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_electric_kwh") / 3.51685
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_thermal_production_bau_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh_bau") / 3.51685
                 elif name == "AbsorptionChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_ton"] = self.results_dict.get("absorpchl_kw") / 3.51685
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_load_series_ton"] = self.po.get_absorpchl_thermal_to_load()
+                        "year_one_absorp_chl_thermal_to_load_series_ton"] = self.results_dict.get("absoprtion_chiller_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = self.po.get_absorpchl_thermal_to_tes()
+                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = self.results_dict.get("absoprtion_chiller_to_tes_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"] = self.po.get_absorpchl_thermal_consum()
+                        "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"] = self.results_dict.get("absoprtion_chiller_consumption_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_absorp_chl_thermal_consumption_mmbtu"] = self.results_dict.get("year_one_absorp_chiller_thermal_consumption_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_prod_kwh") / 3.51685
+                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_consumption_mmbtu") / 3.51685
                 elif name == "HotTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("hot_tes_size_mmbtu",0) / 0.000163
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_from_hot_tes_series_mmbtu_per_hr"] = self.po.get_thermal_from_hot_tes()
+                        "year_one_thermal_from_hot_tes_series_mmbtu_per_hr"] = self.results_dict.get("hot_tes_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_hot_tes_soc_series_pct"] = self.po.get_hot_tes_soc(self.results_dict.get('hot_tes_size_mmbtu'))
+                        "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
                 elif name == "ColdTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("cold_tes_size_kwht",0) / 0.0287
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_thermal_from_cold_tes_series_ton"] = self.po.get_thermal_from_cold_tes()
+                        "year_one_thermal_from_cold_tes_series_ton"] = self.results_dict.get("cold_tes_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_cold_tes_soc_series_pct"] = self.po.get_cold_tes_soc(self.results_dict.get('cold_tes_size_kwht') / 3.51685)
+                        "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
 
             # outputs that depend on multiple object results:
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
