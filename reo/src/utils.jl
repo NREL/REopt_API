@@ -205,7 +205,9 @@ Base.@kwdef struct Parameter
 	BoilerEfficiency::Float64
 	ElectricChillerCOP::Float64
 	AbsorptionChillerCOP::Float64
-	
+	CHPThermalProdSlope::AxisArray
+	CHPThermalProdIntercept::AxisArray
+	FuelBurnYIntRate::AxisArray
 	
 	
 end
@@ -227,11 +229,15 @@ function Parameter(d::Dict)
 		"TechsBySalesTier",
 		"SalesTiersByTech",
 		"NMILRegime",
-		"TechsByNMILRegime"
+		"TechsByNMILRegime",
+		"TechsByFuelType",
+		"FuelCost"
      )
-    if typeof(d["Tech"]) === Array{Any, 1}  # came from Python as empty array
-        d["Tech"] = convert(Array{String, 1}, d["Tech"])
-    end
+	for x in ["Tech","FuelType","CHPTechs"]
+		if typeof(d[x]) === Array{Any, 1}  # came from Python as empty array
+			d[x] = convert(Array{String, 1}, d[x])
+		end
+	end
     for x in can_be_empty
         if typeof(x) === Array{Any, 1}  # came from Python as empty array
             d[x] = convert(Array{Float64, 1}, d[x])
@@ -281,7 +287,7 @@ function Parameter(d::Dict)
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
     d["StorageCostPerKWH"] = AxisArray(d["StorageCostPerKWH"], d["Storage"])
-    d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
+	d["FuelCost"] = vector_to_axisarray(d["FuelCost"], d["FuelType"], d[:TimeStep])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
     d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
     d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
@@ -303,9 +309,8 @@ function Parameter(d::Dict)
     d["MaxGridSales"] = [d["MaxGridSales"]]
 	
 	# CHP Additions
-	
 	d["CHPThermalProdSlope"] = AxisArray(d["CHPThermalProdSlope"],d["CHPTechs"])
-	d["CCHPThermalProdIntercept"] = AxisArray(d["CCHPThermalProdIntercept"],d["CHPTechs"])
+	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
 	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
 
     # Indexed Sets

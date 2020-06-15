@@ -1274,6 +1274,9 @@ class DataManager:
             	'BoilerEfficiency': boiler_efficiency,
             	'ElectricChillerCOP': elec_chiller_cop,
             	'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
+            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
+            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
             'CHPThermalProdFactor': chp_thermal_prod_factor
             }
 
@@ -1387,8 +1390,8 @@ class DataManager:
             	'BoilerEfficiency': boiler_efficiency,
             	'ElectricChillerCOP': elec_chiller_cop,
             	'AbsorptionChillerCOP': absorp_chiller_cop,
-            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
-            'CCHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
-            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
+            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope_bau,
+            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept_bau,
+            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept_bau,
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau
         }
