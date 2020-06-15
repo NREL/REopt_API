@@ -1049,7 +1049,96 @@ function add_pv_results(m, p, r::Dict)
         end
 	end
 end
-
+	
+function add_chp_results(m, p, r::Dict)
+	##CHP Results go here; need to populate expressions for first collection
+	if !isempty(p.CHPTechs)
+		results["chp_kw"] = []
+		results["year_one_chp_fuel_used"] = []
+		results["year_one_chp_electric_energy_produced"] = []
+		results["year_one_chp_thermal_energy_produced"] = []
+		results["chp_electric_production_series"] = []
+		results["chp_to_battery_series"] = []
+		results["chp_electric_to_load_series"] = []
+		results["chp_to_grid_series"] = []
+		results["chp_thermal_to_load_series"] = []
+		results["chp_thermal_to_tes_series"] = []
+	else
+		results["chp_kw"] = 0.0
+		results["year_one_chp_fuel_used"] = 0.0
+		results["year_one_chp_electric_energy_produced"] = 0.0
+		results["year_one_chp_thermal_energy_produced"] = 0.0
+		results["chp_electric_production_series"] = []
+		results["chp_to_battery_series"] = []
+		results["chp_electric_to_load_series"] = []
+		results["chp_to_grid_series"] = []
+		results["chp_thermal_to_load_series"] = []
+		results["chp_thermal_to_tes_series"] = []
+	end
+	
+	##Boiler results go here; need to populate expressions for first collection
+	if !isempty(p.HeatingTechs)  #Right now assuming a boiler is present if any heating techs exist
+		results["fuel_to_boiler_series"] = []
+		results["boiler_thermal_production_series"] = []
+		results["year_one_fuel_to_boiler_mmbtu"] = 0.0
+		results["year_one_boiler_thermal_production_mmbtu"] = 0.0
+	else
+		results["fuel_to_boiler_series"] = []
+		results["boiler_thermal_production_series"] = []
+		results["year_one_fuel_to_boiler_mmbtu"] = 0.0
+		results["year_one_boiler_thermal_production_mmbtu"] = 0.0
+	end
+	
+	##Electric chiller results go here; need to populate expressions for first collection
+	if !isempty(p.ElectricChillers)
+		results["electric_chiller_to_load_series"] = []
+		results["electric_chiller_to_tes_series"] = []
+		results["electric_chiller_consumption_series"] = []
+		results["year_one_electric_chiller_electric_kwh"] = 0.0
+	else
+		results["electric_chiller_to_load_series"] = []
+		results["electric_chiller_to_tes_series"] = []
+		results["electric_chiller_consumption_series"] = []
+		results["year_one_electric_chiller_electric_kwh"] = 0.0
+	end
+	
+	##Absorption chiller results go here; need to populate expressions for first collection
+	if !isempty(p.AbsorptionChillers)
+		results["absorpchl_kw"] = 0.0
+		results["absoprtion_chiller_to_load_series"] = []
+		results["absoprtion_chiller_to_tes_series"] = []
+		results["absoprtion_chiller_consumption_series"] = []
+		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+	else
+		results["absorpchl_kw"] = 0.0
+		results["absoprtion_chiller_to_load_series"] = []
+		results["absoprtion_chiller_to_tes_series"] = []
+		results["absoprtion_chiller_consumption_series"] = []
+		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+	end
+	
+	##Hot thermal energy storage results go here; need to populate expressions for first collection
+	if !isempty(p.HotTES)
+		results["hot_tes_size_mmbtu"] = 0.0
+		results["hot_tes_thermal_production_series"] = []
+		results["hot_tes_pct_soc_series"] = []
+	else
+		results["hot_tes_size_mmbtu"] = 0.0
+		results["hot_tes_thermal_production_series"] = []
+		results["hot_tes_pct_soc_series"] = []
+	end
+	
+	##Cold thermal energy storage results go here; need to populate expressions for first collection
+	if !isempty(p.ColdTES)
+		results["cold_tes_size_kwht"] = 0.0
+		results["cold_tes_thermal_production_series"] = []
+		results["cold_tes_pct_soc_series"] = []
+	else
+		results["cold_tes_size_kwht"] = 0.0
+		results["cold_tes_thermal_production_series"] = []
+		results["cold_tes_pct_soc_series"] = []
+	end
+end	
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
@@ -1080,3 +1169,4 @@ function add_util_results(m, p, r::Dict)
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 end
+
