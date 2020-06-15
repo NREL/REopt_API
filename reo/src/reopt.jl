@@ -280,8 +280,8 @@ function add_thermal_production_constraints(m, p)
 					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 					)
 		# Constraint (2b): Thermal Production of CHP 
-		@constraint(m, CHPThermalProductionCpn[t in p.CHPTechs, ts in p.TimeStep],
-					m[:dvThermalProduction][t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
+		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
+					p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] <=  #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
 					CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
 						)
 					)
@@ -440,7 +440,7 @@ function add_storage_op_constraints(m, p)
 	##Constraint (5b): Hot thermal loads
 	if !isempty(p.HeatingTechs)
 		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
-				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
+				sum(p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
@@ -1139,6 +1139,7 @@ function add_chp_results(m, p, r::Dict)
 		results["cold_tes_pct_soc_series"] = []
 	end
 end	
+
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
