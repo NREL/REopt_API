@@ -282,13 +282,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 elif name == "LoadProfileBoilerFuel":
                     lpbf = LoadProfileBoilerFuelModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = lpbf.annual_calculated_boiler_fuel_load_mmbtu_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.po.get_load_profile_boiler_fuel()
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.self.po.get_load_profile_boiler_fuel()
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = self.po.get_load_profile_boiler_thermal()
                 elif name == "LoadProfileChillerElectric":
                     lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.po.get_load_profile_chiller_electric()
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = self.po.get_load_profile_chiller_electric()
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_heating_load_series_mmbtu")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = self.dm["LoadProfile"].get("year_one_cooling_load_series_kw")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
