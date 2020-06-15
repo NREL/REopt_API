@@ -26,10 +26,10 @@ function add_continuous_variables(m, p)
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
-		#dvFuelBurnYIntercept[p.Tech, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
-		#dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
-		#dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
-		#dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
+		dvFuelBurnYIntercept[p.Tech, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
+		dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
+		dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
+		dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
     end
 end
 
@@ -185,19 +185,17 @@ function add_bigM_adjustments(m, p)
 	end
 	
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
-	TempHeatingTechs = [] #temporarily replace p.HeatingTechs which is undefined
-	TempCoolingTechs = [] #temporarily replace p.CoolingTechs which is undefined
-	
-	for t in TempHeatingTechs
-		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
+
+	for t in p.HeatingTechs
+		NewMaxSize[t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
 		end
 	end
-	for t in TempCoolingTechs
-		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (m[:NewMaxSize][t] > p.MaxSize[t])
-			m[:NewMaxSize][t] = p.MaxSize[t]
+	for t in p.CoolingTechs
+		NewMaxSize[t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (NewMaxSize[t] > p.MaxSize[t])
+			NewMaxSize[t] = p.MaxSize[t]
 		end
 	end
 	for t in p.ElectricTechs
@@ -240,7 +238,7 @@ function add_fuel_constraints(m, p)
 	)
 	
 	# Constraint (1b): Fuel burn for non-CHP Constraints
-	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
 		m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
 			(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
 	)
@@ -248,12 +246,8 @@ function add_fuel_constraints(m, p)
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
-	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-				m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
-					(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
-				)
 	
-	if !isempty(CHPTechs)
+	if !isempty(p.CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
 		@constraint(m, CHPFuelBurnCon[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvFuelUsage][t,ts]  == #p.FuelBurnAmbientFactor[t,ts] * 
@@ -262,12 +256,12 @@ function add_fuel_constraints(m, p)
 					)
 					
 		#Constraint (1d): Y-intercept fuel burn for CHP
-		@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+		@constraint(m, CHPFuelBurnYIntCon[t in p.CHPTechs, ts in p.TimeStep],
 					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,th]   					
 					)
 	end
 	
-	if !isempty(HeatingTechs)
+	if !isempty(p.HeatingTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
 		@constraint(m, BoilerFuelBurnCon[t in p.HeatingTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
 					m[:dvFuelUsage][t,ts]  ==  m[:dvThermalProduction][t,ts] / p.BoilerEfficiency 					
@@ -276,7 +270,6 @@ function add_fuel_constraints(m, p)
 end
 
 function add_thermal_production_constraints(m, p)	
-
 	if !isempty(p.CHPTechs)
 		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
 		@constraint(m, CHPYInt2a1Con[t in p.CHPTechs, ts in p.TimeStep],
@@ -420,11 +413,11 @@ function add_storage_op_constraints(m, p)
 	)
 				
 	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
-	@constraint(m, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+	@constraint(m, DischargeLEQCapHotCon[b in p.HotTES, ts in p.TimeStep],
     	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
 				)
 	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
-	@constraint(m, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+	@constraint(m, DischargeLEQCapColdCon[b in p.ColdTES, ts in p.TimeStep],
     	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
 				)
 					
