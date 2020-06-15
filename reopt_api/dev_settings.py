@@ -122,22 +122,7 @@ ROLLBAR = {
     'enabled':True
 }
 
-if os.environ.get('BUILD_TYPE') == 'jenkins':
-    ROLLBAR['branch'] = os.environ.get('BRANCH_NAME')
-    if not os.environ.get('DB_TEST_NAME') == 'reopt_development':
-        ROLLBAR['enabled'] = False
-
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql_psycopg2',
-            'NAME': os.environ.get('DB_TEST_NAME') or 'reopt_lite_' + str(uuid.uuid4()),
-            'USER': os.environ.get('DB_USERNAME'),
-            'PASSWORD': os.environ.get('DB_PASSWORD'),
-            'HOST': os.environ.get('DB_HOSTNAME'),
-            'PORT': os.environ.get('DB_PORT'),
-        }
-    }
-elif 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
+if 'test' in sys.argv or os.environ.get('APP_ENV') == 'local':
     ROLLBAR['enabled'] = False
     DATABASES = {
         'default': {
