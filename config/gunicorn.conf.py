@@ -27,7 +27,7 @@ accesslog = '-'
 # This timeout should be greater than the xpress timeout, but less than the
 # nginx timeout, to give the app an opportunity to handle timeouts more
 # gracefully.
-timeout = 315
+timeout = 435
 
 # Set the appropriate DJANGO_SETTINGS_MODULE environment variable based on the
 # current environment.
