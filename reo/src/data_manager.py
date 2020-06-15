@@ -103,14 +103,14 @@ class DataManager:
         self.load = load
         
     def add_load_boiler_fuel(self, load):
-        self.LoadProfile["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x / self.boiler.boiler_efficiency for x in load.load_list]
+        self.LoadProfile["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x / self.boiler.boiler_efficiency for x in load.load_list] if self.boiler != None else load.load_list
         self.LoadProfile["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = load.load_list
         self.LoadProfile["annual_heating_mmbtu"] = load.annual_mmbtu
         self.heating_load = load
         
     def add_load_chiller_electric(self, load):
         self.LoadProfile["year_one_chiller_electric_load_series_kw"] = load.load_list
-        self.LoadProfile["year_one_chiller_thermal_load_series_ton"] = [x * self.elecchl.chiller_cop for x in load.load_list]
+        self.LoadProfile["year_one_chiller_thermal_load_series_ton"] = [x * self.elecchl.chiller_cop for x in load.load_list] if self.elecchl != None else load.load_list
         self.LoadProfile["annual_cooling_kwh"] = load.annual_kwh
         self.cooling_load = load
         
