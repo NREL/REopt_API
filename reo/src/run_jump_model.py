@@ -75,7 +75,7 @@ class RunJumpModelTask(Task):
 
 @shared_task(bind=True, base=RunJumpModelTask)
 def run_jump_model(self, dfm, data, run_uuid, bau=False):
-    self.profiler = Profiler()
+    profiler = Profiler()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
     self.data = data
@@ -133,10 +133,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
-    self.profiler.profileEnd()
-    tmp = dict()
-    tmp[name+'_seconds'] = self.profiler.getDuration()
-    ModelManager.updateModel('ProfileModel', tmp, run_uuid)
+    profiler.profileEnd()
+    ModelManager.updateModel('ProfileModel', {name+'_seconds': profiler.getDuration()}, run_uuid)
 
     # reduce the amount data being transferred between tasks
     if bau:
