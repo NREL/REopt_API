@@ -40,6 +40,7 @@ from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 log = logging.getLogger(__name__)
 
+
 class ProcessResultsTask(Task):
     """
     Used to define custom Error handling for celery task
@@ -116,7 +117,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             :param instance of DataManager class
             :param dict, data['inputs']['Scenario']['Site']
             """
-            self.profiler = Profiler()
             self.dm = dm
             self.inputs = inputs
 
@@ -164,7 +164,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         @property
-
         def replacement_costs(self):
             replacement_costs = 0
             replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
@@ -454,9 +453,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
 
-            self.profiler.profileEnd()
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
-
         def compute_total_power(self, tech):
             power_lists = list()
             d = self.nested_outputs["Scenario"]["Site"][tech]
@@ -516,13 +512,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
+        if len(data['outputs']['Scenario']['Site']['PV']) == 1:
+            data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
+
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
-        if len(data['outputs']['Scenario']['Site']['PV'])==1:
-            data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
+
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
