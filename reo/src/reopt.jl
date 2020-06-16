@@ -6,14 +6,23 @@ include("utils.jl")
 
 function reopt(reo_model, data, model_inputs)
 
+	t_start = time()
+	
     p = Parameter(model_inputs)
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
-    return reopt_run(reo_model, MAXTIME, p)
+	t = time() - t_start
+
+	results = reopt_run(reo_model, MAXTIME, p)
+	results["julia_input_construction_seconds"] = t
+	return results
 end
 
+
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
-	
+
+	t_start = time()
+	results = Dict{String, Any}()
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
@@ -116,7 +125,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#		])
 	#	end
 	#end	
-	
+	results["julia_reopt_preamble_seconds"] = time() - t_start
+	t_start = time()
+
     @variables REopt begin
 		# Continuous Variables
 	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
@@ -154,7 +165,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
     end
-		
+	results["julia_reopt_variables_seconds"] = time() - t_start
+	t_start = time()
     ##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
@@ -690,7 +702,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@objective(REopt, Min, REcosts - sum(dvStorageSOC["Elec",ts] for ts in p.TimeStep)/8760.)
 	end
 	
+	results["julia_reopt_constriants_seconds"] = time() - t_start
+	t_start = time()
+
 	optimize!(REopt)
+
+	results["julia_reopt_optimize_seconds"] = time() - t_start
+	t_start = time()
+
 	if termination_status(REopt) == MOI.TIME_LIMIT
 		status = "timed-out"
     elseif termination_status(REopt) == MOI.OPTIMAL
@@ -726,7 +745,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
 
-    ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
+	results["lcc"] = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
     Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
@@ -734,8 +753,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     Year1FixedCharges = TotalFixedCharges / p.pwf_e
     Year1MinCharges = MinChargeAdder / p.pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
-
-    results = Dict{String, Any}("lcc" => ojv)
 
     results["batt_kwh"] = value(dvStorageCapEnergy["Elec"])
     results["batt_kw"] = value(dvStorageCapPower["Elec"])
@@ -936,5 +953,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	print("TotalProductionIncentive:")
 	println(value(TotalProductionIncentive))
 	=#
+	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end
