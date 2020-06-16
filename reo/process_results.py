@@ -107,6 +107,19 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "gen_total_fuel_cost",
             "gen_year_one_fuel_cost",
             "gen_year_one_variable_om_costs",
+            "julia_input_construction_seconds",
+            "julia_reopt_preamble_seconds",
+            "julia_reopt_variables_seconds",
+            "julia_reopt_constriants_seconds",
+            "julia_reopt_optimize_seconds",
+            "julia_reopt_postprocess_seconds",
+            "pyjulia_start_seconds",
+            "pyjulia_pkg_seconds",
+            "pyjulia_activate_seconds",
+            "pyjulia_include_model_seconds",
+            "pyjulia_make_model_seconds",
+            "pyjulia_include_reopt_seconds",
+            "pyjulia_run_reopt_seconds",
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -453,6 +466,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
 
+            time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
+
+            for k in time_outputs:
+                self.nested_outputs["Scenario"]["Profile"][k] = self.results_dict.get(k)
+                self.nested_outputs["Scenario"]["Profile"][k + "_bau"] = self.results_dict.get(k + "_bau")
+
         def compute_total_power(self, tech):
             power_lists = list()
             d = self.nested_outputs["Scenario"]["Site"][tech]
@@ -520,7 +539,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
-
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()

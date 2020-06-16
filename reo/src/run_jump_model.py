@@ -36,6 +36,7 @@ from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, Not
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
+import time
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -76,6 +77,7 @@ class RunJumpModelTask(Task):
 @shared_task(bind=True, base=RunJumpModelTask)
 def run_jump_model(self, dfm, data, run_uuid, bau=False):
     profiler = Profiler()
+    time_dict = dict()
     name = 'reopt' if not bau else 'reopt_bau'
     reopt_inputs = dfm['reopt_inputs'] if not bau else dfm['reopt_inputs_bau']
     self.data = data
@@ -84,32 +86,73 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
     logger.info("Running JuMP model ...")
     try:
+        t_start = time.time()
         j = julia.Julia()
+        time_dict["pyjulia_start_seconds"] = time.time() - t_start
+
+        t_start = time.time()
         j.using("Pkg")
+        time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
+
         if os.environ.get("SOLVER") == "xpress":
+            t_start = time.time()
             j.eval('Pkg.activate("./julia_envs/Xpress/")')
+            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
             try:
+                t_start = time.time()
                 j.include("reo/src/reopt_xpress_model.jl")
+                time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
             except ImportError:
                 # should only need to instantiate once
                 j.eval('Pkg.instantiate()')
                 j.include("reo/src/reopt_xpress_model.jl")
+
+            t_start = time.time()
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
+            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
         elif os.environ.get("SOLVER") == "cbc":
+            t_start = time.time()
             j.eval('Pkg.activate("./julia_envs/Cbc/")')
+            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+            t_start = time.time()
             j.include("reo/src/reopt_cbc_model.jl")
+            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+            t_start = time.time()
             model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
         elif os.environ.get("SOLVER") == "scip":
+            t_start = time.time()
             j.eval('Pkg.activate("./julia_envs/SCIP/")')
+            time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+            t_start = time.time()
             j.include("reo/src/reopt_scip_model.jl")
+            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+            t_start = time.time()
             model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+            time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
         else:
             raise REoptFailedToStartError(
                 message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
                 run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
+        t_start = time.time()
         j.include("reo/src/reopt.jl")
+        time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
+
+        t_start = time.time()
         results = j.reopt(model, data, reopt_inputs)
+        time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
+
+        results.update(time_dict)
+
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
