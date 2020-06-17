@@ -1,5 +1,5 @@
 using Pkg
-
+println("Julia XPRESSDIR: ", ENV["XPRESSDIR"])
 Pkg.activate("julia_envs/Xpress")
 Pkg.instantiate()
 
