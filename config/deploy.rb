@@ -23,7 +23,7 @@ namespace :app do
       within release_path do
         execute "virtualenv", "env", "--python=/bin/python3"
         execute "./env/bin/pip3", "install", "-r", "requirements.txt"
-        execute ". /opt/xpressmp/bin/xpvars.sh && julia ./julia_envs/Xpress/build_julia_image.jl"
+        execute ". /opt/xpressmp/bin/xpvars.sh && julia #{release_path}/julia_envs/Xpress/build_julia_image.jl"
         execute "./env/bin/python", "-c", "'import julia; julia.install()'"
       end
     end
