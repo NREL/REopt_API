@@ -4,7 +4,7 @@ using Pkg
 function build_julia_image(project_path::String)
     
     # cwd = home/deploy ! PyCall not in Project?
-    Pkg.activate(joinpath(project_path, "julia_envs", "Xpress")
+    Pkg.activate(joinpath(project_path, "julia_envs", "Xpress"))
     Pkg.instantiate(verbose=true)
     Pkg.add("PackageCompiler")
     using PackageCompiler
