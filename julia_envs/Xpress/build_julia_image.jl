@@ -1,8 +1,8 @@
 using Pkg
 
 Pkg.activate("julia_envs/Xpress")
-Pkg.instantiate()
-
+Pkg.instantiate(verbose=true)
+Pkg.add("PackageCompiler")
 using PackageCompiler
 
 # must point pycall to the python path we want it to use
