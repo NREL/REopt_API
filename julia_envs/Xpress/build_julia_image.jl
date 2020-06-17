@@ -1,4 +1,5 @@
 using Pkg
+using PackageCompiler
 
 
 function build_julia_image(project_path::String)
@@ -7,7 +8,6 @@ function build_julia_image(project_path::String)
     Pkg.activate(joinpath(project_path, "julia_envs", "Xpress"))
     Pkg.instantiate(verbose=true)
     Pkg.add("PackageCompiler")
-    using PackageCompiler
 
     # must point pycall to the python path we want it to use
     ENV["PYTHON"] = joinpath(project_path, "env", "bin", "python")
@@ -17,7 +17,6 @@ function build_julia_image(project_path::String)
 
     include(joinpath(project_path, "reo", "src", "reopt_xpress_model.jl"))
     include(joinpath(project_path, "reo", "src", "reopt.jl"))
-
 
     if Sys.islinux()
         ext = ".so"
