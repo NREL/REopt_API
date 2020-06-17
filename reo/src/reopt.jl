@@ -731,7 +731,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                        for t in GeneratorTechs, ts in p.TimeStep))
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					   for t in GeneratorTechs, ts in p.TimeStep))
-						
+	@expression(REopt, Year1CHPElecProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
+                       for t in CHPTechs, ts in p.TimeStep))
+	@expression(REopt, Year1CHPThermalProd, p.TimeStepScaling * sum(p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts]
+                       for t in CHPTechs, ts in p.TimeStep))
 
 	@expression(REopt, GenPerUnitSizeOMCosts, p.two_party_factor * 
 		sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in GeneratorTechs)
@@ -922,10 +925,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##CHP Results go here; need to populate expressions for first collection
 	if !isempty(p.CHPTechs)
-		results["chp_kw"] = []
+		results["CHP"] = Dict()
+		results["chp_kw"] = value(sum(dvSize[t] for t in CHPTechs))
 		results["year_one_chp_fuel_used"] = []
-		results["year_one_chp_electric_energy_produced"] = []
-		results["year_one_chp_thermal_energy_produced"] = []
+		results["year_one_chp_electric_energy_produced"] = round.(value.(Year1CHPElecProd), digits=3)
+		results["year_one_chp_thermal_energy_produced"] = round.(value.(Year1CHPThermalProd), digits=3)
 		results["chp_electric_production_series"] = []
 		results["chp_to_battery_series"] = []
 		results["chp_electric_to_load_series"] = []
