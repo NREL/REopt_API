@@ -928,8 +928,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["CHP"] = Dict()
 		results["chp_kw"] = value(sum(dvSize[t] for t in CHPTechs))
 		results["year_one_chp_fuel_used"] = []
-		results["year_one_chp_electric_energy_produced"] = round.(value.(Year1CHPElecProd), digits=3)
-		results["year_one_chp_thermal_energy_produced"] = round.(value.(Year1CHPThermalProd), digits=3)
+		results["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
+		results["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 		results["chp_electric_production_series"] = []
 		results["chp_to_battery_series"] = []
 		results["chp_electric_to_load_series"] = []
