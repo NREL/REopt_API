@@ -37,6 +37,7 @@ from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
 import time
+import platform
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -86,9 +87,28 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
     logger.info("Running JuMP model ...")
     try:
-        t_start = time.time()
-        j = julia.Julia()
-        time_dict["pyjulia_start_seconds"] = time.time() - t_start
+        if os.environ['APP_ENV'] in ['development', 'staging', 'production', 'internal_c110p']:
+            # TODO: clean up this try/except block and handle local development with Julia image
+            t_start = time.time()
+
+            if platform.system() == "Darwin":
+                ext = ".dylib"
+            elif platform.system() == "Windows":
+                ext = ".dll"
+            else:
+                ext = ".so"  # if platform.system() == "Linux":
+
+            # then on one of NREL's REopt servers, use Julia system image built via Jenkins deploy
+            from julia.api import LibJulia
+            api = LibJulia.load()
+            api.sysimage = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+            api.init_julia()
+            j = julia.Julia()
+            time_dict["pyjulia_start_seconds"] = time.time() - t_start
+        else:
+            t_start = time.time()
+            j = julia.Julia()
+            time_dict["pyjulia_start_seconds"] = time.time() - t_start
 
         t_start = time.time()
         j.using("Pkg")
@@ -138,6 +158,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             t_start = time.time()
             model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
         else:
             raise REoptFailedToStartError(
                 message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
