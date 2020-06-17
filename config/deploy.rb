@@ -21,12 +21,10 @@ namespace :app do
   task :pip_install do
     on roles(:app) do
       within release_path do
-        with "XPRESSDIR" => fetch(:xpress_dir) do
-          execute "virtualenv", "env", "--python=/bin/python3"
-          execute "./env/bin/pip3", "install", "-r", "requirements.txt"
-          execute "julia", "./julia_envs/Xpress/build_julia_image.jl"
-          execute "./env/bin/python", "-c", "'import julia; julia.install()'"
-        end
+        execute "virtualenv", "env", "--python=/bin/python3"
+        execute "./env/bin/pip3", "install", "-r", "requirements.txt"
+        execute "julia", "./julia_envs/Xpress/build_julia_image.jl"
+        execute "./env/bin/python", "-c", "'import julia; julia.install()'"
       end
     end
   end
