@@ -14,9 +14,11 @@ function build_julia_image(project_path::String)
     println("Python path for PyCall: ", ENV["PYTHON"])
     Pkg.build("PyCall")
     Pkg.build("Xpress")
+    include(joinpath(project_path, "julia_envs", "Xpress", "precompile.jl"))
 
-    include(joinpath(project_path, "reo", "src", "reopt_xpress_model.jl"))
-    include(joinpath(project_path, "reo", "src", "reopt.jl"))
+    # TODO create REopt module to attach to Base for system image
+    # include(joinpath(project_path, "reo", "src", "reopt_xpress_model.jl"))
+    # include(joinpath(project_path, "reo", "src", "reopt.jl"))
 
     if Sys.islinux()
         ext = ".so"
