@@ -547,11 +547,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
         	 binDemandMonthsTier[m, n] * NewMaxDemandMonthsInTier[m,n-1] <= dvPeakDemandEMonth[m, n-1])
 	
-	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
-	@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
-        	 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin ) >= 
-			 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
-	)
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month
+	if p.CHPDoesNotReduceDemandCharges == 1
+		@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
+				 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin )  >= 
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier ) + 
+				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.CHPTechs) -
+				 sum(dvProductionToStorage[t,ts] for t in p.CHPTechs) - 
+				 sum(sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+		)
+	else
+		@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
+				 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin ) >= 
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
+		)
+	end
 	### End Constraint Set (11)
 	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
@@ -569,10 +579,20 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		    	 binDemandTier[r, e] * NewMaxDemandInTier[r,e-1] <= dvPeakDemandE[r, e-1])
 		
 		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
-		@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
-		    	 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
+		if p.CHPDoesNotReduceDemandCharges == 1
+			@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
+				 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier ) + 
+				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.CHPTechs) -
+				 sum(dvProductionToStorage[t,ts] for t in p.CHPTechs) - 
+				 sum( sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+			)
+		else
+			@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
+				 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
 				 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
-		)
+			)
+		end
 		
 		##Constraint (12e): Peak demand used in percent lookback calculation 
 		@constraint(REopt, [m in p.DemandLookbackMonths],
@@ -610,7 +630,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
 	)
-    if !isempty(FuelBurningTechs)
+    if !isempty(p.FuelBurningTechs)
 		@expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * p.pwf_om * 
 			sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
 		)
@@ -738,6 +758,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 
 	@expression(REopt, Year1CHPElecProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
                        for t in p.CHPTechs, ts in p.TimeStep))
+					   
 	@expression(REopt, Year1CHPThermalProd, p.TimeStepScaling * sum(p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts]
                        for t in p.CHPTechs, ts in p.TimeStep))
 
@@ -950,7 +971,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
 				for t in CHPTechs, u in p.SalesTiersByTech[t]))
 		results["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
-		@expression(REopt, CHPtoBatt[ts in p.TimeStep]
+		@expression(REopt, CHPtoBatt[ts in p.TimeStep],
 			sum(dvProductionToStorage["Elec",t,ts] for t in CHPTechs))
 		results["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
 		@expression(REopt, CHPtoLoad[ts in p.TimeStep],
@@ -961,7 +982,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(dvProductionToStorage["HotTES",t,ts] for t in CHPTechs))
 		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
-			dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
 				for t in CHPTechs) - CHPtoHotTES[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 
@@ -999,21 +1020,22 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, Year1ElecChlElecConsumption,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP
 	        	for t in p.ElectricChillers, ts in p.TimeStep))
-		results["year_one_electric_chiller_electric_kwh"] = round(value(Year1ElecChlElecConsumption), digits=3))
+		results["year_one_electric_chiller_electric_kwh"] = round(value(Year1ElecChlElecConsumption), digits=3)
 		@expression(REopt, Year1ElecChlThermalProd,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 	        	for t in p.ElectricChillers, ts in p.TimeStep))
-		results["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ElecChlThermalProd), digits=3))
+		results["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ElecChlThermalProd), digits=3)
 	else
 		results["electric_chiller_to_load_series"] = []
 		results["electric_chiller_to_tes_series"] = []
 		results["electric_chiller_consumption_series"] = []
 		results["year_one_electric_chiller_electric_kwh"] = 0.0
+		results["year_one_electric_chiller_thermal_kwh"] = 0.0
 	end
 	
 	##Absorption chiller results go here; need to populate expressions for first collection
 	if !isempty(p.AbsorptionChillers)
-		results["absorpchl_kw"] = value(sum(dvSize[t] for t in AbsorptionChillers))
+		results["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
 		results["absorption_chiller_to_load_series"] = []
 		results["absorption_chiller_to_tes_series"] = []
 		results["absorption_chiller_consumption_series"] = []

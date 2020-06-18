@@ -1279,7 +1279,9 @@ class DataManager:
             'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
             'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
             'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
-            'CHPThermalProdFactor': chp_thermal_prod_factor
+            'CHPThermalProdFactor': chp_thermal_prod_factor,
+            'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
+            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
             }
 
         self.reopt_inputs_bau = {

@@ -209,7 +209,7 @@ Base.@kwdef struct Parameter
 	CHPThermalProdIntercept::AxisArray
 	FuelBurnYIntRate::AxisArray
 	CHPThermalProdFactor::AxisArray
-	CHPStandByCharge::Float64
+	CHPStandbyCharge::Float64
 	CHPDoesNotReduceDemandCharges::Int64
 end
 
