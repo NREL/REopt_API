@@ -652,8 +652,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
-	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
-    @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
+
+	if !isempty(p.DemandRates)
+		@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
+	else
+		@expression(REopt, DemandTOUCharges, 0)
+	end
+
+	if !isempty(p.DemandRatesMonth)
+		@expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
+	else
+		@expression(REopt, DemandFlatCharges, 0)
+	end
+
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
 		

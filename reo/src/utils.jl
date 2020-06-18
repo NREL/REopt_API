@@ -308,7 +308,7 @@ end
 JuMP.value(::Val{false}) = 0
 
 
-JuMP.value(x::Float64) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and similar
+JuMP.value(x::Number) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and similar
 
 
 JuMP.value(::MutableArithmetics.Zero) = 0
