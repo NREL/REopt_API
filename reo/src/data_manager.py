@@ -1395,5 +1395,7 @@ class DataManager:
             'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope_bau,
             'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept_bau,
             'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept_bau,
-            'CHPThermalProdFactor': chp_thermal_prod_factor_bau
+            'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
+            'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
+            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
         }

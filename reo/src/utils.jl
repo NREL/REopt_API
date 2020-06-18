@@ -209,7 +209,8 @@ Base.@kwdef struct Parameter
 	CHPThermalProdIntercept::AxisArray
 	FuelBurnYIntRate::AxisArray
 	CHPThermalProdFactor::AxisArray
-	
+	CHPStandByCharge::Float64
+	CHPDoesNotReduceDemandCharges::Int64
 end
 
 
@@ -313,6 +314,7 @@ function Parameter(d::Dict)
 	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
 	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
+	
 
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])

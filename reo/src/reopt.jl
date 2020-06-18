@@ -663,6 +663,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
+	@expression(REopt, TotalCHPStandbyCharges, 
+		p.CHPStandbyCharge * 12 * sum(dvSize[t] for t in p.CHPTechs) * p.pwf_e
+		)
+	
 		
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
@@ -691,7 +695,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalCHPStandbyCharges + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         TotalGenFuelCharges * r_tax_fraction_offtaker -
@@ -747,6 +751,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
+		
+	
 
     ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
