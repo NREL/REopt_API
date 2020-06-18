@@ -36,6 +36,7 @@ from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, Not
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
 from celery.utils.log import get_task_logger
+from julia.api import LibJulia
 import time
 import platform
 # julia.install()  # needs to be run if it is the first time you are using julia package
@@ -99,7 +100,6 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 ext = ".so"  # if platform.system() == "Linux":
 
             # then on one of NREL's REopt servers, use Julia system image built via Jenkins deploy
-            from julia.api import LibJulia
             api = LibJulia.load()
             api.sysimage = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
             api.init_julia()
