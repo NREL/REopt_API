@@ -114,15 +114,13 @@
         "wholesale_rate_us_dollars_per_kwh": 0.0,
         "net_metering_limit_kw": 0.0,
         "interconnection_limit_kw": 100000000.0,
-        "blended_monthly_demand_charges_us_dollars_per_kw": [],
         "urdb_utility_name": "",
         "urdb_label": "",
         "wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0,
         "urdb_rate_name": "",
         "urdb_response": null,
         "blended_annual_demand_charges_us_dollars_per_kw": 0.0,
-        "blended_annual_rates_us_dollars_per_kwh": 0.1,
-        "blended_monthly_rates_us_dollars_per_kwh": []
+        "blended_annual_rates_us_dollars_per_kwh": 0.1
       },
       "longitude": -104.990251,
       "address": "Denver CO USA",

@@ -207,6 +207,7 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
             "Wind": {"max_kw": 0.0}
         }}}
         resp = self.get_response(data=data)
+        import pdb; pdb.set_trace()
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
         run_uuid = r.get('run_uuid')
