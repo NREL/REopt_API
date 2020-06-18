@@ -382,7 +382,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.CoolingTechs)  +
+				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
 				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
@@ -463,7 +463,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
-		 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerCOP +
+		 sum(dvThermalProduction[t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
@@ -610,7 +610,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
 	)
-    if !isempty(GeneratorTechs)
+    if !isempty(FuelBurningTechs)
 		@expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * p.pwf_om * 
 			sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
 		)
@@ -735,6 +735,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
                        for t in GeneratorTechs, ts in p.TimeStep))
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					   for t in GeneratorTechs, ts in p.TimeStep))
+
 	@expression(REopt, Year1CHPElecProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
                        for t in p.CHPTechs, ts in p.TimeStep))
 	@expression(REopt, Year1CHPThermalProd, p.TimeStepScaling * sum(p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts]
@@ -933,15 +934,37 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	if !isempty(p.CHPTechs)
 		results["CHP"] = Dict()
 		results["chp_kw"] = value(sum(dvSize[t] for t in CHPTechs))
-		results["year_one_chp_fuel_used"] = []
+		@expression(REopt, CHPFuelUsed, sum(dvFuelUsage[t, ts] for t in CHPTechs, ts in p.TimeStep))
+		results["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
+		@expression(REopt, Year1CHPElecProd,
+			p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
+				for t in CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
+		@expression(REopt, Year1CHPThermalProd,
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+				for t in CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
-		results["chp_electric_production_series"] = []
-		results["chp_to_battery_series"] = []
-		results["chp_electric_to_load_series"] = []
-		results["chp_to_grid_series"] = []
-		results["chp_thermal_to_load_series"] = []
-		results["chp_thermal_to_tes_series"] = []
+		@expression(REopt, CHPElecProdTotal[ts in p.TimeStep],
+			sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] for t in CHPTechs))
+		results["chp_electric_production_series"] = round.value.(CHPElecProdTotal)
+		@expression(REopt, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
+				for t in CHPTechs, u in p.SalesTiersByTech[t]))
+		results["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
+		@expression(REopt, CHPtoBatt[ts in p.TimeStep]
+			sum(dvProductionToStorage["Elec",t,ts] for t in CHPTechs))
+		results["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
+		@expression(REopt, CHPtoLoad[ts in p.TimeStep],
+			sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+				for t in CHPTechs) - CHPtoBatt[ts] - CHPtoGrid[ts])
+		results["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
+		@expression(REopt, CHPtoHotTES[ts in p.TimeStep],
+			sum(dvProductionToStorage["HotTES",t,ts] for t in CHPTechs))
+		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
+		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
+			dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+				for t in CHPTechs) - CHPtoHotTES[ts])
+		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
+
 	else
 		results["chp_kw"] = 0.0
 		results["year_one_chp_fuel_used"] = 0.0
@@ -973,7 +996,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["electric_chiller_to_load_series"] = []
 		results["electric_chiller_to_tes_series"] = []
 		results["electric_chiller_consumption_series"] = []
-		results["year_one_electric_chiller_electric_kwh"] = 0.0
+		@expression(REopt, Year1ElecChlElecConsumption,
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP
+	        	for t in p.ElectricChillers, ts in p.TimeStep))
+		results["year_one_electric_chiller_electric_kwh"] = round(value(Year1ElecChlElecConsumption), digits=3))
+		@expression(REopt, Year1ElecChlThermalProd,
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts]
+	        	for t in p.ElectricChillers, ts in p.TimeStep))
+		results["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ElecChlThermalProd), digits=3))
 	else
 		results["electric_chiller_to_load_series"] = []
 		results["electric_chiller_to_tes_series"] = []
@@ -983,16 +1013,23 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
 	##Absorption chiller results go here; need to populate expressions for first collection
 	if !isempty(p.AbsorptionChillers)
-		results["absorpchl_kw"] = 0.0
-		results["absoprtion_chiller_to_load_series"] = []
-		results["absoprtion_chiller_to_tes_series"] = []
-		results["absoprtion_chiller_consumption_series"] = []
-		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+		results["absorpchl_kw"] = value(sum(dvSize[t] for t in AbsorptionChillers))
+		results["absorption_chiller_to_load_series"] = []
+		results["absorption_chiller_to_tes_series"] = []
+		results["absorption_chiller_consumption_series"] = []
+		@expression(REopt, Year1AbsorpChlThermalConsumption,
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP
+				for t in p.AbsorptionChillers, ts in p.TimeStep))
+		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1AbsorpChlThermalConsumption), digits=3)
+		@expression(REopt, Year1AbsorpChlThermalProd,
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts]
+				for t in p.AbsorptionChillers, ts in p.TimeStep))
+		results["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1AbsorpChlThermalProd), digits=3)
 	else
 		results["absorpchl_kw"] = 0.0
-		results["absoprtion_chiller_to_load_series"] = []
-		results["absoprtion_chiller_to_tes_series"] = []
-		results["absoprtion_chiller_consumption_series"] = []
+		results["absorption_chiller_to_load_series"] = []
+		results["absorption_chiller_to_tes_series"] = []
+		results["absorption_chiller_consumption_series"] = []
 		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
 	end
 	
