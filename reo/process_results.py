@@ -546,7 +546,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_electric_consumption_kwh"] = self.results_dict.get("year_one_electric_chiller_electric_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_electric_kwh") / 3.51685
+                        "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh") / 3.51685
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_thermal_production_bau_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh_bau") / 3.51685
                 elif name == "AbsorptionChiller":
