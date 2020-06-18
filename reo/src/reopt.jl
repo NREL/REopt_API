@@ -382,7 +382,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.CoolingTechs)  +
+				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
 				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
@@ -463,7 +463,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
-		 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerCOP +
+		 sum(dvThermalProduction[t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
@@ -610,7 +610,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
 	)
-    if !isempty(GeneratorTechs)
+    if !isempty(FuelBurningTechs)
 		@expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * p.pwf_om * 
 			sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
 		)
