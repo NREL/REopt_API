@@ -74,7 +74,7 @@ function add_cost_expressions(m, p)
 	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech ) 
 	)
-    if !isempty(m[:GeneratorTechs])
+    if !isempty(m[:FuelBurningTechs])
 		m[:TotalPerUnitProdOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * 
 			sum( p.OMcostPerUnitProd[t] * m[:dvRatedProduction][t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
 		)
@@ -444,7 +444,7 @@ function add_storage_op_constraints(m, p)
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(m[:dvProductionToStorage][b,t,ts] b in p.HotTES, for t in p.CoolingTechs)  +
+				sum(m[:dvProductionToStorage][b,t,ts] b in p.HotTES, for t in p.HeatingTechs)  +
 				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
@@ -532,7 +532,7 @@ function add_load_balance_constraints(m, p)
 		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
-		 sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerCOP +
+		 sum(dvThermalProduction[t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
@@ -636,7 +636,6 @@ function add_monthly_demand_charge_constraints(m, p)
 	else
 		m[:DemandFlatCharges] = 0
 	end
-
 end
 
 
