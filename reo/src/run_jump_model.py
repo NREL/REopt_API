@@ -86,22 +86,24 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     self.run_uuid = data['outputs']['Scenario']['run_uuid']
     self.user_uuid = data['outputs']['Scenario'].get('user_uuid')
 
+    if platform.system() == "Darwin":
+        ext = ".dylib"
+    elif platform.system() == "Windows":
+        ext = ".dll"
+    else:
+        ext = ".so"  # if platform.system() == "Linux":
+    julia_img_file = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+
     logger.info("Running JuMP model ...")
     try:
-        if os.environ['APP_ENV'] in ['development', 'staging', 'production', 'internal_c110p']:
+        if os.path.isfile(julia_img_file):
             # TODO: clean up this try/except block and handle local development with Julia image
+            print("Using Julia image.")
             t_start = time.time()
-
-            if platform.system() == "Darwin":
-                ext = ".dylib"
-            elif platform.system() == "Windows":
-                ext = ".dll"
-            else:
-                ext = ".so"  # if platform.system() == "Linux":
 
             # then on one of NREL's REopt servers, use Julia system image built via Jenkins deploy
             api = LibJulia.load()
-            api.sysimage = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+            api.sysimage = julia_img_file
             api.init_julia()
             j = julia.Julia()
             time_dict["pyjulia_start_seconds"] = time.time() - t_start
@@ -111,7 +113,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             time_dict["pyjulia_start_seconds"] = time.time() - t_start
 
         t_start = time.time()
-        j.using("Pkg")
+        j.eval('using Pkg')
         time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
 
         if os.environ.get("SOLVER") == "xpress":
@@ -121,13 +123,13 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
             try:
                 t_start = time.time()
-                j.include("reo/src/reopt_xpress_model.jl")
+                j.eval('include("reo/src/reopt_xpress_model.jl")')
                 time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
 
             except ImportError:
                 # should only need to instantiate once
                 j.eval('Pkg.instantiate()')
-                j.include("reo/src/reopt_xpress_model.jl")
+                j.eval('include("reo/src/reopt_xpress_model.jl")')
 
             t_start = time.time()
             model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
@@ -139,7 +141,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             time_dict["pyjulia_activate_seconds"] = time.time() - t_start
 
             t_start = time.time()
-            j.include("reo/src/reopt_cbc_model.jl")
+            j.eval('include("reo/src/reopt_cbc_model.jl")')
             time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
 
             t_start = time.time()
@@ -152,7 +154,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             time_dict["pyjulia_activate_seconds"] = time.time() - t_start
 
             t_start = time.time()
-            j.include("reo/src/reopt_scip_model.jl")
+            j.eval('include("reo/src/reopt_scip_model.jl")')
             time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
 
             t_start = time.time()
@@ -165,12 +167,16 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
         t_start = time.time()
-        j.include("reo/src/reopt.jl")
+        j.eval('include("reo/src/reopt.jl")')
         time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
 
         t_start = time.time()
         results = j.reopt(model, data, reopt_inputs)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
+
+        # t_start = time.time()  # excludes compilation time
+        # results = j.reopt(model, data, reopt_inputs)
+        # time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
         results.update(time_dict)
 
