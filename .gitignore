@@ -118,3 +118,6 @@ results_processing/*
 # Math Forumlation Latex
 docs/formulation/*aux
 docs/formulation/*log
+
+# solver folder for avoiding pushing xpauth.xpr file to remote
+solver/*
