@@ -583,7 +583,7 @@ class UrdbParse:
             elif tech.lower() == 'generator':
                 energy_burn_rate.append(self.generator_fuel_slope)
             elif tech.lower() == 'chp':
-                energy_burn_rate.append(self.chp_fuel_slope)
+                energy_burn_rate.append(self.chp_fuel_burn_slope)
             else:
                 energy_burn_rate.append(0.0)
 
@@ -594,8 +594,8 @@ class UrdbParse:
             if tech.lower() == 'generator':
                 energy_burn_intercept.append(self.generator_fuel_intercept)
             elif tech.lower() == 'chp':
-                energy_burn_intercept.append(self.chp_fuel_intercept)
-                chp_energy_burn_yint.append(self.chp.chp_fuel_intercept)
+                energy_burn_intercept.append(self.chp_fuel_burn_intercept)
+                chp_energy_burn_yint.append(self.chp_fuel_burn_intercept)
             else:
                 energy_burn_intercept.append(0)
 
