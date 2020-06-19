@@ -1212,14 +1212,13 @@ function add_chp_results(m, p, r::Dict)
 	
 	##Hot thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.HotTES)
-		@expression(REopt, HotTESSizeMMBTU, sum(dvStorageCapEnergy[b] for b in HotTES))
+		@expression(REopt, HotTESSizeMMBTU, sum(dvStorageCapEnergy[b] for b in p.HotTES))
 		results["hot_tes_size_mmbtu"] = round(value(HotTESSizeMMBTU), digits=5)
-		@expression(REopt, HotTESDischargeSeries[ts in p.TimeStep], dvDischargeFromStorage[b, ts]
-			for b in HotTES)
+		@expression(REopt, HotTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
+			for b in p.HotTES))
 		results["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
-		@expression(REopt, HotTESsoc[ts in p.TimeStep], dvStorageSOC[b,ts] / HotTESSizeMMBTU
-			for b in HotTES)
-		results["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc), digits=5)
+		@expression(REopt, HotTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.HotTES))
+		results["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
 	else
 		results["hot_tes_size_mmbtu"] = 0.0
 		results["hot_tes_thermal_production_series"] = []
@@ -1228,14 +1227,13 @@ function add_chp_results(m, p, r::Dict)
 	
 	##Cold thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.ColdTES)
-		@expression(REopt, ColdTESSizeKWHT, sum(dvStorageCapEnergy[b] for b in ColdTES))
+		@expression(REopt, ColdTESSizeKWHT, sum(dvStorageCapEnergy[b] for b in p.ColdTES))
 		results["cold_tes_size_kwht"] = round(value(ColdTESSizeKWHT), digits=5)
-		@expression(REopt, ColdTESDischargeSeries[ts in p.TimeStep], dvDischargeFromStorage[b, ts]
-			for b in ColdTES)
+		@expression(REopt, ColdTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
+			for b in p.ColdTES))
 		results["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
-		@expression(REopt, ColdTESsoc[ts in p.TimeStep], dvStorageSOC[b,ts] / ColdTESSizeKWHT
-			for b in ColdTES)
-		results["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc), digits=5)
+		@expression(REopt, ColdTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.ColdTES))
+		results["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
 	else
 		results["cold_tes_size_kwht"] = 0.0
 		results["cold_tes_thermal_production_series"] = []
