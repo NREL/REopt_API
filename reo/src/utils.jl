@@ -3,6 +3,7 @@ import Base.reshape
 import AxisArrays.AxisArray
 import JuMP.value
 import LinearAlgebra: transpose
+import MutableArithmetics
 using AxisArrays
 using JuMP
 using Printf
@@ -339,7 +340,10 @@ end
 JuMP.value(::Val{false}) = 0
 
 
-JuMP.value(x::Float64) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and similar
+JuMP.value(x::Number) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and similar
+
+
+JuMP.value(::MutableArithmetics.Zero) = 0
 
 
 function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{String, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
