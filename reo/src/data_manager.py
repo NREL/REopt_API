@@ -1165,7 +1165,15 @@ class DataManager:
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
-        
+
+        #TODO: handle chp parameter population directly in urdb_parse, or move all to data_manager
+        chp_thermal_prod_slope = tariff_args.chp_thermal_prod_slope if len(chp_techs) > 0 else []
+        chp_thermal_prod_slope_bau = tariff_args.chp_thermal_prod_slope_bau if len(chp_techs_bau) > 0 else []
+        chp_thermal_prod_intercept = tariff_args.chp_thermal_prod_intercept if len(chp_techs) > 0 else []
+        chp_thermal_prod_intercept_bau = tariff_args.chp_thermal_prod_intercept_bau if len(chp_techs_bau) > 0 else []
+        chp_fuel_burn_intercept = tariff_args.chp_fuel_burn_intercept if len(chp_techs) > 0 else []
+        chp_fuel_burn_intercept_bau = tariff_args.chp_fuel_burn_intercept_bau if len(chp_techs_bau) > 0 else []
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1273,12 +1281,12 @@ class DataManager:
             'AbsorptionChillers': absorption_chillers,
             'CoolingTechs': cooling_techs,
             'HeatingTechs': heating_techs,
-            	'BoilerEfficiency': boiler_efficiency,
-            	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop,
-            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
-            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
-            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
+            'BoilerEfficiency': boiler_efficiency,
+            'ElectricChillerCOP': elec_chiller_cop,
+            'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': chp_thermal_prod_slope,
+            'CHPThermalProdIntercept': chp_thermal_prod_intercept,
+            'FuelBurnYIntRate': chp_fuel_burn_intercept,
             'CHPThermalProdFactor': chp_thermal_prod_factor,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
@@ -1391,13 +1399,25 @@ class DataManager:
             'AbsorptionChillers': absorption_chillers_bau,
             'CoolingTechs': cooling_techs_bau,
             'HeatingTechs': heating_techs_bau,
-            	'BoilerEfficiency': boiler_efficiency,
-            	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop,
-            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope_bau,
-            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept_bau,
-            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept_bau,
+            'BoilerEfficiency': boiler_efficiency,
+            'ElectricChillerCOP': elec_chiller_cop,
+            'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
+            'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
+            'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
         }
+        print(self.reopt_inputs['Tech'])
+        print(self.reopt_inputs['CHPTechs'])
+        print(self.reopt_inputs['CHPThermalProdSlope'])
+        print(self.reopt_inputs['CHPThermalProdIntercept'])
+        print(self.reopt_inputs['CHPThermalProdFactor'])
+        print(self.reopt_inputs['FuelBurnYIntRate'])
+        print(self.reopt_inputs_bau['Tech'])
+        print(self.reopt_inputs_bau['CHPTechs'])
+        print(self.reopt_inputs_bau['CHPThermalProdSlope'])
+        print(self.reopt_inputs_bau['CHPThermalProdIntercept'])
+        print(self.reopt_inputs_bau['CHPThermalProdFactor'])
+        print(self.reopt_inputs_bau['FuelBurnYIntRate'])
