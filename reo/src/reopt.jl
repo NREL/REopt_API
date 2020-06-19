@@ -626,11 +626,22 @@ function add_monthly_demand_charge_constraints(m, p)
 	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
 		m[:binDemandMonthsTier][mth, n] * m[:NewMaxDemandMonthsInTier][mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
 	
-	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
-	@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
-		sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
-		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
-	)
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month
+	if p.CHPDoesNotReduceDemandCharges == 1
+		@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
+				sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
+				sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier ) +
+				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.CHPTechs) -
+				 sum(m[:dvProductionToStorage][t,ts] for t in p.CHPTechs) -
+				 sum(sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+		)
+	else
+		@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
+			sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+		)
+	end
+	
 	if !isempty(p.DemandRatesMonth)
 		m[:DemandFlatCharges] = @expression(m, p.pwf_e * sum( p.DemandRatesMonth[mth,n] * m[:dvPeakDemandEMonth][mth,n] for mth in p.Month, n in p.DemandMonthsBin) )
 	else
@@ -659,25 +670,27 @@ function add_tou_demand_charge_constraints(m, p)
 	)
 	
 	##Constraint (12e): Peak demand used in percent lookback calculation 
-	@constraint(m, [m in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][m, n] for n in p.DemandMonthsBin)
+	@constraint(m, [mth in p.DemandLookbackMonths],
+		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
 	)
 	
 	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
 	@constraint(m, [r in p.DemandLookbackMonths],
-		sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
+		sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >= 
 		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
 	)
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
+
 	end
 end
 
 
 function add_util_fixed_and_min_charges(m, p)
+
     m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
-		
+
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
         m[:TotalMinCharge] = p.AnnualMinCharge 
@@ -868,6 +881,7 @@ function reopt_run(m, p::Parameter)
 		# not optimal, empty objective_value
 		return results
 	end
+
 
 	add_yearone_expressions(m, p)
 
@@ -1070,7 +1084,7 @@ function add_chp_results(m, p, r::Dict)
 		@expression(REopt, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
 				for t in CHPTechs, u in p.SalesTiersByTech[t]))
 		results["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
-		@expression(REopt, CHPtoBatt[ts in p.TimeStep]
+		@expression(REopt, CHPtoBatt[ts in p.TimeStep],
 			sum(dvProductionToStorage["Elec",t,ts] for t in CHPTechs))
 		results["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
 		@expression(REopt, CHPtoLoad[ts in p.TimeStep],
@@ -1081,7 +1095,7 @@ function add_chp_results(m, p, r::Dict)
 			sum(dvProductionToStorage["HotTES",t,ts] for t in CHPTechs))
 		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
-			dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
 				for t in CHPTechs) - CHPtoHotTES[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,

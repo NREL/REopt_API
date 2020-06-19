@@ -63,8 +63,9 @@ class REoptArgs:
         self.demand_lookback_percent = 0.0
         self.demand_min = 0
 
-        self.energy_rates = []
-        self.energy_rates_bau = []
+ 
+        self.energy_costs = []
+        self.energy_costs_bau = []
         self.energy_tiers_num = 1
         self.energy_max_in_tiers = 1 * [big_number]
         self.energy_avail = []
@@ -74,8 +75,6 @@ class REoptArgs:
         self.energy_burn_intercept = []
         self.energy_burn_intercept_bau = []
 
-        self.energy_costs = []
-        self.energy_costs_bau = []
         self.fuel_costs = []
         self.fuel_costs_bau = []
         self.grid_export_rates = []
@@ -297,7 +296,7 @@ class UrdbParse:
             self.prepare_energy_costs(current_rate)
             self.prepare_fixed_charges(current_rate)
 
-        self.reopt_args.energy_rates, \
+        self.reopt_args.fuel_costs, \
         self.reopt_args.fuel_limit,  \
         self.reopt_args.fuel_types,  \
         self.reopt_args.techs_by_fuel_type,  \
@@ -318,7 +317,7 @@ class UrdbParse:
         self.reopt_args.electric_chiller_cop, \
         self.reopt_args.absorption_chiller_cop = self.prepare_techs_and_loads(self.techs)
 
-        self.reopt_args.energy_rates_bau, \
+        self.reopt_args.fuel_costs_bau, \
         self.reopt_args.fuel_limit_bau,  \
         self.reopt_args.fuel_types_bau,  \
         self.reopt_args.techs_by_fuel_type_bau,  \
@@ -524,7 +523,7 @@ class UrdbParse:
             excess_rate_costs = [1.0 * x for x in self.excess_rate]
 
         # FuelCost = array(FuelType, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        energy_rates = list()
+        fuel_costs = list()
         # FuelLimit: array(FuelType)
         fuel_limit = list()
         # Set FuelType
@@ -535,18 +534,18 @@ class UrdbParse:
             # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
             if tech.lower() == 'generator':
                 # generator fuel is not free anymore since generator is also a design variable
-                energy_rates = operator.add(energy_rates, self.diesel_cost_array)
+                fuel_costs = operator.add(fuel_costs, self.diesel_cost_array)
                 fuel_limit.append(self.generator_fuel_avail)
                 # TODO figure out how to populate fuel costs for all fb techs
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("DIESEL")
             elif tech.lower() == 'boiler':
-                energy_rates = operator.add(energy_rates, self.boiler_fuel_rate_array)
+                fuel_costs = operator.add(fuel_costs, self.boiler_fuel_rate_array)
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("BOILERFUEL")
             elif tech.lower() == 'chp':
-                energy_rates = operator.add(energy_rates, self.chp_fuel_rate_array)
+                fuel_costs = operator.add(fuel_costs, self.chp_fuel_rate_array)
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
                 fuel_types.append("CHPFUEL")
@@ -581,10 +580,10 @@ class UrdbParse:
                 energy_burn_rate.append(1.0)
             elif tech.lower() == 'boiler':
                 energy_burn_rate.append(1 / self.boiler_efficiency)
-            elif tech.lower() == 'generator' and load != 'boiler' and load != 'tes':
+            elif tech.lower() == 'generator':
                 energy_burn_rate.append(self.generator_fuel_slope)
-            elif tech.lower() == 'chp' and load != 'boiler' and load != 'tes':
-                energy_burn_rate.append(self.chp_fuel_slope)
+            elif tech.lower() == 'chp':
+                energy_burn_rate.append(self.chp_fuel_burn_slope)
             else:
                 energy_burn_rate.append(0.0)
 
@@ -595,8 +594,8 @@ class UrdbParse:
             if tech.lower() == 'generator':
                 energy_burn_intercept.append(self.generator_fuel_intercept)
             elif tech.lower() == 'chp':
-                energy_burn_intercept.append(self.chp_fuel_intercept)
-                chp_energy_burn_yint.append(self.chp.chp_fuel_intercept)
+                energy_burn_intercept.append(self.chp_fuel_burn_intercept)
+                chp_energy_burn_yint.append(self.chp_fuel_burn_intercept)
             else:
                 energy_burn_intercept.append(0)
 
@@ -611,7 +610,7 @@ class UrdbParse:
         electric_chiller_cop = self.electric_chiller_cop
         absorption_chiller_cop = self.absorption_chiller_cop
 
-        return energy_rates, fuel_limit, fuel_types, techs_by_fuel_type, energy_burn_rate, energy_burn_intercept, \
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, energy_burn_rate, energy_burn_intercept, \
             energy_costs, grid_export_rates, rates_by_tech, techs_by_rate, num_sales_tiers, \
             chp_thermal_prod_slope, chp_thermal_prod_intercept, chp_fuel_burn_intercept, \
             chp_derate, chp_standby_rate, chp_does_not_reduce_demand_charges, \
