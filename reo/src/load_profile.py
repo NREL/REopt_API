@@ -409,7 +409,7 @@ class BuiltInProfile(object):
             gdf = gdf[gdf.geometry.intersects(g.Point(self.longitude, self.latitude))]
             if not gdf.empty:
                 self.nearest_city = gdf.city.values[0].replace(' ','')
-                
+
             if self.nearest_city is None:
                 # else use old geometric approach, never fails...but isn't necessarily correct
                 log.info("Using geometrically nearest city to lat/lng.")
@@ -555,7 +555,7 @@ class LoadProfile(BuiltInProfile):
 
             # appending the weighted load at every timestep, for making hybrid loadlist
                     combine_loadlist.append([load * (percent_share / 100) for load in self.load_list])
-            
+
             # combine_loadlist and combine_critical_loads_kw list are both "list of lists", now summing up the loads from individual list-elements completing the hybrid load and critical load profile
             # using ndarray for faster operations
                 hybrid_loadlist_np = list(np.sum(np.array(combine_loadlist), 0))
@@ -570,15 +570,10 @@ class LoadProfile(BuiltInProfile):
             if pv is not None:
                 if pv.existing_kw > 0:
                     """
-                        Create existing PV profile.
-                        Must account for levelization factor to align with how PV is modeled in REopt:
-                        Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
-                        that accounts for the PV capacity degradation over the analysis_years. In other words, by
-                        multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+                    Create existing PV profile.
                     """
-                    levelization_factor = round(degradation_factor(analysis_years, pv.degradation_pct), 5)
                     # for first PV just override the existing_pv_kw_list, otherwise add to existing production
-                    new_existing_pv_kw_list = [pv.existing_kw * x * levelization_factor for x in pv.prod_factor]
+                    new_existing_pv_kw_list = [pv.existing_kw * x for x in pv.prod_factor]
                     if existing_pv_kw_list is None:
                         existing_pv_kw_list = new_existing_pv_kw_list
                     else:
@@ -600,9 +595,9 @@ class LoadProfile(BuiltInProfile):
         def resilienceCheck(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                             fuel_avail_before_outage, fuel_slope, fuel_intercept):
             fuel_avail = fuel_avail_before_outage
-            
+
             i = -1
-            
+
             if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
                 return False, 0
 
@@ -684,7 +679,7 @@ class LoadProfile(BuiltInProfile):
             """
             resilience_check_flag = True
             sustain_hours = 0 #no outage
-            
+
         else:  # missing outage_start_hour, outage_end_hour, or critical_load_kw => no specified outage
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
