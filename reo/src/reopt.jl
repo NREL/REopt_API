@@ -6,14 +6,23 @@ include("utils.jl")
 
 function reopt(reo_model, data, model_inputs)
 
+	t_start = time()
+	
     p = Parameter(model_inputs)
     MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
 
-    return reopt_run(reo_model, MAXTIME, p)
+	t = time() - t_start
+
+	results = reopt_run(reo_model, MAXTIME, p)
+	results["julia_input_construction_seconds"] = t
+	return results
 end
 
+
 function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
-	
+
+	t_start = time()
+	results = Dict{String, Any}()
 	REopt = reo_model
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
@@ -116,7 +125,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#		])
 	#	end
 	#end	
-	
+	results["julia_reopt_preamble_seconds"] = time() - t_start
+	t_start = time()
+
     @variables REopt begin
 		# Continuous Variables
 	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
@@ -154,7 +165,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         binDemandMonthsTier[p.Month, p.DemandMonthsBin], Bin # 1 If tier n has allocated demand during month m; 0 otherwise
 		binEnergyTier[p.Month, p.PricingTier], Bin    #  Z^{ut}_{mu} 1 If demand tier $u$ is active in month m; 0 otherwise (NEW)
     end
-		
+	results["julia_reopt_variables_seconds"] = time() - t_start
+	t_start = time()
     ##############################################################################
 	#############  		Constraints									 #############
 	##############################################################################
@@ -354,12 +366,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#			)
-	
-
-	#Constraint (4n): Discharge no greater than power capacity
-	@constraint(REopt, StoragePowerCapCon[b in p.Storage, ts in p.TimeStep],
-    	        dvDischargeFromStorage[b,ts] <= dvStorageCapPower[b]
-					)
 					
 	#Constraint (4n): State of charge upper bound is storage system size
 	@constraint(REopt, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
@@ -640,8 +646,19 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		sum(dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
-	@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
-    @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
+
+	if !isempty(p.DemandRates)
+		@expression(REopt, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * dvPeakDemandE[r,e] for r in p.Ratchets, e in p.DemandBin) )
+	else
+		@expression(REopt, DemandTOUCharges, 0)
+	end
+
+	if !isempty(p.DemandRatesMonth)
+		@expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
+	else
+		@expression(REopt, DemandFlatCharges, 0)
+	end
+
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
 		
@@ -690,7 +707,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@objective(REopt, Min, REcosts - sum(dvStorageSOC["Elec",ts] for ts in p.TimeStep)/8760.)
 	end
 	
+	results["julia_reopt_constriants_seconds"] = time() - t_start
+	t_start = time()
+
 	optimize!(REopt)
+
+	results["julia_reopt_optimize_seconds"] = time() - t_start
+	t_start = time()
+
 	if termination_status(REopt) == MOI.TIME_LIMIT
 		status = "timed-out"
     elseif termination_status(REopt) == MOI.OPTIMAL
@@ -725,8 +749,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
+	
+	try
+		results["lcc"] = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
+	catch
+		results["status"] = "not optimal"
+		return results
+	end
 
-    ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
     Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
@@ -734,8 +764,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     Year1FixedCharges = TotalFixedCharges / p.pwf_e
     Year1MinCharges = MinChargeAdder / p.pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
-
-    results = Dict{String, Any}("lcc" => ojv)
 
     results["batt_kwh"] = value(dvStorageCapEnergy["Elec"])
     results["batt_kw"] = value(dvStorageCapPower["Elec"])
@@ -895,7 +923,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						for t in WindTechs) - WINDtoGrid[ts] - WINDtoBatt[ts] )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
-		
 	else
 		results["WINDtoLoad"] = []
     	results["WINDtoGrid"] = []
@@ -910,31 +937,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     end
 
     results["status"] = status
-	
-	#=
-	print("TotalTechCapCosts:")
-	println(value(TotalTechCapCosts))
-	print("TotalStorageCapCosts:")
-	println(value(TotalStorageCapCosts))
-	print("TotalPerUnitSizeOMCosts:")
-	println(value(TotalPerUnitSizeOMCosts))
-	print("TotalPerUnitProdOMCosts:")
-	println(value(TotalPerUnitProdOMCosts))
-	println(value( r_tax_fraction_owner * TotalPerUnitProdOMCosts ))
-	print("TotalEnergyCharges:")
-	println(value(TotalEnergyCharges))
-	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
-	print("TotalExportBenefit:")
-	println(value(TotalExportBenefit))
-	println(value( r_tax_fraction_offtaker * TotalExportBenefit ))
-	print("TotalFixedCharges:")
-	println(value(TotalFixedCharges))
-	println(value(r_tax_fraction_offtaker * p.pwf_e * ( p.FixedMonthlyCharge * 12 ) ) )
-	print("MinChargeAdder:")
-	println(value(MinChargeAdder))
-	println(value(r_tax_fraction_offtaker * p.pwf_e * ( MinChargeAdder ) ) )
-	print("TotalProductionIncentive:")
-	println(value(TotalProductionIncentive))
-	=#
+	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end

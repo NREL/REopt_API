@@ -116,3 +116,8 @@ results_processing/*
 # Math Forumlation Latex
 docs/formulation/*aux
 docs/formulation/*log
+
+# Julia system images
+julia_envs/**/**.so
+julia_envs/**/**.dylib
+julia_envs/**/**.dll
