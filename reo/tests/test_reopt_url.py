@@ -373,8 +373,11 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
                     "ElectricTariff": {
                         "blended_monthly_rates_us_dollars_per_kwh": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
                                                                      0.2, 0.2],
-                        "blended_monthly_demand_charges_us_dollars_per_kw": [0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2,
-                                                                             0.2, 0.2, 0.2, 0.2]
+                        "blended_monthly_demand_charges_us_dollars_per_kw": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                                             0.0, 0.0, 0.0, 0.0]
+                    },
+                    "PV": {
+                        "max_kw": 0
                     },
                     "Storage": {
                         "max_kw": 0

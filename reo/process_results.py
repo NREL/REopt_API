@@ -41,6 +41,7 @@ from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
 log = logging.getLogger(__name__)
 
+
 class ProcessResultsTask(Task):
     """
     Used to define custom Error handling for celery task
@@ -111,6 +112,19 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "total_boiler_fuel_cost",
             "year_one_boiler_thermal_production_mmbtu",
             "year_one_electric_chiller_thermal_kwh"
+            "julia_input_construction_seconds",
+            "julia_reopt_preamble_seconds",
+            "julia_reopt_variables_seconds",
+            "julia_reopt_constriants_seconds",
+            "julia_reopt_optimize_seconds",
+            "julia_reopt_postprocess_seconds",
+            "pyjulia_start_seconds",
+            "pyjulia_pkg_seconds",
+            "pyjulia_activate_seconds",
+            "pyjulia_include_model_seconds",
+            "pyjulia_make_model_seconds",
+            "pyjulia_include_reopt_seconds",
+            "pyjulia_run_reopt_seconds",
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -121,7 +135,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             :param instance of DataManager class
             :param dict, data['inputs']['Scenario']['Site']
             """
-            self.profiler = Profiler()
             self.dm = dm
             self.inputs = inputs
 
@@ -182,7 +195,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs = self.setup_nested()
 
         @property
-
         def replacement_costs(self):
             replacement_costs = 0
             replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
@@ -571,8 +583,11 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
 
-            self.profiler.profileEnd()
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
+            time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
+
+            for k in time_outputs:
+                self.nested_outputs["Scenario"]["Profile"][k] = self.results_dict.get(k)
+                self.nested_outputs["Scenario"]["Profile"][k + "_bau"] = self.results_dict.get(k + "_bau")
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -634,12 +649,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         data = EmissionsCalculator.add_to_data(data)
+        if len(data['outputs']['Scenario']['Site']['PV']) == 1:
+            data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
         profiler.profileEnd()
         data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
-        if len(data['outputs']['Scenario']['Site']['PV'])==1:
-            data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)
 
