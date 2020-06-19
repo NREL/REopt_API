@@ -534,8 +534,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_mmbtu")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_boiler_thermal_production_bau_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_mmbtu_bau")
                 elif name == "ElectricChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_thermal_to_load_series_ton"] = self.results_dict.get("electric_chiller_to_load_series")
@@ -547,8 +545,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_electric_chiller_electric_consumption_kwh"] = self.results_dict.get("year_one_electric_chiller_electric_kwh")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_electric_chiller_thermal_production_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh") / 3.51685
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_electric_chiller_thermal_production_bau_tonhr"] = self.results_dict.get("year_one_electric_chiller_thermal_kwh_bau") / 3.51685
                 elif name == "AbsorptionChiller":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_ton"] = self.results_dict.get("absorpchl_kw") / 3.51685
@@ -575,7 +571,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_thermal_from_cold_tes_series_ton"] = self.results_dict.get("cold_tes_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
+                        "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
 
             # outputs that depend on multiple object results:
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
