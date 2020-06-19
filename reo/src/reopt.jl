@@ -434,9 +434,9 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		)
 			
 		##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-		@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-			dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
-		)
+		#@constraint(REopt, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
+		#	dvRatedProduction[t,ts]  <= p.ElectricDerate[t,ts] * dvSize[t]
+		#)
 			
 		##Constraint (7f)-1: Minimum segment size
 		@constraint(REopt, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
