@@ -391,6 +391,7 @@ class BuiltInProfile(object):
         self.year = year or 2017
         self.annual_energy = annual_energy if annual_energy else (
             sum(monthly_totals_energy) if monthly_totals_energy else self.default_annual_energy)
+        self.annual_kwh = self.annual_energy
 
     @property
     def built_in_profile(self):
@@ -653,7 +654,6 @@ class LoadProfile(BuiltInProfile):
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept)
-            self.bau_load_list[outage_start_hour:outage_start_hour+sustain_hours] = critical_loads_kw[outage_start_hour:outage_start_hour+sustain_hours]
             self.bau_load_list[outage_start_hour:outage_start_hour + sustain_hours] = \
                 critical_loads_kw[outage_start_hour:outage_start_hour + sustain_hours]
 
