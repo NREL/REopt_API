@@ -755,8 +755,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
+	
+	try
+		results["lcc"] = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
+	catch
+		results["status"] = "not optimal"
+		return results
+	end
 
-	results["lcc"] = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
     Year1DemandCost = TotalDemandCharges / p.pwf_e
     Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
@@ -923,7 +929,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 						for t in WindTechs) - WINDtoGrid[ts] - WINDtoBatt[ts] )
 		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 
-		
 	else
 		results["WINDtoLoad"] = []
     	results["WINDtoGrid"] = []
@@ -938,32 +943,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     end
 
     results["status"] = status
-	
-	#=
-	print("TotalTechCapCosts:")
-	println(value(TotalTechCapCosts))
-	print("TotalStorageCapCosts:")
-	println(value(TotalStorageCapCosts))
-	print("TotalPerUnitSizeOMCosts:")
-	println(value(TotalPerUnitSizeOMCosts))
-	print("TotalPerUnitProdOMCosts:")
-	println(value(TotalPerUnitProdOMCosts))
-	println(value( r_tax_fraction_owner * TotalPerUnitProdOMCosts ))
-	print("TotalEnergyCharges:")
-	println(value(TotalEnergyCharges))
-	println(value(r_tax_fraction_offtaker * TotalEnergyCharges))
-	print("TotalExportBenefit:")
-	println(value(TotalExportBenefit))
-	println(value( r_tax_fraction_offtaker * TotalExportBenefit ))
-	print("TotalFixedCharges:")
-	println(value(TotalFixedCharges))
-	println(value(r_tax_fraction_offtaker * p.pwf_e * ( p.FixedMonthlyCharge * 12 ) ) )
-	print("MinChargeAdder:")
-	println(value(MinChargeAdder))
-	println(value(r_tax_fraction_offtaker * p.pwf_e * ( MinChargeAdder ) ) )
-	print("TotalProductionIncentive:")
-	println(value(TotalProductionIncentive))
-	=#
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end
