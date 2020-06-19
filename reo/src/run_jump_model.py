@@ -97,11 +97,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     logger.info("Running JuMP model ...")
     try:
         if os.path.isfile(julia_img_file):
-            # TODO: clean up this try/except block and handle local development with Julia image
-            print("Using Julia image.")
+            # TODO: clean up this try/except block 
             t_start = time.time()
-
-            # then on one of NREL's REopt servers, use Julia system image built via Jenkins deploy
             api = LibJulia.load()
             api.sysimage = julia_img_file
             api.init_julia()
@@ -132,7 +129,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 j.eval('include("reo/src/reopt_xpress_model.jl")')
 
             t_start = time.time()
-            model = j.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
+            reopt_model = j.eval("reopt_model")
+            model = reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "cbc":
@@ -145,7 +143,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
 
             t_start = time.time()
-            model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+            reopt_model = j.eval("reopt_model")
+            model = reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "scip":
@@ -158,7 +157,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
 
             t_start = time.time()
-            model = j.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
+            reopt_model = j.eval("reopt_model")
+            model = reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         else:
@@ -171,12 +171,9 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
 
         t_start = time.time()
-        results = j.reopt(model, data, reopt_inputs)
+        reopt = j.eval("reopt")
+        results = reopt(model, data, reopt_inputs)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
-
-        # t_start = time.time()  # excludes compilation time
-        # results = j.reopt(model, data, reopt_inputs)
-        # time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
         results.update(time_dict)
 
