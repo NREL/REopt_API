@@ -547,11 +547,21 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, [m in p.Month, n in 2:p.DemandMonthsBinCount],
         	 binDemandMonthsTier[m, n] * NewMaxDemandMonthsInTier[m,n-1] <= dvPeakDemandEMonth[m, n-1])
 	
-	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
-	@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
-        	 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin ) >= 
-			 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
-	)
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month
+	if p.CHPDoesNotReduceDemandCharges == 1
+		@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
+				 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin )  >=
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier ) +
+				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.CHPTechs) -
+				 sum(dvProductionToStorage[t,ts] for t in p.CHPTechs) -
+				 sum(sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+		)
+	else
+		@constraint(REopt, [m in p.Month, ts in p.TimeStepRatchetsMonth[m]],
+				 sum( dvPeakDemandEMonth[m, n] for n in p.DemandMonthsBin ) >=
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
+		)
+	end
 	### End Constraint Set (11)
 	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
@@ -569,10 +579,20 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		    	 binDemandTier[r, e] * NewMaxDemandInTier[r,e-1] <= dvPeakDemandE[r, e-1])
 		
 		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
-		@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
-		    	 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >= 
+		if p.CHPDoesNotReduceDemandCharges == 1
+			@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
+				 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >=
+				 sum( dvGridPurchase[u, ts] for u in p.PricingTier ) +
+				 sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.CHPTechs) -
+				 sum(dvProductionToStorage[t,ts] for t in p.CHPTechs) -
+				 sum( sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.CHPTechs)
+			)
+		else
+			@constraint(REopt, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
+				 sum( dvPeakDemandE[r, e] for e in p.DemandBin ) >=
 				 sum( dvGridPurchase[u, ts] for u in p.PricingTier )
-		)
+			)
+		end
 		
 		##Constraint (12e): Peak demand used in percent lookback calculation 
 		@constraint(REopt, [m in p.DemandLookbackMonths],
@@ -610,7 +630,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, TotalPerUnitSizeOMCosts, p.two_party_factor * p.pwf_om * 
 		sum( p.OMperUnitSize[t] * dvSize[t] for t in p.Tech ) 
 	)
-    if !isempty(FuelBurningTechs)
+    if !isempty(p.FuelBurningTechs)
 		@expression(REopt, TotalPerUnitProdOMCosts, p.two_party_factor * p.pwf_om * 
 			sum( p.OMcostPerUnitProd[t] * dvRatedProduction[t,ts] for t in p.FuelBurningTechs, ts in p.TimeStep ) 
 		)
@@ -663,7 +683,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[m,n] * dvPeakDemandEMonth[m,n] for m in p.Month, n in p.DemandMonthsBin) )
     @expression(REopt, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
     TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
-		
+	@expression(REopt, TotalCHPStandbyCharges,
+		p.CHPStandbyCharge * 12 * sum(dvSize[t] for t in p.CHPTechs) * p.pwf_e
+		)
+
+
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
         TotalMinCharge = p.AnnualMinCharge 
@@ -691,7 +715,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		TotalPerUnitProdOMCosts * r_tax_fraction_owner +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
+		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalCHPStandbyCharges + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         TotalGenFuelCharges * r_tax_fraction_offtaker -
@@ -732,7 +756,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, AverageGenProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					   for t in GeneratorTechs, ts in p.TimeStep))
 
-	@expression(REopt, GenPerUnitSizeOMCosts, p.two_party_factor * 
+	@expression(REopt, Year1CHPElecProd, p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
+                       for t in p.CHPTechs, ts in p.TimeStep))
+
+	@expression(REopt, Year1CHPThermalProd, p.TimeStepScaling * sum(p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts]
+                       for t in p.CHPTechs, ts in p.TimeStep))
+
+	@expression(REopt, GenPerUnitSizeOMCosts, p.two_party_factor *
 		sum(p.OMperUnitSize[t] * p.pwf_om * dvSize[t] for t in GeneratorTechs)
 	)
 	@expression(REopt, GenPerUnitProdOMCosts, p.two_party_factor * 
@@ -743,6 +773,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     @expression(REopt, Year1UtilityEnergy,  p.TimeStepScaling * sum(
 		dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier)
 		)	
+
+
 
     ojv = round(JuMP.objective_value(REopt)+ 0.0001*value(MinChargeAdder))
     Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
@@ -939,7 +971,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
 				for t in CHPTechs, u in p.SalesTiersByTech[t]))
 		results["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
-		@expression(REopt, CHPtoBatt[ts in p.TimeStep]
+		@expression(REopt, CHPtoBatt[ts in p.TimeStep],
 			sum(dvProductionToStorage["Elec",t,ts] for t in CHPTechs))
 		results["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
 		@expression(REopt, CHPtoLoad[ts in p.TimeStep],
@@ -950,7 +982,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(dvProductionToStorage["HotTES",t,ts] for t in CHPTechs))
 		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
-			dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
 				for t in CHPTechs) - CHPtoHotTES[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
