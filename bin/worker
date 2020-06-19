@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+if [ "$APP_ENV" == "local" ]
+then
+    if ["$UNAME" != "Linux"]
+    then
+        XPRESSDIR="/usr/local/opt/xpress"
+        PATH="${XPRESSDIR}/bin:${PATH}"
+        DYLD_LIBRARY_PATH="${XPRESSDIR}/lib:${DEPLOY_CURRENT_PATH}/reo/src:${DYLD_LIBRARY_PATH}"
+        CLASSPATH="${XPRESSDIR}/lib/xprs.jar:${XPRESSDIR}/lib/xprb.jar:${XPRESSDIR}/lib/xprm.jar:${CLASSPATH}"
+        export DYLD_LIBRARY_PATH
+        export CLASSPATH
+        export XPRESS="$XPRESSDIR/bin"
+        export PATH
+    else
+        . /opt/xpressmp/bin/xpvars.sh
+        export XPRESS=/opt/xpressmp/bin
+
+        LD_LIBRARY_PATH="${DEPLOY_CURRENT_PATH}/reo/src:${LD_LIBRARY_PATH}"
+        export LD_LIBRARY_PATH
+    fi
+else
+    . /opt/xpressmp/bin/xpvars.sh
+    export XPRESS=/opt/xpressmp/bin
+
+    LD_LIBRARY_PATH="${DEPLOY_CURRENT_PATH}/reo/src:${LD_LIBRARY_PATH}"
+    export LD_LIBRARY_PATH
+fi
+
+exec ./env/bin/celery -A reopt_api worker --loglevel=info --queues="$APP_QUEUE_NAME"
