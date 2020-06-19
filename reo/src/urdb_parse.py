@@ -549,7 +549,7 @@ class UrdbParse:
                 energy_rates = operator.add(energy_rates, self.chp_fuel_rate_array)
                 fuel_limit.append(self.big_number)
                 techs_by_fuel_type.append([tech.upper()])
-                fuel_types.append("CHPGAS")
+                fuel_types.append("CHPFUEL")
 
         # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
         # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
