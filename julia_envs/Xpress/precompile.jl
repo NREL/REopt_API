@@ -1,4 +1,3 @@
-using Xpress
 using JuMP
 using AxisArrays
 using MathOptInterface
