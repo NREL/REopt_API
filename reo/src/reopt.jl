@@ -354,12 +354,6 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	#@constraint(REopt, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
     #	        dvStorageCapPower[b] >= sum(dvProductionToStorage[b,t,ts] for t in p.CoolingTechs)
 	#			)
-	
-
-	#Constraint (4n): Discharge no greater than power capacity
-	@constraint(REopt, StoragePowerCapCon[b in p.Storage, ts in p.TimeStep],
-    	        dvDischargeFromStorage[b,ts] <= dvStorageCapPower[b]
-					)
 					
 	#Constraint (4n): State of charge upper bound is storage system size
 	@constraint(REopt, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
