@@ -1409,15 +1409,4 @@ class DataManager:
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
         }
-        print(self.reopt_inputs['Tech'])
-        print(self.reopt_inputs['CHPTechs'])
-        print(self.reopt_inputs['CHPThermalProdSlope'])
-        print(self.reopt_inputs['CHPThermalProdIntercept'])
-        print(self.reopt_inputs['CHPThermalProdFactor'])
-        print(self.reopt_inputs['FuelBurnYIntRate'])
-        print(self.reopt_inputs_bau['Tech'])
-        print(self.reopt_inputs_bau['CHPTechs'])
-        print(self.reopt_inputs_bau['CHPThermalProdSlope'])
-        print(self.reopt_inputs_bau['CHPThermalProdIntercept'])
-        print(self.reopt_inputs_bau['CHPThermalProdFactor'])
-        print(self.reopt_inputs_bau['FuelBurnYIntRate'])
+
