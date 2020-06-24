@@ -594,7 +594,7 @@ class UrdbParse:
             if tech.lower() == 'generator':
                 energy_burn_intercept.append(self.generator_fuel_intercept)
             elif tech.lower() == 'chp':
-                energy_burn_intercept.append(self.chp_fuel_burn_intercept)
+                energy_burn_intercept.append(self.chp_fuel_burn_intercept[0])
                 chp_energy_burn_yint.append(self.chp_fuel_burn_intercept)
             else:
                 energy_burn_intercept.append(0)

@@ -26,11 +26,11 @@ function add_continuous_variables(m, p)
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
-		dvFuelBurnYIntercept[p.Tech, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
-		dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
-		dvThermalProductionYIntercept[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
-		dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
-		dvElectricChillerDemand[p.TimeStep]  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
+		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
+		dvThermalProduction[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
+		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
+		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
+		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
     end
 end
 
@@ -246,9 +246,12 @@ function add_fuel_constraints(m, p)
 				(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
 		)
 	end
-	m[:TotalGenFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
+	m[:TotalFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f] *
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
+	)
+	m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] * p.TimeStepScaling 	
+				* sum(p.FuelCost["DIESEL",ts] * dvFuelUsage["GENERATOR",ts] for ts in p.TimeStep)
 	)
 	
 	if !isempty(p.CHPTechs)
@@ -728,8 +731,8 @@ function add_cost_function(m, p)
 		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
-        m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
-                
+        m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
+
         # Subtract Incentives, which are taxable
 		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
 	)
@@ -948,8 +951,8 @@ function add_generator_results(m, p, r::Dict)
 		r["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
 		r["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
 		r["gen_net_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) * m[:r_tax_fraction_owner], digits=0)
-		r["gen_total_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
-		r["gen_year_one_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) / p.pwf_e, digits=2)
+		r["gen_total_fuel_cost"] = round(value(m[:TotalGeneratorFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
+		r["gen_year_one_fuel_cost"] = round(value(m[:TotalGeneratorFuelCharges]) / p.pwf_e, digits=2)
 		r["gen_year_one_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
 		r["gen_year_one_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
 	end
@@ -1103,13 +1106,10 @@ function add_chp_results(m, p, r::Dict)
 				for t in p.CHPTechs) - CHPtoHotTES[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
-			p.pwf_e * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
+			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
 				for ts in p.TimeStep))
-		results["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges), digits=3)
-		@expression(REopt, YearOneCHPFuelCharges,
-			p.TimeStepScaling * sum( p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
-				for ts in p.TimeStep))
-		results["year_one_chp_fuel_cost"] = round(value(YearOneCHPFuelCharges), digits=3)
+		results["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
+		results["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
 	else
 		results["chp_kw"] = 0.0
 		results["year_one_chp_fuel_used"] = 0.0
@@ -1137,13 +1137,10 @@ function add_chp_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
 		@expression(REopt, TotalBoilerFuelCharges,
-			p.pwf_e * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
+			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
-		results["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges), digits=3)
-		@expression(REopt, YearOneBoilerFuelCharges,
-			p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
-				for ts in p.TimeStep))
-		results["year_one_boiler_fuel_cost"] = round(value(YearOneBoilerFuelCharges), digits=3)
+		results["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
+		results["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
 	else
 		results["fuel_to_boiler_series"] = []
 		results["boiler_thermal_production_series"] = []
@@ -1246,7 +1243,7 @@ end
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
-                                value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
+                                value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
     push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
 						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
