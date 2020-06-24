@@ -102,7 +102,6 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
             api = LibJulia.load()
             api.sysimage = julia_img_file
             api.init_julia()
-            j = julia.Julia()
             from julia import Main
             time_dict["pyjulia_start_seconds"] = time.time() - t_start
         else:
