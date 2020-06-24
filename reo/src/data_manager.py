@@ -1107,8 +1107,8 @@ class DataManager:
         techs_no_turndown = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND")]
         techs_no_turndown_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND")]
         
-        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
-        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR")]
+        electric_techs = [t for t in reopt_techs if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
+        electric_techs_bau = [t for t in reopt_techs_bau if t.startswith("PV") or t.startswith("WIND") or t.startswith("GENERATOR") or t.startswith("CHP")]
         
         if len(reopt_techs) > 0:
             non_storage_sales_tiers = [1, 2]
@@ -1187,6 +1187,7 @@ class DataManager:
             'LevelizationFactor': levelization_factor,
             'pwf_e': pwf_e,
             'pwf_om': pwf_om,
+            'pwf_fuel': pwf_fuel_by_tech,
             'two_party_factor': two_party_factor,
             'pwf_prod_incent': pwf_prod_incent,
             'MaxProdIncent': max_prod_incent,
@@ -1305,6 +1306,7 @@ class DataManager:
             'LevelizationFactor': levelization_factor_bau,
             'pwf_e': pwf_e_bau,
             'pwf_om': pwf_om_bau,
+            'pwf_fuel': pwf_fuel_by_tech_bau,
             'two_party_factor': two_party_factor_bau,
             'pwf_prod_incent': pwf_prod_incent_bau,
             'MaxProdIncent': max_prod_incent_bau,

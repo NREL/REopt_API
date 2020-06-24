@@ -67,7 +67,7 @@ Base.@kwdef struct Parameter
 	 #CHPTechs::Array{String,1}  # T^{CHP} \subset T: CHP technologies (IGNORE)
 	 #CoolingTechs::Array{String,1}  # T^{cl} \subset T: Cooling technologies (IGNORE)
 	 ElectricTechs::Array{String,1}  # T^{e} \subset T: Electricity-producing technologies
-	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE) 
+	 #ElectricChillers::Array{String,1}  # T^{ec} \subset T: Electric chillers  (IGNORE)
 	 FuelBurningTechs::Array{String,1}  # T^{f} \subset T: Fuel-burning technologies
 	 #HeatingTechs::Array{String,1}  # T^{ht} \subset T: Heating technologies (IGNORE)
 	 TechsNoTurndown::Array{String,1}  # T^{ac} \subset T: Technologies that cannot turn down, i.e., PV and wind
@@ -127,7 +127,8 @@ Base.@kwdef struct Parameter
 	 
 	 ###  Generic Factor Parameters ###
 	 pwf_om::Float64  # f^{om}: Operations and maintenance present worth factor [unitless] 
-     pwf_e::Float64   # f^{e}: Energy present worth factor [unitless] 
+     pwf_e::Float64   # f^{e}: Energy present worth factor [unitless]
+	 pwf_fuel::AxisArray
 	 r_tax_owner::Float64      # f^{tow}: Tax rate factor for owner [fraction]
      r_tax_offtaker::Float64   # f^{tot}: Tax rate factor for offtaker [fraction]
 	 
@@ -315,7 +316,7 @@ function Parameter(d::Dict)
 	d["CHPThermalProdIntercept"] = AxisArray(d["CHPThermalProdIntercept"],d["CHPTechs"])
 	d["FuelBurnYIntRate"] = AxisArray(d["FuelBurnYIntRate"],d["CHPTechs"])
 	d["CHPThermalProdFactor"] = vector_to_axisarray(d["CHPThermalProdFactor"],d["CHPTechs"],d[:TimeStep])
-	
+	d["pwf_fuel"] = AxisArray(d["pwf_fuel"], d["Tech"])
 
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])

@@ -146,8 +146,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
         MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
-		dvFuelUsage[p.Tech, p.TimeStep]  # Fuel burned by technology t in time step h
-		dvFuelBurnYIntercept[p.Tech, p.TimeStep]  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
+		dvFuelUsage[p.Tech, p.TimeStep] >= 0 # Fuel burned by technology t in time step h
+		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
 		dvThermalProduction[p.Tech, p.TimeStep]  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep]
 		dvAbsorptionChillerDemand[p.TimeStep]  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
@@ -686,7 +686,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@expression(REopt, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * 
 		sum( p.ElecRate[u,ts] * dvGridPurchase[u,ts] for ts in p.TimeStep, u in p.PricingTier ) 
 	)
-	@expression(REopt, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling * sum( sum( p.FuelCost[f,ts] *
+	@expression(REopt, TotalFuelCharges, p.TimeStepScaling * sum( sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
 		dvFuelUsage[t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
@@ -739,8 +739,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		# Utility Bill, tax deductible for offtaker
 		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalCHPStandbyCharges + TotalFixedCharges + 0.999*MinChargeAdder) * r_tax_fraction_offtaker +
         
-        ## Total Generator Fuel Costs, tax deductible for offtaker
-        TotalGenFuelCharges * r_tax_fraction_offtaker -
+        ## Total Fuel Costs, tax deductible for offtaker
+        TotalFuelCharges * r_tax_fraction_offtaker -
                 
         # Subtract Incentives, which are taxable
 		TotalProductionIncentive * r_tax_fraction_owner
@@ -849,9 +849,11 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
             results["generator_kw"] = value(sum(dvSize[t] for t in GeneratorTechs))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * r_tax_fraction_owner, digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * r_tax_fraction_owner, digits=0)
-	        # TODO TotalGenFuelCharges is actually ALL fuel burning techs (Diesel Generator, Boiler, and CHP)
-			results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * r_tax_fraction_offtaker, digits=2)
-	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) / p.pwf_e, digits=2)
+			@expression(REopt, TotalGeneratorFuelCharges,
+				p.pwf_fuel["GENERATOR"] * p.TimeStepScaling * sum(p.FuelCost["DIESEL",ts] * dvFuelUsage["GENERATOR",ts]
+					for ts in p.TimeStep))
+			results["gen_total_fuel_cost"] = round(value(TotalGeneratorFuelCharges) * r_tax_fraction_offtaker, digits=2)
+			results["gen_year_one_fuel_cost"] = round(value(TotalGeneratorFuelCharges) / p.pwf_fuel["GENERATOR"], digits=2)
 	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 	        results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 		end
@@ -859,7 +861,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	
     net_capital_costs_plus_om = value(TotalTechCapCosts + TotalStorageCapCosts) +
                                 value(TotalPerUnitSizeOMCosts + TotalPerUnitProdOMCosts) * r_tax_fraction_owner +
-                                value(TotalGenFuelCharges) * r_tax_fraction_offtaker
+                                value(TotalFuelCharges) * r_tax_fraction_offtaker
 
     push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
 						 "year_one_energy_cost" => round(value(Year1EnergyCost), digits=2),
@@ -1011,13 +1013,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				for t in p.CHPTechs) - CHPtoHotTES[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
-			p.pwf_e * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
+			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
 				for ts in p.TimeStep))
-		results["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges), digits=3)
-		@expression(REopt, YearOneCHPFuelCharges,
-			p.TimeStepScaling * sum( p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
-				for ts in p.TimeStep))
-		results["year_one_chp_fuel_cost"] = round(value(YearOneCHPFuelCharges), digits=3)
+		results["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
+		results["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
 	else
 		results["chp_kw"] = 0.0
 		results["year_one_chp_fuel_used"] = 0.0
@@ -1045,13 +1044,10 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			for ts in p.TimeStep))
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
 		@expression(REopt, TotalBoilerFuelCharges,
-			p.pwf_e * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
+			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
-		results["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges), digits=3)
-		@expression(REopt, YearOneBoilerFuelCharges,
-			p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
-				for ts in p.TimeStep))
-		results["year_one_boiler_fuel_cost"] = round(value(YearOneBoilerFuelCharges), digits=3)
+		results["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
+		results["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
 	else
 		results["fuel_to_boiler_series"] = []
 		results["boiler_thermal_production_series"] = []
