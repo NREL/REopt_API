@@ -229,13 +229,13 @@ class UrdbParse:
                                       self.days_in_month[month] * 24 * self.time_steps_per_hour)
 
         if chp is not None:
-            self.chp_fuel_burn_slope = [chp.fuel_burn_slope]
+            self.chp_fuel_burn_slope = chp.fuel_burn_slope
             self.chp_fuel_burn_intercept = [chp.fuel_burn_intercept]
             self.chp_thermal_prod_slope = [chp.thermal_prod_slope]
             self.chp_thermal_prod_intercept = [chp.thermal_prod_intercept]
             self.chp_derate = [chp.derate]
         else:
-            self.chp_fuel_burn_slope = list()
+            self.chp_fuel_burn_slope = 0.0
             self.chp_fuel_burn_intercept = list()
             self.chp_thermal_prod_slope = list()
             self.chp_thermal_prod_intercept = list()

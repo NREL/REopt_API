@@ -665,7 +665,7 @@ class DataManager:
                     pf_electric, pf_hot_thermal = self.chp.prod_factor
                     for pf in pf_electric:
                         production_factor.append(float(pf))
-                    chp_thermal_prod_factor.append([float(pf) for pf in pf_hot_thermal])
+                    chp_thermal_prod_factor = [float(pf) for pf in pf_hot_thermal]
                     for pf in self.chp.chp_power_derate:
                         electric_derate.append(float(pf))
 
