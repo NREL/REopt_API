@@ -370,6 +370,57 @@ function add_prod_incent_constraints(m, p)
 end
 
 
+function add_tech_size_constraints(m, p)
+	# PV techs can be constrained by space available based on location at site (roof, ground, both)
+	@constraint(m, TechMaxSizeByLocCon[loc in p.Location],
+		sum( m[:dvSize][t] * p.TechToLocation[t, loc] for t in p.Tech) <= p.MaxSizesLocation[loc]
+	)
+
+	#Constraint (7a): Single Basic Technology Constraints
+	@constraint(m, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
+		m[:dvSize][t] <= m[:NewMaxSize][t] * m[:binSingleBasicTech][t,c]
+		)
+	##Constraint (7b): At most one Single Basic Technology per Class
+	@constraint(m, TechClassMinSelectCon[c in p.TechClass],
+		sum( m[:binSingleBasicTech][t,c] for t in p.TechsInClass[c] ) <= 1
+		)
+	##Constraint (7c): Minimum size for each tech class
+	@constraint(m, TechClassMinSizeCon[c in p.TechClass],
+				sum( m[:dvSize][t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
+			)
+	
+	## Constraint (7d): Non-turndown technologies are always at rated production
+	@constraint(m, RenewableRatedProductionCon[t in p.TechsNoTurndown, ts in p.TimeStep],
+		m[:dvRatedProduction][t,ts] == m[:dvSize][t]  
+	)
+		
+	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
+	@constraint(m, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
+		m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+	)
+		
+	##Constraint (7f)-1: Minimum segment size
+	@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
+		m[:dvSystemSizeSegment][t,k,s]  >= p.SegmentMinSize[t,k,s] * m[:binSegmentSelect][t,k,s]
+	)
+	
+	##Constraint (7f)-2: Maximum segment size
+	@constraint(m, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
+		m[:dvSystemSizeSegment][t,k,s]  <= p.SegmentMaxSize[t,k,s] * m[:binSegmentSelect][t,k,s]
+	)
+	
+	##Constraint (7g):  Segments add up to system size 
+	@constraint(m, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
+		sum(m[:dvSystemSizeSegment][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) == m[:dvSize][t]
+	)
+		
+	##Constraint (7h): At most one segment allowed
+	@constraint(m, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
+		sum(m[:binSegmentSelect][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= m[:binSingleBasicTech][t,c]
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -427,54 +478,7 @@ function reopt_run(m, p::Parameter)
     ### System Size and Production Constraints
 	### Constraint set (7): System Size is zero unless single basic tech is selected for class
 	if !isempty(p.Tech)
-
-		# PV techs can be constrained by space available based on location at site (roof, ground, both)
-		@constraint(m, TechMaxSizeByLocCon[loc in p.Location],
-			sum( m[:dvSize][t] * p.TechToLocation[t, loc] for t in p.Tech) <= p.MaxSizesLocation[loc]
-		)
-
-		#Constraint (7a): Single Basic Technology Constraints
-		@constraint(m, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
-			m[:dvSize][t] <= m[:NewMaxSize][t] * m[:binSingleBasicTech][t,c]
-			)
-		##Constraint (7b): At most one Single Basic Technology per Class
-		@constraint(m, TechClassMinSelectCon[c in p.TechClass],
-			sum( m[:binSingleBasicTech][t,c] for t in p.TechsInClass[c] ) <= 1
-			)
-		##Constraint (7c): Minimum size for each tech class
-		@constraint(m, TechClassMinSizeCon[c in p.TechClass],
-					sum( m[:dvSize][t] for t in p.TechsInClass[c] ) >= p.TechClassMinSize[c]
-				)
-		
-		## Constraint (7d): Non-turndown technologies are always at rated production
-		@constraint(m, RenewableRatedProductionCon[t in p.TechsNoTurndown, ts in p.TimeStep],
-			m[:dvRatedProduction][t,ts] == m[:dvSize][t]  
-		)
-			
-		##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
-		@constraint(m, TurbineRatedProductionCon[t in p.Tech, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-			m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
-		)
-			
-		##Constraint (7f)-1: Minimum segment size
-		@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
-			m[:dvSystemSizeSegment][t,k,s]  >= p.SegmentMinSize[t,k,s] * m[:binSegmentSelect][t,k,s]
-		)
-		
-		##Constraint (7f)-2: Maximum segment size
-		@constraint(m, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
-			m[:dvSystemSizeSegment][t,k,s]  <= p.SegmentMaxSize[t,k,s] * m[:binSegmentSelect][t,k,s]
-		)
-		
-		##Constraint (7g):  Segments add up to system size 
-		@constraint(m, SegmentSizeAddCon[t in p.Tech, k in p.Subdivision],
-			sum(m[:dvSystemSizeSegment][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) == m[:dvSize][t]
-		)
-			
-		##Constraint (7h): At most one segment allowed
-		@constraint(m, SegmentSelectCon[c in p.TechClass, t in p.TechsInClass[c], k in p.Subdivision],
-			sum(m[:binSegmentSelect][t,k,s] for s in 1:p.SegByTechSubdivision[k,t]) <= m[:binSingleBasicTech][t,c]
-		)
+		add_tech_size_constraints(m, p)
 	end
 
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
