@@ -493,6 +493,19 @@ function add_nem_constraint(m, p)
 end
 
 
+function add_energy_price_constraints(m, p)
+	##Constraint (10a): Usage limits by pricing tier, by month
+	@constraint(m, [u in p.PricingTier, mth in p.Month],
+		p.TimeStepScaling * sum( m[:dvGridPurchase][u, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u])
+	##Constraint (10b): Ordering of pricing tiers
+	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
+		m[:binEnergyTier][mth, u] - m[:binEnergyTier][mth, u-1] <= 0)
+	## Constraint (10c): One tier must be full before any usage in next tier 
+	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],
+		m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -573,18 +586,8 @@ function reopt_run(m, p::Parameter)
 	end
 	###End constraint set (9)
 	
-	### Constraint set (10): Electrical Energy Pricing Tiers
-	##Constraint (10a): Usage limits by pricing tier, by month
-	@constraint(m, [u in p.PricingTier, mth in p.Month],
-                p.TimeStepScaling * sum( m[:dvGridPurchase][u, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u])
-	##Constraint (10b): Ordering of pricing tiers
-	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
-    	        m[:binEnergyTier][mth, u] - m[:binEnergyTier][mth, u-1] <= 0)
-	## Constraint (10c): One tier must be full before any usage in next tier 
-	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],
-    	        m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0)
-	
-	#End constraint set (10)
+	### Constraint set (10): Electrical Energy Pricing tiers
+	add_energy_price_constraints(m, p)
 
 	### Constraint set (11): Peak Electrical Power Demand Charges: Months
 	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
