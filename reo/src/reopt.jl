@@ -421,6 +421,30 @@ function add_tech_size_constraints(m, p)
 end
 
 
+function add_load_balance_constraints(m, p)
+	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
+		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +  
+		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) + 
+		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
+		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
+			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] + 
+		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		p.ElecLoad[ts]
+	)
+	
+	##Constraint (8b): Electrical Load Balancing without Grid
+	@constraint(m, ElecLoadBalanceNoGridCon[ts in p.TimeStepsWithoutGrid],
+		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +  
+		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
+		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
+			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
+		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		p.ElecLoad[ts]
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -483,27 +507,7 @@ function reopt_run(m, p::Parameter)
 
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	##Constraint (8a): Electrical Load Balancing with Grid
-	
-	@constraint(m, ElecLoadBalanceCon[ts in p.TimeStepsWithGrid],
-		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +  
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage ) + 
-		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier ) ==
-		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
-			sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) + m[:dvGridToStorage][ts] + 
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
-		p.ElecLoad[ts]
-	)
-	
-	##Constraint (8b): Electrical Load Balancing without Grid
-	@constraint(m, ElecLoadBalanceNoGridCon[ts in p.TimeStepsWithoutGrid],
-		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] for t in p.ElectricTechs) +  
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
-		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
-			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
-		p.ElecLoad[ts]
-	)
+	add_load_balance_constraints(m, p)
 	
 	##Constraint (8c): Grid-to-storage no greater than grid purchases 
 	@constraint(m, GridToStorageCon[ts in p.TimeStepsWithGrid],
