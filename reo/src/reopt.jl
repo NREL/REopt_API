@@ -61,6 +61,147 @@ function add_no_grid_constraints(m, p)
 end
 
 
+function add_storage_size_constraints(m, p)
+	# Constraint (4a): Reconcile initial state of charge for storage systems
+	@constraint(m, InitStorageCon[b in p.Storage], m[:dvStorageSOC][b,0] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
+	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
+	@constraint(m, StorageEnergyLBCon[b in p.Storage], m[:dvStorageCapEnergy][b] >= p.StorageMinSizeEnergy[b])
+	# Constraint (4b)-2: Upper bound on Storage Energy Capacity
+	@constraint(m, StorageEnergyUBCon[b in p.Storage], m[:dvStorageCapEnergy][b] <= p.StorageMaxSizeEnergy[b])
+	# Constraint (4c)-1: Lower bound on Storage Power Capacity
+	@constraint(m, StoragePowerLBCon[b in p.Storage], m[:dvStorageCapPower][b] >= p.StorageMinSizePower[b])
+	# Constraint (4c)-2: Upper bound on Storage Power Capacity
+	@constraint(m, StoragePowerUBCon[b in p.Storage], m[:dvStorageCapPower][b] <= p.StorageMaxSizePower[b])
+end
+
+
+function add_storage_op_constraints(m, p)
+	### Battery Operations
+	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
+	@constraint(m, ElecTechProductionFlowCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
+		m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) <= 
+		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
+	)
+	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
+	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
+		m[:dvProductionToStorage][b,t,ts]  <= 
+		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
+	)
+	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
+	#@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
+    #	        m[:dvProductionToStorage][b,t,ts]  <= 
+	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+	#			)
+	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
+	#@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
+    #	        m[:dvProductionToStorage][b,t,ts]  <= 
+	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+	#			)
+	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
+	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
+		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + 
+			p.GridChargeEfficiency*m[:dvGridToStorage][ts] - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+		)
+	)
+				
+	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
+	@constraint(m, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
+		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+		)
+	)
+	
+	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
+	#@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
+    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
+	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+	#				)
+	#			)
+				
+	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
+	#@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
+    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
+	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
+	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+	#				)
+	#			)
+	
+	# Constraint (4j): Minimum state of charge
+	@constraint(m, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
+		m[:dvStorageSOC][b,ts] >= p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]
+	)
+	
+	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
+	@constraint(m, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
+		m[:dvStorageCapPower][b] >= (  
+			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
+		)
+	)
+	
+	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
+	#@constraint(m, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    #	        m[:dvStorageCapPower][b] >= (  
+	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
+	#				)
+	#			)
+	
+	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
+	#@constraint(m, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    #	        m[:dvStorageCapPower][b] >= (  
+	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
+	#				)
+	#			)
+	
+	#Constraint (4j): Dispatch from storage is no greater than power capacity
+	@constraint(m, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
+		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts]
+	)
+	
+	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
+	@constraint(m, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
+		m[:dvStorageCapPower][b] >=   m[:dvDischargeFromStorage][b,ts] + 
+			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
+	)	
+	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
+	@constraint(m, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
+		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + 
+			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
+	)
+				
+	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
+	#@constraint(m, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
+    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
+	#			)
+	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
+	#@constraint(m, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
+    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
+	#			)
+					
+	#Constraint (4n): State of charge upper bound is storage system size
+	@constraint(m, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
+		m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
+	)
+	
+end
+
+
+function add_prod_incent_constraints(m, p)
+	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
+	@constraint(m, ProdIncentUBCon[t in p.Tech],
+		m[:dvProdIncent][t] <= m[:binProdIncent][t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor)
+	##Constraint (6a)-2: Production Incentive According to Production (updated)
+	@constraint(m, IncentByProductionCon[t in p.Tech],
+		m[:dvProdIncent][t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
+			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for ts in p.TimeStep)
+	)
+	##Constraint (6b): System size max to achieve production incentive
+	@constraint(m, IncentBySystemSizeCon[t in p.Tech],
+		m[:dvSize][t]  <= p.MaxSizeForProdIncent[t] + m[:NewMaxSize][t] * (1 - m[:binProdIncent][t]))
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -81,12 +222,12 @@ function reopt_run(m, p::Parameter)
 	
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	
-	NewMaxUsageInTier = Array{Float64,2}(undef,12, p.PricingTierCount+1)
-	NewMaxDemandInTier = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
-	NewMaxDemandMonthsInTier = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
-	NewMaxSize = Dict()
+	m[:NewMaxUsageInTier] = Array{Float64,2}(undef,12, p.PricingTierCount+1)
+	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
+	m[:NewMaxDemandMonthsInTier] = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
+	m[:NewMaxSize] = Dict()
 	NewMaxSizeByHour = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
-	# NewMaxDemandMonthsInTier sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
+	# m[:NewMaxDemandMonthsInTier] sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	if !isempty(p.ElecStorage)
 		added_power = p.StorageMaxSizePower["Elec"]
 		added_energy = p.StorageMaxSizeEnergy["Elec"]
@@ -98,30 +239,30 @@ function reopt_run(m, p::Parameter)
 	for n in p.DemandMonthsBin
 		for mth in p.Month 
 			if n > 1
-				NewMaxDemandMonthsInTier[mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
+				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
 					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  - 
-					sum(NewMaxDemandMonthsInTier[mth,np] for np in 1:(n-1)) ]
+					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
 				)
 			else 
-				NewMaxDemandMonthsInTier[mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
+				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
 					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])   ])
 			end
 		end
 	end
 	
-	# NewMaxDemandInTier sets a new minimum if the new peak demand for the ratchet, minus the size of all previous bins for the ratchet, is less than the existing bin size.
+	# m[:NewMaxDemandInTier] sets a new minimum if the new peak demand for the ratchet, minus the size of all previous bins for the ratchet, is less than the existing bin size.
 	for e in p.DemandBin
 		for r in p.Ratchets 
 			if e > 1
-				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
+				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], 
 				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  - 
-				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
+				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
 			else
-				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
+				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], 
 				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStep])  
 				])
@@ -129,16 +270,16 @@ function reopt_run(m, p::Parameter)
 		end
 	end
 	
-	# NewMaxUsageInTier sets a new minumum if the total demand for the month, minus the size of all previous bins, is less than the existing bin size.
+	# m[:NewMaxUsageInTier] sets a new minumum if the total demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	for u in p.PricingTier
 		for mth in p.Month 
 			if u > 1
-				NewMaxUsageInTier[mth,u] = minimum([p.MaxUsageInTier[u], 
+				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], 
 					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]) - sum(NewMaxUsageInTier[mth,up] for up in 1:(u-1))
+					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
 				])
 			else
-				NewMaxUsageInTier[mth,u] = minimum([p.MaxUsageInTier[u], 
+				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], 
 					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
 					for ts in p.TimeStepRatchetsMonth[mth])  
 				])
@@ -151,29 +292,29 @@ function reopt_run(m, p::Parameter)
 	TempCoolingTechs = [] #temporarily replace p.CoolingTechs which is undefined
 	
 	for t in TempHeatingTechs
-		NewMaxSize[t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (NewMaxSize[t] > p.MaxSize[t])
-			NewMaxSize[t] = p.MaxSize[t]
+		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in TempCoolingTechs
-		NewMaxSize[t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (NewMaxSize[t] > p.MaxSize[t])
-			NewMaxSize[t] = p.MaxSize[t]
+		m[:NewMaxSize][t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in p.ElectricTechs
-		NewMaxSize[t] = maximum([sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
-		if (NewMaxSize[t] > p.MaxSize[t])
-			NewMaxSize[t] = p.MaxSize[t]
+		m[:NewMaxSize][t] = maximum([sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month])
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs 
 	#	for ts in p.TimeStep
-	#		NewMaxSizeByHour[t,ts] = minimum([NewMaxSize[t],
-	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * NewMaxSize[t],
+	#		NewMaxSizeByHour[t,ts] = minimum([m[:NewMaxSize][t],
+	#			sum(p.ProdFactor[t,d,ts] for d in p.Load if p.LoadProfile[d,ts] > 0)  * m[:NewMaxSize][t],
 	#			sum(p.LoadProfile[d,ts] for d in ["1R"], ts in p.TimeStep)  
 	#		])
 	#	end
@@ -224,7 +365,7 @@ function reopt_run(m, p::Parameter)
 					
 		#Constraint (1d): Y-intercept fuel burn for CHP
 		#@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-		#			p.FuelBurnYIntRate[t] * m[:dvSize][t] - NewMaxSize[t] * (1-m[:binTechIsOnInTS][t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+		#			p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= dvFuelBurnYIntercept[t,th]   					
 		#			)
 	#end
 	
@@ -244,7 +385,7 @@ function reopt_run(m, p::Parameter)
 		#			)
 		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
 		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * NewMaxSize[t] * m[:binTechIsOnInTS][t,ts]
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 		#			)
 		# Constraint (2b): Thermal Production of CHP 
 		#@constraint(m, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
@@ -258,148 +399,18 @@ function reopt_run(m, p::Parameter)
 	### Section 3: Switch Constraints
 	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
 	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-				m[:dvRatedProduction][t,ts] <= NewMaxSize[t] * m[:binTechIsOnInTS][t,ts])
+				m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts])
 	#Constraint (3b): Technologies that are turned on must not be turned down
 	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-			  p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= NewMaxSize[t] * (1-m[:binTechIsOnInTS][t,ts]) )
+			  p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts]) )
 	
     ### Section 4: Storage System Constraints
-	### 
-	### Boundary Conditions and Size Limits
-	# Constraint (4a): Reconcile initial state of charge for storage systems
-	@constraint(m, InitStorageCon[b in p.Storage], m[:dvStorageSOC][b,0] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
-	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
-	@constraint(m, StorageEnergyLBCon[b in p.Storage], m[:dvStorageCapEnergy][b] >= p.StorageMinSizeEnergy[b])
-	# Constraint (4b)-2: Upper bound on Storage Energy Capacity
-	@constraint(m, StorageEnergyUBCon[b in p.Storage], m[:dvStorageCapEnergy][b] <= p.StorageMaxSizeEnergy[b])
-	# Constraint (4c)-1: Lower bound on Storage Power Capacity
-	@constraint(m, StoragePowerLBCon[b in p.Storage], m[:dvStorageCapPower][b] >= p.StorageMinSizePower[b])
-	# Constraint (4c)-2: Upper bound on Storage Power Capacity
-	@constraint(m, StoragePowerUBCon[b in p.Storage], m[:dvStorageCapPower][b] <= p.StorageMaxSizePower[b])
-	
-	### Battery Operations
-	# Constraint (4d): Electrical production sent to storage or grid must be less than technology's rated production
-	@constraint(m, ElecTechProductionFlowCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithGrid],
-    	        m[:dvProductionToStorage][b,t,ts] + sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t]) <= 
-				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
-				)
-	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
-	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in p.TimeStepsWithoutGrid],
-    	        m[:dvProductionToStorage][b,t,ts]  <= 
-				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
-				)
-	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
-    #	        m[:dvProductionToStorage][b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
-	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
-	#@constraint(m, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
-    #	        m[:dvProductionToStorage][b,t,ts]  <= 
-	#			p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
-	#			)
-	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
-	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
-    	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + 
-					p.GridChargeEfficiency*m[:dvGridToStorage][ts] - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-					)
-				)
-				
-	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
-	@constraint(m, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
-    	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-					)
-				)
-	
-	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
-	#@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
-	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
-				
-	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
-	#@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
-	#				sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
-	#				m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
-	#				)
-	#			)
-	
-	# Constraint (4j): Minimum state of charge
-	@constraint(m, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
-    	        m[:dvStorageSOC][b,ts] >= p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]
-					)
-	
-	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
-	@constraint(m, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= (  
-					sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
-					)
-				)
-	
-	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
-	#@constraint(m, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= (  
-	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
-	#				)
-	#			)
-	
-	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
-	#@constraint(m, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= (  
-	#				sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
-	#				)
-	#			)
-	
-	#Constraint (4j): Dispatch from storage is no greater than power capacity
-	@constraint(m, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts]
-				)
-	
-	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
-	@constraint(m, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
-    	        m[:dvStorageCapPower][b] >=   m[:dvDischargeFromStorage][b,ts] + 
-					sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
-				)	
-	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
-	@constraint(m, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
-    	        m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + 
-					sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
-				)
-				
-	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(m, DischargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
-	#			)
-	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
-	#@constraint(m, DischargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    #	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
-	#			)
-					
-	#Constraint (4n): State of charge upper bound is storage system size
-	@constraint(m, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
-				m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
-					)
-	
+	add_storage_size_constraints(m, p)
+	add_storage_op_constraints(m, p)
 	### Constraint set (5) - hot and cold thermal loads - reserved for later
 	
 	### Constraint set (6): Production Incentive Cap
-	##Constraint (6a)-1: Production Incentive Upper Bound (unchanged)
-	@constraint(m, ProdIncentUBCon[t in p.Tech],
-                m[:dvProdIncent][t] <= m[:binProdIncent][t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor)
-	##Constraint (6a)-2: Production Incentive According to Production (updated)
-	@constraint(m, IncentByProductionCon[t in p.Tech],
-                m[:dvProdIncent][t] <= p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
-                                   sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for ts in p.TimeStep)
-                )
-	##Constraint (6b): System size max to achieve production incentive
-	@constraint(m, IncentBySystemSizeCon[t in p.Tech],
-                m[:dvSize][t]  <= p.MaxSizeForProdIncent[t] + NewMaxSize[t] * (1 - m[:binProdIncent][t]))
-
+	add_prod_incent_constraints(m, p)
     ### System Size and Production Constraints
 	### Constraint set (7): System Size is zero unless single basic tech is selected for class
 	if !isempty(p.Tech)
@@ -411,7 +422,7 @@ function reopt_run(m, p::Parameter)
 
 		#Constraint (7a): Single Basic Technology Constraints
 		@constraint(m, TechMaxSizeByClassCon[c in p.TechClass, t in p.TechsInClass[c]],
-			m[:dvSize][t] <= NewMaxSize[t] * m[:binSingleBasicTech][t,c]
+			m[:dvSize][t] <= m[:NewMaxSize][t] * m[:binSingleBasicTech][t,c]
 			)
 		##Constraint (7b): At most one Single Basic Technology per Class
 		@constraint(m, TechClassMinSelectCon[c in p.TechClass],
@@ -524,20 +535,20 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (10): Electrical Energy Demand Pricing Tiers
 	##Constraint (10a): Usage limits by pricing tier, by month
 	@constraint(m, [u in p.PricingTier, mth in p.Month],
-                p.TimeStepScaling * sum( m[:dvGridPurchase][u, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= m[:binEnergyTier][mth, u] * NewMaxUsageInTier[mth,u])
+                p.TimeStepScaling * sum( m[:dvGridPurchase][u, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u])
 	##Constraint (10b): Ordering of pricing tiers
 	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],   #Need to fix, update purchase vs. sales pricing tiers
     	        m[:binEnergyTier][mth, u] - m[:binEnergyTier][mth, u-1] <= 0)
 	## Constraint (10c): One tier must be full before any usage in next tier 
 	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],
-    	        m[:binEnergyTier][mth, u] * NewMaxUsageInTier[mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0)
+    	        m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0)
 	
 	#End constraint set (10)
 
 	### Constraint set (11): Peak Electrical Power Demand Charges: Months
 	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
 	@constraint(m, [n in p.DemandMonthsBin, mth in p.Month],
-                m[:dvPeakDemandEMonth][mth,n] <= NewMaxDemandMonthsInTier[mth,n] * m[:binDemandMonthsTier][mth,n])
+                m[:dvPeakDemandEMonth][mth,n] <= m[:NewMaxDemandMonthsInTier][mth,n] * m[:binDemandMonthsTier][mth,n])
 	
 	## Constraint (11b): Monthly peak electrical power demand tier ordering
 	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
@@ -545,7 +556,7 @@ function reopt_run(m, p::Parameter)
 	
 	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
 	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
-        	 m[:binDemandMonthsTier][mth, n] * NewMaxDemandMonthsInTier[mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
+        	 m[:binDemandMonthsTier][mth, n] * m[:NewMaxDemandMonthsInTier][mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
 	
 	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
 	@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
@@ -558,7 +569,7 @@ function reopt_run(m, p::Parameter)
 	if !isempty(p.TimeStepRatchets)
 		## Constraint (12a): Upper bound on peak electrical power demand by tier, by ratchet, if tier is selected (0 o.w.)
 		@constraint(m, [r in p.Ratchets, e in p.DemandBin],
-		            m[:dvPeakDemandE][r, e] <= NewMaxDemandInTier[r,e] * m[:binDemandTier][r, e])
+		            m[:dvPeakDemandE][r, e] <= m[:NewMaxDemandInTier][r,e] * m[:binDemandTier][r, e])
 		
 		## Constraint (12b): Ratchet peak electrical power ratchet tier ordering
 		@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
@@ -566,7 +577,7 @@ function reopt_run(m, p::Parameter)
 		
 		## Constraint (12c): One ratchet peak electrical power demand tier must be full before next one is active
 		@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
-		    	 m[:binDemandTier][r, e] * NewMaxDemandInTier[r,e-1] <= m[:dvPeakDemandE][r, e-1])
+		    	 m[:binDemandTier][r, e] * m[:NewMaxDemandInTier][r,e-1] <= m[:dvPeakDemandE][r, e-1])
 		
 		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
 		@constraint(m, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
