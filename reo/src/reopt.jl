@@ -899,56 +899,9 @@ function reopt_run(m, p::Parameter)
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
-
-
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
-
-	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
-    for PVclass in PVclasses
-		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
-		
-		if !isempty(PVtechs_in_class)
-			
-			results[string(PVclass, "_kw")] = round(value(sum(m[:dvSize][t] for t in PVtechs_in_class)), digits=4)
-			
-			# NOTE: must use anonymous expressions in this loop to overwrite values for cases with multiple PV
-            if !isempty(p.ElecStorage)			
-				PVtoBatt = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToStorage][b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage))
-			else
-				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
-            end
-			results[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
-			
-			PVtoGrid = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]))
-    	    results[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
-			
-			PVtoLoad = @expression(m, [ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
-				- PVtoGrid[ts] - PVtoBatt[ts]
-				)
-			
-            results[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
-			
-			Year1PvProd = @expression(m, sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
-				for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
-			results[string("year_one_energy_produced_", PVclass)] = round(value(Year1PvProd), digits=0)
-
-			AveragePvProd = @expression(m, sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] 
-			    for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
-            results[string("average_yearly_energy_produced_", PVclass)] = round(value(AveragePvProd), digits=0)
-
-			ExportedElecPV = @expression(m, sum(m[:dvProductionToGrid][t,u,ts] 
-				for t in PVtechs_in_class, u in p.SalesTiersByTech[t], ts in p.TimeStep) * p.TimeStepScaling)
-            results[string("average_annual_energy_exported_", PVclass)] = round(value(ExportedElecPV), digits=0)
-
-            PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
-            results[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
-        end
-    end
 	
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
@@ -956,8 +909,8 @@ end
 
 
 function reopt_results(m, p, r::Dict)
-	add_storage_results!(m, p, r)
-
+	add_storage_results(m, p, r)
+	add_pv_results(m, p, r)
 	if !isempty(m[:GeneratorTechs])
 		add_generator_results(m, p, r)
     else
@@ -970,19 +923,17 @@ function reopt_results(m, p, r::Dict)
 		r["GENERATORtoGrid"] = []
 		r["GENERATORtoLoad"] = []
 	end
-
 	if !isempty(m[:WindTechs])
 		add_wind_results(m, p, r)
 	else
 		r["WINDtoLoad"] = []
     	r["WINDtoGrid"] = []
 	end
-
 	return r
 end
 
 
-function add_storage_results!(m, p, r::Dict)
+function add_storage_results(m, p, r::Dict)
     r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
     r["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
 
@@ -1049,4 +1000,50 @@ function add_wind_results(m, p, r::Dict)
 					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
 	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 	nothing
+end
+
+
+function add_pv_results(m, p, r::Dict)PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
+    for PVclass in PVclasses
+		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
+		
+		if !isempty(PVtechs_in_class)
+			
+			r[string(PVclass, "_kw")] = round(value(sum(m[:dvSize][t] for t in PVtechs_in_class)), digits=4)
+			
+			# NOTE: must use anonymous expressions in this loop to overwrite values for cases with multiple PV
+            if !isempty(p.ElecStorage)			
+				PVtoBatt = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToStorage][b, t, ts] for t in PVtechs_in_class, b in p.ElecStorage))
+			else
+				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
+            end
+			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
+			
+			PVtoGrid = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]))
+    	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
+			
+			PVtoLoad = @expression(m, [ts in p.TimeStep],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				- PVtoGrid[ts] - PVtoBatt[ts]
+				)
+            r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
+			
+			Year1PvProd = @expression(m, sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+				for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
+			r[string("year_one_energy_produced_", PVclass)] = round(value(Year1PvProd), digits=0)
+
+			AveragePvProd = @expression(m, sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] 
+			    for t in PVtechs_in_class, ts in p.TimeStep) * p.TimeStepScaling)
+            r[string("average_yearly_energy_produced_", PVclass)] = round(value(AveragePvProd), digits=0)
+
+			ExportedElecPV = @expression(m, sum(m[:dvProductionToGrid][t,u,ts] 
+				for t in PVtechs_in_class, u in p.SalesTiersByTech[t], ts in p.TimeStep) * p.TimeStepScaling)
+            r[string("average_annual_energy_exported_", PVclass)] = round(value(ExportedElecPV), digits=0)
+
+            PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
+            r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
+        end
+	end
 end
