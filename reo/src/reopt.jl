@@ -484,6 +484,15 @@ function add_NMIL_constraints(m, p)
 end
 
 
+function add_nem_constraint(m, p)
+	@constraint(m, GridSalesLimit, 
+		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  + 
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling * 
+		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -560,15 +569,11 @@ function reopt_run(m, p::Parameter)
 	end
 	##Constraint (9c): Net metering only -- can't sell more than you purchase
 	if !isempty(p.SalesTiers)
-		@constraint(m, GridSalesLimit, 
-				p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  + 
-				sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling * 
-				sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
-			)
+		add_nem_constraint(m, p)
 	end
 	###End constraint set (9)
 	
-	### Constraint set (10): Electrical Energy Demand Pricing Tiers
+	### Constraint set (10): Electrical Energy Pricing Tiers
 	##Constraint (10a): Usage limits by pricing tier, by month
 	@constraint(m, [u in p.PricingTier, mth in p.Month],
                 p.TimeStepScaling * sum( m[:dvGridPurchase][u, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u])
