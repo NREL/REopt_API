@@ -834,13 +834,6 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * 
-		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
-	)
-	m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor * 
-		sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
-			for t in m[:GeneratorTechs], ts in p.TimeStep)
-	)
     m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
 		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
 	)	
@@ -903,6 +896,13 @@ end
 
 
 function add_generator_results(m, p, r::Dict)
+	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * 
+		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
+	)
+	m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor * 
+		sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
+			for t in m[:GeneratorTechs], ts in p.TimeStep)
+	)
 	if value(sum(m[:dvSize][t] for t in m[:GeneratorTechs])) > 0
 		r["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
 		r["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
