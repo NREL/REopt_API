@@ -527,6 +527,38 @@ function add_monthly_demand_charge_constraints(m, p)
 end
 
 
+function add_tou_demand_charge_constraints(m, p)
+	## Constraint (12a): Upper bound on peak electrical power demand by tier, by ratchet, if tier is selected (0 o.w.)
+	@constraint(m, [r in p.Ratchets, e in p.DemandBin],
+		m[:dvPeakDemandE][r, e] <= m[:NewMaxDemandInTier][r,e] * m[:binDemandTier][r, e])
+	
+	## Constraint (12b): Ratchet peak electrical power ratchet tier ordering
+	@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		m[:binDemandTier][r, e] <= m[:binDemandTier][r, e-1])
+	
+	## Constraint (12c): One ratchet peak electrical power demand tier must be full before next one is active
+	@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
+		m[:binDemandTier][r, e] * m[:NewMaxDemandInTier][r,e-1] <= m[:dvPeakDemandE][r, e-1])
+	
+	## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
+	@constraint(m, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
+		sum( m[:dvPeakDemandE][r, e] for e in p.DemandBin ) >= 
+		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+	)
+	
+	##Constraint (12e): Peak demand used in percent lookback calculation 
+	@constraint(m, [m in p.DemandLookbackMonths],
+		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][m, n] for n in p.DemandMonthsBin)
+	)
+	
+	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+	@constraint(m, [r in p.DemandLookbackMonths],
+		sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
+		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -615,37 +647,8 @@ function reopt_run(m, p::Parameter)
 	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
 	if !isempty(p.TimeStepRatchets)
-		## Constraint (12a): Upper bound on peak electrical power demand by tier, by ratchet, if tier is selected (0 o.w.)
-		@constraint(m, [r in p.Ratchets, e in p.DemandBin],
-		            m[:dvPeakDemandE][r, e] <= m[:NewMaxDemandInTier][r,e] * m[:binDemandTier][r, e])
-		
-		## Constraint (12b): Ratchet peak electrical power ratchet tier ordering
-		@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
-		    	        m[:binDemandTier][r, e] <= m[:binDemandTier][r, e-1])
-		
-		## Constraint (12c): One ratchet peak electrical power demand tier must be full before next one is active
-		@constraint(m, [r in p.Ratchets, e in 2:p.DemandBinCount],
-		    	 m[:binDemandTier][r, e] * m[:NewMaxDemandInTier][r,e-1] <= m[:dvPeakDemandE][r, e-1])
-		
-		## Constraint (12d): Ratchet peak demand is >= demand at each hour in the ratchet` 
-		@constraint(m, [r in p.Ratchets, ts in p.TimeStepRatchets[r]],
-		    	 sum( m[:dvPeakDemandE][r, e] for e in p.DemandBin ) >= 
-				 sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
-		)
-		
-		##Constraint (12e): Peak demand used in percent lookback calculation 
-		@constraint(m, [m in p.DemandLookbackMonths],
-			        m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][m, n] for n in p.DemandMonthsBin)
-					)
-		
-		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-		@constraint(m, [r in p.DemandLookbackMonths],
-					sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
-					p.DemandLookbackPercent * m[:dvPeakDemandELookback] )
+		add_tou_demand_charge_constraints(m, p)
 	end
-	### End Constraint Set (12)
-	
-	### Alternate constraint (13): Monthly minimum charge adder
 	
     r_tax_fraction_owner = (1 - p.r_tax_owner)
     r_tax_fraction_offtaker = (1 - p.r_tax_offtaker)
