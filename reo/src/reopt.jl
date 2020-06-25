@@ -899,11 +899,7 @@ function reopt_run(m, p::Parameter)
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
-    @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
-    results["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
 
-    @expression(m, GridToBatt[ts in p.TimeStep], m[:dvGridToStorage][ts])
-    results["GridToBatt"] = round.(value.(GridToBatt), digits=3)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
@@ -954,31 +950,6 @@ function reopt_run(m, p::Parameter)
         end
     end
 	
-	if !isempty(m[:WindTechs])
-        results["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
-        #@expression(m, WINDtoBatt[ts in p.TimeStep],
-        #            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
-		WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
-		for ts in p.TimeStep
-			for t in m[:WindTechs]
-				for b in p.ElecStorage
-					WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts]) 
-				end
-			end
-		end
-		@expression(m, WINDtoGrid[ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
-		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
-		@expression(m, WINDtoLoad[ts in p.TimeStep],
-					sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
-		results["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
-
-	else
-		results["WINDtoLoad"] = []
-    	results["WINDtoGrid"] = []
-	end
-
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end
@@ -999,7 +970,14 @@ function reopt_results(m, p, r::Dict)
 		r["GENERATORtoGrid"] = []
 		r["GENERATORtoLoad"] = []
 	end
-	
+
+	if !isempty(m[:WindTechs])
+		add_wind_results(m, p, r)
+	else
+		r["WINDtoLoad"] = []
+    	r["WINDtoGrid"] = []
+	end
+
 	return r
 end
 
@@ -1014,6 +992,9 @@ function add_storage_results!(m, p, r::Dict)
     else
         r["year_one_soc_series_pct"] = []
     end
+    @expression(m, GridToBatt[ts in p.TimeStep], m[:dvGridToStorage][ts])
+	r["GridToBatt"] = round.(value.(GridToBatt), digits=3)
+	nothing
 end
 
 
@@ -1041,4 +1022,31 @@ function add_generator_results(m, p, r::Dict)
 					GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
 					)
 	r["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
+
+    @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
+	r["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
+	nothing
+end
+
+
+function add_wind_results(m, p, r::Dict)
+	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
+	#@expression(m, WINDtoBatt[ts in p.TimeStep],
+	#            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
+	WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
+	for ts in p.TimeStep
+		for t in m[:WindTechs]
+			for b in p.ElecStorage
+				WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts]) 
+			end
+		end
+	end
+	@expression(m, WINDtoGrid[ts in p.TimeStep],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
+	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+	@expression(m, WINDtoLoad[ts in p.TimeStep],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
+	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
+	nothing
 end
