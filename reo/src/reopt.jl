@@ -674,6 +674,32 @@ function add_util_fixed_and_min_charges(m, p)
 end
 
 
+function add_cost_function(m, p)
+	m[:REcosts] = @expression(m,
+		# Capital Costs
+		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +  
+		
+		## Fixed O&M, tax deductible for owner
+		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
+
+        ## Variable O&M, tax deductible for owner
+		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
+
+		# Utility Bill, tax deductible for offtaker
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+        
+        ## Total Generator Fuel Costs, tax deductible for offtaker
+        m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
+                
+        # Subtract Incentives, which are taxable
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
+	)
+    #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
+		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
+		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -690,7 +716,7 @@ function reopt_run(m, p::Parameter)
 
 	t_start = time()
 	results = Dict{String, Any}()
-    Obj = 2  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
+    Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
 	
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
@@ -770,34 +796,12 @@ function reopt_run(m, p::Parameter)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
 	
-	###  New Objective Function
-	@expression(m, REcosts,
-		# Capital Costs
-		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +  
-		
-		## Fixed O&M, tax deductible for owner
-		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
+	add_cost_function(m, p)
 
-        ## Variable O&M, tax deductible for owner
-		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
-
-		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
-        
-        ## Total Generator Fuel Costs, tax deductible for offtaker
-        m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
-                
-        # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
-	)
-    #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
-		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
-		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
-	
     if Obj == 1
-		@objective(m, Min, REcosts)
+		@objective(m, Min, m[:REcosts])
 	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, REcosts - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/8760.)
+		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in p.TimeStep)/8760.)
 	end
 	
 	results["julia_reopt_constriants_seconds"] = time() - t_start
