@@ -244,7 +244,10 @@ function add_fuel_constraints(m, p)
 		m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
 			(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
 	)
-	
+	m[:TotalGenFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
+		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
+		for f in p.FuelType)
+	)
 	#if !isempty(CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
 		#@constraint(m, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
@@ -577,7 +580,11 @@ function add_energy_price_constraints(m, p)
 		m[:binEnergyTier][mth, u] - m[:binEnergyTier][mth, u-1] <= 0)
 	## Constraint (10c): One tier must be full before any usage in next tier 
 	@constraint(m, [u in 2:p.FuelBinCount, mth in p.Month],
-		m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0)
+		m[:binEnergyTier][mth, u] * m[:NewMaxUsageInTier][mth,u-1] - sum( m[:dvGridPurchase][u-1, ts] for ts in p.TimeStepRatchetsMonth[mth] ) <= 0
+	)
+	m[:TotalEnergyChargesUtil] = @expression(m, p.pwf_e * p.TimeStepScaling * 
+		sum( p.ElecRate[u,ts] * m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
+	)
 end
 
 
@@ -599,6 +606,12 @@ function add_monthly_demand_charge_constraints(m, p)
 		sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
+	if !isempty(p.DemandRatesMonth)
+		m[:DemandFlatCharges] = @expression(m, p.pwf_e * sum( p.DemandRatesMonth[mth,n] * m[:dvPeakDemandEMonth][mth,n] for mth in p.Month, n in p.DemandMonthsBin) )
+	else
+		m[:DemandFlatCharges] = 0
+	end
+
 end
 
 
@@ -631,6 +644,33 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
 		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
 	)
+
+	if !isempty(p.DemandRates)
+		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
+	else
+		m[:DemandTOUCharges] = 0
+	end
+
+end
+
+
+function add_util_fixed_and_min_charges(m, p)
+    m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
+		
+	### Constraint (13): Annual minimum charge adder 
+	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
+        m[:TotalMinCharge] = p.AnnualMinCharge 
+    else
+        m[:TotalMinCharge] = 12 * p.MonthlyMinCharge
+    end
+	
+	if m[:TotalMinCharge] >= 1e-2
+        @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - ( 
+			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
+		)
+	else
+		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
+	end
 end
 
 
@@ -719,54 +759,16 @@ function reopt_run(m, p::Parameter)
 
 	### Constraint set (11): Peak Electrical Power Demand Charges: binDemandMonthsTier
 	add_monthly_demand_charge_constraints(m, p)
-	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
 	if !isempty(p.TimeStepRatchets)
 		add_tou_demand_charge_constraints(m, p)
 	end
+    m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
-
-	@expression(m, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * 
-		sum( p.ElecRate[u,ts] * m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier ) 
-	)
-
-	@expression(m, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
-		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
-		for f in p.FuelType)
-	)
-
-	if !isempty(p.DemandRates)
-		@expression(m, DemandTOUCharges, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
-	else
-		@expression(m, DemandTOUCharges, 0)
-	end
-
-	if !isempty(p.DemandRatesMonth)
-		@expression(m, DemandFlatCharges, p.pwf_e * sum( p.DemandRatesMonth[mth,n] * m[:dvPeakDemandEMonth][mth,n] for mth in p.Month, n in p.DemandMonthsBin) )
-	else
-		@expression(m, DemandFlatCharges, 0)
-	end
-
-    @expression(m, TotalDemandCharges, DemandTOUCharges + DemandFlatCharges)
-    TotalFixedCharges = p.pwf_e * p.FixedMonthlyCharge * 12
-		
-	### Constraint (13): Annual minimum charge adder 
-	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
-        TotalMinCharge = p.AnnualMinCharge 
-    else
-        TotalMinCharge = 12 * p.MonthlyMinCharge
-    end
-	
-	if TotalMinCharge >= 1e-2
-        @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= TotalMinCharge - ( 
-			TotalEnergyChargesUtil + TotalDemandCharges + m[:TotalExportBenefit] + TotalFixedCharges)
-		)
-	else
-		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
-    end
+	add_util_fixed_and_min_charges(m, p)
 	
 	###  New Objective Function
 	@expression(m, REcosts,
@@ -780,16 +782,16 @@ function reopt_run(m, p::Parameter)
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + m[:TotalExportBenefit] + TotalFixedCharges + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
-        TotalGenFuelCharges * m[:r_tax_fraction_offtaker] -
+        m[:TotalGenFuelCharges] * m[:r_tax_fraction_offtaker] -
                 
         # Subtract Incentives, which are taxable
 		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
 	)
-    #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
-		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or m[:MinChargeAdder]).
+    #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
+		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
 		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
 	
     if Obj == 1
@@ -848,11 +850,11 @@ function reopt_run(m, p::Parameter)
 		return results
 	end
 
-    Year1EnergyCost = TotalEnergyChargesUtil / p.pwf_e
-    Year1DemandCost = TotalDemandCharges / p.pwf_e
-    Year1DemandTOUCost = DemandTOUCharges / p.pwf_e
-    Year1DemandFlatCost = DemandFlatCharges / p.pwf_e
-    Year1FixedCharges = TotalFixedCharges / p.pwf_e
+    Year1EnergyCost = m[:TotalEnergyChargesUtil] / p.pwf_e
+    Year1DemandCost = m[:TotalDemandCharges] / p.pwf_e
+    Year1DemandTOUCost = m[:DemandTOUCharges] / p.pwf_e
+    Year1DemandFlatCost = m[:DemandFlatCharges] / p.pwf_e
+    Year1FixedCharges = m[:TotalFixedCharges] / p.pwf_e
     Year1MinCharges = m[:MinChargeAdder] / p.pwf_e
     Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
 
@@ -893,8 +895,8 @@ function reopt_run(m, p::Parameter)
             results["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
 			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
 			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * m[:r_tax_fraction_owner], digits=0)
-	        results["gen_total_fuel_cost"] = round(value(TotalGenFuelCharges) * m[:r_tax_fraction_offtaker], digits=2)
-	        results["gen_year_one_fuel_cost"] = round(value(TotalGenFuelCharges) / p.pwf_e, digits=2)
+	        results["gen_total_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
+	        results["gen_year_one_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) / p.pwf_e, digits=2)
 	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 	        results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
 		end
@@ -902,7 +904,7 @@ function reopt_run(m, p::Parameter)
 	
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
-                                value(TotalGenFuelCharges) * m[:r_tax_fraction_offtaker]
+                                value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
 
     push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
 						 "year_one_energy_cost" => round(value(Year1EnergyCost), digits=2),
@@ -913,10 +915,10 @@ function reopt_run(m, p::Parameter)
 						 "year_one_fixed_cost" => round(Year1FixedCharges, digits=0),
 						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
 						 "year_one_bill" => round(value(Year1Bill), digits=2),
-						 "year_one_payments_to_third_party_owner" => round(value(TotalDemandCharges) / p.pwf_e, digits=0),
-						 "total_energy_cost" => round(value(TotalEnergyChargesUtil) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_demand_cost" => round(value(TotalDemandCharges) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_fixed_cost" => round(TotalFixedCharges * m[:r_tax_fraction_offtaker], digits=2),
+						 "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
+						 "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_payments_to_third_party_owner" => 0,
