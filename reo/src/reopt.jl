@@ -813,11 +813,11 @@ function reopt_run(m, p::Parameter)
 	t_start = time()
 
 	if termination_status(m) == MOI.TIME_LIMIT
-		status = "timed-out"
+		results["status"] = "timed-out"
     elseif termination_status(m) == MOI.OPTIMAL
-        status = "optimal"
+        results["status"] = "optimal"
     else
-        status = "not optimal"
+		results["status"] = "not optimal"
     end
     
 	##############################################################################
@@ -850,7 +850,7 @@ function reopt_run(m, p::Parameter)
 	try
 		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
 	catch
-		results["status"] = "not optimal"
+		# not optimal, empty objective_value
 		return results
 	end
 
@@ -1025,15 +1025,6 @@ function reopt_run(m, p::Parameter)
     	results["WINDtoGrid"] = []
 	end
 
-	if termination_status(m) == MOI.TIME_LIMIT
-		status = "timed-out"
-    elseif termination_status(m) == MOI.OPTIMAL
-        status = "optimal"
-    else
-        status = "not optimal"
-    end
-
-    results["status"] = status
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end
