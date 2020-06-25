@@ -834,27 +834,32 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-    @expression(m, Year1WindProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
-                                            for t in m[:WindTechs], ts in p.TimeStep))
-    @expression(m, AverageWindProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-                                              for t in m[:WindTechs], ts in p.TimeStep))
-
-    @expression(m, Year1GenProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
-                       for t in m[:GeneratorTechs], ts in p.TimeStep))
-    @expression(m, AverageGenProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					   for t in m[:GeneratorTechs], ts in p.TimeStep))
-						
-	@expression(m, GenPerUnitSizeOMCosts, p.two_party_factor * 
+	m[:Year1WindProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+			for t in m[:WindTechs], ts in p.TimeStep)
+	)
+	m[:AverageWindProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in m[:WindTechs], ts in p.TimeStep)
+	)
+	m[:Year1GenProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+			for t in m[:GeneratorTechs], ts in p.TimeStep)
+	)
+	m[:AverageGenProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in m[:GeneratorTechs], ts in p.TimeStep)
+	)
+	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * 
 		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
 	)
-	@expression(m, GenPerUnitProdOMCosts, p.two_party_factor * 
+	m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor * 
 		sum(m[:dvRatedProduction][t,ts] * p.TimeStepScaling * p.ProductionFactor[t,ts] * p.OMcostPerUnitProd[t] * p.pwf_om
 			for t in m[:GeneratorTechs], ts in p.TimeStep)
 	)
-
-    @expression(m, Year1UtilityEnergy,  p.TimeStepScaling * sum(
+    m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
 		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
-		)	
+	)	
 	
 	try
 		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
@@ -877,12 +882,12 @@ function reopt_run(m, p::Parameter)
     	if value(sum(m[:dvSize][t] for t in m[:GeneratorTechs])) > 0
 			results["Generator"] = Dict()
             results["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
-			results["gen_net_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
-			results["gen_net_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) * m[:r_tax_fraction_owner], digits=0)
+			results["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
+			results["gen_net_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) * m[:r_tax_fraction_owner], digits=0)
 	        results["gen_total_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
 	        results["gen_year_one_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) / p.pwf_e, digits=2)
-	        results["gen_year_one_variable_om_costs"] = round(value(GenPerUnitProdOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
-	        results["gen_year_one_fixed_om_costs"] = round(value(GenPerUnitSizeOMCosts) / (p.pwf_om * p.two_party_factor), digits=0)
+	        results["gen_year_one_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
+	        results["gen_year_one_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
 		end
     end
 	
@@ -890,7 +895,7 @@ function reopt_run(m, p::Parameter)
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
 
-    push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
+    push!(results, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
 						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
 						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
 						 "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
@@ -906,11 +911,11 @@ function reopt_run(m, p::Parameter)
 						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=0),
-						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=0),
+						 "year_one_wind_energy_produced" => round(value(m[:Year1WindProd]), digits=0),
+						 "average_wind_energy_produced" => round(value(m[:AverageWindProd]), digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
-                         "year_one_gen_energy_produced" => round(value(Year1GenProd), digits=0),
-                         "average_yearly_gen_energy_produced" => round(value(AverageGenProd), digits=0),
+                         "year_one_gen_energy_produced" => round(value(m[:Year1GenProd]), digits=0),
+                         "average_yearly_gen_energy_produced" => round(value(m[:AverageGenProd]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
