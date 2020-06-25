@@ -647,8 +647,6 @@ function add_tou_demand_charge_constraints(m, p)
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
-	else
-		m[:DemandTOUCharges] = 0
 	end
 
 end
@@ -799,6 +797,8 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
 	if !isempty(p.TimeStepRatchets)
 		add_tou_demand_charge_constraints(m, p)
+	else
+		m[:DemandTOUCharges] = 0
 	end
     m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 
