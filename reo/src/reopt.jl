@@ -472,6 +472,18 @@ function add_prod_grid_constraints(m, p)
 end
 
 
+function add_NMIL_constraints(m, p)
+	#Constraint (9a): exactly one net-metering regime must be selected
+	@constraint(m, sum(m[:binNMLorIL][n] for n in p.NMILRegime) == 1)
+
+	##Constraint (9b): Maximum system sizes for each net-metering regime
+	@constraint(m, NetMeterSizeLimit[n in p.NMILRegime],
+		sum(p.TurbineDerate[t] * m[:dvSize][t]
+		for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * m[:binNMLorIL][n]
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -544,13 +556,7 @@ function reopt_run(m, p::Parameter)
 
     ### Constraint set (9): Net Meter Module (copied directly from legacy model)
 	if !isempty(p.Tech)
-		#Constraint (9a): exactly one net-metering regime must be selected
-		@constraint(m, sum(m[:binNMLorIL][n] for n in p.NMILRegime) == 1)
-		
-		##Constraint (9b): Maximum system sizes for each net-metering regime
-		@constraint(m, NetMeterSizeLimit[n in p.NMILRegime],
-					sum(p.TurbineDerate[t] * m[:dvSize][t]
-                    for t in p.TechsByNMILRegime[n]) <= p.NMILLimits[n] * m[:binNMLorIL][n])
+		add_NMIL_constraints(m, p)
 	end
 	##Constraint (9c): Net metering only -- can't sell more than you purchase
 	if !isempty(p.SalesTiers)
