@@ -700,6 +700,17 @@ function add_cost_function(m, p)
 end
 
 
+function add_yearone_expressions(m, p)
+    m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
+    m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
+    m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
+    m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
+    m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
+    m[:Year1MinCharges] = m[:MinChargeAdder] / p.pwf_e
+    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -823,7 +834,6 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-    #ProdLoad = ["1R", "1W", "1X", "1S"]
     @expression(m, Year1WindProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
                                             for t in m[:WindTechs], ts in p.TimeStep))
     @expression(m, AverageWindProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
@@ -854,14 +864,8 @@ function reopt_run(m, p::Parameter)
 		return results
 	end
 
-    Year1EnergyCost = m[:TotalEnergyChargesUtil] / p.pwf_e
-    Year1DemandCost = m[:TotalDemandCharges] / p.pwf_e
-    Year1DemandTOUCost = m[:DemandTOUCharges] / p.pwf_e
-    Year1DemandFlatCost = m[:DemandFlatCharges] / p.pwf_e
-    Year1FixedCharges = m[:TotalFixedCharges] / p.pwf_e
-    Year1MinCharges = m[:MinChargeAdder] / p.pwf_e
-    Year1Bill = Year1EnergyCost + Year1DemandCost + Year1FixedCharges + Year1MinCharges
-
+	add_yearone_expressions(m, p)
+	
     results["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
     results["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
 
@@ -911,14 +915,14 @@ function reopt_run(m, p::Parameter)
                                 value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
 
     push!(results, Dict("year_one_utility_kwh" => round(value(Year1UtilityEnergy), digits=2),
-						 "year_one_energy_cost" => round(value(Year1EnergyCost), digits=2),
-						 "year_one_demand_cost" => round(value(Year1DemandCost), digits=2),
-						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
-						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
+						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
+						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
+						 "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
+						 "year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
 						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
-						 "year_one_fixed_cost" => round(Year1FixedCharges, digits=0),
-						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
-						 "year_one_bill" => round(value(Year1Bill), digits=2),
+						 "year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
+						 "year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
+						 "year_one_bill" => round(value(m[:Year1Bill]), digits=2),
 						 "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
 						 "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
