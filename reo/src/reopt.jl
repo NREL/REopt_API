@@ -699,6 +699,9 @@ end
 
 
 function add_yearone_expressions(m, p)
+    m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
+		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
+	)
     m[:Year1EnergyCost] = m[:TotalEnergyChargesUtil] / p.pwf_e
     m[:Year1DemandCost] = m[:TotalDemandCharges] / p.pwf_e
     m[:Year1DemandTOUCost] = m[:DemandTOUCharges] / p.pwf_e
@@ -834,10 +837,6 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-    m[:Year1UtilityEnergy] = @expression(m,  p.TimeStepScaling * sum(
-		m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier)
-	)	
-	
 	try
 		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
 	catch
