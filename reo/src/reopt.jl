@@ -834,14 +834,6 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-	m[:Year1WindProd] = @expression(m, 
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
-			for t in m[:WindTechs], ts in p.TimeStep)
-	)
-	m[:AverageWindProd] = @expression(m, 
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-			for t in m[:WindTechs], ts in p.TimeStep)
-	)
 	m[:Year1GenProd] = @expression(m, 
 		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
 			for t in m[:GeneratorTechs], ts in p.TimeStep)
@@ -968,6 +960,16 @@ function add_wind_results(m, p, r::Dict)
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
 	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
+	m[:Year1WindProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+			for t in m[:WindTechs], ts in p.TimeStep)
+	)
+	r["year_one_wind_energy_produced"] = round(value(m[:Year1WindProd]), digits=0)
+	m[:AverageWindProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in m[:WindTechs], ts in p.TimeStep)
+	)
+	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
 	nothing
 end
 
@@ -1040,8 +1042,6 @@ function add_util_results(m, p, r::Dict)
 						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-						 "year_one_wind_energy_produced" => round(value(m[:Year1WindProd]), digits=0),
-						 "average_wind_energy_produced" => round(value(m[:AverageWindProd]), digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
                          "year_one_gen_energy_produced" => round(value(m[:Year1GenProd]), digits=0),
                          "average_yearly_gen_energy_produced" => round(value(m[:AverageGenProd]), digits=0),
