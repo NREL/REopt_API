@@ -458,6 +458,20 @@ function add_storage_grid_constraints(m, p)
 end
 
 
+function add_prod_grid_constraints(m, p)
+	##Constraint (8e): Production-to-grid no greater than production
+	@constraint(m, ProductionToGridCon[t in p.Tech, ts in p.TimeStepsWithGrid],
+	 p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] >= sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t])
+	)
+	
+	##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
+	@constraint(m,  AnnualGridSalesLimitCon,
+	 p.TimeStepScaling * ( 
+		sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -524,16 +538,7 @@ function reopt_run(m, p::Parameter)
 
 	add_storage_grid_constraints(m, p)
 	if !isempty(p.SalesTiers)
-		##Constraint (8e): Production-to-grid no greater than production
-		@constraint(m, ProductionToGridCon[t in p.Tech, ts in p.TimeStepsWithGrid],
-		 p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts] >= sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiersByTech[t])
-		)
-		
-		##Constraint (8f): Total sales to grid no greater than annual allocation - storage tiers
-		@constraint(m,  AnnualGridSalesLimitCon,
-		 p.TimeStepScaling * ( 
-			sum( m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers)) +  sum(m[:dvProductionToGrid][t,u,ts] for u in p.SalesTiers, t in p.TechsBySalesTier[u], ts in p.TimeStepsWithGrid if !(u in p.CurtailmentTiers))) <= p.MaxGridSales[1]
-		)
+		add_prod_grid_constraints(m, p)
 	end
 	## End constraint (8)
 
