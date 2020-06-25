@@ -48,6 +48,19 @@ function add_integer_variables(m, p)
 end
 
 
+function add_no_grid_constraints(m, p)
+	for ts in p.TimeStepsWithoutGrid
+		fix(m[:dvGridToStorage][ts], 0.0, force=true)
+		for u in p.PricingTier
+			fix(m[:dvGridPurchase][u,ts], 0.0, force=true)
+		end
+		#for u in p.StorageSalesTiers  #don't allow curtailment of storage either
+		#	fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
+		#end
+	end
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -178,16 +191,10 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
 	
 	## Temporary workaround for outages TimeStepsWithoutGrid
-	for ts in p.TimeStepsWithoutGrid
-		fix(m[:dvGridToStorage][ts], 0.0, force=true)
-		for u in p.PricingTier
-			fix(m[:dvGridPurchase][u,ts], 0.0, force=true)
-		end
-		#for u in p.StorageSalesTiers  #don't allow curtailment of storage either
-		#	fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
-		#end
+	if !isempty(p.TimeStepsWithoutGrid)
+		add_no_grid_constraints(m, p)
 	end
-	
+
 	#don't allow curtailment or sales of stroage 
 	for ts in p.TimeStep
 		for u in p.StorageSalesTiers
