@@ -53,7 +53,7 @@ function add_bigM_adjustments(m, p)
 	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
 	m[:NewMaxDemandMonthsInTier] = Array{Float64,2}(undef,12, p.DemandMonthsBinCount)
 	m[:NewMaxSize] = Dict()
-	
+
 	NewMaxSizeByHour = Array{Float64,2}(undef,length(p.Tech),p.TimeStepCount)
 	# m[:NewMaxDemandMonthsInTier] sets a new minimum if the new peak demand for the month, minus the size of all previous bins, is less than the existing bin size.
 	if !isempty(p.ElecStorage)
@@ -159,6 +159,73 @@ function add_no_grid_constraints(m, p)
 		#	fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
 		#end
 	end
+end
+
+
+function add_fuel_constraints(m, p)
+
+	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
+	@constraint(m, TotalFuelConsumptionCon[f in p.FuelType],
+		sum( m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep ) <= 
+		p.FuelLimit[f]
+	)
+	
+	# Constraint (1b): Fuel burn for non-CHP Constraints
+	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+		m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
+			(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
+	)
+	
+	#if !isempty(CHPTechs)
+		#Constraint (1c): Total Fuel burn for CHP
+		#@constraint(m, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
+		#			m[:dvFuelUsage][t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
+		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * m[:dvRatedProduction][t,ts]) 					
+		#			)
+					
+		#Constraint (1d): Y-intercept fuel burn for CHP
+		#@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
+		#			p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= dvFuelBurnYIntercept[t,th]   					
+		#			)
+	#end
+	
+	#if !isempty(NonCHPHeatingTechs)
+		#Constraint (1e): Total Fuel burn for Boiler
+		#@constraint(m, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
+		#			m[:dvFuelUsage][t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
+		#			)
+	#end
+	
+	### Constraint set (2): CHP Thermal Production Constraints
+	#if !isempty(CHPTechs)
+		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:dvSize][t]
+		#			)
+		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
+		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
+		#			)
+		# Constraint (2b): Thermal Production of CHP 
+		#@constraint(m, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
+		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
+		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + dvThermalProductionYIntercept[t,ts]
+		#				)
+		#			)
+	#end
+end
+
+
+function add_binTechIsOnInTS_constraints(m, p)
+	### Section 3: Switch Constraints
+	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
+	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+		m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
+	)
+	#Constraint (3b): Technologies that are turned on must not be turned down
+	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
+		p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts]) 
+	)
 end
 
 
@@ -347,67 +414,9 @@ function reopt_run(m, p::Parameter)
 		end
 	end
 
-					
-	##Constraint (1a): Sum of fuel used must not exceed prespecified limits
-	@constraint(m, TotalFuelConsumptionCon[f in p.FuelType],
-				sum( m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep ) <= 
-				p.FuelLimit[f]
-				)
-	
-	# Constraint (1b): Fuel burn for non-CHP Constraints
-	@constraint(m, FuelBurnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-				m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
-					(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
-				)
-	
-	#if !isempty(CHPTechs)
-		#Constraint (1c): Total Fuel burn for CHP
-		#@constraint(m, CHPFuelBurnCon[t in CHPTechs, ts in p.TimeStep],
-		#			m[:dvFuelUsage][t,ts]  == p.FuelBurnAmbientFactor[t,ts] * (dvFuelBurnYIntercept[t,th] +  
-		#				p.ProductionFactor[t,ts] * p.FuelBurnRateM[t] * m[:dvRatedProduction][t,ts]) 					
-		#			)
-					
-		#Constraint (1d): Y-intercept fuel burn for CHP
-		#@constraint(m, CHPFuelBurnYIntCon[t in CHPTechs, ts in p.TimeStep],
-		#			p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= dvFuelBurnYIntercept[t,th]   					
-		#			)
-	#end
-	
-	#if !isempty(NonCHPHeatingTechs)
-		#Constraint (1e): Total Fuel burn for Boiler
-		#@constraint(m, BoilerFuelBurnCon[t in NonCHPHeatingTechs, ts in p.TimeStep],
-		#			m[:dvFuelUsage][t,ts]  ==  dvThermalProduction[t,ts] / p.BoilerEfficiency 					
-		#			)
-	#end
-	
-	
-	### Constraint set (2): CHP Thermal Production Constraints
-	#if !isempty(CHPTechs)
-		#Constraint (2a-1): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:dvSize][t]
-		#			)
-		# Constraint (2a-2): Upper Bounds on Thermal Production Y-Intercept 
-		#@constraint(m, CHPYInt2a1Con[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProductionYIntercept[t,ts] <= CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
-		#			)
-		# Constraint (2b): Thermal Production of CHP 
-		#@constraint(m, CHPThermalProductionCpn[t in CHPTechs, ts in p.TimeStep],
-		#			dvThermalProduction[t,ts] <=  HotWaterAmbientFactor[t,ts] * HotWaterThermalFactor[t,ts] * (
-		#			CHPThermalProdSlope[t] * ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + dvThermalProductionYIntercept[t,ts]
-		#				)
-		#			)
-	#end
-	
-	
-	### Section 3: Switch Constraints
-	#Constraint (3a): Technology must be on for nonnegative output (fuel-burning only)
-	@constraint(m, ProduceIfOnCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-				m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts])
-	#Constraint (3b): Technologies that are turned on must not be turned down
-	@constraint(m, MinTurndownCon[t in p.FuelBurningTechs, ts in p.TimeStep],
-			  p.MinTurndown[t] * m[:dvSize][t] - m[:dvRatedProduction][t,ts] <= m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts]) )
-	
+	add_fuel_constraints(m, p)
+	add_binTechIsOnInTS_constraints(m, p)
+
     ### Section 4: Storage System Constraints
 	add_storage_size_constraints(m, p)
 	add_storage_op_constraints(m, p)
