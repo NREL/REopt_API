@@ -4,7 +4,7 @@ const MOI = MathOptInterface
 include("utils.jl")
 
 
-function reopt(reo_model, model_inputs)
+function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
     p = Parameter(model_inputs)

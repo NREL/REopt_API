@@ -219,6 +219,7 @@ function Parameter(d::Dict)
             d[x] = convert(Array{Float64, 1}, d[x])
         end
     end
+    d = convert(Dict{Union{String, Symbol}, Any}, d)
 
     d[:Seg] = 1:d["CapCostSegCount"]
     d[:Points] = 0:d["CapCostSegCount"]
@@ -312,7 +313,7 @@ JuMP.value(x::Number) = x  # for @expression(REopt, ExportBenefitYr1, 0.0) and s
 JuMP.value(::MutableArithmetics.Zero) = 0
 
 
-function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{String, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
+function vector_to_axisarray(v::Array{<:Any, 1}, ax1::Array{<:Any, 1}, ax2::Union{UnitRange, Array{<:Any, 1}})
     l1 = length(ax1)
     l2 = length(ax2)
     a = transpose(reshape(v, l2, l1))
