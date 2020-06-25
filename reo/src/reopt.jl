@@ -871,38 +871,6 @@ function reopt_run(m, p::Parameter)
 	add_yearone_expressions(m, p)
 
 	results = reopt_results(m, p, results)
-    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
-                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
-                                value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
-
-    push!(results, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
-						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
-						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
-						 "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
-						 "year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
-						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
-						 "year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
-						 "year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
-						 "year_one_bill" => round(value(m[:Year1Bill]), digits=2),
-						 "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
-						 "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
-						 "year_one_wind_energy_produced" => round(value(m[:Year1WindProd]), digits=0),
-						 "average_wind_energy_produced" => round(value(m[:AverageWindProd]), digits=0),
-						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
-                         "year_one_gen_energy_produced" => round(value(m[:Year1GenProd]), digits=0),
-                         "average_yearly_gen_energy_produced" => round(value(m[:AverageGenProd]), digits=0),
-                         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
-						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
-
-    @expression(m, GridToLoad[ts in p.TimeStep],
-                sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
-    results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
-	
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
 end
@@ -929,6 +897,7 @@ function reopt_results(m, p, r::Dict)
 		r["WINDtoLoad"] = []
     	r["WINDtoGrid"] = []
 	end
+	add_util_results(m, p, r)
 	return r
 end
 
@@ -1003,7 +972,8 @@ function add_wind_results(m, p, r::Dict)
 end
 
 
-function add_pv_results(m, p, r::Dict)PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
+function add_pv_results(m, p, r::Dict)
+	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
     for PVclass in PVclasses
 		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
 		
@@ -1046,4 +1016,39 @@ function add_pv_results(m, p, r::Dict)PVclasses = filter(tc->startswith(tc, "PV"
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
         end
 	end
+end
+
+
+function add_util_results(m, p, r::Dict)
+    net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
+                                value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
+                                value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
+
+    push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
+						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
+						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
+						 "year_one_demand_tou_cost" => round(value(m[:Year1DemandTOUCost]), digits=2),
+						 "year_one_demand_flat_cost" => round(value(m[:Year1DemandFlatCost]), digits=2),
+						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
+						 "year_one_fixed_cost" => round(m[:Year1FixedCharges], digits=0),
+						 "year_one_min_charge_adder" => round(value(m[:Year1MinCharges]), digits=2),
+						 "year_one_bill" => round(value(m[:Year1Bill]), digits=2),
+						 "year_one_payments_to_third_party_owner" => round(value(m[:TotalDemandCharges]) / p.pwf_e, digits=0),
+						 "total_energy_cost" => round(value(m[:TotalEnergyChargesUtil]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_demand_cost" => round(value(m[:TotalDemandCharges]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
+						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
+						 "year_one_wind_energy_produced" => round(value(m[:Year1WindProd]), digits=0),
+						 "average_wind_energy_produced" => round(value(m[:AverageWindProd]), digits=0),
+						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
+                         "year_one_gen_energy_produced" => round(value(m[:Year1GenProd]), digits=0),
+                         "average_yearly_gen_energy_produced" => round(value(m[:AverageGenProd]), digits=0),
+                         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
+						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
+
+    @expression(m, GridToLoad[ts in p.TimeStep],
+                sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
+    r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 end
