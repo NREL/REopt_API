@@ -84,6 +84,39 @@ function add_cost_expressions(m, p)
 end
 
 
+function add_export_expressions(m, p)
+	if !isempty(p.Tech)
+		# NOTE: LevelizationFactor is baked into m[:dvProductionToGrid]
+		m[:TotalExportBenefit] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( 
+			sum(p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
+			+ sum(p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
+				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
+			) for ts in p.TimeStep )
+		)
+		m[:ExportedElecWIND] = @expression(m,
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+		)
+		m[:ExportedElecGEN] = @expression(m,
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+				for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+		)        
+		m[:ExportBenefitYr1] = @expression(m,
+			p.TimeStepScaling * sum( 
+			sum( p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
+			+ sum( p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
+				for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
+			for ts in p.TimeStep ) 
+		)
+	else
+		m[:TotalExportBenefit] = 0
+		m[:ExportedElecWIND] = 0
+		m[:ExportedElecGEN] = 0
+		m[:ExportBenefitYr1] = 0
+	end
+end
+
+
 function add_bigM_adjustments(m, p)
 	m[:NewMaxUsageInTier] = Array{Float64,2}(undef,12, p.PricingTierCount+1)
 	m[:NewMaxDemandInTier] = Array{Float64,2}(undef, length(p.Ratchets), p.DemandBinCount)
@@ -403,6 +436,12 @@ function add_prod_incent_constraints(m, p)
 	##Constraint (6b): System size max to achieve production incentive
 	@constraint(m, IncentBySystemSizeCon[t in p.Tech],
 		m[:dvSize][t]  <= p.MaxSizeForProdIncent[t] + m[:NewMaxSize][t] * (1 - m[:binProdIncent][t]))
+	
+	if !isempty(p.Tech)
+		m[:TotalProductionIncentive] = @expression(m, sum(m[:dvProdIncent][t] for t in p.Tech))
+	else
+		m[:TotalProductionIncentive] = 0
+	end
 end
 
 
@@ -688,44 +727,12 @@ function reopt_run(m, p::Parameter)
 
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
+	add_export_expressions(m, p)
 
-	### Utility and Taxable Costs
-	if !isempty(p.Tech)
-		# NOTE: LevelizationFactor is baked into m[:dvProductionToGrid]
-		@expression(m, TotalExportBenefit, p.pwf_e * p.TimeStepScaling * sum( 
-			sum(p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
-			+ sum(p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
-				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
-			) for ts in p.TimeStep )
-		)
-		@expression(m, TotalProductionIncentive, sum(m[:dvProdIncent][t] for t in p.Tech))
-
-		@expression(m, ExportedElecWIND,
-					p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
-						for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
-		)
-		@expression(m, ExportedElecGEN,
-					p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
-						for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
-		)        
-		@expression(m, ExportBenefitYr1,
-				p.TimeStepScaling * sum( 
-				sum( p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
-				+ sum( p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
-					  for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
-				for ts in p.TimeStep ) 
-		)
-	else
-		@expression(m, TotalExportBenefit, 0.0)
-		@expression(m, TotalProductionIncentive, 0.0)
-		@expression(m, ExportedElecWIND, 0.0)
-		@expression(m, ExportedElecGEN, 0.0)
-		@expression(m, ExportBenefitYr1, 0.0)
-	end
-	
 	@expression(m, TotalEnergyChargesUtil, p.pwf_e * p.TimeStepScaling * 
 		sum( p.ElecRate[u,ts] * m[:dvGridPurchase][u,ts] for ts in p.TimeStep, u in p.PricingTier ) 
 	)
+
 	@expression(m, TotalGenFuelCharges, p.pwf_e * p.TimeStepScaling * sum( p.FuelCost[f] *
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
@@ -755,7 +762,7 @@ function reopt_run(m, p::Parameter)
 	
 	if TotalMinCharge >= 1e-2
         @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= TotalMinCharge - ( 
-			TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
+			TotalEnergyChargesUtil + TotalDemandCharges + m[:TotalExportBenefit] + TotalFixedCharges)
 		)
 	else
 		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
@@ -773,13 +780,13 @@ function reopt_run(m, p::Parameter)
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(TotalEnergyChargesUtil + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(TotalEnergyChargesUtil + TotalDemandCharges + m[:TotalExportBenefit] + TotalFixedCharges + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         TotalGenFuelCharges * m[:r_tax_fraction_offtaker] -
                 
         # Subtract Incentives, which are taxable
-		TotalProductionIncentive * m[:r_tax_fraction_owner]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when TotalMinCharge > (TotalEnergyCharges + TotalDemandCharges + TotalExportBenefit + TotalFixedCharges)
 		it is arbitrary where the min charge ends up (eg. could be in TotalDemandCharges or m[:MinChargeAdder]).
@@ -902,7 +909,7 @@ function reopt_run(m, p::Parameter)
 						 "year_one_demand_cost" => round(value(Year1DemandCost), digits=2),
 						 "year_one_demand_tou_cost" => round(value(Year1DemandTOUCost), digits=2),
 						 "year_one_demand_flat_cost" => round(value(Year1DemandFlatCost), digits=2),
-						 "year_one_export_benefit" => round(value(ExportBenefitYr1), digits=0),
+						 "year_one_export_benefit" => round(value(m[:ExportBenefitYr1]), digits=0),
 						 "year_one_fixed_cost" => round(Year1FixedCharges, digits=0),
 						 "year_one_min_charge_adder" => round(value(Year1MinCharges), digits=2),
 						 "year_one_bill" => round(value(Year1Bill), digits=2),
@@ -910,16 +917,16 @@ function reopt_run(m, p::Parameter)
 						 "total_energy_cost" => round(value(TotalEnergyChargesUtil) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_demand_cost" => round(value(TotalDemandCharges) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_fixed_cost" => round(TotalFixedCharges * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_export_benefit" => round(value(TotalExportBenefit) * m[:r_tax_fraction_offtaker], digits=2),
+						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_payments_to_third_party_owner" => 0,
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=0),
 						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=0),
-						 "average_annual_energy_exported_wind" => round(value(ExportedElecWIND), digits=0),
+						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
                          "year_one_gen_energy_produced" => round(value(Year1GenProd), digits=0),
                          "average_yearly_gen_energy_produced" => round(value(AverageGenProd), digits=0),
-                         "average_annual_energy_exported_gen" => round(value(ExportedElecGEN), digits=0),
+                         "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
     @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
