@@ -98,6 +98,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     try:
         if os.path.isfile(julia_img_file):
             # TODO: clean up this try/except block 
+            logger.info("Found Julia image file {}.".format(julia_img_file))
             t_start = time.time()
             api = LibJulia.load()
             api.sysimage = julia_img_file
