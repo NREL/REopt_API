@@ -9,10 +9,6 @@ function build_julia_image(project_path::String)
 
     # must point pycall to the python path we want it to use
     ENV["PYTHON"] = joinpath(project_path, "env", "bin", "python")
-    println("Python path for PyCall: ", ENV["PYTHON"])
-    Pkg.build("PyCall")
-    Pkg.build("Xpress")
-    include(joinpath(project_path, "julia_envs", "Xpress", "precompile.jl"))
 
     # TODO create REopt module to attach to Base for system image
     if Sys.islinux()
