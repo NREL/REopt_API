@@ -844,7 +844,6 @@ function reopt_run(m, p::Parameter)
     @expression(m, AverageGenProd, p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					   for t in m[:GeneratorTechs], ts in p.TimeStep))
 						
-
 	@expression(m, GenPerUnitSizeOMCosts, p.two_party_factor * 
 		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
 	)
@@ -865,31 +864,8 @@ function reopt_run(m, p::Parameter)
 	end
 
 	add_yearone_expressions(m, p)
-	
-    results["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
-    results["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
 
-    if results["batt_kwh"] != 0
-    	@expression(m, soc[ts in p.TimeStep], m[:dvStorageSOC]["Elec",ts] / results["batt_kwh"])
-        results["year_one_soc_series_pct"] = value.(soc)
-    else
-        results["year_one_soc_series_pct"] = []
-    end
-	
-    if !isempty(m[:WindTechs])
-        results["Wind"] = Dict()
-        results["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
-        #@expression(m, WINDtoBatt[ts in p.TimeStep],
-        #            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
-		WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
-		for ts in p.TimeStep
-			for t in m[:WindTechs]
-				for b in p.ElecStorage
-					WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts]) 
-				end
-			end
-		end
-	end
+	results = reopt_results(m, p, results)
 
 	results["gen_net_fixed_om_costs"] = 0
 	results["gen_net_variable_om_costs"] = 0
@@ -929,7 +905,6 @@ function reopt_run(m, p::Parameter)
 						 "total_fixed_cost" => round(m[:TotalFixedCharges] * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_export_benefit" => round(value(m[:TotalExportBenefit]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
-						 "total_payments_to_third_party_owner" => 0,
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "year_one_wind_energy_produced" => round(value(Year1WindProd), digits=0),
 						 "average_wind_energy_produced" => round(value(AverageWindProd), digits=0),
@@ -1016,6 +991,17 @@ function reopt_run(m, p::Parameter)
     end
 	
 	if !isempty(m[:WindTechs])
+        results["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
+        #@expression(m, WINDtoBatt[ts in p.TimeStep],
+        #            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
+		WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
+		for ts in p.TimeStep
+			for t in m[:WindTechs]
+				for b in p.ElecStorage
+					WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts]) 
+				end
+			end
+		end
 		@expression(m, WINDtoGrid[ts in p.TimeStep],
 					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
 		results["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
@@ -1031,4 +1017,23 @@ function reopt_run(m, p::Parameter)
 
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
+end
+
+
+function reopt_results(m, p, r::Dict)
+	add_storage_results!(m, p, r)
+	return r
+end
+
+
+function add_storage_results!(m, p, r::Dict)
+    r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
+    r["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
+
+    if r["batt_kwh"] != 0
+    	@expression(m, soc[ts in p.TimeStep], m[:dvStorageSOC]["Elec",ts] / r["batt_kwh"])
+        r["year_one_soc_series_pct"] = value.(soc)
+    else
+        r["year_one_soc_series_pct"] = []
+    end
 end
