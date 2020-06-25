@@ -506,6 +506,27 @@ function add_energy_price_constraints(m, p)
 end
 
 
+function add_monthly_demand_charge_constraints(m, p)
+	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
+	@constraint(m, [n in p.DemandMonthsBin, mth in p.Month],
+		m[:dvPeakDemandEMonth][mth,n] <= m[:NewMaxDemandMonthsInTier][mth,n] * m[:binDemandMonthsTier][mth,n])
+	
+	## Constraint (11b): Monthly peak electrical power demand tier ordering
+	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
+		m[:binDemandMonthsTier][mth, n] <= m[:binDemandMonthsTier][mth, n-1])
+	
+	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
+	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
+		m[:binDemandMonthsTier][mth, n] * m[:NewMaxDemandMonthsInTier][mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
+	
+	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
+	@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
+		sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
+		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -589,25 +610,8 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (10): Electrical Energy Pricing tiers
 	add_energy_price_constraints(m, p)
 
-	### Constraint set (11): Peak Electrical Power Demand Charges: Months
-	## Constraint (11a): Upper bound on peak electrical power demand by tier, by month, if tier is selected (0 o.w.)
-	@constraint(m, [n in p.DemandMonthsBin, mth in p.Month],
-                m[:dvPeakDemandEMonth][mth,n] <= m[:NewMaxDemandMonthsInTier][mth,n] * m[:binDemandMonthsTier][mth,n])
-	
-	## Constraint (11b): Monthly peak electrical power demand tier ordering
-	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
-        	        m[:binDemandMonthsTier][mth, n] <= m[:binDemandMonthsTier][mth, n-1])
-	
-	## Constraint (11c): One monthly peak electrical power demand tier must be full before next one is active
-	@constraint(m, [mth in p.Month, n in 2:p.DemandMonthsBinCount],
-        	 m[:binDemandMonthsTier][mth, n] * m[:NewMaxDemandMonthsInTier][mth,n-1] <= m[:dvPeakDemandEMonth][mth, n-1])
-	
-	## Constraint (11d): Monthly peak demand is >= demand at each hour in the month` 
-	@constraint(m, [mth in p.Month, ts in p.TimeStepRatchetsMonth[mth]],
-        	 sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >= 
-			 sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
-	)
-	### End Constraint Set (11)
+	### Constraint set (11): Peak Electrical Power Demand Charges: binDemandMonthsTier
+	add_monthly_demand_charge_constraints(m, p)
 	
 	### Constraint set (12): Peak Electrical Power Demand Charges: Ratchets
 	if !isempty(p.TimeStepRatchets)
