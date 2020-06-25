@@ -9,8 +9,8 @@ using Pkg
 using JSON
 using Logging
 
+@info "pwd: " pwd()
 mi = JSON.parsefile(joinpath("julia_envs", "Xpress", "modelinputs.json"))
-
 
 Pkg.build("PyCall")
 Pkg.build("Xpress")
