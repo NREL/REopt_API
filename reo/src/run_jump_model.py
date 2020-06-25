@@ -170,7 +170,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
 
         t_start = time.time()
-        results = Main.reopt(model, data, reopt_inputs)
+        results = Main.reopt(model, reopt_inputs)
         time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
         results.update(time_dict)
