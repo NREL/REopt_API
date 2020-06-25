@@ -6,11 +6,18 @@ using LinearAlgebra
 using MutableArithmetics
 using Printf
 using Pkg
+using JSON
+using Logging
+
+@info pwd()
+mi = JSON.parsefile(joinpath(ENV["PROJECT_PATH"], "julia_envs", "Xpress", "modelinputs.json"))
 
 Pkg.build("PyCall")
 Pkg.build("Xpress")
 
-include(joinpath("..", "..", "reo", "src", "reopt_xpress_model.jl"))
-include(joinpath("..", "..", "reo", "src", "reopt.jl"))
+# somehow changing working dir during the image build?
+include(joinpath(ENV["PROJECT_PATH"], "reo", "src", "reopt_xpress_model.jl"))
+include(joinpath(ENV["PROJECT_PATH"], "reo", "src", "reopt.jl"))
 
-# TODO run_reopt
+model = reopt_model(300)
+results = reopt(model, mi)

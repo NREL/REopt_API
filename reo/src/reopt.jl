@@ -4,22 +4,19 @@ const MOI = MathOptInterface
 include("utils.jl")
 
 
-function reopt(reo_model, data, model_inputs)
+function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
-	
     p = Parameter(model_inputs)
-    MAXTIME = data["inputs"]["Scenario"]["timeout_seconds"]
-
 	t = time() - t_start
 
-	results = reopt_run(reo_model, MAXTIME, p)
+	results = reopt_run(reo_model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
 end
 
 
-function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
+function reopt_run(reo_model, p::Parameter)
 
 	t_start = time()
 	results = Dict{String, Any}()
