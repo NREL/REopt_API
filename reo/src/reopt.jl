@@ -871,26 +871,6 @@ function reopt_run(m, p::Parameter)
 	add_yearone_expressions(m, p)
 
 	results = reopt_results(m, p, results)
-
-	results["gen_net_fixed_om_costs"] = 0
-	results["gen_net_variable_om_costs"] = 0
-	results["gen_total_fuel_cost"] = 0
-	results["gen_year_one_fuel_cost"] = 0
-	results["gen_year_one_variable_om_costs"] = 0
-
-    if !isempty(m[:GeneratorTechs])
-    	if value(sum(m[:dvSize][t] for t in m[:GeneratorTechs])) > 0
-			results["Generator"] = Dict()
-            results["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
-			results["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
-			results["gen_net_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) * m[:r_tax_fraction_owner], digits=0)
-	        results["gen_total_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
-	        results["gen_year_one_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) / p.pwf_e, digits=2)
-	        results["gen_year_one_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
-	        results["gen_year_one_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
-		end
-    end
-	
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker]
@@ -929,27 +909,6 @@ function reopt_run(m, p::Parameter)
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     results["GridToLoad"] = round.(value.(GridToLoad), digits=3)
 
-	if !isempty(m[:GeneratorTechs])
-		@expression(m, GENERATORtoBatt[ts in p.TimeStep],
-					sum(m[:dvProductionToStorage]["Elec",t,ts] for t in m[:GeneratorTechs]))
-    	results["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
-
-		@expression(m, GENERATORtoGrid[ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t]))
-		results["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
-
-		@expression(m, GENERATORtoLoad[ts in p.TimeStep],
-					sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-						for t in m[:GeneratorTechs]) - 
-						GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
-						)
-		results["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
-    else
-    	results["GENERATORtoBatt"] = []
-		results["GENERATORtoGrid"] = []
-		results["GENERATORtoLoad"] = []
-	end
-	
 	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
     for PVclass in PVclasses
 		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
@@ -1027,6 +986,20 @@ end
 
 function reopt_results(m, p, r::Dict)
 	add_storage_results!(m, p, r)
+
+	if !isempty(m[:GeneratorTechs])
+		add_generator_results(m, p, r)
+    else
+		r["gen_net_fixed_om_costs"] = 0
+		r["gen_net_variable_om_costs"] = 0
+		r["gen_total_fuel_cost"] = 0
+		r["gen_year_one_fuel_cost"] = 0
+		r["gen_year_one_variable_om_costs"] = 0
+    	r["GENERATORtoBatt"] = []
+		r["GENERATORtoGrid"] = []
+		r["GENERATORtoLoad"] = []
+	end
+	
 	return r
 end
 
@@ -1041,4 +1014,31 @@ function add_storage_results!(m, p, r::Dict)
     else
         r["year_one_soc_series_pct"] = []
     end
+end
+
+
+function add_generator_results(m, p, r::Dict)
+	if value(sum(m[:dvSize][t] for t in m[:GeneratorTechs])) > 0
+		r["generator_kw"] = value(sum(m[:dvSize][t] for t in m[:GeneratorTechs]))
+		r["gen_net_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) * m[:r_tax_fraction_owner], digits=0)
+		r["gen_net_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) * m[:r_tax_fraction_owner], digits=0)
+		r["gen_total_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) * m[:r_tax_fraction_offtaker], digits=2)
+		r["gen_year_one_fuel_cost"] = round(value(m[:TotalGenFuelCharges]) / p.pwf_e, digits=2)
+		r["gen_year_one_variable_om_costs"] = round(value(m[:GenPerUnitProdOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
+		r["gen_year_one_fixed_om_costs"] = round(value(m[:GenPerUnitSizeOMCosts]) / (p.pwf_om * p.two_party_factor), digits=0)
+	end
+	@expression(m, GENERATORtoBatt[ts in p.TimeStep],
+				sum(m[:dvProductionToStorage]["Elec",t,ts] for t in m[:GeneratorTechs]))
+	r["GENERATORtoBatt"] = round.(value.(GENERATORtoBatt), digits=3)
+
+	@expression(m, GENERATORtoGrid[ts in p.TimeStep],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t]))
+	r["GENERATORtoGrid"] = round.(value.(GENERATORtoGrid), digits=3)
+
+	@expression(m, GENERATORtoLoad[ts in p.TimeStep],
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+					for t in m[:GeneratorTechs]) - 
+					GENERATORtoBatt[ts] - GENERATORtoGrid[ts]
+					)
+	r["GENERATORtoLoad"] = round.(value.(GENERATORtoLoad), digits=3)
 end
