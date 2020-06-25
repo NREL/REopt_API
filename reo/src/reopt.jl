@@ -834,14 +834,6 @@ function reopt_run(m, p::Parameter)
 	##############################################################################
     #############  		Outputs    									 #############
     ##############################################################################
-	m[:Year1GenProd] = @expression(m, 
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
-			for t in m[:GeneratorTechs], ts in p.TimeStep)
-	)
-	m[:AverageGenProd] = @expression(m, 
-		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-			for t in m[:GeneratorTechs], ts in p.TimeStep)
-	)
 	m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * 
 		sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
 	)
@@ -937,6 +929,19 @@ function add_generator_results(m, p, r::Dict)
 
     @expression(m, GeneratorFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in m[:GeneratorTechs], ts in p.TimeStep))
 	r["fuel_used_gal"] = round(value(GeneratorFuelUsed), digits=2)
+
+
+	m[:Year1GenProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] 
+			for t in m[:GeneratorTechs], ts in p.TimeStep)
+	)
+	r["year_one_gen_energy_produced"] = round(value(m[:Year1GenProd]), digits=0)
+	m[:AverageGenProd] = @expression(m, 
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+			for t in m[:GeneratorTechs], ts in p.TimeStep)
+	)
+	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
+
 	nothing
 end
 
@@ -1043,8 +1048,6 @@ function add_util_results(m, p, r::Dict)
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
-                         "year_one_gen_energy_produced" => round(value(m[:Year1GenProd]), digits=0),
-                         "average_yearly_gen_energy_produced" => round(value(m[:AverageGenProd]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
