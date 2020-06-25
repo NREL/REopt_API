@@ -445,6 +445,19 @@ function add_load_balance_constraints(m, p)
 end
 
 
+function add_storage_grid_constraints(m, p)
+	##Constraint (8c): Grid-to-storage no greater than grid purchases 
+	@constraint(m, GridToStorageCon[ts in p.TimeStepsWithGrid],
+		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier)  >= m[:dvGridToStorage][ts]
+	)
+		
+	##Constraint (8d): Storage-to-grid no greater than discharge from Storage
+	@constraint(m, StorageToGridCon[ts in p.TimeStepsWithGrid],
+		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage)  >= sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
+	)
+end
+
+
 function reopt(reo_model, model_inputs::Dict)
 
 	t_start = time()
@@ -508,17 +521,8 @@ function reopt_run(m, p::Parameter)
 	### Constraint set (8): Electrical Load Balancing and Grid Sales
 	##Constraint (8a): Electrical Load Balancing with Grid
 	add_load_balance_constraints(m, p)
-	
-	##Constraint (8c): Grid-to-storage no greater than grid purchases 
-	@constraint(m, GridToStorageCon[ts in p.TimeStepsWithGrid],
-		sum( m[:dvGridPurchase][u,ts] for u in p.PricingTier)  >= m[:dvGridToStorage][ts]
-	)
-		
-	##Constraint (8d): Storage-to-grid no greater than discharge from Storage
-	@constraint(m, StorageToGridCon[ts in p.TimeStepsWithGrid],
-		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage)  >= sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers)
-	)
-		
+
+	add_storage_grid_constraints(m, p)
 	if !isempty(p.SalesTiers)
 		##Constraint (8e): Production-to-grid no greater than production
 		@constraint(m, ProductionToGridCon[t in p.Tech, ts in p.TimeStepsWithGrid],
