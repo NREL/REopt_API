@@ -179,7 +179,6 @@ Base.@kwdef struct Parameter
 	 ElectricDerate::AxisArray
 
      # New Sets
-     SubdivisionByTech::AxisArray
      SalesTiers::UnitRange
      StorageSalesTiers::Array{Int, 1}
      NonStorageSalesTiers::Array{Int, 1}
@@ -288,7 +287,6 @@ function Parameter(d::Dict)
     # Indexed Sets
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
-    d["SubdivisionByTech"] = AxisArray(d["SubdivisionByTech"], d["Tech"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
 	d["SalesTiersByTech"] = AxisArray(d["SalesTiersByTech"], d["Tech"])
 	d["TechsBySalesTier"] = AxisArray(d["TechsBySalesTier"], d[:SalesTiers])
