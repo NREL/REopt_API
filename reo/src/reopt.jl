@@ -1149,7 +1149,7 @@ function add_chp_results(m, p, r::Dict)
 		results["total_boiler_fuel_cost"] = 0.0
 		results["year_one_boiler_fuel_cost"] = 0.0
 	end
-	
+
 	##Electric chiller results go here; need to populate expressions for first collection
 	if !isempty(p.ElectricChillers)
 		@expression(REopt, ELECCHLtoTES[ts in p.TimeStep],
