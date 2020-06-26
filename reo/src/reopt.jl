@@ -1153,14 +1153,14 @@ function add_chp_results(m, p, r::Dict)
 	##Electric chiller results go here; need to populate expressions for first collection
 	if !isempty(p.ElectricChillers)
 		@expression(REopt, ELECCHLtoTES[ts in p.TimeStep],
-			dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.ElectricChillers)
+			sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
 		results["electric_chiller_to_tes_series"] = round.(value.(ELECCHLtoTES), digits=3)
 		@expression(REopt, ELECCHLtoLoad[ts in p.TimeStep],
-			dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers
-				- ELECCHLtoTES)
+			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
+				- ELECCHLtoTES[ts])
 		results["electric_chiller_to_load_series"] = round.(value.(ELECCHLtoLoad), digits=3)
 		@expression(REopt, ELECCHLElecConsumptionSeries[ts in p.TimeStep],
-			dvThermalProduction[t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers)
+			sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
 		results["electric_chiller_consumption_series"] = round.(value.(ELECCHLElecConsumptionSeries), digits=3)
 		@expression(REopt, Year1ELECCHLElecConsumption,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP
