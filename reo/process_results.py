@@ -549,15 +549,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_ton"] = self.results_dict.get("absorpchl_kw") / 3.51685
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_load_series_ton"] = self.results_dict.get("absoprtion_chiller_to_load_series")
+                        "year_one_absorp_chl_thermal_to_load_series_ton"] = self.results_dict.get("absorption_chiller_to_load_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = self.results_dict.get("absoprtion_chiller_to_tes_series")
+                        "year_one_absorp_chl_thermal_to_tes_series_ton"] = self.results_dict.get("absorption_chiller_to_tes_series")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"] = self.results_dict.get("absoprtion_chiller_consumption_series")
+                        "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr"] = self.results_dict.get("absorption_chiller_consumption_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_absorp_chl_thermal_consumption_mmbtu"] = self.results_dict.get("year_one_absorp_chiller_thermal_consumption_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_consumption_mmbtu") / 3.51685
+                        "year_one_absorp_chl_thermal_production_tonhr"] = self.results_dict.get("year_one_absorp_chiller_thermal_prod_kwh") / 3.51685
                 elif name == "HotTES":
                     self.nested_outputs["Scenario"]["Site"][name][
                         "size_gal"] = self.results_dict.get("hot_tes_size_mmbtu",0) / 0.000163
