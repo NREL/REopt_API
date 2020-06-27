@@ -1089,14 +1089,14 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	if !isempty(p.AbsorptionChillers)
 		results["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
 		@expression(REopt, ABSORPCHLtoTES[ts in p.TimeStep],
-			dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers)
+			sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
 		results["absorption_chiller_to_tes_series"] = round.(value.(ABSORPCHLtoTES), digits=3)
 		@expression(REopt, ABSORPCHLtoLoad[ts in p.TimeStep],
-			dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers
-				- ABSORPCHLtoTES)
+			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
+				- ABSORPCHLtoTES[ts])
 		results["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
 		@expression(REopt, ABSORPCHLThermalConsumptionSeries[ts in p.TimeStep],
-			dvThermalProduction[t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers)
+			sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
 		results["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
 		@expression(REopt, Year1ABSORPCHLThermalConsumption,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP
