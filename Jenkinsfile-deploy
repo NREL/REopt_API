@@ -30,6 +30,10 @@ pipeline {
     PATH = "${JENKINS_HOME}/.rbenv/bin:${JENKINS_HOME}/.rbenv/shims:/usr/local/bin:/sbin:/usr/sbin:/bin:/usr/bin"
     C110P_URL = credentials("reopt-api-c110p-url")
     DEV_URL = credentials("reopt-api-dev-url")
+    STAGE_URL = credentials("reopt-api-stage-url")
+    STAGE1_URL = credentials("reopt-api1-stage-url")
+    STAGE2_URL = credentials("reopt-api2-stage-url")
+    STAGE_BASEDOMAIN_URL = credentials("reopt-api-stage-base-url")
     XPRESSDIR = "/opt/xpressmp"
   }
 
