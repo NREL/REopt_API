@@ -41,6 +41,9 @@ try:
     if env == 'internal_c110p':
         raw_env = 'reopt_api.internal_c110p_settings'
         redis_host = ':' + dev_redis_password + '@localhost'
+    elif env == 'development':
+        raw_env = 'reopt_api.dev_settings'
+        redis_host = ':' + dev_redis_password + '@' + dev_database_host
     else:
         raw_env = 'reopt_api.dev_settings'
         redis_host = os.environ.get('REDIS_HOST', 'localhost')
