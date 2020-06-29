@@ -21,4 +21,6 @@ staging_database_name = ""
 production_redis_password = ""
 prod_database_host = ""
 prod_database_name = ""
+production_user = ""
+production_user_password = ""
 
