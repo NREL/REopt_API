@@ -34,6 +34,9 @@ pipeline {
     STAGE1_URL = credentials("reopt-api1-stage-url")
     STAGE2_URL = credentials("reopt-api2-stage-url")
     STAGE_BASEDOMAIN_URL = credentials("reopt-api-stage-base-url")
+    PROD_URL = credentials("reopt-api-prod-url")
+    PROD1_URL = credentials("reopt-api1-prod-url")
+    PROD2_URL = credentials("reopt-api2-prod-url")
     XPRESSDIR = "/opt/xpressmp"
   }
 
