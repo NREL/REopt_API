@@ -134,7 +134,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvProductionToWaste[p.Tech, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by technology t sent to waste in time step h
+	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by technology t sent to waste in time step h
 		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
@@ -284,12 +284,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
-    	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
+    	        dvProductionToStorage[b,t,ts] <= 
 				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 				)
 	# Constraint (4f)-2: (Cold) Thermal production sent to storage or grid must be less than technology's rated production
 	@constraint(REopt, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
-    	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
+    	        dvProductionToStorage[b,t,ts] <= 
 				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 				)
 	
@@ -369,7 +369,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) == 
 				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
-				sum(dvProductionToWaste[t,ts] + sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES) for t in p.CoolingTechs) 
+				sum(sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES) for t in p.CoolingTechs) 
 		)
 	end
 	
@@ -380,7 +380,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(dvProductionToWaste[t,ts] + sum(dvProductionToStorage[b,t,ts] for b in p.HotTES) for t in p.HeatingTechs)  +
+				sum(dvProductionToWaste[t,ts] for t in p.CHPTechs) + sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
 				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
