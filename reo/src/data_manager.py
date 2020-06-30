@@ -915,6 +915,7 @@ class DataManager:
         storage_max_power = [self.storage.max_kw]
         storage_min_energy = [self.storage.min_kwh]
         storage_max_energy = [self.storage.max_kwh]
+        storage_decay_rate = [0.0]
         
         #Obtain storage costs and params
         sf = self.site.financial
@@ -957,6 +958,7 @@ class DataManager:
             storage_max_power.append(self.hot_tes.max_mmbtu / self.steplength)
             storage_min_energy.append(self.hot_tes.min_mmbtu)
             storage_max_energy.append(self.hot_tes.max_mmbtu)
+            storage_decay_rate.append(self.hot_tes.thermal_decay_rate_fraction)
             
         
 
@@ -978,6 +980,7 @@ class DataManager:
             storage_max_power.append(self.cold_tes.max_kwht / self.steplength)
             storage_min_energy.append(self.cold_tes.min_kwht)
             storage_max_energy.append(self.cold_tes.max_kwht)
+            storage_decay_rate.append(self.cold_tes.thermal_decay_rate_fraction)
         
         thermal_storage_techs = storage_techs[1:]
         hot_tes_techs = [] if self.hot_tes == None else ['HotTES']
@@ -986,7 +989,7 @@ class DataManager:
         return storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
             storage_min_power, storage_max_power, storage_min_energy, \
-            storage_max_energy
+            storage_max_energy, storage_decay_rate
             
 
     def finalize(self):
@@ -1032,7 +1035,7 @@ class DataManager:
         storage_techs, thermal_storage_techs, hot_tes_techs, \
             cold_tes_techs, storage_power_cost, storage_energy_cost, \
             storage_min_power, storage_max_power, storage_min_energy, \
-            storage_max_energy = self._get_REopt_storage_techs_and_params()
+            storage_max_energy, storage_decay_rate = self._get_REopt_storage_techs_and_params()
 
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff, fuel_tariff=self.fuel_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
@@ -1290,7 +1293,8 @@ class DataManager:
             'FuelBurnYIntRate': chp_fuel_burn_intercept,
             'CHPThermalProdFactor': chp_thermal_prod_factor,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
-            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
+            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
+            'StorageDecayRate': storage_decay_rate
             }
 
         self.reopt_inputs_bau = {
@@ -1409,6 +1413,7 @@ class DataManager:
             'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
-            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month
+            'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
+            'StorageDecayRate': storage_decay_rate
         }
 

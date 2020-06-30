@@ -318,7 +318,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.HeatingTechs) - 
-					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
+					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b] - 
+					p.StorageDecayRate[b] * dvStorageSOC[b,ts]
 					)
 				)
 				
@@ -326,7 +327,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * dvProductionToStorage[b,t,ts] for t in p.CoolingTechs) - 
-					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b]
+					dvDischargeFromStorage[b,ts]/p.DischargeEfficiency[b] - 
+					p.StorageDecayRate[b] * dvStorageSOC[b,ts]
 					)
 				)
 	
