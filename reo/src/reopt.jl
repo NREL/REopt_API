@@ -280,7 +280,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts]
 				)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
+	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep; !(t in p.CHPTechs)],
     	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
 				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 				)
@@ -288,6 +288,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	@constraint(REopt, CoolingTechProductionFlowCon[b in p.ColdTES, t in p.CoolingTechs, ts in p.TimeStep],
     	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
 				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
+				)
+	
+	# Constraint (4g): CHP Thermal production sent to storage or grid must be less than technology's rated production
+	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
+    	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
+				dvThermalProduction[t,ts]
 				)
 				
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
