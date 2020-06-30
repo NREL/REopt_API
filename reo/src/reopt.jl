@@ -294,7 +294,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				)
 	
 	# Constraint (4g): CHP Thermal production sent to storage or grid must be less than technology's rated production
-	@constraint(REopt, HeatingTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
+	@constraint(REopt, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
     	        dvProductionToStorage[b,t,ts] + dvProductionToWaste[t,ts] <= 
 				dvThermalProduction[t,ts]
 				)
