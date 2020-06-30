@@ -134,7 +134,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
+	    dvProductionToWaste[p.Tech, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by technology t sent to waste in time step h
+		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
 	    dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
@@ -288,6 +289,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
     	        dvProductionToStorage[b,t,ts]  <= 
 				p.ProductionFactor[t,ts] * dvThermalProduction[t,ts]
 				)
+				
 	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(REopt, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
     	        dvStorageSOC[b,ts] == dvStorageSOC[b,ts-1] + p.TimeStepScaling * (  
@@ -382,7 +384,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in p.CoolingTechs) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.ColdTES) == 
 				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
-				sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
+				sum(dvProductionToWaste[t,ts] + sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES) for t in p.CoolingTechs) 
 		)
 	end
 	
@@ -393,7 +395,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 				sum(p.ProductionFactor[t,ts] * dvThermalProduction[t,ts] for t in ["BOILER"]) + 
 				sum(dvDischargeFromStorage[b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(dvProductionToStorage[b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
+				sum(dvProductionToWaste[t,ts] + sum(dvProductionToStorage[b,t,ts] for b in p.HotTES) for t in p.HeatingTechs)  +
 				sum(dvThermalProduction[t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
