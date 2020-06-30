@@ -236,13 +236,16 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@constraint(REopt, CHPYInt2a2Con[t in p.CHPTechs, ts in p.TimeStep],
 					dvThermalProductionYIntercept[t,ts] <= p.CHPThermalProdIntercept[t] * NewMaxSize[t] * binTechIsOnInTS[t,ts]
 					)
-		# Constraint (2b): Thermal Production of CHP
-		 #p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] * (
+		#Constraint (2b): Lower Bounds on Thermal Production Y-Intercept 
+		@constraint(REopt, CHPYInt2bCon[t in p.CHPTechs, ts in p.TimeStep],
+					dvThermalProductionYIntercept[t,ts] >= p.CHPThermalProdIntercept[t] * dvSize[t] - p.CHPThermalProdIntercept[t] * NewMaxSize[t] * (1 - binTechIsOnInTS[t,ts])
+					)
+		# Constraint (2c): Thermal Production of CHP
+		# Note: p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] removed from this but present in math
 		@constraint(REopt, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
-					p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts] <=
+					p.CHPThermalProdFactor[t,ts] * dvThermalProduction[t,ts] ==
 					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * dvRatedProduction[t,ts] + dvThermalProductionYIntercept[t,ts]
 					)
-					#				)
 	end
 	
 	
