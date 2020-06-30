@@ -46,13 +46,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if n > 1
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])  - 
 					sum(NewMaxDemandMonthsInTier[m,np] for np in 1:(n-1)) ]
 				)
 			else 
 				NewMaxDemandMonthsInTier[m,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[m]])   ])
 			end
 		end
@@ -63,13 +63,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for r in p.Ratchets 
 			if e > 1
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStep])  - 
 				sum(NewMaxDemandInTier[r,ep] for ep in 1:(e-1))
 				])
 			else
 				NewMaxDemandInTier[r,e] = minimum([p.MaxDemandInTier[e], 
-				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -81,12 +81,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		for m in p.Month 
 			if u > 1
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+					added_energy + sum(p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[m]) - sum(NewMaxUsageInTier[m,up] for up in 1:(u-1))
 				])
 			else
 				NewMaxUsageInTier[m,u] = minimum([p.MaxUsageInTier[u], 
-					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+					added_energy + sum(p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[m])  
 				])
 			end
@@ -134,7 +134,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by technology t sent to waste in time step h
+	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by CHP technology t sent to waste in time step h
 		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
