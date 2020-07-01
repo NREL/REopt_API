@@ -171,6 +171,11 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
 )
 
+# the chord_unlock task gets stuck when an error occurs (sometimes)
+# set this value to something greater than timeout_seconds so that the chord_unlock tasks
+# eventually stop (otherwise the retry forever).
+CHORD_UNLOCK_MAX_RETRIES = 1000
+
 if 'test' in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
