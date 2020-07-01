@@ -1040,7 +1040,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 			sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
 		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES))
 		@expression(REopt, BoilerToLoad[ts in p.TimeStep],
-			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts]
 				for t in ["BOILER"]) - BoilerToHotTES[ts] )
 		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad))
 		@expression(REopt, TotalBoilerFuelCharges,
