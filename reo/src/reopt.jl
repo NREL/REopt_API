@@ -1020,6 +1020,7 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		results["chp_to_grid_series"] = []
 		results["chp_thermal_to_load_series"] = []
 		results["chp_thermal_to_tes_series"] = []
+		results["chp_thermal_to_waste_series"] = []
 		results["total_chp_fuel_cost"] = 0.0
 		results["year_one_chp_fuel_cost"] = 0.0
 	end
@@ -1035,6 +1036,13 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, BoilerThermalProduced, sum(dvThermalProduction["BOILER",ts]
 			for ts in p.TimeStep))
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
+		@expression(REopt, BoilerToHotTES[ts in p.TimeStep],
+			sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
+		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES))
+		@expression(REopt, BoilerToLoad[ts in p.TimeStep],
+			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+				for t in ["BOILER"]) - BoilerToHotTES[ts] )
+		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad))
 		@expression(REopt, TotalBoilerFuelCharges,
 			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
@@ -1043,6 +1051,8 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 	else
 		results["fuel_to_boiler_series"] = []
 		results["boiler_thermal_production_series"] = []
+		results["boiler_thermal_to_load_series"] = []
+		results["boiler_thermal_to_tes_series"] = []
 		results["year_one_fuel_to_boiler_mmbtu"] = 0.0
 		results["year_one_boiler_thermal_production_mmbtu"] = 0.0
 		results["total_boiler_fuel_cost"] = 0.0
