@@ -637,6 +637,8 @@ class CHPModel(models.Model):
                                                                 blank=True)
     year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), null=True,
                                                                 blank=True)
+    year_one_thermal_to_waste_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                                blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     total_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
