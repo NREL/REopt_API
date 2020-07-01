@@ -706,6 +706,8 @@ class BoilerModel(models.Model):
     # Outputs
     year_one_boiler_fuel_consumption_series_mmbtu_per_hr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_boiler_thermal_production_series_mmbtu_per_hr = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_thermal_to_load_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_thermal_to_tes_series_mmbtu_per_hour = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_boiler_fuel_consumption_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_mmbtu = models.FloatField(null=True, blank=True)
     year_one_boiler_thermal_production_bau_mmbtu = models.FloatField(null=True, blank=True)

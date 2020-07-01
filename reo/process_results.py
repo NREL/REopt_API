@@ -533,6 +533,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_series_mmbtu_per_hr"] = self.results_dict.get("boiler_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_load_series_mmbtu_per_hour"] = self.results_dict.get("boiler_thermal_to_load_series")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_thermal_to_tes_series_mmbtu_per_hour"] = self.results_dict.get("boiler_thermal_to_tes_series")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_fuel_consumption_mmbtu"] = self.results_dict.get("year_one_fuel_to_boiler_mmbtu")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_boiler_thermal_production_mmbtu"] = self.results_dict.get("year_one_boiler_thermal_production_mmbtu")

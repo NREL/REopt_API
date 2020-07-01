@@ -830,6 +830,16 @@ nested_output_definitions = {
                   "description": "Annual average boiler thermal production",
                   "units": "MMBtu"
                 },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
                 "year_one_boiler_thermal_production_bau_mmbtu": {
                   "type": float,
                   "description": "Annual average bau boiler thermal production",
