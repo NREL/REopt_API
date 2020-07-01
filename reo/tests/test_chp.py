@@ -17,6 +17,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         super(CHPTest, self).setUp()
         self.reopt_base = '/v1/job/'
         self.test_post = os.path.join('reo', 'tests', 'posts', 'test_chp_sizing_POST.json')
+        #self.test_post = os.path.join('reo', 'tests', 'posts', 'POST_test_chp_OS.json')
 
     def get_response(self, data):
 
@@ -41,17 +42,18 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat_chp(d['outputs'])
-
+        from celery.contrib import rdb
+        rdb.set_trace()
         # This test was verified to be withing 1.5% gap after 10 mins of the Mosel/Xpress monolith
         d_expected = dict()
-        d_expected['lcc'] = 13405579.0
-        d_expected['npv'] = 1413514.0
-        d_expected['chp_kw'] = 812.86
-        d_expected['chp_year_one_fuel_used_mmbtu'] = 43651.45
-        d_expected['chp_year_one_electric_energy_produced_kwh'] = 4502590.86
-        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9790.75
-        d_expected['boiler_total_fuel_cost_us_dollars'] = 457.215
-        d_expected['chp_total_fuel_cost_us_dollars'] = 5141634.46
+        d_expected['lcc'] = 13406752.0
+        d_expected['npv'] = 1412341.0
+        d_expected['chp_kw'] = 776.94
+        d_expected['chp_year_one_fuel_used_mmbtu'] = 42065.37
+        d_expected['chp_year_one_electric_energy_produced_kwh'] = 4344703.75
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9787.7
+        d_expected['boiler_total_fuel_cost_us_dollars'] = 902.6
+        d_expected['chp_total_fuel_cost_us_dollars'] = 4954813.24
 
         try:
             check_common_outputs(self, c, d_expected)
