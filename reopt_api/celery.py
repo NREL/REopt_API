@@ -31,7 +31,7 @@ from __future__ import absolute_import, unicode_literals  # recommended by celer
 import os
 import logging
 from celery import Celery
-from celery.signals import after_setup_logger, worker_init
+from celery.signals import after_setup_logger
 from keys import *
 
 # set the default Django settings module for the 'celery' program.
@@ -113,15 +113,3 @@ def setup_loggers(logger, *args, **kwargs):
     console_handler.setFormatter(console_formatter)
     console_handler.setLevel(logging.INFO)
     logger.addHandler(console_handler)
-
-
-@worker_init.connect
-def limit_chord_unlock_tasks(worker, **kwargs):
-    """
-    Set max_retries for chord.unlock tasks to avoid infinitely looping
-    tasks. (see celery/celery#1700 or celery/celery#2725)
-    """
-    task = worker.app.tasks['celery.chord_unlock']
-    if task.max_retries is None:
-        retries = getattr(worker.app.conf, 'CHORD_UNLOCK_MAX_RETRIES', None)
-        task.max_retries = retries
