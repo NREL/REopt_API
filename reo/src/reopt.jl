@@ -997,9 +997,12 @@ function reopt_run(reo_model, MAXTIME::Int64, p::Parameter)
 		@expression(REopt, CHPtoHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in p.CHPTechs))
 		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
+		@expression(REopt, CHPThermalToWaste[ts in p.TimeStep],
+			sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
+		results["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
-				for t in p.CHPTechs) - CHPtoHotTES[ts])
+				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
 			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
