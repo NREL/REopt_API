@@ -171,6 +171,9 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
 )
 
+# limit number of concurrent workers
+CELERY_WORKER_CONCURRENCY = 3
+
 # the chord_unlock task gets stuck when an error occurs (sometimes)
 # set this value to something greater than timeout_seconds so that the chord_unlock tasks
 # eventually stop (otherwise the retry forever).
