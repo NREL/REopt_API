@@ -73,8 +73,8 @@ class ScenarioTask(Task):
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
-        # self.request.chain = None  # stop the chain?
-        # self.request.callback = None
+        self.request.chain = None  # stop the chain?
+        self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
 
