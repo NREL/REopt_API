@@ -780,6 +780,11 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to Hot TES",
                   "units": "MMBtu/hr"
                 },
+                "year_one_thermal_to_waste_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to waste heat",
+                  "units": "MMBtu/hr"
+                },
                 "year_one_emissions_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
@@ -824,6 +829,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Annual average boiler thermal production",
                   "units": "MMBtu"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "units": "MMBtu/hr"
                 },
                 "year_one_boiler_thermal_production_bau_mmbtu": {
                   "type": float,

@@ -13,7 +13,8 @@ function add_continuous_variables(m, p)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
 		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
+	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by CHP technology t sent to waste in time step h
+		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
 	    dvStorageCapPower[p.Storage] >= 0   # X^{bkW}_b: Power capacity of storage system b [kW]  (NEW)
@@ -138,13 +139,13 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month 
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])  - 
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
 				)
 			else 
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n], 
-					added_power + maximum([p.ElecLoad[ts] #+ LoadProfileChillerElectric[ts]
+					added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]])   ])
 			end
 		end
@@ -155,13 +156,13 @@ function add_bigM_adjustments(m, p)
 		for r in p.Ratchets 
 			if e > 1
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], 
-				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStep])  - 
 				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
 			else
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e], 
-				added_power + maximum([p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+				added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStep])  
 				])
 			end
@@ -173,12 +174,12 @@ function add_bigM_adjustments(m, p)
 		for mth in p.Month 
 			if u > 1
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], 
-					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+					added_energy + sum(p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth]) - sum(m[:NewMaxUsageInTier][mth,up] for up in 1:(u-1))
 				])
 			else
 				m[:NewMaxUsageInTier][mth,u] = minimum([p.MaxUsageInTier[u], 
-					added_energy + sum(p.ElecLoad[ts] #+ p.LoadProfileChillerElectric[ts]
+					added_energy + sum(p.ElecLoad[ts] + p.CoolingLoad[ts]
 					for ts in p.TimeStepRatchetsMonth[mth])  
 				])
 			end
@@ -188,15 +189,15 @@ function add_bigM_adjustments(m, p)
 	# NewMaxSize generates a new maximum size that is equal to the largest monthly load of the year.  This is intended to be a reasonable upper bound on size that would never be exceeeded, but is sufficienctly small to replace much larger big-M values placed as a default.
 
 	for t in p.HeatingTechs
-		NewMaxSize[t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
-		if (NewMaxSize[t] > p.MaxSize[t])
-			NewMaxSize[t] = p.MaxSize[t]
+		m[:NewMaxSize][t] = maximum([sum(p.HeatingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in p.CoolingTechs
 		NewMaxSize[t] = maximum([sum(p.CoolingLoad[ts] for ts in p.TimeStepRatchetsMonth[m]) for m in p.Month])
-		if (NewMaxSize[t] > p.MaxSize[t])
-			NewMaxSize[t] = p.MaxSize[t]
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
 	for t in p.ElectricTechs
@@ -285,10 +286,15 @@ function add_thermal_production_constraints(m, p)
 		@constraint(m, CHPYInt2a2Con[t in p.CHPTechs, ts in p.TimeStep],
 					m[:dvThermalProductionYIntercept][t,ts] <= p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * m[:binTechIsOnInTS][t,ts]
 					)
-		# Constraint (2b): Thermal Production of CHP 
+		#Constraint (2b): Lower Bounds on Thermal Production Y-Intercept 
+		@constraint(m, CHPYInt2bCon[t in p.CHPTechs, ts in p.TimeStep],
+					m[:dvThermalProductionYIntercept][t,ts] >= p.CHPThermalProdIntercept[t] * m[:dvSize][t] - p.CHPThermalProdIntercept[t] * m[:NewMaxSize][t] * (1 - m[:binTechIsOnInTS][t,ts])
+					)
+		# Constraint (2c): Thermal Production of CHP
+		# Note: p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] removed from this but present in math
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
-					p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] <=  
-					CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
+					p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] ==
+					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
 					)
 	end
 end
@@ -343,7 +349,14 @@ function add_storage_op_constraints(m, p)
     	        m[:dvProductionToStorage][b,t,ts]  <= 
 				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
 				)
-	# Constraint (4g): Reconcile state-of-charge for electrical storage - with grid
+				
+	# Constraint (4g): CHP Thermal production sent to storage or grid must be less than technology's rated production
+	@constraint(m, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
+    	        m[:dvProductionToStorage][b,t,ts] + m[:dvProductionToWaste][t,ts] <= 
+				p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts]
+				)
+				
+	# Constraint (4h): Reconcile state-of-charge for electrical storage - with grid
 	@constraint(m, ElecStorageInventoryCon[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
 		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + 
@@ -351,14 +364,14 @@ function add_storage_op_constraints(m, p)
 		)
 	)
 				
-	# Constraint (4h): Reconcile state-of-charge for electrical storage - no grid
+	# Constraint (4i): Reconcile state-of-charge for electrical storage - no grid
 	@constraint(m, ElecStorageInventoryConNoGrid[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 			sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) - m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
 		)
 	)
 	
-	# Constraint (4i)-1: Reconcile state-of-charge for (hot) thermal storage
+	# Constraint (4j)-1: Reconcile state-of-charge for (hot) thermal storage
 	@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
@@ -366,64 +379,37 @@ function add_storage_op_constraints(m, p)
 					)
 				)
 				
-	# Constraint (4i)-2: Reconcile state-of-charge for (cold) thermal storage
+	# Constraint (4j)-2: Reconcile state-of-charge for (cold) thermal storage
 	@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
 					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
 					)
 				)
-
-	
-	# Constraint (4j): Minimum state of charge
+				
+	# Constraint (4k): Minimum state of charge
 	@constraint(m, MinStorageLevelCon[b in p.Storage, ts in p.TimeStep],
 		m[:dvStorageSOC][b,ts] >= p.StorageMinSOC[b] * m[:dvStorageCapEnergy][b]
 	)
 	
-	#Constraint (4i)-1: Dispatch to electrical storage is no greater than power capacity
-	@constraint(m, ElecChargeLEQCapCon[b in p.ElecStorage, ts in p.TimeStep],
-		m[:dvStorageCapPower][b] >= (  
-			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
-		)
-	)
-	
-	#Constraint (4i)-2: Dispatch to hot storage is no greater than power capacity
-	@constraint(m, HotTESChargeLEQCapCon[b in p.HotTES, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= (  
-					sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
-					)
-				)
-	
-	#Constraint (4i)-3: Dispatch to cold storage is no greater than power capacity
-	@constraint(m, ColdTESChargeLEQCapCon[b in p.ColdTES, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= (  
-					sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
-					)
-				)
-	
-	#Constraint (4j): Dispatch from storage is no greater than power capacity
-	@constraint(m, DischargeLEQCapCon[b in p.Storage, ts in p.TimeStep],
-		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts]
-	)
-	
-	#Constraint (4k)-alt: Dispatch to and from electrical storage is no greater than power capacity
+	#Constraint (4l): Dispatch to and from electrical storage is no greater than power capacity
 	@constraint(m, ElecChargeLEQCapConAlt[b in p.ElecStorage, ts in p.TimeStepsWithGrid],
 		m[:dvStorageCapPower][b] >=   m[:dvDischargeFromStorage][b,ts] + 
 			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs) + m[:dvGridToStorage][ts]
 	)	
-	#Constraint (4l)-alt: Dispatch from electrical storage is no greater than power capacity
+	#Constraint (4m): Dispatch to and from electrical storage is no greater than power capacity (no grid interaction)
 	@constraint(m, DischargeLEQCapConNoGridAlt[b in p.ElecStorage, ts in p.TimeStepsWithoutGrid],
 		m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + 
 			sum(m[:dvProductionToStorage][b,t,ts] for t in p.ElectricTechs)
 	)
 				
-	#Constraint (4m)-1: Dispatch from thermal storage is no greater than power capacity
+	#Constraint (4n)-1: Dispatch to and from thermal storage is no greater than power capacity
 	@constraint(m, DischargeLEQCapHotCon[b in p.HotTES, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
+    	        m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + sum(m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs)
 				)
-	#Constraint (4m)-2: Dispatch from thermal storage is no greater than power capacity
+	#Constraint (4n)-2: Dispatch to and from thermal storage is no greater than power capacity
 	@constraint(m, DischargeLEQCapColdCon[b in p.ColdTES, ts in p.TimeStep],
-    	        m[:dvStorageCapPower][b] >= sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
+    	        m[:dvStorageCapPower][b] >= m[:dvDischargeFromStorage][b,ts] + sum(m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs)
 				)
 					
 	#Constraint (4n): State of charge upper bound is storage system size
@@ -431,6 +417,7 @@ function add_storage_op_constraints(m, p)
 		m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
 	)
 end
+
 
 function add_thermal_load_constraints(m, p)	
 	### Constraint set (5) - hot and cold thermal loads
@@ -440,7 +427,7 @@ function add_thermal_load_constraints(m, p)
 				sum(p.ProductionFactor[t,ts] * m:[dvThermalProduction][t,ts] for t in p.CoolingTechs) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.ColdTES) == 
 				p.CoolingLoad[ts] * p.ElectricChillerCOP + 
-				sum(m[:dvProductionToStorage][[b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
+				sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
 		)
 	end
 	
@@ -451,7 +438,7 @@ function add_thermal_load_constraints(m, p)
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
-				sum(m[:dvProductionToStorage][b,t,ts] b in p.HotTES, for t in p.HeatingTechs)  +
+				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
 				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
@@ -1083,8 +1070,8 @@ function add_chp_results(m, p, r::Dict)
 				for t in p.CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
 		@expression(REopt, Year1CHPThermalProd,
-			p.TimeStepScaling * sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
-				for t in p.CHPTechs, ts in p.TimeStep))
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts] -
+			dvProductionToWaste[t,ts] for t in p.CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 		@expression(REopt, CHPElecProdTotal[ts in p.TimeStep],
 			sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
@@ -1102,9 +1089,12 @@ function add_chp_results(m, p, r::Dict)
 		@expression(REopt, CHPtoHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in p.CHPTechs))
 		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
+		@expression(REopt, CHPThermalToWaste[ts in p.TimeStep],
+			sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
+		results["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
-				for t in p.CHPTechs) - CHPtoHotTES[ts])
+				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
 			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
@@ -1122,6 +1112,7 @@ function add_chp_results(m, p, r::Dict)
 		results["chp_to_grid_series"] = []
 		results["chp_thermal_to_load_series"] = []
 		results["chp_thermal_to_tes_series"] = []
+		results["chp_thermal_to_waste_series"] = []
 		results["total_chp_fuel_cost"] = 0.0
 		results["year_one_chp_fuel_cost"] = 0.0
 	end
@@ -1137,6 +1128,13 @@ function add_chp_results(m, p, r::Dict)
 		@expression(REopt, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts]
 			for ts in p.TimeStep))
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
+		@expression(REopt, BoilerToHotTES[ts in p.TimeStep],
+			sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
+		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES))
+		@expression(REopt, BoilerToLoad[ts in p.TimeStep],
+			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts]
+				for t in ["BOILER"]) - BoilerToHotTES[ts] )
+		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad))
 		@expression(REopt, TotalBoilerFuelCharges,
 			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
@@ -1145,6 +1143,8 @@ function add_chp_results(m, p, r::Dict)
 	else
 		results["fuel_to_boiler_series"] = []
 		results["boiler_thermal_production_series"] = []
+		results["boiler_thermal_to_load_series"] = []
+		results["boiler_thermal_to_tes_series"] = []
 		results["year_one_fuel_to_boiler_mmbtu"] = 0.0
 		results["year_one_boiler_thermal_production_mmbtu"] = 0.0
 		results["total_boiler_fuel_cost"] = 0.0
