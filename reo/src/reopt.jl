@@ -293,7 +293,7 @@ function add_thermal_production_constraints(m, p)
 		# Constraint (2c): Thermal Production of CHP
 		# Note: p.HotWaterAmbientFactor[t,ts] * p.HotWaterThermalFactor[t,ts] removed from this but present in math
 		@constraint(m, CHPThermalProductionCon[t in p.CHPTechs, ts in p.TimeStep],
-					p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] ==
+					m[:dvThermalProduction][t,ts] ==
 					p.CHPThermalProdSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts] + m[:dvThermalProductionYIntercept][t,ts]
 					)
 	end
@@ -353,7 +353,7 @@ function add_storage_op_constraints(m, p)
 	# Constraint (4g): CHP Thermal production sent to storage or grid must be less than technology's rated production
 	@constraint(m, CHPTechProductionFlowCon[b in p.HotTES, t in p.CHPTechs, ts in p.TimeStep],
     	        m[:dvProductionToStorage][b,t,ts] + m[:dvProductionToWaste][t,ts] <= 
-				p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts]
+				m[:dvThermalProduction][t,ts]
 				)
 				
 	# Constraint (4h): Reconcile state-of-charge for electrical storage - with grid
@@ -430,11 +430,11 @@ function add_thermal_load_constraints(m, p)
 				sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.CoolingTechs) 
 		)
 	end
-	
+
 	##Constraint (5b): Hot thermal loads
 	if !isempty(p.HeatingTechs)
 		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
-				sum(p.CHPThermalProdFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
+				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
 				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
@@ -1070,8 +1070,7 @@ function add_chp_results(m, p, r::Dict)
 				for t in p.CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
 		@expression(REopt, Year1CHPThermalProd,
-			p.TimeStepScaling * sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts] -
-			dvProductionToWaste[t,ts] for t in p.CHPTechs, ts in p.TimeStep))
+			p.TimeStepScaling * sum(dvThermalProduction[t,ts] for t in p.CHPTechs, ts in p.TimeStep))
 		results["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 		@expression(REopt, CHPElecProdTotal[ts in p.TimeStep],
 			sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
@@ -1093,7 +1092,7 @@ function add_chp_results(m, p, r::Dict)
 			sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
 		results["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
-			sum(dvThermalProduction[t,ts] * p.CHPThermalProdFactor[t,ts]
+			sum(dvThermalProduction[t,ts]
 				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
 		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
 		@expression(REopt, TotalCHPFuelCharges,
