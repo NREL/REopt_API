@@ -86,6 +86,7 @@ Base.@kwdef struct Parameter
 	 ElecRate::Array{Float64, 2}  #   c^{g}_{uh}: Grid energy cost in energy demand tier u during time step h  (NEW)
 	 OMperUnitSize::AxisArray # c^{om}_{t}: Operation and maintenance cost of technology t per unit of system size [$/kW]
      OMcostPerUnitProd::AxisArray
+	 OMcostPerUnitHourPerSize::AxisArray
      
 	 GridExportRates::Array{Float64, 2}  # c^{e}_{uh}: Export rate for energy in energy pricing tier u in time step h   (NEW)
 	 CapCostSlope::AxisArray   # c^{cm}_{ts}: Slope of capital cost curve for technology t in segment s 
@@ -222,6 +223,7 @@ function Parameter(d::Dict)
         "MaxSize",
         "OMperUnitSize",
         "OMcostPerUnitProd",
+		"OMcostPerUnitHourPerSize",
         "MaxProdIncent",
         "MaxSizeForProdIncent",
         "TurbineDerate",
@@ -288,6 +290,7 @@ function Parameter(d::Dict)
     d["NMILLimits"] = AxisArray(d["NMILLimits"], d["NMILRegime"])
     d["TechToNMILMapping"] = vector_to_axisarray(d["TechToNMILMapping"], d["Tech"], d["NMILRegime"])
     d["OMcostPerUnitProd"] = AxisArray(d["OMcostPerUnitProd"], d["Tech"])
+	d["OMcostPerUnitHourPerSize"] = AxisArray(d["OMcostPerUnitHourPerSize"], d["Tech"])
 
     # Reformulation additions
     d["StorageCostPerKW"] = AxisArray(d["StorageCostPerKW"], d["Storage"])
