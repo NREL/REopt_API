@@ -1245,6 +1245,11 @@ nested_input_definitions = {
           "restrict_to": ['recip_engine', 'micro_turbine', 'combustion_turbine', 'fuel_cell'],
           "description": "CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
         },
+        "size_class":{
+          "type": "int",
+          "restrict_to": [1, 2, 3, 4],
+          "description": "CHP size class for using appropriate default inputs"
+        },
         "min_kw": {
           "type": "float",
           "min": 0.0,
@@ -1280,6 +1285,12 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0e3,
           "description": "CHP non-fuel variable operations and maintenance costs in $/kwh"
+        },
+        "om_cost_us_dollars_per_hr_per_kw_rated": {
+          "type": "float",
+          "min": 0.0,
+          "max": 1.0,
+          "description": "CHP non-fuel variable operations and maintenance costs in $/hr/kw_rated"
         },
         "elec_effic_full_load": {
           "type": "float",

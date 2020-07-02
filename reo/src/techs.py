@@ -322,6 +322,7 @@ class CHP(Tech):
         super(CHP, self).__init__()
 
         self.prime_mover = kwargs.get('prime_mover')
+        self.size_class = kwargs.get('size_class')
         self.existing_boiler_production_type_steam_or_hw = existing_boiler_production_type_steam_or_hw
         self.reopt_class = 'CHP'
         self.is_chp = True
@@ -336,6 +337,7 @@ class CHP(Tech):
             self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
             self.om_cost_us_dollars_per_kw = kwargs['om_cost_us_dollars_per_kw']
             self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
+            self.om_cost_us_dollars_per_hr_per_kw_rated = kwargs['om_cost_us_dollars_per_hr_per_kw_rated']
             self.elec_effic_full_load = kwargs['elec_effic_full_load']
             self.elec_effic_half_load = kwargs['elec_effic_half_load']
             self.thermal_effic_full_load = kwargs['thermal_effic_full_load']
