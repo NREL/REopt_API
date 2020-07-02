@@ -1087,14 +1087,14 @@ function add_chp_results(m, p, r::Dict)
 		results["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
 		@expression(REopt, CHPtoHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in p.CHPTechs))
-		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES))
+		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
 		@expression(REopt, CHPThermalToWaste[ts in p.TimeStep],
 			sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
 		results["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
 		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts]
 				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
-		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad))
+		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
 		@expression(REopt, TotalCHPFuelCharges,
 			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
 				for ts in p.TimeStep))
@@ -1129,11 +1129,11 @@ function add_chp_results(m, p, r::Dict)
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
 		@expression(REopt, BoilerToHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
-		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES))
+		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
 		@expression(REopt, BoilerToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts]
 				for t in ["BOILER"]) - BoilerToHotTES[ts] )
-		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad))
+		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
 		@expression(REopt, TotalBoilerFuelCharges,
 			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
