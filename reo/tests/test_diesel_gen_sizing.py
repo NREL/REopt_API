@@ -84,6 +84,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
 
+        c['year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_C02']
+        c['year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02']
+        c['utility_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02']
+        c['utility_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02']
+        c['generator_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02']
+        c['generator_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02']
+
         d_expected = dict()
         d_expected['lcc'] = 245232.0
         d_expected['npv'] = -4139.0
@@ -96,7 +103,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['microgrid_upgrade_cost_us_dollars'] = 1102.2
         d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
-        d_expected['net_capital_costs_plus_om'] = 15647.0
+        d_expected['net_capital_costs_plus_om'] = 15466.0
+        d_expected['year_one_emissions_lb_C02'] = 421702.1
+        d_expected['year_one_emissions_bau_lb_C02'] = 421766.1
+        d_expected['utility_year_one_emissions_lb_C02'] = 421702.1
+        d_expected['utility_year_one_emissions_bau_lb_C02'] =  421702.1
+        d_expected['generator_year_one_emissions_lb_C02'] = 17.1
+        d_expected['generator_year_one_emissions_bau_lb_C02'] = 0
 
         try:
             check_common_outputs(self, c, d_expected)

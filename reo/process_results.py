@@ -97,6 +97,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_bill",
             "year_one_utility_kwh",
             "year_one_export_benefit",
+            "GridToLoad",
             "total_energy_cost",
             "total_demand_cost",
             "total_fixed_cost",
@@ -283,7 +284,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
-
+            from IPython import embed
+            embed()
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
@@ -420,6 +422,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "total_export_benefit_bau_us_dollars"] = self.results_dict.get("total_export_benefit_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_series_us_dollars_per_kwh"] = \
                         self.dm.get('year_one_energy_cost_series_us_dollars_per_kwh')
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -427,6 +431,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.dm.get('year_one_demand_cost_series_us_dollars_per_kw')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get('GridToLoad')
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_load_bau_series_kw"] = self.results_dict.get('GridToLoad_bau')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get('GridToBatt')
                     self.nested_outputs["Scenario"]["Site"][name][
