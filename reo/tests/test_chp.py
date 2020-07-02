@@ -42,8 +42,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat_chp(d['outputs'])
-        from celery.contrib import rdb
-        rdb.set_trace()
         # This test was verified to be withing 1.5% gap after 10 mins of the Mosel/Xpress monolith
         d_expected = dict()
         d_expected['lcc'] = 13406752.0

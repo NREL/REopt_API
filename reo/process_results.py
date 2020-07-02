@@ -288,8 +288,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
-            from IPython import embed
-            embed()
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
