@@ -270,7 +270,7 @@ function add_fuel_constraints(m, p)
 	if !isempty(p.HeatingTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
 		@constraint(m, BoilerFuelBurnCon[ts in p.TimeStep],
-					m[:dvFuelUsage]["BOILER",ts]  ==  m[:dvThermalProduction]["BOILER",ts] / p.BoilerEfficiency 					
+					m[:dvFuelUsage]["BOILER",ts]  ==  p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts] / p.BoilerEfficiency 			
 					)
 	end
 end
@@ -430,8 +430,10 @@ function add_storage_op_constraints(m, p)
 	@constraint(m, StorageEnergyMaxCapCon[b in p.Storage, ts in p.TimeStep],
 		m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
 	)
-	
-	### Constraint set (5) - hot and cold thermal loads - reserved for later
+end
+
+function add_thermal_load_constraints(m, p)	
+	### Constraint set (5) - hot and cold thermal loads
 	##Constraint (5a): Cold thermal loads
 	if !isempty(p.CoolingTechs)
 		@constraint(m, ColdThermalLoadCon[ts in p.TimeStep],
@@ -453,7 +455,6 @@ function add_storage_op_constraints(m, p)
 				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
-	
 end
 
 
@@ -1129,11 +1130,11 @@ function add_chp_results(m, p, r::Dict)
 	if !isempty(p.HeatingTechs)  #Right now assuming a boiler is present if any heating techs exist
 		@expression(REopt, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
 		results["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
-		@expression(REopt, BoilerThermalProd[ts in p.TimeStep], dvThermalProduction["BOILER",ts])
+		@expression(REopt, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])
 		results["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
 		@expression(REopt, BoilerFuelUsed, sum(dvFuelUsage["BOILER", ts] for ts in p.TimeStep))
 		results["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
-		@expression(REopt, BoilerThermalProduced, sum(dvThermalProduction["BOILER",ts]
+		@expression(REopt, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts]
 			for ts in p.TimeStep))
 		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
 		@expression(REopt, TotalBoilerFuelCharges,
@@ -1238,7 +1239,6 @@ function add_chp_results(m, p, r::Dict)
 		results["cold_tes_pct_soc_series"] = []
 	end
 end	
-
 
 function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
