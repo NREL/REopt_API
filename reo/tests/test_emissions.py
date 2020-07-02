@@ -211,6 +211,7 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
         test = self.api_client.get('/v1/emissions_profile/',data={"latitude":1,"longitude":1})
         self.assertTrue("Your site location (1.0,1.0) is more than 5 miles from the nearest emission region." in str(test.content))
 
+
     def test_bad_grid_emissions_profile(self):
         """
         Tests that a poorly formatted utility emissions factor profile does not validate 
@@ -241,32 +242,5 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
         self.assertTrue(response['outputs']['Scenario']['Site']['total_emissions_lb_C02'] is None)
         self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] is None)
         self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['total_emissions_lb_C02'] is None)
-        self.assertTrue(response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] == 146.5)
-        self.assertTrue(response['outputs']['Scenario']['Site']['Generator']['total_emissions_lb_C02'] == 2930.0)
-
-    @skip('CHP test')
-    def test_good_grid_emissions_profile_location(self):
-        """
-        Tests that emissions are calculated for utility loads and generators
-        """
-        data = self.post
-        data['Scenario']['Site']['Generator']['emissions_factor_lb_CO2_per_gal'] = 12.0
-        response = self.get_response(data)
-
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'],-1), 282270)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['total_emissions_lb_C02'],-1), 5645460)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'],-1), 282150)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['ElectricTariff']['total_emissions_lb_C02'],-1), 5643060)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],-1), 120)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Generator']['total_emissions_lb_C02'],-1), 2400)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['CHP']['total_emissions_lb_C02'],-1), 0)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Boiler']['total_emissions_lb_C02'],-1), 0)
-
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'],-1), 383140)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['total_emissions_bau_lb_C02'],-1), 7662830)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02'],-1), 383140)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['ElectricTariff']['total_emissions_bau_lb_C02'],-1), 7662830)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'],-1), 0)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Generator']['total_emissions_bau_lb_C02'],-1), 0)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['CHP']['total_emissions_bau_lb_C02'],-1), 0)
-        self.assertEqual(round(response['outputs']['Scenario']['Site']['Boiler']['total_emissions_bau_lb_C02'],-1), 0)
+        self.assertTrue(round(response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],-1) ==150)
+        self.assertTrue(round(response['outputs']['Scenario']['Site']['Generator']['total_emissions_lb_C02'],-1) == 2950)

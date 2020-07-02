@@ -175,12 +175,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              fuel_slope=gen.fuel_slope,
                              fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
-            #[az] Imported from CHP, not sure that we need?
-            #tmp = dict()
-            #tmp['annual_calculated_kwh_bau'] = lp.annual_kwh
-            #tmp['resilience_check_flag'] = lp.resilience_check_flag
-            #tmp['sustain_hours'] = lp.sustain_hours
-            #ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+            tmp = dict()
+            tmp['annual_calculated_kwh'] = lp.annual_kwh
+            tmp['resilience_check_flag'] = lp.resilience_check_flag
+            tmp['sustain_hours'] = lp.sustain_hours
+            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
             lp = LoadProfile(dfm=dfm,
                              user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
@@ -195,12 +194,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              fuel_slope=0,
                              fuel_intercept=0,
                              **inputs_dict['Site']['LoadProfile'])
-            #[az] Imported from CHP, not sure that we need?
-            #tmp = dict()
-            #tmp['annual_calculated_kwh_bau'] = lp.annual_kwh
-            #tmp['resilience_check_flag'] = lp.resilience_check_flag
-            #tmp['sustain_hours'] = lp.sustain_hours
-            #ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
+            tmp = dict()
+            tmp['annual_calculated_kwh'] = lp.annual_kwh
+            tmp['resilience_check_flag'] = lp.resilience_check_flag
+            tmp['sustain_hours'] = lp.sustain_hours
+            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
         # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
