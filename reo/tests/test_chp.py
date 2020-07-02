@@ -49,7 +49,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d_expected['chp_kw'] = 776.94
         d_expected['chp_year_one_fuel_used_mmbtu'] = 42065.37
         d_expected['chp_year_one_electric_energy_produced_kwh'] = 4344703.75
-        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9787.7
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 17715.51
         d_expected['boiler_total_fuel_cost_us_dollars'] = 902.6
         d_expected['chp_total_fuel_cost_us_dollars'] = 4954813.24
 
