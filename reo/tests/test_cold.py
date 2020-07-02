@@ -81,14 +81,19 @@ class ColdTest(ResourceTestCaseMixin, TestCase):
         # Heating outputs
         boiler_fuel_consumption_calculated = d['outputs']['Scenario']['Site']['Boiler']['year_one_boiler_fuel_consumption_mmbtu']
         boiler_thermal_series = d['outputs']['Scenario']['Site']['Boiler']['year_one_boiler_thermal_production_series_mmbtu_per_hr']
+        boiler_thermal_to_load_series = d['outputs']['Scenario']['Site']['Boiler']['year_one_thermal_to_load_series_mmbtu_per_hour']
+        boiler_thermal_to_tes_series = d['outputs']['Scenario']['Site']['Boiler']['year_one_thermal_to_tes_series_mmbtu_per_hour']
         chp_thermal_to_load_series = d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_load_series_mmbtu_per_hour']
         chp_thermal_to_tes_series = d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_tes_series_mmbtu_per_hour']
+        chp_thermal_to_waste_series = d['outputs']['Scenario']['Site']['CHP']['year_one_thermal_to_waste_series_mmbtu_per_hour']
         absorpchl_thermal_series = d['outputs']['Scenario']['Site']['AbsorptionChiller']['year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr']
         hot_tes_mmbtu_per_hr_to_load_series = d['outputs']['Scenario']['Site']['HotTES']['year_one_thermal_from_hot_tes_series_mmbtu_per_hr']
-        heating_extra_from_tes_losses = sum(chp_thermal_to_tes_series) - sum(hot_tes_mmbtu_per_hr_to_load_series)
-        new_total_thermal_expected = boiler_thermal_mmbtu_expected + sum(absorpchl_thermal_series) + heating_extra_from_tes_losses
-        new_boiler_fuel_expected = (new_total_thermal_expected - sum(chp_thermal_to_load_series) - sum(hot_tes_mmbtu_per_hr_to_load_series)) / 0.78
-        total_thermal_mmbtu_calculated = sum(boiler_thermal_series) + sum(chp_thermal_to_load_series) + sum(hot_tes_mmbtu_per_hr_to_load_series)
+        tes_inflows = sum(chp_thermal_to_tes_series) + sum(boiler_thermal_to_tes_series)
+        total_chp_production = sum(chp_thermal_to_load_series) + sum(chp_thermal_to_tes_series) + sum(chp_thermal_to_waste_series)
+        tes_outflows = sum(hot_tes_mmbtu_per_hr_to_load_series)
+        new_total_thermal_expected = boiler_thermal_mmbtu_expected + sum(absorpchl_thermal_series) + sum(chp_thermal_to_waste_series) + tes_inflows
+        new_boiler_fuel_expected = (new_total_thermal_expected - total_chp_production - tes_outflows) / 0.78
+        total_thermal_mmbtu_calculated = sum(boiler_thermal_series) + total_chp_production + tes_outflows
 
         self.assertAlmostEqual(boiler_fuel_consumption_calculated, new_boiler_fuel_expected, delta=8.0)
         self.assertAlmostEqual(total_thermal_mmbtu_calculated, new_total_thermal_expected, delta=8.0)
