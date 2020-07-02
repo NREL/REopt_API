@@ -171,9 +171,6 @@ CELERY_IMPORTS = (
     'resilience_stats.outage_simulator_LF',
 )
 
-# limit number of concurrent workers
-CELERY_WORKER_CONCURRENCY = 3
-
 if 'test' in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
