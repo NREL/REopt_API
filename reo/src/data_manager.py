@@ -1151,6 +1151,9 @@ class DataManager:
         heating_techs = [t for t in reopt_techs if t.lower().startswith('chp') or t.lower().startswith('boiler')]
         heating_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('chp') or t.lower().startswith('boiler')]
         
+        boiler_techs = [t for t in reopt_techs if t.lower().startswith('boiler')]
+        boiler_techs_bau = [t for t in reopt_techs_bau if t.lower().startswith('boiler')]
+        
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
@@ -1262,12 +1265,13 @@ class DataManager:
             'AbsorptionChillers': absorption_chillers,
             'CoolingTechs': cooling_techs,
             'HeatingTechs': heating_techs,
-            	'BoilerEfficiency': boiler_efficiency,
-            	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop,
-            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope,
-            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept,
-            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept,
+            'BoilerTechs': boiler_techs,
+            'BoilerEfficiency': boiler_efficiency,
+            'ElectricChillerCOP': elec_chiller_cop,
+            'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': chp_thermal_prod_slope,
+            'CHPThermalProdIntercept': chp_thermal_prod_intercept,
+            'FuelBurnYIntRate': chp_fuel_burn_intercept,
             'CHPThermalProdFactor': chp_thermal_prod_factor,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
@@ -1382,12 +1386,13 @@ class DataManager:
             'AbsorptionChillers': absorption_chillers_bau,
             'CoolingTechs': cooling_techs_bau,
             'HeatingTechs': heating_techs_bau,
-            	'BoilerEfficiency': boiler_efficiency,
-            	'ElectricChillerCOP': elec_chiller_cop,
-            	'AbsorptionChillerCOP': absorp_chiller_cop,
-            'CHPThermalProdSlope': tariff_args.chp_thermal_prod_slope_bau,
-            'CHPThermalProdIntercept': tariff_args.chp_thermal_prod_intercept_bau,
-            'FuelBurnYIntRate': tariff_args.chp_fuel_burn_intercept_bau,
+            'BoilerTechs': boiler_techs_bau,
+            'BoilerEfficiency': boiler_efficiency,
+            'ElectricChillerCOP': elec_chiller_cop,
+            'AbsorptionChillerCOP': absorp_chiller_cop,
+            'CHPThermalProdSlope': chp_thermal_prod_slope_bau,
+            'CHPThermalProdIntercept': chp_thermal_prod_intercept_bau,
+            'FuelBurnYIntRate': chp_fuel_burn_intercept_bau,
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
