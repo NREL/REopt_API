@@ -65,6 +65,7 @@ function add_parameters(m, p)
 end
 
 
+
 function add_cost_expressions(m, p)
 	m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
 		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
@@ -268,10 +269,10 @@ function add_fuel_constraints(m, p)
 					)
 	end
 	
-	if !isempty(p.HeatingTechs)
+	if !isempty(p.BoilerTechs)
 		#Constraint (1e): Total Fuel burn for Boiler
-		@constraint(m, BoilerFuelBurnCon[ts in p.TimeStep],
-					m[:dvFuelUsage]["BOILER",ts]  ==  p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts] / p.BoilerEfficiency 			
+		@constraint(m, BoilerFuelBurnCon[t in p.BoilerTechs, ts in p.TimeStep],
+					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency 			
 					)
 	end
 end
@@ -340,7 +341,7 @@ function add_storage_op_constraints(m, p)
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
-	if ("BOILER" in p.Tech)
+	if !isempty(p.BoilerTechs)
 		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
     	        m[:dvProductionToStorage][b,t,ts]  <= 
 				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
@@ -439,7 +440,7 @@ function add_thermal_load_constraints(m, p)
 	if !isempty(p.HeatingTechs)
 		@constraint(m, HotThermalLoadCon[ts in p.TimeStep],
 				sum(m[:dvThermalProduction][t,ts] for t in p.CHPTechs) +
-				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in ["BOILER"]) + 
+				sum(p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] for t in BoilerTechs) + 
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) == 
 				p.HeatingLoad[ts] * p.BoilerEfficiency + 
 				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
@@ -1121,7 +1122,7 @@ function add_chp_results(m, p, r::Dict)
 	end
 	
 	##Boiler results go here; need to populate expressions for first collection
-	if !isempty(p.HeatingTechs)  #Right now assuming a boiler is present if any heating techs exist
+	if !isempty(p.BoilerTechs)  #Right now assuming a boiler is present if any heating techs exist
 		@expression(REopt, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
 		results["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
 		@expression(REopt, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])

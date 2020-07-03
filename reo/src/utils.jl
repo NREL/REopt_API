@@ -201,6 +201,7 @@ Base.@kwdef struct Parameter
 	AbsorptionChillers::Array{String,1}
 	CoolingTechs::Array{String,1}
 	HeatingTechs::Array{String,1}
+	BoilerTechs::Array{String,1}
 	HeatingLoad::Array{Float64,1}
 	CoolingLoad::Array{Float64,1}
 	BoilerEfficiency::Float64
