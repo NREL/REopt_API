@@ -15,13 +15,11 @@ class TestCase(ResourceTestCaseMixin, TestCase):
     "Scenario" :     {
       "Site" :       {
         "ElectricTariff" :         {
-          "blended_monthly_demand_charges_us_dollars_per_kw" : [  ],
           "urdb_utility_name" : "Comision Federal de Electricidad",
           "urdb_rate_name" : "Tarifa 1A",
           "interconnection_limit_kw" : 1e+08,
           "blended_annual_demand_charges_us_dollars_per_kw" : 0,
           "add_blended_rates_to_urdb_rate" : False,
-          "blended_monthly_rates_us_dollars_per_kwh" : [  ],
           "blended_annual_rates_us_dollars_per_kwh" : 0,
           "net_metering_limit_kw" : 0,
           "wholesale_rate_us_dollars_per_kwh" : 0,
@@ -242,7 +240,7 @@ class TestCase(ResourceTestCaseMixin, TestCase):
         #     status = response['outputs']['Scenario']['status']
 
         return response
-    @skip("CHP test")
+    #@skip("CHP test")
     def test_case(self):
        
         response = self.get_response(self.post)        
