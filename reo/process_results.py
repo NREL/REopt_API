@@ -38,6 +38,7 @@ from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
+from reo.src.emissions_calculator import EmissionsCalculator
 log = logging.getLogger(__name__)
 
 
@@ -89,6 +90,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         bau_attributes = [
             "lcc",
             "fuel_used_gal",
+            "GridToLoad",
             "year_one_energy_cost",
             "year_one_demand_cost",
             "year_one_fixed_cost",
@@ -273,6 +275,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
                     self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
                     self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]['loads_kw'] = self.dm["LoadProfile"].get("loads_kw")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
@@ -400,6 +403,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get('GridToLoad')
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_to_load_series_bau_kw"] = self.results_dict.get('GridToLoad_bau')
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_battery_series_kw"] = self.results_dict.get('GridToBatt')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_supplied_kwh"] = self.results_dict.get("year_one_utility_kwh")
@@ -515,6 +520,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
+
+        data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
