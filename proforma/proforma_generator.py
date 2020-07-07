@@ -1,6 +1,6 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
+from reo.models import SiteModel, LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -43,6 +43,7 @@ def generate_proforma(scenariomodel, output_file_path):
     generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
     electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
     financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
     load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
@@ -380,6 +381,35 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = '=ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2)'.format(bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
     current_row += 1
 
     ####################################################################################################################

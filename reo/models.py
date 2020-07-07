@@ -132,6 +132,8 @@ class SiteModel(models.Model):
     longitude = models.FloatField()
     land_acres = models.FloatField(null=True, blank=True)
     roof_squarefeet = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -226,6 +228,7 @@ class ElectricTariffModel(models.Model):
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
     add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=False, default=False)
     tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
+    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -253,9 +256,12 @@ class ElectricTariffModel(models.Model):
     year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_bau_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_supplied_kwh_bau = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -453,6 +459,7 @@ class GeneratorModel(models.Model):
     pbi_max_us_dollars = models.FloatField(null=True, blank=True)
     pbi_years = models.FloatField(null=True, blank=True)
     pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    emissions_factor_lb_CO2_per_gal = models.FloatField(null=True, blank=True)
 
     # Outputs
     fuel_used_gal = models.FloatField(null=True, blank=True)
@@ -477,6 +484,8 @@ class GeneratorModel(models.Model):
     existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
     existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
+    year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

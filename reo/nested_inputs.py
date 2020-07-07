@@ -382,6 +382,11 @@ nested_input_definitions = {
           "type": "str",
           "replacement_sets": electric_tariff_possible_sets,
           "description": "Label attribute of utility rate structure from <a href='https: //openei.org/services/doc/rest/util_rates/?version=3' target='blank'>Utility Rate Database API</a>"
+        },
+         "emissions_factor_series_lb_CO2_per_kwh": {
+          "type": "list_of_float",
+          "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
+          "default":[]
         }
       },
 
@@ -1093,7 +1098,11 @@ nested_input_definitions = {
           "max": 1.0e9,
           "default": 0.0,
           "description": "Maximum system size for which production-based incentives apply"
-        }
+        },
+         "emissions_factor_lb_CO2_per_gal": {
+          "type": "float",
+          "description": "Average carbon dioxide emissions factor"
+         }
       }
     }
   }
