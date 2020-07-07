@@ -52,7 +52,10 @@ class REoptError(Exception):
         if message == "Wind Dataset Timed Out":
             msg_adder = " Please try again later or remove the wind technology from the analysis."
         elif message.startswith("PV Watts could not locate a dataset station"):
-            msg_adder = ". Please increase your PV search radius parameter, or choose an alternate location with similar solar irradiance and weather trends closer to the continental US. You can also use a search radius of 0 to return PV Watts results regardless of distance to the nearest station."
+            msg_adder = (" Please increase your PV search radius parameter, or choose an alternate "
+            "location with similar solar irradiance and weather trends closer to the continental US. "
+            "You can also use a search radius of 0 to return PV Watts results regardless of distance "
+            "to the nearest station.")
 
         if 'infeasible' not in traceback:
             self.message = message + msg_adder  # msg_adder included in messages: error response, but not in error table
