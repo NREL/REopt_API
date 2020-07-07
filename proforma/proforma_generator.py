@@ -1,6 +1,6 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
+from reo.models import LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -43,6 +43,7 @@ def generate_proforma(scenariomodel, output_file_path):
     generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
     electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
     financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
     if financial.two_party_ownership is True:
@@ -366,6 +367,19 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data])
     make_attribute_row(ws, current_row)
     current_row += 1
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Percent energy from on-site renewable resources"
+    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},2)'.format(\
+        wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
+    make_attribute_row(ws, current_row, alignment=right_align,
+                           number_format='##%')
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Percent reduction in annual energy bill"
+    ws['B{}'.format(current_row)] = '=ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2)'.format(bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
+    make_attribute_row(ws, current_row, alignment=right_align,
+                           number_format='##%')
     current_row += 1
 
     ####################################################################################################################

@@ -518,9 +518,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
-            pv_warning = ("The best available solar resource data is {} miles from the site's coordinates. "
-             "Consider choosing an alternative location closer to NREL's NSRDB or international datasets, shown "
-             "at https://maps.nrel.gov/nsrdb-viewer/ and documented at https://nsrdb.nrel.gov/"
+            pv_warning = ("The best available solar resource data is {} miles from the site's coordinates."
+                " Beyond 200 miles, we display this warning. Consider choosing an alternative location closer"
+                " to the continental US with similar solar irradiance and weather patterns and rerunning the analysis."
+                " For more information, see https://maps.nrel.gov/nsrdb-viewer/ and the documenation at https://nsrdb.nrel.gov/"
              ).format(round(pv_watts_station_check*0.621,0))
             
             if data.get('messages') is None:
