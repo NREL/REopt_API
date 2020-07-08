@@ -1120,7 +1120,9 @@ function add_chp_results(m, p, r::Dict)
 		r["total_chp_fuel_cost"] = 0.0
 		r["year_one_chp_fuel_cost"] = 0.0
 	end
+end
 	
+function add_boiler_results(m, p, r::Dict)
 	##Boiler results go here; need to populate expressions for first collection
 	if !isempty(p.BoilerTechs)  #Right now assuming a boiler is present if any heating techs exist
 		@expression(m, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
@@ -1154,7 +1156,9 @@ function add_chp_results(m, p, r::Dict)
 		r["total_boiler_fuel_cost"] = 0.0
 		r["year_one_boiler_fuel_cost"] = 0.0
 	end
+end
 
+function add_elec_chiller_results(m, p, r::Dict)
 	##Electric chiller results go here; need to populate expressions for first collection
 	if !isempty(p.ElectricChillers)
 		@expression(m, ELECCHLtoTES[ts in p.TimeStep],
@@ -1182,7 +1186,9 @@ function add_chp_results(m, p, r::Dict)
 		r["year_one_electric_chiller_electric_kwh"] = 0.0
 		r["year_one_electric_chiller_thermal_kwh"] = 0.0
 	end
-	
+end
+
+function add_absorption_chiller_results(m, p, r::Dict)	
 	##Absorption chiller results go here; need to populate expressions for first collection
 	if !isempty(p.AbsorptionChillers)
 		r["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
@@ -1212,7 +1218,9 @@ function add_chp_results(m, p, r::Dict)
 		r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
 		r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
 	end
-	
+end
+
+function add_hot_tes_results(m, p, r::Dict)		
 	##Hot thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.HotTES)
 		@expression(m, HotTESSizeMMBTU, sum(dvStorageCapEnergy[b] for b in p.HotTES))
@@ -1227,7 +1235,9 @@ function add_chp_results(m, p, r::Dict)
 		r["hot_tes_thermal_production_series"] = []
 		r["hot_tes_pct_soc_series"] = []
 	end
+end
 	
+function add_cold_tes_results(m, p, r::Dict)	
 	##Cold thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.ColdTES)
 		@expression(m, ColdTESSizeKWHT, sum(dvStorageCapEnergy[b] for b in p.ColdTES))
