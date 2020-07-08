@@ -1066,181 +1066,181 @@ end
 function add_chp_results(m, p, r::Dict)
 	##CHP Results go here; need to populate expressions for first collection
 	if !isempty(p.CHPTechs)
-		results["CHP"] = Dict()
-		results["chp_kw"] = value(sum(dvSize[t] for t in p.CHPTechs))
-		@expression(REopt, CHPFuelUsed, sum(dvFuelUsage[t, ts] for t in p.CHPTechs, ts in p.TimeStep))
-		results["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
-		@expression(REopt, Year1CHPElecProd,
+		r["CHP"] = Dict()
+		r["chp_kw"] = value(sum(dvSize[t] for t in p.CHPTechs))
+		@expression(m, CHPFuelUsed, sum(dvFuelUsage[t, ts] for t in p.CHPTechs, ts in p.TimeStep))
+		r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
+		@expression(m, Year1CHPElecProd,
 			p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
 				for t in p.CHPTechs, ts in p.TimeStep))
-		results["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
-		@expression(REopt, Year1CHPThermalProd,
+		r["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
+		@expression(m, Year1CHPThermalProd,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts]-dvProductionToWaste[t,ts] for t in p.CHPTechs, ts in p.TimeStep))
-		results["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
-		@expression(REopt, CHPElecProdTotal[ts in p.TimeStep],
+		r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
+		@expression(m, CHPElecProdTotal[ts in p.TimeStep],
 			sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
-		results["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
-		@expression(REopt, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
+		r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
+		@expression(m, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
 				for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
-		results["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
-		@expression(REopt, CHPtoBatt[ts in p.TimeStep],
+		r["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
+		@expression(m, CHPtoBatt[ts in p.TimeStep],
 			sum(dvProductionToStorage["Elec",t,ts] for t in p.CHPTechs))
-		results["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
-		@expression(REopt, CHPtoLoad[ts in p.TimeStep],
+		r["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
+		@expression(m, CHPtoLoad[ts in p.TimeStep],
 			sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 				for t in p.CHPTechs) - CHPtoBatt[ts] - CHPtoGrid[ts])
-		results["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
-		@expression(REopt, CHPtoHotTES[ts in p.TimeStep],
+		r["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
+		@expression(m, CHPtoHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in p.CHPTechs))
-		results["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
-		@expression(REopt, CHPThermalToWaste[ts in p.TimeStep],
+		r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
+		@expression(m, CHPThermalToWaste[ts in p.TimeStep],
 			sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
-		results["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
-		@expression(REopt, CHPThermalToLoad[ts in p.TimeStep],
+		r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
+		@expression(m, CHPThermalToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts]
 				for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
-		results["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
-		@expression(REopt, TotalCHPFuelCharges,
+		r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
+		@expression(m, TotalCHPFuelCharges,
 			p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
 				for ts in p.TimeStep))
-		results["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
-		results["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
+		r["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
+		r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
 	else
-		results["chp_kw"] = 0.0
-		results["year_one_chp_fuel_used"] = 0.0
-		results["year_one_chp_electric_energy_produced"] = 0.0
-		results["year_one_chp_thermal_energy_produced"] = 0.0
-		results["chp_electric_production_series"] = []
-		results["chp_to_battery_series"] = []
-		results["chp_electric_to_load_series"] = []
-		results["chp_to_grid_series"] = []
-		results["chp_thermal_to_load_series"] = []
-		results["chp_thermal_to_tes_series"] = []
-		results["chp_thermal_to_waste_series"] = []
-		results["total_chp_fuel_cost"] = 0.0
-		results["year_one_chp_fuel_cost"] = 0.0
+		r["chp_kw"] = 0.0
+		r["year_one_chp_fuel_used"] = 0.0
+		r["year_one_chp_electric_energy_produced"] = 0.0
+		r["year_one_chp_thermal_energy_produced"] = 0.0
+		r["chp_electric_production_series"] = []
+		r["chp_to_battery_series"] = []
+		r["chp_electric_to_load_series"] = []
+		r["chp_to_grid_series"] = []
+		r["chp_thermal_to_load_series"] = []
+		r["chp_thermal_to_tes_series"] = []
+		r["chp_thermal_to_waste_series"] = []
+		r["total_chp_fuel_cost"] = 0.0
+		r["year_one_chp_fuel_cost"] = 0.0
 	end
 	
 	##Boiler results go here; need to populate expressions for first collection
 	if !isempty(p.BoilerTechs)  #Right now assuming a boiler is present if any heating techs exist
-		@expression(REopt, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
-		results["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
-		@expression(REopt, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])
-		results["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
-		@expression(REopt, BoilerFuelUsed, sum(dvFuelUsage["BOILER", ts] for ts in p.TimeStep))
-		results["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
-		@expression(REopt, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts]
+		@expression(m, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
+		r["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
+		@expression(m, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])
+		r["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
+		@expression(m, BoilerFuelUsed, sum(dvFuelUsage["BOILER", ts] for ts in p.TimeStep))
+		r["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
+		@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts]
 			for ts in p.TimeStep))
-		results["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
-		@expression(REopt, BoilerToHotTES[ts in p.TimeStep],
+		r["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
+		@expression(m, BoilerToHotTES[ts in p.TimeStep],
 			sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
-		results["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
-		@expression(REopt, BoilerToLoad[ts in p.TimeStep],
+		r["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
+		@expression(m, BoilerToLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts]
 				for t in ["BOILER"]) - BoilerToHotTES[ts] )
-		results["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
-		@expression(REopt, TotalBoilerFuelCharges,
+		r["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
+		@expression(m, TotalBoilerFuelCharges,
 			p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
 				for ts in p.TimeStep))
-		results["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
-		results["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
+		r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
+		r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
 	else
-		results["fuel_to_boiler_series"] = []
-		results["boiler_thermal_production_series"] = []
-		results["boiler_thermal_to_load_series"] = []
-		results["boiler_thermal_to_tes_series"] = []
-		results["year_one_fuel_to_boiler_mmbtu"] = 0.0
-		results["year_one_boiler_thermal_production_mmbtu"] = 0.0
-		results["total_boiler_fuel_cost"] = 0.0
-		results["year_one_boiler_fuel_cost"] = 0.0
+		r["fuel_to_boiler_series"] = []
+		r["boiler_thermal_production_series"] = []
+		r["boiler_thermal_to_load_series"] = []
+		r["boiler_thermal_to_tes_series"] = []
+		r["year_one_fuel_to_boiler_mmbtu"] = 0.0
+		r["year_one_boiler_thermal_production_mmbtu"] = 0.0
+		r["total_boiler_fuel_cost"] = 0.0
+		r["year_one_boiler_fuel_cost"] = 0.0
 	end
 
 	##Electric chiller results go here; need to populate expressions for first collection
 	if !isempty(p.ElectricChillers)
-		@expression(REopt, ELECCHLtoTES[ts in p.TimeStep],
+		@expression(m, ELECCHLtoTES[ts in p.TimeStep],
 			sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
-		results["electric_chiller_to_tes_series"] = round.(value.(ELECCHLtoTES), digits=3)
-		@expression(REopt, ELECCHLtoLoad[ts in p.TimeStep],
+		r["electric_chiller_to_tes_series"] = round.(value.(ELECCHLtoTES), digits=3)
+		@expression(m, ELECCHLtoLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
 				- ELECCHLtoTES[ts])
-		results["electric_chiller_to_load_series"] = round.(value.(ELECCHLtoLoad), digits=3)
-		@expression(REopt, ELECCHLElecConsumptionSeries[ts in p.TimeStep],
+		r["electric_chiller_to_load_series"] = round.(value.(ELECCHLtoLoad), digits=3)
+		@expression(m, ELECCHLElecConsumptionSeries[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
-		results["electric_chiller_consumption_series"] = round.(value.(ELECCHLElecConsumptionSeries), digits=3)
-		@expression(REopt, Year1ELECCHLElecConsumption,
+		r["electric_chiller_consumption_series"] = round.(value.(ELECCHLElecConsumptionSeries), digits=3)
+		@expression(m, Year1ELECCHLElecConsumption,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP
 	        	for t in p.ElectricChillers, ts in p.TimeStep))
-		results["year_one_electric_chiller_electric_kwh"] = round(value(Year1ELECCHLElecConsumption), digits=3)
-		@expression(REopt, Year1ELECCHLThermalProd,
+		r["year_one_electric_chiller_electric_kwh"] = round(value(Year1ELECCHLElecConsumption), digits=3)
+		@expression(m, Year1ELECCHLThermalProd,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 	        	for t in p.ElectricChillers, ts in p.TimeStep))
-		results["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
+		r["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
 	else
-		results["electric_chiller_to_load_series"] = []
-		results["electric_chiller_to_tes_series"] = []
-		results["electric_chiller_consumption_series"] = []
-		results["year_one_electric_chiller_electric_kwh"] = 0.0
-		results["year_one_electric_chiller_thermal_kwh"] = 0.0
+		r["electric_chiller_to_load_series"] = []
+		r["electric_chiller_to_tes_series"] = []
+		r["electric_chiller_consumption_series"] = []
+		r["year_one_electric_chiller_electric_kwh"] = 0.0
+		r["year_one_electric_chiller_thermal_kwh"] = 0.0
 	end
 	
 	##Absorption chiller results go here; need to populate expressions for first collection
 	if !isempty(p.AbsorptionChillers)
-		results["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
-		@expression(REopt, ABSORPCHLtoTES[ts in p.TimeStep],
+		r["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
+		@expression(m, ABSORPCHLtoTES[ts in p.TimeStep],
 			sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
-		results["absorption_chiller_to_tes_series"] = round.(value.(ABSORPCHLtoTES), digits=3)
-		@expression(REopt, ABSORPCHLtoLoad[ts in p.TimeStep],
+		r["absorption_chiller_to_tes_series"] = round.(value.(ABSORPCHLtoTES), digits=3)
+		@expression(m, ABSORPCHLtoLoad[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
 				- ABSORPCHLtoTES[ts])
-		results["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
-		@expression(REopt, ABSORPCHLThermalConsumptionSeries[ts in p.TimeStep],
+		r["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
+		@expression(m, ABSORPCHLThermalConsumptionSeries[ts in p.TimeStep],
 			sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
-		results["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
-		@expression(REopt, Year1ABSORPCHLThermalConsumption,
+		r["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
+		@expression(m, Year1ABSORPCHLThermalConsumption,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP
 				for t in p.AbsorptionChillers, ts in p.TimeStep))
-		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
-		@expression(REopt, Year1ABSORPCHLThermalProd,
+		r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
+		@expression(m, Year1ABSORPCHLThermalProd,
 			p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 				for t in p.AbsorptionChillers, ts in p.TimeStep))
-		results["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
+		r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
 	else
-		results["absorpchl_kw"] = 0.0
-		results["absorption_chiller_to_load_series"] = []
-		results["absorption_chiller_to_tes_series"] = []
-		results["absorption_chiller_consumption_series"] = []
-		results["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
-		results["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
+		r["absorpchl_kw"] = 0.0
+		r["absorption_chiller_to_load_series"] = []
+		r["absorption_chiller_to_tes_series"] = []
+		r["absorption_chiller_consumption_series"] = []
+		r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+		r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
 	end
 	
 	##Hot thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.HotTES)
-		@expression(REopt, HotTESSizeMMBTU, sum(dvStorageCapEnergy[b] for b in p.HotTES))
-		results["hot_tes_size_mmbtu"] = round(value(HotTESSizeMMBTU), digits=5)
-		@expression(REopt, HotTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
+		@expression(m, HotTESSizeMMBTU, sum(dvStorageCapEnergy[b] for b in p.HotTES))
+		r["hot_tes_size_mmbtu"] = round(value(HotTESSizeMMBTU), digits=5)
+		@expression(m, HotTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
 			for b in p.HotTES))
-		results["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
-		@expression(REopt, HotTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.HotTES))
-		results["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
+		r["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
+		@expression(m, HotTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.HotTES))
+		r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
 	else
-		results["hot_tes_size_mmbtu"] = 0.0
-		results["hot_tes_thermal_production_series"] = []
-		results["hot_tes_pct_soc_series"] = []
+		r["hot_tes_size_mmbtu"] = 0.0
+		r["hot_tes_thermal_production_series"] = []
+		r["hot_tes_pct_soc_series"] = []
 	end
 	
 	##Cold thermal energy storage results go here; need to populate expressions for first collection
 	if !isempty(p.ColdTES)
-		@expression(REopt, ColdTESSizeKWHT, sum(dvStorageCapEnergy[b] for b in p.ColdTES))
-		results["cold_tes_size_kwht"] = round(value(ColdTESSizeKWHT), digits=5)
-		@expression(REopt, ColdTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
+		@expression(m, ColdTESSizeKWHT, sum(dvStorageCapEnergy[b] for b in p.ColdTES))
+		r["cold_tes_size_kwht"] = round(value(ColdTESSizeKWHT), digits=5)
+		@expression(m, ColdTESDischargeSeries[ts in p.TimeStep], sum(dvDischargeFromStorage[b, ts]
 			for b in p.ColdTES))
-		results["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
-		@expression(REopt, ColdTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.ColdTES))
-		results["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
+		r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
+		@expression(m, ColdTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.ColdTES))
+		r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
 	else
-		results["cold_tes_size_kwht"] = 0.0
-		results["cold_tes_thermal_production_series"] = []
-		results["cold_tes_pct_soc_series"] = []
+		r["cold_tes_size_kwht"] = 0.0
+		r["cold_tes_thermal_production_series"] = []
+		r["cold_tes_pct_soc_series"] = []
 	end
 end	
 
