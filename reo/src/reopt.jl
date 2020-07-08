@@ -896,87 +896,127 @@ function reopt_results(m, p, r::Dict)
 	if !isempty(m[:GeneratorTechs])
 		add_generator_results(m, p, r)
     else
-		r["gen_net_fixed_om_costs"] = 0
-		r["gen_net_variable_om_costs"] = 0
-		r["gen_total_fuel_cost"] = 0
-		r["gen_year_one_fuel_cost"] = 0
-		r["gen_year_one_variable_om_costs"] = 0
-    	r["GENERATORtoBatt"] = []
-		r["GENERATORtoGrid"] = []
-		r["GENERATORtoLoad"] = []
+		add_null_generator_results(m, p, r)
 	end
 	if !isempty(m[:WindTechs])
 		add_wind_results(m, p, r)
 	else
-		r["WINDtoLoad"] = []
-    	r["WINDtoGrid"] = []
+		add_null_wind_results(m, p, r)
 	end
 	if !isempty(p.CHPTechs)
 		add_chp_results(m, p, r)
 	else
-		r["chp_kw"] = 0.0
-		r["year_one_chp_fuel_used"] = 0.0
-		r["year_one_chp_electric_energy_produced"] = 0.0
-		r["year_one_chp_thermal_energy_produced"] = 0.0
-		r["chp_electric_production_series"] = []
-		r["chp_to_battery_series"] = []
-		r["chp_electric_to_load_series"] = []
-		r["chp_to_grid_series"] = []
-		r["chp_thermal_to_load_series"] = []
-		r["chp_thermal_to_tes_series"] = []
-		r["chp_thermal_to_waste_series"] = []
-		r["total_chp_fuel_cost"] = 0.0
-		r["year_one_chp_fuel_cost"] = 0.0
+		add_null_chp_results(m, p, r)
 	end
 	if !isempty(p.BoilerTechs)
 		add_boiler_results(m, p, r)
 	else
-		r["fuel_to_boiler_series"] = []
-		r["boiler_thermal_production_series"] = []
-		r["boiler_thermal_to_load_series"] = []
-		r["boiler_thermal_to_tes_series"] = []
-		r["year_one_fuel_to_boiler_mmbtu"] = 0.0
-		r["year_one_boiler_thermal_production_mmbtu"] = 0.0
-		r["total_boiler_fuel_cost"] = 0.0
-		r["year_one_boiler_fuel_cost"] = 0.0
+		add_null_boiler_results(m, p, r)
 	end
 	if !isempty(p.ElectricChillers)
 		add_elec_chiller_results(m, p, r)
 	else
-		r["electric_chiller_to_load_series"] = []
-		r["electric_chiller_to_tes_series"] = []
-		r["electric_chiller_consumption_series"] = []
-		r["year_one_electric_chiller_electric_kwh"] = 0.0
-		r["year_one_electric_chiller_thermal_kwh"] = 0.0
+		add_null_elec_chiller_results(m, p, r)
 	end
 	if !isempty(p.AbsorptionChillers)
 		add_absorption_chiller_results(m, p, r)
 	else
-		r["absorpchl_kw"] = 0.0
-		r["absorption_chiller_to_load_series"] = []
-		r["absorption_chiller_to_tes_series"] = []
-		r["absorption_chiller_consumption_series"] = []
-		r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
-		r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
+		add_null_absorption_chiller_results(m, p, r)
 	end
 	if !isempty(p.HotTES)
 		add_hot_tes_results(m, p, r)
 	else
-		r["hot_tes_size_mmbtu"] = 0.0
-		r["hot_tes_thermal_production_series"] = []
-		r["hot_tes_pct_soc_series"] = []
+		add_null_hot_tes_results(m, p, r)
 	end
 	if !isempty(p.ColdTES)
 		add_cold_tes_results(m, p, r)
 	else
-		r["cold_tes_size_kwht"] = 0.0
-		r["cold_tes_thermal_production_series"] = []
-		r["cold_tes_pct_soc_series"] = []
+		add_null_cold_tes_results(m, p, r)
 	end
 	add_util_results(m, p, r)
 	return r
 end
 
+
+function add_null_generator_results(m, p, r::Dict)
+	r["gen_net_fixed_om_costs"] = 0
+	r["gen_net_variable_om_costs"] = 0
+	r["gen_total_fuel_cost"] = 0
+	r["gen_year_one_fuel_cost"] = 0
+	r["gen_year_one_variable_om_costs"] = 0
+	r["GENERATORtoBatt"] = []
+	r["GENERATORtoGrid"] = []
+	r["GENERATORtoLoad"] = []
+	nothing
+end
+
+function add_null_wind_results(m, p, r::Dict)
+	r["WINDtoLoad"] = []
+	r["WINDtoGrid"] = []
+	nothing
+end
+
+function add_null_chp_results(m, p, r::Dict)
+	r["chp_kw"] = 0.0
+	r["year_one_chp_fuel_used"] = 0.0
+	r["year_one_chp_electric_energy_produced"] = 0.0
+	r["year_one_chp_thermal_energy_produced"] = 0.0
+	r["chp_electric_production_series"] = []
+	r["chp_to_battery_series"] = []
+	r["chp_electric_to_load_series"] = []
+	r["chp_to_grid_series"] = []
+	r["chp_thermal_to_load_series"] = []
+	r["chp_thermal_to_tes_series"] = []
+	r["chp_thermal_to_waste_series"] = []
+	r["total_chp_fuel_cost"] = 0.0
+	r["year_one_chp_fuel_cost"] = 0.0
+	nothing
+end
+
+function add_null_boiler_results(m, p, r::Dict)
+	r["fuel_to_boiler_series"] = []
+	r["boiler_thermal_production_series"] = []
+	r["boiler_thermal_to_load_series"] = []
+	r["boiler_thermal_to_tes_series"] = []
+	r["year_one_fuel_to_boiler_mmbtu"] = 0.0
+	r["year_one_boiler_thermal_production_mmbtu"] = 0.0
+	r["total_boiler_fuel_cost"] = 0.0
+	r["year_one_boiler_fuel_cost"] = 0.0
+	nothing
+end
+
+function add_null_elec_chiller_results(m, p, r::Dict)
+	r["electric_chiller_to_load_series"] = []
+	r["electric_chiller_to_tes_series"] = []
+	r["electric_chiller_consumption_series"] = []
+	r["year_one_electric_chiller_electric_kwh"] = 0.0
+	r["year_one_electric_chiller_thermal_kwh"] = 0.0
+	nothing
+end
+
+function add_null_absorption_chiller_results(m, p, r::Dict)
+	r["absorpchl_kw"] = 0.0
+	r["absorption_chiller_to_load_series"] = []
+	r["absorption_chiller_to_tes_series"] = []
+	r["absorption_chiller_consumption_series"] = []
+	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
+	r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
+	nothing
+end
+
+function add_null_hot_tes_results(m, p, r::Dict)
+	r["hot_tes_size_mmbtu"] = 0.0
+	r["hot_tes_thermal_production_series"] = []
+	r["hot_tes_pct_soc_series"] = []
+	nothing
+end
+
+function add_null_cold_tes_results(m, p, r::Dict)
+	r["cold_tes_size_kwht"] = 0.0
+	r["cold_tes_thermal_production_series"] = []
+	r["cold_tes_pct_soc_series"] = []
+	nothing
+end
 
 function add_storage_results(m, p, r::Dict)
     r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
@@ -1123,6 +1163,7 @@ function add_pv_results(m, p, r::Dict)
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
         end
 	end
+	nothing
 end
 	
 function add_chp_results(m, p, r::Dict)
@@ -1165,6 +1206,7 @@ function add_chp_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 	r["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
 	r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
+	nothing
 end
 	
 function add_boiler_results(m, p, r::Dict)
@@ -1191,6 +1233,7 @@ function add_boiler_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 	r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
 	r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
+	nothing
 end
 
 function add_elec_chiller_results(m, p, r::Dict)
@@ -1212,6 +1255,7 @@ function add_elec_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 			for t in p.ElectricChillers, ts in p.TimeStep))
 	r["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
+	nothing
 end
 
 function add_absorption_chiller_results(m, p, r::Dict)	
@@ -1234,6 +1278,7 @@ function add_absorption_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
+	nothing
 end
 
 function add_hot_tes_results(m, p, r::Dict)		
@@ -1244,6 +1289,7 @@ function add_hot_tes_results(m, p, r::Dict)
 	r["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
 	@expression(m, HotTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.HotTES))
 	r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
+	nothing
 end
 	
 function add_cold_tes_results(m, p, r::Dict)	
@@ -1254,6 +1300,7 @@ function add_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
 	@expression(m, ColdTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.ColdTES))
 	r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
+	nothing
 end	
 
 function add_util_results(m, p, r::Dict)
@@ -1284,5 +1331,6 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
+	nothing
 end
 
