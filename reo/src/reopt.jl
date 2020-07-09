@@ -382,7 +382,8 @@ function add_storage_op_constraints(m, p)
 	@constraint(m, HotTESInventoryCon[b in p.HotTES, ts in p.TimeStep],
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.HeatingTechs) - 
-					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] - 
+					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
 					)
 				)
 				
@@ -390,7 +391,8 @@ function add_storage_op_constraints(m, p)
 	@constraint(m, ColdTESInventoryCon[b in p.ColdTES, ts in p.TimeStep],
     	        m[:dvStorageSOC][b,ts] == m[:dvStorageSOC][b,ts-1] + p.TimeStepScaling * (  
 					sum(p.ChargeEfficiency[t,b] * m[:dvProductionToStorage][b,t,ts] for t in p.CoolingTechs) - 
-					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b]
+					m[:dvDischargeFromStorage][b,ts]/p.DischargeEfficiency[b] - 
+					p.StorageDecayRate[b] * m[:dvStorageSOC][b,ts]
 					)
 				)
 				
