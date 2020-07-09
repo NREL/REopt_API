@@ -125,11 +125,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "pyjulia_include_model_seconds",
             "pyjulia_make_model_seconds",
             "pyjulia_include_reopt_seconds",
-            "pyjulia_run_reopt_seconds",
-            "year_one_boiler_fuel_cost",
-            "total_boiler_fuel_cost",
-            "year_one_boiler_thermal_production_mmbtu",
-            "year_one_electric_chiller_thermal_kwh"
+            "pyjulia_run_reopt_seconds"
         ]
 
         def __init__(self, results_dict, results_dict_bau, dm, inputs):
@@ -658,6 +654,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         # Calculate avoided outage costs
         calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
+        data = EmissionsCalculator.add_to_data(data)
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
 
