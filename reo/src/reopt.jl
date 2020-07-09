@@ -1211,7 +1211,6 @@ end
 	
 function add_boiler_results(m, p, r::Dict)
 	##Boiler results go here; need to populate expressions for first collection
-	if !isempty(p.BoilerTechs)  #Right now assuming a boiler is present if any heating techs exist
 	@expression(m, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
 	r["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
 	@expression(m, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])
