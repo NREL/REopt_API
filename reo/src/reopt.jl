@@ -947,13 +947,13 @@ function add_null_generator_results(m, p, r::Dict)
 	r["GENERATORtoBatt"] = []
 	r["GENERATORtoGrid"] = []
 	r["GENERATORtoLoad"] = []
-	return nothing
+	nothing
 end
 
 function add_null_wind_results(m, p, r::Dict)
 	r["WINDtoLoad"] = []
 	r["WINDtoGrid"] = []
-	return nothing
+	nothing
 end
 
 function add_null_chp_results(m, p, r::Dict)
@@ -970,7 +970,7 @@ function add_null_chp_results(m, p, r::Dict)
 	r["chp_thermal_to_waste_series"] = []
 	r["total_chp_fuel_cost"] = 0.0
 	r["year_one_chp_fuel_cost"] = 0.0
-	return nothing
+	nothing
 end
 
 function add_null_boiler_results(m, p, r::Dict)
@@ -982,7 +982,7 @@ function add_null_boiler_results(m, p, r::Dict)
 	r["year_one_boiler_thermal_production_mmbtu"] = 0.0
 	r["total_boiler_fuel_cost"] = 0.0
 	r["year_one_boiler_fuel_cost"] = 0.0
-	return nothing
+	nothing
 end
 
 function add_null_elec_chiller_results(m, p, r::Dict)
@@ -991,7 +991,7 @@ function add_null_elec_chiller_results(m, p, r::Dict)
 	r["electric_chiller_consumption_series"] = []
 	r["year_one_electric_chiller_electric_kwh"] = 0.0
 	r["year_one_electric_chiller_thermal_kwh"] = 0.0
-	return nothing
+	nothing
 end
 
 function add_null_absorption_chiller_results(m, p, r::Dict)
@@ -1001,21 +1001,21 @@ function add_null_absorption_chiller_results(m, p, r::Dict)
 	r["absorption_chiller_consumption_series"] = []
 	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = 0.0
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = 0.0
-	return nothing
+	nothing
 end
 
 function add_null_hot_tes_results(m, p, r::Dict)
 	r["hot_tes_size_mmbtu"] = 0.0
 	r["hot_tes_thermal_production_series"] = []
 	r["hot_tes_pct_soc_series"] = []
-	return nothing
+	nothing
 end
 
 function add_null_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_size_kwht"] = 0.0
 	r["cold_tes_thermal_production_series"] = []
 	r["cold_tes_pct_soc_series"] = []
-	return nothing
+	nothing
 end
 
 function add_storage_results(m, p, r::Dict)
@@ -1030,7 +1030,7 @@ function add_storage_results(m, p, r::Dict)
     end
     @expression(m, GridToBatt[ts in p.TimeStep], m[:dvGridToStorage][ts])
 	r["GridToBatt"] = round.(value.(GridToBatt), digits=3)
-	return nothing
+	nothing
 end
 
 
@@ -1081,7 +1081,7 @@ function add_generator_results(m, p, r::Dict)
 	)
 	r["average_yearly_gen_energy_produced"] = round(value(m[:AverageGenProd]), digits=0)
 
-	return nothing
+	nothing
 end
 
 
@@ -1115,7 +1115,7 @@ function add_wind_results(m, p, r::Dict)
 			for t in m[:WindTechs], ts in p.TimeStep)
 	)
 	r["average_wind_energy_produced"] = round(value(m[:AverageWindProd]), digits=0)
-	return nothing
+	nothing
 end
 
 
@@ -1163,7 +1163,7 @@ function add_pv_results(m, p, r::Dict)
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
         end
 	end
-	return nothing
+	nothing
 end
 	
 function add_chp_results(m, p, r::Dict)
@@ -1206,7 +1206,7 @@ function add_chp_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 	r["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
 	r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
-	return nothing
+	nothing
 end
 	
 function add_boiler_results(m, p, r::Dict)
@@ -1233,7 +1233,7 @@ function add_boiler_results(m, p, r::Dict)
 			for ts in p.TimeStep))
 	r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
 	r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
-	return nothing
+	nothing
 end
 
 function add_elec_chiller_results(m, p, r::Dict)
@@ -1255,7 +1255,7 @@ function add_elec_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 			for t in p.ElectricChillers, ts in p.TimeStep))
 	r["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
-	return nothing
+	nothing
 end
 
 function add_absorption_chiller_results(m, p, r::Dict)	
@@ -1278,7 +1278,7 @@ function add_absorption_chiller_results(m, p, r::Dict)
 		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
-	return nothing
+	nothing
 end
 
 function add_hot_tes_results(m, p, r::Dict)		
@@ -1289,7 +1289,7 @@ function add_hot_tes_results(m, p, r::Dict)
 	r["hot_tes_thermal_production_series"] = round.(value.(HotTESDischargeSeries), digits=5)
 	@expression(m, HotTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.HotTES))
 	r["hot_tes_pct_soc_series"] = round.(value.(HotTESsoc) / value(HotTESSizeMMBTU), digits=5)
-	return nothing
+	nothing
 end
 	
 function add_cold_tes_results(m, p, r::Dict)	
@@ -1300,7 +1300,7 @@ function add_cold_tes_results(m, p, r::Dict)
 	r["cold_tes_thermal_production_series"] = round.(value.(ColdTESDischargeSeries), digits=5)
 	@expression(m, ColdTESsoc[ts in p.TimeStep], sum(dvStorageSOC[b,ts] for b in p.ColdTES))
 	r["cold_tes_pct_soc_series"] = round.(value.(ColdTESsoc) / value(ColdTESSizeKWHT), digits=5)
-	return nothing
+	nothing
 end	
 
 function add_util_results(m, p, r::Dict)
@@ -1331,6 +1331,6 @@ function add_util_results(m, p, r::Dict)
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
     r["GridToLoad"] = round.(value.(GridToLoad), digits=3)
-	return nothing
+	nothing
 end
 
