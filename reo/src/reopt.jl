@@ -794,11 +794,17 @@ function reopt_run(m, p::Parameter)
 			fix(m[:dvStorageToGrid][u,ts], 0.0, force=true)
 		end
 	end
-
+	
+	### Constraint set (1): Fuel Burn Constraints
 	add_fuel_constraints(m, p)
+	
+	### Constraint set (2): Thermal Production Constraints
+	add_thermal_production_constraints(m, p)
+	
+	### Constraint set (3): Switch Constraints
 	add_binTechIsOnInTS_constraints(m, p)
 
-    ### Section 4: Storage System Constraints
+    ### Constraint set (4): Storage System Constraints
 	add_storage_size_constraints(m, p)
 	add_storage_op_constraints(m, p)
 	### Constraint set (5) - hot and cold thermal loads
