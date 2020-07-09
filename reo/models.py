@@ -116,6 +116,7 @@ class ScenarioModel(models.Model):
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
     created = models.DateTimeField(auto_now_add=True)
+    optimality_tolerance = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

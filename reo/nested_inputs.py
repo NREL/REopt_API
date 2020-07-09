@@ -109,6 +109,13 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
+	"optimality_tolerance": {
+      "type": "float",
+      "min": 0.0,
+      "max": 10.0,
+      "default": 1.0e-3,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
 
     "Site": {
       "latitude": {
