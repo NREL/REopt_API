@@ -872,6 +872,17 @@ class DataManager:
 
         return max_sizes, min_turn_down, max_sizes_location, min_allowable_size
 
+    def _get_tech_subsets(self, techs):
+        tech_subdivisions = list()
+        for tech in techs:
+            tech_sub = list()
+            if tech in self.available_techs:
+                tech_sub.append('CapCost')
+            if tech in self.fuel_burning_techs:
+                tech_sub.append('FuelBurn')
+            tech_subdivisions.append(tech_sub)
+        return tech_subdivisions
+
     def _get_time_steps_with_grid(self):
         """
         Obtains the subdivision of time steps with a grid connection and those
@@ -1053,6 +1064,9 @@ class DataManager:
         fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
         fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
+        subdivisions_by_tech = self._get_tech_subsets(reopt_techs)
+        subdivisions_by_tech_bau = self._get_tech_subsets(reopt_techs_bau)
+
         # There are no cost curves yet, but incentive size limits and existing techs require cost curve segments
         # TODO: create this array in _get_REopt_cost_curve?
         seg_by_tech_subdivision = list()
@@ -1157,7 +1171,15 @@ class DataManager:
         boiler_efficiency = self.boiler.boiler_efficiency if self.boiler != None else 1.0
         elec_chiller_cop = self.elecchl.chiller_cop if self.elecchl != None else 1.0
         absorp_chiller_cop = self.absorpchl.chiller_cop if self.absorpchl != None else 1.0
-        
+
+        #TODO: handle chp parameter population directly in urdb_parse, or move all to data_manager
+        chp_thermal_prod_slope = tariff_args.chp_thermal_prod_slope if len(chp_techs) > 0 else []
+        chp_thermal_prod_slope_bau = tariff_args.chp_thermal_prod_slope_bau if len(chp_techs_bau) > 0 else []
+        chp_thermal_prod_intercept = tariff_args.chp_thermal_prod_intercept if len(chp_techs) > 0 else []
+        chp_thermal_prod_intercept_bau = tariff_args.chp_thermal_prod_intercept_bau if len(chp_techs_bau) > 0 else []
+        chp_fuel_burn_intercept = tariff_args.chp_fuel_burn_intercept if len(chp_techs) > 0 else []
+        chp_fuel_burn_intercept_bau = tariff_args.chp_fuel_burn_intercept_bau if len(chp_techs_bau) > 0 else []
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1239,6 +1261,7 @@ class DataManager:
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
+            'SubdivisionByTech': subdivisions_by_tech,
             'SegByTechSubdivision': seg_by_tech_subdivision,
             'TechsInClass': techs_in_class,
             'TechsByFuelType': tariff_args.techs_by_fuel_type,
