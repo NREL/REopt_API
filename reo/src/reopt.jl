@@ -956,6 +956,9 @@ function add_null_generator_results(m, p, r::Dict)
 	r["GENERATORtoBatt"] = []
 	r["GENERATORtoGrid"] = []
 	r["GENERATORtoLoad"] = []
+	r["fuel_used_gal"] = 0
+	r["year_one_gen_energy_produced"] = 0.0
+	r["average_yearly_gen_energy_produced"] = 0.0
 	nothing
 end
 
