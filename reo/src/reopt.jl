@@ -6,14 +6,14 @@ include("utils.jl")
 
 function add_continuous_variables(m, p)
     @variables m begin
-	    dvSize[p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
+	    m[:dvSize][p.Tech] >= 0     #X^{\sigma}_{t}: System Size of Technology t [kW]   (NEW)
     	dvSystemSizeSegment[p.Tech, p.Subdivision, p.Seg] >= 0   #X^{\sigma s}_{tks}: System size of technology t allocated to segmentation k, segment s [kW]  (NEW)
 		dvGridPurchase[p.PricingTier, p.TimeStep] >= 0   # X^{g}_{uh}: Power from grid dispatched to meet electrical load in demand tier u during time step h [kW]  (NEW)
 	    dvRatedProduction[p.Tech, p.TimeStep] >= 0   #X^{rp}_{th}: Rated production of technology t during time step h [kW]  (NEW)
 	    dvProductionToGrid[p.Tech, p.SalesTiers, p.TimeStep] >= 0  # X^{ptg}_{tuh}: Exports from electrical production to the grid by technology t in demand tier u during time step h [kW]   (NEW)
 	    dvStorageToGrid[p.StorageSalesTiers, p.TimeStep] >= 0  # X^{stg}_{uh}: Exports from electrical storage to the grid in demand tier u during time step h [kW]  (NEW)
-		dvProductionToStorage[p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
-	    dvProductionToWaste[p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by CHP technology t sent to waste in time step h
+		m[:dvProductionToStorage][p.Storage, p.Tech, p.TimeStep] >= 0  # X^{ptg}_{bth}: Power from technology t used to charge storage system b during time step h [kW]  (NEW)
+	    m[:dvProductionToWaste][p.CHPTechs, p.TimeStep] >= 0  #X^{ptw}_{th}: Thermal production by CHP technology t sent to waste in time step h
 		dvDischargeFromStorage[p.Storage, p.TimeStep] >= 0 # X^{pts}_{bh}: Power discharged from storage system b during time step h [kW]  (NEW)
 	    dvGridToStorage[p.TimeStep] >= 0 # X^{gts}_{h}: Electrical power delivered to storage by the grid in time step h [kW]  (NEW)
 	    dvStorageSOC[p.Storage, p.TimeStepBat] >= 0  # X^{se}_{bh}: State of charge of storage system b in time step h   (NEW)
@@ -26,9 +26,9 @@ function add_continuous_variables(m, p)
         MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
-		dvFuelUsage[p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
+		m[:dvFuelUsage][p.Tech, p.TimeStep] >= 0  # Fuel burned by technology t in time step h
 		dvFuelBurnYIntercept[p.Tech, p.TimeStep] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
-		dvThermalProduction[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
+		m[:dvThermalProduction][p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
@@ -247,14 +247,10 @@ function add_fuel_constraints(m, p)
 			m[:dvFuelUsage][t,ts]  == (p.FuelBurnSlope[t] * p.ProductionFactor[t,ts] * m[:dvRatedProduction][t,ts]) + 
 				(p.FuelBurnYInt[t] * m[:binTechIsOnInTS][t,ts])
 		)
+		m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] * p.TimeStepScaling 	
+				* sum(p.FuelCost["DIESEL",ts] * m[:dvFuelUsage]["GENERATOR",ts] for ts in p.TimeStep)
+		)
 	end
-	m[:TotalFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f] *
-		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
-		for f in p.FuelType)
-	)
-	m[:TotalGeneratorFuelCharges] = @expression(m, p.pwf_fuel["GENERATOR"] * p.TimeStepScaling 	
-				* sum(p.FuelCost["DIESEL",ts] * dvFuelUsage["GENERATOR",ts] for ts in p.TimeStep)
-	)
 	
 	if !isempty(p.CHPTechs)
 		#Constraint (1c): Total Fuel burn for CHP
@@ -275,6 +271,12 @@ function add_fuel_constraints(m, p)
 					m[:dvFuelUsage][t,ts]  ==  p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts] / p.BoilerEfficiency 			
 					)
 	end
+	
+	m[:TotalFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
+		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
+		for f in p.FuelType)
+	)
+	
 end
 
 function add_thermal_production_constraints(m, p)	
@@ -528,10 +530,10 @@ function add_load_balance_constraints(m, p)
 		sum(p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * dvRatedProduction[t,ts] for t in p.ElectricTechs) +  
 		sum( dvDischargeFromStorage[b,ts] for b in p.ElecStorage ) + 
 		sum( dvGridPurchase[u,ts] for u in p.PricingTier ) ==
-		sum( sum(dvProductionToStorage[b,t,ts] for b in p.ElecStorage) + 
+		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
 			sum(dvProductionToGrid[t,u,ts] for u in p.SalesTiersByTech[t]) for t in p.ElectricTechs) +
 		sum(dvStorageToGrid[u,ts] for u in p.StorageSalesTiers) + dvGridToStorage[ts] + 
-		 sum(dvThermalProduction[t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
+		 sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 	
@@ -541,7 +543,7 @@ function add_load_balance_constraints(m, p)
 		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
-		## sum(dvThermalProduction[t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		## sum(m[:dvThermalProduction][t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
 		p.ElecLoad[ts]
 	)
 end
@@ -1168,41 +1170,41 @@ end
 	
 function add_chp_results(m, p, r::Dict)
 	r["CHP"] = Dict()
-	r["chp_kw"] = value(sum(dvSize[t] for t in p.CHPTechs))
-	@expression(m, CHPFuelUsed, sum(dvFuelUsage[t, ts] for t in p.CHPTechs, ts in p.TimeStep))
+	r["chp_kw"] = value(sum(m[:dvSize][t] for t in p.CHPTechs))
+	@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_fuel_used"] = round(value(CHPFuelUsed), digits=3)
 	@expression(m, Year1CHPElecProd,
-		p.TimeStepScaling * sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts]
+		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
 			for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_electric_energy_produced"] = round(value(Year1CHPElecProd), digits=3)
 	@expression(m, Year1CHPThermalProd,
-		p.TimeStepScaling * sum(dvThermalProduction[t,ts]-dvProductionToWaste[t,ts] for t in p.CHPTechs, ts in p.TimeStep))
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]-m[:dvProductionToWaste][t,ts] for t in p.CHPTechs, ts in p.TimeStep))
 	r["year_one_chp_thermal_energy_produced"] = round(value(Year1CHPThermalProd), digits=3)
 	@expression(m, CHPElecProdTotal[ts in p.TimeStep],
-		sum(dvRatedProduction[t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
+		sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts] for t in p.CHPTechs))
 	r["chp_electric_production_series"] = round.(value.(CHPElecProdTotal))
-	@expression(m, CHPtoGrid[ts in p.TimeStep], sum(dvProductionToGrid[t,u,ts]
+	@expression(m, CHPtoGrid[ts in p.TimeStep], sum(m[:dvProductionToGrid][t,u,ts]
 			for t in p.CHPTechs, u in p.SalesTiersByTech[t]))
 	r["chp_to_grid_series"] = round.(value.(CHPtoGrid), digits=3)
 	@expression(m, CHPtoBatt[ts in p.TimeStep],
-		sum(dvProductionToStorage["Elec",t,ts] for t in p.CHPTechs))
+		sum(m[:dvProductionToStorage]["Elec",t,ts] for t in p.CHPTechs))
 	r["chp_to_battery_series"] = round.(value.(CHPtoBatt), digits=3)
 	@expression(m, CHPtoLoad[ts in p.TimeStep],
-		sum(dvRatedProduction[t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
+		sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 			for t in p.CHPTechs) - CHPtoBatt[ts] - CHPtoGrid[ts])
 	r["chp_electric_to_load_series"] = round.(value.(CHPtoLoad), digits=3)
 	@expression(m, CHPtoHotTES[ts in p.TimeStep],
-		sum(dvProductionToStorage["HotTES",t,ts] for t in p.CHPTechs))
+		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_tes_series"] = round.(value.(CHPtoHotTES), digits=3)
 	@expression(m, CHPThermalToWaste[ts in p.TimeStep],
-		sum(dvProductionToWaste[t,ts] for t in p.CHPTechs))
+		sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs))
 	r["chp_thermal_to_waste_series"] = round.(value.(CHPThermalToWaste))
 	@expression(m, CHPThermalToLoad[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts]
+		sum(m[:dvThermalProduction][t,ts]
 			for t in p.CHPTechs) - CHPtoHotTES[ts] - CHPThermalToWaste[ts])
 	r["chp_thermal_to_load_series"] = round.(value.(CHPThermalToLoad), digits=3)
 	@expression(m, TotalCHPFuelCharges,
-		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * dvFuelUsage["CHP",ts]
+		p.pwf_fuel["CHP"] * p.TimeStepScaling * sum(p.FuelCost["CHPFUEL",ts] * m[:dvFuelUsage]["CHP",ts]
 			for ts in p.TimeStep))
 	r["total_chp_fuel_cost"] = round(value(TotalCHPFuelCharges) * r_tax_fraction_offtaker, digits=3)
 	r["year_one_chp_fuel_cost"] = round(value(TotalCHPFuelCharges / p.pwf_fuel["CHP"]), digits=3)
@@ -1211,24 +1213,24 @@ end
 	
 function add_boiler_results(m, p, r::Dict)
 	##Boiler results go here; need to populate expressions for first collection
-	@expression(m, FuelToBoiler[ts in p.TimeStep], dvFuelUsage["BOILER", ts])
+	@expression(m, FuelToBoiler[ts in p.TimeStep], m[:dvFuelUsage]["BOILER", ts])
 	r["fuel_to_boiler_series"] = round.(value.(FuelToBoiler), digits=3)
-	@expression(m, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts])
+	@expression(m, BoilerThermalProd[ts in p.TimeStep], p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts])
 	r["boiler_thermal_production_series"] = round.(value.(BoilerThermalProd), digits=3)
-	@expression(m, BoilerFuelUsed, sum(dvFuelUsage["BOILER", ts] for ts in p.TimeStep))
+	@expression(m, BoilerFuelUsed, sum(m[:dvFuelUsage]["BOILER", ts] for ts in p.TimeStep))
 	r["year_one_fuel_to_boiler_mmbtu"] = round(value(BoilerFuelUsed), digits=3)
-	@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * dvThermalProduction["BOILER",ts]
+	@expression(m, BoilerThermalProduced, sum(p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts]
 		for ts in p.TimeStep))
 	r["year_one_boiler_thermal_production_mmbtu"] = round(value(BoilerThermalProduced), digits=3)
 	@expression(m, BoilerToHotTES[ts in p.TimeStep],
-		sum(dvProductionToStorage["HotTES",t,ts] for t in ["BOILER"]))
+		sum(m[:dvProductionToStorage]["HotTES",t,ts] for t in ["BOILER"]))
 	r["boiler_thermal_to_tes_series"] = round.(value.(BoilerToHotTES), digits=3)
 	@expression(m, BoilerToLoad[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts]
+		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts]
 			for t in ["BOILER"]) - BoilerToHotTES[ts] )
 	r["boiler_thermal_to_load_series"] = round.(value.(BoilerToLoad), digits=3)
 	@expression(m, TotalBoilerFuelCharges,
-		p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * dvFuelUsage["BOILER",ts]
+		p.pwf_fuel["BOILER"] * p.TimeStepScaling * sum(p.FuelCost["BOILERFUEL",ts] * m[:dvFuelUsage]["BOILER",ts]
 			for ts in p.TimeStep))
 	r["total_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges * r_tax_fraction_offtaker), digits=3)
 	r["year_one_boiler_fuel_cost"] = round(value(TotalBoilerFuelCharges / p.pwf_fuel["BOILER"]), digits=3)
@@ -1237,44 +1239,44 @@ end
 
 function add_elec_chiller_results(m, p, r::Dict)
 	@expression(m, ELECCHLtoTES[ts in p.TimeStep],
-		sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
+		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
 	r["electric_chiller_to_tes_series"] = round.(value.(ELECCHLtoTES), digits=3)
 	@expression(m, ELECCHLtoLoad[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
+		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.ElectricChillers)
 			- ELECCHLtoTES[ts])
 	r["electric_chiller_to_load_series"] = round.(value.(ELECCHLtoLoad), digits=3)
 	@expression(m, ELECCHLElecConsumptionSeries[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
+		sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP for t in p.ElectricChillers))
 	r["electric_chiller_consumption_series"] = round.(value.(ELECCHLElecConsumptionSeries), digits=3)
 	@expression(m, Year1ELECCHLElecConsumption,
-		p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.ElectricChillerCOP
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.ElectricChillerCOP
 			for t in p.ElectricChillers, ts in p.TimeStep))
 	r["year_one_electric_chiller_electric_kwh"] = round(value(Year1ELECCHLElecConsumption), digits=3)
 	@expression(m, Year1ELECCHLThermalProd,
-		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
 			for t in p.ElectricChillers, ts in p.TimeStep))
 	r["year_one_electric_chiller_thermal_kwh"] = round(value(Year1ELECCHLThermalProd), digits=3)
 	nothing
 end
 
 function add_absorption_chiller_results(m, p, r::Dict)	
-	r["absorpchl_kw"] = value(sum(dvSize[t] for t in p.AbsorptionChillers))
+	r["absorpchl_kw"] = value(sum(m[:dvSize][t] for t in p.AbsorptionChillers))
 	@expression(m, ABSORPCHLtoTES[ts in p.TimeStep],
-		sum(dvProductionToStorage[b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
+		sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
 	r["absorption_chiller_to_tes_series"] = round.(value.(ABSORPCHLtoTES), digits=3)
 	@expression(m, ABSORPCHLtoLoad[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
+		sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
 			- ABSORPCHLtoTES[ts])
 	r["absorption_chiller_to_load_series"] = round.(value.(ABSORPCHLtoLoad), digits=3)
 	@expression(m, ABSORPCHLThermalConsumptionSeries[ts in p.TimeStep],
-		sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
+		sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
 	r["absorption_chiller_consumption_series"] = round.(value.(ABSORPCHLThermalConsumptionSeries), digits=3)
 	@expression(m, Year1ABSORPCHLThermalConsumption,
-		p.TimeStepScaling * sum(dvThermalProduction[t,ts] / p.AbsorptionChillerCOP
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_consumption_mmbtu"] = round(value(Year1ABSORPCHLThermalConsumption), digits=3)
 	@expression(m, Year1ABSORPCHLThermalProd,
-		p.TimeStepScaling * sum(dvThermalProduction[t,ts]
+		p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
 			for t in p.AbsorptionChillers, ts in p.TimeStep))
 	r["year_one_absorp_chiller_thermal_prod_kwh"] = round(value(Year1ABSORPCHLThermalProd), digits=3)
 	nothing
