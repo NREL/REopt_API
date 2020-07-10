@@ -856,7 +856,8 @@ class DataManager:
                                                          self.storage.incentives.macrs_schedule,
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
-
+        StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+        
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),

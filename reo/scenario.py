@@ -227,7 +227,7 @@ def setup_scenario(self, run_uuid, data, raw_post):
             tmp = dict()
             tmp['federal_itc_pct'] = wind.incentives.federal.itc
             tmp['installed_cost_us_dollars_per_kw'] = wind.installed_cost_us_dollars_per_kw
-
+            print('UPDATED')
             ModelManager.updateModel('WindModel', tmp, run_uuid)
             # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 

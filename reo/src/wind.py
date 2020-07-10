@@ -271,7 +271,7 @@ class WindSAMSDK:
 
             # combine into one file to pass to SAM
             if len(heights) > 1:
-                self.file_downloaded = combine_wind_files(file_resource_heights, file_resource_full, path_inputs)
+                self.file_downloaded = combine_wind_files(file_resource_heights, file_resource_full)
 
         self.file_resource_full = file_resource_full
         self.wind_turbine_powercurve = wind_turbine_powercurve_lookup[size_class] 
