@@ -3,6 +3,7 @@
     "webtool_uuid": null,
     "description": "",
     "timeout_seconds": 295,
+	"optimality_tolerance": 1.0e-4,
     "Site": {
       "PV": {
         "pbi_years": 1.0,
