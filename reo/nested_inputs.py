@@ -890,7 +890,11 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kw": {
             "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
             "description": "Rebate based on installed power capacity"
-          }
+          },
+          "total_rebate_us_dollars_per_kwh": {
+            "type": "float", "min": 0, "max": 1e9, "default": 0,
+            "description": "Rebate based on installed energy capacity"
+           }             
         },
 
       "Generator": {

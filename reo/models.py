@@ -169,6 +169,7 @@ class FinancialModel(models.Model):
     initial_capital_costs = models.FloatField(null=True, blank=True)
     replacement_costs = models.FloatField(null=True, blank=True)
     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
+    simple_payback_years = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -328,6 +329,7 @@ class PVModel(models.Model):
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -377,6 +379,7 @@ class WindModel(models.Model):
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -410,6 +413,7 @@ class StorageModel(models.Model):
     macrs_itc_reduction = models.FloatField()
     total_itc_pct = models.FloatField()
     total_rebate_us_dollars_per_kw = models.IntegerField()
+    total_rebate_us_dollars_per_kwh = models.IntegerField(default=0)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)

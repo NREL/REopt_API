@@ -92,12 +92,12 @@ class EmissionsCalculator:
             generator_emmissions = data['inputs']['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal')
             if generator_emmissions is not None:
                 data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'] = \
-                round(generator_emmissions * data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0,precision)
+                round(generator_emmissions * (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal") or 0),precision)
                 data['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] += \
                 round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],precision)
                 
                 data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'] = \
-                round(generator_emmissions *  data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal_bau") or 0,precision)
+                round(generator_emmissions *  (data['outputs']['Scenario']['Site']['Generator'].get("fuel_used_gal_bau") or 0),precision)
                 data['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02'] += \
                 round(data['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02'],precision)
                             

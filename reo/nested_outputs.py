@@ -174,7 +174,15 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
-                }
+                },
+                 "simple_payback_years": {
+                  "type": float,
+                  "description": ("Number of years until the cumulative cashflow is positive. If there are charges "
+                                  "(i.e. battery repalcement costs) that cause the cumulative cashflow to go negative "
+                                  "after initially breaking even, the number of years required to recuperate these costs"
+                                  "is added to the metric."),
+                  "units": "$"
+                 }                   
               },
 
               "PV": {
@@ -205,6 +213,11 @@ nested_output_definitions = {
                 "year_one_energy_produced_kwh": {
                   "type": float,
                   "description": "Year one energy produced by the PV system",
+                  "units": "kWh"
+                },
+                "year_one_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Year one energy produced by the PV system in the BAU case",
                   "units": "kWh"
                 },
                 "year_one_power_production_series_kw": {
