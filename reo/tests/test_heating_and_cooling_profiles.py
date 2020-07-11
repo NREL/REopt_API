@@ -13,7 +13,8 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 
 
 post = {"Scenario": {
-    "timeout_seconds": 1,
+    "timeout_seconds": 600,
+    "optimality_tolerance": 1.0,
     "Site": {
     "latitude": 37.78, "longitude": -122.45,
     "Financial": {
@@ -44,15 +45,6 @@ post = {"Scenario": {
         "chp_fuel_type": "natural_gas",
         "chp_fuel_blended_monthly_rates_us_dollars_per_mmbtu": [11.0]*12
     },
-    "CHP": {
-        "prime_mover": "recip_engine",
-        "min_kw": 10,
-        "max_kw": 5250,
-        "installed_cost_us_dollars_per_kw": 1700,
-        "om_cost_us_dollars_per_kw": 10,
-        "om_cost_us_dollars_per_kwh": 0.05,
-        "min_turn_down_pct": 0.32
-    },
     "Storage": {
         "max_kwh": 0,
         "max_kw": 0,
@@ -74,7 +66,7 @@ post = {"Scenario": {
     },
     "ColdTES": {
         "min_gal": 0,
-        "max_gal": 50000,
+        "max_gal": 0,
         "installed_cost_us_dollars_per_gal": 3,
         "thermal_decay_rate_fraction": 0.004,
         "om_cost_us_dollars_per_gal": 0,
@@ -82,24 +74,11 @@ post = {"Scenario": {
     },
     "HotTES": {
         "min_gal": 0,
-        "max_gal": 50000,
+        "max_gal": 0,
         "installed_cost_us_dollars_per_gal": 3,
         "thermal_decay_rate_fraction": 0.004,
         "om_cost_us_dollars_per_gal": 0,
         "internal_efficiency_pct": 0.97,
-    },
-    "AbsorptionChiller": {
-        "min_ton": 0,
-        "max_ton": 5000,
-        "chiller_cop": 0.7,
-        "installed_cost_us_dollars_per_ton": 2000,
-        "om_cost_us_dollars_per_ton_per_year": 2,
-    },
-    "PV": {
-        "min_kw": 0,
-        "max_kw": 0,
-        "installed_cost_us_dollars_per_kw": 1700.0,
-        "om_cost_us_dollars_per_kw": 16,
     }
 }}}
 
