@@ -344,7 +344,7 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.BoilerTechs)
-		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.HeatingTechs, ts in p.TimeStep],
+		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
     	        m[:dvProductionToStorage][b,t,ts]  <= 
 				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
 				)
@@ -545,7 +545,7 @@ function add_load_balance_constraints(m, p)
 		sum( m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage )  ==
 		sum( sum(m[:dvProductionToStorage][b,t,ts] for b in p.ElecStorage) + 
 			sum(m[:dvProductionToGrid][t,u,ts] for u in p.CurtailmentTiers) for t in p.ElectricTechs) +
-		## sum(m[:dvThermalProduction][t,ts] for t in p.CoolingTechs )/ p.ElectricChillerEfficiency +
+		    sum(m[:dvThermalProduction][t,ts] for t in p.ElectricChillers )/ p.ElectricChillerCOP +
 		p.ElecLoad[ts]
 	)
 end
