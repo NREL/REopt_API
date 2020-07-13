@@ -84,6 +84,13 @@ function add_cost_expressions(m, p)
     else
         m[:TotalPerUnitProdOMCosts] = @expression(m, 0.0)
 	end
+	if !isempty(p.CHPTechs)
+		m[:TotalCHPStandbyCharges] = @expression(m, p.CHPStandbyCharge * 12 * sum(
+			m[:dvSize][t] for t in p.CHPTechs) * p.pwf_e)
+		)
+	else
+		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
+	end
 end
 
 
@@ -725,7 +732,7 @@ function add_cost_function(m, p)
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
