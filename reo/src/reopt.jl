@@ -87,7 +87,6 @@ function add_cost_expressions(m, p)
 	if !isempty(p.CHPTechs)
 		m[:TotalCHPStandbyCharges] = @expression(m, p.CHPStandbyCharge * 12 * sum(
 			m[:dvSize][t] for t in p.CHPTechs) * p.pwf_e)
-		)
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 	end
