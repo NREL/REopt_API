@@ -272,7 +272,7 @@ function add_fuel_constraints(m, p)
 					)
 	end
 	
-	m[:TotalFuelCharges] = @expression(m, p.pwf_e * p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
+	m[:TotalFuelCharges] = @expression(m, p.TimeStepScaling * sum( p.pwf_fuel[t] * p.FuelCost[f,ts] *
 		sum(m[:dvFuelUsage][t,ts] for t in p.TechsByFuelType[f], ts in p.TimeStep)
 		for f in p.FuelType)
 	)
