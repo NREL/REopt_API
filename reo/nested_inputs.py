@@ -1245,9 +1245,9 @@ nested_input_definitions = {
           "restrict_to": ['recip_engine', 'micro_turbine', 'combustion_turbine', 'fuel_cell'],
           "description": "CHP prime mover type (recip_engine, micro_turbine, combustion_turbine, fuel_cell)"
         },
-        "size_class":{
+        "size_class": {
           "type": "int",
-          "restrict_to": [1, 2, 3, 4],
+          "restrict_to": [0, 1, 2, 3, 4],
           "description": "CHP size class for using appropriate default inputs"
         },
         "min_kw": {

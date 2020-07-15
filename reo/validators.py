@@ -961,7 +961,7 @@ class ValidateNestedInput:
                     # create an updated attribute set to check invalid combinations of input data later
                     prime_mover_defaults.update({"size_class": size_class})
                     updated_set = copy.deepcopy(prime_mover_defaults)
-                    for param, value in self.prime_mover_defaults.items():
+                    for param, value in prime_mover_defaults.items():
                         if real_values.get(param) is None:
                             self.update_attribute_value(object_name_path, number, param, value)
                         else:
@@ -1006,7 +1006,7 @@ class ValidateNestedInput:
 
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
-                        required_keys = self.prime_mover_defaults_all['recip_engine'].keys()
+                        required_keys = prime_mover_defaults_all['recip_engine'].keys()
                         filtered_values = {k: real_values.get(k) for k in required_keys}
                         for k,v in filtered_values.items():
                             if v is None:
