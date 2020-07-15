@@ -134,8 +134,8 @@ def process_size_class_data(class_bounds, elec_effic_half_frac, hre_half_frac):
         # Build a dictionary of all data, grouped first by prime mover type, then by size class
         size_class_data_all[pm] = {'installed_cost_us_dollars_per_kw': capex_class[pm],
                                    'om_cost_us_dollars_per_kw': [0] * len(class_bounds[pm]),
-                                   'om_cost_us_dollars_per_kwh': opex_class[pm],
-                                   'om_cost_us_dollars_per_hr_per_kw_rated': [0] * len(class_bounds[pm]),
+                                   'om_cost_us_dollars_per_kwh': [0] * len(class_bounds[pm]),
+                                   'om_cost_us_dollars_per_hr_per_kw_rated': opex_class[pm],
                                    'elec_effic_full_load': elec_effic_full_class[pm],
                                    'elec_effic_half_load': elec_effic_half_class[pm],
                                    'thermal_effic_full_load': therm_effic_full_class[pm],
