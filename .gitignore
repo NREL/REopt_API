@@ -119,13 +119,8 @@ results_processing/*
 docs/formulation/*aux
 docs/formulation/*log
 
-# solver folder for avoiding pushing xpauth.xpr file to remote
-solver/*
-
 # Julia system images
 julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
 
-# solver folder for avoiding pushing xpauth.xpr file to remote
-solver/*
