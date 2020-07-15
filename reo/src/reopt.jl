@@ -32,6 +32,7 @@ function add_continuous_variables(m, p)
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
+		dvOMByHourBySizeCHP[p.Tech] >= 0
     end
 end
 
@@ -85,10 +86,13 @@ function add_cost_expressions(m, p)
         m[:TotalPerUnitProdOMCosts] = @expression(m, 0.0)
 	end
 	if !isempty(p.CHPTechs)
-		m[:TotalCHPStandbyCharges] = @expression(m, p.CHPStandbyCharge * 12 * sum(
-			m[:dvSize][t] for t in p.CHPTechs) * p.pwf_e)
+		m[:TotalCHPStandbyCharges] = @expression(m, p.pwf_e * p.CHPStandbyCharge * 12 *
+		sum(m[:dvSize][t] for t in p.CHPTechs))
+		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om *
+			sum(m[:dvOMByHourBySizeCHP][t] for t in p.CHPTechs))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
+		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
 	end
 end
 
@@ -717,6 +721,13 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 end
 
+function add_chp_hourly_opex_charges(m, p)
+	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
+					sum(p.OMcostPerUnitHourPerSize[t] * dvSize[t] -
+					NewMaxSize[t] * p.OMcostPerUnitHourPerSize[t] * (1-binTechIsOnInTS[t,ts])
+					  for ts in p.TimeStep) <= dvOMByHourBySizeCHP[t]
+					)
+end
 
 function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
@@ -728,7 +739,7 @@ function add_cost_function(m, p)
 		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
-		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
+		(m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
 		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
@@ -755,7 +766,8 @@ function add_yearone_expressions(m, p)
     m[:Year1DemandFlatCost] = m[:DemandFlatCharges] / p.pwf_e
     m[:Year1FixedCharges] = m[:TotalFixedCharges] / p.pwf_e
     m[:Year1MinCharges] = m[:MinChargeAdder] / p.pwf_e
-    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
+	m[:Year1CHPStandbyCharges] = m[:TotalCHPStandbyCharges] / p.pwf_e
+    m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges] + m[:Year1CHPStandbyCharges]
 end
 
 
@@ -1327,6 +1339,10 @@ function add_util_results(m, p, r::Dict)
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]
 
+	total_opex_costs = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner]
+
+	year_one_opex_costs = total_opex_costs / p.pwf_om
+
     push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
 						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
 						 "year_one_demand_cost" => round(value(m[:Year1DemandCost]), digits=2),
@@ -1345,7 +1361,9 @@ function add_util_results(m, p, r::Dict)
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
-						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
+						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))
+						 "total_opex_costs" => round(total_opex_costs, digits=0),
+						 "year_one_opex_costs" => round(year_one_opex_costs, digits=0)...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )

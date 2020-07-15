@@ -239,6 +239,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
+                },
+                "total_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "units": "$"
+                },
+                "year_one_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "units": "$"
                 }
               },
 

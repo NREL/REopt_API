@@ -313,6 +313,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
                         self.results_dict.get("net_capital_costs") \
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
+                    self.nested_outputs["Scenario"]["Site"][name]["total_opex_costs_us_dollars"] = self.results_dict.get(
+                        "total_opex_costs")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_opex_costs_us_dollars"] = self.results_dict.get(
+                        "year_one_opex_costs")
                 elif name == "PV":
                     pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
                     template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
