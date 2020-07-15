@@ -33,6 +33,7 @@ import sys
 import traceback as tb
 import uuid
 import copy
+import pickle
 from django.http import JsonResponse
 from reo.src.load_profile import BuiltInProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
@@ -47,6 +48,7 @@ from reo.src.techs import Generator
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
+from input_files.CHP import chp_input_defaults
 
 
 # loading the labels of hard problems - doing it here so loading happens once on startup
@@ -495,3 +497,79 @@ def generator_efficiency(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."})
+
+def chp_defaults(request):
+    """
+    This provides the default input values for CHP based the following:
+        1. Prime mover and size class
+        2. Prime mover and average heating load
+    If both size class and average heating load are given, the size class will be used.
+    Boiler efficiency is assumed and may not be consistent with actual input value.
+    """
+    chp_defaults_dict_pickle = os.path.join('input_files', 'CHP', 'chp_input_defaults_all.pickle')
+    with open(chp_defaults_dict_pickle, 'rb') as handle:
+        prime_mover_defaults_all = pickle.load(handle)
+
+    try:
+        prime_mover = request.GET.get('prime_mover')
+        avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
+        size_class = request.GET.get('size_class')
+
+        if prime_mover is not None:
+            # Calculate heuristic CHP size based on average thermal load, using average efficiencies across all size ranges
+            if avg_boiler_fuel_load_mmbtu_per_hr is not None:
+                avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
+                boiler_effic = 0.8
+                therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][0]
+                elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][0]
+                avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
+                chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
+                chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
+            else:
+                chp_elec_size_heuristic_kw = None
+            # If size class is specified use that and ignore heuristic CHP sizing for determining size class
+            if size_class is not None:
+                size_class = int(size_class)
+                if (size_class < 0) or (size_class >= chp_input_defaults.n_classes[prime_mover]):
+                    raise ValueError('The size class input is outside the valid range for ' + str(prime_mover))
+            # If size class is not specified, heuristic sizing based on avg thermal load and size class 0 efficiencies
+            elif avg_boiler_fuel_load_mmbtu_per_hr is not None and size_class is None:
+                # With heuristic size, find the suggested size class
+                if chp_elec_size_heuristic_kw < chp_input_defaults.class_bounds[prime_mover][1][1]:
+                    # If smaller than the upper bound of the smallest class, assign the smallest class
+                    size_class = 1
+                elif chp_elec_size_heuristic_kw >= chp_input_defaults.class_bounds[prime_mover][chp_input_defaults.n_classes[prime_mover] - 1][0]:
+                    # If larger than or equal to the lower bound of the largest class, assign the largest class
+                    size_class = chp_input_defaults.n_classes[prime_mover] - 1  # Size classes are zero-indexed
+                else:
+                    # For middle size classes
+                    for sc in range(2, chp_input_defaults.n_classes[prime_mover] - 1):
+                        if (chp_elec_size_heuristic_kw >= chp_input_defaults.class_bounds[prime_mover][sc][0]) and \
+                                (chp_elec_size_heuristic_kw < chp_input_defaults.class_bounds[prime_mover][sc][1]):
+                            size_class = sc
+            else:
+                size_class = chp_input_defaults.default_chp_size_class[prime_mover]
+            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                    for param in prime_mover_defaults_all[prime_mover].keys()}
+        else:
+            raise ValueError("Missing prime_mover type query parameter.")
+
+        response = JsonResponse(
+            {"prime_mover": prime_mover,
+             "size_class": size_class,
+             "default_inputs": prime_mover_defaults,
+             "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
+             }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
