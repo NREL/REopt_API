@@ -42,6 +42,8 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat_chp(d['outputs'])
+        #from celery.contrib import rdb
+        #rdb.set_trace()
         # This test was verified to be withing 1.5% gap after 10 mins of the Mosel/Xpress monolith
         d_expected = dict()
         d_expected['lcc'] = 13406752.0
@@ -54,6 +56,8 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d_expected['chp_total_fuel_cost_us_dollars'] = 4954813.24
 
         try:
+            for key, value in d_expected.items():
+                print(key + "= ", c[key])
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
