@@ -331,26 +331,23 @@ class CHP(Tech):
         self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
         self.incentives = Incentives(**kwargs)
 
-        try:
-            self.min_kw = kwargs['min_kw']
-            self.max_kw = kwargs['max_kw']
-            self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
-            self.om_cost_us_dollars_per_kw = kwargs['om_cost_us_dollars_per_kw']
-            self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
-            self.om_cost_us_dollars_per_hr_per_kw_rated = kwargs['om_cost_us_dollars_per_hr_per_kw_rated']
-            self.elec_effic_full_load = kwargs['elec_effic_full_load']
-            self.elec_effic_half_load = kwargs['elec_effic_half_load']
-            self.thermal_effic_full_load = kwargs['thermal_effic_full_load']
-            self.thermal_effic_half_load = kwargs['thermal_effic_half_load']
-            self.min_turn_down_pct = kwargs['min_turn_down_pct']
-            self.min_allowable_kw = kwargs['min_allowable_kw']
-            self.use_default_derate = kwargs['use_default_derate']
-            self.max_derate_factor = kwargs['max_derate_factor']
-            self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
-            self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
-        except:
-            print("Prime mover type was not specified and not all cost/performance parameters were input "
-                  "in the post")
+        # All of these attributes are assigned based on defaults in validators.py or they should all be in the inputs
+        self.min_kw = kwargs['min_kw']
+        self.max_kw = kwargs['max_kw']
+        self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
+        self.om_cost_us_dollars_per_kw = kwargs['om_cost_us_dollars_per_kw']
+        self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
+        self.om_cost_us_dollars_per_hr_per_kw_rated = kwargs['om_cost_us_dollars_per_hr_per_kw_rated']
+        self.elec_effic_full_load = kwargs['elec_effic_full_load']
+        self.elec_effic_half_load = kwargs['elec_effic_half_load']
+        self.thermal_effic_full_load = kwargs['thermal_effic_full_load']
+        self.thermal_effic_half_load = kwargs['thermal_effic_half_load']
+        self.min_turn_down_pct = kwargs['min_turn_down_pct']
+        self.min_allowable_kw = kwargs['min_allowable_kw']
+        self.use_default_derate = kwargs['use_default_derate']
+        self.max_derate_factor = kwargs['max_derate_factor']
+        self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
+        self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
 
         self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
             self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
