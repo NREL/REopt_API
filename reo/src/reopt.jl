@@ -217,6 +217,12 @@ function add_bigM_adjustments(m, p)
 			m[:NewMaxSize][t] = p.MaxSize[t]
 		end
 	end
+	for t in p.CHPTechs
+		m[:NewMaxSize][t] = maximum([p.ElecLoad[ts] for ts in p.TimeStep])
+		if (m[:NewMaxSize][t] > p.MaxSize[t])
+			m[:NewMaxSize][t] = p.MaxSize[t]
+		end
+	end
 	
 	# NewMaxSizeByHour is designed to scale the right-hand side of the constraint limiting rated production in each hour to the production factor; in most cases this is unaffected unless the production factor is zero, in which case the right-hand side is set to zero.
 	#for t in p.ElectricTechs 
@@ -721,13 +727,13 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 end
 
-function add_chp_hourly_opex_charges(m, p)
-	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
-					sum(p.OMcostPerUnitHourPerSize[t] * dvSize[t] -
-					NewMaxSize[t] * p.OMcostPerUnitHourPerSize[t] * (1-binTechIsOnInTS[t,ts])
-					  for ts in p.TimeStep) <= dvOMByHourBySizeCHP[t]
-					)
-end
+#function add_chp_hourly_opex_charges(m, p)
+#	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
+#					sum(p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
+#					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
+#					  for ts in p.TimeStep) <= m[:dvOMByHourBySizeCHP][t]
+#					)
+#end
 
 function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
@@ -875,6 +881,10 @@ function reopt_run(m, p::Parameter)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
+
+	#if !isempty(p.CHPTechs)
+	#	add_chp_hourly_opex_charges(m, p)
+	#end
 	
 	add_cost_function(m, p)
 
