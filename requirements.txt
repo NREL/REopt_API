@@ -1,7 +1,6 @@
 amqp==2.6.0
 attrs==19.1.0
 autopep8==1.4.3
-backports.shutil-get-terminal-size==1.0.0
 billiard==3.6.3.0
 celery==4.4.6
 certifi==2017.7.27.1
