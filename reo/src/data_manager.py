@@ -650,7 +650,7 @@ class DataManager:
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
         chp_thermal_prod_factor = list()
-        om_cost_us_dollars_per_hr_per_kw = list()
+        om_cost_us_dollars_per_hr_per_kw_rated = list()
 
         charge_efficiency = list()
         discharge_efficiency = list()
@@ -686,10 +686,10 @@ class DataManager:
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
-                    om_cost_us_dollars_per_hr_per_kw.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
-                    om_cost_us_dollars_per_hr_per_kw.append(0.0)
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
 
                 for load in self.available_loads:
 
@@ -723,7 +723,7 @@ class DataManager:
                 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
         return tech_to_load, tech_to_location, derate, \
-               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw, \
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
                production_factor, charge_efficiency, discharge_efficiency, \
                electric_derate, chp_thermal_prod_factor
                
@@ -1009,11 +1009,11 @@ class DataManager:
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         tech_to_load, tech_to_location, derate, om_cost_us_dollars_per_kw, \
-               om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw, production_factor, \
+               om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
                charge_efficiency, discharge_efficiency, \
                electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_load_bau, tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
-               om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_bau, production_factor_bau, \
+               om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
                charge_efficiency_bau, discharge_efficiency_bau, \
                electric_derate_bau, chp_thermal_prod_factor_bau  = self._get_REopt_array_tech_load(self.bau_techs)
 
@@ -1210,7 +1210,7 @@ class DataManager:
             'StorageCostPerKWH': storage_energy_cost,
             'OMperUnitSize': om_cost_us_dollars_per_kw,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh,
-            'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw,
+            'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw_rated,
             'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
             'FuelBinCount': tariff_args.energy_tiers_num,
@@ -1332,7 +1332,7 @@ class DataManager:
             'StorageCostPerKWH': storage_energy_cost,
             'OMperUnitSize': om_cost_us_dollars_per_kw_bau,
             'OMcostPerUnitProd': om_cost_us_dollars_per_kwh_bau,
-            'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw_bau,
+            'OMcostPerUnitHourPerSize': om_cost_us_dollars_per_hr_per_kw_rated_bau,
             'analysis_years': int(sf.analysis_years),
             'NumRatchets': tariff_args.demand_num_ratchets,
             'FuelBinCount': tariff_args.energy_tiers_num,
