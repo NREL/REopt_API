@@ -1,0 +1,17 @@
+Size (kW),recip_engine,micro_turbine,combustion_turbine,fuel_cell
+30,N/A,0.474,N/A,N/A
+35,0.500,N/A,N/A,N/A
+60,N/A,0.465,N/A,N/A
+100,0.532,N/A,N/A,N/A
+190,N/A,0.380,N/A,N/A
+320,N/A,0.416,N/A,0.328
+630,0.453,N/A,N/A,N/A
+950,N/A,0.366,0.432,N/A
+1140,0.430,N/A,N/A,N/A
+1400,N/A,N/A,N/A,0.323
+1800,N/A,N/A,0.489,N/A
+3300,0.386,N/A,0.414,N/A
+7500,N/A,N/A,0.413,N/A
+9300,0.350,N/A,N/A,0.323
+14000,N/A,N/A,0.402,N/A
+20000,N/A,N/A,0.369,N/A
