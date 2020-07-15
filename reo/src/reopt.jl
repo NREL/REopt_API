@@ -1361,9 +1361,9 @@ function add_util_results(m, p, r::Dict)
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
-						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))
+						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2),
 						 "total_opex_costs" => round(total_opex_costs, digits=0),
-						 "year_one_opex_costs" => round(year_one_opex_costs, digits=0)...)
+						 "year_one_opex_costs" => round(year_one_opex_costs, digits=0))...)
 
     @expression(m, GridToLoad[ts in p.TimeStep],
                 sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier) - m[:dvGridToStorage][ts] )
