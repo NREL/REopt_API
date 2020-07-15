@@ -1,0 +1,67 @@
+version: "2.1"
+
+services:
+
+  redis:
+    container_name: redis
+    image: redis
+    command: redis-server
+    ports:
+      - 6379:6379
+
+  db:
+    container_name: db
+    image: postgres
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=reopt
+      - POSTGRES_PASSWORD=reopt
+      - POSTGRES_DB=reopt
+    ports:
+      - 5432:5432
+
+  celeryOS:
+    container_name: celeryOS
+    build:
+      context: .
+      dockerfile: Dockerfile.xpressOS.pyjul
+    command: >
+      "celery -A reopt_api worker -l info"
+    image: celeryos-image
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - REDIS_HOST=redis
+      - SOLVER=xpress
+    volumes:
+      - .:/opt/reopt
+    depends_on:
+      - db
+      - redis
+    mac_address: 02:42:ac:12:00:04
+
+  django:
+    container_name: django
+    image: celeryos-image
+    command:  >
+      "python manage.py migrate
+      && python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - APP_ENV=local
+      - SQL_HOST=db
+      - SQL_PORT=5432
+      - REDIS_HOST=redis
+      - SOLVER=xpress
+    depends_on:
+      - db
+      - redis
+    ports:
+      - 8000:8000
+    volumes:
+      - .:/opt/reopt
+
+volumes:
+  pgdata:

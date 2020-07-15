@@ -107,9 +107,6 @@ static/files/*
 # Redis
 *.rdb
 
-# Docker files with different names for distinguishing OS vs private
-docker-compose.xpressOS.yml
-
 all_data*
 =======
 # CHP results processing
