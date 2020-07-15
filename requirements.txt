@@ -30,7 +30,6 @@ gunicorn==20.0.4
 h5pyd==0.7.0
 idna==2.6
 importlib-metadata==0.23
-ipython-genutils==0.2.0
 jdcal==1.3
 julia==0.5.3
 kombu==4.6.11
@@ -43,7 +42,6 @@ pandas==0.25.2
 pathlib-mate==0.0.15
 pathlib2==2.2.1
 pexpect==4.2.1
-pickleshare==0.7.4
 pigar==0.7.0
 pipreqs==0.4.9
 prompt-toolkit==1.0.13
@@ -63,7 +61,7 @@ rollbar==0.14.7
 scandir==1.5
 Shapely==1.7.0
 simplegeneric==0.8.1
-six==1.10.0
+six==1.15.0
 SQLAlchemy==1.3.1
 sqlparse==0.3.0
 traitlets==4.3.2
