@@ -1109,10 +1109,6 @@ class ValidateNestedInput:
                         'The sum of elements of percent share list for hybrid load profile should be 100.')
 
                 if real_values.get('annual_kwh') is not None:
-                    real_values['year'] = 2017
-                    self.update_attribute_value(object_name_path, number, 'year', 2017)
-                    # Use 2017 b/c it is most recent year that starts on a Sunday and all reference profiles start on
-                    # Sunday
                     if type(real_values['annual_kwh']) is not list:
                         self.update_attribute_value(object_name_path, number, 'annual_kwh', [real_values['annual_kwh']])
                         real_values['annual_kwh'] = [real_values['annual_kwh']]
