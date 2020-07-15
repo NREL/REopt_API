@@ -136,6 +136,7 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
+CELERY_WORKER_MAX_TASKS_PER_CHILD = 5
 
 # celery task registration
 CELERY_IMPORTS = (
