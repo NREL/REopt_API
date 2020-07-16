@@ -121,5 +121,3 @@ julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
 
-# solver folder for avoiding pushing xpauth.xpr file to remote
-solver/xpauth.xpr
