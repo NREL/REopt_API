@@ -13,7 +13,7 @@ from reo.src.wind import WindSAMSDK, combine_wind_files
 
 
 post = {"Scenario": {
-    "timeout_seconds": 600,
+    "timeout_seconds": 420,
     "optimality_tolerance": 1.0,
     "Site": {
     "latitude": 37.78, "longitude": -122.45,
