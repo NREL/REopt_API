@@ -1038,23 +1038,22 @@ class ValidateNestedInput:
                         gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
-            
-            for lp in ['critical_loads_kw', 'loads_kw']:
-                if real_values.get(lp) not in [None, []]:
-                    self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
-                                       number=number, input_isDict=input_isDict)
-                    isnet = real_values.get(lp + '_is_net')
-                    if isnet is None:
-                        isnet = True
-                    if not isnet:
-                        # next line can fail if non-numeric values are passed in for (critical_)loads_kw
-                        if self.isValid:
-                            if min(real_values.get(lp)) < 0:
-                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-            
-            if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                    self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+            if self.isValid:
+                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if real_values.get(lp) not in [None, []]:
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
+                                           number=number, input_isDict=input_isDict)
+                        isnet = real_values.get(lp + '_is_net')
+                        if isnet is None:
+                            isnet = True
+                        if not isnet:
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if self.isValid:
+                                if min(real_values.get(lp)) < 0:
+                                    self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
                 if len(real_values.get('percent_share')) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
@@ -1295,8 +1294,6 @@ class ValidateNestedInput:
                         if len(real_values.get('doe_reference_name')) != len(real_values.get('annual_kwh')):
                             self.input_data_errors.append(
                                 'The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid boiler fuel load profile')
-
-
 
         if object_name_path[-1] == "FuelTariff":
 
