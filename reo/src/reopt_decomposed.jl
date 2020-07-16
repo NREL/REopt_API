@@ -64,6 +64,28 @@ function add_parameters(m, p)
 	end
 end
 
+function set_subproblem_time_sets(m, p, mth::Int64)
+	m[:TimeStep] = p.TimeStepRatchetsMonth[mth]
+	m[:Month] = [mth]
+	m[:TimeStepsWithGrid] = Int64[]
+	m[:TimeStepsWithoutGrid = Int64[]
+	m[:TimeStepRatchets] = Dict()
+	for r in p.Ratchets
+		m[:TimeStepRatchets][r] = Int64[]
+	end
+	for ts in m[:TimeStep]
+		if (ts in p.TimeStepsWithoutGrid)
+			append!(m[:TimeStepsWithoutGrid], ts)
+		else
+			append!(m[:TimeStepsWithGrid], ts)
+		end
+		for r in p.Ratchets
+			if (ts in p.TimeStepRatchets[r])
+				append!(m[:TimeStepRatchets][r], ts)
+			end
+		end
+	end
+end
 
 
 function add_cost_expressions(m, p)
@@ -100,22 +122,22 @@ function add_export_expressions(m, p)
 			sum(p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
 			+ sum(p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
 				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
-			) for ts in p.TimeStep )
+			) for ts in m[:TimeStep] )
 		)
 		m[:ExportedElecWIND] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
-				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in m[:TimeStep])
 		)
 		m[:ExportedElecGEN] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
-				for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+				for t in m[:GeneratorTechs], u in p.SalesTiersByTech[t], ts in m[:TimeStep])
 		)        
 		m[:ExportBenefitYr1] = @expression(m,
 			p.TimeStepScaling * sum( 
 			sum( p.GridExportRates[u,ts] * m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers) 
 			+ sum( p.GridExportRates[u,ts] * m[:dvProductionToGrid][t,u,ts] 
 				for u in p.SalesTiers, t in p.TechsBySalesTier[u]) 
-			for ts in p.TimeStep ) 
+			for ts in m[:TimeStep] ) 
 		)
 	else
 		m[:TotalExportBenefit] = 0
