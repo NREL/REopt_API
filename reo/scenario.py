@@ -326,18 +326,13 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                     )
-        ##[az] Imported from CHP, not sure if we need?
-        #dfm.add_net_metering(
-        #    net_metering_limit=inputs_dict['Site']['ElectricTariff'].get("net_metering_limit_kw"),
-        #    interconnection_limit=inputs_dict['Site']['ElectricTariff'].get("interconnection_limit_kw")
-        #)
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
 
         # delete python objects, which are not serializable
 
         for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
-                  'load', 'heating_load', 'cooling_load', 'util'] + dfm.available_techs:
+				'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

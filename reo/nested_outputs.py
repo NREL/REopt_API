@@ -106,16 +106,6 @@ nested_output_definitions = {
               },
 
               "LoadProfile": {
-                "year_one_electric_load_series_kw_bau": {
-                  "type": list_of_float,
-                  "description": "Year one hourly time series of electric load in business-as-usual case.",
-                  "units": "kW"
-                },
-                "year_one_electric_load_series_kw": {
-                  "type": list_of_float,
-                  "description": "Year one hourly time series of electric load",
-                  "units": "kW"
-                },
                 "critical_load_series_kw": {
                   "type": list_of_float,
                   "description": "Hourly critical load for outage simulator. Values are either uploaded by user, or determined from typical load (either uploaded or simulated) and critical_load_pct.",

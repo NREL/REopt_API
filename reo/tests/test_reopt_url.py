@@ -265,8 +265,8 @@ class EntryResourceTest(ResourceTestCaseMixin, TestCase):
         c = nested_to_flat(d['outputs'])
 
         d_expected = dict()
-        d_expected['lcc'] = 10972574
-        d_expected['npv'] = 11257165 - d_expected['lcc']
+        d_expected['lcc'] = 10959381
+        d_expected['npv'] = 11246374 - d_expected['lcc']
         d_expected['pv_kw'] = 216.667
         d_expected['batt_kw'] = 43.5127
         d_expected['batt_kwh'] = 57.3789
