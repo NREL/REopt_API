@@ -806,9 +806,7 @@ function reopt(reo_model, model_inputs::Dict)
 	return results
 end
 
-
-function reopt_run(m, p::Parameter)
-
+function reopt_build(m, p::Parameter)
 	t_start = time()
 	results = Dict{String, Any}()
     Obj = 1  # 1 for minimize LCC, 2 for min LCC AND high mean SOC
@@ -911,6 +909,9 @@ function reopt_run(m, p::Parameter)
 	end
 	
 	results["julia_reopt_constriants_seconds"] = time() - t_start
+end
+
+fucntion reopt_solve(m, p::Parameter)
 	t_start = time()
 
 	optimize!(m)
@@ -942,6 +943,14 @@ function reopt_run(m, p::Parameter)
 	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	return results
+end
+
+function reopt_run(m, p::Parameter)
+
+	reopt_build(m, p)
+	results = reopt_solve(m, p)
+	return results
+	
 end
 
 
