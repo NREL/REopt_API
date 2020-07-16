@@ -684,6 +684,7 @@ class DataManager:
                 # only generator and chp techs have variable o&m cost
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                    om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
                 elif tech.lower() == 'chp':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
                     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
