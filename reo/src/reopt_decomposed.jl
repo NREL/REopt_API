@@ -64,7 +64,7 @@ function add_parameters(m, p)
 	end
 end
 
-function set_subproblem_time_sets(m, p, mth::Int64)
+function add_subproblem_time_sets(m, p, mth::Int64)
 	m[:TimeStep] = p.TimeStepRatchetsMonth[mth]
 	m[:start_period] = m[:TimeStep][1] - 1
 	m[:end_period] = m[:TimeStep]
@@ -90,7 +90,7 @@ function set_subproblem_time_sets(m, p, mth::Int64)
 	end
 end
 
-function set_monolith_time_sets(m, p)
+function add_monolith_time_sets(m, p)
 	m[:TimeStep] = p.TimeStep
 	m[:start_period] = m[:TimeStep][1]
 	m[:end_period] = p.TimeStepCount
@@ -815,6 +815,8 @@ function reopt_run(m, p::Parameter)
 	
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
+	## Time sets
+	add_monolith_time_sets(m, p)
 	results["julia_reopt_preamble_seconds"] = time() - t_start
 	t_start = time()
 
