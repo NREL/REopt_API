@@ -71,7 +71,7 @@ function set_subproblem_time_sets(m, p, mth::Int64)
 	m[:TimeStepBat] = append!([m[:start_period]],m[:TimeStep])
 	m[:Month] = [mth]
 	m[:TimeStepsWithGrid] = Int64[]
-	m[:TimeStepsWithoutGrid = Int64[]
+	m[:TimeStepsWithoutGrid] = Int64[]
 	m[:TimeStepRatchets] = Dict()
 	for r in p.Ratchets
 		m[:TimeStepRatchets][r] = Int64[]
@@ -88,6 +88,17 @@ function set_subproblem_time_sets(m, p, mth::Int64)
 			end
 		end
 	end
+end
+
+function set_monolith_time_sets(m, p)
+	m[:TimeStep] = p.TimeStep
+	m[:start_period] = m[:TimeStep][1]
+	m[:end_period] = p.TimeStepCount
+	m[:TimeStepBat] = p.TimeStepBat
+	m[:Month] = p.Month
+	m[:TimeStepsWithGrid] = p.TimeStepsWithGrid
+	m[:TimeStepsWithoutGrid] = p.TimeStepsWithoutGrid
+	m[:TimeStepRatchets] = p.TimeStepRatchets
 end
 
 
