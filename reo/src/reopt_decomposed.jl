@@ -794,6 +794,28 @@ function add_yearone_expressions(m, p)
     m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
+function add_decomp_models(m, p::Parameter)
+	decomp_models = Dict()
+	lb_models = []
+	ub_models = []
+	for mth in p.Month
+		if m[:solver_name] == "Xpress"
+			append!(lb_models, direct_model(Xpress.Optimizer(MAXTIME=-m[:timeout_seconds], MIPRELSTOP=m[:optimality_tolerance], OUTPUTLOG = 0)))
+			append!(ub_models, direct_model(Xpress.Optimizer(MAXTIME=-m[:timeout_seconds], MIPRELSTOP=m[:optimality_tolerance], OUTPUTLOG = 0)))
+		elseif m[:solver_name] == "Cbc"
+			append!(lb_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=m[:timeout_seconds], ratioGap=m[:optimality_tolerance])))
+			append!(ub_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=m[:timeout_seconds], ratioGap=m[:optimality_tolerance])))
+		elseif m[:solver_name] == "SCIP"
+			append!(lb_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
+			append!(ub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
+		else
+			throw(UndefVarError("solver_name undefined or doesn't match existing base of REopt solvers."))
+		end
+	end
+	decomp_models["lb"] = lb_models
+	decomp_models["lb"] = ub_models
+	return 
+end
 
 function reopt(reo_model, model_inputs::Dict)
 
@@ -804,6 +826,7 @@ function reopt(reo_model, model_inputs::Dict)
 	results = reopt_run(reo_model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
+	
 end
 
 function reopt_build(m, p::Parameter)
