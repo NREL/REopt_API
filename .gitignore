@@ -121,3 +121,6 @@ julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
 
+# Customized docker files
+docker-compose.xpressOS.yml
+Dockerfile.xpressOS.pyjul
