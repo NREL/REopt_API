@@ -741,23 +741,30 @@ end
 
 
 function add_util_fixed_and_min_charges(m, p)
-
-    m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
-
+	if m[:model_type] == "monolith"
+		m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
+	else
+		m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge
+	end
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
-        m[:TotalMinCharge] = p.AnnualMinCharge 
-    else
-        m[:TotalMinCharge] = 12 * p.MonthlyMinCharge
-    end
-	
-	if m[:TotalMinCharge] >= 1e-2
-        @constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - ( 
-			m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
-		)
+		m[:TotalMinCharge] = p.AnnualMinCharge 
 	else
-		@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
-
+		m[:TotalMinCharge] = 12 * p.MonthlyMinCharge
+	end
+	
+	if !(m[:model_type] == "monolith")
+		m[:TotalMinCharge] /= 12
+	end
+		
+	if !(m[:model_type] == "lb")
+		if m[:TotalMinCharge] >= 1e-2
+			@constraint(m, MinChargeAddCon, m[:MinChargeAdder] >= m[:TotalMinCharge] - ( 
+				m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalFixedCharges])
+			)
+		else
+			@constraint(m, MinChargeAddCon, m[:MinChargeAdder] == 0)
+		end
 	end
 end
 
