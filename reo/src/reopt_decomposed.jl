@@ -24,7 +24,6 @@ function add_continuous_variables(m, p)
 		dvPeakDemandEMonth[m[:Month], p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
 		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
-		#UtilityMinChargeAdder[m[:Month]] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
 		dvFuelUsage[p.Tech, m[:TimeStep]] >= 0  # Fuel burned by technology t in time step h
 		dvFuelBurnYIntercept[p.Tech, m[:TimeStep]] >= 0  #X^{fb}_{th}: Y-intercept of fuel burned by technology t in time step h
@@ -49,9 +48,10 @@ function add_integer_variables(m, p)
     end
 end
 
-function add_inventory_variables(m, p)
+function add_subproblem_variables(m, p)
 	@variables m begin
-		dvStorageResetSOC[p.Storage], >= 0 #R_{bl}: reset inventory level at beginning and end of time block for storage system $b$
+		dvStorageResetSOC[p.Storage] >= 0 #R_{bl}: reset inventory level at beginning and end of time block for storage system $b$
+		UtilityMinChargeAdder[m[:Month]] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 	end
 end
 
