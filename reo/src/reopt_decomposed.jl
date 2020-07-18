@@ -49,6 +49,12 @@ function add_integer_variables(m, p)
     end
 end
 
+function add_inventory_variables(m, p)
+	@variables m begin
+		dvStorageResetSOC[p.Storage], >= 0 #R_{bl}: reset inventory level at beginning and end of time block for storage system $b$
+	end
+end
+
 
 function add_parameters(m, p)
     m[:r_tax_fraction_owner] = (1 - p.r_tax_owner)
@@ -99,7 +105,9 @@ function add_monolith_time_sets(m, p)
 	m[:TimeStepsWithGrid] = p.TimeStepsWithGrid
 	m[:TimeStepsWithoutGrid] = p.TimeStepsWithoutGrid
 	m[:TimeStepRatchets] = p.TimeStepRatchets
+	m[:model_type] = "monolith"
 end
+
 
 
 function add_cost_expressions(m, p)
@@ -753,6 +761,15 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 end
 
+function add_inventory_constraints(m, p)
+
+	### Constraint (14a): Beginning SOC = Storage Inventory
+	if !(m[:start_period] == 1)
+		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,start_period] == m[:dvStorageResetSOC][b] 
+	end
+	### Constraint (14b): Ending SOC = Storage Inventory
+	@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,end_period] == m[:dvStorageResetSOC][b] 
+end
 
 function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
@@ -809,12 +826,14 @@ function add_decomp_models(m, p::Parameter)
 			append!(lb_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
 			append!(ub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
 		else
-			throw(UndefVarError("solver_name undefined or doesn't match existing base of REopt solvers."))
+			error("solver_name undefined or doesn't match existing base of REopt solvers.")
 		end
+		lb_models[mth][:model_type] = "lb"
+		ub_models[mth][:model_type] = "ub"
 	end
 	decomp_models["lb"] = lb_models
-	decomp_models["lb"] = ub_models
-	return 
+	decomp_models["ub"] = ub_models
+	return decomp_models
 end
 
 function reopt(reo_model, model_inputs::Dict)
