@@ -34,6 +34,8 @@ import numpy as np
 import pandas as pd
 import os
 import requests
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 import json
 
 from keys import developer_nrel_gov_key
@@ -119,26 +121,27 @@ def get_data(url, filename):
     filename: string
         The filename where data should be written
     """
-    n_tries = 0
+    s = requests.Session()
     n_max_tries = 5
-    success = False
+    retries = Retry(total=n_max_tries,
+                backoff_factor=0.1,
+                status_forcelist=[ 500, 502, 503, 504 ])
+
+    s.mount('https://', HTTPAdapter(max_retries=retries))
+
+    try:
+        r = s.get(url)
     
-    while n_tries < n_max_tries:
-        time.sleep(0.2)
-        r = requests.get(url)
         if r and r.status_code != requests.codes.ok:
             log.error("Wind Toolkit returned invalid data, HTTP " + str(r.status_code))
             raise ValueError('Wind Toolkit returned invalid data, HTTP ' + str(r.status_code))
-            n_tries = n_max_tries
         elif r and r.status_code == requests.codes.ok:
             localfile = open(filename, mode='w+')
             localfile.write(r.text)
-            n_tries = n_max_tries
-        n_tries += 1
+        if os.path.isfile(filename):
+            return True
     
-    if os.path.isfile(filename):
-        return True
-    else:     
+    except:
         log.error("Wind data download timed out " + str(n_max_tries) + "times")
         raise ValueError('Wind Dataset Timed Out')
 
