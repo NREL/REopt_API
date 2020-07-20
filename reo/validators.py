@@ -946,7 +946,7 @@ class ValidateNestedInput:
                 size_class = real_values.get('size_class')
                 if prime_mover is not None:
                     if size_class is not None:
-                        if (size_class >= 0) and (size_class < n_classes):
+                        if (size_class >= 0) and (size_class < n_classes[prime_mover]):
                             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
                                             for param in prime_mover_defaults_all[prime_mover].keys()}
                         else:
