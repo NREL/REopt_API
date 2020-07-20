@@ -110,8 +110,9 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['utility_year_one_emissions_bau_lb_C02'] = 431410.8
         d_expected['generator_year_one_emissions_lb_C02'] = 18
         d_expected['generator_year_one_emissions_bau_lb_C02'] = 0
-
+        
         try:
+            self.assertEqual(d['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Southeast')
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed.".format(run_uuid))

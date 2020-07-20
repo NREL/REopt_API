@@ -974,6 +974,7 @@ class ValidateNestedInput:
                     emissions_series = None
                     try:
                         emissions_series = ec.emissions_series
+                        emissions_region = ec.region
                     except AttributeError as e:
                         # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
                         # since at this point the emissions are not required to do a run it simply
@@ -984,6 +985,8 @@ class ValidateNestedInput:
                     if emissions_series is not None:
                         self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
                             emissions_series)
+                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                            emissions_region)
             else:
                 self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
                     "ElectricTariff", 
