@@ -1086,13 +1086,13 @@ class DataManager:
         for j in range(0, len(cap_cost_x), n_segments+1):
             for _ in subdivisions:
                 for i in range(j, n_segments+j):
-                    segment_min_size.append(cap_cost_x[i])
+                    segment_min_size.append(max(min_allowable_size[int(j/(n_segments+1))], cap_cost_x[i]))
 
         segment_min_size_bau = []
         for j in range(0, len(cap_cost_x_bau), n_segments_bau+1):
             for _ in subdivisions:
                 for i in range(j, n_segments_bau+j):
-                    segment_min_size_bau.append(cap_cost_x_bau[i])
+                    segment_min_size_bau.append(max(min_allowable_size_bau[int(j/(n_segments+1))], cap_cost_x_bau[i]))
 
         segment_max_size = [] 
         for j in range(0, len(cap_cost_x), n_segments+1):
