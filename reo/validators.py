@@ -39,10 +39,9 @@ from reo.src.urdb_rate import Rate
 import re
 import uuid
 import pickle
-from reo.src.techs import Generator, Boiler
+from reo.src.techs import Generator, Boiler, CHP
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
-from input_files.CHP import chp_input_defaults
 
 hard_problems_csv = os.path.join('reo', 'hard_problems.csv')
 hard_problem_labels = [i[0] for i in csv.reader(open(hard_problems_csv, 'r'))]
@@ -939,23 +938,22 @@ class ValidateNestedInput:
                             self.input_data_errors.append(e.args[0])
 
         if object_name_path[-1] == "CHP":
-            chp_defaults_dict_pickle = os.path.join('input_files', 'CHP', 'chp_input_defaults_all.pickle')
-            with open(chp_defaults_dict_pickle, 'rb') as handle:
-                prime_mover_defaults_all = pickle.load(handle)
+            prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
+            n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
             if self.isValid:
                 # fill in prime mover specific defaults
                 prime_mover = real_values.get('prime_mover')
                 size_class = real_values.get('size_class')
                 if prime_mover is not None:
                     if size_class is not None:
-                        if (size_class >= 0) and (size_class <= chp_input_defaults.n_classes[prime_mover]):
+                        if (size_class >= 0) and (size_class < n_classes):
                             prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
                                             for param in prime_mover_defaults_all[prime_mover].keys()}
                         else:
                             self.input_data_errors.append(
                                 'The size class input is outside the valid range for ' + str(prime_mover))
                     else:
-                        size_class = chp_input_defaults.default_chp_size_class[prime_mover]
+                        size_class = CHP.default_chp_size_class[prime_mover]
                         prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
                                             for param in prime_mover_defaults_all[prime_mover].keys()}
                     # create an updated attribute set to check invalid combinations of input data later
