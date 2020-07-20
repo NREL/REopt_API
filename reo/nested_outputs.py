@@ -82,13 +82,30 @@ nested_output_definitions = {
             },
 
             "Site": {
+              "year_one_emissions_lb_C02": {
+                "type": int,
+                "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
+                "units": "hours"
+              },
+
+              "total_emissions_lb_C02": {
+                "type": int,
+                "description": "Total equivalent pounds of carbon dioxide emitted from the site over all years in the analysis period.",
+                "units": "hours"
+              },
+              "year_one_emissions_bau_lb_C02": {
+                "type": int,
+                "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
+                "units": "hours"
+              },
+
+              "total_emissions_bau_lb_C02": {
+                "type": int,
+                "description": "Total equivalent pounds of carbon dioxide emitted from the site over all years in the analysis period in the BAU case.",
+                "units": "hours"
+              },
 
               "LoadProfile": {
-                "year_one_electric_load_series_kw": {
-                  "type": list_of_float,
-                  "description": "Year one hourly time series of electric load",
-                  "units": "kW"
-                },
                 "critical_load_series_kw": {
                   "type": list_of_float,
                   "description": "Hourly critical load for outage simulator. Values are either uploaded by user, or determined from typical load (either uploaded or simulated) and critical_load_pct.",
@@ -107,6 +124,54 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Number of hours the existing system can sustain with resilience check",
                   "units": "hours"
+                }
+              },
+
+              "LoadProfileBoilerFuel": {
+                "year_one_boiler_fuel_load_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of boiler fuel load",
+                  "units": "mmbtu_per_hr"
+                },
+                "year_one_boiler_thermal_load_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of boiler thermal load",
+                  "units": "mmbtu_per_hr"
+                },
+                "year_one_boiler_fuel_load_series_mmbtu_per_hr_bau": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of boiler fuel load in business-as-usual case.",
+                  "units": "mmbtu_per_hr"
+                },
+                "annual_calculated_boiler_fuel_load_mmbtu_bau": {
+                  "type": float,
+                  "description": "Annual boiler fuel consumption calculated by summing up 8760 boiler fuel "
+                                 "load profile in business-as-usual case.",
+                  "units": "mmbtu"
+                }
+              },
+
+              "LoadProfileChillerElectric": {
+                "year_one_chiller_electric_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of chiller electric load",
+                  "units": "kW"
+                },
+                "year_one_chiller_thermal_load_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of electric chiller thermal load",
+                  "units": "Ton"
+                },
+                "year_one_chiller_electric_load_series_kw_bau": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of chiller electric load in business-as-usual case.",
+                  "units": "kW"
+                },                
+                "annual_calculated_kwh_bau": {
+                  "type": float,
+                  "description": "Annual chiller electric consumption calculated by summing up 8760 electric load "
+                                 "profile in business-as-usual case.",
+                  "units": "kWh"
                 }
               },
 
@@ -163,6 +228,16 @@ nested_output_definitions = {
                 "replacement_costs": {
                   "type": float,
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
+                  "units": "$"
+                },
+                "total_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "units": "$"
+                },
+                "year_one_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
                   "units": "$"
                 }
               },
@@ -316,6 +391,11 @@ nested_output_definitions = {
               },
 
               "ElectricTariff": {
+                "year_one_to_load_bau_series_kw" : {
+                  "type": list_of_float,
+                  "description": "Year one BAU utility load",
+                  "units": "kW"
+                },
                 "year_one_energy_cost_us_dollars": {
                   "type": float,
                   "description": "Optimal year one utility energy cost",
@@ -455,6 +535,69 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "hours"
+                },
+                "total_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from utility electricity over all years in the analysis period. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "hours"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "hours"
+                },
+                "total_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity over all years in the analysis period. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "hours"
+                },
+                "year_one_chp_standby_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year 1 standby charge cost incurred by CHP",
+                  "units": "$"
+                },
+                "total_chp_standby_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total lifecycle standby charge cost incurred by CHP",
+                  "units": "$"
+                }
+              },
+
+              "FuelTariff": {
+                "total_boiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total boiler fuel cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
+                "year_one_boiler_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one boiler fuel cost, before-tax",
+                  "units": "$"
+                },
+                "year_one_boiler_fuel_cost_bau_us_dollars": {
+                  "type": float,
+                  "description": "Year one bau boiler fuel cost, before-tax",
+                  "units": "$"
+                },
+                "total_chp_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Total chp fuel cost over the lifecycle, after-tax",
+                  "units": "$"
+                },
+                "year_one_chp_fuel_cost_us_dollars": {
+                  "type": float,
+                  "description": "Year one chp fuel cost, before-tax",
+                  "units": "$"
+                },
+                "total_boiler_fuel_cost_bau_us_dollars": {
+                  "type": float,
+                  "description": "Business as usual total boiler fuel cost over the lifecycle, after-tax",
+                  "units": "$"
                 }
               },
 
@@ -563,6 +706,266 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site use in the first year.",
+                  "units": "hours"
+                },
+                "total_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site over all years in the analysis period.",
+                  "units": "hours"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site use in the first year in the BAU case.",
+                  "units": "hours"
+                },
+                "total_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site over all years in the analysis period in the BAU case.",
+                  "units": "hours"
+                }
+              },
+
+              "CHP": {
+                "size_kw": {
+                  "type": float,
+                  "description": "Optimal CHP prime-mover rated electric size",
+                  "units": "kW"
+                },
+                "year_one_fuel_used_mmbtu": {
+                  "type": float,
+                  "description": "CHP fuel used over one year",
+                  "units": "MMBtu"
+                },
+                "year_one_electric_energy_produced_kwh": {
+                  "type": float,
+                  "description": "Year one electric energy produced by CHP",
+                  "units": "kWh"
+                },
+                "year_one_thermal_energy_produced_mmbtu": {
+                  "type": float,
+                  "description": "Year one thermal energy produced by CHP",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_electric_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one CHP electric production time series",
+                  "units": "kW"
+                },
+                "year_one_to_battery_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP charging battery",
+                  "units": "kW"
+                },
+                "year_one_to_load_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one CHP to electric load time series.",
+                  "units": "kW"
+                },
+                "year_one_to_grid_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP exporting to grid",
+                  "units": "kW"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_waste_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to waste heat",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
+                  "units": "hours"
+                },
+
+                "total_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site over all years in the analysis period.",
+                  "units": "hours"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year in the BAU case.",
+                  "units": "hours"
+                },
+
+                "total_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site over all years in the analysis period in the BAU case.",
+                  "units": "hours"
+                }
+              },
+
+              "Boiler": {
+                "year_one_boiler_fuel_consumption_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of boiler fuel consumption",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_thermal_production_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of boiler thermal production",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_fuel_consumption_mmbtu": {
+                  "type": float,
+                  "description": "Annual average boiler fuel consumption",
+                  "units": "MMBtu"
+                },
+                "year_one_boiler_thermal_production_mmbtu": {
+                  "type": float,
+                  "description": "Annual average boiler thermal production",
+                  "units": "MMBtu"
+                },
+                "year_one_thermal_to_load_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_to_tes_series_mmbtu_per_hour": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of CHP thermal to Hot TES",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_boiler_thermal_production_bau_mmbtu": {
+                  "type": float,
+                  "description": "Annual average bau boiler thermal production",
+                  "units": "MMBtu"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
+                  "units": "hours"
+                },
+                "total_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site over all years in the analysis period.",
+                  "units": "hours"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
+                  "units": "hours"
+                },
+                "total_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site over all years in the analysis period in the BAU case.",
+                  "units": "hours"
+                }
+              },
+
+              "ElectricChiller": {
+                "year_one_electric_chiller_thermal_to_load_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of electric chiller thermal to cooling load",
+                  "units": "Ton"
+                },
+                "year_one_electric_chiller_thermal_to_tes_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of electric chiller thermal to cold TES",
+                  "units": "Ton"
+                },
+                "year_one_electric_chiller_electric_consumption_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of chiller electric consumption",
+                  "units": "kW"
+                },
+                "year_one_electric_chiller_electric_consumption_kwh": {
+                  "type": float,
+                  "description": "Year one chiller electric consumption",
+                  "units": "kWh"
+                },
+                "year_one_electric_chiller_thermal_production_tonhr": {
+                  "type": float,
+                  "description": "Year one chiller thermal production",
+                  "units": "TonHr"
+                },
+                "year_one_electric_chiller_thermal_production_bau_tonhr": {
+                  "type": float,
+                  "description": "Year one bau chiller thermal production",
+                  "units": "TonHr"
+                }
+              },
+
+              "AbsorptionChiller": {
+                "size_ton": {
+                  "type": float,
+                  "description": "Optimal absorption chiller rated cooling power size",
+                  "units": "Ton"
+                },
+                "year_one_absorp_chl_thermal_to_load_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of absorption chiller thermal production",
+                  "units": "Ton"
+                },
+                "year_one_absorp_chl_thermal_to_tes_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of absorption chiller thermal production",
+                  "units": "Ton"
+                },
+                "year_one_absorp_chl_thermal_consumption_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of absorption chiller thermal consumption",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_absorp_chl_thermal_consumption_mmbtu": {
+                  "type": float,
+                  "description": "Year one chiller thermal consumption",
+                  "units": "MMBtu"
+                },
+                "year_one_absorp_chl_thermal_production_tonhr": {
+                  "type": float,
+                  "description": "Year one chiller thermal production",
+                  "units": "TonHr"
+                }
+              },
+
+              "ColdTES": {
+                "size_gal": {
+                  "type": float,
+                  "description": "Optimal cold TES power capacity",
+                  "units": "Ton"
+                },
+                "year_one_thermal_from_cold_tes_series_ton": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of TES serving cooling thermal load",
+                  "units": "Ton"
+                },
+                "year_one_cold_tes_soc_series_pct": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of cold TES state of charge",
+                  "units": "%"
+                }
+              },
+
+              "HotTES": {
+                "size_gal": {
+                  "type": float,
+                  "description": "Optimal hot TES power capacity",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_thermal_from_hot_tes_series_mmbtu_per_hr": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of TES serving hot thermal load",
+                  "units": "MMBtu/hr"
+                },
+                "year_one_hot_tes_soc_series_pct": {
+                  "type": list_of_float,
+                  "description": "Year one hourly time series of hot TES state of charge",
+                  "units": "%"
                 }
               }
             }
