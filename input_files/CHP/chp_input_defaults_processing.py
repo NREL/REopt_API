@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import os
 import copy
-import pickle
+import json
 
 # Lower and upper bounds for size classes - Class 0 is the total average across entire range of data
 class_bounds = {"recip_engine": [(30, 10000), (30, 100), (100, 630), (630, 3300), (3300, 10000)],
@@ -26,14 +26,14 @@ min_allow_frac = [0.5, 0.7, 1.0, 0.5]
 elec_effic_half_frac = [0.9, 0.8, 0.8, 0.9]
 hre_half_frac = [1.0, 1.0, 1.0, 1.0]
 
-chp_defaults_not_size_class_dependent = {'recip_engine': {
+chp_defaults_not_size_class_dependent = {
+                                        'recip_engine': {
                                            'min_kw': 0,
                                            'max_kw': 10000,
                                            'min_turn_down_pct': 0.5,
                                            'max_derate_factor': 1.0,
                                            'derate_start_temp_degF': 95,
                                            'derate_slope_pct_per_degF': 0.008},
-
                                         'micro_turbine': {
                                             'min_kw': 0,
                                             'max_kw': 1000,
@@ -41,7 +41,6 @@ chp_defaults_not_size_class_dependent = {'recip_engine': {
                                             'max_derate_factor': 1.0,
                                             'derate_start_temp_degF': 59,
                                             'derate_slope_pct_per_degF': 0.012},
-
                                         'combustion_turbine': {
                                             'min_kw': 0,
                                             'max_kw': 20000,
@@ -49,14 +48,14 @@ chp_defaults_not_size_class_dependent = {'recip_engine': {
                                             'max_derate_factor': 1.1,
                                             'derate_start_temp_degF': 59,
                                             'derate_slope_pct_per_degF': 0.012},
-
                                         'fuel_cell': {
                                             'min_kw': 0,
                                             'max_kw': 5000,
                                             'min_turn_down_pct': 0.3,
                                             'max_derate_factor': 1.0,
                                             'derate_start_temp_degF': 59,
-                                            'derate_slope_pct_per_degF': 0.008}}
+                                            'derate_slope_pct_per_degF': 0.008}
+                                        }
 
 def create_chp_prime_mover_defaults(class_bounds, elec_effic_half_frac, hre_half_frac):
     # Cost and performane data which varies based on size class
@@ -74,9 +73,9 @@ def create_chp_prime_mover_defaults(class_bounds, elec_effic_half_frac, hre_half
     prime_mover_defaults_all = {pm: {**size_class_data[pm], **class_independent_data[pm]} for pm in class_independent_data.keys()}
 
     save_directory = os.getcwd() + '/input_files/CHP/'
-    pickle_file = 'chp_input_defaults_all'
-    with open(save_directory + pickle_file + '.pickle', 'wb') as handle:
-        pickle.dump(prime_mover_defaults_all, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    json_file_name = 'chp_default_data'
+    with open(save_directory + json_file_name + '.json', 'w') as fp:
+        json.dump(prime_mover_defaults_all, fp)
 
     return prime_mover_defaults_all
 
@@ -144,11 +143,4 @@ def process_size_class_data(class_bounds, elec_effic_half_frac, hre_half_frac):
 
     return size_class_data_all
 
-# data_directory = os.getcwd() + '/input_files/CHP/'
-# pickle_file = 'chp_input_data_all'
-# with open(data_directory + pickle_file + '.pickle', 'rb') as handle:
-#     prime_mover_defaults = pickle.load(handle)
-
-# dict1 = {"key1": {"key1a":3.1, "key1b":3.2}, "key2": {"key2a":4.2, "key2b":4.3}}
-# dict2 = {"key1": {"key1c":3.4, "key1d":3.5}, "key2": {"key2d":4.4, "key2e":4.5}}
-# dict3 = {dict1, dict2}
+processed_data = create_chp_prime_mover_defaults(class_bounds, elec_effic_half_frac, hre_half_frac)
