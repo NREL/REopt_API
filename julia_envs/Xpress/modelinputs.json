@@ -105499,5 +105499,8 @@
     0.0
   ],
   "CHPTechs": [],
-  "OMcostPerUnitHourPerSize": []
+  "OMcostPerUnitHourPerSize": [
+    0.0,
+    0.0
+  ]
 }
