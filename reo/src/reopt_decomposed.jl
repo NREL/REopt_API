@@ -94,6 +94,7 @@ function add_subproblem_time_sets(m, p, mth::Int64)
 			end
 		end
 	end
+	m[:weight] = 1/12
 end
 
 function add_monolith_time_sets(m, p)
@@ -106,6 +107,7 @@ function add_monolith_time_sets(m, p)
 	m[:TimeStepsWithoutGrid] = p.TimeStepsWithoutGrid
 	m[:TimeStepRatchets] = p.TimeStepRatchets
 	m[:model_type] = "monolith"
+	m[:weight] = 1.0
 end
 
 
@@ -785,16 +787,16 @@ function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
 
 		# Capital Costs
-		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +  
+		m[:weight] * (m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +  
 		
 		## Fixed O&M, tax deductible for owner
-		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
+		m[:weight] * m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + (m[:weight] * m[:TotalCHPStandbyCharges]) + (m[:weight] * m[:TotalFixedCharges]) + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
