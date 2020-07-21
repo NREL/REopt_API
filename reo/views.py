@@ -527,7 +527,7 @@ def chp_defaults(request):
             # If size class is specified use that and ignore heuristic CHP sizing for determining size class
             if size_class is not None:
                 size_class = int(size_class)
-                if (size_class < 0) or (size_class >= n_classes):
+                if (size_class < 0) or (size_class >= n_classes[prime_mover]):
                     raise ValueError('The size class input is outside the valid range for ' + str(prime_mover))
             # If size class is not specified, heuristic sizing based on avg thermal load and size class 0 efficiencies
             elif avg_boiler_fuel_load_mmbtu_per_hr is not None and size_class is None:
