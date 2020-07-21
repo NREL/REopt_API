@@ -722,16 +722,19 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
 	
-	##Constraint (12e): Peak demand used in percent lookback calculation 
-	@constraint(m, [mth in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
-	)
-	
-	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.DemandLookbackMonths],
-		sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >= 
-		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
-	)
+	#Peak lookback is only considered when running the monolith; it is calculated in post-processing for the subproblems
+	if m[:model_type] == "monolith"
+		##Constraint (12e): Peak demand used in percent lookback calculation 
+		@constraint(m, [mth in p.DemandLookbackMonths],
+			m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
+		)
+		
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [r in p.DemandLookbackMonths],
+			sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >= 
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
+		)
+	end
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
