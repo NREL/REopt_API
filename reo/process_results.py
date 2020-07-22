@@ -248,8 +248,6 @@ def calculate_simple_payback_and_irr(data):
             new_kw = (generator.get('size_kw') or 0) - (generator.get('existing_kw') or 0)
             existing_kw = generator.get('existing_kw') or 0
             
-            capital_costs = (new_kw * generator['installed_cost_us_dollars_per_kw'])
-
             # In the two party case the developer does not include the fuel cost in their costs
             # It is assumed that the offtaker will pay for this at a rate that is not marked up
             # to cover developer profits

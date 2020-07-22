@@ -1105,7 +1105,7 @@ nested_input_definitions = {
         },
          "emissions_factor_lb_CO2_per_gal": {
           "type": "float",
-          "description": "Average carbon dioxide emissions factor"
+          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
          }
       }
     }
