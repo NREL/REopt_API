@@ -823,29 +823,21 @@ function add_yearone_expressions(m, p)
     m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
-function add_decomp_models(m, p::Parameter)
-	decomp_models = Dict()
-	lb_models = []
-	ub_models = []
+function add_decomp_models(m, p::Parameter, model_type::String)
+	sub_models = []
 	for mth in p.Month
 		if m[:solver_name] == "Xpress"
-			append!(lb_models, direct_model(Xpress.Optimizer(MAXTIME=-m[:timeout_seconds], MIPRELSTOP=m[:optimality_tolerance], OUTPUTLOG = 0)))
-			append!(ub_models, direct_model(Xpress.Optimizer(MAXTIME=-m[:timeout_seconds], MIPRELSTOP=m[:optimality_tolerance], OUTPUTLOG = 0)))
+			append!(sub_models, direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, OUTPUTLOG = 0)))
 		elseif m[:solver_name] == "Cbc"
-			append!(lb_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=m[:timeout_seconds], ratioGap=m[:optimality_tolerance])))
-			append!(ub_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=m[:timeout_seconds], ratioGap=m[:optimality_tolerance])))
+			append!(sub_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.01)))
 		elseif m[:solver_name] == "SCIP"
-			append!(lb_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
-			append!(ub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=m[:timeout_seconds], limits_gap=m[:optimality_tolerance]))
+			append!(sub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01))
 		else
 			error("solver_name undefined or doesn't match existing base of REopt solvers.")
 		end
-		lb_models[mth][:model_type] = "lb"
-		ub_models[mth][:model_type] = "ub"
+		sub_models[mth][:model_type] = model_type
 	end
-	decomp_models["lb"] = lb_models
-	decomp_models["ub"] = ub_models
-	return decomp_models
+	return sub_models
 end
 
 function reopt(reo_model, model_inputs::Dict)
