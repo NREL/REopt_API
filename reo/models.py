@@ -170,6 +170,7 @@ class FinancialModel(models.Model):
     replacement_costs = models.FloatField(null=True, blank=True)
     initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
     simple_payback_years = models.FloatField(null=True, blank=True)
+    irr_pct = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

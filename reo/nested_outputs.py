@@ -175,14 +175,20 @@ nested_output_definitions = {
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
                 },
-                 "simple_payback_years": {
+                "simple_payback_years": {
                   "type": float,
                   "description": ("Number of years until the cumulative cashflow is positive. If there are charges "
                                   "(i.e. battery repalcement costs) that cause the cumulative cashflow to go negative "
                                   "after initially breaking even, the number of years required to recuperate these costs"
                                   "is added to the metric."),
                   "units": "$"
-                 }                   
+                },
+                "irr_pct": {
+                  "type": float,
+                  "description": ("Internal Rate of Return of the cost-optimal system. In two-party cases the "
+                                  "developer discount rate is used in place of the offtaker discount rate."),
+                  "units": "%"
+                 }               
               },
 
               "PV": {

@@ -2942,12 +2942,12 @@ def generate_proforma(scenariomodel, output_file_path):
     if not financial.two_party_ownership:
         current_row += 1
         hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
-        for year in range(financial.analysis_years + 1):
+        for year in range(1, financial.analysis_years + 1):
             hcs["{}{}".format(upper_case_letters[year + 1], current_row)] = (
                 "= ({col}{taxed_incentives} * (1 - {tax_rate}/100)) + "
                 "{col}{total_nontaxable_cash_incentives_row}"
             ).format(
-                col=upper_case_letters[year + 2],
+                col=upper_case_letters[year + 1],
                 taxed_incentives=bau_total_taxable_cash_incentives_row,
                 tax_rate=host_fed_tax_rate_cell,
                 total_nontaxable_cash_incentives_row=bau_total_nontaxable_cash_incentives_row
