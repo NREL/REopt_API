@@ -1,9 +1,9 @@
 using JuMP
 using Xpress
 
-function reopt_model(MAXTIME)
+function reopt_model(MAXTIME, LOGFILE)
    
-    REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME, OUTPUTLOG = 0))
+    REopt = direct_model(Xpress.Optimizer(MAXTIME=-MAXTIME, logfile=LOGFILE))
 	return REopt
 
 end

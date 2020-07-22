@@ -177,10 +177,13 @@ nested_output_definitions = {
                 },
                 "simple_payback_years": {
                   "type": float,
-                  "description": ("Number of years until the cumulative cashflow is positive. If there are charges "
-                                  "(i.e. battery repalcement costs) that cause the cumulative cashflow to go negative "
-                                  "after initially breaking even, the number of years required to recuperate these costs"
-                                  "is added to the metric."),
+                  "description": ("Number of years until the cumulative annual cashflow turns positive. "
+                                  "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+                                  " then simple payback is increased by the number of years that the cash flow "
+                                  "is negative beyond the break-even year."),
+
+
+
                   "units": "$"
                 },
                 "irr_pct": {
@@ -492,7 +495,9 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_lb_C02": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
+                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
                   "units": "lb CO2"
                 },
                 "year_one_emissions_bau_lb_C02": {
