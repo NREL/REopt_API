@@ -74,7 +74,7 @@ class ProcessResultsTask(Task):
         self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-def calculate_simple_payback(data):
+def calculate_simple_payback_and_irr(data):
         """
         Recreates the ProForma spreadsheet calculations to get the simple payback period
         :param data: dict a complete response from the REopt API for a successfully completed job
@@ -310,6 +310,7 @@ def calculate_simple_payback(data):
             annual_income_from_host = -1 * sum(discounted_cashflow) * capital_recovery_factor * (1-tax_pct)
             free_cashflow = copy.deepcopy(free_cashflow_before_income)
             free_cashflow[1:] += annual_income_from_host
+            irr = np.irr(free_cashflow)
             cumulative_cashflow =  np.cumsum(free_cashflow)
         else:
             # get cumulative cashflow for host by comparing to BAU cashflow
@@ -328,12 +329,13 @@ def calculate_simple_payback(data):
             free_cashflow_before_income_bau = np.append([0], free_cashflow_before_income_bau)
             # difference optimal and BAU
             free_cashflow =  free_cashflow_before_income - free_cashflow_before_income_bau                                          
+            irr = np.irr(free_cashflow)
             cumulative_cashflow =  np.cumsum(free_cashflow)
         
         #when the cumulative cashflow goes positive, scale the amount by the free cashflow to 
         #approximate a partial year
         if cumulative_cashflow[-1] < 0:
-            return None
+            return None, None
             
         simple_payback_years = 0
         for i in range(1, years+1):
@@ -345,7 +347,7 @@ def calculate_simple_payback(data):
                 simple_payback_years += -(cumulative_cashflow[i-1]/free_cashflow[i])
             # skip years where cumulative cashflow is positive and the previous year's is too
         
-        return round(simple_payback_years,4)
+        return round(simple_payback_years,4), round(irr,4)
 
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
@@ -871,7 +873,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
         #simple payback needs all data to be computed so running that calculation here
-        data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = calculate_simple_payback(data)  
+        simple_payback, irr = calculate_simple_payback_and_irr(data)  
+        data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
+        data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr
         data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
