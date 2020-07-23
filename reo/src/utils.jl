@@ -156,6 +156,7 @@ Base.@kwdef struct Parameter
      StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
      StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
      StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction]
+     StorageCanGridCharge::AxisArray  # Boolean for storage system [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
 	 FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t
@@ -280,6 +281,7 @@ function Parameter(d::Dict)
     d["StorageMaxSizePower"] = AxisArray([d["StorageMaxSizePower"]], d["Storage"])
     d["StorageMinSOC"] = AxisArray([d["StorageMinSOC"]], d["Storage"])
     d["StorageInitSOC"] = AxisArray([d["StorageInitSOC"]], d["Storage"])
+    d["StorageCanGridCharge"] = AxisArray([d["StorageCanGridCharge"]], d["Storage"])
     d["SegmentMinSize"] = AxisArray(seg_min_size_array, d["Tech"], d["Subdivision"], d[:Seg])
     d["SegmentMaxSize"] = AxisArray(seg_max_size_array, d["Tech"], d["Subdivision"], d[:Seg])
 	d["ElectricDerate"] = vector_to_axisarray(d["ElectricDerate"], d["Tech"], d[:TimeStep])
