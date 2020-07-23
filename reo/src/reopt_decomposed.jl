@@ -136,6 +136,16 @@ function add_cost_expressions(m, p)
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 	end
+	if m[:model_type] == "lb"
+		m[:LagrangianPenalties] = @expression(m, sum(m[:tech_size_penalty] * m[:dvSize] for t in p.Tech)
+			+ sum(m[:storage_power_size_penalty] * m[:dvStorageCapPower]
+				+ m[:storage_energy_size_penalty] * m[:dvStorageCapEnergy]
+				+ m[:storage_inventory_penalty] * m[:dvStorageSOC]
+				for b in p.Storage)
+		)
+	else
+		m[:LagrangianPenalties] = @expression(m, 0.0)
+	end
 end
 
 
@@ -802,7 +812,10 @@ function add_cost_function(m, p)
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
+		
+		# Lagrangian penalties, which are only potentially nonzero in the lower bound model
+		m[:LagrangianPenalties]
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -1468,7 +1481,7 @@ function update_decomp_penalties(models,p)
 	for t in p.Tech
 		mean_size = sum(value(m[:dvSize][t]) for m in models) / 12
 		for m in models
-			m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1]+p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
+			m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
 		end
 	end
 	for b in p.Storage
@@ -1523,3 +1536,4 @@ function fix_sizing_decisions(models,p,sizes::Dict)
 		end
 	end
 end
+
