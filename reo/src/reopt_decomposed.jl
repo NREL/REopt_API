@@ -978,6 +978,7 @@ fucntion reopt_solve(m, p::Parameter)
     ##############################################################################
 	try
 		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		results["lower_bound"] = round(JuMP.objective_bound(m))
 	catch
 		# not optimal, empty objective_value
 		return results
@@ -1446,16 +1447,18 @@ function add_util_results(m, p, r::Dict)
 	nothing
 end
 
-function get_initial_decomp_penalties(m,p)
-	m[:tech_size_penalty] = Dict()
-	m[:storage_size_penalty] = Dict()
-	m[:storage_inventory_penalty] = Dict()
-	for t in p.Tech
-		m[:tech_size_penalty][t] = 0.0
-	end
-	for b in p.Storage
-		m[:storage_size_penalty][b] = 0.0
-		m[:storage_inventory_penalty][b] = 0.0
+function get_initial_decomp_penalties(models,p)
+	for m in models
+		m[:tech_size_penalty] = Dict()
+		m[:storage_size_penalty] = Dict()
+		m[:storage_inventory_penalty] = Dict()
+		for t in p.Tech
+			m[:tech_size_penalty][t] = 0.0
+		end
+		for b in p.Storage
+			m[:storage_size_penalty][b] = 0.0
+			m[:storage_inventory_penalty][b] = 0.0
+		end
 	end
 	nothing
 end
@@ -1476,6 +1479,47 @@ function update_decomp_penalties(models,p)
 			m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
 			m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
 			m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
+		end
+	end
+	nothing
+end
+
+function get_peak_month(p)
+	idx = 0
+	incumbent = 0.0
+	monthly_loads = [sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
+	for mth in p.Month
+		if monthly_loads[mth] > incumbent
+			incumbent = monthly_loads[mth]
+			idx = mth
+		end
+	end
+	return idx
+end
+
+function get_peak_sizing_decisions(models,p)
+	mth = get_peak_month(p)
+	sizes = Dict()
+	for t in p.Tech
+		sizes["dvSize",t] = value(models[mth][:dvSize][t])
+	end
+	for b in p.Storage
+		sizes["dvStorageCapPower",b] = value(models[mth][:dvStorageCapPower][b])
+		sizes["dvStorageCapEnergy",b] = value(models[mth][:dvStorageCapEnergy][b])
+		sizes["dvStorageResetSOC",b] = value(models[mth][:dvStorageResetSOC][b])
+	end
+	return sizes
+end
+
+function fix_sizing_decisions(models,p,sizes::Dict)
+	for m in models
+		for t in p.Tech
+			fix(m[:dvSize][t], sizes["dvSize",t], force=true)
+		end
+		for b in p.Storage
+			fix(m[:dvStorageCapPower][b], sizes["dvStorageCapPower",b], force=true)
+			fix(m[:dvStorageCapEnergy][b], sizes["dvStorageCapEnergy",b], force=true)
+			fix(m[:dvStorageResetSOC][b], sizes["dvStorageResetSOC",b], force=true)
 		end
 	end
 end
