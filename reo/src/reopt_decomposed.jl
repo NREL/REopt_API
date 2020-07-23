@@ -51,7 +51,7 @@ end
 function add_subproblem_variables(m, p)
 	@variables m begin
 		dvStorageResetSOC[p.Storage] >= 0 #R_{bl}: reset inventory level at beginning and end of time block for storage system $b$
-		UtilityMinChargeAdder[m[:Month]] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
+		#UtilityMinChargeAdder[m[:Month]] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 	end
 end
 
@@ -1535,5 +1535,47 @@ function fix_sizing_decisions(models,p,sizes::Dict)
 			fix(m[:dvStorageResetSOC][b], sizes["dvStorageResetSOC",b], force=true)
 		end
 	end
+	nothing
+end
+
+function aggregate_subproblem_results(result_dicts)
+	results = Dict()
+		for key in keys(result_dicts[1])
+			results[key] = result_dicts[1][key]
+		end
+		for idx in 2:12
+			for key in keys(result_dicts[idx])
+				if typeof(result_dicts[idx][key]) == Float64
+					results[key] += result_dicts[idx][key]
+				else
+					append!(results[key], result_dicts[idx][key])
+				end
+			end
+		end
+	nothing
+end
+
+function get_full_year_objective_value(models, p)
+	### Obtain subproblem lcc's, minus the min charge adders and production incentives
+	obj = sum(value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
+		for m in models)
+	### recalculate min charge adder and add to the results
+	min_charge = sum(m[:TotalMinCharge] - m[:TotalMinCharge] - ( 
+					m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] 
+					+ m[:TotalExportBenefit] + m[:TotalFixedCharges])
+					for m in models
+				)
+	if min_charge > 0
+		obj += min_charge
+	end
+	### recalculate production incentive
+	incentive = sum(p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
+			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for ts in m[:TimeStep])
+			for m in models
+				)
+	if incentive > models[1][:binProdIncent][t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor 
+		incentive = p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor
+	end
+	obj -= incentive
 end
 
