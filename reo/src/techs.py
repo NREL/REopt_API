@@ -49,7 +49,6 @@ class Tech(object):
         self.loads_served = ['retail', 'wholesale', 'export', 'storage']
         self.nmil_regime = None
         self.reopt_class = ""
-        self.is_grid = False
         self.derate = 1.0
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
@@ -78,7 +77,6 @@ class Util(Tech):
         self.outage_start_hour = outage_start_hour
         self.outage_end_hour = outage_end_hour
         self.loads_served = ['retail', 'storage']
-        self.is_grid = True
         self.derate = 0.0
         self.n_timesteps = dfm.n_timesteps
 
@@ -104,12 +102,12 @@ class PV(Tech):
         4: 0
     }
 
-    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, **kwargs):
+    def __init__(self, dfm, degradation_pct, time_steps_per_hour=1, acres_per_kw=6e-3, kw_per_square_foot=0.01, existing_kw=0.0, tilt=0.537, azimuth=180, pv_number=1, location='both', prod_factor_series_kw=None, **kwargs):
         super(PV, self).__init__(**kwargs)
 
         self.degradation_pct = degradation_pct
         self.nmil_regime = 'BelowNM'
-        self.reopt_class = 'PV'
+        self.reopt_class = 'PV' + str(pv_number)
         self.acres_per_kw = acres_per_kw
         self.kw_per_square_foot = kw_per_square_foot
         self.time_steps_per_hour = time_steps_per_hour
@@ -118,6 +116,9 @@ class PV(Tech):
         self.azimuth = azimuth
         self.pvwatts_prod_factor = None
         self.existing_kw = existing_kw
+        self.prod_factor_series_kw = prod_factor_series_kw
+        self.tech_name = 'pv' + str(pv_number)
+        self.location = location
 
         # if user hasn't entered the tilt (default value is 0.537), tilt value gets assigned based on array_type
         if self.tilt == 0.537:
@@ -144,10 +145,12 @@ class PV(Tech):
 
     @property
     def prod_factor(self):
-
-        if self.pvwatts_prod_factor is None:
-            self.pvwatts_prod_factor = self.pvwatts.pv_prod_factor
-        return self.pvwatts_prod_factor
+        if self.prod_factor_series_kw is None:
+            if self.pvwatts_prod_factor is None:
+                self.pvwatts_prod_factor = self.pvwatts.pv_prod_factor
+            return self.pvwatts_prod_factor
+        else:
+            return self.prod_factor_series_kw
 
     @property
     def station_location(self):
@@ -178,7 +181,7 @@ class Wind(Tech):
         'large': 0.12,
     }
 
-    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, **kwargs):
+    def __init__(self, dfm, inputs_path, acres_per_kw=.03, time_steps_per_hour=1, prod_factor_series_kw=None, **kwargs):
         super(Wind, self).__init__(**kwargs)
 
         self.path_inputs = inputs_path
@@ -189,6 +192,7 @@ class Wind(Tech):
         self.time_steps_per_hour = time_steps_per_hour
         self.incentives = Incentives(**kwargs)
         self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
+        self.prod_factor_series_kw = prod_factor_series_kw
 
         # if user hasn't entered the federal itc, itc value gets assigned based on size_class
         if self.incentives.federal.itc == 0.3:
@@ -201,37 +205,20 @@ class Wind(Tech):
         self.sam_prod_factor = None
         dfm.add_wind(self)
 
-        """
-        # restricting max_kw based on size_class constraints reo to consider just 1 turbine per simulation.
-        # residential <= 2.5 kW
-        # commercial <= 100  kW
-        # medium <= 1000 kW
-        # Large <= 2500 kW (2.5 MW)
-
-        if kwargs.get('size_class') == 'residential':
-            self.max_kw = 2.5
-        elif kwargs.get('size_class') == 'commercial':
-            self.max_kw = 100
-        elif kwargs.get('size_class') == 'medium':
-            self.max_kw = 250
-        elif kwargs.get('size_class') == 'large':
-            self.max_kw = 1000
-
-        if self.min_kw > self.max_kw:
-            self.min_kw = self.max_kw
-        """
-
     @property
     def prod_factor(self):
         """
         Pass resource_meters_per_sec to SAM SDK to get production factor
         :return: wind turbine production factor for 1kW system for 1 year with length = 8760 * time_steps_per_hour
         """
-        if self.sam_prod_factor is None:
-            sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
-                             time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
-            self.sam_prod_factor = sam.wind_prod_factor()
-        return self.sam_prod_factor
+        if self.prod_factor_series_kw is None:
+            if self.sam_prod_factor is None:
+                sam = WindSAMSDK(path_inputs=self.path_inputs, hub_height_meters=self.hub_height_meters,
+                                 time_steps_per_hour=self.time_steps_per_hour, **self.kwargs)
+                self.sam_prod_factor = sam.wind_prod_factor()
+            return self.sam_prod_factor
+        else:
+            return self.prod_factor_series_kw
 
 
 class Generator(Tech):

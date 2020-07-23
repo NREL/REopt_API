@@ -28,13 +28,9 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
-import os
 from tastypie.test import ResourceTestCaseMixin
 from django.test import TestCase
-from reo.nested_to_flat_output import nested_to_flat
-#from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
 from reo.models import ModelManager
-from reo.utilities import check_common_outputs
 
 
 class NegativeLatitudeTest(ResourceTestCaseMixin, TestCase):

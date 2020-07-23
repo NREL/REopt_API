@@ -33,4 +33,5 @@ from . import views
 
 urlpatterns = [
     url(r'^$', views.resilience_stats, name='resilience_stats'),
+    url(r'^$', views.financial_check, name='financial_check'),
 ]

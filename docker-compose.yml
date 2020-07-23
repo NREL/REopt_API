@@ -27,8 +27,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.cbc
-      args:
-        - oom_kill_disable=true
     command: >
       "celery -A reopt_api worker -l info"
     image: celery-image

@@ -33,8 +33,7 @@ import os
 import pandas as pd
 from tastypie.test import ResourceTestCaseMixin
 from reo.nested_to_flat_output import nested_to_flat
-from unittest import TestCase  # have to use unittest.TestCase to get tests to store to database, django.test.TestCase flushes db
-from unittest import skip
+from django.test import TestCase  
 from reo.models import ModelManager
 from reo.utilities import check_common_outputs
 from reo.validators import ValidateNestedInput
@@ -137,7 +136,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
                 check_common_outputs(self, c, d_expected)
             except:
                 print("Run {} expected outputs may have changed.".format(run_uuid))
-                print("Error message: {}".format(d['messages']))
+                print("Error message: {}".format(d['messages'].get('error')))
                 raise
 
     def test_wind_sam_sdk(self):

@@ -204,9 +204,11 @@ class LoadProfileError(REoptError):
 
     __name__ = 'LoadProfileError'
 
-    def __init__(self, exc_value, exc_traceback, task='', run_uuid='', user_uuid=''):
-        debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value, exc_traceback)
-        message = "Problem parsing load data."
+    def __init__(self, exc_value=None, exc_traceback=None, task='', run_uuid='', user_uuid='',message=None):
+        debug_msg = 'Error in Load Profile'
+        if (not exc_value is None) and (not exc_traceback is None):
+            debug_msg = "exc_value: {}; exc_traceback: {}".format(exc_value, tb.format_tb(exc_traceback))
+        message = message or "Problem parsing load data."
         super(LoadProfileError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                message=message, traceback=debug_msg)
 

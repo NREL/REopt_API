@@ -353,7 +353,9 @@ class WindSAMSDK:
             idx = 1
             msg = self.ssc.module_log(self.module, 0)
             while msg is not None:
-                print ('	: ' + msg)
+                if type(msg) == bytes:
+                    msg = msg.decode("utf-8")
+                print ('   : {}'.format(msg))
                 msg = self.ssc.module_log(self.module, idx)
                 idx = idx + 1
         self.ssc.module_free(self.module)
