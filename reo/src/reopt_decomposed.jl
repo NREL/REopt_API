@@ -1446,3 +1446,36 @@ function add_util_results(m, p, r::Dict)
 	nothing
 end
 
+function get_initial_decomp_penalties(m,p)
+	m[:tech_size_penalty] = Dict()
+	m[:storage_size_penalty] = Dict()
+	m[:storage_inventory_penalty] = Dict()
+	for t in p.Tech
+		m[:tech_size_penalty][t] = 0.0
+	end
+	for b in p.Storage
+		m[:storage_size_penalty][b] = 0.0
+		m[:storage_inventory_penalty][b] = 0.0
+	end
+	nothing
+end
+
+function update_decomp_penalties(models,p)
+	rho = 0.001 #penalty factor; this is a parameter that can be tuned
+	for t in p.Tech
+		mean_size = sum(value(m[:dvSize][t]) for m in models) / 12
+		for m in models
+			m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1]+p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
+		end
+	end
+	for b in p.Storage
+		mean_power = sum(value(m[:dvStorageCapPower][b]) for m in models) / 12
+		mean_energy = sum(value(m[:dvStorageCapEnergy][b]) for m in models) / 12
+		mean_inv = sum(value(m[:dvStorageResetSOC][b]) for m in models) / 12
+		for m in models
+			m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
+			m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
+			m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
+		end
+	end
+end
