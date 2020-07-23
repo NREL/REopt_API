@@ -63,15 +63,23 @@ load_profile_possible_sets = [["loads_kw"],
             ["doe_reference_name"]
             ]
 
-electric_tariff_possible_sets = [["urdb_response"],
-            ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
-            ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
-            ["urdb_label"],
-            ["urdb_utility_name", "urdb_rate_name"]]
+electric_tariff_possible_sets = [
+  ["urdb_response"],
+  ["blended_monthly_demand_charges_us_dollars_per_kw", "blended_monthly_rates_us_dollars_per_kwh"],
+  ["blended_annual_demand_charges_us_dollars_per_kw", "blended_annual_rates_us_dollars_per_kwh"],
+  ["urdb_label"],
+  ["urdb_utility_name", "urdb_rate_name"],
+  ["tou_energy_rates_us_dollars_per_kwh"]
+]
 
 
 def list_of_float(input):
     return [float(i) for i in input]
+
+
+def list_of_str(input):
+  return [str(i) for i in input]
+
 
 nested_input_definitions = {
 
@@ -79,8 +87,8 @@ nested_input_definitions = {
     "timeout_seconds": {
       "type": "int",
       "min": 1,
-      "max": 9999,
-      "default": 600,
+      "max": 420,
+      "default": 420,
       "description": "The number of seconds allowed before the optimization times out"
     },
     "user_uuid": {
@@ -161,7 +169,26 @@ nested_input_definitions = {
           "min": 0.0,
           "max": 1.0,
           "default": 0.083,
-          "description": "Nominal host discount rate"
+          "description": "Nominal energy offtaker discount rate. In single ownership model the offtaker is also the generation owner."
+        },
+        "two_party_ownership": {
+          "default": False,
+          "type": "bool",
+          "description": "Specify if ownership model is direct ownership or two party. In two party model the offtaker does not purcharse the generation technologies, but pays the generation owner for energy from the generator(s)."
+        },
+        "owner_tax_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.26,
+          "description": "Generation owner tax rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
+        },
+        "owner_discount_pct": {
+          "type": "float",
+          "min": 0,
+          "max": 1,
+          "default": 0.083,
+          "description": "Nominal generation owner discount rate. Used for two party financing model. In two party ownership model the offtaker does not own the generator(s)."
         },
         "analysis_years": {
           "type": "int",
@@ -188,24 +215,31 @@ nested_input_definitions = {
 
       "LoadProfile": {
         "doe_reference_name": {
-          "type": "str",
+          "type": ["str", "list_of_str"],
           "restrict_to": default_buildings,
           "replacement_sets": load_profile_possible_sets,
           "description": "Simulated load profile from DOE <a href='https: //energy.gov/eere/buildings/commercial-reference-buildings' target='blank'>Commercial Reference Buildings</a>"
         },
         "annual_kwh": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 1.0,
           "max": 1.0e12,
           "replacement_sets": load_profile_possible_sets,
           "depends_on": ["doe_reference_name"],
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
         },
+        "percent_share": {
+                 "type": "list_of_float",
+                  "min": 1.0,
+                  "max": 100.0,
+                  "default": [100.0],
+                 "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+        },
         "year": {
           "type": "int",
           "min": 1,
           "max": 9999,
-          "default": 2018,
+          "default": 2019,
           "description": "Year of Custom Load Profile. If a custom load profile is uploaded via the loads_kw parameter, it is important that this year correlates with the load profile so that weekdays/weekends are determined correctly for the utility rate tariff. If a DOE Reference Building profile (aka 'simulated' profile) is used, the year is set to 2017 since the DOE profiles start on a Sunday."
         },
         "monthly_totals_kwh": {
@@ -292,17 +326,27 @@ nested_input_definitions = {
           "description": "Array (length of 12) of blended demand charges (demand charge cost in $ divided by monthly peak demand in kW)"
         },
         "blended_annual_rates_us_dollars_per_kwh": {
-              "type": "float",
-              "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
-              "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
+          "type": "float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "depends_on": ["blended_annual_demand_charges_us_dollars_per_kw"],
+          "description": "Annual blended energy rate (total annual energy in kWh divided by annual cost in $)"
           },
         "blended_annual_demand_charges_us_dollars_per_kw": {
-              "type": "float",
-              "replacement_sets": electric_tariff_possible_sets,
-              "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
-              "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
+          "type": "float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "depends_on": ["blended_annual_rates_us_dollars_per_kwh"],
+          "description": "Annual blended demand rates (annual demand charge cost in $ divided by annual peak demand in kW)"
           },
+        "add_tou_energy_rates_to_urdb_rate": {
+          "type": "bool",
+          "default": False,
+          "description": "Set to 'true' to add the tou  energy rates to the URDB rate schedule. Otherwise, tou energy rates will only be considered if a URDB rate is not provided. "
+        },
+        "tou_energy_rates_us_dollars_per_kwh": {
+          "type": "list_of_float",
+          "replacement_sets": electric_tariff_possible_sets,
+          "description": "Time-of-use energy rates, provided by user. Must be an array with length equal to number of timesteps per year. Hourly or 15 minute rates allowed."
+        },
         "net_metering_limit_kw": {
           "type": "float",
           "min": 0.0,
@@ -508,10 +552,18 @@ nested_input_definitions = {
           "max": 1.0e9,
           "default": 1.0e9,
           "description": "Maximum system size for which production-based incentives apply"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
       },
 
       "PV": {
+        "pv_name": {
+          "type": "str",
+          "description": "Site name/description"
+        },
         "existing_kw": {
           "type": "float",
           "min": 0.0,
@@ -646,10 +698,10 @@ nested_input_definitions = {
         },
         "pbi_max_us_dollars": {
           "type": "float",
-          "min": 0.0,
-          "max": 1.0e9,
-          "default": 1.0e9,
-          "description": "Maximum annual value of production-based incentives"
+          "min": 0,
+          "max": 1e9,
+          "default": 1e9,
+          "description": "Maximum annual value in present terms of production-based incentives"
         },
         "pbi_years": {
           "type": "float",
@@ -731,7 +783,22 @@ nested_input_definitions = {
           "max": 90.0,
           "default": 0.537,
           "description": "PV system tilt"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
+        },
+        "location": {
+          "type": "str",
+          "restrict_to": "['roof', 'ground', 'both']",
+          "default": 'both',
+          "description": "Where PV can be deployed. One of [roof, ground, both] with default as both"
+        },
+        "prod_factor_series_kw": {
+          "type": "list_of_float",
+          "description": "Optional user-defined production factors. Entries have units of kWh/kW, representing the energy (kWh) output of a 1 kW system in each time step. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples)."
         }
+
       },
 
       "Storage": {

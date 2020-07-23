@@ -39,7 +39,8 @@ class ElecTariff(object):
                  net_metering_limit_kw, interconnection_limit_kw, load_year, time_steps_per_hour,
                  blended_monthly_rates_us_dollars_per_kwh=None, blended_monthly_demand_charges_us_dollars_per_kw=None,
                  urdb_response=None, add_blended_rates_to_urdb_rate=None, blended_annual_rates_us_dollars_per_kwh=None,
-                 blended_annual_demand_charges_us_dollars_per_kw=None,
+                 blended_annual_demand_charges_us_dollars_per_kw=None, add_tou_energy_rates_to_urdb_rate=None,
+                 tou_energy_rates_us_dollars_per_kwh=None,
                   **kwargs):
         """
         Electricity Tariff object for creating inputs to REopt
@@ -63,6 +64,9 @@ class ElecTariff(object):
         self.wholesale_rate_above_site_load = wholesale_rate_above_site_load_us_dollars_per_kwh
         self.time_steps_per_hour = time_steps_per_hour
         self.load_year = load_year
+        self.tou_energy_rates = tou_energy_rates_us_dollars_per_kwh
+        self.add_tou_energy_rates_to_urdb_rate = add_tou_energy_rates_to_urdb_rate
+        self.override_urdb_rate_with_tou_energy_rates = False
 
         self.net_metering = False
         if net_metering_limit_kw > 0:
@@ -70,14 +74,25 @@ class ElecTariff(object):
 
         if urdb_response is not None:
             log.info("Parsing URDB rate")
-            if add_blended_rates_to_urdb_rate:
-                urdb_response = self.update_urdb_with_monthly_energy_and_demand(urdb_response, blended_monthly_rates_us_dollars_per_kwh, blended_monthly_demand_charges_us_dollars_per_kw)
+            if self.tou_energy_rates is not None and self.add_tou_energy_rates_to_urdb_rate is False:
+                self.override_urdb_rate_with_tou_energy_rates = True
+                # option of adding tou energy rate to urdb rate is implemented in UrdbParse.prepare_energy_costs
+            elif add_blended_rates_to_urdb_rate:
+                self.add_tou_energy_rates_to_urdb_rate = False
+                urdb_response = self.update_urdb_with_monthly_energy_and_demand(
+                    urdb_response, blended_monthly_rates_us_dollars_per_kwh,
+                    blended_monthly_demand_charges_us_dollars_per_kw)
 
-        elif blended_monthly_rates_us_dollars_per_kwh is not None and blended_monthly_demand_charges_us_dollars_per_kw is not None:
+        elif blended_monthly_rates_us_dollars_per_kwh is not None \
+                and blended_monthly_demand_charges_us_dollars_per_kw is not None:
+            self.add_tou_energy_rates_to_urdb_rate = False
             log.info("Making URDB rate from monthly blended data")
             urdb_response = self.make_urdb_rate(blended_monthly_rates_us_dollars_per_kwh,
                                                 blended_monthly_demand_charges_us_dollars_per_kw)
-        elif blended_annual_rates_us_dollars_per_kwh is not None and blended_annual_demand_charges_us_dollars_per_kw is not None: 
+
+        elif blended_annual_rates_us_dollars_per_kwh is not None \
+                and blended_annual_demand_charges_us_dollars_per_kw is not None:
+            self.add_tou_energy_rates_to_urdb_rate = False
             blended_monthly_rates_us_dollars_per_kwh = 12 * [blended_annual_rates_us_dollars_per_kwh]
             blended_monthly_demand_charges_us_dollars_per_kw = 12 * [blended_annual_demand_charges_us_dollars_per_kw]
             log.info("Making URDB rate from annual blended data")
@@ -93,17 +108,17 @@ class ElecTariff(object):
         dfm.add_elec_tariff(self)
 
     def update_urdb_with_monthly_energy_and_demand(self, urdb_rate, monthly_energy, monthly_demand):
-        #Make sure at least monthly energy and demand are captured
-        if 'flatdemandmonths' not in urdb_rate.keys() :
-            urdb_rate['flatdemandstructure'] = [[{'rate':0.0}]]
-            urdb_rate['flatdemandmonths'] = [0 for _ in range(0,12)]
+        # Make sure at least monthly energy and demand are captured
+        if 'flatdemandmonths' not in urdb_rate.keys():
+            urdb_rate['flatdemandstructure'] = [[{'rate': 0.0}]]
+            urdb_rate['flatdemandmonths'] = [0 for _ in range(0, 12)]
 
         if 'energyratestructure' not in urdb_rate.keys():
-            urdb_rate['energyratestructure'] = [[{'rate':0.0}]]
-            urdb_rate['energyweekdayschedule'] = [[0 for _ in range(0,24)] for __ in range(0,12)]
-            urdb_rate['energyweekendschedule'] = [[0 for _ in range(0,24)] for __ in range(0,12)]
+            urdb_rate['energyratestructure'] = [[{'rate': 0.0}]]
+            urdb_rate['energyweekdayschedule'] = [[0 for _ in range(0, 24)] for __ in range(0, 12)]
+            urdb_rate['energyweekendschedule'] = [[0 for _ in range(0, 24)] for __ in range(0, 12)]
 
-        #Add Demand Charges
+        # Add Demand Charges
         updated_rates = []
         rate_adj_combos = []
         for position, monthly_rate_id in enumerate(urdb_rate['flatdemandmonths']):
@@ -123,7 +138,7 @@ class ElecTariff(object):
             urdb_rate['flatdemandmonths'][position] = rate_id
         urdb_rate['flatdemandstructure'] = updated_rates
 
-        #Add Energy Charges
+        # Add Energy Charges
         added_charges_set, schedules = monthly_energy, ['energyweekdayschedule', 'energyweekendschedule']
         
         if 'energyratestructure' in urdb_rate.keys():
@@ -146,11 +161,11 @@ class ElecTariff(object):
                                 updated_rates.append(rates)
                             rate_id = rate_adj_combos.index(combo)
                             for ii, entry in enumerate(month):
-                                if entry==original_rate_id:
+                                if entry == original_rate_id:
                                     month[ii] = rate_id
                     urdb_rate['energyratestructure'] = updated_rates
        
-        return  urdb_rate
+        return urdb_rate
 
     def make_urdb_rate(self, blended_utility_rate, demand_charge):
 

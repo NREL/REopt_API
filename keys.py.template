@@ -14,3 +14,13 @@ dev_user = 'reopt_api'
 dev_user_password = 'reopt'
 dev_redis_password = 'password'
 
+# items that don't have to be changed by users (needed for NREL API servers)
+staging_redis_password = ""
+staging_database_host = ""
+staging_database_name = ""
+production_redis_password = ""
+prod_database_host = ""
+prod_database_name = ""
+production_user = ""
+production_user_password = ""
+

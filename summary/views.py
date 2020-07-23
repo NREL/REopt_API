@@ -33,6 +33,7 @@ from django.http import JsonResponse
 from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, MessageModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
+from resilience_stats.models import ResilienceModel
 import uuid
 from summary.models import UserUnlinkedRuns
 
@@ -175,7 +176,6 @@ def summary(request, user_uuid):
             return JsonResponse({"Error": str(err.message)}, status=404)
 
     try:
-        
         scenarios = ScenarioModel.objects.filter(user_uuid=user_uuid).order_by('-created')
         unlinked_run_uuids = [i.run_uuid for i in UserUnlinkedRuns.objects.filter(user_uuid=user_uuid)]
         scenarios = [s for s in scenarios if s.run_uuid not in unlinked_run_uuids]
@@ -187,6 +187,7 @@ def summary(request, user_uuid):
             return response
         
         scenario_run_uuids =  [s.run_uuid for s in scenarios]
+        scenario_run_ids =  [s.id for s in scenarios]
 
         #saving time by only calling each table once
         messages = MessageModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','message_type','message')
@@ -196,14 +197,20 @@ def summary(request, user_uuid):
         pvs = PVModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         winds = WindModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
         gens = GeneratorModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid', 'max_kw', 'size_kw')
-        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs')
+        financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
+        resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
 
         def get_scenario_data(data, run_uuid):
             if type(data)==dict:
                 if str(data.get('run_uuid')) == str(run_uuid):
                     return data
+                if str(data.get('scenariomodel_id')) == str(run_uuid):
+                    return data
             result = [s for s in data if str(s.get('run_uuid')) == str(run_uuid)]
+            if len(result) > 0:
+                return result
+            result = [s for s in data if str(s.get('scenariomodel_id')) == str(run_uuid)]
             if len(result) > 0:
                 return result
             return [{}]
@@ -223,6 +230,7 @@ def summary(request, user_uuid):
             gen = get_scenario_data(gens, scenario.run_uuid)[0]
             financial = get_scenario_data(financials, scenario.run_uuid)[0]
             tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
+            resilience = get_scenario_data(resiliences, scenario.id)[0]
             
             # Messages
             results['messages'] = {}
@@ -271,6 +279,17 @@ def summary(request, user_uuid):
                 # DG System Cost
                 results['net_capital_costs'] = financial.get('net_capital_costs')
 
+                # Lifecycle Costs
+                results['lcc_us_dollars'] = financial.get('lcc_us_dollars')
+
+                 # Lifecycle Costs BAU
+                results['lcc_bau_us_dollars'] = financial.get('lcc_bau_us_dollars')
+
+                #Other Financials
+                results['net_capital_costs_plus_om_us_dollars'] = financial.get('net_capital_costs_plus_om_us_dollars')
+                results['net_om_us_dollars_bau'] = financial.get('net_om_us_dollars_bau')
+                results['net_capital_costs'] = financial.get('net_capital_costs')
+
                 # Year 1 Savings
                 year_one_costs = sum(filter(None, [
                     tariff.get('year_one_energy_cost_us_dollars') or 0,
@@ -287,6 +306,17 @@ def summary(request, user_uuid):
                     tariff.get('year_one_min_charge_adder_bau_us_dollars') or 0,
                     tariff.get('year_one_bill_bau_us_dollars') or 0
                     ]))
+                #Resilience Stats
+                results['resilience_hours_min'] = resilience.get('resilience_hours_min') 
+                results['resilience_hours_max'] = resilience.get('resilience_hours_max') 
+                results['resilience_hours_avg'] = resilience.get('resilience_hours_avg') 
+
+                if results['resilience_hours_max'] is None:
+                    results['resilience_hours_max'] = 'not evaluated'
+                if results['resilience_hours_min'] is None:
+                    results['resilience_hours_min'] = 'not evaluated'
+                if results['resilience_hours_avg'] is None:
+                    results['resilience_hours_avg'] = 'not evaluated'
                 
                 results['year_one_savings_us_dollars'] = year_one_costs_bau - year_one_costs
 

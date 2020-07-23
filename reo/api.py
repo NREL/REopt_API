@@ -28,26 +28,25 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
-import logging
 import uuid
 import sys
 import traceback
+import logging
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.bundle import Bundle
 from tastypie.serializers import Serializer
 from tastypie.exceptions import ImmediateHttpResponse, HttpResponse
 from tastypie.resources import ModelResource
 from tastypie.validation import Validation
-from .validators import ValidateNestedInput
-from .scenario import setup_scenario
-import logging
-log = logging.getLogger(__name__)
+from reo.validators import ValidateNestedInput
+from reo.scenario import setup_scenario
 from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.process_results import process_results
 from reo.src.run_jump_model import run_jump_model
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
+log = logging.getLogger(__name__)
 
 api_version = "version 1.0.0"
 saveToDb = True

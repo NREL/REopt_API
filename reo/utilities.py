@@ -78,6 +78,8 @@ def annuity(analysis_period, rate_escalation, rate_discount):
 def degradation_factor(analysis_period, rate_degradation):
     if analysis_period == 0:
         return 0
+    if analysis_period == 1:
+        return 1 - rate_degradation
     factor = 1
     factors = [factor]
     for yr in range(1, int(analysis_period)):
@@ -86,18 +88,17 @@ def degradation_factor(analysis_period, rate_degradation):
     return sum(factors)/analysis_period
 
 
-def annuity_degr(analysis_period, rate_escalation, rate_discount, rate_degradation):
+def annuity_escalation(analysis_period, rate_escalation, rate_discount):
     '''
-    same as VBA Function PWaDegr(
     :param analysis_period: years
     :param rate_escalation: escalation rate
     :param rate_discount: discount rate
-    :param rate_degradation: annual degradation
-    :return: present worth factor with degradation
+    :return: present worth factor with escalation (inflation, or degradation if negative)
+    NOTE: assume escalation/degradation starts in year 2
     '''
     pwf = 0
     for yr in range(1, int(analysis_period + 1)):
-        pwf += (1 + rate_escalation) ** yr / (1 + rate_discount) ** yr * (1 + rate_degradation) ** (yr - 1)
+        pwf += (1 + rate_escalation) ** (yr - 1) / (1 + rate_discount) ** yr
     return pwf
 
 
@@ -165,7 +166,6 @@ def setup_capital_cost_incentive(itc_basis, replacement_cost, replacement_year,
     tax_savings_array = [0]
     for idx, macrs_rate in enumerate(macrs_schedule):
         depreciation_amount = macrs_rate * depr_basis
-        taxable_income = depreciation_amount
         if idx == 0:
             depreciation_amount += bonus_depreciation
         taxable_income = depreciation_amount
@@ -227,13 +227,13 @@ def check_common_outputs(Test, d_calculated, d_expected):
 
         if 'lcc_bau' in c and c['lcc_bau'] > 0:
         # Total LCC BAU is sum of utility costs
-            Test.assertTrue(abs((float(c['lcc_bau']) - float(c['total_energy_cost_bau']) - float(c['total_min_charge_adder'])
-                            - float(c['total_demand_cost_bau']) - float(c['existing_pv_om_cost_us_dollars'])
-                            - float(c['total_fixed_cost_bau'])
-                            - float(c['existing_gen_total_variable_om_cost_us_dollars'])
-                            - float(c['existing_gen_total_fixed_om_cost_us_dollars'])
-                            - float(c['existing_gen_total_fuel_cost_us_dollars']))
-                            / float(c['lcc_bau'])) < Test.REopt_tol,
+            Test.assertTrue(abs((float(c['lcc_bau'] or 0) - float(c['total_energy_cost_bau'] or 0) - float(c['total_min_charge_adder'] or 0)
+                            - float(c['total_demand_cost_bau'] or 0) - float(c['existing_pv_om_cost_us_dollars'] or 0)
+                            - float(c['total_fixed_cost_bau'] or 0)
+                            - float(c['existing_gen_total_variable_om_cost_us_dollars'] or 0)
+                            - float(c['existing_gen_total_fixed_om_cost_us_dollars'] or 0)
+                            - float(c['existing_gen_total_fuel_cost_us_dollars'] or 0))
+                            / float(c['lcc_bau'] or 0)) < Test.REopt_tol,
                             "LCC_BAU doesn't add up to sum of individual costs")
     except Exception as e:
         print("check_common_outputs failed: {}".format(e.args[0]))
@@ -245,3 +245,5 @@ def check_common_outputs(Test, d_calculated, d_expected):
                 traceback: \t {}
                 """.format(em.task, em.message, em.traceback)
             )
+        else:
+            raise e

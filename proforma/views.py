@@ -55,6 +55,9 @@ def proforma(request, run_uuid):
     try:
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
 
+        if scenario.status.lower() == "optimizing...":
+            return HttpResponse("Problem is still solving. Please try again later.", status=425)  # too early status
+
         try:  # see if Proforma already created
             pf = ProForma.objects.get(scenariomodel=scenario)
         except:

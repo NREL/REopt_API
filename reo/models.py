@@ -67,6 +67,34 @@ class ProfileModel(models.Model):
     reopt_bau_seconds = models.FloatField(null=True, blank=True)
     parse_run_outputs_seconds = models.FloatField(null=True, blank=True)
 
+    julia_input_construction_seconds = models.FloatField(null=True, blank=True)
+    julia_reopt_preamble_seconds = models.FloatField(null=True, blank=True)
+    julia_reopt_variables_seconds = models.FloatField(null=True, blank=True)
+    julia_reopt_constriants_seconds = models.FloatField(null=True, blank=True)
+    julia_reopt_optimize_seconds = models.FloatField(null=True, blank=True)
+    julia_reopt_postprocess_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_start_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_pkg_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_activate_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_include_model_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_make_model_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_include_reopt_seconds = models.FloatField(null=True, blank=True)
+    pyjulia_run_reopt_seconds = models.FloatField(null=True, blank=True)
+
+    julia_input_construction_seconds_bau = models.FloatField(null=True, blank=True)
+    julia_reopt_preamble_seconds_bau = models.FloatField(null=True, blank=True)
+    julia_reopt_variables_seconds_bau = models.FloatField(null=True, blank=True)
+    julia_reopt_constriants_seconds_bau = models.FloatField(null=True, blank=True)
+    julia_reopt_optimize_seconds_bau = models.FloatField(null=True, blank=True)
+    julia_reopt_postprocess_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_start_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_pkg_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_activate_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_include_model_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_make_model_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_include_reopt_seconds_bau = models.FloatField(null=True, blank=True)
+    pyjulia_run_reopt_seconds_bau = models.FloatField(null=True, blank=True)
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -123,8 +151,9 @@ class FinancialModel(models.Model):
     offtaker_tax_pct = models.FloatField()
     value_of_lost_load_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
     microgrid_upgrade_cost_pct = models.FloatField(null=True, blank=True)
-    # owner_discount_pct = models.FloatField(null=True)
-    # owner_tax_pct = models.FloatField(null=True)
+    two_party_ownership = models.BooleanField(default=False)
+    owner_discount_pct = models.FloatField(null=True, blank=True)
+    owner_tax_pct = models.FloatField(null=True, blank=True)
 
     # Outputs
     lcc_us_dollars = models.FloatField(null=True, blank=True)
@@ -135,6 +164,9 @@ class FinancialModel(models.Model):
     microgrid_upgrade_cost_us_dollars = models.FloatField(null=True, blank=True)
     net_capital_costs = models.FloatField(null=True, blank=True)
     net_om_us_dollars_bau = models.FloatField(null=True, blank=True)
+    initial_capital_costs = models.FloatField(null=True, blank=True)
+    replacement_costs = models.FloatField(null=True, blank=True)
+    initial_capital_costs_after_incentives = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -147,8 +179,9 @@ class FinancialModel(models.Model):
 class LoadProfileModel(models.Model):
     # Inputs
     run_uuid = models.UUIDField(unique=True)
-    doe_reference_name = models.TextField(null=True, blank=True, default='')
-    annual_kwh = models.FloatField(null=True, blank=True)
+    doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
+    annual_kwh = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list)
     year = models.IntegerField(default=2018)
     monthly_totals_kwh = ArrayField(models.FloatField(blank=True), default=list)
     loads_kw = ArrayField(models.FloatField(blank=True), default=list)
@@ -191,6 +224,8 @@ class ElectricTariffModel(models.Model):
     wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
+    add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=False, default=False)
+    tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
 
     # Ouptuts
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
@@ -209,14 +244,14 @@ class ElectricTariffModel(models.Model):
     total_demand_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_fixed_cost_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
+    total_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
     total_min_charge_adder_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_us_dollars = models.FloatField(null=True, blank=True)
     year_one_bill_bau_us_dollars = models.FloatField(null=True, blank=True)
     year_one_export_benefit_us_dollars = models.FloatField(null=True, blank=True)
-    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                                blank=True)
-    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                               blank=True)
+    year_one_export_benefit_bau_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_energy_cost_series_us_dollars_per_kwh = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_demand_cost_series_us_dollars_per_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_energy_supplied_kwh = models.FloatField(null=True, blank=True)
@@ -232,7 +267,7 @@ class ElectricTariffModel(models.Model):
 
 class PVModel(models.Model):
     # Inputs
-    run_uuid = models.UUIDField(unique=True)
+    run_uuid = models.UUIDField(unique=False)
     existing_kw = models.FloatField()
     min_kw = models.FloatField()
     max_kw = models.FloatField()
@@ -265,6 +300,11 @@ class PVModel(models.Model):
     inv_eff = models.FloatField()
     radius = models.FloatField()
     tilt = models.FloatField()
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
+    pv_number = models.IntegerField(default=1, null=True, blank=True)
+    pv_name = models.TextField(null=True, blank=True, default='')
+    location = models.TextField(null=True, blank=True, default='both')
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -275,11 +315,13 @@ class PVModel(models.Model):
     average_yearly_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
     year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_bau_kwh = models.FloatField(null=True, blank=True)
     year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     existing_pv_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
@@ -318,6 +360,7 @@ class WindModel(models.Model):
     pbi_max_us_dollars = models.FloatField()
     pbi_years = models.FloatField()
     pbi_system_max_kw = models.FloatField()
+    prod_factor_series_kw = ArrayField(models.FloatField(blank=True), default=list)
 
     # Outputs
     size_kw = models.FloatField(null=True, blank=True)
@@ -378,67 +421,68 @@ class StorageModel(models.Model):
 
 
 class GeneratorModel(models.Model):
-        # Inputs
-        run_uuid = models.UUIDField(unique=True)
-        existing_kw = models.FloatField(null=True, blank=True, default=0)
-        min_kw = models.FloatField(default=0)
-        max_kw = models.FloatField(null=True, blank=True)
-        installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-        om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
-        om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
-        diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
-        fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
-        fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
-        fuel_avail_gal = models.FloatField(null=True, blank=True,)
-        min_turn_down_pct = models.FloatField(null=True, blank=True)
-        generator_only_runs_during_grid_outage = models.BooleanField(default=True)
-        generator_sells_energy_back_to_grid = models.BooleanField(default=False)
-        macrs_option_years = models.IntegerField(null=True, blank=True)
-        macrs_bonus_pct = models.FloatField(null=True, blank=True)
-        macrs_itc_reduction = models.FloatField(null=True, blank=True)
-        federal_itc_pct = models.FloatField(null=True, blank=True)
-        state_ibi_pct = models.FloatField(null=True, blank=True)
-        state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-        utility_ibi_pct = models.FloatField(null=True, blank=True)
-        utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
-        federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-        utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
-        utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
-        pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
-        pbi_max_us_dollars = models.FloatField(null=True, blank=True)
-        pbi_years = models.FloatField(null=True, blank=True)
-        pbi_system_max_kw = models.FloatField(null=True, blank=True)
+    # Inputs
+    run_uuid = models.UUIDField(unique=True)
+    existing_kw = models.FloatField(null=True, blank=True, default=0)
+    min_kw = models.FloatField(default=0)
+    max_kw = models.FloatField(null=True, blank=True)
+    installed_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kw = models.FloatField(null=True, blank=True,)
+    om_cost_us_dollars_per_kwh = models.FloatField(null=True, blank=True,)
+    diesel_fuel_cost_us_dollars_per_gallon = models.FloatField(null=True, blank=True)
+    fuel_slope_gal_per_kwh = models.FloatField(null=True, blank=True,)
+    fuel_intercept_gal_per_hr = models.FloatField(null=True, blank=True,)
+    fuel_avail_gal = models.FloatField(null=True, blank=True,)
+    min_turn_down_pct = models.FloatField(null=True, blank=True)
+    generator_only_runs_during_grid_outage = models.BooleanField(default=True)
+    generator_sells_energy_back_to_grid = models.BooleanField(default=False)
+    macrs_option_years = models.IntegerField(null=True, blank=True)
+    macrs_bonus_pct = models.FloatField(null=True, blank=True)
+    macrs_itc_reduction = models.FloatField(null=True, blank=True)
+    federal_itc_pct = models.FloatField(null=True, blank=True)
+    state_ibi_pct = models.FloatField(null=True, blank=True)
+    state_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_ibi_pct = models.FloatField(null=True, blank=True)
+    utility_ibi_max_us_dollars = models.FloatField(null=True, blank=True)
+    federal_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    state_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    utility_rebate_us_dollars_per_kw = models.FloatField(null=True, blank=True)
+    utility_rebate_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    pbi_max_us_dollars = models.FloatField(null=True, blank=True)
+    pbi_years = models.FloatField(null=True, blank=True)
+    pbi_system_max_kw = models.FloatField(null=True, blank=True)
 
-        # Outputs
-        fuel_used_gal = models.FloatField(null=True, blank=True)
-        fuel_used_gal_bau = models.FloatField(null=True, blank=True)
-        size_kw = models.FloatField(null=True, blank=True)
-        average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
-        average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
-        year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
-        year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
-                                                         blank=True)
-        year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
-        year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
-        existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    # Outputs
+    fuel_used_gal = models.FloatField(null=True, blank=True)
+    fuel_used_gal_bau = models.FloatField(null=True, blank=True)
+    size_kw = models.FloatField(null=True, blank=True)
+    average_yearly_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    average_yearly_energy_exported_kwh = models.FloatField(null=True, blank=True)
+    year_one_energy_produced_kwh = models.FloatField(null=True, blank=True)
+    year_one_power_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True,
+                                                     blank=True)
+    year_one_to_battery_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
+    year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    year_one_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_year_one_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_variable_om_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fuel_cost_us_dollars = models.FloatField(null=True, blank=True)
+    existing_gen_total_fixed_om_cost_us_dollars = models.FloatField(null=True, blank=True)
 
-        @classmethod
-        def create(cls, **kwargs):
-            obj = cls(**kwargs)
-            obj.save()
-
-            return obj
+    @classmethod
+    def create(cls, **kwargs):
+        obj = cls(**kwargs)
+        obj.save()
+        return obj
 
 
 class MessageModel(models.Model):
@@ -525,7 +569,12 @@ class ModelManager(object):
                                                      **attribute_inputs(d['Site']['LoadProfile']))
         self.electric_tariffM = ElectricTariffModel.create(run_uuid=self.scenarioM.run_uuid,
                                                            **attribute_inputs(d['Site']['ElectricTariff']))
-        self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV'])==list:
+            self.pvM = [PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV'][0]))]
+            for pv in d['Site']['PV'][1:]:
+                self.pvM.append(PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(pv)))
+        if type(d['Site']['PV'])==dict:
+            self.pvM = PVModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['PV']))
         self.windM = WindModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Wind']))
         self.storageM = StorageModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Storage']))
         self.generatorM = GeneratorModel.create(run_uuid=self.scenarioM.run_uuid, **attribute_inputs(d['Site']['Generator']))
@@ -533,8 +582,13 @@ class ModelManager(object):
             MessageModel.create(run_uuid=self.scenarioM.run_uuid, message_type=message_type, message=message)
 
     @staticmethod
-    def updateModel(modelName, modelData, run_uuid):
-        eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+    def updateModel(modelName, modelData, run_uuid, number=None):
+        if number==None:
+            eval(modelName).objects.filter(run_uuid=run_uuid).update(**attribute_inputs(modelData))
+        else:
+            if 'PV' in modelName:
+                eval(modelName).objects.filter(run_uuid=run_uuid, pv_number=number).update(**attribute_inputs(modelData))
+        
 
     @staticmethod
     def remove(run_uuid):
@@ -564,18 +618,22 @@ class ModelManager(object):
         :param model_ids: dict, optional, for use when updating existing models that have not been created in memory
         :return: None
         """
-        d = data["outputs"]["Scenario"]
-        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
+        d = data["outputs"]["Scenario"] 
         ProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Profile']))
         SiteModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']))
         FinancialModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Financial']))
         LoadProfileModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['LoadProfile']))
         ElectricTariffModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['ElectricTariff']))
-        PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV']) == dict:
+            PVModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['PV']))
+        if type(d['Site']['PV']) == list:
+            for pv in d['Site']['PV']:
+                PVModel.objects.filter(run_uuid=run_uuid, pv_number=pv['pv_number']).update(**attribute_inputs(pv))
         WindModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Wind']))
         StorageModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Storage']))
         GeneratorModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d['Site']['Generator']))
-
+        # Do this last so that the status does not change to optimal before the rest of the results are filled in
+        ScenarioModel.objects.filter(run_uuid=run_uuid).update(**attribute_inputs(d))  # force_update=True
         for message_type, message in data['messages'].items():
             if len(MessageModel.objects.filter(run_uuid=run_uuid, message=message)) > 0:
                 # message already saved
@@ -620,7 +678,11 @@ class ModelManager(object):
         :param run_uuid:
         :return: nested dictionary matching nested_output_definitions
         """
-
+        def remove_number(k, d):
+            if k in d.keys():
+                del d[k]
+            return d
+        
         def remove_ids(d):
             del d['run_uuid']
             del d['id']
@@ -631,22 +693,43 @@ class ModelManager(object):
             resp['inputs']['Scenario']['Site'][site_key] = dict()
 
             for k in nested_input_definitions['Scenario']['Site'][site_key].keys():
-
                 try:
-                    resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                    if site_key == "PV":
+                        if type(resp['outputs']['Scenario']['Site'][site_key])==dict:
+                            resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                            del resp['outputs']['Scenario']['Site'][site_key][k]
+                        
+                        elif type(resp['outputs']['Scenario']['Site'][site_key])==list:
+                            max_order = max([p.get('pv_number') for p in resp['outputs']['Scenario']['Site'][site_key]])
+                            if resp['inputs']['Scenario']['Site'].get(site_key) == {}:
+                                resp['inputs']['Scenario']['Site'][site_key] = []
+                            if len(resp['inputs']['Scenario']['Site'][site_key]) == 0 :
+                                for _ in range(max_order):
+                                    resp['inputs']['Scenario']['Site'][site_key].append({})
+                            for i in range(max_order):
+                                resp['inputs']['Scenario']['Site'][site_key][i][k] = resp['outputs']['Scenario']['Site'][site_key][i][k]
+                                if isinstance(resp['inputs']['Scenario']['Site'][site_key][i][k], list):
+                                    if len(resp['inputs']['Scenario']['Site'][site_key][i][k]) == 1:
+                                        resp['inputs']['Scenario']['Site'][site_key][i][k] = \
+                                            resp['inputs']['Scenario']['Site'][site_key][i][k][0]                                    
+                                if k not in ['pv_name']:
+                                    del resp['outputs']['Scenario']['Site'][site_key][i][k]
+
                     # special handling for inputs that can be scalar or array,
                     # (which we have to make an array in database)
-                    if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
-                        if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
-                            resp['inputs']['Scenario']['Site'][site_key][k] = \
-                                resp['inputs']['Scenario']['Site'][site_key][k][0]
-                    del resp['outputs']['Scenario']['Site'][site_key][k]
+                    else:
+                        resp['inputs']['Scenario']['Site'][site_key][k] = resp['outputs']['Scenario']['Site'][site_key][k]
+                        if isinstance(resp['inputs']['Scenario']['Site'][site_key][k], list):
+                            if len(resp['inputs']['Scenario']['Site'][site_key][k]) == 1:
+                                resp['inputs']['Scenario']['Site'][site_key][k] = \
+                                    resp['inputs']['Scenario']['Site'][site_key][k][0]
+                            elif len(resp['inputs']['Scenario']['Site'][site_key][k]) == 0:
+                                del resp['inputs']['Scenario']['Site'][site_key][k] 
+                        del resp['outputs']['Scenario']['Site'][site_key][k]
                 except KeyError:  # known exception for k = urdb_response (user provided blended rates)
                     resp['inputs']['Scenario']['Site'][site_key][k] = None
-
-        # add try/except for get fail / bad run_uuid
+        
         site_keys = ['PV', 'Storage', 'Financial', 'LoadProfile', 'ElectricTariff', 'Generator', 'Wind']
-
         resp = dict()
         resp['outputs'] = dict()
         resp['outputs']['Scenario'] = dict()
@@ -660,9 +743,10 @@ class ModelManager(object):
             scenario_model = ScenarioModel.objects.get(run_uuid=run_uuid)
         except Exception as e:
             if isinstance(e, models.ObjectDoesNotExist):
-                resp['messages']['error'] = "run_uuid {} not in database. "\
-                                            "You may have hit the results endpoint too quickly after POST'ing scenario, "\
-                                            "you may have a typo in your run_uuid, or the scenario was deleted.".format(run_uuid)
+                resp['messages']['error'] = (
+                    "run_uuid {} not in database. "
+                    "You may have hit the results endpoint too quickly after POST'ing scenario, "
+                    "you may have a typo in your run_uuid, or the scenario was deleted.").format(run_uuid)
                 resp['outputs']['Scenario']['status'] = 'error'
                 return resp
             else:
@@ -678,7 +762,7 @@ class ModelManager(object):
             model_to_dict(LoadProfileModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['ElectricTariff'] = remove_ids(
             model_to_dict(ElectricTariffModel.objects.get(run_uuid=run_uuid)))
-        resp['outputs']['Scenario']['Site']['PV'] = remove_ids(model_to_dict(PVModel.objects.get(run_uuid=run_uuid)))
+        resp['outputs']['Scenario']['Site']['PV'] = [remove_ids(model_to_dict(x)) for x in PVModel.objects.filter(run_uuid=run_uuid).order_by('pv_number')]
         resp['outputs']['Scenario']['Site']['Storage'] = remove_ids(
             model_to_dict(StorageModel.objects.get(run_uuid=run_uuid)))
         resp['outputs']['Scenario']['Site']['Generator'] = remove_ids(
@@ -704,8 +788,12 @@ class ModelManager(object):
                 del resp['outputs']['Scenario']['Site'][site_key]
 
             elif site_key in site_keys:
-
                 move_outs_to_ins(site_key, resp=resp)
+        if len(resp['inputs']['Scenario']['Site']['PV']) == 1:
+            resp['inputs']['Scenario']['Site']['PV'] = resp['inputs']['Scenario']['Site']['PV'][0]
+        resp['outputs']['Scenario']['Site']['PV'] = [remove_number('pv_number', x) for x in resp['outputs']['Scenario']['Site']['PV']]
+        if len(resp['outputs']['Scenario']['Site']['PV']) == 1:
+            resp['outputs']['Scenario']['Site']['PV'] = resp['outputs']['Scenario']['Site']['PV'][0]
 
         if resp['inputs']['Scenario']['Site']['LoadProfile'].get('doe_reference_name') == '':
             del resp['inputs']['Scenario']['Site']['LoadProfile']['doe_reference_name']

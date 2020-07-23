@@ -29,15 +29,17 @@
 # *********************************************************************************
 import sys
 import traceback
+import copy
+import numpy as np
 from reo.nested_outputs import nested_output_definitions
 import logging
-log = logging.getLogger(__name__)
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
-# TODO: remove PVModel
+log = logging.getLogger(__name__)
+
 
 class ProcessResultsTask(Task):
     """
@@ -56,7 +58,6 @@ class ProcessResultsTask(Task):
         :param args: Original arguments for the task that failed.
         :param kwargs: Original keyword arguments for the task that failed.
         :param einfo: ExceptionInfo instance, containing the traceback.
-
         :return: None, The return value of this handler is ignored.
         """
         if isinstance(exc, REoptError):
@@ -65,11 +66,11 @@ class ProcessResultsTask(Task):
         self.data["outputs"]["Scenario"]["status"] = "An error occurred. See messages for more."
         ModelManager.update_scenario_and_messages(self.data, run_uuid=self.run_uuid)
 
-        # self.request.chain = None  # stop the chain?
-        # self.request.callback = None
+        self.request.chain = None  # stop the chain?
+        self.request.callback = None
         self.request.chord = None  # this seems to stop the infinite chord_unlock call
 
-# TODO: register process_results and add to Celery chain
+
 @shared_task(bind=True, base=ProcessResultsTask, ignore_result=True)
 def process_results(self, dfm_list, data, meta, saveToDB=True):
     """
@@ -81,6 +82,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
     :param saveToDB: boolean for saving postgres models
     :return: None
     """
+    profiler = Profiler()
 
     class Results:
 
@@ -93,27 +95,44 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             "year_one_min_charge_adder",
             "year_one_bill",
             "year_one_utility_kwh",
+            "year_one_export_benefit",
             "total_energy_cost",
             "total_demand_cost",
             "total_fixed_cost",
             "total_min_charge_adder",
+            "total_export_benefit",
             "net_capital_costs_plus_om",
-            "pv_net_fixed_om_costs",
             "gen_net_fixed_om_costs",
             "gen_net_variable_om_costs",
             "gen_total_fuel_cost",
             "gen_year_one_fuel_cost",
             "gen_year_one_variable_om_costs",
+            "julia_input_construction_seconds",
+            "julia_reopt_preamble_seconds",
+            "julia_reopt_variables_seconds",
+            "julia_reopt_constriants_seconds",
+            "julia_reopt_optimize_seconds",
+            "julia_reopt_postprocess_seconds",
+            "pyjulia_start_seconds",
+            "pyjulia_pkg_seconds",
+            "pyjulia_activate_seconds",
+            "pyjulia_include_model_seconds",
+            "pyjulia_make_model_seconds",
+            "pyjulia_include_reopt_seconds",
+            "pyjulia_run_reopt_seconds",
         ]
 
-        def __init__(self, results_dict, results_dict_bau, dfm):
+        def __init__(self, results_dict, results_dict_bau, dm, inputs):
             """
             Convenience (and legacy) class for handling REopt results
             :param results_dict: flat dict of results from reopt.jl
             :param results_dict_bau: flat dict of results from reopt.jl for bau case
+            :param instance of DataManager class
+            :param dict, data['inputs']['Scenario']['Site']
             """
-            self.profiler = Profiler()
-            self.dfm = dfm
+            self.dm = dm
+            self.inputs = inputs
+
             # remove invalid sizes due to optimization error margins
             for r in [results_dict, results_dict_bau]:
                 for key, value in r.items():
@@ -123,11 +142,26 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             # add bau outputs to results_dict
             for k in Results.bau_attributes:
-                results_dict[k + '_bau'] = results_dict_bau[k]
+                if results_dict_bau.get(k) is None:
+                    results_dict[k + '_bau'] = 0
+                else:
+                    results_dict[k + '_bau'] = results_dict_bau[k]
 
-            # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
-            if results_dict.get('pv_kw') is None:
-                results_dict['pv_kw'] = 0
+            for i in range(len(self.inputs["PV"])):
+                # b/c of PV & PVNM techs in REopt, if both are zero then no value is written to REopt_results.json
+                i += 1
+                if results_dict.get('PV{}_kw'.format(i)) is None:
+                    results_dict['PV{}_kw'.format(i)] = 0
+                pv_bau_keys = ["PV{}_net_fixed_om_costs".format(i),
+                               "average_yearly_PV{}_energy_produced".format(i),
+                               "year_one_PV{}_energy_produced".format(i),
+                               "average_yearly_energy_produced_PV{}".format(i),
+                              ]
+                for k in pv_bau_keys:
+                    if results_dict_bau.get(k) is None:
+                        results_dict[k + '_bau'] = 0
+                    else:
+                        results_dict[k + '_bau'] = results_dict_bau[k]
 
             # if wind is zero then no value is written to REopt results.json
             if results_dict.get("wind_kw") is None:
@@ -141,6 +175,64 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             self.results_dict = results_dict
             self.nested_outputs = self.setup_nested()
+
+        @property
+        def replacement_costs(self):
+            replacement_costs = 0
+            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
+                                 self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
+            replacement_costs += self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
+                                 self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
+            return round(replacement_costs, 2)
+
+        @property
+        def upfront_capex(self):
+            upfront_capex = 0
+            upfront_capex += max(self.inputs["Generator"]["installed_cost_us_dollars_per_kw"]
+                                 * (self.nested_outputs["Scenario"]["Site"]["Generator"]["size_kw"]
+                                 - self.inputs["Generator"]["existing_kw"]), 0)
+
+            for pv in self.inputs["PV"]:
+                upfront_capex += max(pv["installed_cost_us_dollars_per_kw"]
+                                 * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
+                                 - pv["existing_kw"]), 0)
+
+            for tech in ["Storage", "Wind"]:
+                upfront_capex += self.inputs[tech]["installed_cost_us_dollars_per_kw"] * \
+                                 self.nested_outputs["Scenario"]["Site"][tech]["size_kw"]
+            # storage capacity
+            upfront_capex += self.inputs["Storage"]["installed_cost_us_dollars_per_kwh"] * \
+                             self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
+
+            return round(upfront_capex, 2)
+
+        @property
+        def upfront_capex_after_incentives(self):
+            """
+            The net_capital_costs output is the upfront capex after incentives, except it includes the battery
+            replacement cost in present value. So we calculate the upfront_capex_after_incentives as net_capital_costs
+            minus the battery replacement cost in present value
+            """
+            upfront_capex_after_incentives = self.nested_outputs["Scenario"]["Site"]["Financial"]["net_capital_costs"]
+
+            pwf_inverter = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
+                           **self.inputs["Storage"]["inverter_replacement_year"])
+
+            pwf_storage = 1 / ((1 + self.inputs["Financial"]["offtaker_discount_pct"])
+                          **self.inputs["Storage"]["battery_replacement_year"])
+
+            inverter_future_cost = self.inputs["Storage"]["replace_cost_us_dollars_per_kw"] * \
+                                   self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kw"]
+
+            storage_future_cost = self.inputs["Storage"]["replace_cost_us_dollars_per_kwh"] * \
+                                  self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
+
+            # NOTE these upfront costs include the tax benefit available to commercial entities
+            upfront_capex_after_incentives -= inverter_future_cost * pwf_inverter * \
+                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+            upfront_capex_after_incentives -= storage_future_cost * pwf_storage * \
+                                              (1 - self.inputs["Financial"]["offtaker_tax_pct"])
+            return round(upfront_capex_after_incentives, 2)
 
         def get_output(self):
             self.get_nested()
@@ -174,14 +266,13 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
 
-            # format assumes that the flat format is still the primary default
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.results_dict.get("Load")
-                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dfm["LoadProfile"].get("critical_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dfm["LoadProfile"].get("annual_kwh")
-                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dfm["LoadProfile"].get("resilience_check_flag")
-                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dfm["LoadProfile"].get("sustain_hours")
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_electric_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["critical_load_series_kw"] = self.dm["LoadProfile"].get("critical_load_series_kw")
+                    self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh"] = self.dm["LoadProfile"].get("annual_kwh")
+                    self.nested_outputs["Scenario"]["Site"][name]["resilience_check_flag"] = self.dm["LoadProfile"].get("resilience_check_flag")
+                    self.nested_outputs["Scenario"]["Site"][name]["sustain_hours"] = self.dm["LoadProfile"].get("sustain_hours")
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(
@@ -195,27 +286,39 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         self.results_dict.get("net_capital_costs") \
                         * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
                 elif name == "PV":
-                    pv_model = PVModel.objects.get(run_uuid=meta['run_uuid'])
-                    self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("pv_kw", 0)
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_produced_kwh"] = self.results_dict.get(
-                        "average_yearly_pv_energy_produced")
-                    self.nested_outputs["Scenario"]["Site"][name]["average_yearly_energy_exported_kwh"] = self.results_dict.get(
-                        "average_annual_energy_exported_pv")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_battery_series_kw"] = self.results_dict.get("PVtoBatt")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_load_series_kw"] = self.results_dict.get("PVtoLoad")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_grid_series_kw"] = self.results_dict.get("PVtoGrid")
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_power_production_series_kw"] = self.compute_total_power(name)
-                    self.nested_outputs["Scenario"]["Site"][name][
-                        "existing_pv_om_cost_us_dollars"] = self.results_dict.get("pv_net_fixed_om_costs_bau")
-                    self.nested_outputs['Scenario']["Site"][name]["station_latitude"] = pv_model.station_latitude
-                    self.nested_outputs['Scenario']["Site"][name]["station_longitude"] = pv_model.station_longitude
-                    self.nested_outputs['Scenario']["Site"][name]["station_distance_km"] = pv_model.station_distance_km
+                    pv_models = list(PVModel.objects.filter(run_uuid=meta['run_uuid']).order_by('pv_number'))
+                    template_pv = copy.deepcopy(self.nested_outputs['Scenario']["Site"][name])
+                    self.nested_outputs['Scenario']["Site"][name] = []
+                    for i, pv_model in enumerate(pv_models):
+                        i += 1
+                        pv = copy.deepcopy(template_pv)
+                        pv["pv_number"] = i
+                        pv["size_kw"] = self.results_dict.get("PV{}_kw".format(i)) or 0
+                        pv["average_yearly_energy_produced_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}".format(i))
+                        pv["average_yearly_energy_produced_bau_kwh"] = self.results_dict.get("average_yearly_energy_produced_PV{}_bau".format(i))
+                        pv["average_yearly_energy_exported_kwh"] = self.results_dict.get("average_annual_energy_exported_PV{}".format(i))
+                        pv["year_one_energy_produced_kwh"] = self.results_dict.get("year_one_energy_produced_PV{}".format(i))
+                        pv["year_one_to_battery_series_kw"] = self.results_dict.get("PV{}toBatt".format(i))
+                        pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
+                        pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
+                        pv["year_one_power_production_series_kw"] = pv.get("year_one_to_grid_series_kw")
+                        if not pv.get("year_one_to_battery_series_kw") is None:
+                            if pv["year_one_power_production_series_kw"] is None:
+                                pv["year_one_power_production_series_kw"] = pv.get("year_one_to_battery_series_kw")
+                            else:
+                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_battery_series_kw")))
+                        if not pv.get("year_one_to_load_series_kw") is None:
+                            if pv["year_one_power_production_series_kw"] is None:
+                                pv["year_one_power_production_series_kw"] = pv.get("year_one_to_load_series_kw")
+                            else:
+                                pv["year_one_power_production_series_kw"]  = list(np.array(pv["year_one_power_production_series_kw"]) + np.array(pv.get("year_one_to_load_series_kw")))                        
+                        if pv["year_one_power_production_series_kw"] is None:
+                            pv["year_one_power_production_series_kw"] = []
+                        pv["existing_pv_om_cost_us_dollars"] = self.results_dict.get("PV{}_net_fixed_om_costs_bau".format(i))
+                        pv["station_latitude"] = pv_model.station_latitude
+                        pv["station_longitude"] = pv_model.station_longitude
+                        pv["station_distance_km"] = pv_model.station_distance_km
+                        self.nested_outputs['Scenario']["Site"][name].append(pv)
                 elif name == "Wind":
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("wind_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -285,13 +388,15 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_export_benefit_us_dollars"] = self.results_dict.get("year_one_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_export_benefit_bau_us_dollars"] = self.results_dict.get("year_one_export_benefit_bau")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "total_export_benefit_us_dollars"] = self.results_dict.get("total_export_benefit")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_energy_cost_series_us_dollars_per_kwh"] = \
-                        self.dfm.get('year_one_energy_cost_series_us_dollars_per_kwh')
+                        self.dm.get('year_one_energy_cost_series_us_dollars_per_kwh')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_demand_cost_series_us_dollars_per_kw"] = \
-                        self.dfm.get('year_one_demand_cost_series_us_dollars_per_kw')
+                        self.dm.get('year_one_demand_cost_series_us_dollars_per_kw')
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_load_series_kw"] = self.results_dict.get('GridToLoad')
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -327,6 +432,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "existing_gen_total_fixed_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_fixed_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "total_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_net_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_fixed_om_cost_us_dollars"] = self.results_dict.get("gen_year_one_fixed_om_costs")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_total_variable_om_cost_us_dollars"] = self.results_dict.get(
                         "gen_net_variable_om_costs_bau")
                     self.nested_outputs["Scenario"]["Site"][name][
@@ -350,8 +459,18 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "existing_gen_year_one_fuel_cost_us_dollars"] = self.results_dict.get(
                         "gen_year_one_fuel_cost_bau")
-            self.profiler.profileEnd()
-            self.nested_outputs["Scenario"]["Profile"]["parse_run_outputs_seconds"] = self.profiler.getDuration()
+
+            # outputs that depend on multiple object results:
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs"] = self.upfront_capex
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = self.replacement_costs
+            self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
+                self.upfront_capex_after_incentives
+
+            time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
+
+            for k in time_outputs:
+                self.nested_outputs["Scenario"]["Profile"][k] = self.results_dict.get(k)
+                self.nested_outputs["Scenario"]["Profile"][k + "_bau"] = self.results_dict.get(k + "_bau")
 
         def compute_total_power(self, tech):
             power_lists = list()
@@ -375,13 +494,48 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
     try:
         results_object = Results(results_dict=dfm_list[0]['results'], results_dict_bau=dfm_list[1]['results_bau'],
-                                 dfm=dfm_list[0])
+                                 dm=dfm_list[0], inputs=data['inputs']['Scenario']['Site'])
         results = results_object.get_output()
+        
+        # Move PV exported to grid during an outage to the curtailed PV series, doing this here so we have access to input data
+        # Get outage start and end hour
+        outage_start_hour= data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_hour')
+        outage_end_hour = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_hour')
+        for pv in results['Scenario']['Site']['PV']:
+            # If there is an outage move the PV exported to the grid to the curtailment series
+            if len(pv["year_one_to_grid_series_kw"] or [])>0:
+                pv['year_one_curtailed_production_series_kw'] = [0.0] * len(pv["year_one_to_grid_series_kw"])
+                if (outage_start_hour is not None) and (outage_end_hour is not None):
+                    outage_start_time_step = outage_start_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                    outage_end_time_step = outage_end_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                    pv['year_one_curtailed_production_series_kw'][outage_start_time_step : outage_end_time_step] = \
+                        pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step]
+                    pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step] = \
+                        [0.0] * (outage_end_time_step - outage_start_time_step)
+
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
 
+        pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
+        if pv_watts_station_check > 322:
+            pv_warning = ("The best available solar resource data is {} miles from the site's coordinates. "
+             "Consider choosing an alternative location closer to NREL's NSRDB or international datasets, shown "
+             "at https://maps.nrel.gov/nsrdb-viewer/ and documented at https://nsrdb.nrel.gov/"
+             ).format(round(pv_watts_station_check*0.621,0))
+            
+            if data.get('messages') is None:
+                data['messages'] = {"PVWatts Warning": pv_warning}
+            else:
+                data['messages']["PVWatts Warning"] = pv_warning
+
         # Calculate avoided outage costs
-        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'])
+        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
+
+        if len(data['outputs']['Scenario']['Site']['PV']) == 1:
+            data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
+
+        profiler.profileEnd()
+        data['outputs']["Scenario"]["Profile"]["parse_run_outputs_seconds"] = profiler.getDuration()
 
         if saveToDB:
             ModelManager.update(data, run_uuid=self.run_uuid)

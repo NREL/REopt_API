@@ -27,14 +27,42 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+from __future__ import absolute_import, unicode_literals  # recommended by celery documentation
 import os
 import logging
 from celery import Celery
 from celery.signals import after_setup_logger
+from keys import *
 
 # set the default Django settings module for the 'celery' program.
-raw_env = 'reopt_api.dev_settings'
-redis_host = os.environ.get('REDIS_HOST', 'localhost')
+try:
+    env = os.environ['APP_ENV']
+
+    if env == 'internal_c110p':
+        raw_env = 'reopt_api.internal_c110p_settings'
+        redis_host = ':' + dev_redis_password + '@localhost'
+    elif env == 'development':
+        raw_env = 'reopt_api.dev_settings'
+        redis_host = ':' + dev_redis_password + '@' + dev_database_host
+    elif env == 'staging':
+        raw_env = 'reopt_api.staging_settings'
+        redis_host = ':' + staging_redis_password + '@' + staging_database_host
+    elif env == 'production':
+        raw_env = 'reopt_api.production_settings'
+        redis_host = ':' + production_redis_password + '@' + prod_database_host
+    else:
+        raw_env = 'reopt_api.dev_settings'
+        redis_host = os.environ.get('REDIS_HOST', 'localhost')
+
+except KeyError:
+    """
+    This catch is necessary for running celery from command line when testing/developing locally.
+    APP_ENV is defined in config/deploy/[development, production, staging].rb files for servers.
+    For testing and local development, APP_ENV *can* be defined in .env file (see README.md),
+    which `honcho` or `foreman` loads before running Procfile.
+    """
+    raw_env = 'reopt_api.dev_settings'
+    redis_host = os.environ.get('REDIS_HOST', 'localhost')
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', raw_env)
 

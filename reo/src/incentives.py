@@ -68,7 +68,7 @@ class ProductionBasedIncentive(object):
     def __init__(self, pbi_us_dollars_per_kwh, pbi_max_us_dollars, pbi_years, pbi_system_max_kw, **kwargs):
 
         self.us_dollars_per_kw = pbi_us_dollars_per_kwh
-        self.max_us_dollars_per_kw = pbi_max_us_dollars
+        self.max_us_dollars_per_year = pbi_max_us_dollars
         self.years = pbi_years
         self.max_kw = pbi_system_max_kw
 

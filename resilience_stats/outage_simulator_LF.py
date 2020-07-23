@@ -28,90 +28,97 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 #!usr/bin/python
-import copy
 from math import floor
 import pandas as pd
-
-class Generator():
-    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
-        self.kw = diesel_kw
-        self.fuel_available = fuel_available if (self.kw or 0) > 0 else 0
-        self.b = b  # input b: fuel curve intercept
-        self.m = m
-        self.min_turndown = diesel_min_turndown
-        self.genmin = self.min_turndown * self.kw
-
-        if self.fuel_available == 1e9:
-                self.fuel_available = 660
-
-    def gen_avail(self, n_steps_per_hour):  # kW
-        if self.fuel_available - self.b > 0:
-            return min((self.fuel_available * n_steps_per_hour - self.b) / self.m, self.kw)
-        else:
-            return 0
-
-    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        if self.gen_avail(n_steps_per_hour) >= self.genmin and gen_output > 0:
-            gen_output = max(self.genmin, min(gen_output, self.gen_avail(n_steps_per_hour)))
-            fuel_consume = (self.b + self.m * gen_output) / n_steps_per_hour
-            self.fuel_available -= min(self.fuel_available, fuel_consume)
-        else:
-            gen_output = 0
-        return gen_output
+from celery import group, shared_task, chord
+from time import sleep
 
 
-class Battery():
-    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
-        self.kw = batt_kw
-        self.size = batt_kwh if (self.kw or 0) > 0 else 0
-        self.soc = soc
-        self.roundtrip_efficiency = batt_roundtrip_efficiency
+@shared_task
+def simulate_outage(init_time_step, diesel_kw, fuel_available, b, m, diesel_min_turndown, batt_kwh, batt_kw,
+                    batt_roundtrip_efficiency, n_timesteps, n_steps_per_hour, batt_soc_kwh, crit_load):
+    """
+    Determine how long the critical load can be met with gas generator and energy storage.
+    Celery task used to parallelize outage simulations starting every time step in a year.
+    :param init_time_step: int, initial time step
+    :param diesel_kw: float, generator capacity
+    :param fuel_available: float, gallons
+    :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b)  [gal/hr]
+    :param m: float, diesel fuel burn rate slope (y = m*x + b)  [gal/kWh]
+    :param diesel_min_turndown:
+    :param batt_kwh: float, battery capacity
+    :param batt_kw: float, battery inverter capacity (AC rating)
+    :param batt_roundtrip_efficiency:
+    :param batt_soc_kwh: float, battery state of charge in kWh
+    :param n_timesteps: int, number of time steps in a year
+    :param n_steps_per_hour: int, number of time steps per hour
+    :param crit_load: list of float, load after DER (PV, Wind, ...)
+    :return: float, number of hours that the critical load can be met using load following
+    """
+    for i in range(n_timesteps):
+        t = (init_time_step + i) % n_timesteps  # for wrapping around end of year
+        load_kw = crit_load[t]
 
-    def batt_avail(self, n_steps_per_hour):  # kW
-        return min(self.size * self.soc * n_steps_per_hour, self.kw)
+        if load_kw < 0:  # load is met
+            if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
+                batt_soc_kwh += min(
+                    batt_kwh - batt_soc_kwh,     # room available
+                    batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
+                    -load_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # excess energy
+                )
+        else:  # check if we can meet load with generator then storage
+            fuel_needed = (m * max(load_kw, diesel_min_turndown*diesel_kw) + b) / n_steps_per_hour
+            # (gal/kWh * kW + gal/hr) * hr = gal
+            # TODO: do we want to enforce diesel_min_turndown? (Used to not b/c we assume it is an emergency so it doesn't matter)
 
-    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
-        discharge = min(self.batt_avail(n_steps_per_hour), discharge)
-        self.soc -= min(discharge / self.size / n_steps_per_hour, self.soc) if self.size > 0 else 0
-        return discharge
+            if load_kw <= diesel_kw and fuel_needed <= fuel_available:  # diesel can meet load
+                fuel_available -= fuel_needed
+                if load_kw < diesel_min_turndown * diesel_kw:  # extra generation goes to battery
+                    if batt_soc_kwh < batt_kwh:  # charge battery if there's room in the battery
+                        batt_soc_kwh += min(
+                            batt_kwh - batt_soc_kwh,     # room available
+                            batt_kw / n_steps_per_hour * batt_roundtrip_efficiency,  # inverter capacity
+                            (diesel_min_turndown * diesel_kw - load_kw) / n_steps_per_hour * batt_roundtrip_efficiency  # excess energy
+                        )
+                load_kw = 0
+            else:  # diesel can meet part or no load
 
-    def batt_charge(self, charge, n_steps_per_hour):  # kw
-        room = (1 - self.soc)  # if there's room in the battery
-        charge = min(room * n_steps_per_hour * self.size / self.roundtrip_efficiency, charge,
-                     self.kw / self.roundtrip_efficiency)
-        chargesoc = charge * self.roundtrip_efficiency / self.size / n_steps_per_hour if self.size > 0 else 0
-        self.soc += chargesoc
-        return charge
+                if fuel_needed > fuel_available and load_kw <= diesel_kw:  # tank is limiting factor
+                    load_kw -= max(0, (fuel_available * n_steps_per_hour - b) / m)  # (gal/hr - gal/hr) * kWh/gal = kW
+                    fuel_available = 0
 
-class NoGenerator():
-    def __init__(self, diesel_kw, fuel_available, b, m, diesel_min_turndown):
-        self.kw = 0
-        self.fuel_available = 0
-        self.genmin = 0
+                    # check if battery can meet remaining load_kw
+                    if min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
 
-    def gen_avail(self, n_steps_per_hour):  # kW
-        return 0
+                elif fuel_needed <= fuel_available and load_kw > diesel_kw:  # diesel capacity is limiting factor
+                    load_kw -= diesel_kw
+                    # run diesel gen at max output
+                    fuel_available = max(0, fuel_available - (diesel_kw * m + b) / n_steps_per_hour)
+                                                              # (kW * gal/kWh + gal/hr) * hr = gal
+                    # check if battery can meet remaining load_kw
+                    if min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
 
-    def fuel_consume(self, gen_output, n_steps_per_hour):  # kW
-        return 0
+                elif min(batt_kw, batt_soc_kwh * n_steps_per_hour) >= load_kw:  # battery can carry balance
+                        # prevent battery charge from going negative
+                        batt_soc_kwh = max(0, batt_soc_kwh - load_kw / n_steps_per_hour)
+                        load_kw = 0
 
-class NoBattery():
-    def __init__(self, batt_kwh, batt_kw, batt_roundtrip_efficiency, soc=0.5):
-        self.kw = 0
-        self.size = 0
+        if round(load_kw, 5) > 0:  # failed to meet load in this time step
+            return float(i) / float(n_steps_per_hour)
 
-    def batt_avail(self, n_steps_per_hour):  # kW
-        return 0
+    return n_timesteps / n_steps_per_hour  # met the critical load for all time steps
 
-    def batt_discharge(self, discharge, n_steps_per_hour):  # kW
-        return 0
 
-    def batt_charge(self, charge, n_steps_per_hour):  # kw
-        return 0
-
-def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
-                    batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
-                    financial_check=None, resilience_run_site_result={}, financial_run_site_result={}):
+def simulate_outages(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critical_loads_kw=[], wind_kw_ac_hourly=None,
+                     batt_roundtrip_efficiency=0.829, diesel_kw=0, fuel_available=0, b=0, m=0, diesel_min_turndown=0.3,
+                     celery_eager=True
+                     ):
     """
     :param batt_kwh: float, battery storage capacity
     :param batt_kw: float, battery inverter capacity
@@ -125,146 +132,110 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
     :param b: float, diesel fuel burn rate intercept coefficient (y = m*x + b*rated_capacity)  [gal/kwh/kw]
     :param m: float, diesel fuel burn rate slope (y = m*x + b*rated_capacity)  [gal/kWh]
     :param diesel_min_turndown: minimum generator turndown in fraction of generator capacity (0 to 1)
-    :param financial_check: string, check financial and resilience system size if equal "financial_check"
-    :param resilience_run_site_result: dict, resilience run results{ "pv_size_kw": float,
-                                                                    "storage_size_kw": float,
-                                                                    "storage_size_kwh": float,
-                                                                    "gen_size_kw": float,
-                                                                    "wind_size_kw": float }
-    :param financial_run_site_result: dict, financial run results{ "pv_size_kw": float,
-                                                                    "storage_size_kw": float,
-                                                                    "storage_size_kwh": float,
-                                                                    "gen_size_kw": float,
-                                                                    "wind_size_kw": float }
-    :return: list of hours survived for outages starting at every time step, plus min,max,avg of list
-    :return: boolean, survives_specified_outage
+    :return: dict,
+        {
+            "resilience_by_timestep": r,
+            "resilience_hours_min": r_min,
+            "resilience_hours_max": r_max,
+            "resilience_hours_avg": r_avg,
+            "outage_durations": x_vals,
+            "probs_of_surviving": y_vals,
+            "probs_of_surviving_by_month": y_vals_group_month,
+            "probs_of_surviving_by_hour_of_the_day": y_vals_group_hour,
+        }
     """
-    # capping fuel availability to 660 - default fuel availability is set at 1e9 for the optimization process
-    # for the outage simulator, the fuel availability is capped at 660.
-    if fuel_available == 1e9:
-        fuel_available = 660
+    n_timesteps = len(critical_loads_kw)
+    n_steps_per_hour = int(n_timesteps / 8760)
+    r = [0] * n_timesteps
 
+    if batt_kw == 0 or batt_kwh == 0:
+        init_soc = [0] * n_timesteps  # default is None
 
-    if financial_check == "financial_check":
-        # Do financial check
-        if resilience_run_site_result.keys() == financial_run_site_result.keys():
-            for k, v in resilience_run_site_result.items():
-                if k in financial_run_site_result:
-                    if float(v - financial_run_site_result[k]) / float(max(v, 1)) > 1.0e-3:
-                        return False
-            return True
-        else:
-            return False
+        if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:
+            # no pv, generator, nor battery --> no resilience
+            return {"resilience_by_timestep": r,
+                    "resilience_hours_min": 0,
+                    "resilience_hours_max": 0,
+                    "resilience_hours_avg": 0,
+                    "outage_durations": [],
+                    "probs_of_surviving": [],
+                    "probs_of_surviving_by_month": [[0] for _ in range(12)],
+                    "probs_of_surviving_by_hour_of_the_day": [[0] for _ in range(24)],
+                    }
 
-    else:
-        # Do outage simulator
-        n_timesteps = len(critical_loads_kw)
-        n_steps_per_hour = n_timesteps / 8760  # type: int
-
-        r = [0] * n_timesteps
-
-        # NOTE: not making hourly load assumptions: a kW is not equivalent to a kWh!!!
-
-        if batt_kw == 0 or batt_kwh == 0:
-            init_soc = [0] * n_timesteps  # default is None
-
-            if ((pv_kw_ac_hourly in [None, []]) or (sum(pv_kw_ac_hourly) == 0)) and diesel_kw == 0:  # no pv, generator, nor battery --> no resilience
-
-                months = 12
-                hours = 24
-                probs_of_surviving_by_month = [[0] for _ in range(months)]
-                probs_of_surviving_by_hour_of_the_day = [[0] for _ in range(hours)]
-                return {"resilience_by_timestep": r,
-                        "resilience_hours_min": 0,
-                        "resilience_hours_max": 0,
-                        "resilience_hours_avg": 0,
-                        "outage_durations": [],
-                        "probs_of_surviving": [],
-                        "probs_of_surviving_by_month": probs_of_surviving_by_month,
-                        "probs_of_surviving_by_hour_of_the_day": probs_of_surviving_by_hour_of_the_day,
-                        }
-
-        if pv_kw_ac_hourly in [None, []]:
-            pv_kw_ac_hourly = [0] * n_timesteps
-        if wind_kw_ac_hourly in [None, []]:
-            wind_kw_ac_hourly = [0] * n_timesteps
-
-        def load_following(critical_load, pv, wind, generator, battery, n_steps_per_hour):
-            """
-            Dispatch strategy for one time step
-            """
-
-            # distributed generation minus load is the burden on battery
-            unmatch = (critical_load - pv - wind)  # kw
-
-            if unmatch < 0:    # pv + wind> critical_load
-                # excess PV power to charge battery
-                charge = battery.batt_charge(-unmatch, n_steps_per_hour)
-                unmatch = 0
-
-            elif generator.genmin <= generator.gen_avail(n_steps_per_hour) and 0 < generator.kw:
-                gen_output = generator.fuel_consume(unmatch, n_steps_per_hour)
-                # charge battery with excess energy if unmatch < genmin
-                charge = battery.batt_charge(max(gen_output - unmatch, 0), n_steps_per_hour)  # prevent negative charge
-                discharge = battery.batt_discharge(max(unmatch - gen_output, 0), n_steps_per_hour)  # prevent negative discharge
-                unmatch -= (gen_output + discharge - charge)
-
-            elif unmatch <= battery.batt_avail(n_steps_per_hour):   # battery can carry balance
-                discharge = battery.batt_discharge(unmatch, n_steps_per_hour)
-                unmatch = 0
-
-            return unmatch, generator, battery
-
-        '''
-        Simulation starts here
-        '''
-        if diesel_kw == 0 or fuel_available == 0:
-            GEN = NoGenerator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-        else:
-            GEN = Generator(diesel_kw, fuel_available, b, m, diesel_min_turndown)
-
-        if batt_kw == 0 or batt_kwh == 0:
-            BATT = NoBattery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
-        else:
-            BATT = Battery(batt_kwh, batt_kw, batt_roundtrip_efficiency)
-
+    if pv_kw_ac_hourly in [None, []]:
+        pv_kw_ac_hourly = [0] * n_timesteps
+    if wind_kw_ac_hourly in [None, []]:
+        wind_kw_ac_hourly = [0] * n_timesteps
+    load_minus_der = [ld - pv - wd for (pv, wd, ld) in zip(pv_kw_ac_hourly, wind_kw_ac_hourly, critical_loads_kw)]
+    '''
+    Simulation starts here
+    '''
+    # outer loop: do simulation starting at each time step
+    if not celery_eager:  # run jobs in parallel
+        jobs = group(simulate_outage.s(
+            init_time_step=time_step,
+            diesel_kw=diesel_kw,
+            fuel_available=fuel_available,
+            b=b, m=m,
+            diesel_min_turndown=diesel_min_turndown,
+            batt_kwh=batt_kwh,
+            batt_kw=batt_kw,
+            batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+            n_timesteps=n_timesteps,
+            n_steps_per_hour=n_steps_per_hour,
+            batt_soc_kwh=init_soc[time_step]*batt_kwh,
+            crit_load=load_minus_der) for time_step in range(n_timesteps)
+        )
+        result = chord(jobs, process_results.s(n_steps_per_hour, n_timesteps)).delay()
+        while not result.ready():
+            sleep(2)
+        if not result.successful():
+            raise Exception("Outage simulator failed.")
+        return result.result
+    else:  # run jobs serially, faster when each job only takes a small amount of time
         for time_step in range(n_timesteps):
-            gen = copy.deepcopy(GEN)
-            batt = copy.deepcopy(BATT)
-            # outer loop: do simulation starting at each time step
-            batt.soc = init_soc[time_step]   # reset battery for each simulation
+            r[time_step] = simulate_outage(
+                init_time_step=time_step,
+                diesel_kw=diesel_kw,
+                fuel_available=fuel_available,
+                b=b, m=m,
+                diesel_min_turndown=diesel_min_turndown,
+                batt_kwh=batt_kwh,
+                batt_kw=batt_kw,
+                batt_roundtrip_efficiency=batt_roundtrip_efficiency,
+                n_timesteps=n_timesteps,
+                n_steps_per_hour=n_steps_per_hour,
+                batt_soc_kwh=init_soc[time_step] * batt_kwh,
+                crit_load=load_minus_der
+            )
+        results = process_results(r, n_steps_per_hour, n_timesteps)
+        return results
 
-            for i in range(n_timesteps):    # the i-th time step of simulation
-                # inner loop: step through all possible surviving time steps
-                # break inner loop if can not survive
-                t = (time_step + i) % n_timesteps
 
-                unmatch, gen, batt = load_following(
-                    critical_loads_kw[t], pv_kw_ac_hourly[t], wind_kw_ac_hourly[t], gen, batt, n_steps_per_hour)
+@shared_task
+def process_results(r, n_steps_per_hour, n_timesteps):
 
-                if unmatch > 0 or i == (n_timesteps-1):  # cannot survive
-                    r[time_step] = float(i) / float(n_steps_per_hour)
-                    break
+    r_min = min(r)
+    r_max = max(r)
+    r_avg = round((float(sum(r)) / float(len(r))), 2)
 
-        r_min = min(r)
-        r_max = max(r)
-        r_avg = round((float(sum(r)) / float(len(r))), 2)
+    # Create a time series of 8760*n_steps_per_hour elements starting on 1/1/2017
+    time = pd.date_range('1/1/2017', periods=8760*n_steps_per_hour, freq='{}min'.format(n_steps_per_hour*60))
+    r_series = pd.Series(r, index=time)
 
-        # Create a time series of 8760*n_steps_per_hour elements starting on 1/1/2017
-        time = pd.date_range('1/1/2017', periods=8760*n_steps_per_hour, freq='{}min'.format(n_steps_per_hour*60))
-        r_series = pd.Series(r, index=time)
+    r_group_month = r_series.groupby(r_series.index.month)
+    r_group_hour = r_series.groupby(r_series.index.hour)
 
-        r_group_month = r_series.groupby(r_series.index.month)
-        r_group_hour = r_series.groupby(r_series.index.hour)
+    x_vals = list(range(1, int(floor(r_max)+1)))
+    y_vals = list()
+    y_vals_group_month = list()
+    y_vals_group_hour = list()
 
-        x_vals = list(range(1, int(floor(r_max)+1)))
-        y_vals = list()
-        y_vals_group_month = list()
-        y_vals_group_hour = list()
+    for hrs in x_vals:
+        y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
 
-        for hrs in x_vals:
-            y_vals.append(round(float(sum([1 if h >= hrs else 0 for h in r])) / float(n_timesteps), 4))
-
+    if len(x_vals) > 0:
         width = 0
         for k, v in r_group_month:
             tmp = list()
@@ -293,12 +264,12 @@ def simulate_outage(batt_kwh=0, batt_kw=0, pv_kw_ac_hourly=0, init_soc=0, critic
         for i, v in enumerate(y_vals_group_hour):
             y_vals_group_hour[i] = v + [0] * (width - len(v))
 
-        return {"resilience_by_timestep": r,
-                "resilience_hours_min": r_min,
-                "resilience_hours_max": r_max,
-                "resilience_hours_avg": r_avg,
-                "outage_durations": x_vals,
-                "probs_of_surviving": y_vals,
-                "probs_of_surviving_by_month": y_vals_group_month,
-                "probs_of_surviving_by_hour_of_the_day": y_vals_group_hour,
-                }
+    return {"resilience_by_timestep": r,
+            "resilience_hours_min": r_min,
+            "resilience_hours_max": r_max,
+            "resilience_hours_avg": r_avg,
+            "outage_durations": x_vals,
+            "probs_of_surviving": y_vals,
+            "probs_of_surviving_by_month": y_vals_group_month,
+            "probs_of_surviving_by_hour_of_the_day": y_vals_group_hour,
+            }

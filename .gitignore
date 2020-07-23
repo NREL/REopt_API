@@ -11,6 +11,7 @@ input_files/*
 .DS_Store
 urdb_rate_errors/
 outage_sizing/
+.vscode/
 
 # Distribution / packaging
 .Python
@@ -104,6 +105,9 @@ static/files/*
 # Redis
 *.rdb
 
+# Docker files with different names for distinguishing OS vs private
+docker-compose.xpressOS.yml
+
 all_data*
 =======
 # CHP results processing
@@ -112,3 +116,8 @@ results_processing/*
 # Math Forumlation Latex
 docs/formulation/*aux
 docs/formulation/*log
+
+# Julia system images
+julia_envs/**/**.so
+julia_envs/**/**.dylib
+julia_envs/**/**.dll

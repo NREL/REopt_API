@@ -34,7 +34,7 @@ from reo.api import Job
 from tastypie.api import Api
 from reo import views
 from proforma.views import proforma
-
+from resilience_stats.views import resilience_stats, financial_check
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
@@ -52,7 +52,9 @@ def page_not_found(request, url):
 
 urlpatterns = [
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/proforma/?$', proforma, name='proforma'),
-    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?(?:(?P<financial_check>[a-u_]+)/?)?', include('resilience_stats.urls'), name='resilience_stats'),
+    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/?$', resilience_stats, name='resilience_stats'),
+    url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/resilience_stats/financial_check/?$', financial_check, name='financial_check'),  # preserving old behavior
+    url(r'^v1/financial_check/?$', financial_check, name='financial_check'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/results/?$', views.results, name='results'),
     url(r'^v1/job/(?P<run_uuid>[0-9a-f-]+)/remove/?$', views.remove, name='remove'),
     url(r'^v1/user/?', include('summary.urls'), name='summary'),

@@ -40,8 +40,9 @@ class Financial(object):
                  offtaker_tax_pct,
                  offtaker_discount_pct,
                  analysis_years,
-                 owner_tax_pct=None,
-                 owner_discount_pct=None,
+                 two_party_ownership,
+                 owner_tax_pct,
+                 owner_discount_pct,
                  **kwargs
                  ):
         self.om_cost_escalation_pct = om_cost_escalation_pct
@@ -49,13 +50,13 @@ class Financial(object):
         self.owner_tax_pct = owner_tax_pct
         self.offtaker_tax_pct = offtaker_tax_pct
         self.owner_discount_pct = owner_discount_pct
+        self.two_party_ownership = two_party_ownership
         self.offtaker_discount_pct = offtaker_discount_pct
         self.analysis_years = analysis_years
 
         # set-up direct ownership
-        if self.owner_discount_pct is None:
+        if self.two_party_ownership is False:
             self.owner_discount_pct = self.offtaker_discount_pct
-        if self.owner_tax_pct is None:
             self.owner_tax_pct = self.offtaker_tax_pct
 
 
