@@ -70,12 +70,12 @@ function add_parameters(m, p)
 	end
 end
 
-function add_subproblem_time_sets(m, p, mth::Int64)
-	m[:TimeStep] = p.TimeStepRatchetsMonth[mth]
+function add_subproblem_time_sets(m, p)
+	m[:TimeStep] = p.TimeStepRatchetsMonth[m[:month_idx]]
 	m[:start_period] = m[:TimeStep][1] - 1
 	m[:end_period] = m[:TimeStep]
 	m[:TimeStepBat] = append!([m[:start_period]],m[:TimeStep])
-	m[:Month] = [mth]
+	m[:Month] = [m[:month_idx]]
 	m[:TimeStepsWithGrid] = Int64[]
 	m[:TimeStepsWithoutGrid] = Int64[]
 	m[:TimeStepRatchets] = Dict()
@@ -834,22 +834,20 @@ function add_yearone_expressions(m, p)
     m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
-function add_decomp_models(m, p::Parameter, model_type::String)
-	sub_models = []
-	for mth in p.Month
-		if m[:solver_name] == "Xpress"
-			append!(sub_models, direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, OUTPUTLOG = 0)))
-		elseif m[:solver_name] == "Cbc"
-			append!(sub_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.01)))
-		elseif m[:solver_name] == "SCIP"
-			append!(sub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01)))
-		else
-			error("solver_name undefined or doesn't match existing base of REopt solvers.")
-		end
-		sub_models[mth][:model_type] = model_type
-		reopt_build(sub_models[mth], p)
+function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
+	if m[:solver_name] == "Xpress"
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, OUTPUTLOG = 0))
+	elseif m[:solver_name] == "Cbc"
+		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.01))
+	elseif m[:solver_name] == "SCIP"
+		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01))
+	else
+		error("solver_name undefined or doesn't match existing base of REopt solvers.")
 	end
-	return sub_models
+	sub_model[:model_type] = model_type
+	sub_model[:month_idx] = mth
+	reopt_build(sub_model, p)
+	return sub_model
 end
 
 function reopt(reo_model, model_inputs::Dict)
@@ -1476,35 +1474,32 @@ function add_util_results(m, p, r::Dict)
 	nothing
 end
 
-function get_initial_decomp_penalties(models,p)
-	for m in models
-		m[:tech_size_penalty] = Dict()
-		m[:storage_size_penalty] = Dict()
-		m[:storage_inventory_penalty] = Dict()
-		for t in p.Tech
-			m[:tech_size_penalty][t] = 0.0
-		end
-		for b in p.Storage
-			m[:storage_size_penalty][b] = 0.0
-			m[:storage_inventory_penalty][b] = 0.0
-		end
+function get_initial_decomp_penalties(m,p)
+	m[:tech_size_penalty] = Dict()
+	m[:storage_size_penalty] = Dict()
+	m[:storage_inventory_penalty] = Dict()
+	for t in p.Tech
+		m[:tech_size_penalty][t] = 0.0
 	end
-	nothing
+	for b in p.Storage
+		m[:storage_size_penalty][b] = 0.0
+		m[:storage_inventory_penalty][b] = 0.0
+	end
 end
 
-function update_decomp_penalties(models,p)
+function update_decomp_penalties(m,p)
 	rho = 0.001 #penalty factor; this is a parameter that can be tuned
 	for t in p.Tech
-		mean_size = sum(value(m[:dvSize][t]) for m in models) / 12
-		for m in models
+		mean_size = sum(value(m[:dvSize][t]) for midx in 1:12) / 12
+		for midx in 1:12
 			m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
 		end
 	end
 	for b in p.Storage
-		mean_power = sum(value(m[:dvStorageCapPower][b]) for m in models) / 12
-		mean_energy = sum(value(m[:dvStorageCapEnergy][b]) for m in models) / 12
-		mean_inv = sum(value(m[:dvStorageResetSOC][b]) for m in models) / 12
-		for m in models
+		mean_power = sum(value(m[:dvStorageCapPower][b]) for midx in 1:12) / 12
+		mean_energy = sum(value(m[:dvStorageCapEnergy][b]) for midx in 1:12) / 12
+		mean_inv = sum(value(m[:dvStorageResetSOC][b]) for midx in 1:12) / 12
+		for midx in 1:12
 			m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
 			m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
 			m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
@@ -1526,22 +1521,21 @@ function get_peak_month(p)
 	return idx
 end
 
-function get_peak_sizing_decisions(models,p)
-	mth = get_peak_month(p)
+function get_peak_sizing_decisions(m,p)
 	sizes = Dict()
 	for t in p.Tech
-		sizes["dvSize",t] = value(models[mth][:dvSize][t])
+		sizes["dvSize",t] = value(m[:dvSize][t])
 	end
 	for b in p.Storage
-		sizes["dvStorageCapPower",b] = value(models[mth][:dvStorageCapPower][b])
-		sizes["dvStorageCapEnergy",b] = value(models[mth][:dvStorageCapEnergy][b])
-		sizes["dvStorageResetSOC",b] = value(models[mth][:dvStorageResetSOC][b])
+		sizes["dvStorageCapPower",b] = value(m[:dvStorageCapPower][b])
+		sizes["dvStorageCapEnergy",b] = value(m[:dvStorageCapEnergy][b])
+		sizes["dvStorageResetSOC",b] = value(m[:dvStorageResetSOC][b])
 	end
 	return sizes
 end
 
-function fix_sizing_decisions(models,p,sizes::Dict)
-	for m in models
+function fix_sizing_decisions(m,p,sizes::Dict)
+	for midx in 1:12
 		for t in p.Tech
 			if t != "BOILER" && t != "ELECCHL"
 				fix(m[:dvSize][t], sizes["dvSize",t], force=true)
@@ -1575,21 +1569,21 @@ end
 
 function get_objective_value(models, p)
 	### Obtain subproblem lcc's, minus the min charge adders and production incentives
-	obj = sum(value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
-		for m in models)
+	obj = sum(value(models[midx][:REcosts]) - value(models[midx][:MinChargeAdder]) + value(models[midx][:TotalProductionIncentive]) 
+		for midx in 1:12)
 	### recalculate min charge adder and add to the results
-	min_charge = sum(m[:TotalMinCharge] - m[:TotalMinCharge] - ( 
-					m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] 
-					+ m[:TotalExportBenefit] + m[:TotalFixedCharges])
-					for m in models
+	min_charge = sum(models[midx][:TotalMinCharge] - ( 
+					models[midx][:TotalEnergyChargesUtil] + models[midx][:TotalDemandCharges] 
+					+ models[midx][:TotalExportBenefit] + models[midx][:TotalFixedCharges])
+					for midx in 1:12
 				)
 	if min_charge > 0
 		obj += min_charge
 	end
 	### recalculate production incentive
 	incentive = sum(p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
-			sum(p.ProductionFactor[t, ts] * m[:dvRatedProduction][t,ts] for ts in m[:TimeStep])
-			for m in models
+			sum(p.ProductionFactor[t, ts] * models[midx][:dvRatedProduction][t,ts] for ts in models[midx][:TimeStep])
+			for midx in 1:12
 				)
 	if incentive > models[1][:binProdIncent][t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor 
 		incentive = p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor
