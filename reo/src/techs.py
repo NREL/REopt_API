@@ -846,14 +846,14 @@ class ElectricChiller(Tech):
 
 class AbsorptionChiller(Tech):
 
-    def __init__(self, dfm, chiller_cop, min_ton, max_ton, installed_cost_us_dollars_per_ton,
-                 om_cost_us_dollars_per_ton, **kwargs):
+    absorption_chiller_cop_defaults = {"hot_water": 0.74,
+                                       "steam": 1.42}
         super(AbsorptionChiller, self).__init__(**kwargs)
 
         self.loads_served = ['retail', 'tes']
         self.is_cool = True
         self.reopt_class = 'ABSORPCHL'
-        self.chiller_cop = chiller_cop
+        self.chiller_cop = kwargs.get('chiller_cop')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
 

@@ -1639,7 +1639,6 @@ nested_input_definitions = {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,
-          "default": 0.7,
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
