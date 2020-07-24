@@ -268,7 +268,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
         if lpce.annual_kwh > 0.0:
-            elecchl = ElectricChiller(dfm=dfm,**inputs_dict['Site']['ElectricChiller'])
+            elecchl = ElectricChiller(dfm=dfm, chiller_electric_series_bau=lpce.load_list,
+                                      **inputs_dict['Site']['ElectricChiller'])
+            tmp = dict()
+            tmp['chiller_cop'] = elecchl.chiller_cop
+            tmp['max_kw'] = elecchl.max_kw
+            ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
             elecchl = None
 
