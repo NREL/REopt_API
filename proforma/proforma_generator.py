@@ -271,7 +271,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[i]["pv_degradation_rate_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
-        ws['A{}'.format(current_row)] = "{} LCOE of New Capacity ($/kWh)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "{} LCOE of New Capacity ($/kWh), nominal".format(pv['name'])
         pv_cell_locations[i]["pv_lcoe_cell"] = 'B{}'.format(current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
@@ -289,7 +289,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row, alignment=right_align)
     
     current_row += 1
-    ws['A{}'.format(current_row)] = "Wind LCOE ($/kWh)"
+    ws['A{}'.format(current_row)] = "Wind LCOE ($/kWh), nominal"
     wind_lcoe_cell = 'B{}'.format(current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
@@ -353,19 +353,16 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Present value of annual existing {} energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Existing {} energy produced (kWh), Year 1".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
         pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
-
         current_row += 1
 
-    for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Nominal annual {} optimal energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Total {} optimal energy produced (kWh), Year 1".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy"]
         pv_cell_locations[i]["pv_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
-
         current_row += 1
 
     ws['A{}'.format(current_row)] = "Nominal annual optimal wind energy produced (kWh/year)"
@@ -589,30 +586,6 @@ def generate_proforma(scenariomodel, output_file_path):
         host_discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
 
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Present Worth Factor"
-    present_worth_factor_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    host_present_worth_factor_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row, alignment=right_align, precision=3)
-
-    if financial.two_party_ownership:
-        ws['A{}'.format(current_row)] = "Host Present Worth Factor"
-
-        current_row += 1
-        ws['A{}'.format(current_row)] = "Developer Present Worth Factor"
-        present_worth_factor_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-        make_attribute_row(ws, current_row, alignment=right_align, precision=3)
-    
-    for i, pv in enumerate(pv_data):
-        current_row += 1
-        ws['A{}'.format(current_row)] = "{} Energy Levelization Factor".format(pv["name"])
-        pv_cell_locations[i]['energy_levelization_factor_cell'] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-        make_attribute_row(ws, current_row, alignment=right_align)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Wind Energy Levelization Factor"
-    wind_energy_levelization_factor_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row, alignment=right_align, precision=3)
     current_row += 1
     current_row += 1
 
@@ -2030,7 +2003,10 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         dcs['A{}'.format(current_row)] = "Amount"
         dcs['A{}'.format(current_row)].alignment = two_tab_indent
+        pv_cell_locations[idx]["pv_depreciation_benefit"] = list()
         for i in range(financial.analysis_years):
+            pv_cell_locations[idx]["pv_depreciation_benefit"].append("\'{}\'!{}{}".format(
+                    developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
             if i == 0:
                 dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                     '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2085,7 +2061,11 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     dcs['A{}'.format(current_row)] = "Amount"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    wind_depreciation_benefit = list()
     for i in range(financial.analysis_years):
+        wind_depreciation_benefit.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+        
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -2168,6 +2148,47 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
+    # Tax benefits for LCOE Calculations
+    ####################################################################################################################
+    dcs['A{}'.format(current_row)] = "Tax benefits for LCOE Calculations"
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
+    current_row += 1
+
+    for idx, pv in enumerate(pv_data):
+        dcs['A{}'.format(current_row)] = "{} income tax savings, $".format(pv['name'])
+        pv_cell_locations[idx]["pv_income_tax_benefits"] = list()
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '=((-1 * {pv_om_cell}) + {pv_depr_cell}) * {fed_tax_rate_cell}/100'.format(
+                    pv_om_cell = pv_cell_locations[idx]['new_o_and_m_cashflow_cells'][year -1],
+                    pv_depr_cell = pv_cell_locations[idx]["pv_depreciation_benefit"][year -1],
+                    fed_tax_rate_cell=fed_tax_rate_cell
+                )
+            pv_cell_locations[idx]["pv_income_tax_benefits"].append("\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    current_row += 1
+    
+    dcs['A{}'.format(current_row)] = "Wind income tax savings, $"
+    wind_income_tax_benefits = list()
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '=((-1 * {wind_om_cell}) + {wind_depr_cell}) * {fed_tax_rate_cell}/100'.format(
+                wind_om_cell = wind_o_and_m_cashflow_cells[year -1],
+                wind_depr_cell = wind_depreciation_benefit[year -1],
+                fed_tax_rate_cell=fed_tax_rate_cell
+            )
+        wind_income_tax_benefits.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    current_row += 1
+    current_row += 1
+
+    ####################################################################################################################
     # Federal ITC
     ####################################################################################################################
 
@@ -2222,6 +2243,8 @@ def generate_proforma(scenariomodel, output_file_path):
         )
         make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_federal_itc_amount_row"] = current_row
+        pv_cell_locations[idx]["pv_federal_itc_amount_cell"] = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
         current_row += 1
 
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Wind"
@@ -2271,6 +2294,8 @@ def generate_proforma(scenariomodel, output_file_path):
     )
     make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
     wind_federal_itc_amount_row = current_row
+    wind_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Battery"
@@ -3229,28 +3254,30 @@ def generate_proforma(scenariomodel, output_file_path):
             return result
         return analysis_period_cell
 
-    ws[host_present_worth_factor_cell.split('!')[-1]] = '=' + present_worth(analysis_period_cell, 0,
-                                                                       host_discount_rate_cell)
-    
-    if financial.two_party_ownership:
-        ws[present_worth_factor_cell.split('!')[-1]] = '=' + present_worth(analysis_period_cell, 0,
-                                                                       discount_rate_cell)
-
     for idx, pv in enumerate(pv_data):
-        ws[pv_cell_locations[idx]['energy_levelization_factor_cell'].split('!')[-1]] = \
-                degradation_factor(financial.analysis_years, pv_cell_locations[idx]['pv_degradation_rate_cell'])
-
+        
         if (pv['pv_installed_kw'] or 0) > 0:
             npv_om = '-1*(NPV({}/100,{}))'.format(discount_rate_cell, 
-                ",".join(pv_cell_locations[idx]["new_o_and_m_cashflow_cells"])
-                )
+                pv_cell_locations[idx]["new_o_and_m_cashflow_cells"][0] + ":" + pv_cell_locations[idx]["new_o_and_m_cashflow_cells"][-1])
 
             npv_pbi = 'NPV({}/100,{})'.format(discount_rate_cell, 
-                ",".join(pv_cell_locations[idx]["new_pv_pbi_series"])
-                )
-            
-            pv_lcoe = ("=ROUND(((({total_installed_cost} + {npv_om} - SUM({cbi},{ibi},{npv_pbi}))) / "
-                "{present_worth_factor}) / (({year_one_energy} - {existing_energy_cell}) * {levelization_factor}), 4)"
+                pv_cell_locations[idx]["new_pv_pbi_series"][0] + ":" + pv_cell_locations[idx]["new_pv_pbi_series"][-1])
+
+            npv_macrs_benefit = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_federal_itc_amount_cell"])
+
+            npv_tax_benefits = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_income_tax_benefits"][0] + ":" + pv_cell_locations[idx]["pv_income_tax_benefits"][-1])
+
+            npv_total_pv = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_production_series"][0] + ":" + pv_cell_locations[idx]["pv_production_series"][-1])
+
+            npv_existing_pv = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_production_series_bau"][0] + ":" + pv_cell_locations[idx]["pv_production_series_bau"][-1])
+
+            pv_lcoe = ("=ROUND((({total_installed_cost} + {npv_om} - "
+                        "SUM({cbi},{ibi},{npv_pbi},{npv_macrs_benefit},{npv_tax_benefits})) "
+                ") / (({npv_total_pv} - {npv_existing_pv})), 4)"
                        ).format(
                 total_installed_cost=pv_cell_locations[idx]["pv_cost_cell"],
                 npv_om=npv_om,
@@ -3259,30 +3286,40 @@ def generate_proforma(scenariomodel, output_file_path):
                 npv_pbi=npv_pbi, 
                 year_one_energy=pv_cell_locations[idx]["pv_energy_cell"], 
                 existing_energy_cell=pv_cell_locations[idx]["pv_energy_bau_cell"], 
-                present_worth_factor=present_worth_factor_cell,
-                levelization_factor=pv_cell_locations[idx]['energy_levelization_factor_cell']
+                npv_macrs_benefit=npv_macrs_benefit,
+                npv_tax_benefits=npv_tax_benefits,
+                npv_total_pv=npv_total_pv,
+                npv_existing_pv=npv_existing_pv
                 )
             ws[pv_cell_locations[idx]["pv_lcoe_cell"]] = pv_lcoe
 
-    
-    ws[wind_energy_levelization_factor_cell.split('!')[-1]] = \
-        degradation_factor(financial.analysis_years, wind_degradation_rate_cell)
-        
+            
     if (wind.size_kw or 0) > 0:
         npv_wind_om = '(-1 * NPV({}/100,{}))'.format(discount_rate_cell, 
-                ",".join(wind_o_and_m_cashflow_cells)
-                )
-        npv_wind_pbi = 'NPV({}/100,{})'.format(discount_rate_cell, ",".join(wind_pbi_series))
-        wind_levelization_factor = "1"
+                wind_o_and_m_cashflow_cells[0] + ":" + wind_o_and_m_cashflow_cells[-1])
+
+        npv_wind_pbi = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_pbi_series[0] + ":" + wind_pbi_series[-1])
+
+        npv_macrs_benefit = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                wind_federal_itc_amount_cell)
+
+        npv_tax_benefits = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_income_tax_benefits[0] + ":" + wind_income_tax_benefits[-1])
+
+        npv_total_wind = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_annual_kwh_cells[0] + ":" + wind_annual_kwh_cells[-1])
+
         wind_lcoe = ("=ROUND(" 
-        "((({total_cost} + {npv_om} - SUM({cbi},{ibi},{npv_pbi}))) / {present_worth_factor})" 
-        "/ ({year_one_energy} * {levelization_factor})" 
+        "({total_cost} + {npv_om} - SUM({cbi},{ibi},{npv_pbi},{npv_macrs_benefit},{npv_tax_benefits}))" 
+        "/ {npv_total_wind}" 
         ",4)".format(
                 total_cost=wind_cost_cell,  npv_om=npv_wind_om,
                 cbi=wind_total_cbi_cell, ibi=wind_total_ibi_cell,
-                npv_pbi=npv_wind_pbi, year_one_energy=wind_energy_cell,
-                present_worth_factor=present_worth_factor_cell, 
-                levelization_factor=wind_energy_levelization_factor_cell
+                npv_pbi=npv_wind_pbi,
+                npv_macrs_benefit=npv_macrs_benefit,
+                npv_tax_benefits=npv_tax_benefits,
+                npv_total_wind=npv_total_wind,
             )
         )
         ws[wind_lcoe_cell] = wind_lcoe

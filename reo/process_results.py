@@ -161,7 +161,7 @@ def calculate_simple_payback_and_irr(data):
                     schedule = macrs_five_year
                 if pv['macrs_option_years'] == 7:
                     schedule = macrs_seven_year
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi
+                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
                 federal_itc_amount = pv['federal_itc_pct'] * federal_itc_basis
                 federal_itc += federal_itc_amount
                 macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * pv['federal_itc_pct'] * pv['macrs_itc_reduction'])
@@ -202,7 +202,7 @@ def calculate_simple_payback_and_irr(data):
                     schedule = macrs_five_year
                 if wind['macrs_option_years'] == 7:
                     schedule = macrs_seven_year
-                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi
+                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
                 federal_itc_amount = wind['federal_itc_pct']*federal_itc_basis
                 federal_itc += federal_itc_amount
                 macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * wind['federal_itc_pct'] * wind['macrs_itc_reduction'])
@@ -521,8 +521,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
 
             if financials.two_party_ownership:
                 discount_pct = financials.owner_discount_pct
+                federal_tax_pct = financials.owner_tax_pct
             else:
                 discount_pct = financials.offtaker_discount_pct
+                federal_tax_pct = financials.offtaker_tax_pct
 
             new_kw = (tech_results_dict.get('size_kw') or 0) - (tech_inputs_dict.get('existing_kw') or 0) # new capacity
             
@@ -532,8 +534,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             capital_costs = new_kw * tech_inputs_dict['installed_cost_us_dollars_per_kw'] # pre-incentive capital costs
             
             annual_om = new_kw * tech_inputs_dict['om_cost_us_dollars_per_kw'] # NPV of O&M charges escalated over financial life
-            npv_om = sum([annual_om * (1+financials.om_cost_escalation_pct)**yr * \
-                            (1.0/(1.0+discount_pct))**yr for yr in range(1, years+1)])
+            
+            om_series = [annual_om * (1+financials.om_cost_escalation_pct)**yr for yr in range(1, years+1)]
+            npv_om = sum([om * (1.0/(1.0+discount_pct))**yr for yr, om in enumerate(om_series,1)])
             
             #Incentives as calculated in the spreadsheet, note utility incentives are applied before state incentives
             utility_ibi = min(capital_costs * tech_inputs_dict['utility_ibi_pct'], tech_inputs_dict['utility_ibi_max_us_dollars'])
@@ -561,17 +564,35 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                              degredation_pct,  tech_inputs_dict['pbi_max_us_dollars'] * degredation_pct )
                         base_pbi = base_pbi * (1.0/(1.0+discount_pct))**(yr+1)
                         npv_pbi += base_pbi
+    
+            npv_federal_itc = 0
+            if tech_inputs_dict['macrs_option_years'] in [5,7]:
+                if tech_inputs_dict['macrs_option_years'] == 5:
+                    schedule = macrs_five_year
+                if tech_inputs_dict['macrs_option_years'] == 7:
+                    schedule = macrs_seven_year
+                federal_itc_basis = capital_costs - state_ibi - utility_ibi - state_cbi - utility_cbi - federal_cbi
+                federal_itc_amount = tech_inputs_dict['federal_itc_pct'] * federal_itc_basis
+                npv_federal_itc = federal_itc_amount * (1.0/(1.0+discount_pct)) 
+                macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * tech_inputs_dict['federal_itc_pct'] * tech_inputs_dict['macrs_itc_reduction'])
+                macrs_basis = macrs_bonus_basis * (1 - tech_inputs_dict['macrs_bonus_pct'])
+                depreciation_schedule = np.array([0.0 for _ in range(years)])
+                for i,r in enumerate(schedule):
+                    depreciation_schedule[i] = macrs_basis * r
+                depreciation_schedule[0] += (tech_inputs_dict['macrs_bonus_pct'] * macrs_bonus_basis)
 
-            #present worth factor is used to annualize the costs in present dollar terms, in the two-party case
-            #scaling by the owner discount factor ensures that the developer recuperates a profit
-            present_worth_factor = annuity(years, 0, discount_pct)
-            #levelization factor is an average of degredation factors over the financial life
-            levelization_factor = degradation_factor(years, tech_inputs_dict.get('degradation_pct') or 0)
+            tax_deductions = (np.array(om_series)  + np.array(depreciation_schedule)) * federal_tax_pct
+            npv_tax_deductions = sum([i* (1.0/(1.0+discount_pct))**yr for yr,i in enumerate(tax_deductions,1)])
+
             #we only care about the energy produced by new capacity in LCOE calcs
             annual_energy = (tech_results_dict['year_one_energy_produced_kwh'] or 0) - existing_energy_bau
+            npv_annual_energy = sum([annual_energy * ((1.0/(1.0+discount_pct))**yr) * \
+                (1- (tech_inputs_dict.get('degradation_pct') or 0))**(yr-1) for yr, i in enumerate(tax_deductions,1)])
+            
             #LCOE is calculated as annualized costs divided by annualized energy
-            lcoe = ((capital_costs + npv_om - npv_pbi - cbi - ibi) / present_worth_factor) / \
-                    (annual_energy*levelization_factor)
+            lcoe = (capital_costs + npv_om - npv_pbi - cbi - ibi - npv_federal_itc - npv_tax_deductions ) / \
+                    (npv_annual_energy)
+            
             return round(lcoe,4)
 
         def get_output(self):
