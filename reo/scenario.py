@@ -244,9 +244,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
         if lpbf.annual_mmbtu > 0.0:
-            boiler = Boiler(dfm=dfm, **inputs_dict['Site']['Boiler'])
+            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
             tmp = dict()
-            tmp['boiler_efficiency'] = boiler.boiler_efficiency
+            tmp['max_mmbtu_per_hr'] = boiler.max_mmbtu_per_hr
             ModelManager.updateModel('BoilerModel', tmp, run_uuid)
         else:
             boiler = None
@@ -268,13 +268,14 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
         if lpce.annual_kwh > 0.0:
-            elecchl = ElectricChiller(dfm=dfm,**inputs_dict['Site']['ElectricChiller'])
+            elecchl = ElectricChiller(dfm=dfm, chiller_electric_series_bau=lpce.load_list,
+                                      **inputs_dict['Site']['ElectricChiller'])
+            tmp = dict()
+            tmp['chiller_cop'] = elecchl.chiller_cop
+            tmp['max_kw'] = elecchl.max_kw
+            ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
         else:
             elecchl = None
-
-        # Absorption chiller
-        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
-            absorpchl = AbsorptionChiller(dfm=dfm, **inputs_dict['Site']['AbsorptionChiller'])
 
         # Fuel tariff
         fuel_tariff = FuelTariff(dfm=dfm, time_steps_per_hour=inputs_dict['time_steps_per_hour'],
@@ -303,7 +304,6 @@ def setup_scenario(self, run_uuid, data, raw_post):
             ModelManager.updateModel('WindModel', tmp, run_uuid)
             # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
-
         if inputs_dict["Site"]["CHP"].get("prime_mover") is not None or \
                 inputs_dict["Site"]["CHP"].get("max_kw", 0.0) > 0.0:
             if boiler is not None:
@@ -316,16 +316,22 @@ def setup_scenario(self, run_uuid, data, raw_post):
                       site_elevation_ft=inputs_dict['Site']['elevation_ft'],
                       time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
 
-            # Update the model inputs if there are calculations with the tech class, CHP.py, etc
-            #tmp = dict()
-            # This is not currently updating anything because tmp is empty (hopefully not doing anything unintended)
-            #ModelManager.updateModel('CHPModel', tmp, run_uuid)
-
+        # Absorption chiller
+        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
+            absorpchl = AbsorptionChiller(dfm=dfm, max_capacity_tons=elecchl.max_chiller_thermal_capacity_tons,
+                                          hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
+                                          chp_prime_mover=chp.prime_mover,
+                                          **inputs_dict['Site']['AbsorptionChiller'])
+            tmp = dict()
+            tmp['installed_cost_us_dollars_per_ton'] = absorpchl.installed_cost_us_dollars_per_ton
+            tmp['om_cost_us_dollars_per_ton'] = absorpchl.om_cost_us_dollars_per_ton
+            ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
 
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                     )
+
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
 
