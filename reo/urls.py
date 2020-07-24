@@ -40,4 +40,5 @@ urlpatterns = [
     url(r'^results/', views.results, name='results'),
     url(r'^simulated_load/', views.simulated_load, name='simulated_load'),
     url(r'^generator_efficiency/', views.generator_efficiency, name='generator_efficiency'),
+    url(r'^emissions_profile/', views.emissions_profile, name='emissions_profile')
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
