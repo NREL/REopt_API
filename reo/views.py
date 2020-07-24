@@ -362,7 +362,7 @@ def simulated_load(request):
                 
                 annual_fraction = float(request.GET['annual_fraction'])
 
-                lp = [0.5]*8760
+                lp = [annual_fraction]*8760
                 
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
