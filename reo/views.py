@@ -44,7 +44,7 @@ from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 import logging
 log = logging.getLogger(__name__)
-from reo.src.techs import Generator, CHP
+from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Boiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
@@ -569,4 +569,103 @@ def chp_defaults(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
+        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+
+def chiller_defaults(request):
+    """
+    This provides the following default parameters for electric and absorption chiller:
+        1. COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
+        2. CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
+            OpEx (AbsorptionChiller.om_cost_us_dollars_per_ton) of absorption chiller based on peak cooling thermal
+            load
+
+    Required inputs:
+        1. max_elec_chiller_elec_load
+
+    Optional inputs:
+        1. hot_water_or_steam (Boiler.existing_boiler_production_type_steam_or_hw)
+            a. If not provided, hot_water is assumed
+        2. prime_mover (CHP.prime_mover)
+            a. If hot_water_or_steam is provided, this is not used
+            b. If hot_water_or_steam is NOT provided and prime_mover is, this will refer to
+                boiler_type_by_chp_pm_defaults
+        3. Max cooling capacity (ElectricChiller.max_thermal_factor_on_peak_load) as a ratio of peak cooling load
+            a. If not entered, assume 1.25
+
+    """
+    elec_chiller_cop_defaults = copy.deepcopy(ElectricChiller.electric_chiller_cop_defaults)
+    absorp_chiller_cost_defaults_all = copy.deepcopy(AbsorptionChiller.absorption_chiller_cost_defaults)
+    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+
+    try:
+        max_elec_chiller_elec_load = request.GET.get('max_elec_chiller_elec_load')
+        hot_water_or_steam = request.GET.get('hot_water_or_steam')
+        prime_mover = request.GET.get('prime_mover')
+        max_cooling_factor = request.GET.get('max_cooling_factor', 1.25)
+
+        if max_elec_chiller_elec_load is None:
+            raise ValueError("Missing required max_elec_chiller_elec_load query parameter.")
+        else:
+            max_chiller_thermal_capacity = float(max_elec_chiller_elec_load) * \
+                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685 * \
+                                            float(max_cooling_factor)
+
+            # Electric chiller COP
+            if max_chiller_thermal_capacity < 100.0:
+                elec_chiller_cop = elec_chiller_cop_defaults["less_than_100_tons"]
+            else:
+                elec_chiller_cop = elec_chiller_cop_defaults["greater_than_100_tons"]
+
+            # Absorption chiller costs
+            if hot_water_or_steam is not None:
+                defaults_sizes = absorp_chiller_cost_defaults_all[hot_water_or_steam]
+            elif prime_mover is not None:
+                defaults_sizes = absorp_chiller_cost_defaults_all[boiler_type_by_chp_pm_defaults[prime_mover]]
+            else:
+                # If hot_water_or_steam and CHP prime_mover are not provided, use hot_water defaults
+                defaults_sizes = absorp_chiller_cost_defaults_all["hot_water"]
+
+            if max_chiller_thermal_capacity <= defaults_sizes[0][0]:
+                absorp_chiller_capex = defaults_sizes[0][1]
+                absorp_chiller_opex = defaults_sizes[0][2]
+            elif max_chiller_thermal_capacity >= defaults_sizes[-1][0]:
+                absorp_chiller_capex = defaults_sizes[-1][1]
+                absorp_chiller_opex = defaults_sizes[-1][2]
+            else:
+                for size in range(1, len(defaults_sizes)):
+                    if max_chiller_thermal_capacity > defaults_sizes[size - 1][0] and \
+                            max_chiller_thermal_capacity <= defaults_sizes[size][0]:
+                        slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
+                                      (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                        slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
+                                     (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                        absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
+                                               (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+                        absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
+                                              (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+
+        response = JsonResponse(
+            {"PeakCoolingLoadTons": max_chiller_thermal_capacity,
+                "ElectricChiller": {
+                 "chiller_cop": elec_chiller_cop
+                },
+            "AbsorptionChiller": {
+                "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
+                "om_cost_us_dollars_per_ton": absorp_chiller_opex
+                }
+            }
+        )
+
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chiller_defaults endpoint. Check log for more."}, status=500)
