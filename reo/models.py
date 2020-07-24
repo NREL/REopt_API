@@ -229,7 +229,6 @@ class LoadProfileBoilerFuelModel(models.Model):
     doe_reference_name = ArrayField(models.TextField(null=True, blank=True), default=list)
     percent_share = ArrayField(models.FloatField(null=True, blank=True), default=list)
 
-
     # Outputs
     annual_calculated_boiler_fuel_load_mmbtu_bau = models.FloatField(null=True, blank=True, )
     year_one_boiler_fuel_load_series_mmbtu_per_hr_bau = ArrayField(models.FloatField(null=True, blank=True), default=list)
@@ -703,6 +702,7 @@ class BoilerModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     min_mmbtu_per_hr = models.FloatField(default=0)
     max_mmbtu_per_hr = models.FloatField(null=True, blank=True)
+    max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
     existing_boiler_production_type_steam_or_hw = models.TextField(null=True, blank=True, default='')
     boiler_efficiency = models.FloatField(blank=True, default=0, null=True)
     installed_cost_us_dollars_per_mmbtu_per_hr = models.FloatField(null=True, default=0, blank=True,)
@@ -734,6 +734,7 @@ class ElectricChillerModel(models.Model):
     run_uuid = models.UUIDField(unique=True)
     min_kw = models.FloatField(default=0)
     max_kw = models.FloatField(null=True, blank=True)
+    max_thermal_factor_on_peak_load = models.FloatField(null=True, blank=True)
     chiller_cop = models.FloatField(blank=True, default=0, null=True)
     installed_cost_us_dollars_per_kw = models.FloatField(null=True, default=0, blank=True,)
 
