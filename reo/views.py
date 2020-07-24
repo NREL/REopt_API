@@ -576,9 +576,10 @@ def chiller_defaults(request):
     """
     This provides the following default parameters for electric and absorption chiller:
         1. COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
-        2. CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
-            OpEx (AbsorptionChiller.om_cost_us_dollars_per_ton) of absorption chiller based on peak cooling thermal
-            load
+        2. COP of absorption chiller (AbsorptionChiller.chiller_cop) based on hot_water_or_steam input or prime_mover
+            CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
+                OpEx (AbsorptionChiller.om_cost_us_dollars_per_ton) of absorption chiller based on peak cooling thermal
+                load
 
     Required inputs:
         1. max_elec_chiller_elec_load
@@ -596,6 +597,7 @@ def chiller_defaults(request):
     """
     elec_chiller_cop_defaults = copy.deepcopy(ElectricChiller.electric_chiller_cop_defaults)
     absorp_chiller_cost_defaults_all = copy.deepcopy(AbsorptionChiller.absorption_chiller_cost_defaults)
+    absorp_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
     boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
 
     try:
@@ -620,11 +622,14 @@ def chiller_defaults(request):
             # Absorption chiller costs
             if hot_water_or_steam is not None:
                 defaults_sizes = absorp_chiller_cost_defaults_all[hot_water_or_steam]
+                absorp_chiller_cop = absorp_chiller_cop_defaults[hot_water_or_steam]
             elif prime_mover is not None:
                 defaults_sizes = absorp_chiller_cost_defaults_all[boiler_type_by_chp_pm_defaults[prime_mover]]
+                absorp_chiller_cop = absorp_chiller_cop_defaults[boiler_type_by_chp_pm_defaults[prime_mover]]
             else:
                 # If hot_water_or_steam and CHP prime_mover are not provided, use hot_water defaults
                 defaults_sizes = absorp_chiller_cost_defaults_all["hot_water"]
+                absorp_chiller_cop = absorp_chiller_cop_defaults["hot_water"]
 
             if max_chiller_thermal_capacity <= defaults_sizes[0][0]:
                 absorp_chiller_capex = defaults_sizes[0][1]
@@ -651,6 +656,7 @@ def chiller_defaults(request):
                  "chiller_cop": elec_chiller_cop
                 },
             "AbsorptionChiller": {
+                "chiller_cop": absorp_chiller_cop,
                 "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
                 "om_cost_us_dollars_per_ton": absorp_chiller_opex
                 }
