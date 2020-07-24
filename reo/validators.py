@@ -1319,17 +1319,18 @@ class ValidateNestedInput:
                         if hw_or_steam_user_input is not None:
                             hw_or_steam = hw_or_steam_user_input
                             boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                            self.update_attribute_value(object_name_path, number,
+                                                        'boiler_efficiency',
+                                                        boiler_effic)
                         elif chp_prime_mover is not None:
                             hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
                             boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
                             self.update_attribute_value(object_name_path, number,
                                                         'existing_boiler_production_type_steam_or_hw',
                                                         hw_or_steam)
-                        else:
-                            self.input_data_errors.append("Must provide boiler_efficiency if not providing boiler type or CHP prime_mover")
-                        self.update_attribute_value(object_name_path, number,
-                                                    'boiler_efficiency',
-                                                    boiler_effic)
+                            self.update_attribute_value(object_name_path, number,
+                                                        'boiler_efficiency',
+                                                        boiler_effic)
 
         if object_name_path[-1] == "AbsorptionChiller":
                 if self.isValid:
@@ -1348,10 +1349,6 @@ class ValidateNestedInput:
                             self.update_attribute_value(object_name_path, number,
                                                         'chiller_cop',
                                                         absorption_chiller_cop_defaults[hw_or_steam])
-                        else:
-                            self.input_data_errors.append(
-                                'Must supply either absorption chiller cop, boiler type (hot water or steam), or CHP prime mover type')
-
 
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):

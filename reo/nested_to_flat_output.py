@@ -238,8 +238,6 @@ def nested_to_flat_chp(nested_output):
                 'year_one_boiler_fuel_consumption_mmbtu'],
             'boiler_yearly_thermal_production_mmbtu': nested_output['Scenario']['Site']['Boiler'][
                 'year_one_boiler_thermal_production_mmbtu'],
-            'boiler_yearly_thermal_production_bau_mmbtu': nested_output['Scenario']['Site']['Boiler'][
-                'year_one_boiler_thermal_production_bau_mmbtu'],
         })
     if nested_output['Scenario']['Site'].get('ElectricChiller') is not None:
         base.update({
@@ -247,9 +245,6 @@ def nested_to_flat_chp(nested_output):
                 'year_one_electric_chiller_electric_consumption_kwh'],
             'electric_chiller_yearly_thermal_production_tonhr': nested_output['Scenario']['Site']['ElectricChiller'][
                 'year_one_electric_chiller_thermal_production_tonhr'],
-            'electric_chiller_yearly_thermal_production_bau_tonhr':
-                nested_output['Scenario']['Site']['ElectricChiller'][
-                    'year_one_electric_chiller_thermal_production_bau_tonhr'],
         })
     if nested_output['Scenario']['Site'].get('AbsorptionChiller') is not None:
         base.update({
