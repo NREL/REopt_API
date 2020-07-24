@@ -424,6 +424,11 @@ function add_storage_op_constraints(m, p)
 		m[:dvStorageSOC][b,ts] <= m[:dvStorageCapEnergy][b]
 	)
 	
+	if !p.StorageCanGridCharge
+		for ts in p.TimeStepsWithGrid
+			fix(m[:dvGridToStorage][ts], 0.0, force=true)
+		end
+	end
 end
 
 
