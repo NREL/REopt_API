@@ -792,8 +792,16 @@ class Boiler(Tech):
         self.existing_boiler_production_type_steam_or_hw = existing_boiler_production_type_steam_or_hw
         self.boiler_efficiency = boiler_efficiency
         self.installed_cost_us_dollars_per_mmbtu_per_hr = installed_cost_us_dollars_per_mmbtu_per_hr
+        self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
+        self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
+        self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+
+        # Unless max_mmbtu_per_hr is a user-input, set the max_mmbtu_per_hr with the heating load and factor
+        if self.max_mmbtu_per_hr is None:
+            self.max_mmbtu_per_hr = max(boiler_fuel_series_bau) * self.boiler_efficiency * \
+                                    self.max_thermal_factor_on_peak_load
 
         dfm.add_boiler(self)
 
@@ -818,6 +826,9 @@ class ElectricChiller(Tech):
         self.max_kw = max_kw
         self.chiller_cop = chiller_cop
         self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
+        self.min_kw = kwargs.get('min_kw')
+        self.max_kw = kwargs.get('max_kw')
+        self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
 
