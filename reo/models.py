@@ -137,7 +137,7 @@ class SiteModel(models.Model):
     total_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
     total_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
-    outdoor_air_temp_degF = ArrayField(models.FloatField(blank=True), default=list)
+    outdoor_air_temp_degF = ArrayField(models.FloatField(blank=True, null=True), default=list)
     elevation_ft = models.FloatField(null=True, blank=True)
 
     @classmethod
