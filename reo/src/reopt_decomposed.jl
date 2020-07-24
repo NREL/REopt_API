@@ -113,14 +113,14 @@ end
 
 
 function add_cost_expressions(m, p)
-	m[:TotalTechCapCosts] = @expression(m, p.two_party_factor * (
+	m[:TotalTechCapCosts] = @expression(m, m[:weight] * p.two_party_factor * (
 		sum( p.CapCostSlope[t,s] * m[:dvSystemSizeSegment][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) + 
 		sum( p.CapCostYInt[t,s] * m[:binSegmentSelect][t,"CapCost",s] for t in p.Tech, s in 1:p.SegByTechSubdivision["CapCost",t] ) 
 	))
-	m[:TotalStorageCapCosts] = @expression(m, p.two_party_factor * 
+	m[:TotalStorageCapCosts] = @expression(m, m[:weight] * p.two_party_factor * 
 		sum( p.StorageCostPerKW[b]*m[:dvStorageCapPower][b] + p.StorageCostPerKWH[b]*m[:dvStorageCapEnergy][b] for b in p.Storage )
 	)
-	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * 
+	m[:TotalPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * p.pwf_om * m[:weight] * 
 		sum( p.OMperUnitSize[t] * m[:dvSize][t] for t in p.Tech ) 
 	)
     if !isempty(p.FuelBurningTechs)
@@ -400,7 +400,7 @@ function add_storage_op_constraints(m, p)
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
 	# Constraint (4e): Electrical production sent to storage or grid must be less than technology's rated production - no grid
-	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in m[:TimeStepsWithGrid]],
+	@constraint(m, ElecTechProductionFlowNoGridCon[b in p.ElecStorage, t in p.ElectricTechs, ts in m[:TimeStepsWithoutGrid]],
 		m[:dvProductionToStorage][b,t,ts]  <= 
 		p.ProductionFactor[t,ts] * p.LevelizationFactor[t] * m[:dvRatedProduction][t,ts]
 	)
@@ -756,11 +756,7 @@ end
 
 
 function add_util_fixed_and_min_charges(m, p)
-	if m[:model_type] == "monolith"
-		m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
-	else
-		m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge
-	end
+	m[:TotalFixedCharges] = p.pwf_e * p.FixedMonthlyCharge * 12
 	### Constraint (13): Annual minimum charge adder 
 	if p.AnnualMinCharge > 12 * p.MonthlyMinCharge
 		m[:TotalMinCharge] = p.AnnualMinCharge 
@@ -770,6 +766,7 @@ function add_util_fixed_and_min_charges(m, p)
 	
 	if !(m[:model_type] == "monolith")
 		m[:TotalMinCharge] /= 12
+		m[:TotalFixedCharges] /= 12
 	end
 		
 	if !(m[:model_type] == "lb")
@@ -784,7 +781,7 @@ function add_util_fixed_and_min_charges(m, p)
 end
 
 function add_inventory_constraints(m, p)
-
+	
 	### Constraint (14a): Beginning SOC = Storage Inventory
 	if !(m[:start_period] == 1)
 		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,start_period] == m[:dvStorageResetSOC][b] )
@@ -797,16 +794,16 @@ function add_cost_function(m, p)
 	m[:REcosts] = @expression(m,
 
 		# Capital Costs
-		m[:weight] * (m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +  
+		m[:TotalTechCapCosts] + m[:TotalStorageCapCosts] +  
 		
 		## Fixed O&M, tax deductible for owner
-		m[:weight] * m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
+		m[:TotalPerUnitSizeOMCosts] * m[:r_tax_fraction_owner] +
 
         ## Variable O&M, tax deductible for owner
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + (m[:weight] * m[:TotalCHPStandbyCharges]) + (m[:weight] * m[:TotalFixedCharges]) + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + [:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
@@ -820,6 +817,7 @@ function add_cost_function(m, p)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
 		0.0001*m[:MinChargeAdder] is added back into LCC when writing to results.  =#
+
 end
 
 
@@ -899,7 +897,7 @@ function reopt_build(m, p::Parameter)
 	##############################################################################
 	
 	## Temporary workaround for outages TimeStepsWithoutGrid
-	if !isempty(m[:TimeStepsWithGrid])
+	if !isempty(m[:TimeStepsWithoutGrid])
 		add_no_grid_constraints(m, p)
 	end
 
