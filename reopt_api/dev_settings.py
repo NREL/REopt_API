@@ -175,6 +175,8 @@ if 'test' in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES_EXCEPTIONS = False
 
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
+
 # Static files (used for Proforma xlsx)
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'

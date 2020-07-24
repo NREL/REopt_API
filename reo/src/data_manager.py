@@ -1047,6 +1047,7 @@ class DataManager:
 	        'StorageMaxSizePower': self.storage.max_kw,
 	        'StorageMinSOC': self.storage.soc_min_pct,
 	        'StorageInitSOC': self.storage.soc_init_pct,
+            'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize': segment_min_size,
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
@@ -1147,6 +1148,7 @@ class DataManager:
 	        'StorageMaxSizePower':0,
 	        'StorageMinSOC':self.storage.soc_min_pct,
 	        'StorageInitSOC':self.storage.soc_init_pct,
+            'StorageCanGridCharge': self.storage.canGridCharge,
             'SegmentMinSize':segment_min_size_bau,
             'SegmentMaxSize':segment_max_size_bau,
             # Sets that need to be populated

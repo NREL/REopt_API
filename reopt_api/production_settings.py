@@ -136,13 +136,15 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
+
 
 # celery task registration
 CELERY_IMPORTS = (
-    'reo.src.reopt',
     'reo.api',
     'reo.scenario',
-    'reo.results',
+    'reo.process_results',
+    'reo.src.run_jump_model',
     'resilience_stats.outage_simulator_LF',
 )
 
