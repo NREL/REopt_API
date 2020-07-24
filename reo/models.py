@@ -283,7 +283,7 @@ class ElectricTariffModel(models.Model):
     wholesale_rate_above_site_load_us_dollars_per_kwh = ArrayField(models.FloatField(default=[0]))
     urdb_response = PickledObjectField(null=True, editable=True)
     add_blended_rates_to_urdb_rate = models.BooleanField(null=False)
-    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list)
+    emissions_factor_series_lb_CO2_per_kwh = ArrayField(models.FloatField(blank=True), default=list, null=True)
     chp_standby_rate_us_dollars_per_kw_per_month = models.FloatField(blank=True, null=True)
     chp_does_not_reduce_demand_charges = models.BooleanField(blank=True, null=True)
     add_tou_energy_rates_to_urdb_rate = models.BooleanField(null=False, default=False)
