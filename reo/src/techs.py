@@ -780,21 +780,23 @@ class Boiler(Tech):
     boiler_efficiency_defaults = {"hot_water": 0.80,
                                   "steam": 0.75}
 
-    def __init__(self, dfm, min_mmbtu_per_hr, max_mmbtu_per_hr, existing_boiler_production_type_steam_or_hw,
-                 boiler_efficiency, installed_cost_us_dollars_per_mmbtu_per_hr, **kwargs):
+    boiler_type_by_chp_prime_mover_defaults = {"recip_engine": "hot_water",
+                                               "micro_turbine": "hot_water",
+                                               "combustion_turbine": "steam",
+                                               "fuel_cell": "hot_water"}
+
+    def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
         super(Boiler, self).__init__(**kwargs)
 
-        self.loads_served = ['boiler', 'tes']  # Not sure if boiler would ever store thermal in tes if no TOU for NG
+        self.loads_served = ['boiler', 'tes']
         self.is_hot = True
         self.reopt_class = 'BOILER'  # Not sure why UTIL tech is not assigned to the UTIL class
-        self.min_mmbtu_per_hr = min_mmbtu_per_hr
-        self.max_mmbtu_per_hr = max_mmbtu_per_hr
-        self.existing_boiler_production_type_steam_or_hw = existing_boiler_production_type_steam_or_hw
-        self.boiler_efficiency = boiler_efficiency
-        self.installed_cost_us_dollars_per_mmbtu_per_hr = installed_cost_us_dollars_per_mmbtu_per_hr
         self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
         self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
+        self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
+        self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
 
@@ -868,6 +870,12 @@ class AbsorptionChiller(Tech):
 
     absorption_chiller_cop_defaults = {"hot_water": 0.74,
                                        "steam": 1.42}
+
+    # Data format for cost is (ton, $/ton, $/ton/yr); less than 1st or greater than last size uses constant, otherwise lin-interp
+    absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (400, 2250.0, 14.0), (1320, 2000.0, 7.0)],
+                                        "steam": [(300, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
+
+    def __init__(self, dfm, max_capacity_tons, hw_or_steam, chp_prime_mover, **kwargs):
         super(AbsorptionChiller, self).__init__(**kwargs)
 
         self.loads_served = ['retail', 'tes']
@@ -878,10 +886,28 @@ class AbsorptionChiller(Tech):
         self.n_timesteps = dfm.n_timesteps
 
         # Convert a size-based inputs from ton to kwt
-        self.min_kw = min_ton * 3.51685
-        self.max_kw = max_ton * 3.51685
-        self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_ton / 3.51685
-        self.om_cost_us_dollars_per_kw = om_cost_us_dollars_per_ton / 3.51685
+        self.min_kw = kwargs.get('min_ton') * 3.51685
+        self.max_kw = kwargs.get('max_ton') * 3.51685
+        self.installed_cost_us_dollars_per_ton = kwargs.get('installed_cost_us_dollars_per_ton')
+        self.om_cost_us_dollars_per_ton = kwargs.get('om_cost_us_dollars_per_ton')
+        self.max_capacity_tons = max_capacity_tons
+        self.hw_or_steam = hw_or_steam
+        self.chp_prime_mover = chp_prime_mover
+
+        # Calc default CapEx and OpEx costs, and use if the user did not enter a value
+        installed_cost_per_ton_calc, om_cost_per_ton_per_yr_calc = self.get_absorp_chiller_costs(self.max_capacity_tons, self.hw_or_steam,
+                                                                     self.chp_prime_mover)
+
+        if self.installed_cost_us_dollars_per_ton is None and self.om_cost_us_dollars_per_ton is None:
+            self.installed_cost_us_dollars_per_ton = installed_cost_per_ton_calc
+            self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
+        elif self.installed_cost_us_dollars_per_ton is None:
+            self.installed_cost_us_dollars_per_ton = installed_cost_per_ton_calc
+        elif self.om_cost_us_dollars_per_ton is None:
+            self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
+
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / 3.51685
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / 3.51685
 
         self.incentives = IncentivesNoProdBased(**kwargs)
 
@@ -895,4 +921,35 @@ class AbsorptionChiller(Tech):
         chiller_prod_factor = [1.0 for _ in range(self.n_timesteps)]
 
         return chiller_prod_factor
+
+    @staticmethod
+    def get_absorp_chiller_costs(max_capacity_tons, hw_or_steam, chp_prime_mover):
+        if hw_or_steam is not None:
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[hw_or_steam]
+        elif chp_prime_mover is not None:
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[Boiler.boiler_type_by_chp_prime_mover_defaults[chp_prime_mover]]
+        else:
+            # If hw_or_steam and CHP prime_mover are not provided, use hot_water defaults
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults["hot_water"]
+
+        if max_capacity_tons <= defaults_sizes[0][0]:
+            absorp_chiller_capex = defaults_sizes[0][1]
+            absorp_chiller_opex = defaults_sizes[0][2]
+        elif max_capacity_tons >= defaults_sizes[-1][0]:
+            absorp_chiller_capex = defaults_sizes[-1][1]
+            absorp_chiller_opex = defaults_sizes[-1][2]
+        else:
+            for size in range(1, len(defaults_sizes)):
+                if max_capacity_tons > defaults_sizes[size - 1][0] and \
+                        max_capacity_tons <= defaults_sizes[size][0]:
+                    slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
+                                  (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                    slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
+                                 (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                    absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
+                                           (max_capacity_tons - defaults_sizes[size - 1][0])
+                    absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
+                                          (max_capacity_tons - defaults_sizes[size - 1][0])
+
+        return absorp_chiller_capex, absorp_chiller_opex
 
