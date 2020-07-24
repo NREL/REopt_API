@@ -205,7 +205,7 @@ class LoadProfileModel(models.Model):
     outage_is_major_event = models.BooleanField(default=True)
 
     #Outputs
-    year_one_electric_load_series_kw_bau = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    year_one_electric_load_series_kw_bau = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
@@ -290,7 +290,7 @@ class ElectricTariffModel(models.Model):
     tou_energy_rates_us_dollars_per_kwh =ArrayField(models.FloatField(blank=True), default=list)
 
     # Ouptuts
-    year_one_to_load_bau_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    year_one_to_load_bau_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     year_one_energy_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_demand_cost_us_dollars = models.FloatField(null=True, blank=True)
     year_one_fixed_cost_us_dollars = models.FloatField(null=True, blank=True)
