@@ -577,7 +577,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_from_hot_tes_series_mmbtu_per_hr"] = self.results_dict.get("hot_tes_thermal_production_series")
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_hot_tes_soc_series_pct"] = self.results_dict.get("hot_tes_pct_soc_series")
-                    if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series"))):
+                    if np.isnan(sum(self.results_dict.get("hot_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_hot_tes_soc_series_pct"] = None
 
                 elif name == "ColdTES":
@@ -587,7 +587,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         "year_one_thermal_from_cold_tes_series_ton"] = [x/3.51685 for x in self.results_dict.get("cold_tes_thermal_production_series")]
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_cold_tes_soc_series_pct"] = self.results_dict.get("cold_tes_pct_soc_series")
-                    if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series"))):
+                    if np.isnan(sum(self.results_dict.get("cold_tes_pct_soc_series") or [np.nan])):
                         self.nested_outputs["Scenario"]["Site"][name]["year_one_cold_tes_soc_series_pct"] = None
 
             # outputs that depend on multiple object results:
