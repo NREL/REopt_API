@@ -1581,7 +1581,8 @@ nested_input_definitions = {
         "existing_boiler_production_type_steam_or_hw": {
           "type": "str",
           "description": "Boiler production type (hot_water, steam)",
-          "restrict_to": ["hot_water", "steam"]
+          "restrict_to": ["hot_water", "steam"],
+          "description": "Boiler thermal production type, hot water or steam"
         },
         "boiler_efficiency": {
           "type": "float",
@@ -1643,11 +1644,11 @@ nested_input_definitions = {
                          "to usable cooling thermal energy output"
         },
         "installed_cost_us_dollars_per_ton": {
-          "type": "float", "min": 0.0, "max": 2.0e4, "default": 4150.0,
+          "type": "float", "min": 0.0, "max": 2.0e4,
           "description": "Thermal power-based cost of absorption chiller (3.5 to 1 ton to kwt)"
         },
         "om_cost_us_dollars_per_ton": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 28.0,
+          "type": "float", "min": 0.0, "max": 1000.0,
           "description": "Yearly fixed O&M cost on a thermal power (ton) basis"
         },
         "macrs_option_years": {
