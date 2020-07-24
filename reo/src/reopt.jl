@@ -518,17 +518,31 @@ function add_tech_size_constraints(m, p)
 		
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
 	@constraint(m, TurbineRatedProductionCon[t in p.FuelBurningTechs, ts in p.TimeStep; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+		m[:dvRatedProduction][t,ts] <= p.ElectricDerate[t,ts] * m[:dvSize][t]
 	)
-		
+
+	##Constraint (7_heating_prod_size): Production limit based on size for boiler
+	if !isempty(p.BoilerTechs)
+		@constraint(m, HeatingProductionCon[t in p.BoilerTechs, ts in p.TimeStep],
+			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
+		)
+	end
+
+	##Constraint (7_cooling_prod_size): Production limit based on size for chillers
+	if !isempty(p.CoolingTechs)
+		@constraint(m, CoolingProductionCon[t in p.CoolingTechs, ts in p.TimeStep],
+			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
+		)
+	end
+
 	##Constraint (7f)-1: Minimum segment size
 	@constraint(m, SegmentSizeMinCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
-		m[:dvSystemSizeSegment][t,k,s]  >= p.SegmentMinSize[t,k,s] * m[:binSegmentSelect][t,k,s]
+		m[:dvSystemSizeSegment][t,k,s] >= p.SegmentMinSize[t,k,s] * m[:binSegmentSelect][t,k,s]
 	)
 	
 	##Constraint (7f)-2: Maximum segment size
 	@constraint(m, SegmentSizeMaxCon[t in p.Tech, k in p.Subdivision, s in 1:p.SegByTechSubdivision[k,t]],
-		m[:dvSystemSizeSegment][t,k,s]  <= p.SegmentMaxSize[t,k,s] * m[:binSegmentSelect][t,k,s]
+		m[:dvSystemSizeSegment][t,k,s] <= p.SegmentMaxSize[t,k,s] * m[:binSegmentSelect][t,k,s]
 	)
 	
 	##Constraint (7g):  Segments add up to system size 

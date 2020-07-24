@@ -1571,13 +1571,18 @@ nested_input_definitions = {
           "description": "Minimum thermal power size - keep to 0 as we are not sizing this"
         },
         "max_mmbtu_per_hr": {
-          "type": "float", "min": 0.0, "max": 1.0e9, "default": 1.0e9,
+          "type": "float", "min": 0.0, "max": 1.0e9,
           "description": "Maximum thermal power size - arbitrary large number to exceed max boiler load input"
+        },
+        "max_thermal_factor_on_peak_load": {
+          "type": "float", "min": 1.0, "max": 5.0, "default": 1.25,
+          "description": "Factor on peak thermal LOAD which the boiler can supply"
         },
         "existing_boiler_production_type_steam_or_hw": {
           "type": "str",
           "description": "Boiler production type (hot_water, steam)",
-          "restrict_to": ["hot_water", "steam"]
+          "restrict_to": ["hot_water", "steam"],
+          "description": "Boiler thermal production type, hot water or steam"
         },
         "boiler_efficiency": {
           "type": "float",
@@ -1602,14 +1607,17 @@ nested_input_definitions = {
           "description": "Minimum electric power size - keep to 0 as we are not sizing this"
         },
         "max_kw": {
-          "type": "float", "min": 0.0, "max": 1.0e9, "default": 1.0e9,
+          "type": "float", "min": 0.0, "max": 1.0e9,
           "description": "Maximum electric power size - arbitrary large number to exceed max chiller load input"
+        },
+        "max_thermal_factor_on_peak_load": {
+          "type": "float", "min": 1.0, "max": 5.0, "default": 1.25,
+          "description": "Factor on peak thermal LOAD which the electric chiller can supply"
         },
         "chiller_cop": {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,
-          "default": 3.5,
           "description": "Existing electric chiller system coefficient of performance - conversion of electricity to "
                          "usable cooling thermal energy"
         },
@@ -1632,16 +1640,15 @@ nested_input_definitions = {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,
-          "default": 0.7,
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
         "installed_cost_us_dollars_per_ton": {
-          "type": "float", "min": 0.0, "max": 2.0e4, "default": 4150.0,
+          "type": "float", "min": 0.0, "max": 2.0e4,
           "description": "Thermal power-based cost of absorption chiller (3.5 to 1 ton to kwt)"
         },
         "om_cost_us_dollars_per_ton": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 28.0,
+          "type": "float", "min": 0.0, "max": 1000.0,
           "description": "Yearly fixed O&M cost on a thermal power (ton) basis"
         },
         "macrs_option_years": {
