@@ -167,13 +167,22 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
                 run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
-        t_start = time.time()
-        Main.include("reo/src/reopt.jl")
-        time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
+        if len(reopt_inputs["CHPTechs"]) == 0:
+            t_start = time.time()
+            Main.include("reo/src/reopt.jl")
+            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
 
-        t_start = time.time()
-        results = Main.reopt(model, reopt_inputs)
-        time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
+            t_start = time.time()
+            results = Main.reopt(model, reopt_inputs)
+            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
+        else:
+            t_start = time.time()
+            Main.include("reo/src/reopt_decomposed.jl")
+            time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
+
+            t_start = time.time()
+            results = run_decomposed_model(data, model, reopt_inputs)
+            time_dict["pyjulia_run_reopt_seconds"] = time.time() - t_start
 
         results.update(time_dict)
 
@@ -212,3 +221,43 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     else:
         del dfm['reopt_inputs']
     return dfm
+
+def run_decomposed_model(data, model, reopt_inputs,
+                         lb_iters=3, ub_select="peak"):
+    time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
+    opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
+    reopt_param = julia.Main.Parameter(reopt_inputs)
+    print("parameter made.")
+    lb_models = [julia.Main.add_decomp_model(model, reopt_param, "lb", i) for i in range(1,13)]
+    print("lb models built.")
+    ub_models = [julia.Main.add_decomp_model(model, reopt_param, "ub", i) for i in range(1,13)]
+    print("ub models built.")
+    lb_result_dicts = solve_subproblems(lb_models, reopt_param)
+    print("lb models solved.")
+    lb = julia.Main.get_lower_bound(lb_result_dicts)
+    print("lb:", lb)
+    system_sizes = julia.Main.get_peak_sizing_decisions(lb_models, reopt_param)
+    julia.Main.fix_sizing_decisions(ub_models, reopt_param, system_sizes)
+    ub_result_dicts = solve_subproblems(ub_models, reopt_param)
+    print("ub models solved.")
+    ub = julia.Main.get_objective_value(ub_result_dicts)
+    print("ub:", ub)
+    gap = (ub - lb) / lb
+    print("gap:", gap)
+    assert(False)
+
+
+
+def solve_subproblems(models, reopt_param):
+    """
+    Solves subproblems, so far in a for loop.
+    TODO: make a celery task for each subproblem solve.
+    :param Main: Julia REPL accessor
+    :param models: JuMP model objects
+    :param reopt_param: JuMP parameter object
+    :return: results_dicts -- list of dictionaries containing subproblem results
+    """
+    results_dicts = []
+    for model in models:
+        results_dicts.append(julia.Main.reopt_solve(model, reopt_param))
+    return results_dicts
