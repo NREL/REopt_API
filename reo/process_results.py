@@ -566,6 +566,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         npv_pbi += base_pbi
     
             npv_federal_itc = 0
+            depreciation_schedule = np.array([0.0 for _ in range(years)])
             if tech_inputs_dict['macrs_option_years'] in [5,7]:
                 if tech_inputs_dict['macrs_option_years'] == 5:
                     schedule = macrs_five_year
@@ -576,7 +577,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 npv_federal_itc = federal_itc_amount * (1.0/(1.0+discount_pct)) 
                 macrs_bonus_basis = federal_itc_basis - (federal_itc_basis * tech_inputs_dict['federal_itc_pct'] * tech_inputs_dict['macrs_itc_reduction'])
                 macrs_basis = macrs_bonus_basis * (1 - tech_inputs_dict['macrs_bonus_pct'])
-                depreciation_schedule = np.array([0.0 for _ in range(years)])
                 for i,r in enumerate(schedule):
                     depreciation_schedule[i] = macrs_basis * r
                 depreciation_schedule[0] += (tech_inputs_dict['macrs_bonus_pct'] * macrs_bonus_basis)
