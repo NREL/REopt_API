@@ -293,12 +293,12 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     lpbf = LoadProfileBoilerFuelModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_boiler_fuel_load_mmbtu_bau"] = lpbf.annual_calculated_boiler_fuel_load_mmbtu_bau
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_fuel_load_series_mmbtu_per_hr"] = self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x * self.dm["boiler_efficiency"] for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_boiler_thermal_load_series_mmbtu_per_hr"] = [x * self.dm.get("boiler_efficiency", 0) for x in self.dm["LoadProfile"].get("year_one_boiler_fuel_load_series_mmbtu_per_hr")]
                 elif name == "LoadProfileChillerElectric":
                     lpce = LoadProfileChillerElectricModel.objects.filter(run_uuid=meta['run_uuid'])[0]
                     self.nested_outputs["Scenario"]["Site"][name]["annual_calculated_kwh_bau"] = lpce.annual_calculated_kwh_bau
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_electric_load_series_kw"] = self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")
-                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = [x * self.dm["elecchl_cop"] / 3.5168545 for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
+                    self.nested_outputs["Scenario"]["Site"][name]["year_one_chiller_thermal_load_series_ton"] = [x * self.dm.get("elecchl_cop", 0) / 3.5168545 for x in self.dm["LoadProfile"].get("year_one_chiller_electric_load_series_kw")]
                 elif name == "Financial":
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_us_dollars"] = self.results_dict.get("lcc")
                     self.nested_outputs["Scenario"]["Site"][name]["lcc_bau_us_dollars"] = self.results_dict.get(

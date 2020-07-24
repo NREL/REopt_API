@@ -1588,6 +1588,7 @@ nested_input_definitions = {
           "type": "float",
           "min:": 0.0,
           "max:": 1.0,
+          "default": 0.8,
           "description": "Existing boiler system efficiency - conversion of fuel to usable heating thermal energy. "
                          "Default value depends on existing_boiler_production_steam_or_hw input"
         },
@@ -1640,6 +1641,7 @@ nested_input_definitions = {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,
+          "default": 0.74,
           "description": "Absorption chiller system coefficient of performance - conversion of hot thermal power input "
                          "to usable cooling thermal energy output"
         },
