@@ -73,7 +73,7 @@ end
 function add_subproblem_time_sets(m, p)
 	m[:TimeStep] = p.TimeStepRatchetsMonth[m[:month_idx]]
 	m[:start_period] = m[:TimeStep][1] - 1
-	m[:end_period] = m[:TimeStep]
+	m[:end_period] = last(m[:TimeStep])
 	m[:TimeStepBat] = append!([m[:start_period]],m[:TimeStep])
 	m[:Month] = [m[:month_idx]]
 	m[:TimeStepsWithGrid] = Int64[]
@@ -137,10 +137,10 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 	end
 	if m[:model_type] == "lb"
-		m[:LagrangianPenalties] = @expression(m, sum(m[:tech_size_penalty] * m[:dvSize] for t in p.Tech)
-			+ sum(m[:storage_power_size_penalty] * m[:dvStorageCapPower]
-				+ m[:storage_energy_size_penalty] * m[:dvStorageCapEnergy]
-				+ m[:storage_inventory_penalty] * m[:dvStorageSOC]
+		m[:LagrangianPenalties] = @expression(m, sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
+			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
+				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
+				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
 				for b in p.Storage)
 		)
 	else
@@ -784,10 +784,10 @@ function add_inventory_constraints(m, p)
 	
 	### Constraint (14a): Beginning SOC = Storage Inventory
 	if !(m[:start_period] == 1)
-		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,start_period] == m[:dvStorageResetSOC][b] )
+		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,m[:start_period]] == m[:dvStorageResetSOC][b] )
 	end
 	### Constraint (14b): Ending SOC = Storage Inventory
-	@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,end_period] == m[:dvStorageResetSOC][b] )
+	@constraint(m, EndInventoryCon[b in p.Storage], m[:dvStorageSOC][b,m[:end_period]] == m[:dvStorageResetSOC][b] )
 end
 
 function add_cost_function(m, p)
@@ -1476,13 +1476,15 @@ end
 
 function get_initial_decomp_penalties(m,p)
 	m[:tech_size_penalty] = Dict()
-	m[:storage_size_penalty] = Dict()
+	m[:storage_power_size_penalty] = Dict()
+	m[:storage_energy_size_penalty] = Dict()
 	m[:storage_inventory_penalty] = Dict()
 	for t in p.Tech
 		m[:tech_size_penalty][t] = 0.0
 	end
 	for b in p.Storage
-		m[:storage_size_penalty][b] = 0.0
+		m[:storage_power_size_penalty][b] = 0.0
+		m[:storage_energy_size_penalty] = 0.0
 		m[:storage_inventory_penalty][b] = 0.0
 	end
 end
