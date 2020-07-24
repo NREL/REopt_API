@@ -1234,7 +1234,7 @@ def generate_proforma(scenariomodel, output_file_path):
             ws[upper_case_letters[2 + ii] + str(current_row)] = 0
             pv_cell_locations[idx]["pv_macrs_cells"].append("\'{}\'!".format(
                 inandout_sheet_name) + upper_case_letters[2 + ii] + str(current_row))
-        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
         fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
         fill_cols(ws, range(1, 2), current_row, grey_fill)
         current_row += 1
@@ -1248,7 +1248,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(wind.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         wind_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
 
@@ -1264,7 +1264,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(batt.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         batt_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
 
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
