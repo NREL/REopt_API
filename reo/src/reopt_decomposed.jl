@@ -849,6 +849,7 @@ function add_decomp_models(m, p::Parameter, model_type::String)
 			error("solver_name undefined or doesn't match existing base of REopt solvers.")
 		end
 		sub_models[mth][:model_type] = model_type
+		reopt_build(sub_models[mth], p)
 	end
 	return sub_models
 end
@@ -858,7 +859,7 @@ function reopt(reo_model, model_inputs::Dict)
 	t_start = time()
     p = Parameter(model_inputs)
 	t = time() - t_start
-
+	reopt_build(reo_model, p)
 	results = reopt_run(reo_model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
@@ -873,12 +874,24 @@ function reopt_build(m, p::Parameter)
 	## Big-M adjustments; these need not be replaced in the parameter object.
 	add_bigM_adjustments(m, p)
 	## Time sets
-	add_monolith_time_sets(m, p)
+	if m[:model_type] == "monolith"
+		add_monolith_time_sets(m, p)
+	else
+		add_subproblem_time_sets(m, p)
+	end
 	results["julia_reopt_preamble_seconds"] = time() - t_start
 	t_start = time()
 
 	add_continuous_variables(m, p)
 	add_integer_variables(m, p)
+	
+	if m[:model_type] != "monolith"
+		add_subproblem_variables(m, p)
+	end
+	
+	if m[:model_type] == "lb"
+		get_initial_decomp_penalties(m, p)
+	end
 
 	results["julia_reopt_variables_seconds"] = time() - t_start
 	t_start = time()
@@ -954,11 +967,15 @@ function reopt_build(m, p::Parameter)
 	end
     m[:TotalDemandCharges] = @expression(m, m[:DemandTOUCharges] + m[:DemandFlatCharges])
 
+	### Decomposition only: inventory constraints
+	if m[:model_type] != "monolith"
+		add_inventory_constraints(m, p)
+	end
+
 	add_parameters(m, p)
 	add_cost_expressions(m, p)
 	add_export_expressions(m, p)
 	add_util_fixed_and_min_charges(m, p)
-	
 	add_cost_function(m, p)
 
     if Obj == 1
@@ -1527,7 +1544,9 @@ end
 function fix_sizing_decisions(models,p,sizes::Dict)
 	for m in models
 		for t in p.Tech
-			fix(m[:dvSize][t], sizes["dvSize",t], force=true)
+			if t != "BOILER" && t != "ELECCHL"
+				fix(m[:dvSize][t], sizes["dvSize",t], force=true)
+			end
 		end
 		for b in p.Storage
 			fix(m[:dvStorageCapPower][b], sizes["dvStorageCapPower",b], force=true)
@@ -1555,7 +1574,7 @@ function aggregate_subproblem_results(result_dicts)
 	nothing
 end
 
-function get_full_year_objective_value(models, p)
+function get_objective_value(models, p)
 	### Obtain subproblem lcc's, minus the min charge adders and production incentives
 	obj = sum(value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
 		for m in models)
@@ -1577,5 +1596,10 @@ function get_full_year_objective_value(models, p)
 		incentive = p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor
 	end
 	obj -= incentive
+	return obj
+end
+
+function get_lower_bound(results_dicts)
+	return sum(r["lower_bound"] for r in results_dicts)
 end
 
