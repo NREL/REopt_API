@@ -283,7 +283,7 @@ end
 
 
 function add_no_grid_constraints(m, p)
-	for ts in m[:TimeStepsWithGrid]
+	for ts in m[:TimeStepsWithoutGrid]
 		fix(m[:dvGridToStorage][ts], 0.0, force=true)
 		for u in p.PricingTier
 			fix(m[:dvGridPurchase][u,ts], 0.0, force=true)
@@ -803,7 +803,7 @@ function add_cost_function(m, p)
 		m[:TotalPerUnitProdOMCosts] * m[:r_tax_fraction_owner] +
 
 		# Utility Bill, tax deductible for offtaker
-		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + [:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
+		(m[:TotalEnergyChargesUtil] + m[:TotalDemandCharges] + m[:TotalExportBenefit] + m[:TotalCHPStandbyCharges] + m[:TotalFixedCharges] + 0.999*m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker] +
         
         ## Total Generator Fuel Costs, tax deductible for offtaker
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
