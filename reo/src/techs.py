@@ -816,21 +816,41 @@ class Boiler(Tech):
 
 class ElectricChiller(Tech):
 
-    def __init__(self, dfm, min_kw, max_kw, chiller_cop, installed_cost_us_dollars_per_kw, **kwargs):
+    electric_chiller_cop_defaults = {"convert_elec_to_thermal": 4.55,
+                                        "less_than_100_tons": 4.40,
+                                        "greater_than_100_tons": 4.69}
+
+    def __init__(self, dfm, chiller_electric_series_bau, **kwargs):
         super(ElectricChiller, self).__init__(**kwargs)
 
         self.loads_served = ['retail', 'tes']
         self.is_cool = True
         self.reopt_class = 'ELECCHL'
-        self.min_kw = min_kw
-        self.max_kw = max_kw
-        self.chiller_cop = chiller_cop
-        self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
         self.min_kw = kwargs.get('min_kw')
         self.max_kw = kwargs.get('max_kw')
         self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
+        self.chiller_cop = kwargs.get('chiller_cop')
+        self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
         self.derate = 0
         self.n_timesteps = dfm.n_timesteps
+
+        # Update COP (if not user-entered) based on estimated max chiller load
+        if self.chiller_cop is None:
+            self.max_chiller_thermal_capacity_tons = max(chiller_electric_series_bau) * \
+                                                ElectricChiller.electric_chiller_cop_defaults["convert_elec_to_thermal"] * \
+                                                self.max_thermal_factor_on_peak_load / 3.51685
+            if self.max_chiller_thermal_capacity_tons < 100.0:
+                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["less_than_100_tons"]
+            else:
+                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["greater_than_100_tons"]
+        else:
+            self.max_chiller_thermal_capacity_tons = max(chiller_electric_series_bau) * \
+                                                self.chiller_cop * \
+                                                self.max_thermal_factor_on_peak_load / 3.51685
+
+        # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
+        if self.max_kw is None:
+            self.max_kw = self.max_chiller_thermal_capacity_tons * 3.51685
 
         dfm.add_electric_chiller(self)
 
