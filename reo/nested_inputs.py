@@ -1617,7 +1617,6 @@ nested_input_definitions = {
           "type": "float",
           "min:": 0.0,
           "max:": 20.0,
-          "default": 3.5,
           "description": "Existing electric chiller system coefficient of performance - conversion of electricity to "
                          "usable cooling thermal energy"
         },
