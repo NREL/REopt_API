@@ -787,10 +787,10 @@ function add_inventory_constraints(m, p)
 
 	### Constraint (14a): Beginning SOC = Storage Inventory
 	if !(m[:start_period] == 1)
-		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,start_period] == m[:dvStorageResetSOC][b] 
+		@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,start_period] == m[:dvStorageResetSOC][b] )
 	end
 	### Constraint (14b): Ending SOC = Storage Inventory
-	@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,end_period] == m[:dvStorageResetSOC][b] 
+	@constraint(m, StartInventoryCon[b in p.Storage], m[:dvStorageSOC][b,end_period] == m[:dvStorageResetSOC][b] )
 end
 
 function add_cost_function(m, p)
@@ -844,7 +844,7 @@ function add_decomp_models(m, p::Parameter, model_type::String)
 		elseif m[:solver_name] == "Cbc"
 			append!(sub_models, Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.01)))
 		elseif m[:solver_name] == "SCIP"
-			append!(sub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01))
+			append!(sub_models, Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01)))
 		else
 			error("solver_name undefined or doesn't match existing base of REopt solvers.")
 		end
@@ -859,7 +859,6 @@ function reopt(reo_model, model_inputs::Dict)
 	t_start = time()
     p = Parameter(model_inputs)
 	t = time() - t_start
-	reopt_build(reo_model, p)
 	results = reopt_run(reo_model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
@@ -985,9 +984,11 @@ function reopt_build(m, p::Parameter)
 	end
 	
 	results["julia_reopt_constriants_seconds"] = time() - t_start
+	
+	return results
 end
 
-fucntion reopt_solve(m, p::Parameter)
+function reopt_solve(m, p::Parameter, results::Dict)
 	t_start = time()
 
 	optimize!(m)
@@ -1023,9 +1024,9 @@ fucntion reopt_solve(m, p::Parameter)
 end
 
 function reopt_run(m, p::Parameter)
-
-	reopt_build(m, p)
-	results = reopt_solve(m, p)
+	m[:model_type] = "monolith"
+	results = reopt_build(m, p)
+	results = reopt_solve(m, p, results)
 	return results
 	
 end
