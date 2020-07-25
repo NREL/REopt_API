@@ -380,7 +380,7 @@ end
 
 function add_storage_size_constraints(m, p)
 	# Constraint (4a): Reconcile initial state of charge for storage systems
-	@constraint(m, InitStorageCon[b in p.Storage], m[:dvStorageSOC][b,0] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
+	@constraint(m, InitStorageCon[b in p.Storage], m[:dvStorageSOC][b,m[:start_period]] == p.StorageInitSOC[b] * m[:dvStorageCapEnergy][b])
 	# Constraint (4b)-1: Lower bound on Storage Energy Capacity
 	@constraint(m, StorageEnergyLBCon[b in p.Storage], m[:dvStorageCapEnergy][b] >= p.StorageMinSizeEnergy[b])
 	# Constraint (4b)-2: Upper bound on Storage Energy Capacity
@@ -846,7 +846,6 @@ function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	end
 	sub_model[:model_type] = model_type
 	sub_model[:month_idx] = mth
-	reopt_build(sub_model, p)
 	return sub_model
 end
 
@@ -1016,6 +1015,10 @@ function reopt_solve(m, p::Parameter, results::Dict)
 
 	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
+	
+	if m[:model_type] != "monolith"
+		results = convert_to_arrays(m, results)
+	end
 	return results
 end
 
@@ -1229,16 +1232,8 @@ end
 
 function add_wind_results(m, p, r::Dict)
 	r["wind_kw"] = round(value(sum(m[:dvSize][t] for t in m[:WindTechs])), digits=4)
-	#@expression(m, WINDtoBatt[ts in m[:TimeStep]],
-	#            sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs], b in p.ElecStorage))
-	WINDtoBatt = 0.0*Array{Float64,1}(undef,p.TimeStepCount)
-	for ts in m[:TimeStep]
-		for t in m[:WindTechs]
-			for b in p.ElecStorage
-				WINDtoBatt[ts] += value(m[:dvProductionToStorage][b, t, ts]) 
-			end
-		end
-	end
+	@expression(m, WINDtoBatt[ts in m[:TimeStep]],
+	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
 	@expression(m, WINDtoGrid[ts in m[:TimeStep]],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
@@ -1484,7 +1479,7 @@ function get_initial_decomp_penalties(m,p)
 	end
 	for b in p.Storage
 		m[:storage_power_size_penalty][b] = 0.0
-		m[:storage_energy_size_penalty] = 0.0
+		m[:storage_energy_size_penalty][b] = 0.0
 		m[:storage_inventory_penalty][b] = 0.0
 	end
 end
@@ -1598,3 +1593,11 @@ function get_lower_bound(results_dicts)
 	return sum(r["lower_bound"] for r in results_dicts)
 end
 
+function convert_to_arrays(m, results::Dict)
+	for key in keys(results)
+		if !(typeof(results[key]) in [Array{Any,1}, String, Float64, Dict{Any, Any}, Int64])
+			results[key] = Array{Float64,1}([results[key][ts] for ts in m[:TimeStep]])
+		end
+	end
+	return results
+end
