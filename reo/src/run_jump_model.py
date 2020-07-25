@@ -228,36 +228,56 @@ def run_decomposed_model(data, model, reopt_inputs,
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
     print("parameter made.")
-    lb_models = [julia.Main.add_decomp_model(model, reopt_param, "lb", i) for i in range(1,13)]
+    lb_models = {}
+    ub_models = {}
+    for idx in range(1, 13):
+        lb_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "lb", idx)
+        ub_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "ub", idx)
+    print("models created.")
+    lb_result_dicts = build_submodels(lb_models, reopt_param)
     print("lb models built.")
-    ub_models = [julia.Main.add_decomp_model(model, reopt_param, "ub", i) for i in range(1,13)]
+    ub_result_dicts = build_submodels(ub_models, reopt_param)
     print("ub models built.")
-    lb_result_dicts = solve_subproblems(lb_models, reopt_param)
+    lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
     print("lb models solved.")
-    lb = julia.Main.get_lower_bound(lb_result_dicts)
-    print("lb:", lb)
+    lb = get_lower_bound(lb_result_dicts)
+    print("lb: ", lb)
     system_sizes = julia.Main.get_peak_sizing_decisions(lb_models, reopt_param)
+    print("system sizes obtained.")
     julia.Main.fix_sizing_decisions(ub_models, reopt_param, system_sizes)
-    ub_result_dicts = solve_subproblems(ub_models, reopt_param)
+    print("system decisions fixed.")
+    ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
     print("ub models solved.")
     ub = julia.Main.get_objective_value(ub_result_dicts)
-    print("ub:", ub)
+    print("ub: ", ub)
     gap = (ub - lb) / lb
-    print("gap:", gap)
+    print("gap: ", gap)
     assert(False)
 
 
+def build_submodels(models, reopt_param):
+    result_dicts = {}
+    for idx in range(1, 13):
+        result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
+    return result_dicts
 
-def solve_subproblems(models, reopt_param):
+def solve_subproblems(models, reopt_param, results_dicts):
     """
     Solves subproblems, so far in a for loop.
     TODO: make a celery task for each subproblem solve.
-    :param Main: Julia REPL accessor
-    :param models: JuMP model objects
+    :param models: dictionary in which key=month (1=Jan, 12=Def) and values are JuMP model objects
     :param reopt_param: JuMP parameter object
-    :return: results_dicts -- list of dictionaries containing subproblem results
+    :param results_dicts: dictionary in which key=month and vals are submodel results dictionaries
+    :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
     """
-    results_dicts = []
-    for model in models:
-        results_dicts.append(julia.Main.reopt_solve(model, reopt_param))
+    for idx in range(1, 13):
+        print(idx, "starting")
+        results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx])
+        print(idx, "complete.")
     return results_dicts
+
+def get_lower_bound(results_dicts):
+    lb = 0.0
+    for idx in range(1, 13):
+        lb += results_dicts[idx]["lb"]
+    return lb
