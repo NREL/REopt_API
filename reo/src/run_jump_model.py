@@ -242,13 +242,15 @@ def run_decomposed_model(data, model, reopt_inputs,
     print("lb models solved.")
     lb = get_lower_bound(lb_result_dicts)
     print("lb: ", lb)
-    system_sizes = julia.Main.get_peak_sizing_decisions(lb_models, reopt_param)
+    peak_month = julia.Main.get_peak_month(reopt_param)
+    print("peak demand month: ", peak_month)
+    system_sizes = julia.Main.get_sizing_decisions(lb_models[peak_month], reopt_param)
     print("system sizes obtained.")
-    julia.Main.fix_sizing_decisions(ub_models, reopt_param, system_sizes)
+    fix_sizing_decisions(ub_models, reopt_param, system_sizes)
     print("system decisions fixed.")
     ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
     print("ub models solved.")
-    ub = julia.Main.get_objective_value(ub_result_dicts)
+    ub = sum([ub_result_dicts[m]["lcc"] for m in range(1,13)])
     print("ub: ", ub)
     gap = (ub - lb) / lb
     print("gap: ", gap)
@@ -279,5 +281,9 @@ def solve_subproblems(models, reopt_param, results_dicts):
 def get_lower_bound(results_dicts):
     lb = 0.0
     for idx in range(1, 13):
-        lb += results_dicts[idx]["lb"]
+        lb += results_dicts[idx]["lower_bound"]
     return lb
+
+def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
+    for i in range(1, 13):
+        julia.Main.fix_sizing_decisions(ub_models[i], reopt_param, system_sizes)

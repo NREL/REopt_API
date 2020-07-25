@@ -1518,7 +1518,7 @@ function get_peak_month(p)
 	return idx
 end
 
-function get_peak_sizing_decisions(m,p)
+function get_sizing_decisions(m,p)
 	sizes = Dict()
 	for t in p.Tech
 		sizes["dvSize",t] = value(m[:dvSize][t])
