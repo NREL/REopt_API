@@ -29,7 +29,7 @@
 # *********************************************************************************
 import uuid
 import sys
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpRequest
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outages
@@ -37,9 +37,10 @@ from reo.exceptions import UnexpectedError, SaveToDatabase
 from django.forms.models import model_to_dict
 from reo.utilities import annuity
 from reo.models import ModelManager
+from typing import Dict, Union
 
 
-def resilience_stats(request, run_uuid=None):
+def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
     Run outage simulator for given run_uuid
     :param request: optional parameter for 'bau', boolean
@@ -65,8 +66,11 @@ def resilience_stats(request, run_uuid=None):
             return JsonResponse({"Error": str(err.message)}, status=400)
 
     bau = False  # whether or not user wants outage simulator run with existing sizes
-    if request.GET.get('bau') in ["True", "true", "1"]:
-        bau = True
+    if isinstance(request, HttpRequest):
+        if request.GET.get('bau') in ["True", "true", "1"]:
+            bau = True
+    elif isinstance(request, dict):
+        bau = request.get("bau")
 
     try:
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
@@ -164,14 +168,14 @@ def financial_check(request, run_uuid=None):
                             content_type='application/json', status=500)
 
     try:
-        finacial_scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
+        financial_scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
     except ScenarioModel.DoesNotExist:
         msg = "Scenario {} does not exist.".format(financial_uuid)
         return JsonResponse({"Error": msg}, content_type='application/json', status=404)
-    if finacial_scenario.status == "Optimizing...":
+    if financial_scenario.status == "Optimizing...":
         return JsonResponse({"Error": "The financial scenario is still optimizing. Please try again later."},
                             content_type='application/json', status=500)
-    elif "error" in finacial_scenario.status.lower():
+    elif "error" in financial_scenario.status.lower():
         return JsonResponse({"Error": "An error occurred in the financial scenario. Please check the messages from your results."},
                             content_type='application/json', status=500)
     try:
