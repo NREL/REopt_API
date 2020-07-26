@@ -31,6 +31,7 @@ from django.conf.urls import include, url
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.http import HttpResponse
 from reo.api import Job
+from resilience_stats.api import SimJob
 from tastypie.api import Api
 from reo import views
 from proforma.views import proforma
@@ -38,6 +39,7 @@ from resilience_stats.views import resilience_stats, financial_check
 
 v1_api = Api(api_name='v1')
 v1_api.register(Job())
+v1_api.register(SimJob())
 
 
 def page_not_found(request, url):
@@ -67,6 +69,7 @@ urlpatterns = [
     url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
     url(r'^errors/(?P<page_uuid>.*)', views.errors, name='errors'),
     url(r'', include(v1_api.urls), name='job'),
+    url(r'', include(v1_api.urls), name='simjob'),
     url(r'(.*)', page_not_found, name='404'),
     ]
 
