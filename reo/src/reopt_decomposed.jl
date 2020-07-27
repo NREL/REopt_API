@@ -1497,9 +1497,9 @@ function update_decomp_penalties(m,p,mean_sizes::Dict)
 		mean_power = mean_sizes["dvStorageCapPower",b]
 		mean_energy = mean_sizes["dvStorageCapPower",b]
 		mean_inv = mean_sizes["dvStorageResetSOC",b]
-		m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
-		m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
-		m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
+		m[:storage_power_size_penalty][b] += rho * p.StorageCostPerKW[b] *(value(m[:dvStorageCapPower][b]) - mean_power)
+		m[:storage_energy_size_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
+		m[:storage_inventory_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageResetSOC][b]) - mean_inv)
 	end
 	nothing
 end
