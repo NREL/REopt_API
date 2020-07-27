@@ -235,23 +235,20 @@ def run_decomposed_model(data, model, reopt_inputs,
         ub_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "ub", idx)
     print("models created.")
     lb_result_dicts = build_submodels(lb_models, reopt_param)
-    print("lb models built.")
     ub_result_dicts = build_submodels(ub_models, reopt_param)
-    print("ub models built.")
     t_start = time.time()
     lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
-    print("lb models solved.")
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
     print("lb: ", lb)
     peak_month = julia.Main.get_peak_month(reopt_param)
     print("peak demand month: ", peak_month)
-    system_sizes = julia.Main.get_sizing_decisions(lb_models[peak_month], reopt_param)
+    system_sizes = get_average_sizing_decisions(lb_models, reopt_param)
     print("system sizes obtained.")
     fix_sizing_decisions(ub_models, reopt_param, system_sizes)
     print("system decisions fixed.")
     ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
     print("ub models solved.")
-    ub = get_objective_value(ub_result_dicts, reopt_inputs)
+    ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     print("ub: ", ub)
     gap = (ub - lb) / lb
     print("gap: ", gap)
@@ -275,14 +272,17 @@ def run_decomposed_model(data, model, reopt_inputs,
                 mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
         fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
         ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
-        iter_ub = get_objective_value(ub_result_dicts, reopt_inputs)
-        if iter_ub < lb:
+        iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
+        if iter_ub < ub:
             ub = iter_ub
+            min_charge_adder = iter_min_charge_adder
+            prod_incentives = iter_prod_incentives
             gap = (ub - lb) / lb
             print("new ub, gap: ", gap)
         t_elapsed = time.time() - t_start
     print("final gap: ", gap)
-    results = aggregate_submodel_results(ub_results)
+    results = aggregate_submodel_results(ub_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
+    results = julia.Main.convert_to_axis_arrays(reopt_param, results)
     return results
 
 
@@ -302,7 +302,6 @@ def solve_subproblems(models, reopt_param, results_dicts):
     :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
     """
     for idx in range(1, 13):
-        print(idx, "starting")
         results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx])
         print(idx, "complete.")
     return results_dicts
@@ -358,3 +357,11 @@ def get_average_sizing_decisions(models, reopt_param):
         sizes[key] /= 12.
     return sizes
 
+def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
+    results = ub_results[1]
+    for idx in range(2, 13):
+        results = julia.Main.add_to_results(results, ub_results[idx])
+    results["lcc"] = obj
+    results["total_min_charge_adder"] = min_charge_adder
+    results["year_one_min_charge_adder"] = min_charge_adder / pwf_e
+    return results
