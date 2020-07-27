@@ -254,32 +254,37 @@ def run_decomposed_model(data, model, reopt_inputs,
     print("gap: ", gap)
     t_elapsed = time.time() - t_start
     print(gap, opt_tolerance, t_elapsed, time_limit)
+    k = 1
     while gap > opt_tolerance and t_elapsed < time_limit:
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-        k = 1
-        while k <= lb_iters:
-            if time.time() - t_start > time_limit or gap < opt_tolerance: break
-            print("iter ", k)
-            k += 1
-            for i in range(1, 13):
-                julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
-                lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
-                iter_lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
-                if iter_lb > lb:
-                    lb = iter_lb
-                    gap = (ub - lb) / lb
-                    print("new lb, new gap: ", gap)
-                mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-        fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
-        ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
-        iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
-        if iter_ub < ub:
-            ub = iter_ub
-            min_charge_adder = iter_min_charge_adder
-            prod_incentives = iter_prod_incentives
+
+        if time.time() - t_start > time_limit or gap < opt_tolerance: break
+        print("iter ", k)
+
+        for i in range(1, 13):
+            julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
+        lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
+        iter_lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
+        print("new lb", iter_lb)
+        if iter_lb > lb:
+            lb = iter_lb
             gap = (ub - lb) / lb
-            print("new ub, gap: ", gap)
+            print("new lb, new gap: ", gap)
+        if k % lb_iters == 0:
+            mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
+
+            fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
+            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
+            iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
+            print("iter_ub: ", iter_ub)
+            if iter_ub < ub:
+                ub = iter_ub
+                min_charge_adder = iter_min_charge_adder
+                prod_incentives = iter_prod_incentives
+                gap = (ub - lb) / lb
+                print("new ub, gap: ", gap)
         t_elapsed = time.time() - t_start
+        k += 1
     print("final gap: ", gap)
     results = aggregate_submodel_results(ub_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
@@ -304,7 +309,6 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     """
     for idx in range(1, 13):
         results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx], update)
-        print(idx, "complete.")
     return results_dicts
 
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
