@@ -1546,23 +1546,6 @@ function fix_sizing_decisions(m,p,sizes::Dict)
 	nothing
 end
 
-function aggregate_subproblem_results(result_dicts)
-	results = Dict()
-		for key in keys(result_dicts[1])
-			results[key] = result_dicts[1][key]
-		end
-		for idx in 2:12
-			for key in keys(result_dicts[idx])
-				if typeof(result_dicts[idx][key]) == Float64
-					results[key] += result_dicts[idx][key]
-				else
-					append!(results[key], result_dicts[idx][key])
-				end
-			end
-		end
-	nothing
-end
-
 function add_sub_obj_value_results(m, p, r::Dict)
 	### Obtain subproblem lcc's, minus the min charge adders and production incentives
 	r["obj_no_annuals"] = value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
@@ -1590,3 +1573,29 @@ function convert_to_arrays(m, results::Dict)
 	return results
 end
 
+function convert_to_axis_arrays(p, r::Dict)
+	for key in keys(r)
+		if typeof(r[key])== Array{Float64,1} && length(r[key]) == p.TimeStepCount
+			r[key] = AxisArray(r[key], p.TimeStep)
+		end
+	end
+	return r
+end
+
+function add_to_results(r1,r2)
+	for key in keys(r1)
+		if typeof(r1[key]) in [Float64, Int64]
+			if !(key in ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
+					"wind_kw","generator_kw","absorpchl_kw"]) && !((occursin("pv",key) || occursin("PV",key)) && occursin("kw", key))
+				r1[key] += r2[key]
+			end
+		elseif typeof(r1[key]) == Array{Float64,1}
+			if length(r2[key]) >= 28*24
+				r1[key] = append!(r1[key],r2[key])   #append time series outputs
+			else
+				r1[key] += r2[key]   #add tech-specific arrays (e.g., production incentive) 
+			end
+		end
+	end
+	return r1
+end
