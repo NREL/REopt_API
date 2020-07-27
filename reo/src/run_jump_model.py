@@ -237,7 +237,7 @@ def run_decomposed_model(data, model, reopt_inputs,
     lb_result_dicts = build_submodels(lb_models, reopt_param)
     ub_result_dicts = build_submodels(ub_models, reopt_param)
     t_start = time.time()
-    lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
+    lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, False)
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
     print("lb: ", lb)
     peak_month = julia.Main.get_peak_month(reopt_param)
@@ -246,7 +246,7 @@ def run_decomposed_model(data, model, reopt_inputs,
     print("system sizes obtained.")
     fix_sizing_decisions(ub_models, reopt_param, system_sizes)
     print("system decisions fixed.")
-    ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
+    ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, False)
     print("ub models solved.")
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     print("ub: ", ub)
@@ -263,7 +263,7 @@ def run_decomposed_model(data, model, reopt_inputs,
             k += 1
             for i in range(1, 13):
                 julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
-                lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
+                lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
                 iter_lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
                 if iter_lb > lb:
                     lb = iter_lb
@@ -271,7 +271,7 @@ def run_decomposed_model(data, model, reopt_inputs,
                     print("new lb, new gap: ", gap)
                 mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
         fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
-        ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
+        ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
         iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
         if iter_ub < ub:
             ub = iter_ub
@@ -292,17 +292,18 @@ def build_submodels(models, reopt_param):
         result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
     return result_dicts
 
-def solve_subproblems(models, reopt_param, results_dicts):
+def solve_subproblems(models, reopt_param, results_dicts, update):
     """
     Solves subproblems, so far in a for loop.
     TODO: make a celery task for each subproblem solve.
     :param models: dictionary in which key=month (1=Jan, 12=Def) and values are JuMP model objects
     :param reopt_param: JuMP parameter object
     :param results_dicts: dictionary in which key=month and vals are submodel results dictionaries
+    :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
     """
     for idx in range(1, 13):
-        results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx])
+        results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx], update)
         print(idx, "complete.")
     return results_dicts
 
