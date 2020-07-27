@@ -229,7 +229,7 @@ class EmissionsCalculator:
             if self.region_abbr in df.columns:
                 self._emmissions_profile = list(df[self.region_abbr].round(3).values)
                 if self.timesteps_per_hour > 1:
-                    self._emmissions_profile = list(np.concatenate([[i]*self.timesteps_per_hour for i in self._emmissions_profile]))
+                    self._emmissions_profile = list(np.concatenate([[i] * self.timesteps_per_hour for i in self._emmissions_profile]))
             else:
                 raise AttributeError("Emissions error. Cannnot find hourly emmissions for region {} ({},{}) \
                     ".format(self.region, self.latitude,self.longitude))

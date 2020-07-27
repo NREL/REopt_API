@@ -475,6 +475,10 @@ nested_input_definitions = {
           "type": ["list_of_float", "float"],
           "description": "Carbon Dioxide emissions factor over all hours in one year. Must be hourly (8,760 samples), 30 minute (17,520 samples), or 15 minute (35,040 samples).",
         },
+        "emissions_region": {
+          "type": "str",
+          "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh. Filled by default with the EPA AVERT region of the site."
+        },
         "chp_standby_rate_us_dollars_per_kw_per_month": {
           "type": "float",
           "min": 0.0,
