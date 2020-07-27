@@ -229,6 +229,16 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
+                },
+                "total_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "units": "$"
+                },
+                "year_one_opex_costs_us_dollars": {
+                  "type": float,
+                  "description": "Total operations and maintenance cost over anlaysis period",
+                  "units": "$"
                 }
               },
 
@@ -830,11 +840,6 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of CHP thermal to Hot TES",
                   "units": "MMBtu/hr"
                 },
-                "year_one_boiler_thermal_production_bau_mmbtu": {
-                  "type": float,
-                  "description": "Annual average bau boiler thermal production",
-                  "units": "MMBtu"
-                },
                 "year_one_emissions_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
@@ -881,11 +886,6 @@ nested_output_definitions = {
                 "year_one_electric_chiller_thermal_production_tonhr": {
                   "type": float,
                   "description": "Year one chiller thermal production",
-                  "units": "TonHr"
-                },
-                "year_one_electric_chiller_thermal_production_bau_tonhr": {
-                  "type": float,
-                  "description": "Year one bau chiller thermal production",
                   "units": "TonHr"
                 }
               },

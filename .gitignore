@@ -107,9 +107,6 @@ static/files/*
 # Redis
 *.rdb
 
-# Docker files with different names for distinguishing OS vs private
-docker-compose.xpressOS.yml
-
 all_data*
 =======
 # CHP results processing
@@ -124,3 +121,6 @@ julia_envs/**/**.so
 julia_envs/**/**.dylib
 julia_envs/**/**.dll
 
+# Customized docker files
+docker-compose.xpressOS.yml
+Dockerfile.xpressOS.pyjul

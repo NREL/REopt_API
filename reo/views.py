@@ -33,6 +33,7 @@ import sys
 import traceback as tb
 import uuid
 import copy
+import pickle
 from django.http import JsonResponse
 from reo.src.load_profile import BuiltInProfile
 from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
@@ -43,7 +44,7 @@ from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
 import logging
 log = logging.getLogger(__name__)
-from reo.src.techs import Generator
+from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Boiler
 from reo.src.emissions_calculator import EmissionsCalculator
 from django.http import HttpResponse
 from django.template import  loader
@@ -361,7 +362,7 @@ def simulated_load(request):
                 
                 annual_fraction = float(request.GET['annual_fraction'])
 
-                lp = [0.5]*8760
+                lp = [annual_fraction]*8760
                 
                 response = JsonResponse(
                     {'loads_fraction': [round(ld, 3) for ld in lp],
@@ -495,3 +496,182 @@ def generator_efficiency(request):
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
         return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."})
+
+def chp_defaults(request):
+    """
+    This provides the default input values for CHP based the following:
+        1. Prime mover and size class
+        2. Prime mover and average heating load
+    If both size class and average heating load are given, the size class will be used.
+    Boiler efficiency is assumed and may not be consistent with actual input value.
+    """
+    prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
+    n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
+
+    try:
+        prime_mover = request.GET.get('prime_mover')
+        avg_boiler_fuel_load_mmbtu_per_hr = request.GET.get('avg_boiler_fuel_load_mmbtu_per_hr')
+        size_class = request.GET.get('size_class')
+        if prime_mover is not None:
+            # Calculate heuristic CHP size based on average thermal load, using the default size class efficiency data
+            if avg_boiler_fuel_load_mmbtu_per_hr is not None:
+                avg_boiler_fuel_load_mmbtu_per_hr = float(avg_boiler_fuel_load_mmbtu_per_hr)
+                boiler_effic = 0.8
+                therm_effic = prime_mover_defaults_all[prime_mover]['thermal_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+                elec_effic = prime_mover_defaults_all[prime_mover]['elec_effic_full_load'][CHP.default_chp_size_class[prime_mover]]
+                avg_heating_thermal_load_mmbtu_per_hr = avg_boiler_fuel_load_mmbtu_per_hr * boiler_effic
+                chp_fuel_rate_mmbtu_per_hr = avg_heating_thermal_load_mmbtu_per_hr / therm_effic
+                chp_elec_size_heuristic_kw = chp_fuel_rate_mmbtu_per_hr * elec_effic * 1.0E6 / 3412.0
+            else:
+                chp_elec_size_heuristic_kw = None
+            # If size class is specified use that and ignore heuristic CHP sizing for determining size class
+            if size_class is not None:
+                size_class = int(size_class)
+                if (size_class < 0) or (size_class >= n_classes[prime_mover]):
+                    raise ValueError('The size class input is outside the valid range for ' + str(prime_mover))
+            # If size class is not specified, heuristic sizing based on avg thermal load and size class 0 efficiencies
+            elif avg_boiler_fuel_load_mmbtu_per_hr is not None and size_class is None:
+                # With heuristic size, find the suggested size class
+                if chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][1][1]:
+                    # If smaller than the upper bound of the smallest class, assign the smallest class
+                    size_class = 1
+                elif chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][n_classes[prime_mover] - 1][0]:
+                    # If larger than or equal to the lower bound of the largest class, assign the largest class
+                    size_class = n_classes[prime_mover] - 1  # Size classes are zero-indexed
+                else:
+                    # For middle size classes
+                    for sc in range(2, n_classes[prime_mover] - 1):
+                        if (chp_elec_size_heuristic_kw >= CHP.class_bounds[prime_mover][sc][0]) and \
+                                (chp_elec_size_heuristic_kw < CHP.class_bounds[prime_mover][sc][1]):
+                            size_class = sc
+            else:
+                size_class = CHP.default_chp_size_class[prime_mover]
+            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                    for param in prime_mover_defaults_all[prime_mover].keys()}
+        else:
+            raise ValueError("Missing prime_mover type query parameter.")
+
+        response = JsonResponse(
+            {"prime_mover": prime_mover,
+             "size_class": size_class,
+             "default_inputs": prime_mover_defaults,
+             "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
+             }
+        )
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chp_defaults endpoint. Check log for more."}, status=500)
+
+
+def chiller_defaults(request):
+    """
+    This provides the following default parameters for electric and absorption chiller:
+        1. COP of electric chiller (ElectricChiller.chiller_cop) based on peak cooling thermal load
+        2. COP of absorption chiller (AbsorptionChiller.chiller_cop) based on hot_water_or_steam input or prime_mover
+            CapEx (AbsorptionChiller.installed_cost_us_dollars_per_ton) and
+                OpEx (AbsorptionChiller.om_cost_us_dollars_per_ton) of absorption chiller based on peak cooling thermal
+                load
+
+    Required inputs:
+        1. max_elec_chiller_elec_load
+
+    Optional inputs:
+        1. hot_water_or_steam (Boiler.existing_boiler_production_type_steam_or_hw)
+            a. If not provided, hot_water is assumed
+        2. prime_mover (CHP.prime_mover)
+            a. If hot_water_or_steam is provided, this is not used
+            b. If hot_water_or_steam is NOT provided and prime_mover is, this will refer to
+                boiler_type_by_chp_pm_defaults
+        3. Max cooling capacity (ElectricChiller.max_thermal_factor_on_peak_load) as a ratio of peak cooling load
+            a. If not entered, assume 1.25
+
+    """
+    elec_chiller_cop_defaults = copy.deepcopy(ElectricChiller.electric_chiller_cop_defaults)
+    absorp_chiller_cost_defaults_all = copy.deepcopy(AbsorptionChiller.absorption_chiller_cost_defaults)
+    absorp_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
+    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+
+    try:
+        max_elec_chiller_elec_load = request.GET.get('max_elec_chiller_elec_load')
+        hot_water_or_steam = request.GET.get('hot_water_or_steam')
+        prime_mover = request.GET.get('prime_mover')
+        max_cooling_factor = request.GET.get('max_cooling_factor', 1.25)
+
+        if max_elec_chiller_elec_load is None:
+            raise ValueError("Missing required max_elec_chiller_elec_load query parameter.")
+        else:
+            max_chiller_thermal_capacity = float(max_elec_chiller_elec_load) * \
+                                            elec_chiller_cop_defaults['convert_elec_to_thermal'] / 3.51685 * \
+                                            float(max_cooling_factor)
+
+            # Electric chiller COP
+            if max_chiller_thermal_capacity < 100.0:
+                elec_chiller_cop = elec_chiller_cop_defaults["less_than_100_tons"]
+            else:
+                elec_chiller_cop = elec_chiller_cop_defaults["greater_than_100_tons"]
+
+            # Absorption chiller costs
+            if hot_water_or_steam is not None:
+                defaults_sizes = absorp_chiller_cost_defaults_all[hot_water_or_steam]
+                absorp_chiller_cop = absorp_chiller_cop_defaults[hot_water_or_steam]
+            elif prime_mover is not None:
+                defaults_sizes = absorp_chiller_cost_defaults_all[boiler_type_by_chp_pm_defaults[prime_mover]]
+                absorp_chiller_cop = absorp_chiller_cop_defaults[boiler_type_by_chp_pm_defaults[prime_mover]]
+            else:
+                # If hot_water_or_steam and CHP prime_mover are not provided, use hot_water defaults
+                defaults_sizes = absorp_chiller_cost_defaults_all["hot_water"]
+                absorp_chiller_cop = absorp_chiller_cop_defaults["hot_water"]
+
+            if max_chiller_thermal_capacity <= defaults_sizes[0][0]:
+                absorp_chiller_capex = defaults_sizes[0][1]
+                absorp_chiller_opex = defaults_sizes[0][2]
+            elif max_chiller_thermal_capacity >= defaults_sizes[-1][0]:
+                absorp_chiller_capex = defaults_sizes[-1][1]
+                absorp_chiller_opex = defaults_sizes[-1][2]
+            else:
+                for size in range(1, len(defaults_sizes)):
+                    if max_chiller_thermal_capacity > defaults_sizes[size - 1][0] and \
+                            max_chiller_thermal_capacity <= defaults_sizes[size][0]:
+                        slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
+                                      (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                        slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
+                                     (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                        absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
+                                               (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+                        absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
+                                              (max_chiller_thermal_capacity - defaults_sizes[size - 1][0])
+
+        response = JsonResponse(
+            {"PeakCoolingLoadTons": max_chiller_thermal_capacity,
+                "ElectricChiller": {
+                 "chiller_cop": elec_chiller_cop
+                },
+            "AbsorptionChiller": {
+                "chiller_cop": absorp_chiller_cop,
+                "installed_cost_us_dollars_per_ton": absorp_chiller_capex,
+                "om_cost_us_dollars_per_ton": absorp_chiller_opex
+                }
+            }
+        )
+
+        return response
+
+    except ValueError as e:
+        return JsonResponse({"Error": str(e.args[0])})
+
+    except Exception:
+
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
+                                                                            tb.format_tb(exc_traceback))
+        log.debug(debug_msg)
+        return JsonResponse({"Error": "Unexpected error in chiller_defaults endpoint. Check log for more."}, status=500)
