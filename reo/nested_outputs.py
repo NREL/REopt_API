@@ -226,7 +226,7 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Total operations and maintenance cost over anlaysis period",
                   "units": "$"
-                }
+                },
                 "simple_payback_years": {
                   "type": float,
                   "description": ("Number of years until the cumulative annual cashflow turns positive. "
