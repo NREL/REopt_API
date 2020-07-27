@@ -257,10 +257,10 @@ def run_decomposed_model(data, model, reopt_inputs,
     k = 1
     while gap > opt_tolerance and t_elapsed < time_limit:
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-
+        print(mean_sizes)
         if time.time() - t_start > time_limit or gap < opt_tolerance: break
         print("iter ", k)
-
+        print([lb_result_dicts[m]["chp_kw"] for m in range(1,13)])
         for i in range(1, 13):
             julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
         lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)

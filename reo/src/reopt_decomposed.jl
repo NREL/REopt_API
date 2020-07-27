@@ -833,11 +833,11 @@ end
 
 function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	if m[:solver_name] == "Xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, OUTPUTLOG = 0))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.005, OUTPUTLOG = 0))
 	elseif m[:solver_name] == "Cbc"
-		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.01))
+		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.005))
 	elseif m[:solver_name] == "SCIP"
-		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.01))
+		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=60, limits_gap=0.005))
 	else
 		error("solver_name undefined or doesn't match existing base of REopt solvers.")
 	end
@@ -1501,7 +1501,7 @@ function get_initial_decomp_penalties(m,p)
 end
 
 function update_decomp_penalties(m,p,mean_sizes::Dict)
-	rho = 0.001 #penalty factor; this is a parameter that can be tuned
+	rho = 1e-4 #penalty factor; this is a parameter that can be tuned
 	for t in p.Tech
 		mean_size = mean_sizes["dvSize",t]
 		m[:tech_size_penalty][t] = rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
