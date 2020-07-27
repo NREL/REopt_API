@@ -59,9 +59,7 @@ class Migration(migrations.Migration):
                 ('year_one_boiler_thermal_production_mmbtu', models.FloatField(blank=True, null=True)),
                 ('year_one_boiler_thermal_production_bau_mmbtu', models.FloatField(blank=True, null=True)),
                 ('year_one_emissions_lb_C02', models.FloatField(blank=True, null=True)),
-                ('total_emissions_lb_C02', models.FloatField(blank=True, null=True)),
                 ('year_one_emissions_bau_lb_C02', models.FloatField(blank=True, null=True)),
-                ('total_emissions_bau_lb_C02', models.FloatField(blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
@@ -114,9 +112,7 @@ class Migration(migrations.Migration):
                 ('year_one_thermal_to_load_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), blank=True, null=True, size=None)),
                 ('year_one_thermal_to_tes_series_mmbtu_per_hour', django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), blank=True, null=True, size=None)),
                 ('year_one_emissions_lb_C02', models.FloatField(blank=True, null=True)),
-                ('total_emissions_lb_C02', models.FloatField(blank=True, null=True)),
                 ('year_one_emissions_bau_lb_C02', models.FloatField(blank=True, null=True)),
-                ('total_emissions_bau_lb_C02', models.FloatField(blank=True, null=True)),
             ],
         ),
         migrations.CreateModel(
@@ -239,37 +235,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='electrictariffmodel',
-            name='emissions_factor_series_lb_CO2_per_kwh',
-            field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True), default=list, size=None),
-        ),
-        migrations.AddField(
-            model_name='electrictariffmodel',
             name='total_chp_standby_cost_us_dollars',
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name='electrictariffmodel',
-            name='total_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='electrictariffmodel',
-            name='total_emissions_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='electrictariffmodel',
             name='year_one_chp_standby_cost_us_dollars',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='electrictariffmodel',
-            name='year_one_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='electrictariffmodel',
-            name='year_one_emissions_lb_C02',
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
@@ -288,31 +259,6 @@ class Migration(migrations.Migration):
             field=models.FloatField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name='generatormodel',
-            name='emissions_factor_lb_CO2_per_gal',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='generatormodel',
-            name='total_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='generatormodel',
-            name='total_emissions_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='generatormodel',
-            name='year_one_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='generatormodel',
-            name='year_one_emissions_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
             model_name='loadprofilemodel',
             name='year_one_electric_load_series_kw_bau',
             field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True, null=True), default=list, size=None),
@@ -326,26 +272,6 @@ class Migration(migrations.Migration):
             model_name='sitemodel',
             name='outdoor_air_temp_degF',
             field=django.contrib.postgres.fields.ArrayField(base_field=models.FloatField(blank=True), default=list, size=None),
-        ),
-        migrations.AddField(
-            model_name='sitemodel',
-            name='total_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='sitemodel',
-            name='total_emissions_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='sitemodel',
-            name='year_one_emissions_bau_lb_C02',
-            field=models.FloatField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name='sitemodel',
-            name='year_one_emissions_lb_C02',
-            field=models.FloatField(blank=True, null=True),
         ),
         migrations.AlterField(
             model_name='loadprofilemodel',
