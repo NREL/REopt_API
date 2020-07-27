@@ -478,7 +478,7 @@ class ValidateNestedInput:
             output["Following inputs were resampled:"] = self.warning_message(self.resampled_inputs)
 
         if bool(self.emission_warning):
-            output["Emissons Warning"] = {"error":self.emission_warning}
+            output["Emissions Warning"] = {"error":self.emission_warning}
 
         return output
 
@@ -1097,20 +1097,8 @@ class ValidateNestedInput:
                 emissions_series = [electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] for i in range(8760*self.input_dict['Scenario']['time_steps_per_hour'])]
                 electric_tariff['emissions_factor_series_lb_CO2_per_kwh'] = emissions_series
                 self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', emissions_series)
-            elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
-                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
-                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
-                    try:
-                        ec = EmissionsCalculator(latitude=self.input_dict['Scenario']['Site']['latitude'], 
-                            longitude=self.input_dict['Scenario']['Site']['longitude'], 
-                            timesteps_per_hour=self.input_dict['Scenario']['time_steps_per_hour'])
-                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', ec.emissions_series)
-                    except AttributeError as e:
-                        self.emission_warning = str(e.args[0])
-            else:
-                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], "ElectricTariff", 'emissions_factor_series_lb_CO2_per_kwh', self.input_dict['Scenario']['time_steps_per_hour'])
 
-            if (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
+            elif (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
                 if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
                     (self.input_dict['Scenario']['Site'].get('longitude') is not None):
                     ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
