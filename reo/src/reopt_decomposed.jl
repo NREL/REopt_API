@@ -765,8 +765,8 @@ function add_util_fixed_and_min_charges(m, p)
 	end
 	
 	if !(m[:model_type] == "monolith")
-		m[:TotalMinCharge] /= 12
-		m[:TotalFixedCharges] /= 12
+		m[:TotalMinCharge] *= m[:weight]
+		m[:TotalFixedCharges] *= m[:weight]
 	end
 		
 	if !(m[:model_type] == "lb")
@@ -1184,7 +1184,7 @@ end
 
 function add_generator_results(m, p, r::Dict, update::Bool)
 	if !(update)
-		m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * 
+		m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * m[:weight] * 
 			sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
 		)
 		m[:GenPerUnitProdOMCosts] = @expression(m, p.two_party_factor * 
@@ -1299,7 +1299,7 @@ function add_pv_results(m, p, r::Dict, update::Bool)
 				for t in PVtechs_in_class, u in p.SalesTiersByTech[t], ts in m[:TimeStep]) * p.TimeStepScaling)
             r[string("average_annual_energy_exported_", PVclass)] = round(value(ExportedElecPV), digits=0)
 
-            PVPerUnitSizeOMCosts = @expression(m, sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in PVtechs_in_class))
+            PVPerUnitSizeOMCosts = @expression(m, p.pwf_om * m[:weight] * sum(p.OMperUnitSize[t] * m[:dvSize][t] for t in PVtechs_in_class))
             r[string(PVclass, "_net_fixed_om_costs")] = round(value(PVPerUnitSizeOMCosts) * m[:r_tax_fraction_owner], digits=0)
         end
 	end
@@ -1514,6 +1514,7 @@ function update_decomp_penalties(m,p,mean_sizes::Dict)
 		m[:storage_energy_size_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
 		m[:storage_inventory_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageResetSOC][b]) - mean_inv)
 	end
+	set_objective_function(m, m[:REcosts])
 	nothing
 end
 
