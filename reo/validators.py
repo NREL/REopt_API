@@ -387,6 +387,7 @@ class ValidateNestedInput:
         self.input_as_none = []
         self.invalid_inputs = []
         self.resampled_inputs = []
+        self.emission_warning = []
         self.defaults_inserted = []
         self.emission_warning = []
         self.input_dict = dict()
@@ -1025,6 +1026,14 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Generator":
             if self.isValid:
+                
+                fuel_conversion_per_gal = {
+                    'diesel_oil': 22.51
+                }
+
+                if self.input_dict['Scenario']['Site']['Generator'].get('emissions_factor_lb_CO2_per_gal') is None:
+                    self.update_attribute_value(object_name_path, number, 'emissions_factor_lb_CO2_per_gal', fuel_conversion_per_gal.get('diesel_oil'))
+                
                 if (real_values["max_kw"] > 0 or real_values["existing_kw"] > 0):
                     # then replace zeros in default burn rate and slope, and set min/max kw values appropriately for
                     # REopt (which need to be in place before data is saved and passed on to celery tasks)
@@ -1100,6 +1109,35 @@ class ValidateNestedInput:
                         self.emission_warning = str(e.args[0])
             else:
                 self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], "ElectricTariff", 'emissions_factor_series_lb_CO2_per_kwh', self.input_dict['Scenario']['time_steps_per_hour'])
+
+            if (len(electric_tariff.get('emissions_factor_series_lb_CO2_per_kwh') or []) == 0):
+                if (self.input_dict['Scenario']['Site'].get('latitude') is not None) and \
+                    (self.input_dict['Scenario']['Site'].get('longitude') is not None):
+                    ec = EmissionsCalculator(   latitude=self.input_dict['Scenario']['Site']['latitude'], 
+                                                    longitude=self.input_dict['Scenario']['Site']['longitude'],
+                                                    time_steps_per_hour = self.input_dict['Scenario']['time_steps_per_hour'])
+                    emissions_series = None
+                    try:
+                        emissions_series = ec.emissions_series
+                        emissions_region = ec.region
+                    except AttributeError as e:
+                        # Emissions warning is a specific type of warning that we check for and display to the users when it occurs
+                        # since at this point the emissions are not required to do a run it simply
+                        # tells the user why we could not get an emission series and results in emissions not being 
+                        # calculated, but does not prevent the run from optimizing
+                        self.emission_warning = str(e.args[0])
+
+                    if emissions_series is not None:
+                        self.update_attribute_value(object_name_path, number, 'emissions_factor_series_lb_CO2_per_kwh', 
+                            emissions_series)
+                        self.update_attribute_value(object_name_path, number, 'emissions_region', 
+                            emissions_region)
+            else:
+                self.validate_8760(electric_tariff['emissions_factor_series_lb_CO2_per_kwh'], 
+                    "ElectricTariff", 
+                    'emissions_factor_series_lb_CO2_per_kwh', 
+                    self.input_dict['Scenario']['time_steps_per_hour'])
+ 
 
             if electric_tariff.get('urdb_response') is not None:
                 self.validate_urdb_response()

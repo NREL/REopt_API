@@ -51,7 +51,10 @@ class REoptError(Exception):
         if message == "Wind Dataset Timed Out":
             msg_with_email = " Please try again later or email reopt@nrel.gov for support or un-check the wind option to take wind out of the analysis"
         elif message.startswith("PV Watts could not locate a dataset station"):
-            msg_with_email = ". Please increase your PV search radius parameter, or choose an alternate location with similar solar irradiance and weather trends closer to the continental US. You can also use a search radius of 0 to return PV Watts results regardless of distance to the nearest station."
+            msg_with_email = (" Please increase your PV search radius parameter, or choose an alternate "
+            "location with similar solar irradiance and weather trends closer to the continental US. "
+            "You can also use a search radius of 0 to return PV Watts results regardless of distance "
+            "to the nearest station.")
         elif run_uuid:
             msg_with_email = " Please email reopt@nrel.gov with your run_uuid ({}) for support.".format(run_uuid)
         elif user_uuid:

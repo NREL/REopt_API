@@ -145,7 +145,7 @@ def get_data(url, filename):
 
 def get_wind_resource_developer_api(filename, year, latitude, longitude, hub_height_meters):
 
-    url = 'http://developer.nrel.gov/api/wind-toolkit/wind/wtk_srw_download?year={year}&lat={lat}&lon={lon}&hubheight={hubheight}&api_key={api_key}'.format(
+    url = 'https://developer.nrel.gov/api/wind-toolkit/wind/wtk_srw_download?year={year}&lat={lat}&lon={lon}&hubheight={hubheight}&api_key={api_key}'.format(
         year=year, lat=latitude, lon=longitude, hubheight=hub_height_meters, api_key=developer_nrel_gov_key)
 
     success = get_data(url, filename=filename)
