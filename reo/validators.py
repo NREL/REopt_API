@@ -38,7 +38,8 @@ import copy
 from reo.src.urdb_rate import Rate
 import re
 import uuid
-from reo.src.techs import Generator, Boiler
+import pickle
+from reo.src.techs import Generator, Boiler, CHP, AbsorptionChiller
 from reo.nested_inputs import max_big_number
 from reo.src.emissions_calculator import EmissionsCalculator
 
@@ -377,70 +378,6 @@ class ValidateNestedInput:
     fuel_conversion_per_gal = {
                 'diesel_oil':22.51
             }
-
-    prime_mover_defaults = {'recip_engine': {
-                           'min_kw': 0,
-                           'max_kw': 10000,
-                           'installed_cost_us_dollars_per_kw': 2300,
-                           'om_cost_us_dollars_per_kw': 100,
-                           'om_cost_us_dollars_per_kwh': 0.004,
-                           'elec_effic_full_load': 0.37,
-                           'elec_effic_half_load': 0.34,
-                           'thermal_effic_full_load': 0.41,
-                           'thermal_effic_half_load': 0.429,
-                           'min_turn_down_pct': 0.3,
-                           'min_allowable_kw': 30,
-                           'max_derate_factor': 1.0,
-                           'derate_start_temp_degF': 95,
-                           'derate_slope_pct_per_degF': 0.008},
-
-                        'micro_turbine': {
-                            'min_kw': 0,
-                            'max_kw': 1000,
-                            'installed_cost_us_dollars_per_kw': 3200,
-                            'om_cost_us_dollars_per_kw': 60,
-                            'om_cost_us_dollars_per_kwh': 0.003,
-                            'elec_effic_full_load': 0.24,
-                            'elec_effic_half_load': 0.20,
-                            'thermal_effic_full_load': 0.456,
-                            'thermal_effic_half_load': 0.48,
-                            'min_turn_down_pct': 0.3,
-                            'min_allowable_kw': 30,
-                            'max_derate_factor': 1.0,
-                            'derate_start_temp_degF': 59,
-                            'derate_slope_pct_per_degF': 0.012},
-
-                        'combustion_turbine': {
-                            'min_kw': 0,
-                            'max_kw': 20000,
-                            'installed_cost_us_dollars_per_kw': 2800,
-                            'om_cost_us_dollars_per_kw': 70,
-                            'om_cost_us_dollars_per_kwh': 0.003,
-                            'elec_effic_full_load': 0.25,
-                            'elec_effic_half_load': 0.21,
-                            'thermal_effic_full_load': 0.428,
-                            'thermal_effic_half_load': 0.45,
-                            'min_turn_down_pct': 0.5,
-                            'min_allowable_kw': 3000,
-                            'max_derate_factor': 1.1,
-                            'derate_start_temp_degF': 59,
-                            'derate_slope_pct_per_degF': 0.012},
-
-                        'fuel_cell': {
-                            'min_kw': 0,
-                            'max_kw': 5000,
-                            'installed_cost_us_dollars_per_kw': 5000,
-                            'om_cost_us_dollars_per_kw': 220,
-                            'om_cost_us_dollars_per_kwh': 0.008,
-                            'elec_effic_full_load': 0.42,
-                            'elec_effic_half_load': 0.41,
-                            'thermal_effic_full_load': 0.348,
-                            'thermal_effic_half_load': 0.354,
-                            'min_turn_down_pct': 0.3,
-                            'min_allowable_kw': 30,
-                            'max_derate_factor': 1.0,
-                            'derate_start_temp_degF': 59,
-                            'derate_slope_pct_per_degF': 0.008}}
 
     def __init__(self, input_dict):
         self.list_or_dict_objects = ['PV']
@@ -1001,13 +938,28 @@ class ValidateNestedInput:
                             self.input_data_errors.append(e.args[0])
 
         if object_name_path[-1] == "CHP":
+            prime_mover_defaults_all = copy.deepcopy(CHP.prime_mover_defaults_all)
+            n_classes = {pm: len(CHP.class_bounds[pm]) for pm in CHP.class_bounds.keys()}
             if self.isValid:
                 # fill in prime mover specific defaults
                 prime_mover = real_values.get('prime_mover')
+                size_class = real_values.get('size_class')
                 if prime_mover is not None:
+                    if size_class is not None:
+                        if (size_class >= 0) and (size_class < n_classes[prime_mover]):
+                            prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                            for param in prime_mover_defaults_all[prime_mover].keys()}
+                        else:
+                            self.input_data_errors.append(
+                                'The size class input is outside the valid range for ' + str(prime_mover))
+                    else:
+                        size_class = CHP.default_chp_size_class[prime_mover]
+                        prime_mover_defaults = {param: prime_mover_defaults_all[prime_mover][param][size_class]
+                                            for param in prime_mover_defaults_all[prime_mover].keys()}
                     # create an updated attribute set to check invalid combinations of input data later
-                    updated_set = copy.deepcopy(self.prime_mover_defaults[prime_mover])
-                    for param, value in self.prime_mover_defaults[prime_mover].items():
+                    prime_mover_defaults.update({"size_class": size_class})
+                    updated_set = copy.deepcopy(prime_mover_defaults)
+                    for param, value in prime_mover_defaults.items():
                         if real_values.get(param) is None:
                             self.update_attribute_value(object_name_path, number, param, value)
                         else:
@@ -1052,7 +1004,7 @@ class ValidateNestedInput:
 
                     # check if user intended to run CHP and supplied sufficient pararmeters to run CHP
                     if user_supplied_chp_inputs:
-                        required_keys = self.prime_mover_defaults['recip_engine'].keys()
+                        required_keys = prime_mover_defaults_all['recip_engine'].keys()
                         filtered_values = {k: real_values.get(k) for k in required_keys}
                         for k,v in filtered_values.items():
                             if v is None:
@@ -1084,23 +1036,22 @@ class ValidateNestedInput:
                         gen["fuel_intercept_gal_per_hr"] = b
 
         if object_name_path[-1] == "LoadProfile":
-            
-            for lp in ['critical_loads_kw', 'loads_kw']:
-                if real_values.get(lp) not in [None, []]:
-                    self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
-                                       number=number, input_isDict=input_isDict)
-                    isnet = real_values.get(lp + '_is_net')
-                    if isnet is None:
-                        isnet = True
-                    if not isnet:
-                        # next line can fail if non-numeric values are passed in for (critical_)loads_kw
-                        if self.isValid:
-                            if min(real_values.get(lp)) < 0:
-                                self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
-            
-            if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
-                if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
-                    self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+            if self.isValid:
+                if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
+                    if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
+                        self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                for lp in ['critical_loads_kw', 'loads_kw']:
+                    if real_values.get(lp) not in [None, []]:
+                        self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
+                                           number=number, input_isDict=input_isDict)
+                        isnet = real_values.get(lp + '_is_net')
+                        if isnet is None:
+                            isnet = True
+                        if not isnet:
+                            # next line can fail if non-numeric values are passed in for (critical_)loads_kw
+                            if self.isValid:
+                                if min(real_values.get(lp)) < 0:
+                                    self.input_data_errors.append("{} must contain loads greater than or equal to zero.".format(lp))
 
                 if len(real_values.get('percent_share')) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
@@ -1338,8 +1289,6 @@ class ValidateNestedInput:
                             self.input_data_errors.append(
                                 'The length of doe_reference_name and annual_kwh lists should be equal for constructing hybrid boiler fuel load profile')
 
-
-
         if object_name_path[-1] == "FuelTariff":
 
             if self.input_dict['Scenario']['Site']['CHP'].get('emissions_factor_lb_CO2_per_mmbtu') is None:
@@ -1360,25 +1309,47 @@ class ValidateNestedInput:
 
         if object_name_path[-1] == "Boiler":
                 if self.isValid:
-                    # Set default boiler efficiency value based on "...steam_or_hw" input, else set to 'hot_water' value
-                    hw_or_steam = real_values.get('existing_boiler_production_type_steam_or_hw')
-                    if hw_or_steam is None and real_values.get('boiler_efficiency') is None:
-                        hw_or_steam = 'hot_water'
-                        self.update_attribute_value(object_name_path, number, 'existing_boiler_production_type_steam_or_hw',
-                                                    hw_or_steam)
-                        self.update_attribute_value(object_name_path, number, 'boiler_efficiency',
-                                                    Boiler.boiler_efficiency_defaults[hw_or_steam])
-                    elif hw_or_steam is not None and real_values.get('boiler_efficiency') is None:
-                        self.update_attribute_value(object_name_path, number, 'boiler_efficiency',
-                                                    Boiler.boiler_efficiency_defaults[hw_or_steam])
-                    elif hw_or_steam is None and real_values.get('boiler_efficiency') is not None:
-                        self.update_attribute_value(object_name_path, number, 'existing_boiler_production_type_steam_or_hw',
-                                                    hw_or_steam)
-                    # If an boiler_efficiency input as zero, set to default
-                    if real_values.get('boiler_efficiency') is not None:
-                        if real_values.get('boiler_efficiency') <= 0.0:
-                            self.update_attribute_value(object_name_path, number, 'boiler_efficiency',
-                                                        Boiler.boiler_efficiency_defaults['hot_water'])
+                    # Set default boiler efficiency based on CHP prime mover value or boiler type, if not defined by user
+                    boiler_effic_by_type_defaults = copy.deepcopy(Boiler.boiler_efficiency_defaults)
+                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+                    hw_or_steam_user_input = real_values.get('existing_boiler_production_type_steam_or_hw')
+                    boiler_effic_user_input = real_values.get('boiler_efficiency')
+                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                    if boiler_effic_user_input is None:
+                        if hw_or_steam_user_input is not None:
+                            hw_or_steam = hw_or_steam_user_input
+                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                            self.update_attribute_value(object_name_path, number,
+                                                        'boiler_efficiency',
+                                                        boiler_effic)
+                        elif chp_prime_mover is not None:
+                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
+                            boiler_effic = boiler_effic_by_type_defaults[hw_or_steam]
+                            self.update_attribute_value(object_name_path, number,
+                                                        'existing_boiler_production_type_steam_or_hw',
+                                                        hw_or_steam)
+                            self.update_attribute_value(object_name_path, number,
+                                                        'boiler_efficiency',
+                                                        boiler_effic)
+
+        if object_name_path[-1] == "AbsorptionChiller":
+                if self.isValid:
+                    # Set default absorption chiller cost and performance based on boiler type or chp prime mover
+                    absorption_chiller_cop_defaults = copy.deepcopy(AbsorptionChiller.absorption_chiller_cop_defaults)
+                    boiler_type_by_chp_pm_defaults = copy.deepcopy(Boiler.boiler_type_by_chp_prime_mover_defaults)
+                    chp_prime_mover = self.input_dict['Scenario']['Site']['CHP'].get("prime_mover")
+                    hw_or_steam_user_input = self.input_dict['Scenario']['Site']['Boiler'].get('existing_boiler_production_type_steam_or_hw')
+                    if real_values.get('chiller_cop') is None:
+                        if hw_or_steam_user_input is not None:
+                            self.update_attribute_value(object_name_path, number,
+                                                        'chiller_cop',
+                                                        absorption_chiller_cop_defaults[hw_or_steam_user_input])
+                        elif chp_prime_mover is not None:
+                            hw_or_steam = boiler_type_by_chp_pm_defaults[chp_prime_mover]
+                            self.update_attribute_value(object_name_path, number,
+                                                        'chiller_cop',
+                                                        absorption_chiller_cop_defaults[hw_or_steam])
+
 
     def check_min_max_restrictions(self, object_name_path, template_values=None, real_values=None, number=1, input_isDict=None):
         """
