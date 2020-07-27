@@ -100,6 +100,7 @@ class DataManager:
         self.LoadProfile["resilience_check_flag"] = load.resilience_check_flag
         self.LoadProfile["sustain_hours"] = load.sustain_hours
         self.LoadProfile["annual_kwh"] = load.annual_kwh
+        self.LoadProfile["loads_kw"] = load.load_list
         self.load = load
 
     def add_load_boiler_fuel(self, load):
@@ -942,6 +943,8 @@ class DataManager:
                                                          self.storage.incentives.macrs_schedule,
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
+        StorageCostPerKWH -= self.storage.incentives.rebate_kwh
+        
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes != None:

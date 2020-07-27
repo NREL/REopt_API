@@ -65,6 +65,7 @@ urlpatterns = [
     url(r'^v1/simulated_load/?$', views.simulated_load, name='simulated_load'),
     url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
     url(r'^v1/generator_efficiency/?$', views.generator_efficiency, name='generator_efficiency'),
+    url(r'^v1/emissions_profile/?$', views.emissions_profile, name='emissions_profile'),
     url(r'^errors/(?P<page_uuid>.*)', views.errors, name='errors'),
     url(r'^v1/annual_mmbtu/?$', views.annual_mmbtu, name='annual_mmbtu'),
     url(r'^v1/chp_defaults/?$', views.chp_defaults, name='chp_defaults'),

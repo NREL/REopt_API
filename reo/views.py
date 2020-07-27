@@ -42,6 +42,7 @@ from reo.nested_inputs import nested_input_definitions
 from reo.api import UUIDFilter
 from reo.models import ModelManager
 from reo.exceptions import UnexpectedError  #, RequestError  # should we save bad requests? could be sql injection attack?
+from reo.src.emissions_calculator import EmissionsCalculator
 import logging
 log = logging.getLogger(__name__)
 from reo.src.techs import Generator, CHP, ElectricChiller, AbsorptionChiller, Boiler

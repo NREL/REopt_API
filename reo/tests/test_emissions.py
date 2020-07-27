@@ -211,7 +211,6 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
         test = self.api_client.get('/v1/emissions_profile/',data={"latitude":1,"longitude":1})
         self.assertTrue("Your site location (1.0,1.0) is more than 5 miles from the nearest emission region." in str(test.content))
 
-
     def test_bad_grid_emissions_profile(self):
         """
         Tests that a poorly formatted utility emissions factor profile does not validate 
@@ -239,8 +238,5 @@ class TestEmissions(ResourceTestCaseMixin, TestCase):
 
         self.assertTrue(text_to_check in response['messages']['warnings'])
         self.assertTrue(response['outputs']['Scenario']['Site']['year_one_emissions_lb_C02'] is None)
-        self.assertTrue(response['outputs']['Scenario']['Site']['total_emissions_lb_C02'] is None)
         self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02'] is None)
-        self.assertTrue(response['outputs']['Scenario']['Site']['ElectricTariff']['total_emissions_lb_C02'] is None)
         self.assertTrue(round(response['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02'],-1) ==150)
-        self.assertTrue(round(response['outputs']['Scenario']['Site']['Generator']['total_emissions_lb_C02'],-1) == 2950)
