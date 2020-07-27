@@ -809,10 +809,7 @@ function add_cost_function(m, p)
         m[:TotalFuelCharges] * m[:r_tax_fraction_offtaker] -
 
         # Subtract Incentives, which are taxable
-		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] +
-		
-		# Lagrangian penalties, which are only potentially nonzero in the lower bound model
-		m[:LagrangianPenalties]
+		m[:TotalProductionIncentive] * m[:r_tax_fraction_owner] 
 	)
     #= Note: 0.9999*m[:MinChargeAdder] in Obj b/c when m[:TotalMinCharge] > (TotalEnergyCharges + m[:TotalDemandCharges] + TotalExportBenefit + m[:TotalFixedCharges])
 		it is arbitrary where the min charge ends up (eg. could be in m[:TotalDemandCharges] or m[:MinChargeAdder]).
@@ -973,9 +970,12 @@ function reopt_build(m, p::Parameter)
 	add_cost_function(m, p)
 
     if Obj == 1
-		@objective(m, Min, m[:REcosts])
+		@objective(m, Min, m[:REcosts] +
+		
+		# Lagrangian penalties, which are only potentially nonzero in the lower bound model
+		m[:LagrangianPenalties])
 	elseif Obj == 2  # Keep SOC high
-		@objective(m, Min, m[:REcosts] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
+		@objective(m, Min, m[:REcosts] + m[:LagrangianPenalties] - sum(m[:dvStorageSOC]["Elec",ts] for ts in m[:TimeStep])/8760.)
 	end
 	
 	results["julia_reopt_constriants_seconds"] = time() - t_start
@@ -1504,17 +1504,25 @@ function update_decomp_penalties(m,p,mean_sizes::Dict)
 	rho = 0.001 #penalty factor; this is a parameter that can be tuned
 	for t in p.Tech
 		mean_size = mean_sizes["dvSize",t]
-		m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
+		m[:tech_size_penalty][t] = rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
 	end
 	for b in p.Storage
 		mean_power = mean_sizes["dvStorageCapPower",b]
 		mean_energy = mean_sizes["dvStorageCapPower",b]
 		mean_inv = mean_sizes["dvStorageResetSOC",b]
-		m[:storage_power_size_penalty][b] += rho * p.StorageCostPerKW[b] *(value(m[:dvStorageCapPower][b]) - mean_power)
-		m[:storage_energy_size_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
-		m[:storage_inventory_penalty][b] += rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageResetSOC][b]) - mean_inv)
+		m[:storage_power_size_penalty][b] = rho * p.StorageCostPerKW[b] *(value(m[:dvStorageCapPower][b]) - mean_power)
+		m[:storage_energy_size_penalty][b] = rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
+		m[:storage_inventory_penalty][b] = rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageResetSOC][b]) - mean_inv)
 	end
-	set_objective_function(m, m[:REcosts])
+	add_to_expression!(m[:LagrangianPenalties], 
+		sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
+			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
+				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
+				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
+				for b in p.Storage)
+	)
+	println(m[:LagrangianPenalties])
+	set_objective_function(m, m[:REcosts] + m[:LagrangianPenalties])
 	nothing
 end
 
