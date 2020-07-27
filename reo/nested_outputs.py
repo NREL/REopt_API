@@ -563,6 +563,10 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Total lifecycle standby charge cost incurred by CHP",
                   "units": "$"
+                },
+                "emissions_region": {
+                  "type": "str",
+                  "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh. Filled by default with the EPA AVERT region of the site."
                 }
               },
 
