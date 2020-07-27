@@ -238,9 +238,10 @@ def run_decomposed_model(data, model, reopt_inputs,
     print("lb models built.")
     ub_result_dicts = build_submodels(ub_models, reopt_param)
     print("ub models built.")
+    t_start = time.time()
     lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
     print("lb models solved.")
-    lb = get_lower_bound(lb_result_dicts)
+    lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
     print("lb: ", lb)
     peak_month = julia.Main.get_peak_month(reopt_param)
     print("peak demand month: ", peak_month)
@@ -250,11 +251,39 @@ def run_decomposed_model(data, model, reopt_inputs,
     print("system decisions fixed.")
     ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
     print("ub models solved.")
-    ub = sum([ub_result_dicts[m]["lcc"] for m in range(1,13)])
+    ub = get_objective_value(ub_result_dicts, reopt_inputs)
     print("ub: ", ub)
     gap = (ub - lb) / lb
     print("gap: ", gap)
-    assert(False)
+    t_elapsed = time.time() - t_start
+    print(gap, opt_tolerance, t_elapsed, time_limit)
+    while gap > opt_tolerance and t_elapsed < time_limit:
+        mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
+        k = 1
+        while k <= lb_iters:
+            if time.time() - t_start > time_limit or gap < opt_tolerance: break
+            print("iter ", k)
+            k += 1
+            for i in range(1, 13):
+                julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
+                lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts)
+                iter_lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
+                if iter_lb > lb:
+                    lb = iter_lb
+                    gap = (ub - lb) / lb
+                    print("new lb, new gap: ", gap)
+                mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
+        fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
+        ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts)
+        iter_ub = get_objective_value(ub_result_dicts, reopt_inputs)
+        if iter_ub < lb:
+            ub = iter_ub
+            gap = (ub - lb) / lb
+            print("new ub, gap: ", gap)
+        t_elapsed = time.time() - t_start
+    print("final gap: ", gap)
+    results = aggregate_submodel_results(ub_results)
+    return results
 
 
 def build_submodels(models, reopt_param):
@@ -278,12 +307,54 @@ def solve_subproblems(models, reopt_param, results_dicts):
         print(idx, "complete.")
     return results_dicts
 
-def get_lower_bound(results_dicts):
-    lb = 0.0
-    for idx in range(1, 13):
-        lb += results_dicts[idx]["lower_bound"]
-    return lb
-
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
     for i in range(1, 13):
         julia.Main.fix_sizing_decisions(ub_models[i], reopt_param, system_sizes)
+
+
+def get_objective_value(ub_result_dicts, reopt_inputs):
+    """
+    Calculates the full-year problem objective value by adjusting
+    year-long components as required.
+    :param ub_result_dicts: subproblem results dictionaries
+    :param reopt_inputs: inputs dicrtionary from DataManager
+    :return obj:  full-year objective value
+    :return prod_incentives: list of production incentive by technology
+    :return min_charge_adder: calculated annual minimum charge adder
+    """
+    obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(1, 13)])
+    min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(1, 13)])
+    total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(1, 13)])
+    min_charge_adder = max(0, total_min_charge - min_charge_comp)
+    obj += min_charge_adder
+    prod_incentives = []
+    for tech_idx in range(len(reopt_inputs['Tech'])):
+        max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
+        prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
+        prod_incentive = min(prod_incent, max_prod_incent)
+        obj += prod_incentive
+        prod_incentives.append(prod_incentive)
+    if len(reopt_inputs['DemandLookbackMonths']) > 0:
+        obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
+    return obj, min_charge_adder, prod_incentives
+
+def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
+    """
+    Calculated added TOU costs to according to peak lookback months,
+    using individual
+    :param ub_result_dicts:
+    :param reopt_inputs:
+    :return:
+    """
+    return 0.0
+
+def get_average_sizing_decisions(models, reopt_param):
+    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
+    for i in range(2, 13):
+        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
+        for key in d.keys():
+            sizes[key] += d[key]
+    for key in d.keys():
+        sizes[key] /= 12.
+    return sizes
+
