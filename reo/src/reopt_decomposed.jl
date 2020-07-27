@@ -1075,6 +1075,9 @@ function reopt_results(m, p, r::Dict)
 		add_null_cold_tes_results(m, p, r)
 	end
 	add_util_results(m, p, r)
+	if m[:model_type] == "ub"
+		add_sub_obj_value_results(m, p, r)
+	end
 	return r
 end
 
@@ -1484,23 +1487,19 @@ function get_initial_decomp_penalties(m,p)
 	end
 end
 
-function update_decomp_penalties(m,p)
+function update_decomp_penalties(m,p,mean_sizes::Dict)
 	rho = 0.001 #penalty factor; this is a parameter that can be tuned
 	for t in p.Tech
-		mean_size = sum(value(m[:dvSize][t]) for midx in 1:12) / 12
-		for midx in 1:12
-			m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
-		end
+		mean_size = mean_sizes["dvSize",t]
+		m[:tech_size_penalty][t] += rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
 	end
 	for b in p.Storage
-		mean_power = sum(value(m[:dvStorageCapPower][b]) for midx in 1:12) / 12
-		mean_energy = sum(value(m[:dvStorageCapEnergy][b]) for midx in 1:12) / 12
-		mean_inv = sum(value(m[:dvStorageResetSOC][b]) for midx in 1:12) / 12
-		for midx in 1:12
-			m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
-			m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
-			m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
-		end
+		mean_power = mean_sizes["dvStorageCapPower",b]
+		mean_energy = mean_sizes["dvStorageCapPower",b]
+		mean_inv = mean_sizes["dvStorageResetSOC",b]
+		m[:storage_power_size_penalty][t] += rho * p.StorageCostPerKW *(value(m[:dvStorageCapPower][b]) - mean_power)
+		m[:storage_energy_size_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
+		m[:storage_inventory_penalty][t] += rho * p.StorageCostPerKWH *(value(m[:dvStorageResetSOC][b]) - mean_inv)
 	end
 	nothing
 end
@@ -1564,40 +1563,30 @@ function aggregate_subproblem_results(result_dicts)
 	nothing
 end
 
-function get_objective_value(models, p)
+function add_sub_obj_value_results(m, p, r::Dict)
 	### Obtain subproblem lcc's, minus the min charge adders and production incentives
-	obj = sum(value(models[midx][:REcosts]) - value(models[midx][:MinChargeAdder]) + value(models[midx][:TotalProductionIncentive]) 
-		for midx in 1:12)
+	r["obj_no_annuals"] = value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
 	### recalculate min charge adder and add to the results
-	min_charge = sum(models[midx][:TotalMinCharge] - ( 
-					models[midx][:TotalEnergyChargesUtil] + models[midx][:TotalDemandCharges] 
-					+ models[midx][:TotalExportBenefit] + models[midx][:TotalFixedCharges])
-					for midx in 1:12
-				)
-	if min_charge > 0
-		obj += min_charge
+	r["min_charge_adder_comp"] = value(m[:TotalEnergyChargesUtil]) + value(m[:TotalDemandCharges]) + value(m[:TotalExportBenefit]) + value(m[:TotalFixedCharges])
+	r["sub_incentive"] = Dict()
+	for t in p.Tech
+		r["sub_incentive"] = Array{Float64,1}([value(m[:dvProdIncent][t]) for t in p.Tech])
 	end
-	### recalculate production incentive
-	incentive = sum(p.TimeStepScaling * p.ProductionIncentiveRate[t] * p.pwf_prod_incent[t] * p.two_party_factor * 
-			sum(p.ProductionFactor[t, ts] * models[midx][:dvRatedProduction][t,ts] for ts in models[midx][:TimeStep])
-			for midx in 1:12
-				)
-	if incentive > models[1][:binProdIncent][t] * p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor 
-		incentive = p.MaxProdIncent[t] * p.pwf_prod_incent[t] * p.two_party_factor
+	if !isempty(p.DemandRatesMonth)
+		r["peak_demand_for_month"] = sum(value(m[:dvPeakDemandEMonth][m[:month_idx],n]) for n in p.DemandMonthsBin)
+	else
+		r["peak_demand_for_month"] = 0.0
 	end
-	obj -= incentive
-	return obj
-end
-
-function get_lower_bound(results_dicts)
-	return sum(r["lower_bound"] for r in results_dicts)
+	r["total_min_charge"] = value(m[:TotalMinCharge])
+	nothing
 end
 
 function convert_to_arrays(m, results::Dict)
 	for key in keys(results)
-		if !(typeof(results[key]) in [Array{Any,1}, String, Float64, Dict{Any, Any}, Int64])
-			results[key] = Array{Float64,1}([results[key][ts] for ts in m[:TimeStep]])
+		if !(typeof(results[key]) in [Array{Float64,1}, String, Float64, Dict{Any, Any}, Int64]) && length(results[key]) == length(m[:TimeStep])
+			results[key] = Array{Float64,1}([results[key][idx] for idx in m[:TimeStep]])
 		end
 	end
 	return results
 end
+
