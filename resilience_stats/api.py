@@ -29,6 +29,8 @@
 # *********************************************************************************
 
 from tastypie.resources import ModelResource
+from tastypie.bundle import Bundle
+from tastypie.validation import Validation
 from resilience_stats.views import resilience_stats
 from tastypie.authorization import ReadOnlyAuthorization
 from tastypie.serializers import Serializer
@@ -44,9 +46,27 @@ class SimJob(ModelResource):
         authorization = ReadOnlyAuthorization()
         serializer = Serializer(formats=['json'])
         always_return_data = True
+        validation = Validation()
         object_class = None
+
+    def detail_uri_kwargs(self, bundle_or_obj):
+        kwargs = {}
+
+        if isinstance(bundle_or_obj, Bundle):
+            kwargs['pk'] = bundle_or_obj.obj.id
+        else:
+            kwargs['pk'] = bundle_or_obj['id']
+
+        return kwargs
+
+    def get_object_list(self, request):
+        return [request]
+
+    def obj_get_list(self, bundle, **kwargs):
+        return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
         run_uuid = bundle.data["run_uuid"]
         bau = bundle.data["bau"]
         resilience_stats({"bau": bau}, run_uuid)
+        return bundle
