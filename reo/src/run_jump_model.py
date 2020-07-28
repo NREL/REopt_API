@@ -243,6 +243,7 @@ def run_decomposed_model(data, model, reopt_inputs,
     system_sizes = get_average_sizing_decisions(lb_models, reopt_param)
     fix_sizing_decisions(ub_models, reopt_param, system_sizes)
     ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, False)
+    best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
     t_elapsed = time.time() - t_start
@@ -261,13 +262,11 @@ def run_decomposed_model(data, model, reopt_inputs,
             mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
             fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
             ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
-            best_result_dicts = copy.deepcopy(ub_result_dicts)
             iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
             if iter_ub < ub:
                 ub = iter_ub
                 best_result_dicts = copy.deepcopy(ub_result_dicts)
                 min_charge_adder = iter_min_charge_adder
-                prod_incentives = iter_prod_incentives
                 gap = (ub - lb) / lb
         t_elapsed = time.time() - t_start
         k += 1
@@ -356,7 +355,7 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
             or len(reopt_inputs['Ratchets']) == 0
     ):
         return 0.0
-    
+
     """
     
     """
