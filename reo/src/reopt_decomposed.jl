@@ -142,7 +142,7 @@ function add_cost_expressions(m, p)
 		m[:LagrangianPenalties] = @expression(m, sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
 			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
 				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
-				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
+				+ m[:storage_inventory_penalty][b] * m[:dvStorageResetSOC][b]
 				for b in p.Storage)
 		)
 	else
