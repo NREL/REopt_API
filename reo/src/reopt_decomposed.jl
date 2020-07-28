@@ -31,7 +31,7 @@ function add_continuous_variables(m, p)
 		dvThermalProductionYIntercept[p.Tech, m[:TimeStep]] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[m[:TimeStep]] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[m[:TimeStep]] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
-		dvOMByHourBySizeCHP[m[:Tech]] >= 0
+		dvOMByHourBySizeCHP[p.Tech] >= 0
     end
 end
 
@@ -205,7 +205,7 @@ function add_bigM_adjustments(m, p)
 			if n > 1
 				m[:NewMaxDemandMonthsInTier][mth,n] = minimum([p.MaxDemandMonthsInTier[n],
 					added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
-					for ts in p.TimeStepRatchetsMonth[mth]])
+					for ts in p.TimeStepRatchetsMonth[mth]])  -
 					sum(m[:NewMaxDemandMonthsInTier][mth,np] for np in 1:(n-1)) ]
 				)
 			else
@@ -222,7 +222,7 @@ function add_bigM_adjustments(m, p)
 			if e > 1
 				m[:NewMaxDemandInTier][r,e] = minimum([p.MaxDemandInTier[e],
 				added_power + maximum([p.ElecLoad[ts] + p.CoolingLoad[ts]
-					for ts in p.TimeStep]) 
+					for ts in p.TimeStep])  -
 				sum(m[:NewMaxDemandInTier][r,ep] for ep in 1:(e-1))
 				])
 			else
@@ -414,7 +414,7 @@ function add_storage_op_constraints(m, p)
 	)
 	# Constraint (4f)-1: (Hot) Thermal production sent to storage or grid must be less than technology's rated production
 	if !isempty(p.BoilerTechs)
-		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in p.TimeStep],
+		@constraint(m, HeatingTechProductionFlowCon[b in p.HotTES, t in p.BoilerTechs, ts in m[:TimeStep]],
     	        m[:dvProductionToStorage][b,t,ts]  <=
 				p.ProductionFactor[t,ts] * m[:dvThermalProduction][t,ts]
 				)
@@ -497,7 +497,7 @@ function add_storage_op_constraints(m, p)
 	)
 
 	if !p.StorageCanGridCharge
-		for ts in p.TimeStepsWithGrid
+		for ts in m[:TimeStepsWithGrid]
 			fix(m[:dvGridToStorage][ts], 0.0, force=true)
 		end
 	end
@@ -572,25 +572,25 @@ function add_tech_size_constraints(m, p)
 			)
 
 	## Constraint (7d): Non-turndown technologies are always at rated production
-	@constraint(m, RenewableRatedProductionCon[t in p.TechsNoTurndown, ts in p.TimeStep],
+	@constraint(m, RenewableRatedProductionCon[t in p.TechsNoTurndown, ts in m[:TimeStep]],
 		m[:dvRatedProduction][t,ts] == m[:dvSize][t]
 	)
 
 	##Constraint (7e): Derate factor limits production variable (separate from ProductionFactor)
 	@constraint(m, TurbineRatedProductionCon[t in p.FuelBurningTechs, ts in m[:TimeStep]; !(t in p.TechsNoTurndown)],
-		m[:dvRatedProduction][t,ts]  <= p.ElectricDerate[t,ts] * m[:dvSize][t]
+		m[:dvRatedProduction][t,ts] <= p.ElectricDerate[t,ts] * m[:dvSize][t]
 	)
 
 	##Constraint (7_heating_prod_size): Production limit based on size for boiler
 	if !isempty(p.BoilerTechs)
-		@constraint(m, HeatingProductionCon[t in p.BoilerTechs, ts in p.TimeStep],
+		@constraint(m, HeatingProductionCon[t in p.BoilerTechs, ts in m[:TimeStep]],
 			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
 		)
 	end
 
 	##Constraint (7_cooling_prod_size): Production limit based on size for chillers
 	if !isempty(p.CoolingTechs)
-		@constraint(m, CoolingProductionCon[t in p.CoolingTechs, ts in p.TimeStep],
+		@constraint(m, CoolingProductionCon[t in p.CoolingTechs, ts in m[:TimeStep]],
 			m[:dvThermalProduction][t,ts] <= m[:dvSize][t]
 		)
 	end
@@ -812,7 +812,7 @@ function add_chp_hourly_opex_charges(m, p)
 	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
 					sum(p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
-					  for ts in p.TimeStep) <= m[:dvOMByHourBySizeCHP][t]
+					  for ts in m[:TimeStep]) <= m[:dvOMByHourBySizeCHP][t]
 					)
 end
 
@@ -872,7 +872,8 @@ end
 
 function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	if m[:solver_name] == "Xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.005, OUTPUTLOG = 0))
+		#sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, OUTPUTLOG = 0))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-60, MIPRELSTOP=0.01, logfile="output.log"))
 	elseif m[:solver_name] == "Cbc"
 		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=60, ratioGap=0.005))
 	elseif m[:solver_name] == "SCIP"
