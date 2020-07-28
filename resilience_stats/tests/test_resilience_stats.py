@@ -222,7 +222,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         for idx, p in enumerate(resp_dict["probs_of_surviving"]):
             self.assertAlmostEqual(p, expected_probs[idx], places=2)
-        self.assertEqual(resp_dict["resilience_hours_avg"], 1.31)
+        self.assertEqual(resp_dict["resilience_hours_avg"], 1.32)
         self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 12)
@@ -245,7 +245,7 @@ class TestResilStats(ResourceTestCaseMixin, TestCase):
 
         for idx, p in enumerate(resp_dict["probs_of_surviving"]):
             self.assertAlmostEqual(p, expected_probs[idx], places=2)
-        self.assertEqual(resp_dict["resilience_hours_avg"], 1.31)
+        self.assertEqual(resp_dict["resilience_hours_avg"], 1.32)
         self.assertEqual(resp_dict["outage_durations"], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
         self.assertEqual(resp_dict["resilience_hours_min"], 0)
         self.assertEqual(resp_dict["resilience_hours_max"], 12)
