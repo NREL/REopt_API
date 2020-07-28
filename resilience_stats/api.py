@@ -27,6 +27,7 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
+import json
 
 from tastypie.resources import ModelResource
 from tastypie.bundle import Bundle
@@ -53,9 +54,12 @@ class SimJob(ModelResource):
         kwargs = {}
 
         if isinstance(bundle_or_obj, Bundle):
-            kwargs['pk'] = bundle_or_obj.obj.id
+            # Primary key is not currently used by our API but
+            # it seems to be a required field for tastypie
+            # so, setting it to a const.
+            kwargs['pk'] = "1"  # bundle_or_obj.obj.id
         else:
-            kwargs['pk'] = bundle_or_obj['id']
+            kwargs['pk'] = "1"  # bundle_or_obj['id']
 
         return kwargs
 
@@ -68,5 +72,7 @@ class SimJob(ModelResource):
     def obj_create(self, bundle, **kwargs):
         run_uuid = bundle.data["run_uuid"]
         bau = bundle.data["bau"]
-        resilience_stats({"bau": bau}, run_uuid)
+        response = resilience_stats({"bau": bau}, run_uuid)
+        bundle.data = json.loads(response.getvalue())
+        print("resp.getval:", json.loads(response.getvalue()))
         return bundle
