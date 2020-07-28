@@ -883,8 +883,7 @@ end
 
 function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	if m[:solver_name] == "Xpress"
-		#sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, OUTPUTLOG = 0))
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, logfile="output.log"))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, OUTPUTLOG = 0))
 	elseif m[:solver_name] == "Cbc"
 		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=90, ratioGap=0.02))
 	elseif m[:solver_name] == "SCIP"
@@ -1582,22 +1581,8 @@ function update_decomp_penalties(m,p,mean_sizes::Dict)
 				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
 				for b in p.Storage)
 	)
-	println(m[:LagrangianPenalties])
 	set_objective_function(m, m[:REcosts] + m[:LagrangianPenalties])
 	nothing
-end
-
-function get_peak_month(p)
-	idx = 0
-	incumbent = 0.0
-	monthly_loads = [sum(p.ElecLoad[ts] for ts in p.TimeStepRatchetsMonth[mth]) for mth in p.Month]
-	for mth in p.Month
-		if monthly_loads[mth] > incumbent
-			incumbent = monthly_loads[mth]
-			idx = mth
-		end
-	end
-	return idx
 end
 
 function get_sizing_decisions(m,p)
