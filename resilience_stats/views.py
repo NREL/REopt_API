@@ -55,8 +55,10 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
          Also can GET the same values as above with '_bau' appended if 'bau=true' for the site's existing capacities.
     """
     try:
+        print(type(run_uuid))
         uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
     except ValueError as e:
+        print("this execption is getting caught")
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.args[0])}, status=400)
         else:
