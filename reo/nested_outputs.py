@@ -87,24 +87,11 @@ nested_output_definitions = {
                 "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
                 "units": "hours"
               },
-
-              "total_emissions_lb_C02": {
-                "type": int,
-                "description": "Total equivalent pounds of carbon dioxide emitted from the site over all years in the analysis period.",
-                "units": "hours"
-              },
               "year_one_emissions_bau_lb_C02": {
                 "type": int,
                 "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
                 "units": "hours"
               },
-
-              "total_emissions_bau_lb_C02": {
-                "type": int,
-                "description": "Total equivalent pounds of carbon dioxide emitted from the site over all years in the analysis period in the BAU case.",
-                "units": "hours"
-              },
-
               "LoadProfile": {
                 "critical_load_series_kw": {
                   "type": list_of_float,
@@ -239,7 +226,21 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Total operations and maintenance cost over anlaysis period",
                   "units": "$"
-                }
+                },
+                "simple_payback_years": {
+                  "type": float,
+                  "description": ("Number of years until the cumulative annual cashflow turns positive. "
+                                  "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+                                  " then simple payback is increased by the number of years that the cash flow "
+                                  "is negative beyond the break-even year."),
+                  "units": "$"
+                },
+                "irr_pct": {
+                  "type": float,
+                  "description": ("Internal Rate of Return of the cost-optimal system. In two-party cases the "
+                                  "developer discount rate is used in place of the offtaker discount rate."),
+                  "units": "%"
+                }               
               },
 
               "PV": {
@@ -270,6 +271,11 @@ nested_output_definitions = {
                 "year_one_energy_produced_kwh": {
                   "type": float,
                   "description": "Year one energy produced by the PV system",
+                  "units": "kWh"
+                },
+                "year_one_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Year one energy produced by the PV system in the BAU case",
                   "units": "kWh"
                 },
                 "year_one_power_production_series_kw": {
@@ -391,11 +397,6 @@ nested_output_definitions = {
               },
 
               "ElectricTariff": {
-                "year_one_to_load_bau_series_kw" : {
-                  "type": list_of_float,
-                  "description": "Year one BAU utility load",
-                  "units": "kW"
-                },
                 "year_one_energy_cost_us_dollars": {
                   "type": float,
                   "description": "Optimal year one utility energy cost",
@@ -521,6 +522,11 @@ nested_output_definitions = {
                   "description": "Year one grid to load time series",
                   "units": "kW"
                 },
+                "year_one_to_load_series_bau_kw": {
+                  "type": list_of_float,
+                  "description": "Year one grid to load time series in the BAU case",
+                  "units": "kW"
+                },
                 "year_one_to_battery_series_kw": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of power from grid to battery",
@@ -538,23 +544,15 @@ nested_output_definitions = {
                 },
                 "year_one_emissions_lb_C02": {
                   "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "hours"
-                },
-                "total_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from utility electricity over all years in the analysis period. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "hours"
+                  "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
+                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
+                  "units": "lb CO2"
                 },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "hours"
-                },
-                "total_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity over all years in the analysis period. Calculated by default from hourly emissions estimates except in AK and HI.",
-                  "units": "hours"
+                  "units": "lb CO2"
                 },
                 "year_one_chp_standby_cost_us_dollars": {
                   "type": float,
@@ -565,6 +563,10 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Total lifecycle standby charge cost incurred by CHP",
                   "units": "$"
+                },
+                "emissions_region": {
+                  "type": "str",
+                  "description": "Description of region for emissions_factor_series_lb_CO2_per_kwh. Filled by default with the EPA AVERT region of the site."
                 }
               },
 
@@ -712,19 +714,9 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site use in the first year.",
                   "units": "hours"
                 },
-                "total_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site over all years in the analysis period.",
-                  "units": "hours"
-                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site use in the first year in the BAU case.",
-                  "units": "hours"
-                },
-                "total_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from generator fuels consumed on site over all years in the analysis period in the BAU case.",
                   "units": "hours"
                 }
               },
@@ -790,23 +782,11 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year.",
                   "units": "hours"
                 },
-
-                "total_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site over all years in the analysis period.",
-                  "units": "hours"
-                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site use in the first year in the BAU case.",
                   "units": "hours"
                 },
-
-                "total_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from CHP fuels consumed on site over all years in the analysis period in the BAU case.",
-                  "units": "hours"
-                }
               },
 
               "Boiler": {
@@ -845,19 +825,9 @@ nested_output_definitions = {
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year.",
                   "units": "hours"
                 },
-                "total_emissions_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site over all years in the analysis period.",
-                  "units": "hours"
-                },
                 "year_one_emissions_bau_lb_C02": {
                   "type": int,
                   "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site use in the first year in the BAU case.",
-                  "units": "hours"
-                },
-                "total_emissions_bau_lb_C02": {
-                  "type": int,
-                  "description": "Total equivalent pounds of carbon dioxide emitted from boiler fuels consumed on site over all years in the analysis period in the BAU case.",
                   "units": "hours"
                 }
               },
@@ -957,10 +927,10 @@ nested_output_definitions = {
                   "description": "Year one hourly time series of hot TES state of charge",
                   "units": "%"
                 }
-              }
             }
           }
-        },
+        }
+      },
 
     "messages": {
         "warnings": {'type': list_of_string, "description": "Warnings generated by simulation"},

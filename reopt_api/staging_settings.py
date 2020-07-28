@@ -112,7 +112,7 @@ DATABASES = {
     'default':{
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'HOST': staging_database_host,
-        'NAME': 'reopt_temp_api_staging',
+        'NAME': staging_database_name,
         'OPTIONS': {
             'options': '-c search_path=reopt_api'
         },
@@ -136,7 +136,7 @@ USE_TZ = True
 
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_WORKER_MAX_TASKS_PER_CHILD = 5
+CELERY_WORKER_MAX_MEMORY_PER_CHILD = 6000000 # 6 GB
 
 # celery task registration
 CELERY_IMPORTS = (
