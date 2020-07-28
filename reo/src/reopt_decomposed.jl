@@ -1628,6 +1628,7 @@ function add_sub_obj_value_results(m, p, r::Dict)
 	else
 		r["peak_demand_for_month"] = 0.0
 	end
+	r["peak_ratchets"] = Array{Float64,1}([sum(value(m[:dvPeakDemandE][r,e]) for e in p.DemandBin) for r in p.Ratchets])
 	r["total_min_charge"] = value(m[:TotalMinCharge])
 	nothing
 end
