@@ -40,6 +40,7 @@ from julia.api import LibJulia
 import time
 import platform
 import copy
+import numpy
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -339,7 +340,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         prod_incentive = min(prod_incent, max_prod_incent)
         obj += prod_incentive
         prod_incentives.append(prod_incentive)
-    if len(reopt_inputs['DemandLookbackMonths']) > 0:
+    if len(reopt_inputs['DemandLookbackMonths']) > 0 and reopt_inputs['DemandLookbackPercent'] > 0.0:
         obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
     return obj, min_charge_adder, prod_incentives
 
@@ -350,15 +351,61 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     :param reopt_inputs:
     :return:
     """
-    if (reopt_inputs['DemandLookbackPercent'] == 0.0
-            or len(reopt_inputs['DemandLookbackMonths']) == 0
-            or len(reopt_inputs['Ratchets']) == 0
-    ):
-        return 0.0
+    added_obj = 0.
+    max_lookback_val = ub_result_dicts[1]["peak_demand_for_month"] if 1 in reopt_inputs['DemandLookbackMonths'] else 0.0
+    peak_ratchets = ub_result_dicts[1]["peak_ratchets"]
+    for m in range(2, 13):
+        #update max ratchet purchases
+        peak_ratchets = numpy.maximum(peak_ratchets, ub_result_dicts[1]["peak_ratchets"])
+        #Update Demandlookback months if required
+        if m in reopt_inputs["DemandLookbackMonths"]:
+            max_lookback_val = max(max_lookback_val, ub_result_dicts[m]["peak_demand_for_month"])
+    #update any ratchet if it is less than the appropriate value
+    if all(peak_ratchets >= max_lookback_val * reopt_inputs["DemandLookbackPercent"]):
+        return 0.
+    for r in range(reopt_inputs["NumRatchets"]):
+        if peak_ratchets[r] >= max_lookback_val * reopt_inputs["DemandLookbackPercent"]:
+            added_demand = peak_ratchets[r] - max_lookback_val * reopt_inputs["DemandLookbackPercent"]
+            bins, vals = get_added_demand_by_bin(peak_ratchets[r], added_demand, reopt_inputs["MaxDemandInBin"])
+            for idx in range(len(bins)):
+                added_obj += reopt_inputs["DemandRates"][idx*reopt_inputs["NumRatchets"]+bins[idx]] * vals[idx]
+    return added_obj
 
+def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     """
-    
+    obtains added demand by bin for calculation of additional ratchet
+    charges when rolling up year-long costs while accounting for
+    demand lookback months.
+    :param start:  starting peak ratchet demand
+    :param added_demand: amount of excess demand to add
+    :param bin_maxes: list of bin_maxes
+    :return bins: list of bin indices (start at zero)
+    :return vals: list of additional value by bin
     """
+    excess_remaining = added_demand
+    start_remaining = start
+    bins = []
+    vals = []
+    for idx in range(len(max_demand_by_bin)):
+        if excess_remaining == 0. and start_remaining == 0.:
+            break
+        bin_remaining = max_demand_by_bin[idx]
+        if bin_remaining > start_remaining:
+            bin_remaining -= start_remaining
+            start_remaining = 0.
+        else:
+            start_remaining -= bin_remaining
+            continue
+        bins.append(idx)
+        if bin_remaining >= excess_remaining:
+            bin_remaining -= excess_remaining
+            vals.append(excess_remaining)
+            excess_remaining = 0.
+        else:
+            excess_remaining -= bin_remaining
+            vals.append(bin_remaining)
+    return bins, vals
+
 
 def get_average_sizing_decisions(models, reopt_param):
     sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
