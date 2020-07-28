@@ -1,4 +1,5 @@
 import os
+import numpy as np
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
 from reo.models import SiteModel, LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, \
     ElectricTariffModel, CHPModel, AbsorptionChillerModel, HotTESModel, ColdTESModel, FuelTariffModel, BoilerModel
@@ -407,6 +408,13 @@ def generate_proforma(scenariomodel, output_file_path):
     chp_electric_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "CHP annual runtime (hours)"
+    ws['B{}'.format(current_row)] = sum(np.array(chp.year_one_electric_production_series_kw or []) > 0)
+    chp_runtime_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+
     current_row += 1
     ws['A{}'.format(current_row)] = "Total optimal electricity produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data]) + (chp.year_one_electric_energy_produced_kwh or 0)
@@ -437,7 +445,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Percent energy from on-site renewable resources"
+    ws['A{}'.format(current_row)] = "Percent electricity from on-site renewable resources"
     ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},2)'.format(\
         wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
     make_attribute_row(ws, current_row, alignment=right_align,
@@ -445,16 +453,19 @@ def generate_proforma(scenariomodel, output_file_path):
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent reduction in annual electricity bill"
-    ws['B{}'.format(current_row)] = '=ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2)'.format(
+    ws['B{}'.format(current_row)] = '=IF({bau_bill}=0,"N/A",ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2))'.format(
         bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, 
         optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
+    
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent reduction in annual fuels bill"
-    ws['B{}'.format(current_row)] = '=ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2)'.format(
-        bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, 
-        optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
+    ws['B{}'.format(current_row)] = '==IF({bau_bill}=0,"N/A",ROUND(({bau_bill} - SUM({optimal_boiler_bill},{optimal_chp_bill}))/{bau_bill},2))'.format(
+        bau_bill=boiler_fuel_bill_bau_cell, 
+        optimal_boiler_bill=boiler_fuel_bill_cell,
+        optimal_chp_bill=chp_fuel_bill_cell
+        )
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
     current_row += 1
@@ -551,19 +562,19 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Absorption Chiller Installed Cost ($)"
     ws['B{}'.format(current_row)] = (absorption_chiller.installed_cost_us_dollars_per_ton or 0) * (absorption_chiller.size_ton or 0)
-    batt_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Chilled water TES Installed Cost ($)"
-    ws['B{}'.format(current_row)] = (cold_tes.installed_cost_us_dollars_per_gal or 0) * (cold_tes.size_gal or 0)
-    batt_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    absorption_chiller_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Hot water TES Installed Cost ($)"
     ws['B{}'.format(current_row)] = (hot_tes.installed_cost_us_dollars_per_gal or 0) * (hot_tes.size_gal or 0)
-    batt_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    hot_tes_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Chilled water TES Installed Cost ($)"
+    ws['B{}'.format(current_row)] = (cold_tes.installed_cost_us_dollars_per_gal or 0) * (cold_tes.size_gal or 0)
+    cold_tes_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
@@ -649,13 +660,20 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_kw or 0
     chp_om_cost_us_dollars_per_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
-    
+
     current_row += 1
-    ws['A{}'.format(current_row)] = "Runtime CHP O&M cost ($/kW/run-hour)"
+    ws['A{}'.format(current_row)] = "Fixed CHP O&M cost ($/kWh-yr)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_kwh or 0
     chp_om_cost_us_dollars_per_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Runtime CHP O&M cost ($/kW-rated/run-hour)"
+    ws['A{}'.format(current_row)].alignment = one_tab_indent
+    ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_hr_per_kw_rated or 0
+    chp_om_cost_us_dollars_per_kw_rated__cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, number_format='0.000')
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Fixed Absorption Chiller O&M cost ($/ton-yr)"
@@ -1378,6 +1396,12 @@ def generate_proforma(scenariomodel, output_file_path):
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "CHP"
     col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Absorption Chiller"
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Hot TES"
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = "Cold TES"
+    col_idx += 1
     make_title_row(ws, current_row, length=col_idx)
     col_idx += 1
 
@@ -1402,6 +1426,15 @@ def generate_proforma(scenariomodel, output_file_path):
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = chp.macrs_option_years
     chp_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = absorption_chiller.macrs_option_years
+    absorption_chiller_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = hot_tes.macrs_option_years
+    hot_tes_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = cold_tes.macrs_option_years
+    cold_tes_macrs_option_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
     col_idx += 1
     make_attribute_row(ws, current_row, length=col_idx, alignment=center_align)
     ws['{}{}'.format(upper_case_letters[macrs_table_start_col], current_row)] = "Year"
@@ -1428,6 +1461,15 @@ def generate_proforma(scenariomodel, output_file_path):
     col_idx += 1
     ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = chp.macrs_bonus_pct
     chp_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = absorption_chiller.macrs_bonus_pct
+    absorption_chiller_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = hot_tes.macrs_bonus_pct
+    hot_tes_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
+    col_idx += 1
+    ws['{}{}'.format(upper_case_letters[col_idx], current_row)] = cold_tes.macrs_bonus_pct
+    cold_tes_bonus_fraction_cell = "\'{}\'!{}{}".format(inandout_sheet_name, upper_case_letters[col_idx], current_row)
     col_idx += 1
     make_attribute_row(ws, current_row, length=col_idx, alignment=center_align)
     col_idx += 1
@@ -1627,6 +1669,63 @@ def generate_proforma(scenariomodel, output_file_path):
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
 
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Absorption Chiller Federal depreciation percentages (fraction)"
+    ws['B{}'.format(current_row)] = 0
+    absorption_chiller_macrs_cells = []
+
+    for i, c in enumerate(macrs_cells[absorption_chiller.macrs_option_years]):
+        ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
+        absorption_chiller_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+
+    start_number = absorption_chiller.macrs_option_years
+    if start_number == 0:
+        start_number = -1
+    for i in range(start_number+ 1, financial.analysis_years):
+        ws[upper_case_letters[2 + i] + str(current_row)] = 0
+        absorption_chiller_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Hot TES Federal depreciation percentages (fraction)"
+    ws['B{}'.format(current_row)] = 0
+    hot_tes_macrs_cells = []
+
+    for i, c in enumerate(macrs_cells[hot_tes.macrs_option_years]):
+        ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
+        hot_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+
+    start_number = hot_tes.macrs_option_years
+    if start_number == 0:
+        start_number = -1
+    for i in range(start_number+ 1, financial.analysis_years):
+        ws[upper_case_letters[2 + i] + str(current_row)] = 0
+        hot_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Cold TES Federal depreciation percentages (fraction)"
+    ws['B{}'.format(current_row)] = 0
+    cold_tes_macrs_cells = []
+
+    for i, c in enumerate(macrs_cells[cold_tes.macrs_option_years]):
+        ws[upper_case_letters[2 + i] + str(current_row)] = '=' + c
+        cold_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+
+    start_number = cold_tes.macrs_option_years
+    if start_number == 0:
+        start_number = -1
+    for i in range(start_number+ 1, financial.analysis_years):
+        ws[upper_case_letters[2 + i] + str(current_row)] = 0
+        cold_tes_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
+    fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
+    fill_cols(ws, range(1, 2), current_row, grey_fill)
+
     free_cash_flow_row = current_row + 1
 
 
@@ -1803,11 +1902,20 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost"
+    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost per kW"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-                chp_om_cost_us_dollars_per_kw_cell, chp_escalation_pct_cell, year)
+                chp_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost per kWh"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
+                chp_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1815,8 +1923,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "CHP runtime O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            chp_om_cost_us_dollars_per_kwh_cell, chp_escalation_pct_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+            chp_om_cost_us_dollars_per_kw_rated__cell, chp_runtime_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1834,16 +1942,16 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            cold_tes_om_cost_us_dollars_per_gal_cell, chp_escalation_pct_cell, year)
+            cold_tes_om_cost_us_dollars_per_gal_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Chilled water TES fixed O&M cost"
+    dcs['A{}'.format(current_row)] = "Hot water TES fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            hot_tes_om_cost_us_dollars_per_gal_cell, chp_escalation_pct_cell, year)
+            hot_tes_om_cost_us_dollars_per_gal_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -2714,6 +2822,159 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
     chp_fed_income_total = current_row
     current_row += 1
+
+    ####################################################################################################################
+    # Absorption Chiller depreciation
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Absorption Chiller Depreciation, Commercial only"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Percentage"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    for i in range(len(absorption_chiller_macrs_cells)):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(absorption_chiller_macrs_cells[i])
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0.0000', border=no_border)
+    absorption_chiller_macrs_percent_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Bonus Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    absorption_chiller_bonus_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(absorption_chiller_bonus_basis_cell, absorption_chiller_bonus_fraction_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    absorption_chiller_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Amount"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    absorption_chiller_depreciation_benefit = list()
+    for i in range(financial.analysis_years):
+        absorption_chiller_depreciation_benefit.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+        
+        if i == 0:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
+                '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
+                    basis_cell=absorption_chiller_basis_cell, col=upper_case_letters[i + 2], macrs_row=absorption_chiller_macrs_percent_row,
+                    bonus_basis_cell=absorption_chiller_bonus_basis_cell, bonus_basis_pct_cell=absorption_chiller_bonus_fraction_cell)
+        else:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
+                basis_cell=absorption_chiller_basis_cell, col=upper_case_letters[i + 2], macrs_row=absorption_chiller_macrs_percent_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    absorption_chiller_fed_income_total = current_row
+    current_row += 1
+
+    ####################################################################################################################
+    # Hot TES depreciation
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Hot TES Depreciation, Commercial only"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Percentage"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    for i in range(len(hot_tes_macrs_cells)):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(hot_tes_macrs_cells[i])
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0.0000', border=no_border)
+    hot_tes_macrs_percent_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Bonus Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    hot_tes_bonus_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(hot_tes_bonus_basis_cell, hot_tes_bonus_fraction_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    hot_tes_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Amount"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    hot_tes_depreciation_benefit = list()
+    for i in range(financial.analysis_years):
+        hot_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+        
+        if i == 0:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
+                '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
+                    basis_cell=hot_tes_basis_cell, col=upper_case_letters[i + 2], macrs_row=hot_tes_macrs_percent_row,
+                    bonus_basis_cell=hot_tes_bonus_basis_cell, bonus_basis_pct_cell=hot_tes_bonus_fraction_cell)
+        else:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
+                basis_cell=hot_tes_basis_cell, col=upper_case_letters[i + 2], macrs_row=hot_tes_macrs_percent_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    hot_tes_fed_income_total = current_row
+    current_row += 1
+
+    ####################################################################################################################
+    # Cold TES depreciation
+    ####################################################################################################################
+
+    dcs['A{}'.format(current_row)] = "Cold TES Depreciation, Commercial only"
+    dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Percentage"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    for i in range(len(cold_tes_macrs_cells)):
+        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={}'.format(cold_tes_macrs_cells[i])
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0.0000', border=no_border)
+    cold_tes_macrs_percent_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Bonus Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    cold_tes_bonus_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Basis"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(cold_tes_bonus_basis_cell, cold_tes_bonus_fraction_cell)
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    cold_tes_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Amount"
+    dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    cold_tes_depreciation_benefit = list()
+    for i in range(financial.analysis_years):
+        cold_tes_depreciation_benefit.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+        
+        if i == 0:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
+                '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
+                    basis_cell=cold_tes_basis_cell, col=upper_case_letters[i + 2], macrs_row=cold_tes_macrs_percent_row,
+                    bonus_basis_cell=cold_tes_bonus_basis_cell, bonus_basis_pct_cell=cold_tes_bonus_fraction_cell)
+        else:
+            dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '={basis_cell}*{col}{macrs_row}'.format(
+                basis_cell=cold_tes_basis_cell, col=upper_case_letters[i + 2], macrs_row=cold_tes_macrs_percent_row)
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    cold_tes_fed_income_total = current_row
+    current_row += 1
     ####################################################################################################################
     # Total depreciation
     ####################################################################################################################
@@ -2726,10 +2987,11 @@ def generate_proforma(scenariomodel, output_file_path):
             col=upper_case_letters[i + 2],
             pv=pv_cell_locations[idx]["pv_fed_income_total"]) for idx in range(len(pv_data))])
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
-            '=SUM({pv_string},{col}{wind},{col}{batt},{col}{chp})'.format(
+            '=SUM({pv_string},{col}{wind},{col}{batt},{col}{chp},{col}{absorption_chiller},{col}{hot_tes},{col}{cold_tes})'.format(
                 col=upper_case_letters[i + 2], pv_string=pv_string,
                 wind=wind_fed_income_total, batt=batt_fed_income_total, 
-                chp=chp_fed_income_total)
+                chp=chp_fed_income_total, absorption_chiller=absorption_chiller_fed_income_total,
+                hot_tes=hot_tes_fed_income_total, cold_tes=cold_tes_fed_income_total)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -2983,6 +3245,73 @@ def generate_proforma(scenariomodel, output_file_path):
     chp_federal_itc_amount_row = current_row
     chp_federal_itc_amount_cell = "\'{}\'!C{}".format(
                 developer_cashflow_sheet_name, current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC basis: Absorption Chiller"
+    dcs['B{}'.format(current_row)] = '={absorption_chiller_cost_cell}'.format(
+                                        absorption_chiller_cost_cell=absorption_chiller_cost_cell)
+    dcs[absorption_chiller_bonus_basis_cell] = (
+        '=IF(OR({absorption_chiller_macrs_option_cell}=5,{absorption_chiller_macrs_option_cell}=7),'
+        '{absorption_chiller_itc_basis_cell},0)'
+    ).format(
+        absorption_chiller_macrs_option_cell=absorption_chiller_macrs_option_cell,
+        absorption_chiller_itc_basis_cell='B{}'.format(current_row),
+    )
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    absorption_chiller_federal_itc_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC amount: Absorption Chiller"
+    dcs['C{}'.format(current_row)] = '=INT("0")'
+    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
+    absorption_chiller_federal_itc_amount_row = current_row
+    absorption_chiller_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC basis: Hot TES"
+    dcs['B{}'.format(current_row)] = '={hot_tes_cost_cell}'.format(
+                                        hot_tes_cost_cell=hot_tes_cost_cell)
+    dcs[hot_tes_bonus_basis_cell] = (
+        '=IF(OR({hot_tes_macrs_option_cell}=5,{hot_tes_macrs_option_cell}=7),'
+        '{hot_tes_itc_basis_cell},0)'
+    ).format(
+        hot_tes_macrs_option_cell=hot_tes_macrs_option_cell,
+        hot_tes_itc_basis_cell='B{}'.format(current_row),
+    )
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    hot_tes_federal_itc_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC amount: Hot TES"
+    dcs['C{}'.format(current_row)] = '=INT("0")'
+    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
+    hot_tes_federal_itc_amount_row = current_row
+    hot_tes_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC basis: Cold TES"
+    dcs['B{}'.format(current_row)] = '={cold_tes_cost_cell}'.format(
+                                        cold_tes_cost_cell=cold_tes_cost_cell)
+    dcs[cold_tes_bonus_basis_cell] = (
+        '=IF(OR({cold_tes_macrs_option_cell}=5,{cold_tes_macrs_option_cell}=7),'
+        '{cold_tes_itc_basis_cell},0)'
+    ).format(
+        cold_tes_macrs_option_cell=cold_tes_macrs_option_cell,
+        cold_tes_itc_basis_cell='B{}'.format(current_row),
+    )
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    cold_tes_federal_itc_basis_cell = 'B{}'.format(current_row)
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Federal ITC amount: Cold TES"
+    dcs['C{}'.format(current_row)] = '=INT("0")'
+    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
+    cold_tes_federal_itc_amount_row = current_row
+    cold_tes_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
+
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total Federal ITC"
     dcs['A{}'.format(current_row)].font = bold_font
@@ -2993,13 +3322,19 @@ def generate_proforma(scenariomodel, output_file_path):
         for idx in range(len(pv_data))
     ])
     dcs['C{}'.format(current_row)] = (
-        '=SUM({pv_string}, {col}{wind_federal_itc_amount_row}, {col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row})'
+        '=SUM({pv_string}, {col}{wind_federal_itc_amount_row}, '
+        '{col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row},'
+        '{col}{absorption_chiller_federal_itc_amount_row}, {col}{hot_tes_federal_itc_amount_row},'
+        '{col}{cold_tes_federal_itc_amount_row})'
     ).format(
         col=upper_case_letters[0 + 2],
         pv_string=pv_string,
         wind_federal_itc_amount_row=wind_federal_itc_amount_row,
         batt_federal_itc_amount_row=batt_federal_itc_amount_row,
         chp_federal_itc_amount_row=chp_federal_itc_amount_row,
+        absorption_chiller_federal_itc_amount_row=absorption_chiller_federal_itc_amount_row,
+        hot_tes_federal_itc_amount_row=hot_tes_federal_itc_amount_row,
+        cold_tes_federal_itc_amount_row=cold_tes_federal_itc_amount_row
     )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
