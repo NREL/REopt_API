@@ -78,7 +78,7 @@ def help(request):
         return JsonResponse(response)
 
     except Exception as e:
-        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])})
+        return JsonResponse({"Error": "Unexpected error in help endpoint: {}".format(e.args[0])}, status=500)
 
 
 def invalid_urdb(request):
@@ -89,7 +89,7 @@ def invalid_urdb(request):
         return JsonResponse({"Invalid IDs": list(set(invalid_set + hard_problem_labels))})
         
     except Exception as e:
-        return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])})
+        return JsonResponse({"Error": "Unexpected error in invalid_urdb endpoint: {}".format(e.args[0])}, status=500)
 
 
 def annual_kwh(request):
@@ -120,10 +120,10 @@ def annual_kwh(request):
         return response
 
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])})
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception as e:
 
@@ -131,7 +131,7 @@ def annual_kwh(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in annual_kwh endpoint. Check log for more."})
+        return JsonResponse({"Error": "Unexpected error in annual_kwh endpoint. Check log for more."}, status=500)
 
 
 
@@ -163,17 +163,17 @@ def annual_mmbtu(request):
         )
         return response
     except KeyError as e:
-        return JsonResponse({"Error. Missing": str(e.args[0])})
+        return JsonResponse({"Error. Missing": str(e.args[0])}, status=500)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."})        
+        return JsonResponse({"Error": "Unexpected Error. Please contact reopt@nrel.gov."}, status=500)
 
 
 def remove(request, run_uuid):
@@ -215,7 +215,7 @@ def results(request, run_uuid):
         err = UnexpectedError(exc_type, exc_value.args[0], tb.format_tb(exc_traceback), task='reo.views.results', run_uuid=run_uuid)
         err.save_to_db()
         resp = make_error_resp(err.message)
-        return JsonResponse(resp)
+        return JsonResponse(resp, status=500)
 
 
 def emissions_profile(request):
@@ -236,7 +236,7 @@ def emissions_profile(request):
                 })
             return response
         except AttributeError as e:
-            return JsonResponse({"Error": str(e.args[0])})
+            return JsonResponse({"Error": str(e.args[0])}, status=500)
     
     except KeyError as e:
         return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
