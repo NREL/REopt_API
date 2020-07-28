@@ -44,15 +44,15 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
 
         # This test was verified to be withing 1.5% gap after 10 mins of the Mosel/Xpress monolith
         d_expected = dict()
-        d_expected['lcc'] = 13545453.0
-        d_expected['npv'] = 1162368.0
-        d_expected['chp_kw'] = 393.14
-        d_expected['chp_year_one_fuel_used_mmbtu'] = 27484.36
-        d_expected['chp_year_one_electric_energy_produced_kwh'] = 2807478.56
-        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9667.73
-        d_expected['boiler_total_fuel_cost_us_dollars'] = 16881.22
-        d_expected['chp_total_fuel_cost_us_dollars'] = 2943035.7
-        d_expected['total_opex_costs'] = 639588.0
+        d_expected['lcc'] = 13494473.47
+        d_expected['npv'] = 1213347.52
+        d_expected['chp_kw'] = 546.67
+        d_expected['chp_year_one_fuel_used_mmbtu'] = 27833.51
+        d_expected['chp_year_one_electric_energy_produced_kwh'] = 2835823.82
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 7294.55
+        d_expected['boiler_total_fuel_cost_us_dollars'] = 334532.68
+        d_expected['chp_total_fuel_cost_us_dollars'] = 2980422.6
+        d_expected['total_opex_costs'] = 658599.0
 
         try:
             # for key, value in d_expected.items():
