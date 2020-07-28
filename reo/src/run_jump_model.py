@@ -39,6 +39,7 @@ from celery.utils.log import get_task_logger
 from julia.api import LibJulia
 import time
 import platform
+import copy
 # julia.install()  # needs to be run if it is the first time you are using julia package
 logger = get_task_logger(__name__)
 
@@ -274,14 +275,14 @@ def run_decomposed_model(data, model, reopt_inputs,
             print("new lb, new gap: ", gap)
         if k % lb_iters == 0:
             mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-
             fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
             ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
+            best_result_dicts = copy.deepcopy(ub_result_dicts)
             iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
             print("iter_ub: ", iter_ub)
             if iter_ub < ub:
                 ub = iter_ub
-                best_result_dicts = copy.deepcopy()
+                best_result_dicts = copy.deepcopy(ub_result_dicts)
                 min_charge_adder = iter_min_charge_adder
                 prod_incentives = iter_prod_incentives
                 gap = (ub - lb) / lb
@@ -289,7 +290,7 @@ def run_decomposed_model(data, model, reopt_inputs,
         t_elapsed = time.time() - t_start
         k += 1
     print("final gap: ", gap)
-    results = aggregate_submodel_results(ub_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
+    results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
     return results
 
