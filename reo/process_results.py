@@ -82,7 +82,7 @@ def calculate_simple_payback_and_irr(data):
         """
             
         #Sort out the inputs and outputs by model so that all needed data is in consolidated locations
-        time_steps_per_hour = data['outputs']['Scenario']['time_steps_per_hour']
+        time_steps_per_hour = data['inputs']['Scenario']['time_steps_per_hour']
         electric_tariff = copy.deepcopy(data['outputs']['Scenario']['Site']['ElectricTariff'])
         electric_tariff.update(data['inputs']['Scenario']['Site']['ElectricTariff'])
         financials =  copy.deepcopy(data['outputs']['Scenario']['Site']['Financial'])
