@@ -41,21 +41,45 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
 
     def setUp(self):
         super(OutageSimTests, self).setUp()
-        self.reopt_base = '/v1/simjob/'
-        self.test_post = { "run_uuid": "6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf",
- "bau": False }
 
-    def get_response(self, data):
-        return self.api_client.post(self.reopt_base, format='json', data=data)
+        # for optimization module
+        self.reopt_base_opt = '/v1/job/'
+        self.post_opt = os.path.join('reo', 'tests', 'posts', 'optPOST.json')
+        self.run_uuid = None
+
+        #for simulation module
+        self.reopt_base_sim = '/v1/simjob/'
 
 
-    def test_endpoint(self):
+    def get_response_opt(self, data):
+        return self.api_client.post(self.reopt_base_opt, format='json', data=data)
+
+    def get_response_sim(self, data_sim):
+        return self.api_client.post(self.reopt_base_sim, format='json',
+                                    data=data_sim)
+
+    def test_opt_module(self):
+        """
+        temporary test setup for running an optimizatin problem that precedes the following test for new endpoint for outage simulation module.
+        :return:
+        """
+        data = json.load(open(self.post_opt, 'rb'))
+        resp = self.get_response_opt(data)
+        self.assertHttpCreated(resp)
+        r_opt = json.loads(resp.content)
+        self.run_uuid = r_opt.get('run_uuid')
+        print(self.run_uuid)
+
+
+    def test_sim_module(self):
         """
         temporary test setup for checking of the new POST endpoint
         named 'simjob' is accepting the post as expected.
         :return:
         """
-
-        resp = self.get_response(self.test_post)
+        #assert(self.run_uuid is not None)
+        post_sim = {"run_uuid": self.run_uuid, "bau": False}
+        resp = self.get_response_sim(data_sim=post_sim)
         self.assertHttpCreated(resp)
-        r = json.loads(resp.content)
+        r_sim = json.loads(resp.content)
+        print("Response from simjob:", r_sim)
