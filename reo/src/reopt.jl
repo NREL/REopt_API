@@ -715,7 +715,7 @@ function add_tou_demand_charge_constraints(m, p)
 	)
 
 	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.DemandLookbackMonths],
+	@constraint(m, [r in p.Ratchets],
 		sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >=
 		p.DemandLookbackPercent * m[:dvPeakDemandELookback]
 	)
@@ -749,11 +749,22 @@ function add_util_fixed_and_min_charges(m, p)
 end
 
 function add_chp_hourly_opex_charges(m, p)
-	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
-					sum(p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
+	#Constraint CHP-hourly-om-a: om per hour, per time step >= per_unit_size_cost * size for when on, >= zero when off
+	@constraint(m, CHPHourlyOMBySizeA[t in p.CHPTechs, ts in m[:TimeStep]],
+					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
-					  for ts in p.TimeStep) <= m[:dvOMByHourBySizeCHP][t]
-					)
+					   <= m[:dvOMByHourBySizeCHP][t, ts]
+					)		
+	#Constraint CHP-hourly-om-b: om per hour, per time step <= per_unit_size_cost * size for each hour
+	@constraint(m, CHPHourlyOMBySizeB[t in p.CHPTechs, ts in m[:TimeStep]],
+					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] 
+					   >= m[:dvOMByHourBySizeCHP][t, ts]
+					)		
+	#Constraint CHP-hourly-om-c: om per hour, per time step <= zero when off, <= per_unit_size_cost*max_size
+	@constraint(m, CHPHourlyOMBySizeC[t in p.CHPTechs, ts in m[:TimeStep]],
+					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * m[:binTechIsOnInTS][t,ts]
+					   >= m[:dvOMByHourBySizeCHP][t, ts]
+					)		
 end
 
 function add_cost_function(m, p)
