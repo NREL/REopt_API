@@ -239,10 +239,10 @@ def emissions_profile(request):
             return JsonResponse({"Error": str(e.args[0])})
     
     except KeyError as e:
-        return JsonResponse({"Error. Missing Parameter": str(e.args[0])})
+        return JsonResponse({"Error. Missing Parameter": str(e.args[0])}, status=500)
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
 
@@ -250,7 +250,7 @@ def emissions_profile(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.error(debug_msg)
-        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."})
+        return JsonResponse({"Error": "Unexpected Error. Please check your input parameters and contact reopt@nrel.gov if problems persist."}, status=500)
 
 
 def simulated_load(request):
