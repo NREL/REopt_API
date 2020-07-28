@@ -31,7 +31,7 @@ function add_continuous_variables(m, p)
 		dvThermalProductionYIntercept[p.Tech, m[:TimeStep]] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[m[:TimeStep]] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[m[:TimeStep]] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
-		dvOMByHourBySizeCHP[p.Tech] >= 0
+		dvOMByHourBySizeCHP[p.Tech, m[:TimeStep]] >= 0
     end
 end
 
@@ -133,7 +133,7 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, m[:weight] * p.pwf_e * p.CHPStandbyCharge * 12 * 
 			sum(m[:dvSize][t] for t in p.CHPTechs))
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om *
-			sum(m[:dvOMByHourBySizeCHP][t] for t in p.CHPTechs))
+			sum(m[:dvOMByHourBySizeCHP][t, ts] for t in p.CHPTechs, ts in m[:TimeStep]))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
@@ -809,11 +809,12 @@ function add_util_fixed_and_min_charges(m, p)
 end
 
 function add_chp_hourly_opex_charges(m, p)
-	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs],
-					sum(p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
+	#Constraint CHP-add-a: om per hour, per time step >= per_unit_size_cost * size for each hour, when on 
+	@constraint(m, CHPHourlyOMBySize[t in p.CHPTechs, ts in m[:TimeStep]],
+					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
-					  for ts in m[:TimeStep]) <= m[:dvOMByHourBySizeCHP][t]
-					)
+					   <= m[:dvOMByHourBySizeCHP][t, ts]
+					)		
 end
 
 function add_inventory_constraints(m, p)
