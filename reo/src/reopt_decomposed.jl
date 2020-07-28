@@ -770,7 +770,7 @@ function add_tou_demand_charge_constraints(m, p)
 		)
 
 		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-		@constraint(m, [r in p.DemandLookbackMonths],
+		@constraint(m, [r in p.Ratchets],
 			sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >= 
 			p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
 		)
