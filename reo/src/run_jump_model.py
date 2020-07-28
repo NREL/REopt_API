@@ -31,7 +31,7 @@ import julia
 import sys
 import traceback
 import os
-from celery import shared_task, Task
+from celery import shared_task, Task, group
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
@@ -281,6 +281,7 @@ def run_decomposed_model(data, model, reopt_inputs,
             print("iter_ub: ", iter_ub)
             if iter_ub < ub:
                 ub = iter_ub
+                best_result_dicts = copy.deepcopy()
                 min_charge_adder = iter_min_charge_adder
                 prod_incentives = iter_prod_incentives
                 gap = (ub - lb) / lb
@@ -309,9 +310,26 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
     """
+    inputs = []
     for idx in range(1, 13):
-        results_dicts[idx] = julia.Main.reopt_solve(models[idx], reopt_param, results_dicts[idx], update)
+        inputs.append({"m": models[idx],
+                       "p": reopt_param,
+                       "r": results_dicts[idx],
+                       "u": update,
+                       "month": idx
+        })
+    jobs = group(solve_subproblem.s(x) for x in inputs)
+    r = jobs.apply()
+    results = r.get()
+    for i, result in enumerate(results):
+        results_dicts[i+1] = result
     return results_dicts
+
+
+@shared_task(name='solve_subproblem')
+def solve_subproblem(kwargs):
+    return julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
+
 
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
     for i in range(1, 13):
@@ -323,7 +341,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
     Calculates the full-year problem objective value by adjusting
     year-long components as required.
     :param ub_result_dicts: subproblem results dictionaries
-    :param reopt_inputs: inputs dicrtionary from DataManager
+    :param reopt_inputs: inputs dictionary from DataManager
     :return obj:  full-year objective value
     :return prod_incentives: list of production incentive by technology
     :return min_charge_adder: calculated annual minimum charge adder
@@ -346,13 +364,20 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
 
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     """
-    Calculated added TOU costs to according to peak lookback months,
-    using individual
+    Calculated added TOU costs to according to peak lookback months.
     :param ub_result_dicts:
     :param reopt_inputs:
     :return:
     """
-    return 0.0
+    if (reopt_inputs['DemandLookbackPercent'] == 0.0
+            or len(reopt_inputs['DemandLookbackMonths']) == 0
+            or len(reopt_inputs['Ratchets']) == 0
+    ):
+        return 0.0
+
+    """
+    
+    """
 
 def get_average_sizing_decisions(models, reopt_param):
     sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
