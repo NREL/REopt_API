@@ -328,7 +328,7 @@ function add_fuel_constraints(m, p)
 					m[:dvFuelUsage][t,ts]  == m[:dvFuelBurnYIntercept][t,ts] +
 						p.ProductionFactor[t,ts] * p.FuelBurnSlope[t] * m[:dvRatedProduction][t,ts]
 					)
-					
+
 		#Constraint (1d): Y-intercept fuel burn for CHP
 		@constraint(m, CHPFuelBurnYIntCon[t in p.CHPTechs, ts in m[:TimeStep]],
 					p.FuelBurnYIntRate[t] * m[:dvSize][t] - m[:NewMaxSize][t] * (1-m[:binTechIsOnInTS][t,ts])  <= m[:dvFuelBurnYIntercept][t,ts]   					
@@ -890,10 +890,10 @@ function reopt(reo_model, model_inputs::Dict)
 	t_start = time()
     p = Parameter(model_inputs)
 	t = time() - t_start
+
 	results = reopt_run(reo_model, p)
 	results["julia_input_construction_seconds"] = t
 	return results
-
 end
 
 function reopt_build(m, p::Parameter)
@@ -922,7 +922,6 @@ function reopt_build(m, p::Parameter)
 	if m[:model_type] == "lb"
 		get_initial_decomp_penalties(m, p)
 	end
-
 	results["julia_reopt_variables_seconds"] = time() - t_start
 	t_start = time()
     ##############################################################################
