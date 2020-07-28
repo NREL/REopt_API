@@ -334,13 +334,13 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Chilled water TES capacity (gallons)"
     ws['B{}'.format(current_row)] = cold_tes.size_gal or 0
-    cold_tes_size_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    cold_tes_size_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Hot water TES capacity (gallons)"
     ws['B{}'.format(current_row)] = hot_tes.size_gal or 0
-    hot_tes_size_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    hot_tes_size_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
     current_row += 1
     current_row += 1
@@ -410,8 +410,8 @@ def generate_proforma(scenariomodel, output_file_path):
 
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "CHP annual runtime (hours)"
-    ws['B{}'.format(current_row)] = sum(np.array(chp.year_one_electric_production_series_kw or []) > 0)
+    ws['A{}'.format(current_row)] = "CHP annual runtime (hours/year)"
+    ws['B{}'.format(current_row)] = sum(np.array(chp.year_one_electric_production_series_kw or []) > 0) / (scenario.time_steps_per_hour or 1)
     chp_runtime_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
@@ -662,7 +662,7 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "Fixed CHP O&M cost ($/kWh-yr)"
+    ws['A{}'.format(current_row)] = "Variable CHP O&M cost ($/kWh)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = chp.om_cost_us_dollars_per_kwh or 0
     chp_om_cost_us_dollars_per_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
@@ -1902,20 +1902,20 @@ def generate_proforma(scenariomodel, output_file_path):
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost per kW"
+    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-                chp_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+                chp_om_cost_us_dollars_per_kw_cell, chp_size_kw_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "CHP fixed O&M cost per kWh"
+    dcs['A{}'.format(current_row)] = "CHP variable generation O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-                chp_om_cost_us_dollars_per_kwh_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+                chp_om_cost_us_dollars_per_kwh_cell, chp_electric_energy_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1932,8 +1932,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Absorption Chiller fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            absorption_chiller_om_cost_us_dollars_per_ton_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+            absorption_chiller_om_cost_us_dollars_per_ton_cell, absorption_chiller_size_ton_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1941,8 +1941,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Chilled water TES fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            cold_tes_om_cost_us_dollars_per_gal_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+            cold_tes_om_cost_us_dollars_per_gal_cell, cold_tes_size_gal_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -1950,8 +1950,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Hot water TES fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1+{}/100)^{}'.format(
-            hot_tes_om_cost_us_dollars_per_gal_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
+            hot_tes_om_cost_us_dollars_per_gal_cell, hot_tes_size_gal_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -2844,6 +2844,11 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Bonus Basis"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    dcs['B{}'.format(current_row)] = (
+            "=IF(OR({absorption_chiller_macrs_option_cell}=5,{absorption_chiller_macrs_option_cell}=7),"
+            "{absorption_chiller_cost_cell},0)").format(
+            absorption_chiller_macrs_option_cell=absorption_chiller_macrs_option_cell, 
+            absorption_chiller_cost_cell=absorption_chiller_cost_cell)
     absorption_chiller_bonus_basis_cell = 'B{}'.format(current_row)
 
     current_row += 1
@@ -2895,6 +2900,11 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Bonus Basis"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    dcs['B{}'.format(current_row)] = (
+            "=IF(OR({hot_tes_macrs_option_cell}=5,{hot_tes_macrs_option_cell}=7),"
+            "{hot_tes_cost_cell},0)").format(
+            hot_tes_macrs_option_cell=hot_tes_macrs_option_cell, 
+            hot_tes_cost_cell=hot_tes_cost_cell)
     hot_tes_bonus_basis_cell = 'B{}'.format(current_row)
 
     current_row += 1
@@ -2946,6 +2956,11 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Bonus Basis"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    dcs['B{}'.format(current_row)] = (
+            "=IF(OR({cold_tes_macrs_option_cell}=5,{cold_tes_macrs_option_cell}=7),"
+            "{cold_tes_cost_cell},0)").format(
+            cold_tes_macrs_option_cell=cold_tes_macrs_option_cell, 
+            cold_tes_cost_cell=cold_tes_cost_cell)
     cold_tes_bonus_basis_cell = 'B{}'.format(current_row)
 
     current_row += 1
@@ -3247,72 +3262,6 @@ def generate_proforma(scenariomodel, output_file_path):
                 developer_cashflow_sheet_name, current_row)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC basis: Absorption Chiller"
-    dcs['B{}'.format(current_row)] = '={absorption_chiller_cost_cell}'.format(
-                                        absorption_chiller_cost_cell=absorption_chiller_cost_cell)
-    dcs[absorption_chiller_bonus_basis_cell] = (
-        '=IF(OR({absorption_chiller_macrs_option_cell}=5,{absorption_chiller_macrs_option_cell}=7),'
-        '{absorption_chiller_itc_basis_cell},0)'
-    ).format(
-        absorption_chiller_macrs_option_cell=absorption_chiller_macrs_option_cell,
-        absorption_chiller_itc_basis_cell='B{}'.format(current_row),
-    )
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    absorption_chiller_federal_itc_basis_cell = 'B{}'.format(current_row)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC amount: Absorption Chiller"
-    dcs['C{}'.format(current_row)] = '=INT("0")'
-    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
-    absorption_chiller_federal_itc_amount_row = current_row
-    absorption_chiller_federal_itc_amount_cell = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC basis: Hot TES"
-    dcs['B{}'.format(current_row)] = '={hot_tes_cost_cell}'.format(
-                                        hot_tes_cost_cell=hot_tes_cost_cell)
-    dcs[hot_tes_bonus_basis_cell] = (
-        '=IF(OR({hot_tes_macrs_option_cell}=5,{hot_tes_macrs_option_cell}=7),'
-        '{hot_tes_itc_basis_cell},0)'
-    ).format(
-        hot_tes_macrs_option_cell=hot_tes_macrs_option_cell,
-        hot_tes_itc_basis_cell='B{}'.format(current_row),
-    )
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    hot_tes_federal_itc_basis_cell = 'B{}'.format(current_row)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC amount: Hot TES"
-    dcs['C{}'.format(current_row)] = '=INT("0")'
-    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
-    hot_tes_federal_itc_amount_row = current_row
-    hot_tes_federal_itc_amount_cell = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC basis: Cold TES"
-    dcs['B{}'.format(current_row)] = '={cold_tes_cost_cell}'.format(
-                                        cold_tes_cost_cell=cold_tes_cost_cell)
-    dcs[cold_tes_bonus_basis_cell] = (
-        '=IF(OR({cold_tes_macrs_option_cell}=5,{cold_tes_macrs_option_cell}=7),'
-        '{cold_tes_itc_basis_cell},0)'
-    ).format(
-        cold_tes_macrs_option_cell=cold_tes_macrs_option_cell,
-        cold_tes_itc_basis_cell='B{}'.format(current_row),
-    )
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    cold_tes_federal_itc_basis_cell = 'B{}'.format(current_row)
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal ITC amount: Cold TES"
-    dcs['C{}'.format(current_row)] = '=INT("0")'
-    make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
-    cold_tes_federal_itc_amount_row = current_row
-    cold_tes_federal_itc_amount_cell = "\'{}\'!C{}".format(
-                developer_cashflow_sheet_name, current_row)
-
-    current_row += 1
     dcs['A{}'.format(current_row)] = "Total Federal ITC"
     dcs['A{}'.format(current_row)].font = bold_font
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
@@ -3323,18 +3272,13 @@ def generate_proforma(scenariomodel, output_file_path):
     ])
     dcs['C{}'.format(current_row)] = (
         '=SUM({pv_string}, {col}{wind_federal_itc_amount_row}, '
-        '{col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row},'
-        '{col}{absorption_chiller_federal_itc_amount_row}, {col}{hot_tes_federal_itc_amount_row},'
-        '{col}{cold_tes_federal_itc_amount_row})'
+        '{col}{batt_federal_itc_amount_row}, {col}{chp_federal_itc_amount_row})'
     ).format(
         col=upper_case_letters[0 + 2],
         pv_string=pv_string,
         wind_federal_itc_amount_row=wind_federal_itc_amount_row,
         batt_federal_itc_amount_row=batt_federal_itc_amount_row,
-        chp_federal_itc_amount_row=chp_federal_itc_amount_row,
-        absorption_chiller_federal_itc_amount_row=absorption_chiller_federal_itc_amount_row,
-        hot_tes_federal_itc_amount_row=hot_tes_federal_itc_amount_row,
-        cold_tes_federal_itc_amount_row=cold_tes_federal_itc_amount_row
+        chp_federal_itc_amount_row=chp_federal_itc_amount_row
     )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
