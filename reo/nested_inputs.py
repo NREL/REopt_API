@@ -521,7 +521,7 @@ nested_input_definitions = {
           "type": "list_of_float",
           "default": [0.0] * 12,
           "description": "Array (length of 12) of blended fuel rates (total monthly energy in mmbtu divided by monthly cost in $)"
-        },
+        }
       },
 
       "Wind": {
@@ -1024,7 +1024,11 @@ nested_input_definitions = {
           "total_rebate_us_dollars_per_kw": {
             "type": "float", "min": 0.0, "max": 1.0e9, "default": 0.0,
             "description": "Rebate based on installed power capacity"
-          }
+          },
+          "total_rebate_us_dollars_per_kwh": {
+            "type": "float", "min": 0, "max": 1e9, "default": 0,
+            "description": "Rebate based on installed energy capacity"
+           }             
         },
 
       "Generator": {
@@ -1235,8 +1239,8 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_gal": {
           "type": "float",
-          "description": "Average carbon dioxide emissions factor"
-        }
+          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
+         }
       },
 
       "CHP": {
@@ -1597,7 +1601,7 @@ nested_input_definitions = {
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
           "type": "float",
-          "description": "Average carbon dioxide emissions factor"
+          "description": "Pounds of carbon dioxide emitted per gallon of fuel burned"
         }
       },
 

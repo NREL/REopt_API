@@ -43,5 +43,5 @@ urlpatterns = [
     url(r'^generator_efficiency/', views.generator_efficiency, name='generator_efficiency'),
     url(r'^annual_mmbtu/', views.annual_mmbtu, name='annual_mmbtu'),
     url(r'^chp_defaults/', views.chp_defaults, name='chp_defaults'),
-    url(r'^chiller_defaults/', views.chiller_defaults, name='chiller_defaults'),
+    url(r'^chiller_defaults/', views.chiller_defaults, name='chiller_defaults')
 ]+ static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
