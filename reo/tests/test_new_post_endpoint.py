@@ -58,7 +58,7 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         return self.api_client.post(self.reopt_base_sim, format='json',
                                     data=data_sim)
 
-    def test_opt_module(self):
+    def test_both_modules(self):
         """
         temporary test setup for running an optimizatin problem that precedes the following test for new endpoint for outage simulation module.
         :return:
@@ -67,18 +67,10 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_response_opt(data)
         self.assertHttpCreated(resp)
         r_opt = json.loads(resp.content)
-        self.run_uuid = r_opt.get('run_uuid')
-        print(self.run_uuid)
+        run_uuid = r_opt.get('run_uuid')
 
-
-    def test_sim_module(self):
-        """
-        temporary test setup for checking of the new POST endpoint
-        named 'simjob' is accepting the post as expected.
-        :return:
-        """
-        #assert(self.run_uuid is not None)
-        post_sim = {"run_uuid": self.run_uuid, "bau": False}
+        assert(run_uuid is not None)
+        post_sim = {"run_uuid": run_uuid, "bau": False}
         resp = self.get_response_sim(data_sim=post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
