@@ -525,7 +525,7 @@ def generator_efficiency(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
 
@@ -533,7 +533,7 @@ def generator_efficiency(request):
         debug_msg = "exc_type: {}; exc_value: {}; exc_traceback: {}".format(exc_type, exc_value.args[0],
                                                                             tb.format_tb(exc_traceback))
         log.debug(debug_msg)
-        return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."})
+        return JsonResponse({"Error": "Unexpected error in generator_efficiency endpoint. Check log for more."}, status=500)
 
 def chp_defaults(request):
     """
@@ -599,7 +599,7 @@ def chp_defaults(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
 
@@ -704,7 +704,7 @@ def chiller_defaults(request):
         return response
 
     except ValueError as e:
-        return JsonResponse({"Error": str(e.args[0])})
+        return JsonResponse({"Error": str(e.args[0])}, status=500)
 
     except Exception:
 
