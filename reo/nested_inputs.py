@@ -1352,28 +1352,28 @@ nested_input_definitions = {
         "macrs_option_years": {
           "type": "int",
           "restrict_to": macrs_schedules,
-          "default": 0,
+          "default": 5,
           "description": "MACRS schedule for financial analysis. Set to zero to disable"
         },
         "macrs_bonus_pct": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 1.0,
           "description": "Percent of upfront project costs to depreciate under MACRS"
         },
         "macrs_itc_reduction": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 0.5,
           "description": "Percent of the full ITC that depreciable basis is reduced by"
         },
         "federal_itc_pct": {
           "type": "float",
           "min": 0.0,
           "max": 1.0,
-          "default": 0.0,
+          "default": 0.1,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
