@@ -71,7 +71,7 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
             bau = True
     elif isinstance(request, dict):
         bau = request.get("bau")
-
+    # Safety check; No exception is expected if called after POST-ing to /outagesimjob end point
     try:
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
     except ScenarioModel.DoesNotExist:
@@ -88,15 +88,12 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
         try:  # catch specific exception
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
         except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
-            results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
-            rm = ResilienceModel.create(scenariomodel=scenario)
+            msg = "Outage sim results not available."
+            msg += "Please POST to /outagesimjob first to generate the" \
+                   "results before GET-ing the results from /resilience_stats"
+            return JsonResponse({"Error": msg}, content_type='application/json', status=404)
 
-            try:
-                ResilienceModel.objects.filter(id=rm.id).update(**results)
-            except SaveToDatabase as e:
-                return JsonResponse({"Error": e.message}, status=500)
-
-        else:  # ResilienceModel does exist (reo/results.py runs the outage simulator after REopt)
+        else:  # ResilienceModel does exist
             results = model_to_dict(rm)
             # remove items that user does not need
             del results['scenariomodel']
