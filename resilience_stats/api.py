@@ -39,9 +39,9 @@ from tastypie.serializers import Serializer
 # POST data:{"run_uuid": UUID, "bau": True}
 
 
-class SimJob(ModelResource):
+class OutageSimJob(ModelResource):
     class Meta:
-        resource_name = 'simjob'
+        resource_name = 'outagesimjob'
         allowed_methods = ['post']
         detail_allowed_methods = []
         authorization = ReadOnlyAuthorization()
@@ -74,5 +74,5 @@ class SimJob(ModelResource):
         bau = bundle.data["bau"]
         response = resilience_stats({"bau": bau}, run_uuid)
         bundle.data = json.loads(response.getvalue())
-        print("resp.getval:", json.loads(response.getvalue()))
+        # print("resp.getval:", json.loads(response.getvalue()))
         return bundle
