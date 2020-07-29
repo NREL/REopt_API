@@ -427,13 +427,13 @@ def generate_proforma(scenariomodel, output_file_path):
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Business as Usual boiler fuels utility bill ($/year)"
-    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_us_dollars or 0
+    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_bau_us_dollars or 0
     boiler_fuel_bill_bau_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Optimal boiler fuels utility bill ($/year)"
-    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_bau_us_dollars or 0
+    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_us_dollars or 0
     boiler_fuel_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
