@@ -298,9 +298,9 @@ def calculate_simple_payback_and_irr(data):
                 (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
             om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
             if not two_party:
-                om_series += np.array([(fuel_tariff.get("year_one_chp_fuel_cost_us_dollars") or 0) * (1+financials['chp_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
-                om_series += np.array([(fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
-                om_series_bau += np.array([(fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
+                om_series += np.array([-1 * (fuel_tariff.get("year_one_chp_fuel_cost_us_dollars") or 0) * (1+financials['chp_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
+                om_series += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
+                om_series_bau += np.array([-1 * (fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
             utility_ibi = min(capital_costs * chp['utility_ibi_pct'], chp['utility_ibi_max_us_dollars'])
             utility_cbi = min(total_kw * chp['utility_rebate_us_dollars_per_kw'], chp['utility_rebate_max_us_dollars'])
             state_ibi = min((capital_costs - utility_ibi - utility_cbi) * chp['state_ibi_pct'], chp['state_ibi_max_us_dollars'])
@@ -645,8 +645,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                  * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
                                  - pv["existing_kw"]), 0)
             for tech in ["Storage", "Wind", "CHP"]:
-                upfront_capex += self.inputs[tech]["installed_cost_us_dollars_per_kw"] * \
-                                 self.nested_outputs["Scenario"]["Site"][tech]["size_kw"]
+                upfront_capex += (self.inputs[tech].get("installed_cost_us_dollars_per_kw") or 0) * \
+                                 (self.nested_outputs["Scenario"]["Site"][tech].get("size_kw") or 0)
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
                              (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
