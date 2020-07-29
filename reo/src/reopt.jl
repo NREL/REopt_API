@@ -1096,6 +1096,13 @@ function add_storage_results(m, p, r::Dict)
     end
     @expression(m, GridToBatt[ts in p.TimeStep], m[:dvGridToStorage][ts])
 	r["GridToBatt"] = round.(value.(GridToBatt), digits=3)
+
+	@expression(m, ElecFromBatt[ts in p.TimeStep],
+		sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
+	r["ElecFromBatt"] = round.(value.(ElecFromBatt), digits=3)
+	@expression(m, ElecFromBattExport[ts in p.TimeStep],
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers))
+	r["ElecFromBattExport"] = round.(value.(ElecFromBattExport), digits=3)
 	nothing
 end
 
