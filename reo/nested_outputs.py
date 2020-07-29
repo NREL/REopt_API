@@ -111,7 +111,14 @@ nested_output_definitions = {
                   "type": int,
                   "description": "Number of hours the existing system can sustain with resilience check",
                   "units": "hours"
-                }
+                },
+                "renewable_electricity_energy_pct"
+                  "type": float,
+                  "description": ("Portion of electrictrity use that is derived from on-site renewable resource generation in year one."
+                                "Calculated as total PV and Wind generation in year one (including exports), "
+                                "divided by the total annual load in year one."
+                                ),
+                  "units": "%"
               },
 
               "LoadProfileBoilerFuel": {
