@@ -44,11 +44,11 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
 
         # for optimization module
         self.reopt_base_opt = '/v1/job/'
-        self.post_opt = os.path.join('reo', 'tests', 'posts', 'optPOST.json')
+        self.post_opt = os.path.join('resilience_stats', 'tests', 'optPOST.json')
         self.run_uuid = None
 
         #for simulation module
-        self.reopt_base_sim = '/v1/simjob/'
+        self.reopt_base_sim = '/v1/outagesimjob/'
 
 
     def get_response_opt(self, data):
@@ -74,4 +74,4 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         resp = self.get_response_sim(data_sim=post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
-        print("Response from simjob:", r_sim)
+        # print("Response from outagesimjob:", r_sim)
