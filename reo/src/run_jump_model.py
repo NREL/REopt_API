@@ -227,7 +227,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     return dfm
 
 def run_decomposed_model(data, model, reopt_inputs,
-                         lb_iters=3, ub_select="peak"):
+                         lb_iters=3, max_iters=100):
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
@@ -248,8 +248,9 @@ def run_decomposed_model(data, model, reopt_inputs,
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
     t_elapsed = time.time() - t_start
-    k = 1
-    while gap > opt_tolerance and t_elapsed < time_limit:
+    for k in range(1,max_iters+1):
+        if gap <= opt_tolerance or t_elapsed > time_limit:
+            break
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
         if time.time() - t_start > time_limit or gap < opt_tolerance: break
         for i in range(1, 13):
@@ -300,17 +301,17 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
                        "u": update,
                        "month": idx
         })
-    jobs = group(solve_subproblem.s(x) for x in inputs)
-    r = jobs.apply()
-    results = r.get()
-    for i, result in enumerate(results):
-        results_dicts[i+1] = result
+    r = group(solve_subproblem.s(x) for x in inputs)()
+    r.forget()
+    results_dicts = {}
+    for i in range(1, 13):
+        results_dicts[i] = inputs[i-1]["r"]
     return results_dicts
 
 
 @shared_task(name='solve_subproblem')
 def solve_subproblem(kwargs):
-    return julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
+    kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
 
 
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
