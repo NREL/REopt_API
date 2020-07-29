@@ -41,9 +41,9 @@ from tastypie.serializers import Serializer
 
 from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
-from resilience_stats.views import resilience_stats
 from resilience_stats.models import ResilienceModel
 from resilience_stats.validators import validate_run_uuid
+from resilience_stats.views import run_outage_sim
 
 # POST data:{"run_uuid": UUID, "bau": True}
 
@@ -101,15 +101,15 @@ class OutageSimJob(ModelResource):
                 {"Error": "An error occurred in the scenario. Please check the messages from your results."},
                 content_type='application/json', status=500)
         # Kick-off outage sim run
-        run_outage_sim.s(run_uuid, bau, scenario)
+        run_outage_sim_task.delay(run_uuid, bau)
         bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 204}
 
         return bundle
 
 
 @shared_task
-def run_outage_sim(run_uuid, bau, scenario):
-
+def run_outage_sim_task(run_uuid, bau):
+        scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
         results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
         rm = ResilienceModel.create(scenariomodel=scenario)
 
