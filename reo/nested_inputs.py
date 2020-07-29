@@ -1678,70 +1678,70 @@ nested_input_definitions = {
         "federal_itc_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.0,
           "default": 0.0,
           "description": "Percent federal capital cost incentive"
         },
         "state_ibi_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to discount under state investment based incentives"
         },
         "state_ibi_max_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e10,
+          "max": 0.0,
           "default": 0.0,
           "description": "Maximum rebate allowed under state investment based incentives"
         },
         "utility_ibi_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 0.0,
           "default": 0.0,
           "description": "Percent of upfront project costs to discount under utility investment based incentives"
         },
         "utility_ibi_max_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e10,
+          "max": 0.0,
           "default": 0.0,
           "description": "Maximum rebate allowed under utility investment based incentives"
         },
         "federal_rebate_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": 0.0,
           "default": 0.0,
           "description": "Federal rebate based on installed capacity"
         },
         "state_rebate_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": 0.0,
           "default": 0.0,
           "description": "State rebates based on installed capacity"
         },
         "state_rebate_max_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e10,
+          "max": 0.0,
           "default": 0.0,
           "description": "Maximum rebate allowed under state rebates"
         },
         "utility_rebate_us_dollars_per_kw": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e9,
+          "max": 0.0,
           "default": 0.0,
           "description": "Utility rebates based on installed capacity"
         },
         "utility_rebate_max_us_dollars": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0e10,
+          "max": 0.0,
           "default": 0.0,
           "description": "Maximum rebate allowed under utility rebates"
         }

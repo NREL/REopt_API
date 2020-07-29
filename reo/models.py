@@ -137,6 +137,7 @@ class SiteModel(models.Model):
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
     outdoor_air_temp_degF = ArrayField(models.FloatField(blank=True, null=True), default=list, null=True)
     elevation_ft = models.FloatField(null=True, blank=True)
+    renewable_electricity_energy_pct = models.FloatField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
