@@ -176,10 +176,15 @@ def generate_proforma(scenariomodel, output_file_path):
     right_align = Alignment(horizontal='right')
     current_row = 2
 
-    upper_case_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
-                          'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'BB', 'CC', 'DD', 'EE', 'FF', 'GG', 'HH', 'II', 'JJ',
-                          'KK', 'LL', 'MM', 'NN', 'OO', 'PP', 'QQ', 'RR', 'SS', 'TT', 'UU', 'VV', 'WW', 'XX', 'YY',
-                          'ZZ']
+    number_of_alphabet_iterations = round(financial.analysis_years/26) + 1
+    base_upper_case_letters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+                          'T', 'U', 'V', 'W', 'X', 'Y', 'Z']
+    upper_case_letters = []                         
+    for i in range(number_of_alphabet_iterations):
+        if i == 0:
+            upper_case_letters += base_upper_case_letters
+        else:
+            upper_case_letters += [base_upper_case_letters[i-1] + l for l  in base_upper_case_letters]
 
     macrs_schedule = {5: macrs_five_year,
                       7: macrs_seven_year}
@@ -422,19 +427,19 @@ def generate_proforma(scenariomodel, output_file_path):
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Business as Usual boiler fuels utility bill ($/year)"
-    ws['B{}'.format(current_row)] = fuel_tariff.total_boiler_fuel_cost_us_dollars or 0
+    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_us_dollars or 0
     boiler_fuel_bill_bau_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual Optimal boiler fuels utility bill ($/year)"
-    ws['B{}'.format(current_row)] = fuel_tariff.total_boiler_fuel_cost_bau_us_dollars or 0
+    ws['B{}'.format(current_row)] = fuel_tariff.year_one_boiler_fuel_cost_bau_us_dollars or 0
     boiler_fuel_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
     current_row += 1
     ws['A{}'.format(current_row)] = "Present value of annual CHP fuels utility bill ($/year)"
-    ws['B{}'.format(current_row)] = fuel_tariff.total_chp_fuel_cost_us_dollars or 0
+    ws['B{}'.format(current_row)] = fuel_tariff.year_one_chp_fuel_cost_us_dollars or 0
     chp_fuel_bill_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
@@ -454,8 +459,8 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent reduction in annual electricity bill"
     ws['B{}'.format(current_row)] = '=IF({bau_bill}=0,"N/A",ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2))'.format(
-        bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, 
-        optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
+        bau_bill=year_one_bau_bill_cell, 
+        optimal_bill=year_one_bill_cell)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
     
@@ -513,6 +518,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = chp.year_one_emissions_lb_C02
     make_attribute_row(ws, current_row)
     current_row += 1
+    current_row += 1
 
     ####################################################################################################################
     # System Costs
@@ -555,7 +561,6 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "CHP Installed Cost ($)"
     ws['B{}'.format(current_row)] = (chp.installed_cost_us_dollars_per_kw or 0) * (chp.size_kw or 0)
-    batt_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     chp_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
@@ -683,14 +688,14 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(ws, current_row)
     
     current_row += 1
-    ws['A{}'.format(current_row)] = "Fixed Chilled water TES O&M cost ($/gallon-hr)"
+    ws['A{}'.format(current_row)] = "Fixed Chilled water TES O&M cost ($/gallon-year)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = cold_tes.om_cost_us_dollars_per_gal or 0 
     cold_tes_om_cost_us_dollars_per_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
     
     current_row += 1
-    ws['A{}'.format(current_row)] = "Fixed Hot water TES O&M cost ($/gallon-hr)"
+    ws['A{}'.format(current_row)] = "Fixed Hot water TES O&M cost ($/gallon-year)"
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = hot_tes.om_cost_us_dollars_per_gal or 0
     hot_tes_om_cost_us_dollars_per_gal_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
@@ -1787,6 +1792,24 @@ def generate_proforma(scenariomodel, output_file_path):
                            number_format='#,##0', border=no_border)
         current_row += 1
 
+        dcs['A{}'.format(current_row)] = "Boiler fuel bill with system"
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '=(-1 * ({boiler_fuel_bill_cell} * (1 + {escalation_pct}/100)^{year}))'.format(
+                    boiler_fuel_bill_cell=boiler_fuel_bill_cell, year=year, escalation_pct=boiler_escalation_pct_cell)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
+
+        dcs['A{}'.format(current_row)] = "CHP fuel bill"
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '=(-1 * ({chp_fuel_bill_cell} * (1 + {escalation_pct}/100)^{year}))'.format(
+                    chp_fuel_bill_cell=chp_fuel_bill_cell, year=year, escalation_pct=chp_escalation_pct_cell)
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
+
     dcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -1923,8 +1946,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "CHP runtime O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     for year in range(1, financial.analysis_years + 1):
-        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * (1+{}/100)^{}'.format(
-            chp_om_cost_us_dollars_per_kw_rated__cell, chp_runtime_cell, om_escalation_rate_cell, year)
+        dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * {} * {} * (1+{}/100)^{}'.format(
+            chp_om_cost_us_dollars_per_kw_rated__cell, chp_size_kw_cell, chp_runtime_cell, om_escalation_rate_cell, year)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
 
@@ -2591,7 +2614,7 @@ def generate_proforma(scenariomodel, output_file_path):
             dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
                 '={pv_string}'
                 '+IF({wind_pbi_combined_tax_fed_cell}="No", {col}{wind_pbi_total_row}, 0)'
-                '+IF({chp_pbi_combined_tax_fed_cell}="Yes", {col}{chp_pbi_total_row}, 0)'
+                '+IF({chp_pbi_combined_tax_fed_cell}="No", {col}{chp_pbi_total_row}, 0)'
             ).format(
                 col=upper_case_letters[i + 1],
                 pv_string=pv_string,
@@ -3416,7 +3439,7 @@ def generate_proforma(scenariomodel, output_file_path):
             "(POWER(1 + {discount_rate}/100, {years}) - 1) / (1 - {tax_rate}/100)"
             ).format(
             discount_rate=discount_rate_cell,
-            years=financial.analysis_years,
+            years=analysis_period_cell,
             tax_rate=fed_tax_rate_cell,
         )
         capital_recovery_factor_cell = 'B{}'.format(current_row)
@@ -3585,6 +3608,20 @@ def generate_proforma(scenariomodel, output_file_path):
         costs/benefits are the net bill savings and the payment to the developer.
         """
         current_row += 1
+        hcs['A{}'.format(current_row)] = "Business as Usual boiler fuel bill ($)"
+
+        for year in range(1, financial.analysis_years + 1):
+            hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = \
+                '=(-1 * ({boiler_fuel_bill_bau_cell} * (1 + {escalation_pct}/100)^{year}))'.format(
+                    boiler_fuel_bill_bau_cell=boiler_fuel_bill_bau_cell,
+                    escalation_pct=boiler_escalation_pct_cell,
+                    year=year,
+                )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        bau_export_credit_row = current_row
+
+        current_row += 1
         hcs['A{}'.format(current_row)] = "Operation and Maintenance (O&M)"
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -3710,7 +3747,7 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['A{}'.format(current_row)] = "Business as Usual boiler fuel bill ($)"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '={fuel_bill} * (1 + {escalation_pct}/100)^{year}'
+                '= (-1 * ({fuel_bill} * (1 + {escalation_pct}/100)^{year}))'
                 ).format(
                     fuel_bill=boiler_fuel_bill_bau_cell, year=year, escalation_pct=boiler_escalation_pct_cell)
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
@@ -3721,7 +3758,7 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['A{}'.format(current_row)] = "Boiler fuel bill with optimal systems ($)"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '={fuel_bill} * (1 + {escalation_pct}/100)^{year}'
+                '=(-1 * ({fuel_bill} * (1 + {escalation_pct}/100)^{year}))'
                 ).format(
                     fuel_bill=boiler_fuel_bill_cell, year=year, escalation_pct=boiler_escalation_pct_cell)
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
@@ -3732,7 +3769,7 @@ def generate_proforma(scenariomodel, output_file_path):
         hcs['A{}'.format(current_row)] = "CHP fuel bill with optimal systems ($)"
         for year in range(1, financial.analysis_years + 1):
             hcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                '={fuel_bill} * (1 + {escalation_pct}/100)^{year}'
+                '=(-1 * ({fuel_bill} * (1 + {escalation_pct}/100)^{year}))'
                 ).format(
                     fuel_bill=chp_fuel_bill_cell, year=year, escalation_pct=chp_escalation_pct_cell)
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
@@ -3771,6 +3808,7 @@ def generate_proforma(scenariomodel, output_file_path):
             hcs['{}{}'.format(upper_case_letters[year+1], current_row)] = (
                 "=-{bau_bill} - {bau_export_credit} + {with_sys_bill} + {export_credits} + {developer_payment} "
                 " - {bau_gen_fuel} + {gen_fuel}"
+                " - {boiler_bill_bau} + {boiler_bill} + {chp_bill}"
                 ).format(
                 bau_bill="{}{}".format(upper_case_letters[year+1], bau_bill_row),
                 bau_export_credit="{}{}".format(upper_case_letters[year+1], bau_export_credit_row),
@@ -3779,6 +3817,9 @@ def generate_proforma(scenariomodel, output_file_path):
                 developer_payment="{}{}".format(upper_case_letters[year+1], developer_payment_row),
                 gen_fuel="{}{}".format(upper_case_letters[year+1], gen_fuel_costs_row),
                 bau_gen_fuel="{}{}".format(upper_case_letters[year+1], bau_gen_fuel_costs_row),
+                chp_bill="{}{}".format(upper_case_letters[year+1], chp_bill_row),
+                boiler_bill="{}{}".format(upper_case_letters[year+1], boiler_bill_row),
+                boiler_bill_bau="{}{}".format(upper_case_letters[year+1], boiler_bill_bau_row)
             )
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)

@@ -297,6 +297,10 @@ def calculate_simple_payback_and_irr(data):
                 (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
                 (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
             om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
+            if not two_party:
+                om_series += np.array([(fuel_tariff.get("year_one_chp_fuel_cost_us_dollars") or 0) * (1+financials['chp_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
+                om_series += np.array([(fuel_tariff.get("year_one_boiler_fuel_cost_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
+                om_series_bau += np.array([(fuel_tariff.get("year_one_boiler_fuel_cost_bau_us_dollars") or 0) * (1+financials['boiler_fuel_escalation_pct'])**yr for yr in range(1, years+1)]) 
             utility_ibi = min(capital_costs * chp['utility_ibi_pct'], chp['utility_ibi_max_us_dollars'])
             utility_cbi = min(total_kw * chp['utility_rebate_us_dollars_per_kw'], chp['utility_rebate_max_us_dollars'])
             state_ibi = min((capital_costs - utility_ibi - utility_cbi) * chp['state_ibi_pct'], chp['state_ibi_max_us_dollars'])
@@ -640,12 +644,22 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 upfront_capex += max(pv["installed_cost_us_dollars_per_kw"]
                                  * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
                                  - pv["existing_kw"]), 0)
-            for tech in ["Storage", "Wind"]:
+            for tech in ["Storage", "Wind", "CHP"]:
                 upfront_capex += self.inputs[tech]["installed_cost_us_dollars_per_kw"] * \
                                  self.nested_outputs["Scenario"]["Site"][tech]["size_kw"]
             # storage capacity
-            upfront_capex += self.inputs["Storage"]["installed_cost_us_dollars_per_kwh"] * \
-                             self.nested_outputs["Scenario"]["Site"]["Storage"]["size_kwh"]
+            upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
+                             (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
+
+            upfront_capex += (self.inputs["AbsorptionChiller"].get("installed_cost_us_dollars_per_ton") or 0) * \
+                             (self.nested_outputs["Scenario"]["Site"]["AbsorptionChiller"].get("size_ton") or 0)
+            
+            upfront_capex += (self.inputs["HotTES"].get("installed_cost_us_dollars_per_gal") or 0) * \
+                             (self.nested_outputs["Scenario"]["Site"]["HotTES"].get("size_gal") or 0)
+            
+            upfront_capex += (self.inputs["ColdTES"].get("installed_cost_us_dollars_per_gal") or 0) * \
+                             (self.nested_outputs["Scenario"]["Site"]["ColdTES"].get("size_gal") or 0)
+            
             return round(upfront_capex, 2)
 
         @property
@@ -1117,6 +1131,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             self.nested_outputs["Scenario"]["Site"]["Financial"]["replacement_costs"] = self.replacement_costs
             self.nested_outputs["Scenario"]["Site"]["Financial"]["initial_capital_costs_after_incentives"] = \
                 self.upfront_capex_after_incentives
+
+            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
+                self.nested_outputs["Scenario"]["Site"]["Wind"].get("year_one_energy_produced_kwh") or 0
+            for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
+                pv.get("year_one_energy_produced_kwh") or 0
+            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
+                self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] / \
+                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"]
+
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
 
