@@ -78,8 +78,8 @@ class OutageSimJob(ModelResource):
         return self.get_object_list(bundle.request)
 
     def obj_create(self, bundle, **kwargs):
-        run_uuid = bundle.data["run_uuid"]
-        bau = bundle.data["bau"]
+        run_uuid = bundle.data.get("run_uuid")
+        bau = bundle.data.get("bau", False)
         # Handle invalid uuids
         try:
             validate_run_uuid(run_uuid)
