@@ -109,8 +109,12 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
 
         solver = os.environ.get("SOLVER")
-        activate_julia_env(solver, time_dict, Pkg, self.run_uuid, self.user_uuid)
-        model = get_julia_model(solver, time_dict, Pkg, Main, run_uuid, self.user_uuid, data)
+
+        t_start = time.time()
+        activate_julia_env(solver, Pkg, self.run_uuid, self.user_uuid)
+        time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+        model, time_dict = get_julia_model(solver, time_dict, Pkg, Main, run_uuid, self.user_uuid, data)
 
         if len(reopt_inputs["CHPTechs"]) == 0:
             t_start = time.time()
