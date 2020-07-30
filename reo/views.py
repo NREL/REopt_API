@@ -328,7 +328,7 @@ def simulated_load(request):
                            annual_kwh=annual_kwh, monthly_totals_kwh=monthly_totals_kwh, critical_load_pct=0,
                            percent_share=percent_share_list)
             
-            lp = b.built_in_profile
+            lp = b.load_list
             
             response = JsonResponse(
                 {'loads_kw': [round(ld, 3) for ld in lp],
