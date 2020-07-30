@@ -287,7 +287,7 @@ def calculate_simple_payback_and_irr(data):
             om_series += np.array([annual_om * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])                
             om_series_bau += np.array([annual_om_bau * (1+financials['om_cost_escalation_pct'])**yr for yr in range(1, years+1)])
         
-        #calculate Wind capital costs, o+m costs, incentives, and depreciation
+        #calculate CHP capital costs, o+m costs, incentives, and depreciation
         if (chp['size_kw'] or 0) > 0:
             total_kw = chp.get('size_kw') or 0
             total_kwh = chp.get('year_one_electric_energy_produced_kwh') or 0
@@ -313,7 +313,7 @@ def calculate_simple_payback_and_irr(data):
             pbi_series = np.array([])
             for yr in range(years):
                 if yr < chp['pbi_years']:
-                    base_pbi = min(chp['pbi_us_dollars_per_kwh'] * (chp['year_one_energy_produced_kwh'] or 0), \
+                    base_pbi = min(chp['pbi_us_dollars_per_kwh'] * (total_kwh or 0), \
                       chp['pbi_max_us_dollars'])
                     pbi_series = np.append(pbi_series, base_pbi)
                 else:
