@@ -31,7 +31,7 @@ import julia
 import sys
 import traceback
 import os
-from celery import shared_task, Task, group
+from celery import shared_task, Task
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError
 from reo.models import ModelManager
 from reo.src.profiler import Profiler
@@ -172,19 +172,20 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     return dfm
 
 
-def run_decomposed_model(data, model, reopt_inputs,
-                         lb_iters=3, max_iters=100):
+def run_decomposed_model(data, model, reopt_inputs, lb_iters=3, max_iters=100):
+    t_start = time.time()
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
     lb_models = {}
     ub_models = {}
+
     for idx in range(1, 13):
         lb_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "lb", idx)
         ub_models[idx] = julia.Main.add_decomp_model(model, reopt_param, "ub", idx)
+
     lb_result_dicts = build_submodels(lb_models, reopt_param)
     ub_result_dicts = build_submodels(ub_models, reopt_param)
-    t_start = time.time()
     lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, False)
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
     system_sizes = get_average_sizing_decisions(lb_models, reopt_param)
@@ -193,12 +194,13 @@ def run_decomposed_model(data, model, reopt_inputs,
     best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
-    t_elapsed = time.time() - t_start
-    for k in range(1,max_iters+1):
+
+    for k in range(1, max_iters+1):
+        t_elapsed = time.time() - t_start
         if gap <= opt_tolerance or t_elapsed > time_limit:
             break
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-        if time.time() - t_start > time_limit or gap < opt_tolerance: break
+
         for i in range(1, 13):
             julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
         lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
@@ -216,8 +218,7 @@ def run_decomposed_model(data, model, reopt_inputs,
                 best_result_dicts = copy.deepcopy(ub_result_dicts)
                 min_charge_adder = iter_min_charge_adder
                 gap = (ub - lb) / lb
-        t_elapsed = time.time() - t_start
-        k += 1
+
     results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
     return results
@@ -229,10 +230,10 @@ def build_submodels(models, reopt_param):
         result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
     return result_dicts
 
+
 def solve_subproblems(models, reopt_param, results_dicts, update):
     """
-    Solves subproblems, so far in a for loop.
-    TODO: make a celery task for each subproblem solve.
+    Solves subproblems
     :param models: dictionary in which key=month (1=Jan, 12=Def) and values are JuMP model objects
     :param reopt_param: JuMP parameter object
     :param results_dicts: dictionary in which key=month and vals are submodel results dictionaries
@@ -242,18 +243,15 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     inputs = []
 
     for idx in range(1, 13):
-        inputs.append({"m": models[idx],
-                       "p": reopt_param,
-                       "r": results_dicts[idx],
-                       "u": update,
-                       "month": idx
+        inputs.append({
+            "m": models[idx],
+            "p": reopt_param,
+            "r": results_dicts[idx],
+            "u": update,
+            "month": idx
         })
         solve_subproblem(inputs[idx-1])
 
-    # Note: with task decorator removed, can't call this as a group
-    #r = group(solve_subproblem(x) for x in inputs)()
-    #r.forget()
-    
     results_dicts = {}
     for i in range(1, 13):
         results_dicts[i] = inputs[i-1]["r"]
@@ -295,6 +293,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
     return obj, min_charge_adder, prod_incentives
 
+
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     """
     Calculated added TOU costs to according to peak lookback months.
@@ -321,6 +320,7 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
             for idx in range(len(bins)):
                 added_obj += reopt_inputs["DemandRates"][idx*reopt_inputs["NumRatchets"]+bins[idx]] * vals[idx]
     return added_obj
+
 
 def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     """
@@ -367,6 +367,7 @@ def get_average_sizing_decisions(models, reopt_param):
     for key in d.keys():
         sizes[key] /= 12.
     return sizes
+
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results = ub_results[1]
