@@ -352,16 +352,7 @@ def calculate_simple_payback_and_irr(data):
             ibi = utility_ibi + state_ibi 
             cbi = utility_cbi + federal_cbi + state_cbi
             total_ibi_and_cbi += (ibi + cbi)
-            # Production-based incentives
-            pbi_series = np.array([])
-            for yr in range(years):
-                if yr < absorption_chiller['pbi_years']:
-                    base_pbi = min(absorption_chiller['pbi_us_dollars_per_kwh'] * (absorption_chiller['year_one_energy_produced_kwh'] or 0), \
-                      absorption_chiller['pbi_max_us_dollars'])
-                    pbi_series = np.append(pbi_series, base_pbi)
-                else:
-                    pbi_series = np.append(pbi_series, 0.0)
-            total_pbi += pbi_series
+
             # Depreciation
             if absorption_chiller['macrs_option_years'] in [5,7]:
                 if absorption_chiller['macrs_option_years'] == 5:
@@ -1137,9 +1128,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
                 pv.get("year_one_energy_produced_kwh") or 0
-            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
+            self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(\
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] / \
-                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"]
+                self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"],4)
 
 
             time_outputs = [k for k in self.bau_attributes if (k.startswith("julia") or k.startswith("pyjulia"))]
