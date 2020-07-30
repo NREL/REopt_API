@@ -36,7 +36,8 @@ import logging
 from celery import shared_task, Task
 from reo.exceptions import REoptError, UnexpectedError
 from reo.models import ModelManager, PVModel, LoadProfileModel, ScenarioModel, LoadProfileBoilerFuelModel, \
-    LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel
+    LoadProfileChillerElectricModel, ElectricChillerModel, BoilerModel, FinancialModel, WindModel, \
+    AbsorptionChillerModel
 from reo.src.outage_costs import calc_avoided_outage_costs
 from reo.src.profiler import Profiler
 from reo.src.emissions_calculator import EmissionsCalculator
@@ -104,10 +105,14 @@ def calculate_simple_payback_and_irr(data):
         years = financials['analysis_years']
         two_party = financials['two_party_ownership']
 
-        chp =  copy.deepcopy(data['outputs']['Scenario']['Site']['CHP'])
+        chp = copy.deepcopy(data['outputs']['Scenario']['Site']['CHP'])
         chp.update(data['inputs']['Scenario']['Site']['CHP'])
-        absorption_chiller =  copy.deepcopy(data['outputs']['Scenario']['Site']['AbsorptionChiller'])
+        absorption_chiller = copy.deepcopy(data['outputs']['Scenario']['Site']['AbsorptionChiller'])
+        absorp_chl = AbsorptionChillerModel.objects.filter(run_uuid=data['outputs']['Scenario']['run_uuid'])[0]
         absorption_chiller.update(data['inputs']['Scenario']['Site']['AbsorptionChiller'])
+        # Need to update two cost input attributes which are calculated in techs.py and updated in scenario.py
+        absorption_chiller.update({"installed_cost_us_dollars_per_ton": absorp_chl.installed_cost_us_dollars_per_ton,
+                                   "om_cost_us_dollars_per_ton": absorp_chl.om_cost_us_dollars_per_ton})
         hot_tes =  copy.deepcopy(data['outputs']['Scenario']['Site']['HotTES'])
         hot_tes.update(data['inputs']['Scenario']['Site']['HotTES'])
         cold_tes =  copy.deepcopy(data['outputs']['Scenario']['Site']['ColdTES'])
@@ -827,8 +832,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["net_capital_costs"] = self.results_dict.get(
                         "net_capital_costs")
                     self.nested_outputs["Scenario"]["Site"][name]["microgrid_upgrade_cost_us_dollars"] = \
-                        self.results_dict.get("net_capital_costs") \
-                        * data['inputs']['Scenario']['Site']['Financial']['microgrid_upgrade_cost_pct']
+                        self.results_dict.get("net_capital_costs") * financials.microgrid_upgrade_cost_pct
                     self.nested_outputs["Scenario"]["Site"][name]["total_opex_costs_us_dollars"] = self.results_dict.get(
                         "total_opex_costs")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_opex_costs_us_dollars"] = self.results_dict.get(
