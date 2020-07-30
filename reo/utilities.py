@@ -265,3 +265,47 @@ def activate_julia_env(solver, time_dict, Pkg, run_uuid, user_uuid):
             message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
             run_uuid=run_uuid, user_uuid=user_uuid)
 
+
+def get_julia_model(solver, time_dict, Pkg, Main, run_uuid, user_uuid, data):
+    if solver == "xpress":
+        try:
+            t_start = time.time()
+            Main.include("reo/src/reopt_xpress_model.jl")
+            time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+        except ImportError:
+            # should only need to instantiate once
+            Pkg.instantiate()
+            Main.include("reo/src/reopt_xpress_model.jl")
+
+        t_start = time.time()
+        model = Main.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"],
+                                 data["inputs"]["Scenario"]["optimality_tolerance"])
+        time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
+    elif solver == "cbc":
+        t_start = time.time()
+        Main.include("reo/src/reopt_cbc_model.jl")
+        time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+        t_start = time.time()
+        model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                 float(data["inputs"]["Scenario"]["optimality_tolerance"]))
+        time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
+    elif solver == "scip":
+        t_start = time.time()
+        Main.include("reo/src/reopt_scip_model.jl")
+        time_dict["pyjulia_include_model_seconds"] = time.time() - t_start
+
+        t_start = time.time()
+        model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                 float(data["inputs"]["Scenario"]["optimality_tolerance"]))
+        time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
+
+    else:
+        raise REoptFailedToStartError(
+            message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
+            run_uuid=run_uuid, user_uuid=user_uuid)
+
+    return model
