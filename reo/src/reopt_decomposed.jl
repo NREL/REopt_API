@@ -524,7 +524,7 @@ function add_thermal_load_constraints(m, p)
 				sum(m[:dvDischargeFromStorage][b,ts] for b in p.HotTES) ==
 				p.HeatingLoad[ts] * p.BoilerEfficiency +
 				sum(m[:dvProductionToWaste][t,ts] for t in p.CHPTechs) + sum(m[:dvProductionToStorage][b,t,ts] for b in p.HotTES, t in p.HeatingTechs)  +
-				sum(m[:dvThermalProduction][t,ts] for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
+				sum(m[:dvThermalProduction][t,ts] * 3412.0 / 1.0E6 for t in p.AbsorptionChillers) / p.AbsorptionChillerCOP
 		)
 	end
 end
@@ -1220,6 +1220,10 @@ function add_storage_results(m, p, r::Dict, update::Bool)
 	if !(update)
 		m[:soc] = @expression(m, [ts in m[:TimeStep]], m[:dvStorageSOC]["Elec",ts])
 		m[:GridToBatt] = @expression(m, [ts in m[:TimeStep]], m[:dvGridToStorage][ts])
+		m[:ElecFromBatt] = @expression(m, [ts in m[:TimeStep]],
+			sum(m[:dvDischargeFromStorage][b,ts] for b in p.ElecStorage))
+		m[:ElecFromBattExport] = @expression(m, [ts in m[:TimeStep]],
+			sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers))
 	end
     r["batt_kwh"] = value(m[:dvStorageCapEnergy]["Elec"])
     r["batt_kw"] = value(m[:dvStorageCapPower]["Elec"])
@@ -1229,6 +1233,8 @@ function add_storage_results(m, p, r::Dict, update::Bool)
         r["year_one_soc_series_pct"] = value.(m[:soc])
     end
 	r["GridToBatt"] = round.(value.(m[:GridToBatt]), digits=3)
+	r["ElecFromBatt"] = round.(value.(m[:ElecFromBatt]), digits=3)
+	r["ElecFromBattExport"] = round.(value.(m[:ElecFromBattExport]), digits=3)
 	nothing
 end
 
@@ -1463,9 +1469,9 @@ function add_absorption_chiller_results(m, p, r::Dict, update::Bool)
 			sum(m[:dvThermalProduction][t,ts] * p.ProductionFactor[t,ts] for t in p.AbsorptionChillers)
 				- ABSORPCHLtoTES[ts])
 		@expression(m, ABSORPCHLThermalConsumptionSeries[ts in m[:TimeStep]],
-			sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP for t in p.AbsorptionChillers))
+			sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6 for t in p.AbsorptionChillers))
 		@expression(m, Year1ABSORPCHLThermalConsumption,
-			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP
+			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts] / p.AbsorptionChillerCOP * 3412.0 / 1.0E6
 				for t in p.AbsorptionChillers, ts in m[:TimeStep]))
 		@expression(m, Year1ABSORPCHLThermalProd,
 			p.TimeStepScaling * sum(m[:dvThermalProduction][t,ts]
