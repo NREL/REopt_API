@@ -82,6 +82,16 @@ nested_output_definitions = {
             },
 
             "Site": {
+              "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from the site in the first year.",
+                  "units": "lb CO2"
+                },
+              "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from the site use in the first year in the BAU case.",
+                  "units": "lb CO2"
+                },
 
               "LoadProfile": {
                 "year_one_electric_load_series_kw": {
@@ -164,7 +174,24 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Net replacement costs for all technologies, in future value, excluding incentives.",
                   "units": "$"
-                }
+                },
+                "simple_payback_years": {
+                  "type": float,
+                  "description": ("Number of years until the cumulative annual cashflow turns positive. "
+                                  "If the cashflow becomes negative again after becoming positive (i.e. due to battery repalcement costs)"
+                                  " then simple payback is increased by the number of years that the cash flow "
+                                  "is negative beyond the break-even year."),
+
+
+
+                  "units": "$"
+                },
+                "irr_pct": {
+                  "type": float,
+                  "description": ("Internal Rate of Return of the cost-optimal system. In two-party cases the "
+                                  "developer discount rate is used in place of the offtaker discount rate."),
+                  "units": "%"
+                 }               
               },
 
               "PV": {
@@ -195,6 +222,11 @@ nested_output_definitions = {
                 "year_one_energy_produced_kwh": {
                   "type": float,
                   "description": "Year one energy produced by the PV system",
+                  "units": "kWh"
+                },
+                "year_one_energy_produced_bau_kwh": {
+                  "type": float,
+                  "description": "Year one energy produced by the PV system in the BAU case",
                   "units": "kWh"
                 },
                 "year_one_power_production_series_kw": {
@@ -441,6 +473,11 @@ nested_output_definitions = {
                   "description": "Year one grid to load time series",
                   "units": "kW"
                 },
+                "year_one_to_load_series_bau_kw": {
+                  "type": list_of_float,
+                  "description": "Year one grid to load time series in the BAU case",
+                  "units": "kW"
+                },
                 "year_one_to_battery_series_kw": {
                   "type": list_of_float,
                   "description": "Year one hourly time series of power from grid to battery",
@@ -455,6 +492,18 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one energy supplied from grid to load in the business-as-usual scenario",
                   "units": "kWh"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": ("Total equivalent pounds of carbon dioxide emitted from utility electricity use "
+                                  "in the first year. Calculated from EPA AVERT region hourly grid emissions factor series for the continental US."
+                                  "In AK and HI, the best available data are EPA eGRID annual averages."),
+                  "units": "lb CO2"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU utility electricity use in the first year. Calculated by default from hourly emissions estimates except in AK and HI.",
+                  "units": "lb CO2"
                 }
               },
 
@@ -563,11 +612,21 @@ nested_output_definitions = {
                   "type": float,
                   "description": "Year one fuel cost for existing diesel generator system",
                   "units": "$"
+                },
+                "year_one_emissions_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from generator use in the first year.",
+                  "units": "lb CO2"
+                },
+                "year_one_emissions_bau_lb_C02": {
+                  "type": int,
+                  "description": "Total equivalent pounds of carbon dioxide emitted from BAU generator use in the first year.",
+                  "units": "lb CO2"
                 }
-              }
             }
           }
-        },
+        }
+      },
 
     "messages": {
         "warnings": {'type': list_of_string, "description": "Warnings generated by simulation"},

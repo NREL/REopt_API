@@ -1,6 +1,6 @@
 import os
 from openpyxl.styles import PatternFill, Border, Font, Side, Alignment
-from reo.models import PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
+from reo.models import SiteModel, LoadProfileModel, PVModel, WindModel, GeneratorModel, StorageModel, FinancialModel, ElectricTariffModel
 from openpyxl import load_workbook
 from reo.src.data_manager import big_number
 from reo.nested_inputs import macrs_five_year, macrs_seven_year
@@ -43,6 +43,8 @@ def generate_proforma(scenariomodel, output_file_path):
     generator = GeneratorModel.objects.filter(run_uuid=scenario.run_uuid).first()
     electric_tariff = ElectricTariffModel.objects.filter(run_uuid=scenario.run_uuid).first()
     financial = FinancialModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    site = SiteModel.objects.filter(run_uuid=scenario.run_uuid).first()
+    load = LoadProfileModel.objects.filter(run_uuid=scenario.run_uuid).first()
 
     # Open file for reading
     if financial.two_party_ownership is True:
@@ -269,10 +271,26 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[i]["pv_degradation_rate_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row, alignment=right_align)
         current_row += 1
+        ws['A{}'.format(current_row)] = "{} LCOE of New Capacity ($/kWh), nominal".format(pv['name'])
+        pv_cell_locations[i]["pv_lcoe_cell"] = 'B{}'.format(current_row)
+        make_attribute_row(ws, current_row, alignment=right_align)
+        current_row += 1
+     
 
     ws['A{}'.format(current_row)] = "Wind Nameplate capacity (kW), purchased"
     ws['B{}'.format(current_row)] = wind_installed_kw
     wind_size_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Wind degradation rate (%/year)"
+    ws['B{}'.format(current_row)] = 0
+    wind_degradation_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Wind LCOE ($/kWh), nominal"
+    wind_lcoe_cell = 'B{}'.format(current_row)
     make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
@@ -335,19 +353,16 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Present value of annual existing {} energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Existing {} energy produced (kWh), Year 1".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy_bau"]
         pv_cell_locations[i]["pv_energy_bau_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
-
         current_row += 1
 
-    for i, pv in enumerate(pv_data):
-        ws['A{}'.format(current_row)] = "Nominal annual {} optimal energy produced (kWh/year)".format(pv['name'])
+        ws['A{}'.format(current_row)] = "Total {} optimal energy produced (kWh), Year 1".format(pv['name'])
         ws['B{}'.format(current_row)] = pv["pv_energy"]
         pv_cell_locations[i]["pv_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
-
         current_row += 1
 
     ws['A{}'.format(current_row)] = "Nominal annual optimal wind energy produced (kWh/year)"
@@ -366,6 +381,48 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['B{}'.format(current_row)] = wind_energy + generator_energy + sum([pv['pv_energy'] for pv in pv_data])
     make_attribute_row(ws, current_row)
     current_row += 1
+
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Percent energy from on-site renewable resources"
+    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},2)'.format(\
+        wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
+    make_attribute_row(ws, current_row, alignment=right_align,
+                           number_format='##%')
+    
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Percent reduction in annual energy bill"
+    ws['B{}'.format(current_row)] = '=ROUND(({bau_bill} - {optimal_bill})/{bau_bill},2)'.format(bau_bill=electric_tariff.year_one_energy_cost_bau_us_dollars, optimal_bill=electric_tariff.year_one_energy_cost_us_dollars)
+    make_attribute_row(ws, current_row, alignment=right_align,
+                           number_format='##%')
+    current_row += 1
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+
+    ws['A{}'.format(current_row)] = "Year one total site carbon dioxide emissions BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = site.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from utility purchases BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = electric_tariff.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_lb_C02
+    make_attribute_row(ws, current_row)
+    current_row += 1
+    
+    ws['A{}'.format(current_row)] = "Year one total carbon dioxide emissions from generator use BAU (lb CO2 equivalent)"
+    ws['B{}'.format(current_row)] = generator.year_one_emissions_bau_lb_C02
+    make_attribute_row(ws, current_row)
     current_row += 1
 
     ####################################################################################################################
@@ -447,7 +504,7 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['A{}'.format(current_row)].alignment = one_tab_indent
     ws['B{}'.format(current_row)] = diesel_fuel_used_cost
     diesel_fuel_used_cost_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Diesel BAU fuel used cost ($)"
@@ -495,13 +552,14 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Analysis period (years)"
     ws['B{}'.format(current_row)] = financial.analysis_years
+    analysis_period_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal O&M cost escalation rate (%/year)"
     ws['B{}'.format(current_row)] = financial.om_cost_escalation_pct * 100
     om_escalation_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row)
+    make_attribute_row(ws, current_row, alignment=right_align)
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Nominal electricity cost escalation rate (%/year)"
@@ -515,17 +573,19 @@ def generate_proforma(scenariomodel, output_file_path):
     discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     host_discount_rate_cell = discount_rate_cell
     make_attribute_row(ws, current_row)
-
+    
+    # NOTE: the following two party logic relies on no lines being inserted here!
     if financial.two_party_ownership:
         ws['A{}'.format(current_row)] = "Nominal Developer discount rate (%/year)"
         ws['B{}'.format(current_row)] = financial.owner_discount_pct * 100
-        make_attribute_row(ws, current_row)
+        make_attribute_row(ws, current_row, alignment=right_align)
 
         current_row += 1
         ws['A{}'.format(current_row)] = "Nominal Host discount rate (%/year)"
         ws['B{}'.format(current_row)] = financial.offtaker_discount_pct * 100
         host_discount_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-        make_attribute_row(ws, current_row)
+        make_attribute_row(ws, current_row, alignment=right_align)
+
     current_row += 1
     current_row += 1
 
@@ -546,6 +606,7 @@ def generate_proforma(scenariomodel, output_file_path):
     if financial.two_party_ownership:
         ws['A{}'.format(current_row)] = "Developer Federal income tax rate (%)"
         ws['B{}'.format(current_row)] = financial.owner_tax_pct * 100
+        developer_fed_tax_rate_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
         make_attribute_row(ws, current_row)
 
         current_row += 1
@@ -809,7 +870,7 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     ws['A{}'.format(current_row)] = "Federal ($/W)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = pv['pv'].federal_rebate_us_dollars_per_kw * 0.001
+    ws['B{}'.format(current_row)] = wind.federal_rebate_us_dollars_per_kw * 0.001
     wind_federal_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = big_number
     wind_federal_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
@@ -964,44 +1025,31 @@ def generate_proforma(scenariomodel, output_file_path):
     ws['C{}'.format(current_row)] = "Maximum ($)"
     ws['C{}'.format(current_row)].border = attribute_border_left_and_right
     make_attribute_row(ws, current_row, length=5, bold_cols=[0])
-
+    
     current_row += 1
-    ws['A{}'.format(current_row)] = "Federal ($/W)"
+    ws['A{}'.format(current_row)] = "Total ($/W)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = 0
-    batt_federal_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['B{}'.format(current_row)] = batt.total_rebate_us_dollars_per_kw / 1000.0
+    batt_total_cbi_per_kw_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = big_number
-    batt_federal_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kw_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
     ws['D{}'.format(current_row)] = "No"
-    batt_cbi_fed_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kw_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
     ws['E{}'.format(current_row)] = "No"
-    batt_cbi_fed_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kw_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, length=5)
 
     current_row += 1
-    ws['A{}'.format(current_row)] = "State  ($/W)"
+    ws['A{}'.format(current_row)] = "Total  ($/Wh)"
     ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = 0
-    batt_state_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+    ws['B{}'.format(current_row)] = batt.total_rebate_us_dollars_per_kwh / 1000.0 
+    batt_total_cbi_per_kwh_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
     ws['C{}'.format(current_row)] = big_number
-    batt_state_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kwh_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
     ws['D{}'.format(current_row)] = "No"
-    batt_cbi_sta_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kwh_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
     ws['E{}'.format(current_row)] = "No"
-    batt_cbi_sta_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
-    make_attribute_row(ws, current_row, length=5)
-
-    current_row += 1
-    ws['A{}'.format(current_row)] = "Utility  ($/W)"
-    ws['A{}'.format(current_row)].alignment = two_tab_indent
-    ws['B{}'.format(current_row)] = 0
-    batt_utility_cbi_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
-    ws['C{}'.format(current_row)] = big_number
-    batt_utility_cbi_max_cell = "\'{}\'!C{}".format(inandout_sheet_name, current_row)
-    ws['D{}'.format(current_row)] = "No"
-    batt_cbi_uti_tax_fed_cell = "\'{}\'!D{}".format(inandout_sheet_name, current_row)
-    ws['E{}'.format(current_row)] = "No"
-    batt_cbi_uti_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
+    batt_total_cbi_per_kwh_deprbas_fed_cell = "\'{}\'!E{}".format(inandout_sheet_name, current_row)
     make_attribute_row(ws, current_row, length=5)
     current_row += 1
     current_row += 1
@@ -1186,7 +1234,7 @@ def generate_proforma(scenariomodel, output_file_path):
             ws[upper_case_letters[2 + ii] + str(current_row)] = 0
             pv_cell_locations[idx]["pv_macrs_cells"].append("\'{}\'!".format(
                 inandout_sheet_name) + upper_case_letters[2 + ii] + str(current_row))
-        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+        make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
         fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
         fill_cols(ws, range(1, 2), current_row, grey_fill)
         current_row += 1
@@ -1200,7 +1248,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(wind.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         wind_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
 
@@ -1216,7 +1264,7 @@ def generate_proforma(scenariomodel, output_file_path):
     for i in range(batt.macrs_option_years + 1, financial.analysis_years):
         ws[upper_case_letters[2 + i] + str(current_row)] = 0
         batt_macrs_cells.append("\'{}\'!".format(inandout_sheet_name) + upper_case_letters[2 + i] + str(current_row))
-    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align)
+    make_attribute_row(ws, current_row, length=financial.analysis_years+2, alignment=center_align, number_format='0.0')
 
     fill_cols(ws, range(2, financial.analysis_years + 2), current_row, calculated_fill)
     fill_cols(ws, range(1, 2), current_row, grey_fill)
@@ -1286,17 +1334,37 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     for i, pv in enumerate(pv_data):
-        dcs['A{}'.format(current_row)] = "{} fixed O&M cost".format(pv['name'])
+        dcs['A{}'.format(current_row)] = "New {} fixed O&M cost".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
+        pv_cell_locations[i]['new_o_and_m_cashflow_cells'] = []
         for year in range(1, financial.analysis_years + 1):
+            pv_cell_locations[i]['new_o_and_m_cashflow_cells'].append('\'{}\'!{}{}'.format(
+                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
                 '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
-                ' * ({pv_size_kw_cell} + {pv_existing_kw_cell})'
+                ' * ({pv_size_kw_cell})'
             ).format(
             pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
             om_escalation_rate_cell=om_escalation_rate_cell,
             year=year,
-            pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"],
+            pv_size_kw_cell=pv_cell_locations[i]["pv_size_kw_cell"]
+            )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        current_row += 1
+        dcs['A{}'.format(current_row)] = "Existing {} fixed O&M cost".format(pv['name'])
+        dcs['A{}'.format(current_row)].alignment = one_tab_indent
+        pv_cell_locations[i]['existing_o_and_m_cashflow_cells'] = []
+        for year in range(1, financial.analysis_years + 1):
+            pv_cell_locations[i]['existing_o_and_m_cashflow_cells'].append('\'{}\'!{}{}'.format(
+                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+            dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                '=-{pv_om_cost_us_dollars_per_kw_cell} * (1 + {om_escalation_rate_cell}/100)^{year}'
+                ' * ({pv_existing_kw_cell})'
+            ).format(
+            pv_om_cost_us_dollars_per_kw_cell=pv_cell_locations[i]["pv_om_cost_us_dollars_per_kw_cell"],
+            om_escalation_rate_cell=om_escalation_rate_cell,
+            year=year,
             pv_existing_kw_cell=pv_cell_locations[i]["pv_existing_kw_cell"] if not financial.two_party_ownership else 0,
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1305,7 +1373,10 @@ def generate_proforma(scenariomodel, output_file_path):
 
     dcs['A{}'.format(current_row)] = "Wind fixed O&M cost"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
+    wind_o_and_m_cashflow_cells = []
     for year in range(1, financial.analysis_years + 1):
+        wind_o_and_m_cashflow_cells.append('\'{}\'!{}{}'.format(
+            developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
         dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = '=-{} * (1 + {}/100)^{} * {}'.format(
             wind_om_cost_us_dollars_per_kw_cell, om_escalation_rate_cell, year, wind_size_kw_cell)
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
@@ -1407,6 +1478,7 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)] = "Direct Cash Incentives"
     make_title_row(dcs, current_row, length=financial.analysis_years+2)
     current_row += 1
+    ibi_and_cbi_totals_rows = []
 
     ####################################################################################################################
     # PV
@@ -1441,7 +1513,9 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(
             pv_cell_locations[idx]["pv_state_ibi_row"], pv_cell_locations[idx]["pv_utility_ibi_row"])
         make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-        pv_cell_locations[idx]["pv_total_ibi_cell"] = 'B{}'.format(current_row)
+        pv_cell_locations[idx]["pv_total_ibi_cell"] = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+        ibi_and_cbi_totals_rows.append(current_row)
+     
 
         current_row += 1
         dcs['A{}'.format(current_row)] = "{} Capacity-based incentives (CBI)".format(pv['name'])
@@ -1457,7 +1531,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[idx]["pv_federal_cbi_row"] = current_row
 
         current_row += 1
-        dcs['A{}'.format(current_row)] = "State IBI"
+        dcs['A{}'.format(current_row)] = "State CBI"
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
         dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
             pv_cell_locations[idx]["pv_state_cbi_cell"], pv_cell_locations[idx]["pv_size_kw_cell"],
@@ -1466,7 +1540,7 @@ def generate_proforma(scenariomodel, output_file_path):
         pv_cell_locations[idx]["pv_state_cbi_row"] = current_row
 
         current_row += 1
-        dcs['A{}'.format(current_row)] = "Utility IBI"
+        dcs['A{}'.format(current_row)] = "Utility CBI"
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
         dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
             pv_cell_locations[idx]["pv_utility_cbi_cell"], pv_cell_locations[idx]["pv_size_kw_cell"],
@@ -1479,8 +1553,9 @@ def generate_proforma(scenariomodel, output_file_path):
         dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(
             pv_cell_locations[idx]["pv_federal_cbi_row"], pv_cell_locations[idx]["pv_state_cbi_row"],
             pv_cell_locations[idx]["pv_utility_cbi_row"])
-        pv_cell_locations[idx]["pv_total_cbi_cell"] = 'B{}'.format(current_row)
+        pv_cell_locations[idx]["pv_total_cbi_cell"] = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
         make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+        ibi_and_cbi_totals_rows.append(current_row)
         current_row += 1
 
     ####################################################################################################################
@@ -1510,7 +1585,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(wind_state_ibi_row, wind_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    wind_total_ibi_cell = 'B{}'.format(current_row)
+    wind_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row) 
+    ibi_and_cbi_totals_rows.append(current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Wind Capacity-based incentives (CBI)"
@@ -1525,7 +1601,7 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_federal_cbi_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "State IBI"
+    dcs['A{}'.format(current_row)] = "State CBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
         wind_state_cbi_cell, wind_size_kw_cell, wind_state_cbi_max_cell)
@@ -1533,7 +1609,7 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_state_cbi_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Utility IBI"
+    dcs['A{}'.format(current_row)] = "Utility CBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
         wind_utility_cbi_cell, wind_size_kw_cell, wind_utility_cbi_max_cell)
@@ -1546,7 +1622,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(wind_federal_cbi_row, wind_state_cbi_row,
                                                                 wind_utility_cbi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    wind_total_cbi_cell = 'B{}'.format(current_row)
+    wind_total_cbi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row)
+    ibi_and_cbi_totals_rows.append(current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Battery Investment-based incentives (IBI)"
@@ -1573,7 +1650,8 @@ def generate_proforma(scenariomodel, output_file_path):
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(batt_state_ibi_row, batt_utility_ibi_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    batt_total_ibi_cell = 'B{}'.format(current_row)
+    batt_total_ibi_cell = "\'{}\'!B{}".format(developer_cashflow_sheet_name, current_row) 
+    ibi_and_cbi_totals_rows.append(current_row)
     current_row += 1
 
     ####################################################################################################################
@@ -1584,36 +1662,35 @@ def generate_proforma(scenariomodel, output_file_path):
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Federal CBI"
+    dcs['A{}'.format(current_row)] = "Total Power (per kW) CBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
-        batt_federal_cbi_cell, batt_size_kw_cell, batt_federal_cbi_max_cell)
+        batt_total_cbi_per_kw_cell, batt_size_kw_cell, batt_total_cbi_per_kw_max_cell)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    batt_federal_cbi_row = current_row
+    batt_cbi_per_kw_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "State IBI"
+    dcs['A{}'.format(current_row)] = "Total Storage Capacity (per kWh) CBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
     dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
-        batt_state_cbi_cell, batt_size_kw_cell, batt_state_cbi_max_cell)
+        batt_total_cbi_per_kwh_cell, batt_size_kwh_cell, batt_total_cbi_per_kwh_max_cell)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    batt_state_cbi_row = current_row
-
-    current_row += 1
-    dcs['A{}'.format(current_row)] = "Utility IBI"
-    dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    dcs['B{}'.format(current_row)] = "=MIN({}*{}*1000,{})".format(
-        batt_utility_cbi_cell, batt_size_kw_cell, batt_utility_cbi_max_cell)
-    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
-    batt_utility_cbi_row = current_row
+    batt_cbi_per_kwh_row = current_row
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-    dcs['B{}'.format(current_row)] = "=SUM(B{},B{},B{})".format(batt_federal_cbi_row, batt_state_cbi_row,
-                                                                batt_utility_cbi_row)
+    dcs['B{}'.format(current_row)] = "=SUM(B{},B{})".format(batt_cbi_per_kw_row, batt_cbi_per_kwh_row)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
     batt_total_cbi_cell = 'B{}'.format(current_row)
+    ibi_and_cbi_totals_rows.append(current_row)
+    current_row += 1
+    current_row += 1
+
+    dcs['A{}'.format(current_row)] = "Total CBI and IBI"
+    dcs['B{}'.format(current_row)] = '=SUM(' + ','.join(['B{}'.format(r) for r in ibi_and_cbi_totals_rows]) + ')'
+    make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
+    current_row += 1
     current_row += 1
 
     ####################################################################################################################
@@ -1626,9 +1703,12 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     start_pbi_total_row = current_row
     for idx, pv in enumerate(pv_data):
-        dcs['A{}'.format(current_row)] = "{} Combined PBI".format(pv['name'])
+        dcs['A{}'.format(current_row)] = "New {} Combined PBI".format(pv['name'])
         dcs['A{}'.format(current_row)].alignment = one_tab_indent
+        pv_cell_locations[idx]["new_pv_pbi_series"] = []
         for year in range(financial.analysis_years):
+            pv_cell_locations[idx]["new_pv_pbi_series"].append("\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
             dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * ({pv_kwh} - {existing_pv_kwh}), "
@@ -1639,21 +1719,45 @@ def generate_proforma(scenariomodel, output_file_path):
                 dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
                 col=upper_case_letters[year + 2],
                 pv_kwh=pv_cell_locations[idx]['pv_production_series'][year],
-                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]
-                                 if financial.two_party_ownership else 0),
+                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]),
                 pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
                 pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
             )
         make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                            number_format='#,##0', border=no_border)
-        pv_cell_locations[idx]["pv_pbi_total_row"] = current_row
+        pv_cell_locations[idx]["new_pv_pbi_total_row"] = current_row
+        current_row += 1
+
+        dcs['A{}'.format(current_row)] = "Existing {} Combined PBI".format(pv['name'])
+        dcs['A{}'.format(current_row)].alignment = one_tab_indent
+        pv_cell_locations[idx]["existing_pv_pbi_series"] = []
+        for year in range(financial.analysis_years):
+            pv_cell_locations[idx]["existing_pv_pbi_series"].append("\'{}\'!{}{}".format(developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
+            dcs['{}{}'.format(upper_case_letters[year + 2], current_row)] = (
+                "=IF({year} < {pbi_year_limit}, "
+                "MIN({dol_per_kwh} * ({existing_pv_kwh}), "
+                "{pbi_max} * (1 - {pv_degradation_rate}/100)^{year}), 0)"
+                ).format(
+                year=year, 
+                pbi_year_limit=pv_cell_locations[idx]["pv_pbi_years_cell"], 
+                dol_per_kwh=pv_cell_locations[idx]["pv_pbi_cell"],
+                col=upper_case_letters[year + 2],
+                existing_pv_kwh=(pv_cell_locations[idx]['pv_production_series_bau'][year]) if not financial.two_party_ownership else 0,
+                pbi_max=pv_cell_locations[idx]["pv_pbi_max_cell"],
+                pv_degradation_rate=pv_cell_locations[idx]["pv_degradation_rate_cell"],
+            )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        pv_cell_locations[idx]["existing_pv_pbi_total_row"] = current_row
         current_row += 1
 
     end_pbi_total_row = current_row
     dcs['A{}'.format(current_row)] = "Wind Combined PBI"
     dcs['A{}'.format(current_row)].alignment = one_tab_indent
-
+    wind_pbi_series = []
     for year in range(financial.analysis_years):
+        wind_pbi_series.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[year + 2], current_row))
         dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
                 "=IF({year} < {pbi_year_limit}, "
                 "MIN({dol_per_kwh} * {wind_kwh}, {pbi_max}), 0)"
@@ -1670,37 +1774,109 @@ def generate_proforma(scenariomodel, output_file_path):
     wind_pbi_total_row = current_row
 
     current_row += 1
-    dcs['A{}'.format(current_row)] = "Total (IBI, CBI, PBI)"
-    pv_cells = ','.join(["{ibi},{cbi}".format(ibi=pv_cell_locations[idx]["pv_total_ibi_cell"],
-                                              cbi=pv_cell_locations[idx]["pv_total_cbi_cell"]) for idx in
-                         range(len(pv_data))])
-    dcs['B{}'.format(current_row)] = "=SUM({},{},{},{},{})".format(pv_cells, wind_total_cbi_cell, wind_total_ibi_cell,
-                                                                   batt_total_cbi_cell, batt_total_ibi_cell)
-    for i in range(financial.analysis_years):
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = '=SUM({col}{start}:{col}{end})'.format(
-            col=upper_case_letters[i + 2], start=start_pbi_total_row, end=end_pbi_total_row)
-    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
-                       number_format='#,##0', border=no_border)
-    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    total_cash_incentives_row = current_row
-
-    current_row += 1
     dcs['A{}'.format(current_row)] = "Total taxable cash incentives"
 
-    for i in range(financial.analysis_years):
+    for i in range(financial.analysis_years+1):
         pv_cells = list()
-        for idx in range(len(pv_data)):  # could be multiple PVs
+        if i == 0:
+            for idx in range(len(pv_data)):  # could be multiple PVs
+                pv_cells.append(
+                    ('IF({pv_ibi_sta_percent_tax_fed_cell}="Yes", {col}{pv_state_ibi_row}, 0)'
+                     ' + IF({pv_ibi_uti_percent_tax_fed_cell}="Yes", {col}{pv_utility_ibi_row}, 0)'
+                     ' + IF({pv_cbi_fed_tax_fed_cell}="Yes", {col}{pv_federal_cbi_row} ,0)'
+                     ' + IF({pv_cbi_sta_tax_fed_cell}="Yes", {col}{pv_state_cbi_row}, 0)'
+                     ' + IF({pv_cbi_uti_tax_fed_cell}="Yes", {col}{pv_utility_cbi_row}, 0)'
+                     ).format(
+                        col=upper_case_letters[i + 1],
+                        pv_ibi_sta_percent_tax_fed_cell=pv_cell_locations[idx]["pv_ibi_sta_percent_tax_fed_cell"],
+                        pv_state_ibi_row=pv_cell_locations[idx]["pv_state_ibi_row"],
+                        pv_ibi_uti_percent_tax_fed_cell=pv_cell_locations[idx]["pv_ibi_uti_percent_tax_fed_cell"],
+                        pv_utility_ibi_row=pv_cell_locations[idx]["pv_utility_ibi_row"],
+                        pv_cbi_fed_tax_fed_cell=pv_cell_locations[idx]["pv_cbi_fed_tax_fed_cell"],
+                        pv_federal_cbi_row=pv_cell_locations[idx]["pv_federal_cbi_row"],
+                        pv_cbi_sta_tax_fed_cell=pv_cell_locations[idx]["pv_cbi_sta_tax_fed_cell"],
+                        pv_state_cbi_row=pv_cell_locations[idx]["pv_state_cbi_row"],
+                        pv_cbi_uti_tax_fed_cell=pv_cell_locations[idx]["pv_cbi_uti_tax_fed_cell"],
+                        pv_utility_cbi_row=pv_cell_locations[idx]["pv_utility_cbi_row"]
+                    )
+                )
+            pv_string = '+'.join(pv_cells)
+
+            dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+                '={pv_string}+IF({batt_ibi_sta_percent_tax_fed_cell}="Yes", {col}{batt_state_ibi_row}, 0)'
+                '+IF({batt_ibi_uti_percent_tax_fed_cell}="Yes", {col}{batt_utility_ibi_row}, 0)'
+                '+IF({batt_total_cbi_per_kw_tax_fed_cell}="Yes", {col}{batt_cbi_per_kw_row}, 0)'
+                '+IF({batt_total_cbi_per_kwh_tax_fed_cell}="Yes", {col}{batt_cbi_per_kwh_row}, 0)'
+                '+IF({wind_ibi_sta_percent_tax_fed_cell}="Yes", {col}{wind_state_ibi_row}, 0)'
+                '+IF({wind_ibi_uti_percent_tax_fed_cell}="Yes", {col}{wind_utility_ibi_row}, 0)'
+                '+IF({wind_cbi_fed_tax_fed_cell}="Yes", {col}{wind_federal_cbi_row}, 0)'
+                '+IF({wind_cbi_sta_tax_fed_cell}="Yes", {col}{wind_state_cbi_row}, 0)'
+                '+IF({wind_cbi_uti_tax_fed_cell}="Yes", {col}{wind_utility_cbi_row}, 0)'
+            ).format(
+                col=upper_case_letters[i + 1],
+                pv_string=pv_string,
+                batt_ibi_sta_percent_tax_fed_cell=batt_ibi_sta_percent_tax_fed_cell,
+                batt_state_ibi_row=batt_state_ibi_row,
+                batt_ibi_uti_percent_tax_fed_cell=batt_ibi_uti_percent_tax_fed_cell,
+                batt_utility_ibi_row=batt_utility_ibi_row,
+                batt_total_cbi_per_kw_tax_fed_cell=batt_total_cbi_per_kw_tax_fed_cell,
+                batt_total_cbi_per_kwh_tax_fed_cell=batt_total_cbi_per_kwh_tax_fed_cell,
+                batt_cbi_per_kw_row=batt_cbi_per_kw_row,
+                batt_cbi_per_kwh_row=batt_cbi_per_kwh_row,
+                wind_ibi_sta_percent_tax_fed_cell=wind_ibi_sta_percent_tax_fed_cell,
+                wind_state_ibi_row=wind_state_ibi_row,
+                wind_ibi_uti_percent_tax_fed_cell=wind_ibi_uti_percent_tax_fed_cell,
+                wind_utility_ibi_row=wind_utility_ibi_row,
+                wind_cbi_fed_tax_fed_cell=wind_cbi_fed_tax_fed_cell,
+                wind_federal_cbi_row=wind_federal_cbi_row,
+                wind_cbi_sta_tax_fed_cell=wind_cbi_sta_tax_fed_cell,
+                wind_state_cbi_row=wind_state_cbi_row,
+                wind_cbi_uti_tax_fed_cell=wind_cbi_uti_tax_fed_cell,
+                wind_utility_cbi_row=wind_utility_cbi_row
+            )
+        else:
+            for idx in range(len(pv_data)):  # could be multiple PVs
+                pv_cells.append(
+                    ('IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{new_pv_pbi_total_row}, 0)'
+                     ' + IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{existing_pv_pbi_total_row}, 0)'
+                     ).format(
+                        col=upper_case_letters[i + 1],
+                        pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
+                        new_pv_pbi_total_row=pv_cell_locations[idx]["new_pv_pbi_total_row"],
+                        existing_pv_pbi_total_row=pv_cell_locations[idx]["existing_pv_pbi_total_row"]
+                    )
+                )
+            pv_string = '+'.join(pv_cells)
+
+            dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+                '={pv_string} + IF({wind_pbi_combined_tax_fed_cell}="Yes", {col}{wind_pbi_total_row}, 0)'
+            ).format(
+                col=upper_case_letters[i + 1],
+                pv_string=pv_string,
+                wind_pbi_combined_tax_fed_cell=wind_pbi_combined_tax_fed_cell,
+                wind_pbi_total_row=wind_pbi_total_row
+            )
+            make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    total_taxable_cash_incentives_row = current_row
+
+    current_row += 1
+    dcs['A{}'.format(current_row)] = "Total non-taxable cash incentives"
+    for i in range(financial.analysis_years +1):
+        if i == 0:
+            pv_cells = list()
             pv_cells.append(
-                ('IF({pv_ibi_sta_percent_tax_fed_cell}="Yes", {prev_col}{pv_state_ibi_row}, 0)'
-                 ' + IF({pv_ibi_uti_percent_tax_fed_cell}="Yes", {prev_col}{pv_utility_ibi_row}, 0)'
-                 ' + IF({pv_cbi_fed_tax_fed_cell}="Yes", {prev_col}{pv_federal_cbi_row} ,0)'
-                 ' + IF({pv_cbi_sta_tax_fed_cell}="Yes", {prev_col}{pv_state_cbi_row}, 0)'
-                 ' + IF({pv_cbi_uti_tax_fed_cell}="Yes", {prev_col}{pv_utility_cbi_row}, 0)'
-                 ' + IF({pv_pbi_combined_tax_fed_cell}="Yes", {col}{pv_pbi_total_row}, 0)'
+                ('IF({pv_ibi_sta_percent_tax_fed_cell}="No", {col}{pv_state_ibi_row}, 0)'
+                 ' + IF({pv_ibi_uti_percent_tax_fed_cell}="No", {col}{pv_utility_ibi_row}, 0)'
+                 ' + IF({pv_cbi_fed_tax_fed_cell}="No", {col}{pv_federal_cbi_row} ,0)'
+                 ' + IF({pv_cbi_sta_tax_fed_cell}="No", {col}{pv_state_cbi_row}, 0)'
+                 ' + IF({pv_cbi_uti_tax_fed_cell}="No", {col}{pv_utility_cbi_row}, 0)'
+                 ' + IF({pv_pbi_combined_tax_fed_cell}="No", {col}{new_pv_pbi_total_row}, 0)'
+                 ' + IF({pv_pbi_combined_tax_fed_cell}="No", {col}{existing_pv_pbi_total_row}, 0)'
                  ).format(
-                    col=upper_case_letters[i + 2],
+                    col=upper_case_letters[i + 1],
                     pv_ibi_sta_percent_tax_fed_cell=pv_cell_locations[idx]["pv_ibi_sta_percent_tax_fed_cell"],
-                    prev_col=upper_case_letters[i + 1],
                     pv_state_ibi_row=pv_cell_locations[idx]["pv_state_ibi_row"],
                     pv_ibi_uti_percent_tax_fed_cell=pv_cell_locations[idx]["pv_ibi_uti_percent_tax_fed_cell"],
                     pv_utility_ibi_row=pv_cell_locations[idx]["pv_utility_ibi_row"],
@@ -1711,54 +1887,76 @@ def generate_proforma(scenariomodel, output_file_path):
                     pv_cbi_uti_tax_fed_cell=pv_cell_locations[idx]["pv_cbi_uti_tax_fed_cell"],
                     pv_utility_cbi_row=pv_cell_locations[idx]["pv_utility_cbi_row"],
                     pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
-                    pv_pbi_total_row=pv_cell_locations[idx]["pv_pbi_total_row"]
+                    new_pv_pbi_total_row=pv_cell_locations[idx]["new_pv_pbi_total_row"],
+                    existing_pv_pbi_total_row=pv_cell_locations[idx]["existing_pv_pbi_total_row"]
                 )
-            )
-        pv_string = '+'.join(pv_cells)
+               )
 
-        dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
-            '={pv_string}+IF({batt_ibi_sta_percent_tax_fed_cell}="Yes", {prev_col}{batt_state_ibi_row}, 0)'
-            '+IF({batt_ibi_uti_percent_tax_fed_cell}="Yes", {prev_col}{batt_utility_ibi_row}, 0)'
-            '+IF({batt_cbi_fed_tax_fed_cell}="Yes", {prev_col}{batt_federal_cbi_row}, 0)'
-            '+IF({batt_cbi_sta_tax_fed_cell}="Yes", {prev_col}{batt_state_cbi_row}, 0)'
-            '+IF({batt_cbi_uti_tax_fed_cell}="Yes", {prev_col}{batt_utility_cbi_row}, 0)'
-            '+IF({wind_ibi_sta_percent_tax_fed_cell}="Yes", {prev_col}{wind_state_ibi_row}, 0)'
-            '+IF({wind_ibi_uti_percent_tax_fed_cell}="Yes", {prev_col}{wind_utility_ibi_row}, 0)'
-            '+IF({wind_cbi_fed_tax_fed_cell}="Yes", {prev_col}{wind_federal_cbi_row}, 0)'
-            '+IF({wind_cbi_sta_tax_fed_cell}="Yes", {prev_col}{wind_state_cbi_row}, 0)'
-            '+IF({wind_cbi_uti_tax_fed_cell}="Yes", {prev_col}{wind_utility_cbi_row}, 0)'
-            '+IF({wind_pbi_combined_tax_fed_cell}="Yes", {col}{wind_pbi_total_row}, 0)'
-        ).format(
-            prev_col=upper_case_letters[i + 1],
-            col=upper_case_letters[i + 2],
-            pv_string=pv_string,
-            batt_ibi_sta_percent_tax_fed_cell=batt_ibi_sta_percent_tax_fed_cell,
-            batt_state_ibi_row=batt_state_ibi_row,
-            batt_ibi_uti_percent_tax_fed_cell=batt_ibi_uti_percent_tax_fed_cell,
-            batt_utility_ibi_row=batt_utility_ibi_row,
-            batt_cbi_fed_tax_fed_cell=batt_cbi_fed_tax_fed_cell,
-            batt_federal_cbi_row=batt_federal_cbi_row,
-            batt_cbi_sta_tax_fed_cell=batt_cbi_sta_tax_fed_cell,
-            batt_state_cbi_row=batt_state_cbi_row,
-            batt_cbi_uti_tax_fed_cell=batt_cbi_uti_tax_fed_cell,
-            batt_utility_cbi_row=batt_utility_cbi_row,
-            wind_ibi_sta_percent_tax_fed_cell=wind_ibi_sta_percent_tax_fed_cell,
-            wind_state_ibi_row=wind_state_ibi_row,
-            wind_ibi_uti_percent_tax_fed_cell=wind_ibi_uti_percent_tax_fed_cell,
-            wind_utility_ibi_row=wind_utility_ibi_row,
-            wind_cbi_fed_tax_fed_cell=wind_cbi_fed_tax_fed_cell,
-            wind_federal_cbi_row=wind_federal_cbi_row,
-            wind_cbi_sta_tax_fed_cell=wind_cbi_sta_tax_fed_cell,
-            wind_state_cbi_row=wind_state_cbi_row,
-            wind_cbi_uti_tax_fed_cell=wind_cbi_uti_tax_fed_cell,
-            wind_utility_cbi_row=wind_utility_cbi_row,
-            wind_pbi_combined_tax_fed_cell=wind_pbi_combined_tax_fed_cell,
-            wind_pbi_total_row=wind_pbi_total_row
-        )
+            pv_string = '+'.join(pv_cells)
+
+            dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+                '={pv_string}+IF({batt_ibi_sta_percent_tax_fed_cell}="No", {col}{batt_state_ibi_row}, 0)'
+                '+IF({batt_ibi_uti_percent_tax_fed_cell}="No", {col}{batt_utility_ibi_row}, 0)'
+                '+IF({batt_total_cbi_per_kw_tax_fed_cell}="No", {col}{batt_cbi_per_kw_row}, 0)'
+                '+IF({batt_total_cbi_per_kwh_tax_fed_cell}="No", {col}{batt_cbi_per_kwh_row}, 0)'
+                '+IF({wind_ibi_sta_percent_tax_fed_cell}="No", {col}{wind_state_ibi_row}, 0)'
+                '+IF({wind_ibi_uti_percent_tax_fed_cell}="No", {col}{wind_utility_ibi_row}, 0)'
+                '+IF({wind_cbi_fed_tax_fed_cell}="No", {col}{wind_federal_cbi_row}, 0)'
+                '+IF({wind_cbi_sta_tax_fed_cell}="No", {col}{wind_state_cbi_row}, 0)'
+                '+IF({wind_cbi_uti_tax_fed_cell}="No", {col}{wind_utility_cbi_row}, 0)'
+                '+IF({wind_pbi_combined_tax_fed_cell}="No", {col}{wind_pbi_total_row}, 0)'
+            ).format(
+                col=upper_case_letters[i + 1],
+                pv_string=pv_string,
+                batt_ibi_sta_percent_tax_fed_cell=batt_ibi_sta_percent_tax_fed_cell,
+                batt_state_ibi_row=batt_state_ibi_row,
+                batt_ibi_uti_percent_tax_fed_cell=batt_ibi_uti_percent_tax_fed_cell,
+                batt_utility_ibi_row=batt_utility_ibi_row,
+                batt_total_cbi_per_kw_tax_fed_cell=batt_total_cbi_per_kw_tax_fed_cell,
+                batt_total_cbi_per_kwh_tax_fed_cell=batt_total_cbi_per_kwh_tax_fed_cell,
+                batt_cbi_per_kw_row=batt_cbi_per_kw_row,
+                batt_cbi_per_kwh_row=batt_cbi_per_kwh_row,
+                wind_ibi_sta_percent_tax_fed_cell=wind_ibi_sta_percent_tax_fed_cell,
+                wind_state_ibi_row=wind_state_ibi_row,
+                wind_ibi_uti_percent_tax_fed_cell=wind_ibi_uti_percent_tax_fed_cell,
+                wind_utility_ibi_row=wind_utility_ibi_row,
+                wind_cbi_fed_tax_fed_cell=wind_cbi_fed_tax_fed_cell,
+                wind_federal_cbi_row=wind_federal_cbi_row,
+                wind_cbi_sta_tax_fed_cell=wind_cbi_sta_tax_fed_cell,
+                wind_state_cbi_row=wind_state_cbi_row,
+                wind_cbi_uti_tax_fed_cell=wind_cbi_uti_tax_fed_cell,
+                wind_utility_cbi_row=wind_utility_cbi_row,
+                wind_pbi_combined_tax_fed_cell=wind_pbi_combined_tax_fed_cell,
+                wind_pbi_total_row=wind_pbi_total_row
+             )
+        else:
+            pv_cells = list()
+            for idx in range(len(pv_data)):  # could be multiple PVs
+                pv_cells.append(
+                    ('   IF({pv_pbi_combined_tax_fed_cell}="No", {col}{new_pv_pbi_total_row}, 0)'
+                     ' + IF({pv_pbi_combined_tax_fed_cell}="No", {col}{existing_pv_pbi_total_row}, 0)' 
+                     ).format(
+                        col=upper_case_letters[i + 1],
+                        pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
+                        new_pv_pbi_total_row=pv_cell_locations[idx]["new_pv_pbi_total_row"],
+                        existing_pv_pbi_total_row=pv_cell_locations[idx]["existing_pv_pbi_total_row"]
+                    )
+                )
+            pv_string = '+'.join(pv_cells)
+     
+            dcs['{}{}'.format(upper_case_letters[i + 1], current_row)] = (
+                '={pv_string}'
+                '+IF({wind_pbi_combined_tax_fed_cell}="No", {col}{wind_pbi_total_row}, 0)'
+            ).format(
+                col=upper_case_letters[i + 1],
+                pv_string=pv_string,
+                wind_pbi_combined_tax_fed_cell=wind_pbi_combined_tax_fed_cell,
+                wind_pbi_total_row=wind_pbi_total_row
+            )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
     fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
-    total_taxable_cash_incentives_row = current_row
+    total_nontaxable_cash_incentives_row = current_row
     current_row += 1
     current_row += 1
 
@@ -1805,7 +2003,10 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         dcs['A{}'.format(current_row)] = "Amount"
         dcs['A{}'.format(current_row)].alignment = two_tab_indent
+        pv_cell_locations[idx]["pv_depreciation_benefit"] = list()
         for i in range(financial.analysis_years):
+            pv_cell_locations[idx]["pv_depreciation_benefit"].append("\'{}\'!{}{}".format(
+                    developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
             if i == 0:
                 dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                     '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -1853,14 +2054,18 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
     dcs['A{}'.format(current_row)] = "Basis"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
-    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(wind_bonus_basis_cell, batt_bonus_fraction_cell)
+    dcs['B{}'.format(current_row)] = '={}*(1-{})'.format(wind_bonus_basis_cell, wind_bonus_fraction_cell)
     make_attribute_row(dcs, current_row, length=2, alignment=right_align, number_format='#,##0', border=no_border)
     wind_basis_cell = 'B{}'.format(current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Amount"
     dcs['A{}'.format(current_row)].alignment = two_tab_indent
+    wind_depreciation_benefit = list()
     for i in range(financial.analysis_years):
+        wind_depreciation_benefit.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[i+2], current_row))
+        
         if i == 0:
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = \
                 '={basis_cell}*{col}{macrs_row} + ({bonus_basis_cell}*{bonus_basis_pct_cell})'.format(
@@ -1943,6 +2148,47 @@ def generate_proforma(scenariomodel, output_file_path):
     current_row += 1
 
     ####################################################################################################################
+    # Tax benefits for LCOE Calculations
+    ####################################################################################################################
+    dcs['A{}'.format(current_row)] = "Tax benefits for LCOE Calculations"
+    make_title_row(dcs, current_row, length=financial.analysis_years+2)
+    current_row += 1
+
+    for idx, pv in enumerate(pv_data):
+        dcs['A{}'.format(current_row)] = "{} income tax savings, $".format(pv['name'])
+        pv_cell_locations[idx]["pv_income_tax_benefits"] = list()
+        for year in range(1, financial.analysis_years + 1):
+            dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+                '=((-1 * {pv_om_cell}) + {pv_depr_cell}) * {fed_tax_rate_cell}/100'.format(
+                    pv_om_cell = pv_cell_locations[idx]['new_o_and_m_cashflow_cells'][year -1],
+                    pv_depr_cell = pv_cell_locations[idx]["pv_depreciation_benefit"][year -1],
+                    fed_tax_rate_cell=fed_tax_rate_cell
+                )
+            pv_cell_locations[idx]["pv_income_tax_benefits"].append("\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    current_row += 1
+    
+    dcs['A{}'.format(current_row)] = "Wind income tax savings, $"
+    wind_income_tax_benefits = list()
+    for year in range(1, financial.analysis_years + 1):
+        dcs['{}{}'.format(upper_case_letters[year+1], current_row)] = \
+            '=((-1 * {wind_om_cell}) + {wind_depr_cell}) * {fed_tax_rate_cell}/100'.format(
+                wind_om_cell = wind_o_and_m_cashflow_cells[year -1],
+                wind_depr_cell = wind_depreciation_benefit[year -1],
+                fed_tax_rate_cell=fed_tax_rate_cell
+            )
+        wind_income_tax_benefits.append("\'{}\'!{}{}".format(
+            developer_cashflow_sheet_name, upper_case_letters[year+1], current_row))
+    make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                       number_format='#,##0', border=no_border)
+    fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+    current_row += 1
+    current_row += 1
+
+    ####################################################################################################################
     # Federal ITC
     ####################################################################################################################
 
@@ -1997,6 +2243,8 @@ def generate_proforma(scenariomodel, output_file_path):
         )
         make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
         pv_cell_locations[idx]["pv_federal_itc_amount_row"] = current_row
+        pv_cell_locations[idx]["pv_federal_itc_amount_cell"] = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
         current_row += 1
 
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Wind"
@@ -2046,16 +2294,17 @@ def generate_proforma(scenariomodel, output_file_path):
     )
     make_attribute_row(dcs, current_row, length=3, alignment=right_align, number_format='#,##0', border=no_border)
     wind_federal_itc_amount_row = current_row
+    wind_federal_itc_amount_cell = "\'{}\'!C{}".format(
+                developer_cashflow_sheet_name, current_row)
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Federal ITC basis: Battery"
     dcs['B{}'.format(current_row)] = (
         '={batt_cost_cell}-IF({batt_ibi_sta_percent_deprbas_fed_cell}="Yes",'
         '{col}{batt_state_ibi_row},0)-IF({batt_ibi_uti_percent_deprbas_fed_cell}="Yes",'
-        '{col}{batt_utility_ibi_row},0)-IF({batt_cbi_fed_deprbas_fed_cell}="Yes",'
-        '{col}{batt_federal_cbi_row},0)-IF({batt_cbi_sta_deprbas_fed_cell}="Yes",'
-        '{col}{batt_state_cbi_row},0)-IF({batt_cbi_uti_deprbas_fed_cell}="Yes",'
-        '{col}{batt_utility_cbi_row},0)'
+        '{col}{batt_utility_ibi_row},0)-IF({batt_total_cbi_per_kw_deprbas_fed_cell}="Yes",'
+        '{col}{batt_cbi_per_kw_row},0)-IF({batt_total_cbi_per_kwh_deprbas_fed_cell}="Yes",'
+        '{col}{batt_cbi_per_kwh_row},0)'
     ).format(
         batt_cost_cell=batt_cost_cell,
         batt_ibi_sta_percent_deprbas_fed_cell=batt_ibi_sta_percent_deprbas_fed_cell,
@@ -2063,12 +2312,10 @@ def generate_proforma(scenariomodel, output_file_path):
         batt_state_ibi_row=batt_state_ibi_row,
         batt_ibi_uti_percent_deprbas_fed_cell=batt_ibi_uti_percent_deprbas_fed_cell,
         batt_utility_ibi_row=batt_utility_ibi_row,
-        batt_cbi_fed_deprbas_fed_cell=batt_cbi_fed_deprbas_fed_cell,
-        batt_federal_cbi_row=batt_federal_cbi_row,
-        batt_cbi_sta_deprbas_fed_cell=batt_cbi_sta_deprbas_fed_cell,
-        batt_state_cbi_row=batt_state_cbi_row,
-        batt_cbi_uti_deprbas_fed_cell=batt_cbi_uti_deprbas_fed_cell,
-        batt_utility_cbi_row=batt_utility_cbi_row
+        batt_total_cbi_per_kw_deprbas_fed_cell=batt_total_cbi_per_kw_deprbas_fed_cell,
+        batt_total_cbi_per_kwh_deprbas_fed_cell=batt_total_cbi_per_kwh_deprbas_fed_cell,
+        batt_cbi_per_kw_row=batt_cbi_per_kw_row,
+        batt_cbi_per_kwh_row=batt_cbi_per_kwh_row
     )
     dcs[batt_bonus_basis_cell] = (
         '=IF(OR({batt_macrs_option_cell}=5,{batt_macrs_option_cell}=7),'
@@ -2152,15 +2399,15 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
-    for year in range(financial.analysis_years):
-        dcs["{}{}".format(upper_case_letters[year+2], current_row)] = (
-            "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
-            "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
+    for year in range(financial.analysis_years + 1):
+        dcs["{}{}".format(upper_case_letters[year+1], current_row)] = (
+            "= ({col}{taxed_incentives} * (1 - {tax_rate}/100)) + "  
+            "{col}{total_nontaxable_cash_incentives_row}"
             ).format(
-            col=upper_case_letters[year+2],
-            untaxed_incentives=total_cash_incentives_row,
+            col=upper_case_letters[year+1],
             taxed_incentives=total_taxable_cash_incentives_row,
             tax_rate=fed_tax_rate_cell,
+            total_nontaxable_cash_incentives_row=total_nontaxable_cash_incentives_row
         )
     make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
                        number_format='#,##0', border=no_border)
@@ -2188,7 +2435,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Free Cash Flow before income"
-    dcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+    dcs['B{}'.format(current_row)] = "={}+B{}".format(upfront_cost_cell, incentives_after_tax_row)
 
     for i in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
@@ -2207,7 +2454,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     dcs['A{}'.format(current_row)] = "Discounted Cash Flow"
-    dcs['B{}'.format(current_row)] = "={}".format(upfront_cost_cell)
+    dcs['B{}'.format(current_row)] = "={}+B{}".format(upfront_cost_cell, incentives_after_tax_row)
     for year in range(financial.analysis_years):
         dcs['{}{}'.format(upper_case_letters[year+2], current_row)] = (
             "={col}{fcf} / (1 + {disc_rate}/100)^{year}"
@@ -2311,8 +2558,11 @@ def generate_proforma(scenariomodel, output_file_path):
         current_row += 1
         dcs['A{}'.format(current_row)] = "Free Cash Flow after income"
         dcs['B{}'.format(current_row)] = "=B{}".format(optimal_fcf_row)
-
+        free_cashflow_cells = ["\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, "B", current_row)]
         for i in range(financial.analysis_years):
+            free_cashflow_cells.append("\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[i + 2], current_row))
             dcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
                 "={col}{fcf} + {col}{income}"
                 ).format(
@@ -2325,6 +2575,31 @@ def generate_proforma(scenariomodel, output_file_path):
         developer_fcf_row = current_row
         fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
+        current_row += 1
+        dcs['A{}'.format(current_row)] = "Cumulative Free Cash Flow after income"
+        cumulative_cashflow_cells = []
+        for year in range(financial.analysis_years+1):
+            cumulative_cashflow_cells.append("\'{}\'!{}{}".format(
+                developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row))
+            if year == 0:
+                dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    "={yr0_cashflow}"
+                    ).format(
+                        yr0_cashflow="\'{}\'!{}{}".format(
+                        developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1)
+                    )
+            else:                    
+                dcs['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    "={yr_cashflow} + {prev_year_cashflow}"
+                    ).format(
+                        yr_cashflow="\'{}\'!{}{}".format(
+                        developer_cashflow_sheet_name, upper_case_letters[year + 1], current_row -1),
+                        prev_year_cashflow="\'{}\'!{}{}".format(
+                        developer_cashflow_sheet_name, upper_case_letters[year], current_row)
+                    )
+        make_attribute_row(dcs, current_row, length=financial.analysis_years+2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(dcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
 
     ####################################################################################################################
     ####################################################################################################################
@@ -2636,6 +2911,31 @@ def generate_proforma(scenariomodel, output_file_path):
         fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
         bau_total_taxable_cash_incentives_row = current_row
         current_row += 1
+        hcs['A{}'.format(current_row)] = "Total non-taxable cash incentives"
+
+        for i in range(financial.analysis_years):
+            pv_cells = list()
+            for idx in range(len(pv_data)):  # could be multiple PVs
+                pv_cells.append(
+                    ('IF({pv_pbi_combined_tax_fed_cell}="No", {col}{pv_pbi_total_row}, 0)'
+                     ).format(
+                        col=upper_case_letters[i + 2],
+                        pv_pbi_combined_tax_fed_cell=pv_cell_locations[idx]["pv_pbi_combined_tax_fed_cell"],
+                        pv_pbi_total_row=pv_cell_locations[idx]["existing_pv_pbi_row"]
+                    )
+                )
+            pv_string = '+'.join(pv_cells)
+
+            hcs['{}{}'.format(upper_case_letters[i + 2], current_row)] = (
+                '={pv_string}'
+            ).format(
+                pv_string=pv_string,
+            )
+        make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
+                           number_format='#,##0', border=no_border)
+        fill_border(hcs, range(financial.analysis_years + 2), current_row, border_top_and_bottom)
+        bau_total_nontaxable_cash_incentives_row = current_row
+        current_row += 1
         current_row += 1
     
     ####################################################################################################################
@@ -2667,15 +2967,15 @@ def generate_proforma(scenariomodel, output_file_path):
     if not financial.two_party_ownership:
         current_row += 1
         hcs['A{}'.format(current_row)] = "Total Cash incentives, after-tax"
-        for year in range(financial.analysis_years):
-            hcs["{}{}".format(upper_case_letters[year + 2], current_row)] = (
-                "=({col}{untaxed_incentives} - {col}{taxed_incentives}) "
-                "+ {col}{taxed_incentives} * (1 - {tax_rate}/100)"
+        for year in range(1, financial.analysis_years + 1):
+            hcs["{}{}".format(upper_case_letters[year + 1], current_row)] = (
+                "= ({col}{taxed_incentives} * (1 - {tax_rate}/100)) + "
+                "{col}{total_nontaxable_cash_incentives_row}"
             ).format(
-                col=upper_case_letters[year + 2],
-                untaxed_incentives=pv_cell_locations[idx]["existing_pv_pbi_row"],  # TODO: sum existing PV's for multiple PV's
+                col=upper_case_letters[year + 1],
                 taxed_incentives=bau_total_taxable_cash_incentives_row,
                 tax_rate=host_fed_tax_rate_cell,
+                total_nontaxable_cash_incentives_row=bau_total_nontaxable_cash_incentives_row
             )
         make_attribute_row(hcs, current_row, length=financial.analysis_years + 2, alignment=right_align,
                            number_format='#,##0', border=no_border)
@@ -2732,7 +3032,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     ####################################################################################################################
     ####################################################################################################################
-    # INPUTS AND OUTPUTS - LCC's, NPV, IRR
+    # INPUTS AND OUTPUTS - LCC's, NPV, IRR, LCOE and Simple Payback
     ####################################################################################################################
     ####################################################################################################################
     ####################################################################################################################
@@ -2774,6 +3074,7 @@ def generate_proforma(scenariomodel, output_file_path):
     else:
         ws['D{}'.format(current_row)] = "Host's NPV, $"
         ws['E{}'.format(current_row)] = "={}".format(bau_LCC_cell)
+    npv_cell = 'E{}'.format(current_row)
     ws['F{}'.format(current_row)] = (
         'NOTE: This NPV can differ slightly (<1%) from the Webtool/API results due to rounding and the tolerance in the'
         ' optimizer.'
@@ -2784,38 +3085,89 @@ def generate_proforma(scenariomodel, output_file_path):
 
     if not financial.two_party_ownership:
         current_row += 1
+        irr_row = current_row
         ws['D{}'.format(current_row)] = "IRR, %"
         ws['E{}'.format(current_row)] = (
-            "=IRR({col1}{row}:{colN}{row}, {discount_rate_cell}/100)"
-            ).format(
+            '=IF({npv_cell}=0,"",IRR({col1}{row}:{colN}{row}, {discount_rate}/100))'
+            ).format(npv_cell=npv_cell,
             col1="B",
             colN=upper_case_letters[financial.analysis_years + 1],
             row=free_cash_flow_row,
-            discount_rate_cell=discount_rate_cell,
+            discount_rate=discount_rate_cell,
         )
         make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
         fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
-        if not financial.two_party_ownership:
-            current_row = free_cash_flow_row
-            ws['A{}'.format(current_row)] = "Free Cash Flow"
+        
+        current_row = free_cash_flow_row
+        ws['A{}'.format(current_row)] = "Free Cash Flow"
+ 
+        free_cashflow_cells = []
+        for year in range(financial.analysis_years+1):
+            free_cashflow_cells.append("\'{}\'!{}{}".format(
+                inandout_sheet_name, upper_case_letters[year + 1], current_row))
+            ws['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                "={optimal_fcf} - {bau_fcf}"
+            ).format(
+                optimal_fcf="\'{}\'!{}{}".format(
+                    developer_cashflow_sheet_name, upper_case_letters[year + 1], optimal_fcf_row),
+                bau_fcf="\'{}\'!{}{}".format(
+                    host_cashflow_sheet_name, upper_case_letters[year + 1], bau_fcf_row),
+            )
+        fill_in_annual_values(current_row)
 
-            for year in range(financial.analysis_years+1):
+        current_row += 1
+        ws['A{}'.format(current_row)] = "Cumulative Free Cash Flow"
+        cumulative_cashflow_cells = []
+        for year in range(financial.analysis_years+1):
+            cumulative_cashflow_cells.append("\'{}\'!{}{}".format(
+                inandout_sheet_name, upper_case_letters[year + 1], current_row))
+            if year == 0:
                 ws['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
-                    "={optimal_fcf} - {bau_fcf}"
-                ).format(
-                    optimal_fcf="\'{}\'!{}{}".format(
-                        developer_cashflow_sheet_name, upper_case_letters[year + 1], optimal_fcf_row),
-                    bau_fcf="\'{}\'!{}{}".format(
-                        host_cashflow_sheet_name, upper_case_letters[year + 1], bau_fcf_row),
-                )
-            fill_in_annual_values(current_row)
+                    "={yr0_cashflow}"
+                    ).format(
+                        yr0_cashflow="\'{}\'!{}{}".format(
+                        inandout_sheet_name, upper_case_letters[year + 1], current_row -1)
+                    )
+            else:                    
+                ws['{}{}'.format(upper_case_letters[year + 1], current_row)] = (
+                    "={yr_cashflow} + {prev_year_cashflow}"
+                    ).format(
+                        yr_cashflow="\'{}\'!{}{}".format(
+                        inandout_sheet_name, upper_case_letters[year + 1], current_row -1),
+                        prev_year_cashflow="\'{}\'!{}{}".format(
+                        inandout_sheet_name, upper_case_letters[year], current_row)
+                    )
+        fill_in_annual_values(current_row)
+
+        simple_payback = ""
+        simple_payback += '=IF({}=0,"", IF({} < 0, "Over {}", '.format(cumulative_cashflow_cells[0], cumulative_cashflow_cells[-1], financial.analysis_years)
+        
+        simple_payback += "SUM("
+        simple_payback_terms = []
+        for year in range(1, financial.analysis_years+1):
+            simple_payback_terms.append(
+                    "IF({current_cumulative}<0,1,"
+                    "IF({prev_cumulative}>0,0,"
+                        "-{prev_cumulative}/{current_free_cashflow}))".format(
+                            current_cumulative=cumulative_cashflow_cells[year],
+                            prev_cumulative=cumulative_cashflow_cells[year-1],
+                            current_free_cashflow=free_cashflow_cells[year]
+                            ))
+        simple_payback += ', '.join(simple_payback_terms) + ")))"
+
+        current_row = irr_row + 1
+        ws['D{}'.format(current_row)] = "Simple Payback Period, years"
+        ws['E{}'.format(current_row)] = simple_payback
+        make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00")
+        fill_cols(ws, range(4, 5), current_row, calculated_fill)
     else:
         current_row += 1
+        irr_row = current_row
         ws['D{}'.format(current_row)] = "Developer IRR, %"
         ws['E{}'.format(current_row)] = (
-            "=IRR({optimal_fcf_B}:{optimal_fcf_N}, {discount_rate_cell}/100)"
-            ).format(
+             "=IF({npv_cell}=0,"",IRR({optimal_fcf_B}:{optimal_fcf_N},{discount_rate_cell}/100))"
+            ).format(npv_cell = npv_cell,
             optimal_fcf_B="\'{}\'!B{}".format(
                 developer_cashflow_sheet_name, developer_fcf_row),
             optimal_fcf_N="\'{}\'!{}{}".format(
@@ -2825,6 +3177,152 @@ def generate_proforma(scenariomodel, output_file_path):
         make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00%")
         fill_cols(ws, range(4, 5), current_row, calculated_fill)
 
+        simple_payback = ""
+        simple_payback += '=IF({} < 0, "Over {}", '.format(cumulative_cashflow_cells[-1], financial.analysis_years)
+        
+        simple_payback += "SUM("
+        simple_payback_terms = []
+        for year in range(1, financial.analysis_years+1):
+            simple_payback_terms.append(
+                    "IF({current_cumulative}<0,1,"
+                    "IF({prev_cumulative}>0,0,"
+                        "-{prev_cumulative}/{current_free_cashflow}))".format(
+                            current_cumulative=cumulative_cashflow_cells[year],
+                            prev_cumulative=cumulative_cashflow_cells[year-1],
+                            current_free_cashflow=free_cashflow_cells[year]
+                            ))
+        simple_payback += ', '.join(simple_payback_terms) + "))"
+
+        current_row = irr_row + 1
+        ws['D{}'.format(current_row)] = "Developer Simple Payback Period, years"
+        ws['E{}'.format(current_row)] = simple_payback
+        make_attribute_row(ws, current_row, length=2, offset=3, number_format="0.00")
+        fill_cols(ws, range(4, 5), current_row, calculated_fill)
+
+
+    
+
+
+    def two_party_factor(pwf_offtaker_cell, offtaker_tax_pct_cell, pwf_owner_cell, owner_tax_pct_cell):
+        """
+        :param pwf_offtaker_cell: present worth factor offtacker cell in spreadsheet
+        :param offtaker_tax_pct_cell: offtacker tax percent cell in spreadsheet
+        :param pwf_owner_cell: present worth factor owner cell in spreadsheet
+        :param owner_tax_pct_cell: owner tax percent cell in spreadsheet
+        :return: two_party_factor
+        """
+        tpf =   ("ROUND((({pwf_offtaker_cell}/100) * (1 - ({offtaker_tax_pct_cell}/100))) / "
+                "(({pwf_owner_cell}/100) * (1 - ({owner_tax_pct_cell}/100))),4)".format(
+                    pwf_offtaker_cell=pwf_offtaker_cell,
+                    offtaker_tax_pct_cell=offtaker_tax_pct_cell,
+                    pwf_owner_cell=pwf_owner_cell,
+                    owner_tax_pct_cell=owner_tax_pct_cell)
+                    )
+        return tpf
+
+    
+
+
+    def degradation_factor(analysis_period, rate_degradation_cell):
+        """
+        :param analysis_period_cell: analysis period cell, years
+        :param rate_degradation_cell: degredation rate cell
+        :return: energy levelization factor
+        """
+
+        if analysis_period == 0:
+            return '0'
+        if analysis_period == 1:
+            return '1'
+        terms = ['1']
+        for yr in range(1, int(analysis_period)):
+            terms.append('(1 - ({rate_degradation}/100))^{yr}'.format(rate_degradation=rate_degradation_cell, yr=yr))
+        return '=ROUND(AVERAGE({terms}),4)'.format(terms=','.join(terms))
+
+
+    def present_worth(analysis_period_cell, esc_cell,  disc_cell):
+        """
+        :param analysis_period_cell: analysis period cell, years
+        :param esc_cell: escalation rate cell
+        :param disc_cell: discount rate cell 
+        :return: present worth factor equation
+        """
+        if esc_cell != disc_cell:
+            x = '((1 + {esc_cell}/100) / (1 + {disc_cell}/100))'.format(esc_cell=esc_cell, disc_cell=disc_cell)
+            result = 'ROUND({x} * (1 - {x}^{analysis_period_cell}) / (1 - {x}),4)'.format(
+                x=x, analysis_period_cell=analysis_period_cell)
+            return result
+        return analysis_period_cell
+
+    for idx, pv in enumerate(pv_data):
+        
+        if (pv['pv_installed_kw'] or 0) > 0:
+            npv_om = '-1*(NPV({}/100,{}))'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["new_o_and_m_cashflow_cells"][0] + ":" + pv_cell_locations[idx]["new_o_and_m_cashflow_cells"][-1])
+
+            npv_pbi = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["new_pv_pbi_series"][0] + ":" + pv_cell_locations[idx]["new_pv_pbi_series"][-1])
+
+            npv_macrs_benefit = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_federal_itc_amount_cell"])
+
+            npv_tax_benefits = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_income_tax_benefits"][0] + ":" + pv_cell_locations[idx]["pv_income_tax_benefits"][-1])
+
+            npv_total_pv = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_production_series"][0] + ":" + pv_cell_locations[idx]["pv_production_series"][-1])
+
+            npv_existing_pv = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                pv_cell_locations[idx]["pv_production_series_bau"][0] + ":" + pv_cell_locations[idx]["pv_production_series_bau"][-1])
+
+            pv_lcoe = ("=ROUND((({total_installed_cost} + {npv_om} - "
+                        "SUM({cbi},{ibi},{npv_pbi},{npv_macrs_benefit},{npv_tax_benefits})) "
+                ") / (({npv_total_pv} - {npv_existing_pv})), 4)"
+                       ).format(
+                total_installed_cost=pv_cell_locations[idx]["pv_cost_cell"],
+                npv_om=npv_om,
+                cbi=pv_cell_locations[idx]["pv_total_cbi_cell"],
+                ibi=pv_cell_locations[idx]['pv_total_ibi_cell'],
+                npv_pbi=npv_pbi, 
+                year_one_energy=pv_cell_locations[idx]["pv_energy_cell"], 
+                existing_energy_cell=pv_cell_locations[idx]["pv_energy_bau_cell"], 
+                npv_macrs_benefit=npv_macrs_benefit,
+                npv_tax_benefits=npv_tax_benefits,
+                npv_total_pv=npv_total_pv,
+                npv_existing_pv=npv_existing_pv
+                )
+            ws[pv_cell_locations[idx]["pv_lcoe_cell"]] = pv_lcoe
+
+            
+    if (wind.size_kw or 0) > 0:
+        npv_wind_om = '(-1 * NPV({}/100,{}))'.format(discount_rate_cell, 
+                wind_o_and_m_cashflow_cells[0] + ":" + wind_o_and_m_cashflow_cells[-1])
+
+        npv_wind_pbi = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_pbi_series[0] + ":" + wind_pbi_series[-1])
+
+        npv_macrs_benefit = 'NPV({}/100,{})'.format(discount_rate_cell, 
+                wind_federal_itc_amount_cell)
+
+        npv_tax_benefits = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_income_tax_benefits[0] + ":" + wind_income_tax_benefits[-1])
+
+        npv_total_wind = 'NPV({}/100,{})'.format(discount_rate_cell, 
+            wind_annual_kwh_cells[0] + ":" + wind_annual_kwh_cells[-1])
+
+        wind_lcoe = ("=ROUND(" 
+        "({total_cost} + {npv_om} - SUM({cbi},{ibi},{npv_pbi},{npv_macrs_benefit},{npv_tax_benefits}))" 
+        "/ {npv_total_wind}" 
+        ",4)".format(
+                total_cost=wind_cost_cell,  npv_om=npv_wind_om,
+                cbi=wind_total_cbi_cell, ibi=wind_total_ibi_cell,
+                npv_pbi=npv_wind_pbi,
+                npv_macrs_benefit=npv_macrs_benefit,
+                npv_tax_benefits=npv_tax_benefits,
+                npv_total_wind=npv_total_wind,
+            )
+        )
+        ws[wind_lcoe_cell] = wind_lcoe
 
     ####################################################################################################################
     ####################################################################################################################

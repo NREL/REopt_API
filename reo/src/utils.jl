@@ -156,6 +156,7 @@ Base.@kwdef struct Parameter
      StorageMaxSizePower::AxisArray     # \ubar{w}^{bkW}_{b}: Minimum power capacity of storage system b [kW]
      StorageMinSOC::AxisArray     #  \ubar{w}^{mcp}_{b}: Minimum state of charge of storage system b [fraction]
      StorageInitSOC::AxisArray  #Initial state of charge of storage system b [fraction]
+     StorageCanGridCharge::Bool  # Boolean for storage system [fraction]
 	 
 	 ###  Fuel Burn Parameters ###
 	 FuelBurnSlope::AxisArray # m^\text{fm}_{t}: Fuel burn rate slope parameter for technology t

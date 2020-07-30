@@ -83,6 +83,13 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r.get('run_uuid')
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat(d['outputs'])
+        c['year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_lb_C02']
+        c['year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['year_one_emissions_bau_lb_C02']
+        c['utility_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_lb_C02']
+        c['utility_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['ElectricTariff']['year_one_emissions_bau_lb_C02']
+        c['generator_year_one_emissions_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_lb_C02']
+        c['generator_year_one_emissions_bau_lb_C02'] = d['outputs']['Scenario']['Site']['Generator']['year_one_emissions_bau_lb_C02']
+
 
         d_expected = dict()
         d_expected['lcc'] = 245232.0
@@ -97,8 +104,15 @@ class GeneratorSizingTests(ResourceTestCaseMixin, TestCase):
         d_expected['gen_total_variable_om_cost_us_dollars'] = 1.0
         d_expected['existing_pv_om_cost_us_dollars'] = 11507.0
         d_expected['net_capital_costs_plus_om'] = 15647.0
-
+        d_expected['year_one_emissions_lb_C02'] = 431428.8
+        d_expected['year_one_emissions_bau_lb_C02'] = 431410.8
+        d_expected['utility_year_one_emissions_lb_C02'] = 431410.8
+        d_expected['utility_year_one_emissions_bau_lb_C02'] = 431410.8
+        d_expected['generator_year_one_emissions_lb_C02'] = 18
+        d_expected['generator_year_one_emissions_bau_lb_C02'] = 0
+        
         try:
+            self.assertEqual(d['outputs']['Scenario']['Site']['ElectricTariff']['emissions_region'], 'Southeast')
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed.".format(run_uuid))
