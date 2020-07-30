@@ -294,6 +294,7 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     :return: results_dicts -- dictionary in which key=month and vals are submodel results dictionaries
     """
     inputs = []
+
     for idx in range(1, 13):
         inputs.append({"m": models[idx],
                        "p": reopt_param,
@@ -301,15 +302,18 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
                        "u": update,
                        "month": idx
         })
-    r = group(solve_subproblem.s(x) for x in inputs)()
-    r.forget()
+        solve_subproblem(inputs[idx-1])
+
+    # Note: with task decorator removed, can't call this as a group
+    #r = group(solve_subproblem(x) for x in inputs)()
+    #r.forget()
+    
     results_dicts = {}
     for i in range(1, 13):
         results_dicts[i] = inputs[i-1]["r"]
     return results_dicts
 
 
-@shared_task(name='solve_subproblem')
 def solve_subproblem(kwargs):
     kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
 
