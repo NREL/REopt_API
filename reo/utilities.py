@@ -32,6 +32,8 @@ from math import log10
 from reo.models import ErrorModel
 import platform
 import os
+import time
+from reo.exceptions import REoptFailedToStartError
 
 
 def slope(x1, y1, x2, y2):
@@ -240,4 +242,26 @@ def get_julia_img_file_name():
         ext = ".so"  # if platform.system() == "Linux":
     julia_img_file = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
     return julia_img_file
+
+
+def activate_julia_env(solver, time_dict, Pkg, run_uuid, user_uuid):
+    if solver == "xpress":
+        t_start = time.time()
+        Pkg.activate("./julia_envs/Xpress/")
+        time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+    elif solver == "cbc":
+        t_start = time.time()
+        Pkg.activate("./julia_envs/Cbc/")
+        time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+    elif solver == "scip":
+        t_start = time.time()
+        Pkg.activate("./julia_envs/SCIP/")
+        time_dict["pyjulia_activate_seconds"] = time.time() - t_start
+
+    else:
+        raise REoptFailedToStartError(
+            message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
+            run_uuid=run_uuid, user_uuid=user_uuid)
 
