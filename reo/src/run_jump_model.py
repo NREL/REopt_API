@@ -309,7 +309,6 @@ def solve_subproblems(models, reopt_param, results_dicts, update):
     return results_dicts
 
 
-@shared_task(name='solve_subproblem')
 def solve_subproblem(kwargs):
     kwargs["r"] = julia.Main.reopt_solve(kwargs["m"], kwargs["p"], kwargs["r"], kwargs["u"])
 
