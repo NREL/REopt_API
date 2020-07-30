@@ -1619,10 +1619,7 @@ function add_sub_obj_value_results(m, p, r::Dict)
 	r["obj_no_annuals"] = value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
 	### recalculate min charge adder and add to the results
 	r["min_charge_adder_comp"] = value(m[:TotalEnergyChargesUtil]) + value(m[:TotalDemandCharges]) + value(m[:TotalExportBenefit]) + value(m[:TotalFixedCharges])
-	r["sub_incentive"] = Dict()
-	for t in p.Tech
-		r["sub_incentive"] = Array{Float64,1}([value(m[:dvProdIncent][t]) for t in p.Tech])
-	end
+	r["sub_incentive"] = Array{Float64,1}([value(m[:dvProdIncent][t]) for t in p.Tech])
 	if !isempty(p.DemandRatesMonth)
 		r["peak_demand_for_month"] = sum(value(m[:dvPeakDemandEMonth][m[:month_idx],n]) for n in p.DemandMonthsBin)
 	else
@@ -1643,12 +1640,17 @@ function convert_to_arrays(m, results::Dict)
 end
 
 function convert_to_axis_arrays(p, r::Dict)
+	new_r = Dict()
 	for key in keys(r)
+		#if the value has been converted to an array for manipulation within python, then convert back to a DenseAxisArray
 		if typeof(r[key])== Array{Float64,1} && length(r[key]) == p.TimeStepCount
-			r[key] = AxisArray(r[key], p.TimeStep)
+			new_r[key] = JuMP.Containers.DenseAxisArray(r[key], p.TimeStep)
+		#remove subproblem outputs
+		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge"])
+			new_r[key] = r[key]
 		end
 	end
-	return r
+	return new_r
 end
 
 function add_to_results(r1,r2)
