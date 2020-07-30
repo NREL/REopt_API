@@ -102,7 +102,7 @@ class OutageSimJob(ModelResource):
                 content_type='application/json', status=500)
         # Kick-off outage sim run
         run_outage_sim_task.delay(run_uuid, bau)
-        bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 204}
+        bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
 
         return bundle
 
