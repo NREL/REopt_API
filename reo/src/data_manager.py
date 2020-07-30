@@ -576,6 +576,7 @@ class DataManager:
                 cap_cost_x += [0.0, big_number]
 
                 # Have to take n_segments as the maximum number across all technologies
+                n_segments = 1
                 n_segments_max = max(n_segments, n_segments_max)
                 n_segments_list.append(n_segments)
 
