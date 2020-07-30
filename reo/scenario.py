@@ -35,10 +35,13 @@ log = logging.getLogger(__name__)
 from reo.src.data_manager import DataManager
 from reo.src.elec_tariff import ElecTariff
 from reo.src.load_profile import LoadProfile
+from reo.src.fuel_tariff import FuelTariff
+from reo.src.load_profile_boiler_fuel import LoadProfileBoilerFuel
+from reo.src.load_profile_chiller_electric import LoadProfileChillerElectric
 from reo.src.profiler import Profiler
 from reo.src.site import Site
-from reo.src.storage import Storage
-from reo.src.techs import PV, Util, Wind, Generator
+from reo.src.storage import Storage, HotTES, ColdTES
+from reo.src.techs import PV, Util, Wind, Generator, CHP, Boiler, ElectricChiller, AbsorptionChiller
 from celery import shared_task, Task
 from reo.models import ModelManager
 from reo.exceptions import REoptError, UnexpectedError, LoadProfileError, WindDownloadError, PVWattsDownloadError
@@ -97,6 +100,12 @@ def setup_scenario(self, run_uuid, data, raw_post):
 
         # storage is always made, even if max size is zero (due to REopt's expected inputs)
         storage = Storage(dfm=dfm, **inputs_dict["Site"]["Storage"])
+
+        # Hot TES, always made, same reason as "storage", do unit conversions as needed here
+        hot_tes = HotTES(dfm=dfm, **inputs_dict['Site']['HotTES'])
+
+        # Cold TES, always made, same reason as "storage", do unit conversions as needed here
+        cold_tes = ColdTES(dfm=dfm, **inputs_dict['Site']['ColdTES'])
 
         site = Site(dfm=dfm, **inputs_dict["Site"])
         pvs = []
@@ -166,6 +175,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              fuel_slope=gen.fuel_slope,
                              fuel_intercept=gen.fuel_intercept,
                              **inputs_dict['Site']['LoadProfile'])
+            tmp = dict()
+            tmp['annual_calculated_kwh'] = lp.annual_kwh
+            tmp['resilience_check_flag'] = lp.resilience_check_flag
+            tmp['sustain_hours'] = lp.sustain_hours
+            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
         else:
             lp = LoadProfile(dfm=dfm,
                              user_profile=inputs_dict['Site']['LoadProfile'].get('loads_kw'),
@@ -180,6 +194,11 @@ def setup_scenario(self, run_uuid, data, raw_post):
                              fuel_slope=0,
                              fuel_intercept=0,
                              **inputs_dict['Site']['LoadProfile'])
+            tmp = dict()
+            tmp['annual_calculated_kwh'] = lp.annual_kwh
+            tmp['resilience_check_flag'] = lp.resilience_check_flag
+            tmp['sustain_hours'] = lp.sustain_hours
+            ModelManager.updateModel('LoadProfileModel', tmp, run_uuid)
 
         # Checks that the load being sent to optimization does not contatin negative values. We check the loads against
         # a variable tolerance (contingent on PV size since this tech has its existing dispatch added to the loads) and
@@ -208,6 +227,60 @@ def setup_scenario(self, run_uuid, data, raw_post):
         # Correct load profile values that fall between the tolerance and 0
         lp.load_list = [0 if ((x > negative_load_tolerance) and (x < 0)) else x for x in lp.load_list]
 
+        # Load Profile Boiler Fuel
+        lpbf = LoadProfileBoilerFuel(dfm=dfm,
+            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+            latitude=inputs_dict['Site']['latitude'],
+            longitude=inputs_dict['Site']['longitude'],
+            nearest_city=lp.nearest_city,
+            year=lp.year,
+            **inputs_dict['Site']['LoadProfileBoilerFuel']
+            )
+        # Option 1, retrieve annual load from calculations here and add to database
+        tmp = dict()
+        tmp['annual_calculated_boiler_fuel_load_mmbtu_bau'] = lpbf.annual_mmbtu
+        tmp['year_one_boiler_fuel_load_series_mmbtu_per_hr_bau'] = lpbf.load_list
+        ModelManager.updateModel('LoadProfileBoilerFuelModel', tmp, run_uuid)
+
+        # Boiler which supplies the bau boiler fuel load, if there is a boiler fuel load
+        if lpbf.annual_mmbtu > 0.0:
+            boiler = Boiler(dfm=dfm, boiler_fuel_series_bau=lpbf.load_list, **inputs_dict['Site']['Boiler'])
+            tmp = dict()
+            tmp['max_mmbtu_per_hr'] = boiler.max_mmbtu_per_hr
+            ModelManager.updateModel('BoilerModel', tmp, run_uuid)
+        else:
+            boiler = None
+
+        # Load Profile Chiller Electric
+        lpce = LoadProfileChillerElectric(dfm=dfm, lp=lp,
+            time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+            latitude=inputs_dict['Site']['latitude'],
+            longitude=inputs_dict['Site']['longitude'],
+            nearest_city=lp.nearest_city or lpbf.nearest_city,
+            year=lp.year,
+            **inputs_dict['Site']['LoadProfileChillerElectric']
+            )
+        # Option 1, retrieve annual load from calculations here and add to database
+        tmp = dict()
+        tmp['annual_calculated_kwh_bau'] = lpce.annual_kwh
+        tmp['year_one_chiller_electric_load_series_kw_bau'] = lpce.load_list
+        ModelManager.updateModel('LoadProfileChillerElectricModel', tmp, run_uuid)
+
+        # Electric chiller which supplies the bau electric chiller load, if there is an electric chiller load
+        if lpce.annual_kwh > 0.0:
+            elecchl = ElectricChiller(dfm=dfm, chiller_electric_series_bau=lpce.load_list,
+                                      **inputs_dict['Site']['ElectricChiller'])
+            tmp = dict()
+            tmp['chiller_cop'] = elecchl.chiller_cop
+            tmp['max_kw'] = elecchl.max_kw
+            ModelManager.updateModel('ElectricChillerModel', tmp, run_uuid)
+        else:
+            elecchl = None
+
+        # Fuel tariff
+        fuel_tariff = FuelTariff(dfm=dfm, time_steps_per_hour=inputs_dict['time_steps_per_hour'],
+                                 **inputs_dict['Site']['FuelTariff'])
+
         elec_tariff = ElecTariff(dfm=dfm, run_id=run_uuid,
                                  load_year=inputs_dict['Site']['LoadProfile']['year'],
                                  time_steps_per_hour=inputs_dict.get('time_steps_per_hour'),
@@ -230,6 +303,29 @@ def setup_scenario(self, run_uuid, data, raw_post):
             ModelManager.updateModel('WindModel', tmp, run_uuid)
             # TODO: remove the need for this db call by passing these values to process_results.py via reopt.jl
 
+        if inputs_dict["Site"]["CHP"].get("prime_mover") is not None or \
+                inputs_dict["Site"]["CHP"].get("max_kw", 0.0) > 0.0:
+            if boiler is not None:
+                steam_or_hw = boiler.existing_boiler_production_type_steam_or_hw
+            else:
+                steam_or_hw = 'hot_water'
+            chp = CHP(dfm=dfm, run_uuid=run_uuid,
+                      existing_boiler_production_type_steam_or_hw=steam_or_hw,
+                      oa_temp_degF=inputs_dict['Site']['outdoor_air_temp_degF'],
+                      site_elevation_ft=inputs_dict['Site']['elevation_ft'],
+                      time_steps_per_hour=inputs_dict.get('time_steps_per_hour'), **inputs_dict['Site']['CHP'])
+
+        # Absorption chiller
+        if inputs_dict["Site"]["AbsorptionChiller"]["max_ton"] > 0:
+            absorpchl = AbsorptionChiller(dfm=dfm, max_capacity_tons=elecchl.max_chiller_thermal_capacity_tons,
+                                          hw_or_steam=boiler.existing_boiler_production_type_steam_or_hw,
+                                          chp_prime_mover=chp.prime_mover,
+                                          **inputs_dict['Site']['AbsorptionChiller'])
+            tmp = dict()
+            tmp['installed_cost_us_dollars_per_ton'] = absorpchl.installed_cost_us_dollars_per_ton
+            tmp['om_cost_us_dollars_per_ton'] = absorpchl.om_cost_us_dollars_per_ton
+            ModelManager.updateModel('AbsorptionChillerModel', tmp, run_uuid)
+
         util = Util(dfm=dfm,
                     outage_start_hour=inputs_dict['Site']['LoadProfile'].get("outage_start_hour"),
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
@@ -239,7 +335,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
         dfm_dict = vars(dfm)  # serialize for celery
 
         # delete python objects, which are not serializable
-        for k in ['storage', 'site', 'elec_tariff', 'pvs', 'pvnms', 'load', 'util'] + dfm.available_techs:
+
+        for k in ['storage', 'hot_tes', 'cold_tes', 'site', 'elec_tariff', 'fuel_tariff', 'pvs', 'pvnms',
+				'load', 'util', 'heating_load', 'cooling_load'] + dfm.available_techs:
             if dfm_dict.get(k) is not None:
                 del dfm_dict[k]
 

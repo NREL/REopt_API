@@ -30,7 +30,8 @@
 from reo.src.data_manager import big_number
 from reo.src.pvwatts import PVWatts
 from reo.src.wind import WindSAMSDK
-from reo.src.incentives import Incentives
+from reo.src.incentives import Incentives, IncentivesNoProdBased
+from reo.models import ModelManager
 
 
 class Tech(object):
@@ -46,10 +47,14 @@ class Tech(object):
         self.installed_cost_us_dollars_per_kw = installed_cost_us_dollars_per_kw
         self.om_cost_us_dollars_per_kw = om_cost_us_dollars_per_kw
 
-        self.loads_served = ['retail', 'wholesale', 'export', 'storage']
+        self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
         self.nmil_regime = None
         self.reopt_class = ""
         self.derate = 1.0
+        self.is_chp = False
+        self.is_hot = False
+        self.is_cool = False
+        self.derate = 1
         self.acres_per_kw = None  # for land constraints
         self.kw_per_square_foot = None  # for roof constraints
 
@@ -304,3 +309,648 @@ class Generator(Tech):
             m = 0.0657
             b = 0.004
         return m, b
+
+
+class CHP(Tech):
+    """
+    Includes calcs for converting user-input electric efficiency and thermal recovery fraction to coefficients
+    useable for JuMP (e.g. fuel burn rate in MMBtu/hr/kW_rated (y-intercept)
+
+    """
+    # Default data, created from input_files.CHP.chp_input_defaults_processing, copied from chp_default_data.json
+    prime_mover_defaults_all = {
+                                "recip_engine": {
+                                    "installed_cost_us_dollars_per_kw": [
+                                        2416.6666666666665,
+                                        3100.0,
+                                        2800.0,
+                                        2290.0,
+                                        1615.0
+                                    ],
+                                    "om_cost_us_dollars_per_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_kwh": [
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
+                                        0.019000000000000003,
+                                        0.0245,
+                                        0.0225,
+                                        0.018666666666666668,
+                                        0.0125
+                                    ],
+                                    "elec_effic_full_load": [
+                                        0.3573333333333333,
+                                        0.2975,
+                                        0.3205,
+                                        0.37666666666666665,
+                                        0.414
+                                    ],
+                                    "elec_effic_half_load": [
+                                        0.32159999999999994,
+                                        0.26775,
+                                        0.28845000000000004,
+                                        0.33899999999999997,
+                                        0.3726
+                                    ],
+                                    "thermal_effic_full_load": [
+                                        0.4418333333333333,
+                                        0.516,
+                                        0.4925,
+                                        0.42300000000000004,
+                                        0.368
+                                    ],
+                                    "thermal_effic_half_load": [
+                                        0.4664,
+                                        0.5378519572953737,
+                                        0.5157297645327446,
+                                        0.448560962566845,
+                                        0.3939986348122866
+                                    ],
+                                    "min_allowable_kw": [
+                                        15.0,
+                                        15.0,
+                                        50.0,
+                                        315.0,
+                                        1650.0
+                                    ],
+                                    "min_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "max_kw": [
+                                        10000,
+                                        10000,
+                                        10000,
+                                        10000,
+                                        10000
+                                    ],
+                                    "min_turn_down_pct": [
+                                        0.5,
+                                        0.5,
+                                        0.5,
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "max_derate_factor": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "derate_start_temp_degF": [
+                                        95,
+                                        95,
+                                        95,
+                                        95,
+                                        95
+                                    ],
+                                    "derate_slope_pct_per_degF": [
+                                        0.008,
+                                        0.008,
+                                        0.008,
+                                        0.008,
+                                        0.008
+                                    ]
+                                },
+                                "micro_turbine": {
+                                    "installed_cost_us_dollars_per_kw": [
+                                        3010.0,
+                                        3410.0,
+                                        3185.0,
+                                        2743.3333333333335
+                                    ],
+                                    "om_cost_us_dollars_per_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_kwh": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
+                                        0.021200000000000004,
+                                        0.026000000000000002,
+                                        0.026000000000000002,
+                                        0.018000000000000002
+                                    ],
+                                    "elec_effic_full_load": [
+                                        0.2658,
+                                        0.2405,
+                                        0.264,
+                                        0.2826666666666667
+                                    ],
+                                    "elec_effic_half_load": [
+                                        0.21264,
+                                        0.19240000000000002,
+                                        0.21120000000000003,
+                                        0.22613333333333335
+                                    ],
+                                    "thermal_effic_full_load": [
+                                        0.4202,
+                                        0.46950000000000003,
+                                        0.4225,
+                                        0.3873333333333333
+                                    ],
+                                    "thermal_effic_half_load": [
+                                        0.4506247235085808,
+                                        0.499233969716919,
+                                        0.45280978260869564,
+                                        0.4178592317224287
+                                    ],
+                                    "min_allowable_kw": [
+                                        21.0,
+                                        21.0,
+                                        42.0,
+                                        133.0
+                                    ],
+                                    "min_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "max_kw": [
+                                        1000,
+                                        1000,
+                                        1000,
+                                        1000
+                                    ],
+                                    "min_turn_down_pct": [
+                                        0.3,
+                                        0.3,
+                                        0.3,
+                                        0.3
+                                    ],
+                                    "max_derate_factor": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "derate_start_temp_degF": [
+                                        59,
+                                        59,
+                                        59,
+                                        59
+                                    ],
+                                    "derate_slope_pct_per_degF": [
+                                        0.012,
+                                        0.012,
+                                        0.012,
+                                        0.012
+                                    ]
+                                },
+                                "combustion_turbine": {
+                                    "installed_cost_us_dollars_per_kw": [
+                                        2816.1666666666665,
+                                        3900.0,
+                                        2129.25
+                                    ],
+                                    "om_cost_us_dollars_per_kw": [
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_kwh": [
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
+                                        0.012166666666666664,
+                                        0.013999999999999999,
+                                        0.011000000000000001
+                                    ],
+                                    "elec_effic_full_load": [
+                                        0.26566666666666666,
+                                        0.22399999999999998,
+                                        0.28975
+                                    ],
+                                    "elec_effic_half_load": [
+                                        0.21253333333333335,
+                                        0.1792,
+                                        0.2318
+                                    ],
+                                    "thermal_effic_full_load": [
+                                        0.41983333333333334,
+                                        0.445,
+                                        0.3995
+                                    ],
+                                    "thermal_effic_half_load": [
+                                        0.45021074292631263,
+                                        0.4706907216494845,
+                                        0.4320956001407955
+                                    ],
+                                    "min_allowable_kw": [
+                                        950.0,
+                                        950.0,
+                                        3300.0
+                                    ],
+                                    "min_kw": [
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "max_kw": [
+                                        20000,
+                                        20000,
+                                        20000
+                                    ],
+                                    "min_turn_down_pct": [
+                                        0.5,
+                                        0.5,
+                                        0.5
+                                    ],
+                                    "max_derate_factor": [
+                                        1.1,
+                                        1.1,
+                                        1.1
+                                    ],
+                                    "derate_start_temp_degF": [
+                                        59,
+                                        59,
+                                        59
+                                    ],
+                                    "derate_slope_pct_per_degF": [
+                                        0.012,
+                                        0.012,
+                                        0.012
+                                    ]
+                                },
+                                "fuel_cell": {
+                                    "installed_cost_us_dollars_per_kw": [
+                                        6133.333333333333,
+                                        10000.0,
+                                        7300.0,
+                                        4200.0
+                                    ],
+                                    "om_cost_us_dollars_per_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_kwh": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
+                                        0.03833333333333333,
+                                        0.045,
+                                        0.042499999999999996,
+                                        0.035
+                                    ],
+                                    "elec_effic_full_load": [
+                                        0.425,
+                                        0.425,
+                                        0.425,
+                                        0.425
+                                    ],
+                                    "elec_effic_half_load": [
+                                        0.3825,
+                                        0.3825,
+                                        0.3825,
+                                        0.3825
+                                    ],
+                                    "thermal_effic_full_load": [
+                                        0.3246666666666666,
+                                        0.32799999999999996,
+                                        0.32549999999999996,
+                                        0.32299999999999995
+                                    ],
+                                    "thermal_effic_half_load": [
+                                        0.34866376811594196,
+                                        0.3522434782608695,
+                                        0.3495586956521739,
+                                        0.34687391304347814
+                                    ],
+                                    "min_allowable_kw": [
+                                        15.0,
+                                        15.0,
+                                        160.0,
+                                        700.0
+                                    ],
+                                    "min_kw": [
+                                        0,
+                                        0,
+                                        0,
+                                        0
+                                    ],
+                                    "max_kw": [
+                                        5000,
+                                        5000,
+                                        5000,
+                                        5000
+                                    ],
+                                    "min_turn_down_pct": [
+                                        0.3,
+                                        0.3,
+                                        0.3,
+                                        0.3
+                                    ],
+                                    "max_derate_factor": [
+                                        1.0,
+                                        1.0,
+                                        1.0,
+                                        1.0
+                                    ],
+                                    "derate_start_temp_degF": [
+                                        59,
+                                        59,
+                                        59,
+                                        59
+                                    ],
+                                    "derate_slope_pct_per_degF": [
+                                        0.008,
+                                        0.008,
+                                        0.008,
+                                        0.008
+                                    ]
+                                }
+                                }
+
+    # Lower and upper bounds for size classes - Class 0 is the total average across entire range of data
+    class_bounds = {"recip_engine": [(30, 10000), (30, 100), (100, 630), (630, 3300), (3300, 10000)],
+                    "micro_turbine": [(30, 1000), (30, 60), (60, 190), (190, 1000)],
+                    "combustion_turbine": [(950, 20000), (950, 3300), (3300, 20000)],
+                    "fuel_cell": [(30, 10000), (30, 320), (320, 1400), (1400, 10000)]}
+
+    # The default CHP size class, currently set to size_class 0 which is the average values across the entire range of data (i.e. all size classes)
+    default_chp_size_class = {"recip_engine": 0,
+                              "micro_turbine": 0,
+                              "combustion_turbine": 0,
+                              "fuel_cell": 0}
+
+    def __init__(self, dfm, run_uuid, existing_boiler_production_type_steam_or_hw, oa_temp_degF, site_elevation_ft,
+                 time_steps_per_hour=1, **kwargs):
+        super(CHP, self).__init__()
+
+        self.prime_mover = kwargs.get('prime_mover')
+        self.size_class = kwargs.get('size_class')
+        self.existing_boiler_production_type_steam_or_hw = existing_boiler_production_type_steam_or_hw
+        self.reopt_class = 'CHP'
+        self.is_chp = True
+        self.time_steps_per_hour = time_steps_per_hour
+        self.derate = 1  # Need to rectify this legacy derate, maybe remove this and replace if no needed (NM/IL?)
+        self.loads_served = ['retail', 'wholesale', 'export', 'storage', 'boiler', 'tes']
+        self.incentives = Incentives(**kwargs)
+
+        # All of these attributes are assigned based on defaults in validators.py or they should all be in the inputs
+        self.min_kw = kwargs['min_kw']
+        self.max_kw = kwargs['max_kw']
+        self.installed_cost_us_dollars_per_kw = kwargs['installed_cost_us_dollars_per_kw']
+        self.om_cost_us_dollars_per_kw = kwargs['om_cost_us_dollars_per_kw']
+        self.om_cost_us_dollars_per_kwh = kwargs['om_cost_us_dollars_per_kwh']
+        self.om_cost_us_dollars_per_hr_per_kw_rated = kwargs['om_cost_us_dollars_per_hr_per_kw_rated']
+        self.elec_effic_full_load = kwargs['elec_effic_full_load']
+        self.elec_effic_half_load = kwargs['elec_effic_half_load']
+        self.thermal_effic_full_load = kwargs['thermal_effic_full_load']
+        self.thermal_effic_half_load = kwargs['thermal_effic_half_load']
+        self.min_turn_down_pct = kwargs['min_turn_down_pct']
+        self.min_allowable_kw = kwargs['min_allowable_kw']
+        self.use_default_derate = kwargs['use_default_derate']
+        self.max_derate_factor = kwargs['max_derate_factor']
+        self.derate_start_temp_degF = kwargs['derate_start_temp_degF']
+        self.derate_slope_pct_per_degF = kwargs['derate_slope_pct_per_degF']
+
+        self.fuel_burn_slope, self.fuel_burn_intercept, self.thermal_prod_slope, self.thermal_prod_intercept = \
+            self.convert_performance_params(self.elec_effic_full_load, self.elec_effic_half_load,
+                                            self.thermal_effic_full_load,
+                                            self.thermal_effic_half_load)
+        if self.use_default_derate:
+            # TODO: Use either site altitude OR derate_max, depending on which, if any, are input. VALIDATORS.PY to handle this!
+            # TODO: implement derate factor array based on input temperature profile, with derate_max from above TODO
+            self.chp_power_derate = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+
+        dfm.add_chp(self)
+
+    @property
+    def prod_factor(self):
+        chp_elec_prod_factor = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+        # Note, we are handling boiler efficiency explicitly so not embedding that into chp thermal prod factor
+        chp_thermal_prod_factor = [1.0 for _ in range(8760 * self.time_steps_per_hour)]
+
+        return chp_elec_prod_factor, chp_thermal_prod_factor
+
+    @staticmethod
+    def convert_performance_params(elec_effic_full_load, elec_effic_half_load, thermal_effic_full_load,
+                                   thermal_effic_half_load):
+        """
+        Convert the performance parameter inputs to coefficients used readily in Xpress
+        :return: fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
+        """
+
+        fuel_burn_full_load = 1 / elec_effic_full_load * 3412.0 / 1.0E6 * 1.0  # [MMBtu/hr/kW]
+        fuel_burn_half_load = 1 / elec_effic_half_load * 3412.0 / 1.0E6 * 0.5  # [MMBtu/hr/kW]
+        fuel_burn_slope = (fuel_burn_full_load - fuel_burn_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
+        fuel_burn_intercept = fuel_burn_full_load - fuel_burn_slope * 1.0  # [MMBtu/hr/kW_rated]
+
+        thermal_prod_full_load = 1.0 * 1 / elec_effic_full_load * \
+                                 thermal_effic_full_load * 3412.0 / 1.0E6  # [MMBtu/hr/kW]
+        thermal_prod_half_load = 0.5 * 1 / elec_effic_half_load * \
+                                 thermal_effic_half_load * 3412.0 / 1.0E6   # [MMBtu/hr/kW]
+        thermal_prod_slope = (thermal_prod_full_load - thermal_prod_half_load) / (1.0 - 0.5)  # [MMBtu/hr/kW]
+        thermal_prod_intercept = thermal_prod_full_load - thermal_prod_slope * 1.0  # [MMBtu/hr/kW_rated]
+
+
+        return fuel_burn_slope, fuel_burn_intercept, thermal_prod_slope, thermal_prod_intercept
+
+
+class Boiler(Tech):
+
+    boiler_efficiency_defaults = {"hot_water": 0.80,
+                                  "steam": 0.75}
+
+    boiler_type_by_chp_prime_mover_defaults = {"recip_engine": "hot_water",
+                                               "micro_turbine": "hot_water",
+                                               "combustion_turbine": "steam",
+                                               "fuel_cell": "hot_water"}
+
+    def __init__(self, dfm, boiler_fuel_series_bau, **kwargs):
+        super(Boiler, self).__init__(**kwargs)
+
+        self.loads_served = ['boiler', 'tes']
+        self.is_hot = True
+        self.reopt_class = 'BOILER'  # Not sure why UTIL tech is not assigned to the UTIL class
+        self.min_mmbtu_per_hr = kwargs.get('min_mmbtu_per_hr')
+        self.max_mmbtu_per_hr = kwargs.get('max_mmbtu_per_hr')
+        self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
+        self.existing_boiler_production_type_steam_or_hw = kwargs.get('existing_boiler_production_type_steam_or_hw')
+        self.boiler_efficiency = kwargs.get('boiler_efficiency')
+        self.installed_cost_us_dollars_per_mmbtu_per_hr = kwargs.get('installed_cost_us_dollars_per_mmbtu_per_hr')
+        self.derate = 0
+        self.n_timesteps = dfm.n_timesteps
+
+        # Unless max_mmbtu_per_hr is a user-input, set the max_mmbtu_per_hr with the heating load and factor
+        if self.max_mmbtu_per_hr is None:
+            self.max_mmbtu_per_hr = max(boiler_fuel_series_bau) * self.boiler_efficiency * \
+                                    self.max_thermal_factor_on_peak_load
+
+        dfm.add_boiler(self)
+
+    @property
+    def prod_factor(self):
+
+        # Note boiler efficiency is explicitly accounted for instead of being embedded in the prod_factor
+        boiler_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return boiler_prod_factor
+
+
+class ElectricChiller(Tech):
+
+    electric_chiller_cop_defaults = {"convert_elec_to_thermal": 4.55,
+                                        "less_than_100_tons": 4.40,
+                                        "greater_than_100_tons": 4.69}
+
+    def __init__(self, dfm, chiller_electric_series_bau, **kwargs):
+        super(ElectricChiller, self).__init__(**kwargs)
+
+        self.loads_served = ['retail', 'tes']
+        self.is_cool = True
+        self.reopt_class = 'ELECCHL'
+        self.min_kw = kwargs.get('min_kw')
+        self.max_kw = kwargs.get('max_kw')
+        self.max_thermal_factor_on_peak_load = kwargs.get('max_thermal_factor_on_peak_load')
+        self.chiller_cop = kwargs.get('chiller_cop')
+        self.installed_cost_us_dollars_per_kw = kwargs.get('installed_cost_us_dollars_per_kw')
+        self.derate = 0
+        self.n_timesteps = dfm.n_timesteps
+
+        # Update COP (if not user-entered) based on estimated max chiller load
+        if self.chiller_cop is None:
+            self.max_chiller_thermal_capacity_tons = max(chiller_electric_series_bau) * \
+                                                ElectricChiller.electric_chiller_cop_defaults["convert_elec_to_thermal"] * \
+                                                self.max_thermal_factor_on_peak_load / 3.51685
+            if self.max_chiller_thermal_capacity_tons < 100.0:
+                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["less_than_100_tons"]
+            else:
+                self.chiller_cop = ElectricChiller.electric_chiller_cop_defaults["greater_than_100_tons"]
+        else:
+            self.max_chiller_thermal_capacity_tons = max(chiller_electric_series_bau) * \
+                                                self.chiller_cop * \
+                                                self.max_thermal_factor_on_peak_load / 3.51685
+
+        # Unless max_kw is a user-input, set the max_kw with the cooling load and factor
+        if self.max_kw is None:
+            self.max_kw = self.max_chiller_thermal_capacity_tons * 3.51685
+
+        dfm.add_electric_chiller(self)
+
+    @property
+    def prod_factor(self):
+
+        # Chiller ProdFactor is where we can account for increased/decreased thermal capacity based on OA temps
+        # Note chiller_cop is explicitly accounted for instead of being embedded in the prod_factor
+        chiller_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return chiller_prod_factor
+
+
+class AbsorptionChiller(Tech):
+
+    absorption_chiller_cop_defaults = {"hot_water": 0.74,
+                                       "steam": 1.42}
+
+    # Data format for cost is (ton, $/ton, $/ton/yr); less than 1st or greater than last size uses constant, otherwise lin-interp
+    absorption_chiller_cost_defaults = {"hot_water": [(50, 6000.0, 42.0), (400, 2250.0, 14.0), (1320, 2000.0, 7.0)],
+                                        "steam": [(300, 3300.0, 21.0), (1000, 2000.0, 7.0)]}
+
+    def __init__(self, dfm, max_capacity_tons, hw_or_steam, chp_prime_mover, **kwargs):
+        super(AbsorptionChiller, self).__init__(**kwargs)
+
+        self.loads_served = ['retail', 'tes']
+        self.is_cool = True
+        self.reopt_class = 'ABSORPCHL'
+        self.chiller_cop = kwargs.get('chiller_cop')
+        self.derate = 0
+        self.n_timesteps = dfm.n_timesteps
+
+        # Convert a size-based inputs from ton to kwt
+        self.min_kw = kwargs.get('min_ton') * 3.51685
+        self.max_kw = kwargs.get('max_ton') * 3.51685
+        self.installed_cost_us_dollars_per_ton = kwargs.get('installed_cost_us_dollars_per_ton')
+        self.om_cost_us_dollars_per_ton = kwargs.get('om_cost_us_dollars_per_ton')
+        self.max_capacity_tons = max_capacity_tons
+        self.hw_or_steam = hw_or_steam
+        self.chp_prime_mover = chp_prime_mover
+
+        # Calc default CapEx and OpEx costs, and use if the user did not enter a value
+        installed_cost_per_ton_calc, om_cost_per_ton_per_yr_calc = self.get_absorp_chiller_costs(self.max_capacity_tons, self.hw_or_steam,
+                                                                     self.chp_prime_mover)
+
+        if self.installed_cost_us_dollars_per_ton is None and self.om_cost_us_dollars_per_ton is None:
+            self.installed_cost_us_dollars_per_ton = installed_cost_per_ton_calc
+            self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
+        elif self.installed_cost_us_dollars_per_ton is None:
+            self.installed_cost_us_dollars_per_ton = installed_cost_per_ton_calc
+        elif self.om_cost_us_dollars_per_ton is None:
+            self.om_cost_us_dollars_per_ton = om_cost_per_ton_per_yr_calc
+
+        self.installed_cost_us_dollars_per_kw = self.installed_cost_us_dollars_per_ton / 3.51685
+        self.om_cost_us_dollars_per_kw = self.om_cost_us_dollars_per_ton / 3.51685
+
+        self.incentives = IncentivesNoProdBased(**kwargs)
+
+        dfm.add_absorption_chiller(self)
+
+    @property
+    def prod_factor(self):
+
+        # Chiller ProdFactor is where we can account for increased/decreased thermal capacity based on OA temps
+        # Note chiller_cop is explicitly accounted for instead of being embedded in the prod_factor
+        chiller_prod_factor = [1.0 for _ in range(self.n_timesteps)]
+
+        return chiller_prod_factor
+
+    @staticmethod
+    def get_absorp_chiller_costs(max_capacity_tons, hw_or_steam, chp_prime_mover):
+        if hw_or_steam is not None:
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[hw_or_steam]
+        elif chp_prime_mover is not None:
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults[Boiler.boiler_type_by_chp_prime_mover_defaults[chp_prime_mover]]
+        else:
+            # If hw_or_steam and CHP prime_mover are not provided, use hot_water defaults
+            defaults_sizes = AbsorptionChiller.absorption_chiller_cost_defaults["hot_water"]
+
+        if max_capacity_tons <= defaults_sizes[0][0]:
+            absorp_chiller_capex = defaults_sizes[0][1]
+            absorp_chiller_opex = defaults_sizes[0][2]
+        elif max_capacity_tons >= defaults_sizes[-1][0]:
+            absorp_chiller_capex = defaults_sizes[-1][1]
+            absorp_chiller_opex = defaults_sizes[-1][2]
+        else:
+            for size in range(1, len(defaults_sizes)):
+                if max_capacity_tons > defaults_sizes[size - 1][0] and \
+                        max_capacity_tons <= defaults_sizes[size][0]:
+                    slope_capex = (defaults_sizes[size][1] - defaults_sizes[size - 1][1]) / \
+                                  (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                    slope_opex = (defaults_sizes[size][2] - defaults_sizes[size - 1][2]) / \
+                                 (defaults_sizes[size][0] - defaults_sizes[size - 1][0])
+                    absorp_chiller_capex = defaults_sizes[size - 1][1] + slope_capex * \
+                                           (max_capacity_tons - defaults_sizes[size - 1][0])
+                    absorp_chiller_opex = defaults_sizes[size - 1][2] + slope_opex * \
+                                          (max_capacity_tons - defaults_sizes[size - 1][0])
+
+        return absorp_chiller_capex, absorp_chiller_opex
+

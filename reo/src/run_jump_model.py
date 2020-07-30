@@ -132,7 +132,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 Main.include("reo/src/reopt_xpress_model.jl")
 
             t_start = time.time()
-            model = Main.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"])
+            model = Main.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"],
+                                     data["inputs"]["Scenario"]["optimality_tolerance"])
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "cbc":
