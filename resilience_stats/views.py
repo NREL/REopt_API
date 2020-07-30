@@ -93,9 +93,10 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
         try:  # catch specific exception
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
         except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
-            msg = "Outage sim results are not ready."
-            "Please try again later if you have already submitted an outagesimjob. If not, please send a POST to /outagesimjob/ first with the run_uuid and bau data to generate the" \
-            " outage simulation results before GET-ing the results from /resilience_stats."
+            msg = "Outage sim results are not ready. "
+            msg += (
+                "If you have already submitted an outagesimjob, please try again later. If not, please first submit an outagesimjob by sending a POST request to /outagesimjob/ with the run_uuid and bau data to generate the" \
+                " outage simulation results before GET-ing the results from /resilience_stats endpoint. ")
             sample_payload = {"run_uuid": "6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf", "bau": False}
             msg += "Sample body data for POST-ing to /outagesimjob/: " + json.dumps(sample_payload)
             return JsonResponse({"Error": msg}, content_type='application/json', status=404)
