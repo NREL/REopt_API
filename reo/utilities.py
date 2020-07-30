@@ -30,6 +30,8 @@
 from numpy import npv
 from math import log10
 from reo.models import ErrorModel
+import platform
+import os
 
 
 def slope(x1, y1, x2, y2):
@@ -227,3 +229,15 @@ def check_common_outputs(Test, d_calculated, d_expected):
             )
         else:
             raise e
+
+
+def get_julia_img_file_name():
+    if platform.system() == "Darwin":
+        ext = ".dylib"
+    elif platform.system() == "Windows":
+        ext = ".dll"
+    else:
+        ext = ".so"  # if platform.system() == "Linux":
+    julia_img_file = os.path.join("julia_envs", "Xpress", "JuliaXpressSysimage" + ext)
+    return julia_img_file
+
