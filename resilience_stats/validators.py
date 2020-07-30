@@ -28,7 +28,25 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 # https://docs.djangoproject.com/en/1.8/ref/validators/
+import sys
+import uuid
+
 from django.core.exceptions import ValidationError
+
+from reo.exceptions import UnexpectedError
+
+
+def validate_run_uuid(run_uuid):
+    try:
+        uuid.UUID(run_uuid)  # raises ValueError if not valid uuid
+    except ValueError as e:
+        if e.args[0] == "badly formed hexadecimal UUID string":
+            raise ValidationError("Error:" + str(e.args[0]))
+        else:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=run_uuid)
+            err.save_to_db()
+            raise ValidationError("Error" + str(err.message))
 
 
 def validate_RunOutput_for_outage_simulator(ro):
