@@ -32,6 +32,7 @@ import logging
 log = logging.getLogger(__name__)
 import rollbar
 import traceback as tb
+import time
 
 
 class REoptError(Exception):
@@ -236,6 +237,7 @@ class PVWattsDownloadError(REoptError):
         super(PVWattsDownloadError, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                                 message=message, traceback=traceback)
 
+
 class SaveToDatabase(REoptError):
     """
     Catches case where a model cannot be saved to the database
@@ -252,3 +254,23 @@ class SaveToDatabase(REoptError):
             message = "Error saving to database."
         super(SaveToDatabase, self).__init__(task=task, name=self.__name__, run_uuid=run_uuid, user_uuid=user_uuid,
                                               message=message, traceback=debug_msg)
+
+
+class CheckGapException(Exception):
+    """
+    Used to make a while loop over subproblem groups -> checkgap that calls process_results
+    once timeout, gap < tol, or max iterations is reached
+    """
+    maxiters = 100
+    iter = 0
+
+    def __init__(self, dfm_bau, data):
+        self.dfm_bau = dfm_bau
+        self.data = data
+        self.time_elapsed = time.time() - data["t_start"]
+        self.maxtime = data['inputs']['Scenario']['timeout_seconds'] - 10  # minus 10 for setup
+        CheckGapException.iter += 0.5
+        """ 
+        two CheckTolException's created with every 
+        chain(subprobs | callback.on_error(runsubproblems.s()) | process_results)()
+        """
