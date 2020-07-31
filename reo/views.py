@@ -261,7 +261,7 @@ def simulated_load(request):
 
         if 'doe_reference_name' in request.GET.keys():
             doe_reference_name = [request.GET.get('doe_reference_name')]
-            percent_share_list = [1]
+            percent_share_list = [100.0]
         elif 'doe_reference_name[0]' in request.GET.keys():
             idx = 0
             doe_reference_name = []
