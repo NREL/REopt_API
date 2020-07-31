@@ -27,19 +27,23 @@
 # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
-import uuid
+import json
 import sys
-from django.http import JsonResponse
+import uuid
+from typing import Dict, Union
+
+from django.forms.models import model_to_dict
+from django.http import JsonResponse, HttpRequest
+
+from reo.exceptions import UnexpectedError
+from reo.models import ModelManager
 from reo.models import ScenarioModel, PVModel, StorageModel, LoadProfileModel, GeneratorModel, FinancialModel, WindModel
+from reo.utilities import annuity
 from resilience_stats.models import ResilienceModel
 from resilience_stats.outage_simulator_LF import simulate_outages
-from reo.exceptions import UnexpectedError, SaveToDatabase
-from django.forms.models import model_to_dict
-from reo.utilities import annuity
-from reo.models import ModelManager
 
 
-def resilience_stats(request, run_uuid=None):
+def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
     """
     Run outage simulator for given run_uuid
     :param request: optional parameter for 'bau', boolean
@@ -60,14 +64,18 @@ def resilience_stats(request, run_uuid=None):
             return JsonResponse({"Error": str(e.args[0])}, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=run_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
+                                  run_uuid=run_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
     bau = False  # whether or not user wants outage simulator run with existing sizes
-    if request.GET.get('bau') in ["True", "true", "1"]:
-        bau = True
-
+    if isinstance(request, HttpRequest):
+        if request.GET.get('bau') in ["True", "true", "1"]:
+            bau = True
+    elif isinstance(request, dict):
+        bau = request.get("bau")
+    # Safety check; No exception is expected if called after POST-ing to /outagesimjob end point
     try:
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
     except ScenarioModel.DoesNotExist:
@@ -78,27 +86,29 @@ def resilience_stats(request, run_uuid=None):
         return JsonResponse({"Error": "The scenario is still optimizing. Please try again later."},
                             content_type='application/json', status=500)
     elif "error" in scenario.status.lower():
-        return JsonResponse({"Error": "An error occurred in the scenario. Please check the messages from your results."},
-                            content_type='application/json', status=500)
+        return JsonResponse(
+            {"Error": "An error occurred in the scenario. Please check the messages from your results."},
+            content_type='application/json', status=500)
     try:  # catch all exceptions
         try:  # catch specific exception
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
         except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
-            results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
-            rm = ResilienceModel.create(scenariomodel=scenario)
+            msg = "Outage sim results are not ready. "
+            msg += (
+                "If you have already submitted an outagesimjob, please try again later. If not, please first submit an outagesimjob by sending a POST request to /outagesimjob/ with the run_uuid and bau data to generate the" \
+                " outage simulation results before GET-ing the results from /resilience_stats endpoint. ")
+            sample_payload = {"run_uuid": "6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf", "bau": False}
+            msg += "Sample body data for POST-ing to /outagesimjob/: " + json.dumps(sample_payload)
+            return JsonResponse({"Error": msg}, content_type='application/json', status=404)
 
-            try:
-                ResilienceModel.objects.filter(id=rm.id).update(**results)
-            except SaveToDatabase as e:
-                return JsonResponse({"Error": e.message}, status=500)
-
-        else:  # ResilienceModel does exist (reo/results.py runs the outage simulator after REopt)
+        else:  # ResilienceModel does exist
             results = model_to_dict(rm)
             # remove items that user does not need
             del results['scenariomodel']
             del results['id']
 
-            if bau and results["probs_of_surviving_bau"] is None:  # then need to run outage_sim with existing sizes (BAU)
+            if bau and results[
+                "probs_of_surviving_bau"] is None:  # then need to run outage_sim with existing sizes (BAU)
                 bau_results = run_outage_sim(run_uuid, with_tech=False, bau=bau)
                 ResilienceModel.objects.filter(id=rm.id).update(**bau_results)
                 results.update(bau_results)
@@ -107,9 +117,10 @@ def resilience_stats(request, run_uuid=None):
                 filtered_dict = {k: v for k, v in results.items() if "_bau" not in k}
                 results = filtered_dict
 
-        results.update({"help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
-                    })
-        response = JsonResponse(results)
+        results.update({
+            "help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
+        })
+        response = JsonResponse({"outage_sim_results": results}, content_type='application/json', status=200)
         return response
 
     except Exception:
@@ -138,16 +149,18 @@ def financial_check(request, run_uuid=None):
         if "PV" in site:
             size_dict["PV"] = site["PV"]["size_kw"]
         return size_dict
+
     # validate uuid's
     try:
         uuid.UUID(str(resilience_uuid))  # raises ValueError if not valid uuid
-        uuid.UUID(str(financial_uuid))   # raises ValueError if not valid uuid
+        uuid.UUID(str(financial_uuid))  # raises ValueError if not valid uuid
     except ValueError as e:
         if e.args[0] == "badly formed hexadecimal UUID string":
             return JsonResponse({"Error": str(e.args[0])}, status=400)
         else:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=resilience_uuid)
+            err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
+                                  run_uuid=resilience_uuid)
             err.save_to_db()
             return JsonResponse({"Error": str(err.message)}, status=400)
 
@@ -160,20 +173,22 @@ def financial_check(request, run_uuid=None):
         return JsonResponse({"Error": "The resilience scenario is still optimizing. Please try again later."},
                             content_type='application/json', status=500)
     elif "error" in resil_scenario.status.lower():
-        return JsonResponse({"Error": "An error occurred in the resilience scenario. Please check the messages from your results."},
-                            content_type='application/json', status=500)
+        return JsonResponse(
+            {"Error": "An error occurred in the resilience scenario. Please check the messages from your results."},
+            content_type='application/json', status=500)
 
     try:
-        finacial_scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
+        financial_scenario = ScenarioModel.objects.get(run_uuid=financial_uuid)
     except ScenarioModel.DoesNotExist:
         msg = "Scenario {} does not exist.".format(financial_uuid)
         return JsonResponse({"Error": msg}, content_type='application/json', status=404)
-    if finacial_scenario.status == "Optimizing...":
+    if financial_scenario.status == "Optimizing...":
         return JsonResponse({"Error": "The financial scenario is still optimizing. Please try again later."},
                             content_type='application/json', status=500)
-    elif "error" in finacial_scenario.status.lower():
-        return JsonResponse({"Error": "An error occurred in the financial scenario. Please check the messages from your results."},
-                            content_type='application/json', status=500)
+    elif "error" in financial_scenario.status.lower():
+        return JsonResponse(
+            {"Error": "An error occurred in the financial scenario. Please check the messages from your results."},
+            content_type='application/json', status=500)
     try:
         # retrieve sizes from db
         resilience_result = ModelManager.make_response(resilience_uuid)
@@ -193,7 +208,8 @@ def financial_check(request, run_uuid=None):
 
     except Exception:
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats', run_uuid=resilience_uuid)
+        err = UnexpectedError(exc_type, exc_value.args[0], exc_traceback, task='resilience_stats',
+                              run_uuid=resilience_uuid)
         err.save_to_db()
         return JsonResponse({"Error": err.message}, status=500)
 
@@ -202,7 +218,6 @@ def financial_check(request, run_uuid=None):
 
 
 def run_outage_sim(run_uuid, with_tech=True, bau=False):
-
     load_profile = LoadProfileModel.objects.filter(run_uuid=run_uuid).first()
     gen = GeneratorModel.objects.filter(run_uuid=run_uuid).first()
     batt = StorageModel.objects.filter(run_uuid=run_uuid).first()
@@ -258,7 +273,7 @@ def run_outage_sim(run_uuid, with_tech=True, bau=False):
             m=gen.fuel_slope_gal_per_kwh,
             diesel_min_turndown=gen.min_turn_down_pct
         )
-        results.update({key+'_bau': val for key, val in bau_results.items()})
+        results.update({key + '_bau': val for key, val in bau_results.items()})
 
     """ add avg_crit_ld and pwf to results so that avoided outage cost can be determined as:
             avoided_outage_costs_us_dollars = resilience_hours_avg * 

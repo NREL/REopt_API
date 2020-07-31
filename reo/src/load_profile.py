@@ -533,7 +533,7 @@ class LoadProfile(BuiltInProfile):
                 super(LoadProfile, self).__init__(**kwargs)
                 load_list = [val for val in self.built_in_profile for _ in range(self.time_steps_per_hour)]
                 # appending the weighted load at every timestep, for making hybrid loadlist
-                combine_loadlist.append([load * (percent_share / 100) for load in load_list])  # list of lists
+                combine_loadlist.append([load * (percent_share / 100.0) for load in load_list])  # list of lists
             self.unmodified_load_list = list(np.sum(np.array(combine_loadlist), axis=0))
 
         if loads_kw_is_net:
