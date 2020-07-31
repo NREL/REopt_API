@@ -44,6 +44,7 @@ from reo.models import ModelManager, BadPost
 from reo.src.profiler import Profiler
 from reo.process_results import process_results
 from reo.src.run_jump_model import run_jump_model
+from reo.src.run_decomposed_jump_model import run_decomposed_jump_model
 from reo.exceptions import REoptError, UnexpectedError
 from celery import group, chain
 log = logging.getLogger(__name__)
@@ -171,15 +172,23 @@ class Job(ModelResource):
                 raise ImmediateHttpResponse(HttpResponse(json.dumps(data),
                                                          content_type='application/json',
                                                          status=500))  # internal server error
+
         setup = setup_scenario.s(run_uuid=run_uuid, data=data, raw_post=bundle.data)
-        call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
-        # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
-        rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
-        rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+        if data['inputs']['Scenario']["Site"]["CHP"].get("prime_mover") is not None or \
+            data['inputs']['Scenario']["Site"]["CHP"].get("max_kw", 0.0) > 0.0:
+            rjm = run_decomposed_jump_model.s(data=data)
+            rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+            c = chain(setup | rjm_bau | rjm)
+        else:
+            call_back = process_results.s(data=data, meta={'run_uuid': run_uuid, 'api_version': api_version})
+            # (use .si for immutable signature, if no outputs were passed from reopt_jobs)
+            rjm = run_jump_model.s(data=data, run_uuid=run_uuid)
+            rjm_bau = run_jump_model.s(data=data, run_uuid=run_uuid, bau=True)
+            c = chain(setup | group(rjm, rjm_bau) | call_back)
 
         log.info("Starting celery chain")
         try:
-            chain(setup | group(rjm, rjm_bau) | call_back)()
+            c()
         except Exception as e:
             if isinstance(e, REoptError):
                 pass  # handled in each task
