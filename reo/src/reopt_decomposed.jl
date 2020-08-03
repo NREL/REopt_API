@@ -1100,15 +1100,19 @@ end
 function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth:Int64, penalties::Dict, update::Bool)
 	m = create_subproblem_model(solver, "lb", mth)
 	p = Parameter(model_inputs)
+	add_decomp_penalties(m, p, penalties)
 	results = reopt_build(m, p)
-	update_decomp_penalties(m, p, results)
 	results = reopt_solve(m, p, results, update)
+	return results
 end
 
 function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth:Int64, system_sizes::Dict)
 	m = create_subproblem_model(solver, "ub", mth)
 	p = Parameter(model_inputs)
-	
+	results = reopt_build(m, p)
+	fix_sizing_decisions(m, p, system_sizes)
+	results = reopt_solve(m, p, results, update)
+	return results
 end
 
 
@@ -1595,6 +1599,18 @@ function get_initial_decomp_penalties(m,p)
 		m[:storage_inventory_penalty][b] = 0.0
 	end
 end
+
+function add_decomp_penalties(m, p, penalties::Dict)
+	for t in p.Tech
+		m[:tech_size_penalty][t] = penalties["dvSize",t] * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t])
+	end
+	for b in p.Storage
+		m[:storage_power_size_penalty][b] = penalties["dvStorageCapPower",b] * p.StorageCostPerKW[b]
+		m[:storage_energy_size_penalty][b] = penalties["dvStorageCapPower",b] * p.StorageCostPerKWH[b]
+		m[:storage_inventory_penalty][b] = penalties["dvStorageResetSOC",b] * p.StorageCostPerKWH[b]
+	end
+end
+
 
 function update_decomp_penalties(m,p,mean_sizes::Dict)
 	rho = 1e-4 #penalty factor; this is a parameter that can be tuned
