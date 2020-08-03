@@ -319,374 +319,374 @@ class CHP(Tech):
     """
     # Default data, created from input_files.CHP.chp_input_defaults_processing, copied from chp_default_data.json
     prime_mover_defaults_all = {
-                                "recip_engine": {
-                                    "installed_cost_us_dollars_per_kw": [
-                                        2416.6666666666665,
-                                        3100.0,
-                                        2800.0,
-                                        2290.0,
-                                        1615.0
-                                    ],
-                                    "om_cost_us_dollars_per_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_kwh": [
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
-                                        0.019000000000000003,
-                                        0.0245,
-                                        0.0225,
-                                        0.018666666666666668,
-                                        0.0125
-                                    ],
-                                    "elec_effic_full_load": [
-                                        0.3573333333333333,
-                                        0.2975,
-                                        0.3205,
-                                        0.37666666666666665,
-                                        0.414
-                                    ],
-                                    "elec_effic_half_load": [
-                                        0.32159999999999994,
-                                        0.26775,
-                                        0.28845000000000004,
-                                        0.33899999999999997,
-                                        0.3726
-                                    ],
-                                    "thermal_effic_full_load": [
-                                        0.4418333333333333,
-                                        0.516,
-                                        0.4925,
-                                        0.42300000000000004,
-                                        0.368
-                                    ],
-                                    "thermal_effic_half_load": [
-                                        0.4664,
-                                        0.5378519572953737,
-                                        0.5157297645327446,
-                                        0.448560962566845,
-                                        0.3939986348122866
-                                    ],
-                                    "min_allowable_kw": [
-                                        15.0,
-                                        15.0,
-                                        50.0,
-                                        315.0,
-                                        1650.0
-                                    ],
-                                    "min_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "max_kw": [
-                                        10000,
-                                        10000,
-                                        10000,
-                                        10000,
-                                        10000
-                                    ],
-                                    "min_turn_down_pct": [
-                                        0.5,
-                                        0.5,
-                                        0.5,
-                                        0.5,
-                                        0.5
-                                    ],
-                                    "max_derate_factor": [
-                                        1.0,
-                                        1.0,
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "derate_start_temp_degF": [
-                                        95,
-                                        95,
-                                        95,
-                                        95,
-                                        95
-                                    ],
-                                    "derate_slope_pct_per_degF": [
-                                        0.008,
-                                        0.008,
-                                        0.008,
-                                        0.008,
-                                        0.008
-                                    ]
-                                },
-                                "micro_turbine": {
-                                    "installed_cost_us_dollars_per_kw": [
-                                        3010.0,
-                                        3410.0,
-                                        3185.0,
-                                        2743.3333333333335
-                                    ],
-                                    "om_cost_us_dollars_per_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_kwh": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
-                                        0.021200000000000004,
-                                        0.026000000000000002,
-                                        0.026000000000000002,
-                                        0.018000000000000002
-                                    ],
-                                    "elec_effic_full_load": [
-                                        0.2658,
-                                        0.2405,
-                                        0.264,
-                                        0.2826666666666667
-                                    ],
-                                    "elec_effic_half_load": [
-                                        0.21264,
-                                        0.19240000000000002,
-                                        0.21120000000000003,
-                                        0.22613333333333335
-                                    ],
-                                    "thermal_effic_full_load": [
-                                        0.4202,
-                                        0.46950000000000003,
-                                        0.4225,
-                                        0.3873333333333333
-                                    ],
-                                    "thermal_effic_half_load": [
-                                        0.4506247235085808,
-                                        0.499233969716919,
-                                        0.45280978260869564,
-                                        0.4178592317224287
-                                    ],
-                                    "min_allowable_kw": [
-                                        21.0,
-                                        21.0,
-                                        42.0,
-                                        133.0
-                                    ],
-                                    "min_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "max_kw": [
-                                        1000,
-                                        1000,
-                                        1000,
-                                        1000
-                                    ],
-                                    "min_turn_down_pct": [
-                                        0.3,
-                                        0.3,
-                                        0.3,
-                                        0.3
-                                    ],
-                                    "max_derate_factor": [
-                                        1.0,
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "derate_start_temp_degF": [
-                                        59,
-                                        59,
-                                        59,
-                                        59
-                                    ],
-                                    "derate_slope_pct_per_degF": [
-                                        0.012,
-                                        0.012,
-                                        0.012,
-                                        0.012
-                                    ]
-                                },
-                                "combustion_turbine": {
-                                    "installed_cost_us_dollars_per_kw": [
-                                        2816.1666666666665,
-                                        3900.0,
-                                        2129.25
-                                    ],
-                                    "om_cost_us_dollars_per_kw": [
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_kwh": [
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
-                                        0.012166666666666664,
-                                        0.013999999999999999,
-                                        0.011000000000000001
-                                    ],
-                                    "elec_effic_full_load": [
-                                        0.26566666666666666,
-                                        0.22399999999999998,
-                                        0.28975
-                                    ],
-                                    "elec_effic_half_load": [
-                                        0.21253333333333335,
-                                        0.1792,
-                                        0.2318
-                                    ],
-                                    "thermal_effic_full_load": [
-                                        0.41983333333333334,
-                                        0.445,
-                                        0.3995
-                                    ],
-                                    "thermal_effic_half_load": [
-                                        0.45021074292631263,
-                                        0.4706907216494845,
-                                        0.4320956001407955
-                                    ],
-                                    "min_allowable_kw": [
-                                        950.0,
-                                        950.0,
-                                        3300.0
-                                    ],
-                                    "min_kw": [
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "max_kw": [
-                                        20000,
-                                        20000,
-                                        20000
-                                    ],
-                                    "min_turn_down_pct": [
-                                        0.5,
-                                        0.5,
-                                        0.5
-                                    ],
-                                    "max_derate_factor": [
-                                        1.1,
-                                        1.1,
-                                        1.1
-                                    ],
-                                    "derate_start_temp_degF": [
-                                        59,
-                                        59,
-                                        59
-                                    ],
-                                    "derate_slope_pct_per_degF": [
-                                        0.012,
-                                        0.012,
-                                        0.012
-                                    ]
-                                },
-                                "fuel_cell": {
-                                    "installed_cost_us_dollars_per_kw": [
-                                        6133.333333333333,
-                                        10000.0,
-                                        7300.0,
-                                        4200.0
-                                    ],
-                                    "om_cost_us_dollars_per_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_kwh": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "om_cost_us_dollars_per_hr_per_kw_rated": [
-                                        0.03833333333333333,
-                                        0.045,
-                                        0.042499999999999996,
-                                        0.035
-                                    ],
-                                    "elec_effic_full_load": [
-                                        0.425,
-                                        0.425,
-                                        0.425,
-                                        0.425
-                                    ],
-                                    "elec_effic_half_load": [
-                                        0.3825,
-                                        0.3825,
-                                        0.3825,
-                                        0.3825
-                                    ],
-                                    "thermal_effic_full_load": [
-                                        0.3246666666666666,
-                                        0.32799999999999996,
-                                        0.32549999999999996,
-                                        0.32299999999999995
-                                    ],
-                                    "thermal_effic_half_load": [
-                                        0.34866376811594196,
-                                        0.3522434782608695,
-                                        0.3495586956521739,
-                                        0.34687391304347814
-                                    ],
-                                    "min_allowable_kw": [
-                                        15.0,
-                                        15.0,
-                                        160.0,
-                                        700.0
-                                    ],
-                                    "min_kw": [
-                                        0,
-                                        0,
-                                        0,
-                                        0
-                                    ],
-                                    "max_kw": [
-                                        10000,
-                                        10000,
-                                        10000,
-                                        10000
-                                    ],
-                                    "min_turn_down_pct": [
-                                        0.3,
-                                        0.3,
-                                        0.3,
-                                        0.3
-                                    ],
-                                    "max_derate_factor": [
-                                        1.0,
-                                        1.0,
-                                        1.0,
-                                        1.0
-                                    ],
-                                    "derate_start_temp_degF": [
-                                        59,
-                                        59,
-                                        59,
-                                        59
-                                    ],
-                                    "derate_slope_pct_per_degF": [
-                                        0.008,
-                                        0.008,
-                                        0.008,
-                                        0.008
-                                    ]
-                                }
+        "recip_engine": {
+            "installed_cost_us_dollars_per_kw": [
+                2416.6666666666665,
+                3100.0,
+                2800.0,
+                2290.0,
+                1615.0
+            ],
+            "om_cost_us_dollars_per_kw": [
+                149.796,
+                193.15800000000002,
+                177.39,
+                147.168,
+                98.55000000000001
+            ],
+            "om_cost_us_dollars_per_kwh": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "om_cost_us_dollars_per_hr_per_kw_rated": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "elec_effic_full_load": [
+                0.3573333333333333,
+                0.2975,
+                0.3205,
+                0.37666666666666665,
+                0.414
+            ],
+            "elec_effic_half_load": [
+                0.32159999999999994,
+                0.26775,
+                0.28845000000000004,
+                0.33899999999999997,
+                0.3726
+            ],
+            "thermal_effic_full_load": [
+                0.4418333333333333,
+                0.516,
+                0.4925,
+                0.42300000000000004,
+                0.368
+            ],
+            "thermal_effic_half_load": [
+                0.4664,
+                0.5378519572953737,
+                0.5157297645327446,
+                0.448560962566845,
+                0.3939986348122866
+            ],
+            "min_allowable_kw": [
+                15.0,
+                15.0,
+                50.0,
+                315.0,
+                1650.0
+            ],
+            "min_kw": [
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "max_kw": [
+                10000,
+                10000,
+                10000,
+                10000,
+                10000
+            ],
+            "min_turn_down_pct": [
+                0.5,
+                0.5,
+                0.5,
+                0.5,
+                0.5
+            ],
+            "max_derate_factor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "derate_start_temp_degF": [
+                95,
+                95,
+                95,
+                95,
+                95
+            ],
+            "derate_slope_pct_per_degF": [
+                0.008,
+                0.008,
+                0.008,
+                0.008,
+                0.008
+            ]
+        },
+        "micro_turbine": {
+            "installed_cost_us_dollars_per_kw": [
+                3010.0,
+                3410.0,
+                3185.0,
+                2743.3333333333335
+            ],
+            "om_cost_us_dollars_per_kw": [
+                167.14080000000004,
+                204.98400000000004,
+                204.98400000000004,
+                141.912
+            ],
+            "om_cost_us_dollars_per_kwh": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "om_cost_us_dollars_per_hr_per_kw_rated": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "elec_effic_full_load": [
+                0.2658,
+                0.2405,
+                0.264,
+                0.2826666666666667
+            ],
+            "elec_effic_half_load": [
+                0.21264,
+                0.19240000000000002,
+                0.21120000000000003,
+                0.22613333333333335
+            ],
+            "thermal_effic_full_load": [
+                0.4202,
+                0.46950000000000003,
+                0.4225,
+                0.3873333333333333
+            ],
+            "thermal_effic_half_load": [
+                0.4506247235085808,
+                0.499233969716919,
+                0.45280978260869564,
+                0.4178592317224287
+            ],
+            "min_allowable_kw": [
+                21.0,
+                21.0,
+                42.0,
+                133.0
+            ],
+            "min_kw": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "max_kw": [
+                1000,
+                1000,
+                1000,
+                1000
+            ],
+            "min_turn_down_pct": [
+                0.3,
+                0.3,
+                0.3,
+                0.3
+            ],
+            "max_derate_factor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "derate_start_temp_degF": [
+                59,
+                59,
+                59,
+                59
+            ],
+            "derate_slope_pct_per_degF": [
+                0.012,
+                0.012,
+                0.012,
+                0.012
+            ]
+        },
+        "combustion_turbine": {
+            "installed_cost_us_dollars_per_kw": [
+                2816.1666666666665,
+                3900.0,
+                2129.25
+            ],
+            "om_cost_us_dollars_per_kw": [
+                95.92200000000001,
+                110.37600000000002,
+                86.72400000000002
+            ],
+            "om_cost_us_dollars_per_kwh": [
+                0,
+                0,
+                0
+            ],
+            "om_cost_us_dollars_per_hr_per_kw_rated": [
+                0,
+                0,
+                0
+            ],
+            "elec_effic_full_load": [
+                0.26566666666666666,
+                0.22399999999999998,
+                0.28975
+            ],
+            "elec_effic_half_load": [
+                0.21253333333333335,
+                0.1792,
+                0.2318
+            ],
+            "thermal_effic_full_load": [
+                0.41983333333333334,
+                0.445,
+                0.3995
+            ],
+            "thermal_effic_half_load": [
+                0.45021074292631263,
+                0.4706907216494845,
+                0.4320956001407955
+            ],
+            "min_allowable_kw": [
+                950.0,
+                950.0,
+                3300.0
+            ],
+            "min_kw": [
+                0,
+                0,
+                0
+            ],
+            "max_kw": [
+                20000,
+                20000,
+                20000
+            ],
+            "min_turn_down_pct": [
+                0.5,
+                0.5,
+                0.5
+            ],
+            "max_derate_factor": [
+                1.1,
+                1.1,
+                1.1
+            ],
+            "derate_start_temp_degF": [
+                59,
+                59,
+                59
+            ],
+            "derate_slope_pct_per_degF": [
+                0.012,
+                0.012,
+                0.012
+            ]
+        },
+        "fuel_cell": {
+            "installed_cost_us_dollars_per_kw": [
+                6133.333333333333,
+                10000.0,
+                7300.0,
+                4200.0
+            ],
+            "om_cost_us_dollars_per_kw": [
+                302.22,
+                354.78000000000003,
+                335.07000000000005,
+                275.94
+            ],
+            "om_cost_us_dollars_per_kwh": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "om_cost_us_dollars_per_hr_per_kw_rated": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "elec_effic_full_load": [
+                0.425,
+                0.425,
+                0.425,
+                0.425
+            ],
+            "elec_effic_half_load": [
+                0.3825,
+                0.3825,
+                0.3825,
+                0.3825
+            ],
+            "thermal_effic_full_load": [
+                0.3246666666666666,
+                0.32799999999999996,
+                0.32549999999999996,
+                0.32299999999999995
+            ],
+            "thermal_effic_half_load": [
+                0.34866376811594196,
+                0.3522434782608695,
+                0.3495586956521739,
+                0.34687391304347814
+            ],
+            "min_allowable_kw": [
+                15.0,
+                15.0,
+                160.0,
+                700.0
+            ],
+            "min_kw": [
+                0,
+                0,
+                0,
+                0
+            ],
+            "max_kw": [
+                5000,
+                5000,
+                5000,
+                5000
+            ],
+            "min_turn_down_pct": [
+                0.3,
+                0.3,
+                0.3,
+                0.3
+            ],
+            "max_derate_factor": [
+                1.0,
+                1.0,
+                1.0,
+                1.0
+            ],
+            "derate_start_temp_degF": [
+                59,
+                59,
+                59,
+                59
+            ],
+            "derate_slope_pct_per_degF": [
+                0.008,
+                0.008,
+                0.008,
+                0.008
+            ]
+        }
                                 }
 
     # Lower and upper bounds for size classes - Class 0 is the total average across entire range of data
