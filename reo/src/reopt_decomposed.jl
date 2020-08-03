@@ -883,11 +883,11 @@ end
 
 function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	if m[:solver_name] == "Xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, OUTPUTLOG = 0))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=0.03, OUTPUTLOG = 0))
 	elseif m[:solver_name] == "Cbc"
-		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=90, ratioGap=0.02))
+		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=120, ratioGap=0.03))
 	elseif m[:solver_name] == "SCIP"
-		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=90, limits_gap=0.02))
+		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=120, limits_gap=0.03))
 	else
 		error("solver_name undefined or doesn't match existing base of REopt solvers.")
 	end
