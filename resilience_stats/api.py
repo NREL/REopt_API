@@ -32,18 +32,19 @@ import json
 from celery import shared_task
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse, HttpResponse
-from tastypie.resources import ModelResource
-from tastypie.exceptions import ImmediateHttpResponse
-from tastypie.bundle import Bundle
-from tastypie.validation import Validation
 from tastypie.authorization import ReadOnlyAuthorization
+from tastypie.bundle import Bundle
+from tastypie.exceptions import ImmediateHttpResponse
+from tastypie.resources import ModelResource
 from tastypie.serializers import Serializer
+from tastypie.validation import Validation
 
-from reo.models import ScenarioModel
 from reo.exceptions import SaveToDatabase
+from reo.models import ScenarioModel
 from resilience_stats.models import ResilienceModel
 from resilience_stats.validators import validate_run_uuid
 from resilience_stats.views import run_outage_sim
+
 
 # POST data:{"run_uuid": UUID, "bau": True}
 
@@ -84,39 +85,47 @@ class OutageSimJob(ModelResource):
         try:
             validate_run_uuid(run_uuid)
         except ValidationError as err:
-            return JsonResponse({"Error": str(err.message)}, status=400)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": str(err.message)}), status=400))
 
         # Handle non-existent scenario runs
         try:
             scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
         except ScenarioModel.DoesNotExist:
             msg = "Scenario {} does not exist.".format(run_uuid)
-            return JsonResponse({"Error": msg}, content_type='application/json', status=404)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": msg}), content_type='application/json', status=404))
 
         if scenario.status == "Optimizing...":
-            return JsonResponse({"Error": "The scenario is still optimizing. Please try again later."},
-                                content_type='application/json', status=500)
+            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": "The scenario is still optimizing. Please try again later."}),
+                                content_type='application/json', status=500))
         elif "error" in scenario.status.lower():
-            return JsonResponse(
-                {"Error": "An error occurred in the scenario. Please check the messages from your results."},
-                content_type='application/json', status=500)
-        # Kick-off outage sim run
-        run_outage_sim_task.delay(run_uuid, bau)
-        bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
+            raise ImmediateHttpResponse(HttpResponse(json.dumps(
+                {"Error": "An error occurred in the scenario. Please check the messages from your results."}),
+                content_type='application/json', status=500))
 
-        return bundle
+        try:  # See if this is a duplicate POST for the given run_uuid
+            _ = ResilienceModel.objects.get(scenariomodel=scenario)
+            err_msg = """The POST endpoint can only be hit once with a particular scenario run_uuid. The Resilience Model associated with this run_uuid already exists in the database. Please retrieve the results from the GET endpoint /outagesimjob/<run_uuid>/resilience_stats/. Note that even if your POST had bau=False, it is possible to retrieve bau results by passing bau=True in the GET request."""
+
+            raise ImmediateHttpResponse(HttpResponse(
+                json.dumps({"Error": err_msg}),
+                content_type='application/json',
+                status=500))
+        except ResilienceModel.DoesNotExist:  # This is the first POST for this run_uuid, kick-off outage sim run
+            run_outage_sim_task.delay(run_uuid, bau)
+            bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
+
+            return bundle
 
 
 @shared_task
 def run_outage_sim_task(run_uuid, bau):
-        scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
-        results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
-        try:  # See if this is a duplicate POST for the given run_uuid
-            rm = ResilienceModel.objects.get(scenariomodel=scenario)
-        except ResilienceModel.DoesNotExist:  # No. This is the first POST for this run_uuid
-            rm = ResilienceModel.create(scenariomodel=scenario)
+    scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
+    results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
 
-        try:
-            ResilienceModel.objects.filter(id=rm.id).update(**results)
-        except SaveToDatabase as e:
-            raise ImmediateHttpResponse(HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=201))
+    rm = ResilienceModel.create(scenariomodel=scenario)
+
+    try:
+        ResilienceModel.objects.filter(id=rm.id).update(**results)
+    except SaveToDatabase as e:
+        raise ImmediateHttpResponse(
+            HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=201))
