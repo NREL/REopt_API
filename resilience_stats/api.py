@@ -111,7 +111,10 @@ class OutageSimJob(ModelResource):
 def run_outage_sim_task(run_uuid, bau):
         scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
         results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
-        rm = ResilienceModel.create(scenariomodel=scenario)
+        try:  # See if this is a duplicate POST for the given run_uuid
+            rm = ResilienceModel.objects.get(scenariomodel=scenario)
+        except ResilienceModel.DoesNotExist:  # No. This is the first POST for this run_uuid
+            rm = ResilienceModel.create(scenariomodel=scenario)
 
         try:
             ResilienceModel.objects.filter(id=rm.id).update(**results)
