@@ -897,11 +897,11 @@ function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 end
 
 function create_subproblem_model(solver::String, model_type::String, mth::Int64)
-	if solver == "Xpress"
+	if solver == "xpress"
 		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, OUTPUTLOG = 0))
-	elseif solver == "Cbc"
+	elseif solver == "cbc"
 		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=90, ratioGap=0.02))
-	elseif solver == "SCIP"
+	elseif solver == "scip"
 		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=90, limits_gap=0.02))
 	else
 		error("solver_name undefined or doesn't match existing base of REopt solvers.")
@@ -1106,7 +1106,7 @@ function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth:Int64, pena
 	return results
 end
 
-function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth:Int64, system_sizes::Dict)
+function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth:Int64, system_sizes::Dict, update::Bool)
 	m = create_subproblem_model(solver, "ub", mth)
 	p = Parameter(model_inputs)
 	results = reopt_build(m, p)
