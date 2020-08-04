@@ -132,15 +132,7 @@ def run_decomposed_jump_model(self, dfm_bau, data):
 
     data["lb_iters"] = 3
     data["max_iters"] = 100
-    data["model"] = model
     data["solver"] = solver
-
-    data["lb_models"] = {}
-    data["ub_models"] = {}
-    data["lb_results"] = {}
-    data["ub_results"] = {}
-    data["penalties"] = {}
-    data["system_sizes"] = {}
 
     data["t_start"] = time.time()
 
@@ -177,8 +169,8 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data["penalties"] = {}
 
     update = (data["iter"] == 1)
-    lb_group = lb_subproblems_group(dfm_bau["reopt_inputs"], data["penalties"], update)
-    ub_group = ub_subproblems_group(dfm_bau["reopt_inputs"], data["lb_result_dicts"], data["system_sizes"], update)
+    lb_group = lb_subproblems_group(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], update)
+    ub_group = ub_subproblems_group(data["solver"], dfm_bau["reopt_inputs"], update)
     callback = checkgap.s(dfm_bau, data)
 
     chain(lb_group | ub_group | callback.on_error(run_subproblems.s()) |
@@ -226,22 +218,40 @@ def build_submodels(models, reopt_param):
     return result_dicts
 
 def ub_subproblems_group(lb_results, solver, reopt_inputs, update):
+    """
+        Creates, builds and solves subproblems in Julia
+        :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
+        :param reopt_inputs: inputs dictionary from DataManger
+        :param sizes: system size to fix for upper bound (key=month index)
+        :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
+        :return: celery group
+        """
+    lb_result_dicts = lb_results[0:12]
+    system_sizes = [d["sizes"] for d in lb_results_dicts]
+    mean_sizes = get_average_sizing_decisions(system_sizes)
+    return group(solve_ub_subproblem.s({
+        "solver": solver,
+        "inputs": reopt_inputs,
+        "month": mth,
+        "sizes": ,
+        "update": update
+    }) for mth in range(1, 13))
 
 def lb_subproblems_group(solver, reopt_inputs, penalties, update):
     """
-    Solves subproblems
-    :param models: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
-    :param reopt_param: Julia Parameter struct
-    :param results_dicts: dictionary in which key=month and vals are submodel results dictionaries
+    Creates, builds and solves subproblems in Julia
+    :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
+    :param reopt_inputs: inputs dictionary from DataManger
+    :param penalties: Lagrangian penalties for different system sizes (key=month index)
     :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: celery group
     """
     return group(solve_lb_subproblem.s({
-        "m": models[mth],
-        "p": reopt_param,
-        "r": results_dicts[mth],
-        "u": update,
-        "month": mth
+        "solver": solver,
+        "inputs": reopt_inputs,
+        "month": mth,
+        "penalties": penalties[mth],
+        "update": update
     }) for mth in range(1, 13))
 
 
@@ -362,10 +372,10 @@ def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     return bins, vals
 
 
-def get_average_sizing_decisions(models, reopt_param):
-    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
-    for i in range(2, 13):
-        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
+def get_average_sizing_decisions(system_sizes):
+    sizes = copy.deepcopy(system_sizes[0])
+    for i in range(1, 12):
+        d = sizes[i]
         for key in d.keys():
             sizes[key] += d[key]
     for key in d.keys():
