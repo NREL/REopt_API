@@ -1681,7 +1681,7 @@ function convert_to_axis_arrays(p, r::Dict)
 		if typeof(r[key])== Array{Float64,1} && length(r[key]) == p.TimeStepCount
 			new_r[key] = JuMP.Containers.DenseAxisArray(r[key], p.TimeStep)
 		#remove subproblem outputs
-		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge"])
+		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge","sizes"])
 			new_r[key] = r[key]
 		end
 	end
