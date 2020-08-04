@@ -1097,7 +1097,7 @@ function reopt_run(m, p::Parameter)
 	
 end
 
-function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth:Int64, penalties::Dict, update::Bool)
+function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth::Int64, penalties::Dict, update::Bool)
 	m = create_subproblem_model(solver, "lb", mth)
 	p = Parameter(model_inputs)
 	if update
@@ -1110,7 +1110,7 @@ function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth:Int64, pena
 	return results
 end
 
-function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth:Int64, system_sizes::Dict, update::Bool)
+function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth::Int64, system_sizes::Dict, update::Bool)
 	m = create_subproblem_model(solver, "ub", mth)
 	p = Parameter(model_inputs)
 	results = reopt_build(m, p)
