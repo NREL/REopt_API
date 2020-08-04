@@ -277,21 +277,25 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
     :return prod_incentives: list of production incentive by technology
     :return min_charge_adder: calculated annual minimum charge adder
     """
-    obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(1, 13)])
-    min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(1, 13)])
-    total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(1, 13)])
-    min_charge_adder = max(0, total_min_charge - min_charge_comp)
-    obj += min_charge_adder
-    prod_incentives = []
-    for tech_idx in range(len(reopt_inputs['Tech'])):
-        max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
-        prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
-        prod_incentive = min(prod_incent, max_prod_incent)
-        obj += prod_incentive
-        prod_incentives.append(prod_incentive)
-    if len(reopt_inputs['DemandLookbackMonths']) > 0 and reopt_inputs['DemandLookbackPercent'] > 0.0:
-        obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
-    return obj, min_charge_adder, prod_incentives
+    try:
+        obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(1, 13)])
+        min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(1, 13)])
+        total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(1, 13)])
+        min_charge_adder = max(0, total_min_charge - min_charge_comp)
+        obj += min_charge_adder
+        prod_incentives = []
+        for tech_idx in range(len(reopt_inputs['Tech'])):
+            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
+            prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
+            prod_incentive = min(prod_incent, max_prod_incent)
+            obj += prod_incentive
+            prod_incentives.append(prod_incentive)
+        if len(reopt_inputs['DemandLookbackMonths']) > 0 and reopt_inputs['DemandLookbackPercent'] > 0.0:
+            obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
+        return obj, min_charge_adder, prod_incentives
+    except KeyError:
+        logger.info("infeasible solution returned.")
+        return 1.0e100, 0., 0.
 
 
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
