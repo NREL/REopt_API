@@ -31,7 +31,7 @@ import julia
 import sys
 import traceback
 import os
-from celery import shared_task, Task, chain, group
+from celery import shared_task, Task, chain, group, chord
 from reo.exceptions import REoptError, OptimizationTimeout, UnexpectedError, NotOptimal, REoptFailedToStartError,\
     CheckGapException
 from reo.models import ModelManager
@@ -160,22 +160,31 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data = data_or_exc.data
         data["iter"] = data_or_exc.iter
         logger.info("iter {} of run_subproblems".format(data["iter"]))
+        print("iter: ", data["iter"])
+        data["start_timestamp"] = time.time()
     else:
         logger.info("first iter of run_subproblems")
         update = False
         dfm_bau = request_or_dfm
         data = data_or_exc
         data["iter"] = 1
-        data["lb_result_dicts"] = {}
-        data["ub_result_dicts"] = {}
-        data["penalties"] = {}
+        data["lb_result_dicts"] = [{} for _ in range(12)]
+        data["ub_result_dicts"] = [{} for _ in range(12)]
+        data["penalties"] = [{} for _ in range(12)]
+        print("iter: ", data["iter"])
 
     update = (data["iter"] == 1)
-    lb_group = lb_subproblems_group(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], update)
-    ub_group = ub_subproblems_group(data["solver"], dfm_bau["reopt_inputs"], update)
+    print("before:", data["lb_result_dicts"])
+    lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], update, data["lb_result_dicts"])
+    lb_result = chord(lb_group())(get_results.s(data))
+    lb_result.forget()
+    print(data["lb_result_dicts"][0][""])
+    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"], update, data["ub_result_dicts"])
+    ub_result = chord(ub_group())(get_results.s(data))
+    ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
 
-    chain(lb_group | ub_group | callback.on_error(run_subproblems.s()) |
+    chain(callback.on_error(run_subproblems.s()) |
           process_results.s(data=data, meta={'run_uuid': data['outputs']['Scenario']['run_uuid'],
                                            'api_version': "v1"}
                           )
@@ -185,7 +194,9 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
 @shared_task
 def checkgap(grp_results, dfm_bau, data):
+    print("checking gap:")
     iter = data["iter"]
+    elapsed_time = time.time() - data["start_timestamp"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     all_results = grp_results[0:12]
@@ -202,11 +213,13 @@ def checkgap(grp_results, dfm_bau, data):
         data["ub"] = ub
     gap = (data["ub"] - data["lb"]) / data["lb"]
     logger.info("Gap: {}".format(gap))
+    print("Gap: ",gap)
     lb_iters = data["lb_iters"]
     max_iters = data["max_iters"]
     model = data["model"]
 
-    if gap <= opt_tolerance or iter >= 2: #max_iters:  # or time or iterations
+    if gap <= opt_tolerance or iter >= max_iters  or elapsed_time > time_limit:
+        data["iter"] += 1
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
         results = julia.Main.convert_to_axis_arrays(data["reopt_param"], results)
         dfm = copy.deepcopy(data["dfm_bau"])
@@ -223,7 +236,20 @@ def build_submodels(models, reopt_param):
         result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
     return result_dicts
 
-def ub_subproblems_group(lb_results, solver, reopt_inputs, update):
+
+@shared_task
+def get_results(results, data):
+    pass
+    #print("results type:", type(results))
+    #print("length of results", len(results))
+    #print("result 1 type:", type(results[0]))
+    #for i in range(12):
+    #    print(results[i].keys())
+    #    data["lb_result_dicts"][i] = results[i]
+    #return data
+
+@shared_task
+def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, update, results):
     """
         Creates, builds and solves subproblems in Julia
         :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
@@ -232,7 +258,6 @@ def ub_subproblems_group(lb_results, solver, reopt_inputs, update):
         :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
         :return: celery group
         """
-    lb_result_dicts = lb_results[0:12]
     system_sizes = [d["sizes"] for d in lb_result_dicts]
     mean_sizes = get_average_sizing_decisions(system_sizes)
     return group(solve_ub_subproblem.s({
@@ -241,10 +266,12 @@ def ub_subproblems_group(lb_results, solver, reopt_inputs, update):
         "month": mth,
         "sizes": mean_sizes,
         "update": update,
-        "lb_results": lb_result_dicts[mth-1]
+        "lb_results": lb_result_dicts[mth-1],
+        "results": results[mth - 1]
     }) for mth in range(1, 13))
 
-def lb_subproblems_group(solver, reopt_inputs, penalties, update):
+@shared_task
+def lb_subproblems_group(solver, reopt_inputs, penalties, update, results):
     """
     Creates, builds and solves subproblems in Julia
     :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
@@ -257,8 +284,9 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update):
         "solver": solver,
         "inputs": reopt_inputs,
         "month": mth,
-        "penalties": penalties[mth],
-        "update": update
+        "penalties": penalties[mth-1],
+        "update": update,
+        "results": results[mth-1]
     }) for mth in range(1, 13))
 
 
@@ -271,6 +299,8 @@ def solve_lb_subproblem(sp_dict):
     """
     results = julia.Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["penalties"], sp_dict["update"])
+    print(results)
+    sp_dict["results"] = results
     return results
 
 @shared_task
@@ -278,10 +308,11 @@ def solve_ub_subproblem(sp_dict):
     """
     Run solve_ub_subproblem Julia method
     :param sp_dict: subproblem input dict
-    :return: updated sp_dict with sp_dict["r"] containing latest results
+    :return: updated sp_dict with sp_dict["results"] containing latest results
     """
     results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["sizes"], sp_dict["update"])
+    sp_dict["results"] = results
     return [sp_dict["lb_results"], results]
 
 
@@ -385,6 +416,10 @@ def get_average_sizing_decisions(system_sizes):
     for key in d.keys():
         sizes[key] /= 12.
     return sizes
+
+
+def update_penalties(penalties, system_sizes, mean_sizes, rho=1.0e-4):
+    pass
 
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
