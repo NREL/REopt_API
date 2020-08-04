@@ -1100,7 +1100,11 @@ end
 function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth:Int64, penalties::Dict, update::Bool)
 	m = create_subproblem_model(solver, "lb", mth)
 	p = Parameter(model_inputs)
-	add_decomp_penalties(m, p, penalties)
+	if update
+		add_decomp_penalties(m, p, penalties)
+	else 
+		get_initial_decomp_penalties(m, p)
+	end
 	results = reopt_build(m, p)
 	results = reopt_solve(m, p, results, update)
 	return results
@@ -1162,6 +1166,9 @@ function reopt_results(m, p, r::Dict, update::Bool)
 	add_util_results(m, p, r, update)
 	if m[:model_type] == "ub"
 		add_sub_obj_value_results(m, p, r)
+	end
+	if m[:model_type] == "lb"
+		add_sizing_results(m, p, r)
 	end
 	return r
 end
@@ -1612,32 +1619,7 @@ function add_decomp_penalties(m, p, penalties::Dict)
 end
 
 
-function update_decomp_penalties(m,p,mean_sizes::Dict)
-	rho = 1e-4 #penalty factor; this is a parameter that can be tuned
-	for t in p.Tech
-		mean_size = mean_sizes["dvSize",t]
-		m[:tech_size_penalty][t] = rho * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t]) * (value(m[:dvSize][t]) - mean_size)
-	end
-	for b in p.Storage
-		mean_power = mean_sizes["dvStorageCapPower",b]
-		mean_energy = mean_sizes["dvStorageCapPower",b]
-		mean_inv = mean_sizes["dvStorageResetSOC",b]
-		m[:storage_power_size_penalty][b] = rho * p.StorageCostPerKW[b] *(value(m[:dvStorageCapPower][b]) - mean_power)
-		m[:storage_energy_size_penalty][b] = rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageCapEnergy][b]) - mean_energy)
-		m[:storage_inventory_penalty][b] = rho * p.StorageCostPerKWH[b] *(value(m[:dvStorageResetSOC][b]) - mean_inv)
-	end
-	add_to_expression!(m[:LagrangianPenalties], 
-		sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
-			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
-				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
-				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
-				for b in p.Storage)
-	)
-	set_objective_function(m, m[:REcosts] + m[:LagrangianPenalties])
-	nothing
-end
-
-function get_sizing_decisions(m,p)
+function add_sizing_results(m, p, r::Dict)
 	sizes = Dict()
 	for t in p.Tech
 		sizes["dvSize",t] = value(m[:dvSize][t])
@@ -1647,7 +1629,8 @@ function get_sizing_decisions(m,p)
 		sizes["dvStorageCapEnergy",b] = value(m[:dvStorageCapEnergy][b])
 		sizes["dvStorageResetSOC",b] = value(m[:dvStorageResetSOC][b])
 	end
-	return sizes
+	r["sizes"] = sizes
+	nothing
 end
 
 function fix_sizing_decisions(m,p,sizes::Dict)
