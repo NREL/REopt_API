@@ -1584,7 +1584,7 @@ function update_decomp_penalties(m,p,mean_sizes::Dict)
 		sum(m[:tech_size_penalty][t] * m[:dvSize][t] for t in p.Tech)
 			+ sum(m[:storage_power_size_penalty][b] * m[:dvStorageCapPower][b]
 				+ m[:storage_energy_size_penalty][b] * m[:dvStorageCapEnergy][b]
-				+ m[:storage_inventory_penalty][b] * m[:dvStorageSOC][b]
+				+ m[:storage_inventory_penalty][b] * m[:dvStorageResetSOC][b]
 				for b in p.Storage)
 	)
 	set_objective_function(m, m[:REcosts] + m[:LagrangianPenalties])
