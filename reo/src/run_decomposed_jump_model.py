@@ -227,14 +227,15 @@ def ub_subproblems_group(lb_results, solver, reopt_inputs, update):
         :return: celery group
         """
     lb_result_dicts = lb_results[0:12]
-    system_sizes = [d["sizes"] for d in lb_results_dicts]
+    system_sizes = [d["sizes"] for d in lb_result_dicts]
     mean_sizes = get_average_sizing_decisions(system_sizes)
     return group(solve_ub_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
         "month": mth,
-        "sizes": ,
-        "update": update
+        "sizes": mean_sizes,
+        "update": update,
+        "lb_results": lb_result_dicts[mth-1]
     }) for mth in range(1, 13))
 
 def lb_subproblems_group(solver, reopt_inputs, penalties, update):
@@ -262,7 +263,8 @@ def solve_lb_subproblem(sp_dict):
     :param sp_dict: subproblem input dict
     :return: updated sp_dict with sp_dict["r"] containing latest results
     """
-    results = julia.Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"], sp_dict["penalties"], sp_dict["update"])
+    results = julia.Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
+                                             sp_dict["penalties"], sp_dict["update"])
     return results
 
 @shared_task
@@ -272,8 +274,9 @@ def solve_ub_subproblem(sp_dict):
     :param sp_dict: subproblem input dict
     :return: updated sp_dict with sp_dict["r"] containing latest results
     """
-    results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"], sp_dict["sizes"], sp_dict["update"])
-    return results
+    results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
+                                             sp_dict["sizes"], sp_dict["update"])
+    return [sp_dict["lb_results"], results]
 
 
 def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
