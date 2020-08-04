@@ -133,6 +133,8 @@ def run_decomposed_jump_model(self, dfm_bau, data):
     data["lb_iters"] = 3
     data["max_iters"] = 100
     data["solver"] = solver
+    data["lb"] = -1.0e100
+    data["ub"] = 1.0e100
 
     data["t_start"] = time.time()
 
@@ -189,18 +191,23 @@ def checkgap(grp_results, dfm_bau, data):
     all_results = grp_results[0:12]
     lb_result_dicts =[x[0] for x in all_results]
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
+    if lb > data["lb"]:
+        data["lb"] = lb
 
     ub_result_dicts =[x[1] for x in all_results]
-    best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, dfm_bau['reopt_inputs'])
-    gap = (ub - lb) / lb
+    if ub < data["ub"]:
+        data["best_result_dicts"] = copy.deepcopy(ub_result_dicts)
+        data["min_charge_adder"] = min_charge_adder
+        data["ub"] = ub
+    gap = (data["ub"] - data["lb"]) / data["lb"]
     logger.info("Gap: {}".format(gap))
     lb_iters = data["lb_iters"]
     max_iters = data["max_iters"]
     model = data["model"]
 
     if gap <= opt_tolerance or iter >= 2: #max_iters:  # or time or iterations
-        results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, dfm_bau['reopt_inputs']["pwf_e"])
+        results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
         results = julia.Main.convert_to_axis_arrays(data["reopt_param"], results)
         dfm = copy.deepcopy(data["dfm_bau"])
         dfm["results"] = results
@@ -282,21 +289,21 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
     """
     Calculates the full-year problem objective value by adjusting
     year-long components as required.
-    :param ub_result_dicts: subproblem results dictionaries
+    :param ub_result_dicts: list of subproblem results dictionaries
     :param reopt_inputs: inputs dictionary from DataManager
     :return obj:  full-year objective value
     :return prod_incentives: list of production incentive by technology
     :return min_charge_adder: calculated annual minimum charge adder
     """
-    obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(1, 13)])
-    min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(1, 13)])
-    total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(1, 13)])
+    obj = sum([ub_result_dicts[idx]["obj_no_annuals"] for idx in range(12)])
+    min_charge_comp = sum([ub_result_dicts[idx]["min_charge_adder_comp"] for idx in range(12)])
+    total_min_charge = sum([ub_result_dicts[idx]["total_min_charge"] for idx in range(12)])
     min_charge_adder = max(0, total_min_charge - min_charge_comp)
     obj += min_charge_adder
     prod_incentives = []
     for tech_idx in range(len(reopt_inputs['Tech'])):
         max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
-        prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
+        prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(12)])
         prod_incentive = min(prod_incent, max_prod_incent)
         obj += prod_incentive
         prod_incentives.append(prod_incentive)
@@ -313,9 +320,9 @@ def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     :return:
     """
     added_obj = 0.
-    max_lookback_val = ub_result_dicts[1]["peak_demand_for_month"] if 1 in reopt_inputs['DemandLookbackMonths'] else 0.0
-    peak_ratchets = ub_result_dicts[1]["peak_ratchets"]
-    for m in range(2, 13):
+    max_lookback_val = ub_result_dicts[0]["peak_demand_for_month"] if 1 in reopt_inputs['DemandLookbackMonths'] else 0.0
+    peak_ratchets = ub_result_dicts[0]["peak_ratchets"]
+    for m in range(1, 12):
         #update max ratchet purchases
         peak_ratchets = numpy.maximum(peak_ratchets, ub_result_dicts[1]["peak_ratchets"])
         #Update Demandlookback months if required
@@ -381,8 +388,8 @@ def get_average_sizing_decisions(system_sizes):
 
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
-    results = ub_results[1]
-    for idx in range(2, 13):
+    results = copy.deepcopy(ub_results[0])
+    for idx in range(1, 12):
         results = julia.Main.add_to_results(results, ub_results[idx])
     results["lcc"] = obj
     results["total_min_charge_adder"] = min_charge_adder
