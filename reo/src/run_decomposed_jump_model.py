@@ -186,12 +186,11 @@ def checkgap(grp_results, dfm_bau, data):
     iter = data["iter"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
-
-    lb_result_dicts = grp_results[0:12]
+    all_results = grp_results[0:12]
+    lb_result_dicts =[x[0] for x in all_results]
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
-    fix_sizing_decisions(data["ub_models"], data["reopt_param"], system_sizes)
 
-    ub_result_dicts = grp_results[12:24]
+    ub_result_dicts =[x[1] for x in all_results]
     best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, dfm_bau['reopt_inputs'])
     gap = (ub - lb) / lb
@@ -277,11 +276,6 @@ def solve_ub_subproblem(sp_dict):
     results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["sizes"], sp_dict["update"])
     return [sp_dict["lb_results"], results]
-
-
-def fix_sizing_decisions(ub_models, reopt_param, system_sizes):
-    for i in range(1, 13):
-        julia.Main.fix_sizing_decisions(ub_models[i], reopt_param, system_sizes)
 
 
 def get_objective_value(ub_result_dicts, reopt_inputs):
