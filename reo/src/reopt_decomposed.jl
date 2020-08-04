@@ -1616,6 +1616,7 @@ function add_decomp_penalties(m, p, penalties::Dict)
 		m[:storage_energy_size_penalty][b] = penalties["dvStorageCapPower",b] * p.StorageCostPerKWH[b]
 		m[:storage_inventory_penalty][b] = penalties["dvStorageResetSOC",b] * p.StorageCostPerKWH[b]
 	end
+	nothing
 end
 
 
