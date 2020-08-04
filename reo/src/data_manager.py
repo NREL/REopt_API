@@ -1155,6 +1155,10 @@ class DataManager:
         else:
             cooling_load = [0.0 for _ in self.load.load_list]
 
+        # Create non-cooling electric load which is ElecLoad in the reopt.jl model
+        non_cooling_electric_load = [self.load.load_list[ts] - cooling_load[ts] for ts in range(len(self.load.load_list))]
+        non_cooling_electric_load_bau = [self.load.bau_load_list[ts] - cooling_load[ts] for ts in range(len(self.load.bau_load_list))]
+
         sf = self.site.financial
 
         ### Populate CHP, heating, cooling technologies and efficiencies
@@ -1251,7 +1255,7 @@ class DataManager:
 	        'MaxGridSales': max_grid_sales,
 	        'ProductionIncentiveRate': production_incentive_rate,
 	        'ProductionFactor': production_factor,
-	        'ElecLoad': self.load.load_list,
+	        'ElecLoad': non_cooling_electric_load,
 	        'FuelLimit': tariff_args.fuel_limit,
 	        'ChargeEfficiency': charge_efficiency, # Do we need this indexed on tech?
 	        'GridChargeEfficiency': grid_charge_efficiency,
@@ -1374,7 +1378,7 @@ class DataManager:
 	        'MaxGridSales': max_grid_sales_bau,
 	        'ProductionIncentiveRate': production_incentive_rate_bau,
 	        'ProductionFactor': production_factor_bau,
-	        'ElecLoad': self.load.bau_load_list,
+	        'ElecLoad': non_cooling_electric_load_bau,
 	        'FuelLimit': tariff_args.fuel_limit_bau,
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
