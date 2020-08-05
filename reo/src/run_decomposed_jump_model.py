@@ -171,13 +171,14 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data["lb_result_dicts"] = [{} for _ in range(12)]
         data["ub_result_dicts"] = [{} for _ in range(12)]
         data["penalties"] = [{} for _ in range(12)]
+        data["ub"] = 1.0e100
         print("iter: ", data["iter"])
 
     update = (data["iter"] != 1)
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], update, data["lb_result_dicts"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
     lb_result.forget()
-    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"], update, data["ub_result_dicts"])
+    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"], data["ub"] < 1.0e99, data["ub_result_dicts"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
