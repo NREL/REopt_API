@@ -173,14 +173,12 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data["penalties"] = [{} for _ in range(12)]
         print("iter: ", data["iter"])
 
-    update = (data["iter"] == 1)
-    print("before:", data["lb_result_dicts"])
+    update = (data["iter"] != 1)
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], update, data["lb_result_dicts"])
-    lb_result = chord(lb_group())(get_results.s(data))
+    lb_result = chord(lb_group())(store_lb_results.s(data))
     lb_result.forget()
-    print(data["lb_result_dicts"][0][""])
     ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"], update, data["ub_result_dicts"])
-    ub_result = chord(ub_group())(get_results.s(data))
+    ub_result = chord(ub_group())(store_ub_results.s(data))
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
 
@@ -200,25 +198,27 @@ def checkgap(grp_results, dfm_bau, data):
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     all_results = grp_results[0:12]
-    lb_result_dicts =[x[0] for x in all_results]
+    lb_result_dicts = data["lb_results_dicts"]
     lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
     if lb > data["lb"]:
         data["lb"] = lb
 
-    ub_result_dicts =[x[1] for x in all_results]
+    ub_result_dicts = data["ub_results_dicts"]
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, dfm_bau['reopt_inputs'])
     if ub < data["ub"]:
         data["best_result_dicts"] = copy.deepcopy(ub_result_dicts)
         data["min_charge_adder"] = min_charge_adder
         data["ub"] = ub
-    gap = (data["ub"] - data["lb"]) / data["lb"]
+    gap = abs((data["ub"] - data["lb"]) / data["lb"])
     logger.info("Gap: {}".format(gap))
+    print("LB", lb, data["lb"])
+    print("UB", ub, data["ub"])
     print("Gap: ",gap)
     lb_iters = data["lb_iters"]
     max_iters = data["max_iters"]
     model = data["model"]
 
-    if gap <= opt_tolerance or iter >= max_iters  or elapsed_time > time_limit:
+    if (gap >= 0. and gap <= opt_tolerance) or iter >= max_iters or elapsed_time > time_limit:
         data["iter"] += 1
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
         results = julia.Main.convert_to_axis_arrays(data["reopt_param"], results)
@@ -238,15 +238,18 @@ def build_submodels(models, reopt_param):
 
 
 @shared_task
-def get_results(results, data):
-    pass
-    #print("results type:", type(results))
-    #print("length of results", len(results))
-    #print("result 1 type:", type(results[0]))
-    #for i in range(12):
-    #    print(results[i].keys())
-    #    data["lb_result_dicts"][i] = results[i]
-    #return data
+def store_lb_results(results, data):
+    for i in range(12):
+        data["lb_result_dicts"][i] = results[i]
+    return data
+
+
+@shared_task
+def store_ub_results(results, data):
+    for i in range(12):
+        data["ub_result_dicts"][i] = results[i]
+    return data
+
 
 @shared_task
 def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, update, results):
@@ -299,7 +302,6 @@ def solve_lb_subproblem(sp_dict):
     """
     results = julia.Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["penalties"], sp_dict["update"])
-    print(results)
     sp_dict["results"] = results
     return results
 
@@ -313,7 +315,7 @@ def solve_ub_subproblem(sp_dict):
     results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["sizes"], sp_dict["update"])
     sp_dict["results"] = results
-    return [sp_dict["lb_results"], results]
+    return results
 
 
 def get_objective_value(ub_result_dicts, reopt_inputs):
