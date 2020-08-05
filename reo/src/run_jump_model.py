@@ -227,7 +227,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     return dfm
 
 def run_decomposed_model(data, model, reopt_inputs,
-                         lb_iters=3, max_iters=100):
+                         lb_iters=1, max_iters=100):
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
@@ -248,7 +248,7 @@ def run_decomposed_model(data, model, reopt_inputs,
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
     t_elapsed = time.time() - t_start
-    for k in range(1,max_iters+1):
+    for k in range(1, max_iters+1):
         if gap <= opt_tolerance or t_elapsed > time_limit:
             break
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
@@ -263,7 +263,7 @@ def run_decomposed_model(data, model, reopt_inputs,
         if k % lb_iters == 0:
             mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
             fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
-            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
+            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
             iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
             if iter_ub < ub:
                 ub = iter_ub
@@ -341,7 +341,8 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         obj += min_charge_adder
         prod_incentives = []
         for tech_idx in range(len(reopt_inputs['Tech'])):
-            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
+            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * \
+                              reopt_inputs['two_party_factor']
             prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
             prod_incentive = min(prod_incent, max_prod_incent)
             obj += prod_incentive
