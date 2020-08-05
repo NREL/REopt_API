@@ -247,12 +247,10 @@ def run_decomposed_model(data, model, reopt_inputs,
     best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
-    t_elapsed = time.time() - t_start
     for k in range(1, max_iters+1):
-        if gap <= opt_tolerance or t_elapsed > time_limit:
+        if time.time() - t_start > time_limit or gap <= opt_tolerance:
             break
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-        if time.time() - t_start > time_limit or gap < opt_tolerance: break
         for i in range(1, 13):
             julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
         lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
@@ -270,7 +268,15 @@ def run_decomposed_model(data, model, reopt_inputs,
                 best_result_dicts = copy.deepcopy(ub_result_dicts)
                 min_charge_adder = iter_min_charge_adder
                 gap = (ub - lb) / lb
-        t_elapsed = time.time() - t_start
+            max_sizes = get_max_sizing_decisions(lb_models, reopt_param)
+            fix_sizing_decisions(ub_models, reopt_param, max_sizes)
+            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
+            iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
+            if iter_ub < ub:
+                ub = iter_ub
+                best_result_dicts = copy.deepcopy(ub_result_dicts)
+                min_charge_adder = iter_min_charge_adder
+                gap = (ub - lb) / lb
         k += 1
     results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
@@ -425,6 +431,14 @@ def get_average_sizing_decisions(models, reopt_param):
             sizes[key] += d[key]
     for key in d.keys():
         sizes[key] /= 12.
+    return sizes
+
+def get_max_sizing_decisions(models, reopt_param):
+    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
+    for i in range(2, 13):
+        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
+        for key in d.keys():
+            sizes[key] = max(d[key], sizes[key])
     return sizes
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
