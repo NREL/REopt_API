@@ -161,12 +161,12 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data["iter"] = data_or_exc.iter
         logger.info("iter {} of run_subproblems".format(data["iter"]))
         print("iter: ", data["iter"])
-        data["start_timestamp"] = time.time()
     else:
         logger.info("first iter of run_subproblems")
         update = False
         dfm_bau = request_or_dfm
         data = data_or_exc
+        data["start_timestamp"] = time.time()
         data["iter"] = 1
         data["lb_result_dicts"] = [{} for _ in range(12)]
         data["ub_result_dicts"] = [{} for _ in range(12)]
@@ -196,17 +196,17 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
 
 @shared_task
-def checkgap(grp_results, dfm_bau, data):
+def checkgap(dfm_bau, data):
     iter = data["iter"]
     print("checking gap: iter ", iter)
     elapsed_time = time.time() - data["start_timestamp"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
-    lb_result_dicts = data["lb_results_dicts"]
-    lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(1, 13)])
+    lb_result_dicts = data["lb_result_dicts"]
+    lb = sum([lb_result_dicts[m]["lower_bound"] for m in range(12)])
     if lb > data["lb"]:
         data["lb"] = lb
-    ub_result_dicts = data["ub_results_dicts"]
+    ub_result_dicts = data["ub_result_dicts"]
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, dfm_bau['reopt_inputs'])
     if ub < data["ub"]:
         data["best_result_dicts"] = copy.deepcopy(ub_result_dicts)
@@ -216,12 +216,12 @@ def checkgap(grp_results, dfm_bau, data):
     logger.info("Gap: {}".format(gap))
     print("LB", lb, data["lb"])
     print("UB", ub, data["ub"])
-    print("Gap: ",gap)
+    print("Gap: ", gap)
     max_iters = data["max_iters"]
 
     if (gap >= 0. and gap <= opt_tolerance) or iter >= 2 or elapsed_time > time_limit:
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
-        results = julia.Main.convert_to_axis_arrays(data["reopt_param"], results)
+        results = julia.Main.convert_to_axis_arrays(data["reopt_inputs"], results)
         dfm = copy.deepcopy(data["dfm_bau"])
         dfm["results"] = results
         return [dfm, data["dfm_bau"]]  # -> process_results
@@ -230,7 +230,7 @@ def checkgap(grp_results, dfm_bau, data):
         data["iter"] += 1
         system_sizes = [d["sizes"] for d in lb_result_dicts]
         mean_sizes = get_average_sizing_decisions(system_sizes)
-        update_penalties(system_sizes, mean_sizes, 1.0e-4)
+        data["penalties"] = update_penalties(data["penalties"],system_sizes, mean_sizes, 1.0e-4)
         raise CheckGapException(dfm_bau, data)  # -> callback.on_error -> run_subproblems
 
 
@@ -437,8 +437,17 @@ def get_max_sizing_decisions(system_sizes):
 
 
 def update_penalties(penalties, system_sizes, mean_sizes, rho=1.0e-4):
-    pass
-
+    # Initialize penalties dictionary if required
+    if penalties[0] == {}:
+        for i in range(12):
+            for key in mean_sizes.keys():
+                penalties[i][key] = 0.0
+    # update values according to difference in system sizes.  These are multiplied by other constants in Julia but are
+    # set up so that the sum of each tech-specific penalty across all subproblem is zero.
+    for i in range(12):
+        for key in mean_sizes.keys():
+            penalties[i][key] += rho * (system_sizes[i][key] - mean_sizes[key])
+    return penalties
 
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
