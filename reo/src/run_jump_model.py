@@ -138,6 +138,10 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     except Exception as e:
         if isinstance(e, REoptFailedToStartError):
             raise e
+        elif "DimensionMismatch" in e.args[0]:  # bug in Xpress.jl and/or JuMP that mishandles timeouts
+            msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
+            logger.info(msg)
+            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
         exc_type, exc_value, exc_traceback = sys.exc_info()
         print(exc_type)
         print(exc_value)
@@ -172,8 +176,8 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
     return dfm
 
 
-def run_decomposed_model(data, model, reopt_inputs, lb_iters=3, max_iters=100):
-    t_start = time.time()
+def run_decomposed_model(data, model, reopt_inputs,
+                         lb_iters=1, max_iters=100):
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
@@ -194,13 +198,10 @@ def run_decomposed_model(data, model, reopt_inputs, lb_iters=3, max_iters=100):
     best_result_dicts = copy.deepcopy(ub_result_dicts)
     ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
     gap = (ub - lb) / lb
-
     for k in range(1, max_iters+1):
-        t_elapsed = time.time() - t_start
-        if gap <= opt_tolerance or t_elapsed > time_limit:
+        if time.time() - t_start > time_limit or gap <= opt_tolerance:
             break
         mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
-
         for i in range(1, 13):
             julia.Main.update_decomp_penalties(lb_models[i], reopt_param, mean_sizes)
         lb_result_dicts = solve_subproblems(lb_models, reopt_param, lb_result_dicts, True)
@@ -211,14 +212,22 @@ def run_decomposed_model(data, model, reopt_inputs, lb_iters=3, max_iters=100):
         if k % lb_iters == 0:
             mean_sizes = get_average_sizing_decisions(lb_models, reopt_param)
             fix_sizing_decisions(ub_models, reopt_param, mean_sizes)
-            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, True)
+            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
             iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
             if iter_ub < ub:
                 ub = iter_ub
                 best_result_dicts = copy.deepcopy(ub_result_dicts)
                 min_charge_adder = iter_min_charge_adder
                 gap = (ub - lb) / lb
-
+            max_sizes = get_max_sizing_decisions(lb_models, reopt_param)
+            fix_sizing_decisions(ub_models, reopt_param, max_sizes)
+            ub_result_dicts = solve_subproblems(ub_models, reopt_param, ub_result_dicts, ub < 1.0e99)
+            iter_ub, iter_min_charge_adder, iter_prod_incentives = get_objective_value(ub_result_dicts, reopt_inputs)
+            if iter_ub < ub:
+                ub = iter_ub
+                best_result_dicts = copy.deepcopy(ub_result_dicts)
+                min_charge_adder = iter_min_charge_adder
+                gap = (ub - lb) / lb
     results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
     return results
@@ -285,7 +294,8 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
         obj += min_charge_adder
         prod_incentives = []
         for tech_idx in range(len(reopt_inputs['Tech'])):
-            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * reopt_inputs['two_party_factor']
+            max_prod_incent = reopt_inputs['MaxProdIncent'][tech_idx] * reopt_inputs['pwf_prod_incent'][tech_idx] * \
+                              reopt_inputs['two_party_factor']
             prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
             prod_incentive = min(prod_incent, max_prod_incent)
             obj += prod_incentive
@@ -372,6 +382,13 @@ def get_average_sizing_decisions(models, reopt_param):
         sizes[key] /= 12.
     return sizes
 
+def get_max_sizing_decisions(models, reopt_param):
+    sizes = julia.Main.get_sizing_decisions(models[1], reopt_param)
+    for i in range(2, 13):
+        d = julia.Main.get_sizing_decisions(models[i], reopt_param)
+        for key in d.keys():
+            sizes[key] = max(d[key], sizes[key])
+    return sizes
 
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results = ub_results[1]
