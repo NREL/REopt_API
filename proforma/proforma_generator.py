@@ -457,7 +457,7 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent electricity from on-site renewable resources"
-    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},2)'.format(\
+    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},3)'.format(\
         wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_avg_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
