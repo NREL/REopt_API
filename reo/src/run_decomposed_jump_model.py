@@ -135,6 +135,8 @@ def run_decomposed_jump_model(self, dfm_bau, data):
     data["solver"] = solver
     data["lb"] = -1.0e100
     data["ub"] = 1.0e100
+    data["run_uuid"] = self.run_uuid
+    data["user_uuid"] = self.user_uuid
 
     data["t_start"] = time.time()
 
@@ -171,13 +173,13 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data["ub_result_dicts"] = [{} for _ in range(12)]
         data["penalties"] = [{} for _ in range(12)]
 
-    use_maxes = (data["iter"] < 1)
+    max_size = (data["iter"] == 1)
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], lb_update,
-                                      data["lb_result_dicts"])
+                                      data["lb_result_dicts"], data["run_uuid"], data["user_uuid"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
     lb_result.forget()
     ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
-                                      data["ub_result_dicts"], use_maxes)
+                                      data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
@@ -192,6 +194,7 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
 @shared_task
 def checkgap(dfm_bau, data):
+    from julia import Main
     iter = data["iter"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
@@ -212,7 +215,7 @@ def checkgap(dfm_bau, data):
 
     if (gap >= 0. and gap <= opt_tolerance) or (iter >= max_iters) or (elapsed_time > time_limit):
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
-        results = julia.Main.convert_to_axis_arrays(dfm_bau["reopt_inputs"], results)
+        results = Main.convert_to_axis_arrays(dfm_bau["reopt_inputs"], results)
         dfm = copy.deepcopy(dfm_bau)
         dfm["results"] = results
         return [dfm, dfm_bau]  # -> process_results
@@ -247,7 +250,7 @@ def store_ub_results(results, data):
 
 
 @shared_task
-def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_size=True):
+def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_size, run_uuid, user_uuid):
     """
         Creates, builds and solves subproblems in Julia
         :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
@@ -267,11 +270,13 @@ def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_siz
         "month": mth,
         "sizes": fixed_sizes,
         "lb_results": lb_result_dicts[mth-1],
-        "results": results[mth - 1]
+        "results": results[mth - 1],
+        "run_uuid": run_uuid,
+        "user_uuid": user_uuid
     }) for mth in range(1, 13))
 
 @shared_task
-def lb_subproblems_group(solver, reopt_inputs, penalties, update, results):
+def lb_subproblems_group(solver, reopt_inputs, penalties, update, results, run_uuid, user_uuid):
     """
     Creates, builds and solves subproblems in Julia
     :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
@@ -286,7 +291,9 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update, results):
         "month": mth,
         "penalties": penalties[mth-1],
         "update": update,
-        "results": results[mth-1]
+        "results": results[mth-1],
+        "run_uuid": run_uuid,
+        "user_uuid": user_uuid
     }) for mth in range(1, 13))
 
 
@@ -297,7 +304,11 @@ def solve_lb_subproblem(sp_dict):
     :param sp_dict: subproblem input dict
     :return: updated sp_dict with sp_dict["r"] containing latest results
     """
-    results = julia.Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
+    from julia import Main
+    from julia import Pkg
+    activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
+    Main.include("reo/src/reopt_decomposed.jl")
+    results = Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["penalties"], sp_dict["update"])
     sp_dict["results"] = results
     return results
@@ -309,7 +320,11 @@ def solve_ub_subproblem(sp_dict):
     :param sp_dict: subproblem input dict
     :return: updated sp_dict with sp_dict["results"] containing latest results
     """
-    results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
+    from julia import Main
+    from julia import Pkg
+    activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
+    Main.include("reo/src/reopt_decomposed.jl")
+    results = Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["sizes"])
     sp_dict["results"] = results
     return results
