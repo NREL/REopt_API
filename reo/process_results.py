@@ -1128,10 +1128,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 self.upfront_capex_after_incentives
 
             self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = \
-                self.nested_outputs["Scenario"]["Site"]["Wind"].get("year_one_energy_produced_kwh") or 0
+                self.nested_outputs["Scenario"]["Site"]["Wind"].get("average_yearly_energy_produced_kwh") or 0
             for pv in self.nested_outputs["Scenario"]["Site"]["PV"]:
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] += \
-                pv.get("year_one_energy_produced_kwh") or 0
+                pv.get("average_yearly_energy_produced_kwh") or 0
             self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] = round(\
                 self.nested_outputs["Scenario"]["Site"]["renewable_electricity_energy_pct"] / \
                 self.nested_outputs["Scenario"]["Site"]["LoadProfile"]["annual_calculated_kwh"],4)
