@@ -458,7 +458,7 @@ def update_penalties(penalties, system_sizes, mean_sizes, rho=1.0e-4):
 def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results = copy.deepcopy(ub_results[0])
     for idx in range(1, 12):
-        results = julia.Main.add_to_results(results, ub_results[idx])
+        results = julia.Main.add_to_results(results, ub_results[idx], idx==1)
     results["lcc"] = obj
     results["total_min_charge_adder"] = min_charge_adder
     results["year_one_min_charge_adder"] = min_charge_adder / pwf_e

@@ -936,6 +936,7 @@ function reopt_build(m, p::Parameter)
 	else
 		add_subproblem_time_sets(m, p)
 	end
+	results["num_periods"] = length(m[:TimeStep])
 	results["julia_reopt_preamble_seconds"] = time() - t_start
 	t_start = time()
 
@@ -1084,7 +1085,7 @@ function reopt_solve(m, p::Parameter, results::Dict)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	
 	if m[:model_type] != "monolith"
-		results = convert_to_arrays(m, results)
+		results = reindex_time_series(m, results)
 	end
 	return results
 end
@@ -1680,10 +1681,20 @@ function add_sub_obj_value_results(m, p, r::Dict)
 	nothing
 end
 
-function convert_to_arrays(m, results::Dict)
+function reindex_time_series(m, results::Dict)
+
 	for key in keys(results)
 		if !(typeof(results[key]) in [Array{Float64,1}, String, Float64, Dict{Any, Any}, Int64]) && length(results[key]) == length(m[:TimeStep])
-			results[key] = Array{Float64,1}([results[key][idx] for idx in m[:TimeStep]])
+			results[key] = JuMP.Containers.DenseAxisArray([results[key][idx] for idx in m[:TimeStep]], 1:results["num_periods"])
+		end
+	end
+	return results
+end
+
+function convert_to_arrays(results::Dict)
+	for key in keys(results)
+		if !(typeof(results[key]) in [Array{Float64,1}, String, Float64, Dict{Any, Any}, Int64]) && length(results[key]) == results["num_periods"]
+			results[key] = Array{Float64,1}([results[key][idx] for idx in 1:results["num_periods"]])
 		end
 	end
 	return results
@@ -1703,7 +1714,11 @@ function convert_to_axis_arrays(d, r::Dict)
 	return new_r
 end
 
-function add_to_results(r1,r2)
+function add_to_results(r1,r2,first::Bool)
+	if first
+		r1 = convert_to_arrays(r1)	
+	end
+	r2 = convert_to_arrays(r2)
 	for key in keys(r1)
 		if typeof(r1[key]) in [Float64, Int64]
 			if !(key in ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
