@@ -1050,7 +1050,7 @@ function reopt_build(m, p::Parameter)
 	return results
 end
 
-function reopt_solve(m, p::Parameter, results::Dict, update::Bool)
+function reopt_solve(m, p::Parameter, results::Dict)
 	t_start = time()
 
 	optimize!(m)
@@ -1080,7 +1080,7 @@ function reopt_solve(m, p::Parameter, results::Dict, update::Bool)
 
 	add_yearone_expressions(m, p)
 
-	results = reopt_results(m, p, results, update)
+	results = reopt_results(m, p, results)
 	results["julia_reopt_postprocess_seconds"] = time() - t_start
 	
 	if m[:model_type] != "monolith"
@@ -1106,64 +1106,64 @@ function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth::Int64, pen
 		get_initial_decomp_penalties(m, p)
 	end
 	results = reopt_build(m, p)
-	results = reopt_solve(m, p, results, update)
+	results = reopt_solve(m, p, results)
 	return results
 end
 
-function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth::Int64, system_sizes::Dict, update::Bool)
+function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth::Int64, system_sizes::Dict)
 	m = create_subproblem_model(solver, "ub", mth)
 	p = Parameter(model_inputs)
 	results = reopt_build(m, p)
 	fix_sizing_decisions(m, p, system_sizes)
-	results = reopt_solve(m, p, results, update)
+	results = reopt_solve(m, p, results)
 	return results
 end
 
 
-function reopt_results(m, p, r::Dict, update::Bool)
-	add_storage_results(m, p, r, update)
-	add_pv_results(m, p, r, update)
+function reopt_results(m, p, r::Dict)
+	add_storage_results(m, p, r)
+	add_pv_results(m, p, r)
 	if !isempty(m[:GeneratorTechs])
-		add_generator_results(m, p, r, update)
+		add_generator_results(m, p, r)
     else
 		add_null_generator_results(m, p, r)
 	end
 	if !isempty(m[:WindTechs])
-		add_wind_results(m, p, r, update)
+		add_wind_results(m, p, r)
 	else
 		add_null_wind_results(m, p, r)
 	end
 	if !isempty(p.CHPTechs)
-		add_chp_results(m, p, r, update)
+		add_chp_results(m, p, r)
 	else
 		add_null_chp_results(m, p, r)
 	end
 	if !isempty(p.BoilerTechs)
-		add_boiler_results(m, p, r, update)
+		add_boiler_results(m, p, r)
 	else
 		add_null_boiler_results(m, p, r)
 	end
 	if !isempty(p.ElectricChillers)
-		add_elec_chiller_results(m, p, r, update)
+		add_elec_chiller_results(m, p, r)
 	else
 		add_null_elec_chiller_results(m, p, r)
 	end
 	if !isempty(p.AbsorptionChillers)
-		add_absorption_chiller_results(m, p, r, update)
+		add_absorption_chiller_results(m, p, r)
 	else
 		add_null_absorption_chiller_results(m, p, r)
 	end
 	if !isempty(p.HotTES)
-		add_hot_tes_results(m, p, r, update)
+		add_hot_tes_results(m, p, r)
 	else
 		add_null_hot_tes_results(m, p, r)
 	end
 	if !isempty(p.ColdTES)
-		add_cold_tes_results(m, p, r, update)
+		add_cold_tes_results(m, p, r)
 	else
 		add_null_cold_tes_results(m, p, r)
 	end
-	add_util_results(m, p, r, update)
+	add_util_results(m, p, r)
 	if m[:model_type] == "ub"
 		add_sub_obj_value_results(m, p, r)
 	end
@@ -1257,7 +1257,7 @@ function add_null_cold_tes_results(m, p, r::Dict)
 	nothing
 end
 
-function add_storage_results(m, p, r::Dict, update::Bool)
+function add_storage_results(m, p, r::Dict)
 	try
 		m[:soc] = @expression(m, [ts in m[:TimeStep]], m[:dvStorageSOC]["Elec",ts])
 		m[:GridToBatt] = @expression(m, [ts in m[:TimeStep]], m[:dvGridToStorage][ts])
@@ -1281,7 +1281,7 @@ function add_storage_results(m, p, r::Dict, update::Bool)
 end
 
 
-function add_generator_results(m, p, r::Dict, update::Bool)
+function add_generator_results(m, p, r::Dict)
 	try
 		m[:GenPerUnitSizeOMCosts] = @expression(m, p.two_party_factor * m[:weight] * 
 			sum(p.OMperUnitSize[t] * p.pwf_om * m[:dvSize][t] for t in m[:GeneratorTechs])
@@ -1332,7 +1332,7 @@ end
 
 
 
-function add_wind_results(m, p, r::Dict, update::Bool)
+function add_wind_results(m, p, r::Dict)
 	try
 		@expression(m, WINDtoBatt[ts in m[:TimeStep]],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
@@ -1360,7 +1360,7 @@ function add_wind_results(m, p, r::Dict, update::Bool)
 end
 
 
-function add_pv_results(m, p, r::Dict, update::Bool)
+function add_pv_results(m, p, r::Dict)
 	PVclasses = filter(tc->startswith(tc, "PV"), p.TechClass)
     for PVclass in PVclasses
 		PVtechs_in_class = filter(t->startswith(t, PVclass), m[:PVTechs])
@@ -1407,7 +1407,7 @@ function add_pv_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 
-function add_chp_results(m, p, r::Dict, update::Bool)
+function add_chp_results(m, p, r::Dict)
 	try
 		@expression(m, CHPFuelUsed, sum(m[:dvFuelUsage][t, ts] for t in p.CHPTechs, ts in m[:TimeStep]))
 		@expression(m, Year1CHPElecProd,
@@ -1455,7 +1455,7 @@ function add_chp_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 	
-function add_boiler_results(m, p, r::Dict, update::Bool)
+function add_boiler_results(m, p, r::Dict)
 	try
 		@expression(m, FuelToBoiler[ts in m[:TimeStep]], m[:dvFuelUsage]["BOILER", ts])
 		@expression(m, BoilerThermalProd[ts in m[:TimeStep]], p.ProductionFactor["BOILER",ts] * m[:dvThermalProduction]["BOILER",ts])
@@ -1483,7 +1483,7 @@ function add_boiler_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 
-function add_elec_chiller_results(m, p, r::Dict, update::Bool)
+function add_elec_chiller_results(m, p, r::Dict)
 	try
 		@expression(m, ELECCHLtoTES[ts in m[:TimeStep]],
 			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.ElectricChillers))
@@ -1508,7 +1508,7 @@ function add_elec_chiller_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 
-function add_absorption_chiller_results(m, p, r::Dict, update::Bool)	
+function add_absorption_chiller_results(m, p, r::Dict)	
 	try
 		@expression(m, ABSORPCHLtoTES[ts in m[:TimeStep]],
 			sum(m[:dvProductionToStorage][b,t,ts] for b in p.ColdTES, t in p.AbsorptionChillers))
@@ -1534,7 +1534,7 @@ function add_absorption_chiller_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 
-function add_hot_tes_results(m, p, r::Dict, update::Bool)		
+function add_hot_tes_results(m, p, r::Dict)		
 	try
 		@expression(m, HotTESSizeMMBTU, sum(m[:dvStorageCapEnergy][b] for b in p.HotTES))
 		@expression(m, HotTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
@@ -1548,7 +1548,7 @@ function add_hot_tes_results(m, p, r::Dict, update::Bool)
 	nothing
 end
 	
-function add_cold_tes_results(m, p, r::Dict, update::Bool)	
+function add_cold_tes_results(m, p, r::Dict)	
 	try
 		@expression(m, ColdTESSizeKWHT, sum(m[:dvStorageCapEnergy][b] for b in p.ColdTES))
 		@expression(m, ColdTESDischargeSeries[ts in m[:TimeStep]], sum(m[:dvDischargeFromStorage][b, ts]
@@ -1562,7 +1562,7 @@ function add_cold_tes_results(m, p, r::Dict, update::Bool)
 	nothing
 end	
 
-function add_util_results(m, p, r::Dict, update::Bool)
+function add_util_results(m, p, r::Dict)
     net_capital_costs_plus_om = value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]) +
                                 value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts]) * m[:r_tax_fraction_owner] +
                                 value(m[:TotalFuelCharges]) * m[:r_tax_fraction_offtaker]

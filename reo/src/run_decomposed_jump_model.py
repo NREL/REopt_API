@@ -155,33 +155,28 @@ checktol dfm -> process_results
 def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
     if not isinstance(data_or_exc, dict):
-        update = True
+        lb_update = True
         dfm_bau = data_or_exc.dfm_bau
         data = data_or_exc.data
         data["iter"] = data_or_exc.iter
         logger.info("iter {} of run_subproblems".format(data["iter"]))
-        print("iter: ", data["iter"])
     else:
+        lb_update = False
         logger.info("first iter of run_subproblems")
-        update = False
         dfm_bau = request_or_dfm
         data = data_or_exc
         data["start_timestamp"] = time.time()
-        data["iter"] = 1
+        data["iter"] = 0
         data["lb_result_dicts"] = [{} for _ in range(12)]
         data["ub_result_dicts"] = [{} for _ in range(12)]
         data["penalties"] = [{} for _ in range(12)]
-        data["ub"] = 1.0e100
-        print("iter: ", data["iter"])
 
-    lb_update = (data["iter"] != 1)
-    ub_update = (data["ub"] < 1.0e99)
-    use_maxes = (data["iter"] == 1)
+    use_maxes = (data["iter"] < 1)
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], lb_update,
                                       data["lb_result_dicts"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
     lb_result.forget()
-    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"], ub_update,
+    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
                                       data["ub_result_dicts"], use_maxes)
     ub_result = chord(ub_group())(store_ub_results.s(data))
     ub_result.forget()
@@ -198,8 +193,6 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 @shared_task
 def checkgap(dfm_bau, data):
     iter = data["iter"]
-    print("checking gap: iter ", iter)
-    elapsed_time = time.time() - data["start_timestamp"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
     lb_result_dicts = data["lb_result_dicts"]
@@ -214,12 +207,10 @@ def checkgap(dfm_bau, data):
         data["ub"] = ub
     gap = abs((data["ub"] - data["lb"]) / data["lb"])
     logger.info("Gap: {}".format(gap))
-    print("LB", lb, data["lb"])
-    print("UB", ub, data["ub"])
-    print("Gap: ", gap)
     max_iters = data["max_iters"]
+    elapsed_time = time.time() - data["start_timestamp"]
 
-    if (gap >= 0. and gap <= opt_tolerance) or iter >= 2 or elapsed_time > time_limit:
+    if (gap >= 0. and gap <= opt_tolerance) or (iter >= max_iters) or (elapsed_time > time_limit):
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
         results = julia.Main.convert_to_axis_arrays(dfm_bau["reopt_inputs"], results)
         dfm = copy.deepcopy(dfm_bau)
@@ -230,7 +221,7 @@ def checkgap(dfm_bau, data):
         data["iter"] += 1
         system_sizes = [d["sizes"] for d in lb_result_dicts]
         mean_sizes = get_average_sizing_decisions(system_sizes)
-        data["penalties"] = update_penalties(data["penalties"],system_sizes, mean_sizes, 1.0e-4)
+        data["penalties"] = update_penalties(data["penalties"], system_sizes, mean_sizes, 1.0e-4)
         raise CheckGapException(dfm_bau, data)  # -> callback.on_error -> run_subproblems
 
 
@@ -256,13 +247,13 @@ def store_ub_results(results, data):
 
 
 @shared_task
-def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, update, results, max_size=True):
+def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_size=True):
     """
         Creates, builds and solves subproblems in Julia
         :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
         :param reopt_inputs: inputs dictionary from DataManger
         :param sizes: system size to fix for upper bound (key=month index)
-        :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
+        :param results: Boolean that is True if skipping the creation of output expressions, and False o.w.
         :return: celery group
         """
     system_sizes = [d["sizes"] for d in lb_result_dicts]
@@ -275,7 +266,6 @@ def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, update, results,
         "inputs": reopt_inputs,
         "month": mth,
         "sizes": fixed_sizes,
-        "update": update,
         "lb_results": lb_result_dicts[mth-1],
         "results": results[mth - 1]
     }) for mth in range(1, 13))
@@ -320,7 +310,7 @@ def solve_ub_subproblem(sp_dict):
     :return: updated sp_dict with sp_dict["results"] containing latest results
     """
     results = julia.Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
-                                             sp_dict["sizes"], sp_dict["update"])
+                                             sp_dict["sizes"])
     sp_dict["results"] = results
     return results
 
