@@ -1618,6 +1618,10 @@ function get_initial_decomp_penalties(m,p)
 end
 
 function add_decomp_penalties(m, p, penalties::Dict)
+	m[:tech_size_penalty] = Dict()
+	m[:storage_power_size_penalty] = Dict()
+	m[:storage_energy_size_penalty] = Dict()
+	m[:storage_inventory_penalty] = Dict()
 	for t in p.Tech
 		m[:tech_size_penalty][t] = penalties["dvSize",t] * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t])
 	end
