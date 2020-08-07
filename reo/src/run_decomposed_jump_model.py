@@ -221,10 +221,10 @@ def checkgap(dfm_bau, data):
 
     if (gap >= 0. and gap <= opt_tolerance) or iter >= 2 or elapsed_time > time_limit:
         results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
-        results = julia.Main.convert_to_axis_arrays(data["reopt_inputs"], results)
-        dfm = copy.deepcopy(data["dfm_bau"])
+        results = julia.Main.convert_to_axis_arrays(dfm_bau["reopt_inputs"], results)
+        dfm = copy.deepcopy(dfm_bau)
         dfm["results"] = results
-        return [dfm, data["dfm_bau"]]  # -> process_results
+        return [dfm, dfm_bau]  # -> process_results
 
     else:  # kick off recursive run_subproblems
         data["iter"] += 1
