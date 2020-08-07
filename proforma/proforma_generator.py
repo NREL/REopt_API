@@ -396,6 +396,12 @@ def generate_proforma(scenariomodel, output_file_path):
         make_attribute_row(ws, current_row)
         current_row += 1
 
+        ws['A{}'.format(current_row)] = "{} optimal electricity produced (kWh), Annual Average".format(pv['name'])
+        ws['B{}'.format(current_row)] = pv["pv"].average_yearly_energy_produced_kwh
+        pv_cell_locations[i]["pv_avg_energy_cell"] = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
+        make_attribute_row(ws, current_row)
+        current_row += 1
+
     ws['A{}'.format(current_row)] = "Nominal annual optimal wind electricity produced (kWh/year)"
     ws['B{}'.format(current_row)] = wind_energy
     wind_energy_cell = "\'{}\'!B{}".format(inandout_sheet_name, current_row)
@@ -451,8 +457,8 @@ def generate_proforma(scenariomodel, output_file_path):
 
     current_row += 1
     ws['A{}'.format(current_row)] = "Percent electricity from on-site renewable resources"
-    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},2)'.format(\
-        wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
+    ws['B{}'.format(current_row)] = '=ROUND(({wind_energy_cell} + SUM({pv_cells}))/{total_energy},3)'.format(\
+        wind_energy_cell=wind_energy_cell, pv_cells=','.join([pv_cell_locations[i]["pv_avg_energy_cell"] for i in range(len(pvs))]), total_energy=load.annual_calculated_kwh)
     make_attribute_row(ws, current_row, alignment=right_align,
                            number_format='##%')
     
