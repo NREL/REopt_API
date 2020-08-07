@@ -898,7 +898,7 @@ end
 
 function create_subproblem_model(solver::String, model_type::String, mth::Int64)
 	if solver == "xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-90, MIPRELSTOP=0.02, OUTPUTLOG = 0))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=0.03, OUTPUTLOG = 0))
 	elseif solver == "cbc"
 		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=90, ratioGap=0.02))
 	elseif solver == "scip"
