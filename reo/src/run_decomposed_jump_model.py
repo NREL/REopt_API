@@ -169,18 +169,20 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
         data = data_or_exc
         data["start_timestamp"] = time.time()
         data["iter"] = 0
-        data["lb_result_dicts"] = [{} for _ in range(12)]
-        data["ub_result_dicts"] = [{} for _ in range(12)]
         data["penalties"] = [{} for _ in range(12)]
 
+    data["lb_result_dicts"] = [{} for _ in range(12)]
+    data["ub_result_dicts"] = [{} for _ in range(12)]
     max_size = (data["iter"] == 1)
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], lb_update,
                                       data["lb_result_dicts"], data["run_uuid"], data["user_uuid"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
+    wait_for_group_results("lb", data)
     lb_result.forget()
     ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
                                       data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
+    wait_for_group_results("ub", data)
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
 
@@ -261,14 +263,17 @@ def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_siz
         """
     system_sizes = [d["sizes"] for d in lb_result_dicts]
     if max_size:
-        fixed_sizes = get_max_sizing_decisions(system_sizes)
+        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_max_sizing_decisions(system_sizes)
     else:
-        fixed_sizes = get_average_sizing_decisions(system_sizes)
+        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_average_sizing_decisions(system_sizes)
     return group(solve_ub_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
         "month": mth,
         "sizes": fixed_sizes,
+        "power": fixed_power,
+        "energy": fixed_energy,
+        "inv": fixed_inv,
         "lb_results": lb_result_dicts[mth-1],
         "results": results[mth - 1],
         "run_uuid": run_uuid,
@@ -307,6 +312,12 @@ def solve_lb_subproblem(sp_dict):
     from julia import Main
     from julia import Pkg
     activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
+    if sp_dict["solver"] == "xpress":
+        Main.include("reo/src/reopt_xpress_model.jl")
+    elif sp_dict["solver"] == "cbc":
+        Main.include("reo/src/reopt_cbc_model.jl")
+    elif sp_dict["solver"] == "scip":
+        Main.include("reo/src/reopt_scip_model.jl")
     Main.include("reo/src/reopt_decomposed.jl")
     results = Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                              sp_dict["penalties"], sp_dict["update"])
@@ -421,24 +432,50 @@ def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     return bins, vals
 
 
-def get_average_sizing_decisions(system_sizes):
-    sizes = copy.deepcopy(system_sizes[0])
+def get_average_sizing_decisions(sub_size, sub_power, sub_energy, sub_inv):
+    system_sizes = copy.deepcopy(sub_size[0])
+    power_sizes = copy.deepcopy(sub_power[0])
+    energy_sizes = copy.deepcopy(sub_energy[0])
+    energy_invs = copy.deepcopy(sub_inv[0])
     for i in range(1, 12):
-        d = system_sizes[i]
-        for key in d.keys():
-            sizes[key] += d[key]
-    for key in d.keys():
-        sizes[key] /= 12.
+        d_size = sub_size[i]
+        d_power = sub_power[i]
+        d_energy = sub_energy[i]
+        d_inv = sub_inv[i]
+        for key in d_size.keys():
+            system_sizes[key] += d_size[key]
+        for key in d_power.keys():
+            power_sizes[key] += d_size[key]
+            energy_sizes[key] += d_energy[key]
+            energy_invs[key] += d_inv[key]
+    for key in d_size.keys():
+        system_sizes[key] /= 12.
+    for key in d_power.keys():
+        power_sizes[key] /= 12.
+        energy_sizes[key] /= 12.
+        energy_invs[key] /= 12.
+    return system_sizes, power_sizes, energy_sizes, energy_invs
+
     return sizes
 
 
-def get_max_sizing_decisions(system_sizes):
-    sizes = copy.deepcopy(system_sizes[0])
+def get_max_sizing_decisions(sub_size, sub_power, sub_energy, sub_inv):
+    system_sizes = copy.deepcopy(sub_size[0])
+    power_sizes = copy.deepcopy(sub_power[0])
+    energy_sizes = copy.deepcopy(sub_energy[0])
+    energy_invs = copy.deepcopy(sub_inv[0])
     for i in range(1, 12):
-        d = system_sizes[i]
-        for key in d.keys():
-            sizes[key] = max(d[key], sizes[key])
-    return sizes
+        d_size = sub_size[i]
+        d_power = sub_power[i]
+        d_energy = sub_energy[i]
+        d_inv = sub_inv[i]
+        for key in d_size.keys():
+            system_sizes[key] = max(d_size[key], system_sizes[key])
+        for key in d_power.keys():
+            power_sizes[key] = max(d_power[key], power_sizes[key])
+            energy_sizes[key] = max(d_energy[key], energy_sizes[key])
+            energy_invs[key] = max(d_inv[key], energy_invs[key])
+    return system_sizes, power_sizes, energy_sizes, energy_invs
 
 
 def update_penalties(penalties, system_sizes, mean_sizes, rho=1.0e-4):
@@ -463,3 +500,15 @@ def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results["total_min_charge_adder"] = min_charge_adder
     results["year_one_min_charge_adder"] = min_charge_adder / pwf_e
     return results
+
+def wait_for_group_results(probs, data):
+    while True:
+        try:
+            if probs == "lb":
+                x = [data["lb_result_dicts"][i]["chp_kw"] for i in range(12)]
+            else:
+                x = [data["ub_result_dicts"][i]["chp_kw"] for i in range(12)]
+            return None
+        except KeyError:
+            logger.info("still optimizing...")
+            time.sleep(5)
