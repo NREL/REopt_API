@@ -1636,16 +1636,20 @@ end
 
 
 function add_sizing_results(m, p, r::Dict)
-	sizes = Dict()
+	r["all_techs"] = p.Tech
+	r["all_storage"] = p.Storage
+	r["sizes"] = Dict()
 	for t in p.Tech
-		sizes["dvSize",t] = value(m[:dvSize][t])
+		r["sizes"][t] = value(m[:dvSize][t])
 	end
+	r["storage_power"] = Dict()
+	r["storage_energy"] = Dict()
+	r["storage_reset"] = Dict()
 	for b in p.Storage
-		sizes["dvStorageCapPower",b] = value(m[:dvStorageCapPower][b])
-		sizes["dvStorageCapEnergy",b] = value(m[:dvStorageCapEnergy][b])
-		sizes["dvStorageResetSOC",b] = value(m[:dvStorageResetSOC][b])
+		r["storage_power"] = value(m[:dvStorageCapPower][b])
+		r["storage_energy"] = value(m[:dvStorageCapEnergy][b])
+		r["storage_reset"] = value(m[:dvStorageResetSOC][b])
 	end
-	r["sizes"] = sizes
 	nothing
 end
 
