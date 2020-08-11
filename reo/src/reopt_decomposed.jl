@@ -1111,11 +1111,13 @@ function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth::Int64, pen
 	return results
 end
 
-function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth::Int64, system_sizes::Dict)
+function reopt_ub_subproblem(solver::String, model_inputs::Dict, mth::Int64, 
+		system_sizes::Dict, storage_power::Dict, storage_energy::Dict, 
+		storage_inv::Dict)
 	m = create_subproblem_model(solver, "ub", mth)
 	p = Parameter(model_inputs)
 	results = reopt_build(m, p)
-	fix_sizing_decisions(m, p, system_sizes)
+	fix_sizing_decisions(m, p, system_sizes, storage_power, storage_energy, storage_inv)
 	results = reopt_solve(m, p, results)
 	return results
 end
@@ -1653,17 +1655,18 @@ function add_sizing_results(m, p, r::Dict)
 	nothing
 end
 
-function fix_sizing_decisions(m,p,sizes::Dict)
+function fix_sizing_decisions(m,p,system_sizes::Dict, storage_power::Dict, storage_energy::Dict, 
+		storage_inv::Dict)
 	for midx in 1:12
 		for t in p.Tech
 			if t != "BOILER" && t != "ELECCHL"
-				fix(m[:dvSize][t], sizes["dvSize",t], force=true)
+				fix(m[:dvSize][t], system_sizes[t], force=true)
 			end
 		end
 		for b in p.Storage
-			fix(m[:dvStorageCapPower][b], sizes["dvStorageCapPower",b], force=true)
-			fix(m[:dvStorageCapEnergy][b], sizes["dvStorageCapEnergy",b], force=true)
-			fix(m[:dvStorageResetSOC][b], sizes["dvStorageResetSOC",b], force=true)
+			fix(m[:dvStorageCapPower][b], storage_power[b], force=true)
+			fix(m[:dvStorageCapEnergy][b], storage_energy[b], force=true)
+			fix(m[:dvStorageResetSOC][b], storage_inv[b], force=true)
 		end
 	end
 	nothing

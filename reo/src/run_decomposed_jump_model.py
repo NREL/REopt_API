@@ -224,9 +224,9 @@ def checkgap(dfm_bau, data):
 
     else:  # kick off recursive run_subproblems
         data["iter"] += 1
-        system_sizes = [d["sizes"] for d in lb_result_dicts]
-        mean_sizes = get_average_sizing_decisions(system_sizes)
-        data["penalties"] = update_penalties(data["penalties"], system_sizes, mean_sizes, 1.0e-4)
+        size_summary = get_size_summary(lb_result_dicts)
+        mean_sizes = get_average_sizing_decisions(size_summary)
+        data["penalties"] = update_penalties(data["penalties"], size_summary, mean_sizes, 1.0e-4)
         raise CheckGapException(dfm_bau, data)  # -> callback.on_error -> run_subproblems
 
 
@@ -261,11 +261,11 @@ def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_siz
         :param results: Boolean that is True if skipping the creation of output expressions, and False o.w.
         :return: celery group
         """
-    system_sizes = [d["sizes"] for d in lb_result_dicts]
+    size_summary = get_size_summary(lb_result_dicts)
     if max_size:
-        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_max_sizing_decisions(system_sizes)
+        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_max_sizing_decisions(size_summary)
     else:
-        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_average_sizing_decisions(system_sizes)
+        fixed_sizes, fixed_power, fixed_energy, fixed_inv = get_average_sizing_decisions(size_summary)
     return group(solve_ub_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
@@ -336,7 +336,8 @@ def solve_ub_subproblem(sp_dict):
     activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
     Main.include("reo/src/reopt_decomposed.jl")
     results = Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
-                                             sp_dict["sizes"])
+                                        sp_dict["sizes"], sp_dict["power"], sp_dict["energy"],
+                                        sp_dict["inv"])
     sp_dict["results"] = results
     return results
 
@@ -432,16 +433,31 @@ def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
     return bins, vals
 
 
-def get_average_sizing_decisions(sub_size, sub_power, sub_energy, sub_inv):
-    system_sizes = copy.deepcopy(sub_size[0])
-    power_sizes = copy.deepcopy(sub_power[0])
-    energy_sizes = copy.deepcopy(sub_energy[0])
-    energy_invs = copy.deepcopy(sub_inv[0])
+def get_size_summary(lb_result_dicts):
+    size_summary = {
+        "sub_size": [],
+        "sub_power": [],
+        "sub_energy": [],
+        "sub_inv": []
+    }
+    for i in range(12):
+        r = lb_result_dicts[i]
+        size_summary["sub_size"].append(r["sizes"])
+        size_summary["sub_power"].append(r["sizes"])
+        size_summary["sub_energy"].append(r["sizes"])
+        size_summary["sub_inv"].append(r["sizes"])
+    return size_summary
+
+def get_average_sizing_decisions(size_summary):
+    system_sizes = copy.deepcopy(size_summary["sub_size"][0])
+    power_sizes = copy.deepcopy(size_summary["sub_power"][0])
+    energy_sizes = copy.deepcopy(size_summary["sub_energy"][0])
+    energy_invs = copy.deepcopy(size_summary["sub_inv"][0])
     for i in range(1, 12):
-        d_size = sub_size[i]
-        d_power = sub_power[i]
-        d_energy = sub_energy[i]
-        d_inv = sub_inv[i]
+        d_size = size_summary["sub_size"][i]
+        d_power = size_summary["sub_power"][i]
+        d_energy = size_summary["sub_energy"][i]
+        d_inv = size_summary["sub_inv"][i]
         for key in d_size.keys():
             system_sizes[key] += d_size[key]
         for key in d_power.keys():
@@ -459,16 +475,16 @@ def get_average_sizing_decisions(sub_size, sub_power, sub_energy, sub_inv):
     return sizes
 
 
-def get_max_sizing_decisions(sub_size, sub_power, sub_energy, sub_inv):
-    system_sizes = copy.deepcopy(sub_size[0])
-    power_sizes = copy.deepcopy(sub_power[0])
-    energy_sizes = copy.deepcopy(sub_energy[0])
-    energy_invs = copy.deepcopy(sub_inv[0])
+def get_max_sizing_decisions(size_summary):
+    system_sizes = copy.deepcopy(size_summary["sub_size"][0])
+    power_sizes = copy.deepcopy(size_summary["sub_power"][0])
+    energy_sizes = copy.deepcopy(size_summary["sub_energy"][0])
+    energy_invs = copy.deepcopy(size_summary["sub_inv"][0])
     for i in range(1, 12):
-        d_size = sub_size[i]
-        d_power = sub_power[i]
-        d_energy = sub_energy[i]
-        d_inv = sub_inv[i]
+        d_size = size_summary["sub_size"][i]
+        d_power = size_summary["sub_power"][i]
+        d_energy = size_summary["sub_energy"][i]
+        d_inv = size_summary["sub_inv"][i]
         for key in d_size.keys():
             system_sizes[key] = max(d_size[key], system_sizes[key])
         for key in d_power.keys():
