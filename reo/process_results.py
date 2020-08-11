@@ -911,7 +911,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 data['messages']["PVWatts Warning"] = pv_warning
 
         # Calculate avoided outage costs
-        calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
+        #calc_avoided_outage_costs(data, present_worth_factor=dfm_list[0]['pwf_e'], run_uuid=self.run_uuid)
 
         if len(data['outputs']['Scenario']['Site']['PV']) == 1:
             data['outputs']['Scenario']['Site']['PV'] = data['outputs']['Scenario']['Site']['PV'][0]
