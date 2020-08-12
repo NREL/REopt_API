@@ -1640,17 +1640,17 @@ end
 function add_sizing_results(m, p, r::Dict)
 	r["all_techs"] = p.Tech
 	r["all_storage"] = p.Storage
-	r["sizes"] = Dict()
+	r["system_sizes"] = Dict()
 	for t in p.Tech
-		r["sizes"][t] = value(m[:dvSize][t])
+		r["system_sizes"][t] = value(m[:dvSize][t])
 	end
 	r["storage_power"] = Dict()
 	r["storage_energy"] = Dict()
-	r["storage_reset"] = Dict()
+	r["storage_inv"] = Dict()
 	for b in p.Storage
-		r["storage_power"] = value(m[:dvStorageCapPower][b])
-		r["storage_energy"] = value(m[:dvStorageCapEnergy][b])
-		r["storage_reset"] = value(m[:dvStorageResetSOC][b])
+		r["storage_power"][b] = value(m[:dvStorageCapPower][b])
+		r["storage_energy"][b] = value(m[:dvStorageCapEnergy][b])
+		r["storage_inv"][b] = value(m[:dvStorageResetSOC][b])
 	end
 	nothing
 end
@@ -1714,7 +1714,7 @@ function convert_to_axis_arrays(d, r::Dict)
 		if typeof(r[key])== Array{Float64,1} && length(r[key]) == d["TimeStepCount"]
 			new_r[key] = JuMP.Containers.DenseAxisArray(r[key], 1:d["TimeStepCount"])
 		#remove subproblem outputs
-		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge","sizes"])
+		elseif !(key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge","system_sizes","storage_power","storage_energy","storage_inv"])
 			new_r[key] = r[key]
 		end
 	end
