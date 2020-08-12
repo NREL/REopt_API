@@ -1457,14 +1457,14 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0.0,
+          "default": 1.0,
           "description": "Duration of production-based incentives from installation date"
         },
         "pbi_system_max_kw": {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum system size for which production-based incentives apply"
         },
         "emissions_factor_lb_CO2_per_mmbtu": {
