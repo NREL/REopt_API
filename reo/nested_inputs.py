@@ -1387,7 +1387,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum rebate allowed under state investment based incentives"
         },
         "utility_ibi_pct": {
@@ -1401,7 +1401,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum rebate allowed under utility investment based incentives"
         },
         "federal_rebate_us_dollars_per_kw": {
@@ -1422,7 +1422,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum rebate allowed under state rebates"
         },
         "utility_rebate_us_dollars_per_kw": {
@@ -1436,7 +1436,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e10,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum rebate allowed under utility rebates"
         },
         "pbi_us_dollars_per_kwh": {
@@ -1450,7 +1450,7 @@ nested_input_definitions = {
           "type": "float",
           "min": 0.0,
           "max": 1.0e9,
-          "default": 0.0,
+          "default": 1.0e9,
           "description": "Maximum rebate allowed under utility production-based incentives"
         },
         "pbi_years": {
