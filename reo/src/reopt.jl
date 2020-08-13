@@ -1395,7 +1395,7 @@ function add_util_results(m, p, r::Dict)
 
 	total_opex_costs = value(m[:TotalPerUnitSizeOMCosts] + m[:TotalPerUnitProdOMCosts] + m[:TotalHourlyCHPOpExCosts]) * m[:r_tax_fraction_owner]
 
-	year_one_opex_costs = total_opex_costs / (p.two_party_factor * p.pwf_om)
+	year_one_opex_costs = total_opex_costs / (p.pwf_om * p.two_party_factor)
 
     push!(r, Dict("year_one_utility_kwh" => round(value(m[:Year1UtilityEnergy]), digits=2),
 						 "year_one_energy_cost" => round(value(m[:Year1EnergyCost]), digits=2),
