@@ -177,12 +177,14 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], lb_update,
                                       data["lb_result_dicts"], data["run_uuid"], data["user_uuid"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
-    wait_for_group_results("lb", data)
+    wait_for_group_results("lb", lb_result)
     lb_result.forget()
+
+    logger.info("after results: {}".format(data["lb_result_dicts"]))
     ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
                                       data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
-    wait_for_group_results("ub", data)
+    wait_for_group_results("ub", ub_result)
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
 
@@ -239,15 +241,18 @@ def build_submodels(models, reopt_param):
 
 @shared_task
 def store_lb_results(results, data):
+    #lb = 0
     for i in range(12):
-        data["lb_result_dicts"][i] = results[i]
+        data["lb_result_dicts"][i] = copy.deepcopy(results[i])
+    #    lb += results[i]["lower_bound"]
+    #data["lb"] = lb
     return data
 
 
 @shared_task
 def store_ub_results(results, data):
     for i in range(12):
-        data["ub_result_dicts"][i] = results[i]
+        data["ub_result_dicts"][i] = copy.deepcopy(results[i])
     return data
 
 
@@ -335,6 +340,7 @@ def solve_ub_subproblem(sp_dict):
     from julia import Pkg
     activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
     Main.include("reo/src/reopt_decomposed.jl")
+
     results = Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
                                         sp_dict["sizes"], sp_dict["power"], sp_dict["energy"],
                                         sp_dict["inv"])
@@ -435,33 +441,37 @@ def get_added_demand_by_bin(start, added_demand, max_demand_by_bin):
 
 def get_size_summary(lb_result_dicts):
     size_summary = {
-        "sub_size": [],
-        "sub_power": [],
-        "sub_energy": [],
-        "sub_inv": []
+        "system_sizes": [],
+        "storage_power": [],
+        "storage_energy": [],
+        "storage_inv": []
     }
     for i in range(12):
+        logger.info(i)
+        s = str(lb_result_dicts[i])
+        logger.info(s)
         r = lb_result_dicts[i]
-        size_summary["sub_size"].append(r["sizes"])
-        size_summary["sub_power"].append(r["sizes"])
-        size_summary["sub_energy"].append(r["sizes"])
-        size_summary["sub_inv"].append(r["sizes"])
+        size_summary["system_sizes"].append(r["system_sizes"])
+        size_summary["storage_power"].append(r["storage_power"])
+        size_summary["storage_energy"].append(r["storage_energy"])
+        size_summary["storage_inv"].append(r["storage_inv"])
+        assert(False)
     return size_summary
 
 def get_average_sizing_decisions(size_summary):
-    system_sizes = copy.deepcopy(size_summary["sub_size"][0])
-    power_sizes = copy.deepcopy(size_summary["sub_power"][0])
-    energy_sizes = copy.deepcopy(size_summary["sub_energy"][0])
-    energy_invs = copy.deepcopy(size_summary["sub_inv"][0])
+    system_sizes = copy.deepcopy(size_summary["system_sizes"][0])
+    power_sizes = copy.deepcopy(size_summary["storage_power"][0])
+    energy_sizes = copy.deepcopy(size_summary["storage_energy"][0])
+    energy_invs = copy.deepcopy(size_summary["storage_inv"][0])
     for i in range(1, 12):
-        d_size = size_summary["sub_size"][i]
-        d_power = size_summary["sub_power"][i]
-        d_energy = size_summary["sub_energy"][i]
-        d_inv = size_summary["sub_inv"][i]
+        d_size = size_summary["system_sizes"][i]
+        d_power = size_summary["storage_power"][i]
+        d_energy = size_summary["storage_energy"][i]
+        d_inv = size_summary["storage_inv"][i]
         for key in d_size.keys():
             system_sizes[key] += d_size[key]
         for key in d_power.keys():
-            power_sizes[key] += d_size[key]
+            power_sizes[key] += d_power[key]
             energy_sizes[key] += d_energy[key]
             energy_invs[key] += d_inv[key]
     for key in d_size.keys():
@@ -476,15 +486,15 @@ def get_average_sizing_decisions(size_summary):
 
 
 def get_max_sizing_decisions(size_summary):
-    system_sizes = copy.deepcopy(size_summary["sub_size"][0])
-    power_sizes = copy.deepcopy(size_summary["sub_power"][0])
-    energy_sizes = copy.deepcopy(size_summary["sub_energy"][0])
-    energy_invs = copy.deepcopy(size_summary["sub_inv"][0])
+    system_sizes = copy.deepcopy(size_summary["system_sizes"][0])
+    power_sizes = copy.deepcopy(size_summary["storage_power"][0])
+    energy_sizes = copy.deepcopy(size_summary["storage_energy"][0])
+    energy_invs = copy.deepcopy(size_summary["storage_inv"][0])
     for i in range(1, 12):
-        d_size = size_summary["sub_size"][i]
-        d_power = size_summary["sub_power"][i]
-        d_energy = size_summary["sub_energy"][i]
-        d_inv = size_summary["sub_inv"][i]
+        d_size = size_summary["system_sizes"][i]
+        d_power = size_summary["storage_power"][i]
+        d_energy = size_summary["storage_energy"][i]
+        d_inv = size_summary["storage_inv"][i]
         for key in d_size.keys():
             system_sizes[key] = max(d_size[key], system_sizes[key])
         for key in d_power.keys():
@@ -517,14 +527,11 @@ def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
     results["year_one_min_charge_adder"] = min_charge_adder / pwf_e
     return results
 
-def wait_for_group_results(probs, data):
+def wait_for_group_results(probs, result):
     while True:
-        try:
-            if probs == "lb":
-                x = [data["lb_result_dicts"][i]["chp_kw"] for i in range(12)]
-            else:
-                x = [data["ub_result_dicts"][i]["chp_kw"] for i in range(12)]
+        if result.status == "SUCCESS":
+            logger.info("subproblem group completed.")
             return None
-        except KeyError:
-            logger.info("still optimizing...")
-            time.sleep(5)
+        else:
+            logger.info("still optimizing subproblem group.")
+            time.sleep(10)
