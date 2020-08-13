@@ -32,7 +32,7 @@ function add_continuous_variables(m, p)
 		dvThermalProductionYIntercept[p.Tech, p.TimeStep] >= 0  #X^{tp}_{th}: Thermal production by technology t in time step h
 		dvAbsorptionChillerDemand[p.TimeStep] >= 0  #X^{ac}_h: Thermal power consumption by absorption chiller in time step h
 		dvElectricChillerDemand[p.TimeStep] >= 0  #X^{ec}_h: Electrical power consumption by electric chiller in time step h
-		dvOMByHourBySizeCHP[p.Tech] >= 0
+		dvOMByHourBySizeCHP[p.Tech, p.TimeStep] >= 0
     end
 end
 
@@ -89,7 +89,7 @@ function add_cost_expressions(m, p)
 		m[:TotalCHPStandbyCharges] = @expression(m, p.pwf_e * p.CHPStandbyCharge * 12 *
 			sum(m[:dvSize][t] for t in p.CHPTechs))
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, p.two_party_factor * p.pwf_om *
-			sum(m[:dvOMByHourBySizeCHP][t] for t in p.CHPTechs))
+			sum(m[:dvOMByHourBySizeCHP][t, ts] for t in p.CHPTechs, ts in p.TimeStep))
 	else
 		m[:TotalCHPStandbyCharges] = @expression(m, 0.0)
 		m[:TotalHourlyCHPOpExCosts] = @expression(m, 0.0)
@@ -750,18 +750,18 @@ end
 
 function add_chp_hourly_opex_charges(m, p)
 	#Constraint CHP-hourly-om-a: om per hour, per time step >= per_unit_size_cost * size for when on, >= zero when off
-	@constraint(m, CHPHourlyOMBySizeA[t in p.CHPTechs, ts in m[:TimeStep]],
+	@constraint(m, CHPHourlyOMBySizeA[t in p.CHPTechs, ts in p.TimeStep],
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
 					   <= m[:dvOMByHourBySizeCHP][t, ts]
 					)		
 	#Constraint CHP-hourly-om-b: om per hour, per time step <= per_unit_size_cost * size for each hour
-	@constraint(m, CHPHourlyOMBySizeB[t in p.CHPTechs, ts in m[:TimeStep]],
+	@constraint(m, CHPHourlyOMBySizeB[t in p.CHPTechs, ts in p.TimeStep],
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] 
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
 					)		
 	#Constraint CHP-hourly-om-c: om per hour, per time step <= zero when off, <= per_unit_size_cost*max_size
-	@constraint(m, CHPHourlyOMBySizeC[t in p.CHPTechs, ts in m[:TimeStep]],
+	@constraint(m, CHPHourlyOMBySizeC[t in p.CHPTechs, ts in p.TimeStep],
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * m[:binTechIsOnInTS][t,ts]
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
 					)		
