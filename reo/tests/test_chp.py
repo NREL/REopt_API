@@ -42,23 +42,19 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         d = ModelManager.make_response(run_uuid=run_uuid)
         c = nested_to_flat_chp(d['outputs'])
 
-        # This test was verified to be withing 1.5% gap after 10 mins of the Mosel/Xpress monolith
+        # The values compared to the expected values may change if optimization parameters were changed
         d_expected = dict()
-        d_expected['lcc'] = 13494473.47
-        d_expected['npv'] = 1213347.52
-        d_expected['chp_kw'] = 546.67
-        d_expected['chp_year_one_fuel_used_mmbtu'] = 27833.51
-        d_expected['chp_year_one_electric_energy_produced_kwh'] = 2835823.82
-        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 7294.55
-        d_expected['boiler_total_fuel_cost_us_dollars'] = 334532.68
-        d_expected['chp_total_fuel_cost_us_dollars'] = 2980422.6
-        d_expected['total_opex_costs'] = 658599.0
+        d_expected['lcc'] = 13480652.87
+        d_expected['npv'] = 1227168.13
+        d_expected['chp_kw'] = 554.28
+        d_expected['chp_year_one_fuel_used_mmbtu'] = 34756.08
+        d_expected['chp_year_one_electric_energy_produced_kwh'] = 3489855.76
+        d_expected['chp_year_one_thermal_energy_produced_mmbtu'] = 9759.82
+        d_expected['boiler_total_fuel_cost_us_dollars'] = 4555.27
+        d_expected['chp_total_fuel_cost_us_dollars'] = 3721693.94
+        d_expected['total_opex_costs'] = 811596.0
 
         try:
-            # for key, value in d_expected.items():
-            #     print(key + "= ", c[key])
-            # print('Total OpEx = ', d['outputs']['Scenario']['Site']['Financial']['total_opex_costs_us_dollars'])
-            # print('Year 1 OpEx = ', d['outputs']['Scenario']['Site']['Financial']['year_one_opex_costs_us_dollars'])
             check_common_outputs(self, c, d_expected)
         except:
             print("Run {} expected outputs may have changed. Check the Outputs folder.".format(run_uuid))
