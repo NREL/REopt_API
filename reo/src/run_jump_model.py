@@ -298,7 +298,7 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
                               reopt_inputs['two_party_factor']
             prod_incent = sum([ub_result_dicts[idx]["sub_incentive"][tech_idx] for idx in range(1, 13)])
             prod_incentive = min(prod_incent, max_prod_incent)
-            obj += prod_incentive
+            obj -= prod_incentive
             prod_incentives.append(prod_incentive)
         if len(reopt_inputs['DemandLookbackMonths']) > 0 and reopt_inputs['DemandLookbackPercent'] > 0.0:
             obj += get_added_peak_tou_costs(ub_result_dicts, reopt_inputs)
