@@ -178,6 +178,7 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
                                       data["lb_result_dicts"], data["run_uuid"], data["user_uuid"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
     wait_for_group_results("lb", lb_result)
+    data = lb_result.result
     lb_result.forget()
 
     logger.info("after results: {}".format(data["lb_result_dicts"]))
@@ -185,6 +186,7 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
                                       data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
     wait_for_group_results("ub", ub_result)
+    data = ub_result.result
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
 
@@ -455,7 +457,6 @@ def get_size_summary(lb_result_dicts):
         size_summary["storage_power"].append(r["storage_power"])
         size_summary["storage_energy"].append(r["storage_energy"])
         size_summary["storage_inv"].append(r["storage_inv"])
-        assert(False)
     return size_summary
 
 def get_average_sizing_decisions(size_summary):
@@ -532,6 +533,9 @@ def wait_for_group_results(probs, result):
         if result.status == "SUCCESS":
             logger.info("subproblem group completed.")
             return None
-        else:
+        elif result.status == "PENDING" or result.status == "STARTED":
             logger.info("still optimizing subproblem group.")
             time.sleep(10)
+        else:
+            logger.info("Unsuccessful execution of subproblem group occurred.")
+            return None
