@@ -1677,13 +1677,13 @@ function add_sub_obj_value_results(m, p, r::Dict)
 	r["obj_no_annuals"] = value(m[:REcosts]) - value(m[:MinChargeAdder]) + value(m[:TotalProductionIncentive]) 
 	### recalculate min charge adder and add to the results
 	r["min_charge_adder_comp"] = value(m[:TotalEnergyChargesUtil]) + value(m[:TotalDemandCharges]) + value(m[:TotalExportBenefit]) + value(m[:TotalFixedCharges])
-	r["sub_incentive"] = Array{Float64,1}([value(m[:dvProdIncent][t]) for t in p.Tech])
+	r["sub_incentive"] =  JuMP.Containers.DenseAxisArray([value(m[:dvProdIncent][t]) for t in p.Tech], 1:length(p.Tech))
 	if !isempty(p.DemandRatesMonth)
 		r["peak_demand_for_month"] = sum(value(m[:dvPeakDemandEMonth][m[:month_idx],n]) for n in p.DemandMonthsBin)
 	else
 		r["peak_demand_for_month"] = 0.0
 	end
-	r["peak_ratchets"] = Array{Float64,1}([sum(value(m[:dvPeakDemandE][r,e]) for e in p.DemandBin) for r in p.Ratchets])
+	r["peak_ratchets"] = JuMP.Containers.DenseAxisArray([sum(value(m[:dvPeakDemandE][r,e]) for e in p.DemandBin) for r in p.Ratchets], p.Ratchets)
 	r["total_min_charge"] = value(m[:TotalMinCharge])
 	nothing
 end
