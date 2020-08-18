@@ -30,7 +30,9 @@
 import sys
 import json
 from django.http import JsonResponse
-from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, MessageModel
+from reo.models import ScenarioModel, SiteModel, LoadProfileModel, PVModel, StorageModel, \
+    WindModel, GeneratorModel, FinancialModel, ElectricTariffModel, \
+    MessageModel, AbsorptionChillerModel, ColdTESModel, HotTESModel, CHPModel
 from reo.exceptions import UnexpectedError
 from reo.models import ModelManager
 from resilience_stats.models import ResilienceModel
@@ -200,6 +202,10 @@ def summary(request, user_uuid):
         financials = FinancialModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','npv_us_dollars','net_capital_costs','lcc_us_dollars','lcc_bau_us_dollars','net_capital_costs_plus_om_us_dollars', 'net_capital_costs','net_om_us_dollars_bau')
         tariffs = ElectricTariffModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','urdb_rate_name','year_one_energy_cost_us_dollars','year_one_demand_cost_us_dollars','year_one_fixed_cost_us_dollars','year_one_min_charge_adder_us_dollars','year_one_bill_us_dollars','year_one_energy_cost_bau_us_dollars','year_one_demand_cost_bau_us_dollars','year_one_fixed_cost_bau_us_dollars','year_one_min_charge_adder_bau_us_dollars','year_one_bill_bau_us_dollars')
         resiliences = ResilienceModel.objects.filter(scenariomodel_id__in=scenario_run_ids).values('scenariomodel_id','resilience_hours_avg','resilience_hours_max','resilience_hours_min')
+        chps = CHPModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_kw','size_kw')
+        hottess = HotTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
+        coldtess = ColdTESModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_gal','size_gal')
+        absorpchls = AbsorptionChillerModel.objects.filter(run_uuid__in=scenario_run_uuids).values('run_uuid','max_ton','size_ton')
 
         def get_scenario_data(data, run_uuid):
             if type(data)==dict:
@@ -231,6 +237,10 @@ def summary(request, user_uuid):
             financial = get_scenario_data(financials, scenario.run_uuid)[0]
             tariff = get_scenario_data(tariffs, scenario.run_uuid)[0]
             resilience = get_scenario_data(resiliences, scenario.id)[0]
+            chp = get_scenario_data(chps, scenario.run_uuid)[0]
+            hottes = get_scenario_data(hottess, scenario.run_uuid)[0]
+            coldtes = get_scenario_data(coldtess, scenario.run_uuid)[0]
+            absorpchl = get_scenario_data(absorpchls, scenario.run_uuid)[0]
             
             # Messages
             results['messages'] = {}
@@ -358,6 +368,42 @@ def summary(request, user_uuid):
                 else:
                     results['batt_kw'] = 'not evaluated'
                     results['batt_kwh'] = 'not evaluated'
+
+                # CHP Size
+                if chp is not None:
+                    if chp.get('max_kw') or -1 > 0:
+                        results['chp_kw'] = chp.get('size_kw')
+                    else:
+                        results['chp_kw'] = 'not evaluated'
+                else:
+                    results['chp_kw'] = 'not evaluated'                    
+
+                # HotTES Size
+                if hottes is not None:
+                    if hottes.get('max_gal') or -1 > 0:
+                        results['hottes_gal'] = hottes.get('hottes_gal')
+                    else:
+                        results['hottes_gal'] = 'not evaluated'
+                else:
+                    results['hottes_gal'] = 'not evaluated'
+
+                # ColdTES Size
+                if coldtes is not None:
+                    if coldtes.get('max_gal') or -1 > 0:
+                        results['coldtes_gal'] = coldtes.get('size_gal')
+                    else:
+                        results['coldtes_gal'] = 'not evaluated' 
+                else:
+                    results['coldtes_gal'] = 'not evaluated' 
+
+                # Absoprtion Chiller Size
+                if absorpchl is not None:
+                    if absorpchl.get('max_ton') or -1 > 0:
+                        results['absorpchl_ton'] = absorpchl.get('size_ton')
+                    else:
+                        results['absorpchl_ton'] = 'not evaluated' 
+                else:
+                    results['absorpchl_ton'] = 'not evaluated' 
 
             json_response['scenarios'].append(results)
         response = JsonResponse(json_response, status=200)
