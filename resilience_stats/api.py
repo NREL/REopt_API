@@ -102,30 +102,31 @@ class OutageSimJob(ModelResource):
                 {"Error": "An error occurred in the scenario. Please check the messages from your results."}),
                 content_type='application/json', status=500))
 
-        try:  # See if this is a duplicate POST for the given run_uuid
-            _ = ResilienceModel.objects.get(scenariomodel=scenario)
-            err_msg = """The POST endpoint can only be hit once with a particular scenario run_uuid. The Resilience Model associated with this run_uuid already exists in the database. Please retrieve the results from the GET endpoint /outagesimjob/<run_uuid>/resilience_stats/. Note that even if your POST had bau=False, it is possible to retrieve bau results by passing bau=True in the GET request."""
+        if ResilienceModel.objects.filter(scenariomodel=scenario).count() > 0:
+            err_msg = ("An outage simulation job has already been created for this run_uuid."
+                "Please retrieve the results with a GET request to v1/outagesimjob/<run_uuid>/resilience_stats."
+                " Note: Even if not specified when the job was created, business-as-usual (BAU) can be retrieved"
+                " from the results endpoint by specifying bau=True in the URL parameters.")
 
             raise ImmediateHttpResponse(HttpResponse(
                 json.dumps({"Error": err_msg}),
                 content_type='application/json',
                 status=500))
-        except ResilienceModel.DoesNotExist:  # This is the first POST for this run_uuid, kick-off outage sim run
-            run_outage_sim_task.delay(run_uuid, bau)
+        else:  # This is the first POST for this run_uuid, kick-off outage sim run
+            rm = ResilienceModel.create(scenariomodel=scenario)
+            run_outage_sim_task.delay(rm.scenariomodel_id, run_uuid, bau)
             bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
 
-            return bundle
+        return bundle
 
 
 @shared_task
-def run_outage_sim_task(run_uuid, bau):
-    scenario = ScenarioModel.objects.get(run_uuid=run_uuid)
+def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
+
     results = run_outage_sim(run_uuid, with_tech=True, bau=bau)
 
-    rm = ResilienceModel.create(scenariomodel=scenario)
-
     try:
-        ResilienceModel.objects.filter(id=rm.id).update(**results)
+        ResilienceModel.objects.filter(scenariomodel_id=scenariomodel_id).update(**results)
     except SaveToDatabase as e:
         raise ImmediateHttpResponse(
             HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=201))
