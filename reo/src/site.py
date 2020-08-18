@@ -62,7 +62,21 @@ class Financial(object):
 
 class Site(object):
 
-    def __init__(self, dfm, land_acres=None, roof_squarefeet=None, **kwargs):
+    def __init__(self, dfm, land_acres=None, roof_squarefeet=None,
+            renewable_generation_min_pct=None,
+            renewable_generation_max_pct=None,
+            emissions_reduction_min_pct=None,
+            emissions_reduction_max_pct=None,
+            emissions_reduction_accounting_method=None,
+            renewable_generation_accounting_method=None,
+            **kwargs):
+
+        self.renewable_generation_min_pct = renewable_generation_min_pct
+        self.renewable_generation_max_pct = renewable_generation_max_pct
+        self.emissions_reduction_min_pct = emissions_reduction_min_pct
+        self.emissions_reduction_max_pct = emissions_reduction_max_pct
+        self.emissions_reduction_accounting_method = emissions_reduction_accounting_method
+        self.renewable_generation_accounting_method = renewable_generation_accounting_method
 
         self.land_acres = land_acres
         self.roof_squarefeet = roof_squarefeet

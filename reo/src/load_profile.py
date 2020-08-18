@@ -594,6 +594,7 @@ class LoadProfile(BuiltInProfile):
 
         def resilienceCheck(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                             fuel_avail_before_outage, fuel_slope, fuel_intercept, time_steps_per_hour):
+            generator_fuel_use_gal = 0
             fuel_avail = fuel_avail_before_outage
 
             i = -1
@@ -612,13 +613,14 @@ class LoadProfile(BuiltInProfile):
                         gen_avail = min(fuel_to_kwh, gen_existing_kw * (1.0/time_steps_per_hour))
                         gen_output = max(min(unmet, gen_avail), gen_min_turn_down)
                         fuel_needed = fuel_intercept + fuel_slope * gen_output
+                        generator_fuel_use_gal += max(min(fuel_needed,fuel_avail), 0)
                         fuel_avail -= fuel_needed
 
                         if gen_output < unmet:
                             resilience_check_flag = False
                             sustain_hours = i - 1
 
-                            return resilience_check_flag, sustain_hours
+                            return resilience_check_flag, sustain_hours, generator_fuel_use_gal
 
             else:  # gen_existing_kw = 0 and PV_existing_kw > 0
                 for i, (load, pv) in enumerate(zip(critical_loads_kw, existing_pv_kw_list)):
@@ -627,11 +629,11 @@ class LoadProfile(BuiltInProfile):
                         resilience_check_flag = False
                         sustain_hours = i - 1
 
-                        return resilience_check_flag, sustain_hours
+                        return resilience_check_flag, sustain_hours, generator_fuel_use_gal
 
             sustain_hours = i + 1
             resilience_check_flag = True
-            return resilience_check_flag, sustain_hours
+            return resilience_check_flag, sustain_hours, generator_fuel_use_gal
 
         if all(x not in [critical_loads_kw, outage_start_hour, outage_end_hour] for x in [None, []]):
 
@@ -647,7 +649,7 @@ class LoadProfile(BuiltInProfile):
                 [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
-            resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
+            resilience_check_flag, sustain_hours, generator_fuel_use_gal = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept, 
                                                                    self.time_steps_per_hour)
@@ -668,7 +670,7 @@ class LoadProfile(BuiltInProfile):
                 [0.0 for _ in critical_loads_kw[outage_start_hour:outage_end_hour]]
 
             # fill in with zeros when diesel generator run out of fuel
-            resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
+            resilience_check_flag, sustain_hours, generator_fuel_use_gal = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
                                                                    fuel_avail_before_outage, fuel_slope, fuel_intercept, 
                                                                    self.time_steps_per_hour)
@@ -681,13 +683,18 @@ class LoadProfile(BuiltInProfile):
             """
             resilience_check_flag = True
             sustain_hours = 0 #no outage
+            generator_fuel_use_gal = 0
 
         else:  # missing outage_start_hour, outage_end_hour, or critical_load_kw => no specified outage
             critical_loads_kw = [critical_load_pct * ld for ld in self.unmodified_load_list]
             resilience_check_flag = True
             sustain_hours = 0  # no outage
+            generator_fuel_use_gal = 0
 
         # resilience_check_flag: True if existing diesel can sustain critical load during outage
+        self.outage_start_hour = outage_start_hour
+        self.outage_end_hour = outage_end_hour
+        self.generator_fuel_use_gal = generator_fuel_use_gal
         self.resilience_check_flag = resilience_check_flag
         self.sustain_hours = sustain_hours
         self.annual_kwh = sum(self.load_list)

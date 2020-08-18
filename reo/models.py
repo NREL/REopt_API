@@ -134,6 +134,12 @@ class SiteModel(models.Model):
     roof_squarefeet = models.FloatField(null=True, blank=True)
     year_one_emissions_lb_C02 = models.FloatField(null=True, blank=True)
     year_one_emissions_bau_lb_C02 = models.FloatField(null=True, blank=True)
+    renewable_generation_min_pct = models.FloatField(null=True, blank=True)
+    renewable_generation_max_pct = models.FloatField(null=True, blank=True)
+    emissions_reduction_min_pct = models.FloatField(null=True, blank=True)
+    emissions_reduction_max_pct = models.FloatField(null=True, blank=True)
+    emissions_reduction_accounting_method = models.IntegerField(null=True, blank=True)
+    renewable_generation_accounting_method = models.IntegerField(null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

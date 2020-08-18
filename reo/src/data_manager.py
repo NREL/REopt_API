@@ -31,6 +31,7 @@ import copy
 from reo.src.urdb_parse import UrdbParse
 from reo.utilities import annuity, degradation_factor, slope, intercept, insert_p_after_u_bp, insert_p_bp, \
     insert_u_after_p_bp, insert_u_bp, setup_capital_cost_incentive, annuity_escalation
+import numpy as np
 max_incentive = 1.0e10
 
 big_number = 1.0e10
@@ -581,6 +582,8 @@ class DataManager:
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
 
+        emissions_factors = list()
+
         charge_efficiency = list()
         discharge_efficiency = list()
 
@@ -598,8 +601,17 @@ class DataManager:
                 # only generator tech has variable o&m cost
                 if tech.lower() == 'generator':
                     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.kwargs["om_cost_us_dollars_per_kwh"]')))
+                    emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_gal')))
+                # Uncomment when hooking up CHP
+                # elif tech.lower() == 'chp':
+                #     om_cost_us_dollars_per_kwh.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_kwh')))
+                #     om_cost_us_dollars_per_hr_per_kw_rated.append(float(eval('self.' + tech + '.om_cost_us_dollars_per_hr_per_kw_rated')))
+                #     emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
+                # elif tech.lower() == 'boiler':
+                #     emissions_factors.append(float(eval('self.' + tech + '.emissions_factor_lb_CO2_per_mmbtu')))
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
+                    emissions_factors.append(0.0)
 
                 for load in self.available_loads:
 
@@ -636,7 +648,7 @@ class DataManager:
 
         return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
-               discharge_efficiency, electric_derate
+               discharge_efficiency, electric_derate, emissions_factors
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -800,6 +812,51 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
+    def bau_emissions(self):
+        
+        """
+        Pre-processing of the BAU emissions to use in determining emissions reductions in the optimal case
+        """
+        total_emissions = 0 
+        
+        ## Grid emissions - bau load list is non-net so must remove exising PV to get to the load served by the grid
+        grid_to_load = np.array(self.load.bau_load_list) 
+
+        years = self.site.financial.analysis_years
+        for pv in self.pvs:
+            """
+            This comes from reo/load_profile.py 
+            
+            Must account for levelization factor to align with how PV is modeled in REopt:
+            Because we only model one year, we multiply the "year 1" PV production by a levelization_factor
+            that accounts for the PV capacity degradation over the analysis_years. In other words, by
+            multiplying the pv.prod_factor by the levelization_factor we are modeling the average pv production.
+            """
+            levelization_factor = round(degradation_factor(years, pv.degradation_pct), 5)
+            grid_to_load -= np.array([pv.existing_kw * x * levelization_factor for x in pv.prod_factor])
+        
+        #Ensure that existing PV cannot export during an outage, but can 
+        for i in range((self.load.outage_start_hour or 0), (self.load.outage_end_hour or 0)):
+            if grid_to_load[i] < 0:
+                grid_to_load[i] = 0
+
+        if self.site.emissions_reduction_accounting_method == 0:
+            grid_to_load = np.array([i if i > 0 else 0 for i in grid_to_load])
+
+        grid_emissions = sum(np.array(self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh) * grid_to_load)
+        total_emissions += grid_emissions
+
+        ## Generator emissions
+        if self.generator is not None:
+            total_emissions += self.load.generator_fuel_use_gal * self.generator.emissions_factor_lb_CO2_per_gal
+        
+        # Uncomment when hooking up CHP
+        # ## Boiler emissions
+        # if self.boiler is not None:
+        #     total_emissions += self.heating_load.annual_mmbtu * self.boiler.emissions_factor_lb_CO2_per_mmbtu
+
+        return total_emissions
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -815,10 +872,14 @@ class DataManager:
 
         tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
-            discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
+            discharge_efficiency, electric_derate, emissions_factors = self._get_REopt_array_tech_load(self.available_techs)
         tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
-            discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
+            discharge_efficiency_bau, electric_derate_bau, emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
+
+        grid_emissions_factor = self.elec_tariff.emissions_factor_series_lb_CO2_per_kwh
+        bau_emissions = self.bau_emissions()
+
 
         max_sizes, min_turn_down, max_sizes_location = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
@@ -972,7 +1033,7 @@ class DataManager:
             max_grid_sales_bau = 0
 
         time_steps_with_grid, time_steps_without_grid = self._get_time_steps_with_grid()
-        
+
         self.reopt_inputs = {
             'Tech': reopt_techs,
             'TechToLocation': tech_to_location,
@@ -1071,7 +1132,16 @@ class DataManager:
             'TechsBySalesTier':tariff_args.techs_by_rate,
             'CurtailmentTiers':curtailment_tiers,
             'ElectricDerate':electric_derate,
-            'TechsByNMILRegime':TechsByNMILRegime
+            'TechsByNMILRegime':TechsByNMILRegime,
+            "GridEmissionsFactor": grid_emissions_factor,
+            "TechEmissionsFactors": emissions_factors, 
+            "MinAnnualPercentRE": self.site.renewable_generation_min_pct,
+            "MaxAnnualPercentRE": self.site.renewable_generation_max_pct,
+            "MinPercentEmissionsReduction": self.site.emissions_reduction_min_pct,
+            "MaxPercentEmissionsReduction": self.site.emissions_reduction_max_pct,
+            "REAccountingMethod": self.site.renewable_generation_accounting_method,
+            "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method,
+            "BAUYr1Emissions": bau_emissions
             }
 
         self.reopt_inputs_bau = {
@@ -1172,5 +1242,13 @@ class DataManager:
             'TechsBySalesTier':tariff_args.techs_by_rate_bau,
             'CurtailmentTiers':curtailment_tiers_bau,
             'ElectricDerate':electric_derate_bau,
-            'TechsByNMILRegime':TechsByNMILRegime_bau
+            'TechsByNMILRegime':TechsByNMILRegime_bau,
+            "GridEmissionsFactor": grid_emissions_factor,
+            "TechEmissionsFactors": emissions_factors_bau, 
+            "MinAnnualPercentRE": self.site.renewable_generation_min_pct,
+            "MaxAnnualPercentRE": self.site.renewable_generation_max_pct,
+            "MinPercentEmissionsReduction": self.site.emissions_reduction_min_pct,
+            "MaxPercentEmissionsReduction": self.site.emissions_reduction_max_pct,
+            "REAccountingMethod": self.site.renewable_generation_accounting_method,
+            "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method
         }
