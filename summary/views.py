@@ -381,7 +381,7 @@ def summary(request, user_uuid):
                 # HotTES Size
                 if hottes is not None:
                     if hottes.get('max_gal') or -1 > 0:
-                        results['hottes_gal'] = hottes.get('hottes_gal')
+                        results['hottes_gal'] = hottes.get('size_gal')
                     else:
                         results['hottes_gal'] = 'not evaluated'
                 else:
