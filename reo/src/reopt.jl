@@ -950,6 +950,8 @@ function reopt_run(m, p::Parameter)
     ##############################################################################
 	try
 		results["lcc"] = round(JuMP.objective_value(m)+ 0.0001*value(m[:MinChargeAdder]))
+		results["lower_bound"] = round(JuMP.objective_bound(m))
+		results["optimality_gap"] = JuMP.relative_gap(m)
 	catch
 		# not optimal, empty objective_value
 		return results
