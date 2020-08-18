@@ -118,6 +118,9 @@ class ScenarioModel(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     optimality_tolerance = models.FloatField(null=True, blank=True)
 
+    lower_bound = models.FloatField(null=True, blank=True)
+    optimality_gap = models.FloatField(null=True, blank=True)
+
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)

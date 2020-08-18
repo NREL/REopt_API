@@ -804,6 +804,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
+            self.nested_outputs["Scenario"]["lower_bound"] = self.results_dict.get("lower_bound")
+            self.nested_outputs["Scenario"]["optimality_gap"] = self.results_dict.get("optimality_gap")
             financials = FinancialModel.objects.filter(run_uuid=meta['run_uuid']).first() #getting financial inputs for wind and pv lcoe calculations
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
