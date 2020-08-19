@@ -513,8 +513,7 @@ def wait_for_group_results(probs, result):
             logger.info("subproblem group completed.")
             return None
         elif result.status == "PENDING" or result.status == "STARTED":
-            logger.info("still optimizing subproblem group.")
-            time.sleep(10)
+            time.sleep(2)
         else:
             logger.info("Unsuccessful execution of subproblem group occurred.")
             raise UnexpectedError("Failed group result.")
