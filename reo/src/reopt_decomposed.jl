@@ -1098,7 +1098,8 @@ function reopt_run(m, p::Parameter)
 	
 end
 
-function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth::Int64, penalties::Dict, update::Bool)
+function reopt_lb_subproblem(solver::String, model_inputs::Dict, mth::Int64, 
+		penalties::Dict, update::Bool)
 	m = create_subproblem_model(solver, "lb", mth)
 	p = Parameter(model_inputs)
 	if update
@@ -1626,20 +1627,18 @@ function add_decomp_penalties(m, p, penalties::Dict)
 	m[:storage_energy_size_penalty] = Dict()
 	m[:storage_inventory_penalty] = Dict()
 	for t in p.Tech
-		m[:tech_size_penalty][t] = penalties["dvSize",t] * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t])
+		m[:tech_size_penalty][t] = penalties["system_sizes"][t] * (p.CapCostSlope[t,1] + p.pwf_om * p.OMperUnitSize[t])
 	end
 	for b in p.Storage
-		m[:storage_power_size_penalty][b] = penalties["dvStorageCapPower",b] * p.StorageCostPerKW[b]
-		m[:storage_energy_size_penalty][b] = penalties["dvStorageCapPower",b] * p.StorageCostPerKWH[b]
-		m[:storage_inventory_penalty][b] = penalties["dvStorageResetSOC",b] * p.StorageCostPerKWH[b]
+		m[:storage_power_size_penalty][b] = penalties["storage_power"][b] * p.StorageCostPerKW[b]
+		m[:storage_energy_size_penalty][b] = penalties["storage_energy"][b] * p.StorageCostPerKWH[b]
+		m[:storage_inventory_penalty][b] = penalties["storage_inv"][b] * p.StorageCostPerKWH[b]
 	end
 	nothing
 end
 
 
 function add_sizing_results(m, p, r::Dict)
-	r["all_techs"] = p.Tech
-	r["all_storage"] = p.Storage
 	r["system_sizes"] = Dict()
 	for t in p.Tech
 		r["system_sizes"][t] = value(m[:dvSize][t])
