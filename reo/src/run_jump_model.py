@@ -230,6 +230,8 @@ def run_decomposed_model(data, model, reopt_inputs,
                 gap = (ub - lb) / lb
     results = aggregate_submodel_results(best_result_dicts, ub, min_charge_adder, reopt_inputs["pwf_e"])
     results = julia.Main.convert_to_axis_arrays(reopt_param, results)
+    results["lower_bound"] = lb
+    results["optimality_gap"] = gap
     return results
 
 

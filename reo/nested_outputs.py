@@ -53,6 +53,14 @@ nested_output_definitions = {
               "description": "Problem Status",
               "units": "none"
             },
+            "lower_bound": {
+              "type": float,
+              "description": "Lower bound of optimal case",
+            },
+            "optimality_gap": {
+              "type": float,
+              "description": "Final optimization gap achieved in the optimal case",
+            },
             "Profile": {
                 "pre_setup_scenario_seconds": {
                   "type": float,
