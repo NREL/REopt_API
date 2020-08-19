@@ -70,7 +70,7 @@ class OutageSimTests(ResourceTestCaseMixin, TestCase):
         run_uuid = r_opt.get('run_uuid')
 
         assert(run_uuid is not None)
-        post_sim = {"run_uuid": run_uuid, "bau": False}
+        post_sim = {"run_uuid": run_uuid, "bau": True}
         resp = self.get_response_sim(data_sim=post_sim)
         self.assertHttpCreated(resp)
         r_sim = json.loads(resp.content)
