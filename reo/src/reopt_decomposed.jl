@@ -1720,24 +1720,26 @@ function convert_to_axis_arrays(d, r::Dict)
 	return new_r
 end
 
-function add_to_results(r1,r2,first::Bool)
-	if first
-		r1 = convert_to_arrays(r1)	
+function aggregate_results(d, all_results_dict)
+	r1 = convert_to_arrays(all_results_dict[1])
+	for key in ["obj_no_annuals","min_charge_adder_comp","sub_incentive","peak_demand_for_month","peak_ratchets","total_min_charge"]
+		delete!(r1,key)
 	end
-	r2 = convert_to_arrays(r2)
-	for key in keys(r1)
-		if typeof(r1[key]) in [Float64, Int64]
-			if !(key in ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
-					"wind_kw","generator_kw","absorpchl_kw"]) && !((occursin("pv",key) || occursin("PV",key)) && occursin("kw", key))
-				r1[key] += r2[key]
-			end
-		elseif typeof(r1[key]) == Array{Float64,1}
-			if length(r2[key]) >= 28*24
-				r1[key] = append!(r1[key],r2[key])   #append time series outputs
-			else
-				r1[key] += r2[key]   #add tech-specific arrays (e.g., production incentive) 
+	for mth in 2:12
+		r2 = convert_to_arrays(all_results_dict[mth])
+		for key in keys(r1)
+			if typeof(r1[key]) in [Float64, Int64]
+				if !(key in ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
+						"wind_kw","generator_kw","absorpchl_kw"]) && !((occursin("pv",key) || occursin("PV",key)) && occursin("kw", key))
+					r1[key] += r2[key]
+				end
+			elseif typeof(r1[key]) == Array{Float64,1}
+				if length(r2[key]) >= 28*24
+					r1[key] = append!(r1[key],r2[key])   #append time series outputs
+				end
 			end
 		end
 	end
+	convert_to_axis_arrays(d, r1)
 	return r1
 end
