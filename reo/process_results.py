@@ -711,9 +711,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh", 0)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_load_series_kw"] = self.results_dict.get("ElecFromStore")
+                        "year_one_to_load_series_kw"] = self.results_dict.get("ElecFromBatt")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_grid_series_kw"] = None
+                        "year_one_to_grid_series_kw"] = self.results_dict.get("ElecFromBattExport")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = \
                         self.results_dict.get("year_one_soc_series_pct")
                 elif name == "ElectricTariff":
