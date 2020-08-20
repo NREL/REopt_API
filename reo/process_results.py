@@ -888,6 +888,17 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step] = \
                         [0.0] * (outage_end_time_step - outage_start_time_step)
 
+        wind = results['Scenario']['Site']['Wind']
+        if len(wind["year_one_to_grid_series_kw"] or [])>0:
+            wind['year_one_curtailed_production_series_kw'] = [0.0] * len(wind["year_one_to_grid_series_kw"])
+            if (outage_start_hour is not None) and (outage_end_hour is not None):
+                outage_start_time_step = outage_start_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                outage_end_time_step = outage_end_hour * data['inputs']['Scenario']['time_steps_per_hour']
+                wind['year_one_curtailed_production_series_kw'][outage_start_time_step : outage_end_time_step] = \
+                    wind["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step]
+                wind["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step] = \
+                    [0.0] * (outage_end_time_step - outage_start_time_step)
+
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         
