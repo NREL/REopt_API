@@ -218,8 +218,9 @@ def checkgap(dfm_bau, data):
     elapsed_time = time.time() - data["start_timestamp"]
 
     if (gap >= 0. and gap <= opt_tolerance) or (iter >= max_iters) or (elapsed_time > time_limit):
-        results = aggregate_submodel_results(data["best_result_dicts"], data["ub"], data["min_charge_adder"], dfm_bau['reopt_inputs']["pwf_e"])
-        results = Main.convert_to_axis_arrays(dfm_bau["reopt_inputs"], results)
+        tstart = time.time()
+        results = aggregate_submodel_results(dfm_bau['reopt_inputs'], data["best_result_dicts"], data["ub"], data["min_charge_adder"])
+        tend = time.time()
         dfm = copy.deepcopy(dfm_bau)
         dfm["results"] = results
         return [dfm, dfm_bau]  # -> process_results
@@ -498,14 +499,16 @@ def update_penalties(penalties, size_summary, mean_sizes, rho=1.0e-4):
     return penalties
 
 
-def aggregate_submodel_results(ub_results, obj, min_charge_adder, pwf_e):
-    results = copy.deepcopy(ub_results[0])
-    for idx in range(1, 12):
-        results = julia.Main.add_to_results(results, ub_results[idx], idx==1)
+def aggregate_submodel_results(reopt_inputs, ub_results, obj, min_charge_adder):
+    sub_results_dict = {}
+    for i in range(1, 13):
+        sub_results_dict[i] = ub_results[i-1]
+    results = julia.Main.aggregate_results(reopt_inputs, sub_results_dict)
     results["lcc"] = obj
     results["total_min_charge_adder"] = min_charge_adder
-    results["year_one_min_charge_adder"] = min_charge_adder / pwf_e
+    results["year_one_min_charge_adder"] = min_charge_adder / reopt_inputs["pwf_e"]
     return results
+
 
 def wait_for_group_results(probs, result):
     while True:
@@ -516,5 +519,5 @@ def wait_for_group_results(probs, result):
             time.sleep(2)
         else:
             logger.info("Unsuccessful execution of subproblem group occurred.")
-            raise UnexpectedError("Failed group result.")
+            raise UnexpectedError("Failed group result.", None, None)
             return None
