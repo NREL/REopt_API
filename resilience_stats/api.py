@@ -119,7 +119,6 @@ class OutageSimJob(ModelResource):
             except SaveToDatabase as e:
                 raise ImmediateHttpResponse(
                 HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=500))
-            
             run_outage_sim_task.delay(rm.scenariomodel_id, run_uuid, bau)
             bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
 
