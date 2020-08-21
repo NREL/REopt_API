@@ -1740,6 +1740,6 @@ function aggregate_results(d, all_results_dict)
 			end
 		end
 	end
-	convert_to_axis_arrays(d, r1)
+	r1 = convert_to_axis_arrays(d, r1)
 	return r1
 end
