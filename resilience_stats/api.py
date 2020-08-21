@@ -28,6 +28,7 @@
 # OF THE POSSIBILITY OF SUCH DAMAGE.
 # *********************************************************************************
 import json
+import sys
 
 from celery import shared_task
 from django.core.exceptions import ValidationError
@@ -109,11 +110,16 @@ class OutageSimJob(ModelResource):
                 " from the results endpoint by specifying bau=True in the URL parameters.")
 
             raise ImmediateHttpResponse(HttpResponse(
-                json.dumps({"Error": err_msg}),
+                json.dumps({"Warning": err_msg}),
                 content_type='application/json',
-                status=500))
+                status=208))
         else:  # This is the first POST for this run_uuid, kick-off outage sim run
-            rm = ResilienceModel.create(scenariomodel=scenario)
+            try:
+                rm = ResilienceModel.create(scenariomodel=scenario)
+            except SaveToDatabase as e:
+                raise ImmediateHttpResponse(
+                HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=500))
+            
             run_outage_sim_task.delay(rm.scenariomodel_id, run_uuid, bau)
             bundle.data = {"run_uuid": run_uuid, "bau": bau, "Success": True, "Status": 201}
 
@@ -128,5 +134,6 @@ def run_outage_sim_task(scenariomodel_id, run_uuid, bau):
     try:
         ResilienceModel.objects.filter(scenariomodel_id=scenariomodel_id).update(**results)
     except SaveToDatabase as e:
-        raise ImmediateHttpResponse(
-            HttpResponse(json.dumps({"Error": e.message}), content_type='application/json', status=201))
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = SaveToDatabase(exc_type, exc_value.args[0], exc_traceback, task='resilience_model', run_uuid=run_uuid)
+        err.save_to_db()
