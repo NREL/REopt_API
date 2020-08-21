@@ -897,6 +897,7 @@ function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 end
 
 function create_subproblem_model(solver::String, model_type::String, mth::Int64)
+    # TODO replace these hard coded optimizer parameters with input values ?
 	if solver == "xpress"
 		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=0.03, OUTPUTLOG = 0))
 	elseif solver == "cbc"

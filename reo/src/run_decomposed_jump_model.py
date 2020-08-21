@@ -125,6 +125,7 @@ def run_decomposed_jump_model(self, dfm_bau, data):
     time_dict["pyjulia_activate_seconds"] = time.time() - t_start
 
     model, time_dict = get_julia_model(solver, time_dict, Pkg, Main, self.run_uuid, self.user_uuid, data)
+    # not using model, nor Main, should just pass those, but we can't? so no reason to start them here
 
     t_start = time.time()
     Main.include("reo/src/reopt_decomposed.jl")
@@ -177,13 +178,14 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
     lb_group = lb_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], data["penalties"], lb_update,
                                       data["lb_result_dicts"], data["run_uuid"], data["user_uuid"])
     lb_result = chord(lb_group())(store_lb_results.s(data))
-    wait_for_group_results("lb", lb_result)
-    data = lb_result.result
-    lb_result.forget()
+    wait_for_group_results("lb", lb_result)  # blocking process
+    data = lb_result.result  # data gets replaced several times in this function, really hard to follow
+    lb_result.forget()  # what does forget do? releases resources from a task
+    # can we run lb_group and ub_group together? If so then they can be a part of the chain with checkgap ?
     ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
                                       data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
     ub_result = chord(ub_group())(store_ub_results.s(data))
-    wait_for_group_results("ub", ub_result)
+    wait_for_group_results("ub", ub_result)  # blocking process
     data = ub_result.result
     ub_result.forget()
     callback = checkgap.s(dfm_bau, data)
@@ -198,7 +200,7 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
 @shared_task
 def checkgap(dfm_bau, data):
-    from julia import Main
+    from julia import Main  # Can we eliminate all Julia calls from this method?
     iter = data["iter"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
@@ -233,25 +235,27 @@ def checkgap(dfm_bau, data):
         raise CheckGapException(dfm_bau, data)  # -> callback.on_error -> run_subproblems
 
 
-def build_submodels(models, reopt_param):
-    result_dicts = {}
-    for idx in range(1, 13):
-        result_dicts[idx] = julia.Main.reopt_build(models[idx], reopt_param)
-    return result_dicts
-
-
 @shared_task
 def store_lb_results(results, data):
-    #lb = 0
+    """
+    Call back for lb_subproblems_group
+    :param results:
+    :param data:
+    :return:
+    """
     for i in range(12):
         data["lb_result_dicts"][i] = copy.deepcopy(results[i])
-    #    lb += results[i]["lower_bound"]
-    #data["lb"] = lb
     return data
 
 
 @shared_task
 def store_ub_results(results, data):
+    """
+     Call back for ub_subproblems_group
+    :param results:
+    :param data:
+    :return:
+    """
     for i in range(12):
         data["ub_result_dicts"][i] = copy.deepcopy(results[i])
     return data
@@ -313,7 +317,7 @@ def solve_lb_subproblem(sp_dict):
     """
     Run solve_lb_subproblem Julia method
     :param sp_dict: subproblem input dict
-    :return: updated sp_dict with sp_dict["r"] containing latest results
+    :return: updated sp_dict with sp_dict["results"] containing latest results
     """
     from julia import Main
     from julia import Pkg
@@ -456,6 +460,7 @@ def get_size_summary(lb_result_dicts):
         size_summary["storage_energy"].append(r["storage_energy"])
         size_summary["storage_inv"].append(r["storage_inv"])
     return size_summary
+
 
 def get_average_sizing_decisions(size_summary):
     avg_sizes = {}
