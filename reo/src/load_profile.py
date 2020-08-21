@@ -551,7 +551,7 @@ class LoadProfile(BuiltInProfile):
         """
 
         def resilienceCheck(critical_loads_kw, existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
-                            fuel_avail_before_outage, fuel_slope, fuel_intercept):
+                            fuel_avail_before_outage, fuel_slope, fuel_intercept, time_steps_per_hour):
             fuel_avail = fuel_avail_before_outage
 
             i = -1
@@ -567,7 +567,7 @@ class LoadProfile(BuiltInProfile):
                     unmet = load - pv
                     if unmet > 0:
                         fuel_to_kwh = (fuel_avail - fuel_intercept) / fuel_slope
-                        gen_avail = min(fuel_to_kwh, gen_existing_kw)
+                        gen_avail = min(fuel_to_kwh, gen_existing_kw * (1.0/time_steps_per_hour))
                         gen_output = max(min(unmet, gen_avail), gen_min_turn_down)
                         fuel_needed = fuel_intercept + fuel_slope * gen_output
                         fuel_avail -= fuel_needed
@@ -607,7 +607,9 @@ class LoadProfile(BuiltInProfile):
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
-                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept)
+                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept,
+                                                                   self.time_steps_per_hour)
+            
             self.bau_load_list[outage_start_hour:outage_start_hour + sustain_hours] = \
                 critical_loads_kw[outage_start_hour:outage_start_hour + sustain_hours]
 
@@ -627,7 +629,8 @@ class LoadProfile(BuiltInProfile):
             # fill in with zeros when diesel generator run out of fuel
             resilience_check_flag, sustain_hours = resilienceCheck(critical_loads_kw[outage_start_hour:outage_end_hour],
                                                                    existing_pv_kw_list, gen_existing_kw, gen_min_turn_down,
-                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept)
+                                                                   fuel_avail_before_outage, fuel_slope, fuel_intercept, 
+                                                                   self.time_steps_per_hour)
 
             self.bau_load_list[outage_start_hour:outage_start_hour + sustain_hours] = \
                 critical_loads_kw[outage_start_hour:outage_start_hour + sustain_hours]
