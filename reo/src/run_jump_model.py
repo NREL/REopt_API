@@ -116,6 +116,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
         model, time_dict = get_julia_model(solver, time_dict, Pkg, Main, run_uuid, self.user_uuid, data)
 
+        # TODO no longer need this if/else and all the supporting decomposed model code
         if len(reopt_inputs["CHPTechs"]) == 0:
             t_start = time.time()
             Main.include("reo/src/reopt.jl")
