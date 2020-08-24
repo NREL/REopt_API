@@ -500,16 +500,25 @@ def aggregate_submodel_results(reopt_inputs, ub_results, lcc, min_charge_adder):
     :param reopt_inputs: dict
     :param ub_results: list of dicts, length = 12
     :param lcc: float
-    :param min_charge_adder:
+    :param min_charge_adder: float
     :return:
     """
-    from julia import Main
-    from julia import Pkg
-    run_uuid = ""  # TODO
-    user_uuid = ""  # TODO
-    activate_julia_env(os.environ.get("SOLVER"), Pkg, run_uuid, user_uuid)
-    Main.include("reo/src/reopt_decomposed.jl")
-    results = Main.aggregate_results(reopt_inputs, ub_results)
+    nonPV_size_keys = ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
+                       "wind_kw","generator_kw","absorpchl_kw"]
+    results = ub_results[0]
+    for key in ["obj_no_annuals", "min_charge_adder_comp", "sub_incentive", "peak_demand_for_month", "peak_ratchets",
+                "total_min_charge"]:  # delete unnecessary values
+        results.pop(key, None)
+    for mth in range(1,12):
+        for key in results.keys():
+            if isinstance(results[key], (float, int)):
+                if not key in nonPV_size_keys:
+                    if (not "pv" in key) or ((not "PV" in key) and (not "kw" in key)):
+                        results[key] += ub_results[mth][key]
+            elif isinstance(results[key], list):
+                if len(ub_results[mth][key]) >= 672:  # 28 * 24
+                    results[key] += ub_results[mth][key]
+
     results["lcc"] = lcc
     results["total_min_charge_adder"] = min_charge_adder
     results["year_one_min_charge_adder"] = min_charge_adder / reopt_inputs["pwf_e"]
