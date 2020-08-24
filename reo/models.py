@@ -475,6 +475,7 @@ class WindModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):
