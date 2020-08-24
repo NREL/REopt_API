@@ -110,26 +110,9 @@ def run_decomposed_jump_model(self, dfm_bau, data):
         api.init_julia()
     else:
         j = julia.Julia()
-    from julia import Main
     time_dict["pyjulia_start_seconds"] = time.time() - t_start
 
-    t_start = time.time()
-    Main.using("Pkg")
-    from julia import Pkg
-    time_dict["pyjulia_pkg_seconds"] = time.time() - t_start
-
     solver = os.environ.get("SOLVER")
-
-    t_start = time.time()
-    activate_julia_env(solver, Pkg, self.run_uuid, self.user_uuid)
-    time_dict["pyjulia_activate_seconds"] = time.time() - t_start
-
-    model, time_dict = get_julia_model(solver, time_dict, Pkg, Main, self.run_uuid, self.user_uuid, data)
-    # not using model, nor Main, should just pass those, but we can't? so no reason to start them here
-
-    t_start = time.time()
-    Main.include("reo/src/reopt_decomposed.jl")
-    time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
 
     data["lb_iters"] = 3
     data["max_iters"] = 100
@@ -156,8 +139,10 @@ checktol dfm -> process_results
 """
 @shared_task
 def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
-
+    logger.warn("run_subproblems traceback: {}".format(traceback))
     if not isinstance(data_or_exc, dict):
+        if not isinstance(data_or_exc, CheckGapException):
+            raise data_or_exc # not handled correctly
         lb_update = True
         dfm_bau = data_or_exc.dfm_bau
         data = data_or_exc.data
@@ -200,7 +185,6 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
 
 @shared_task
 def checkgap(dfm_bau, data):
-    from julia import Main  # Can we eliminate all Julia calls from this method?
     iter = data["iter"]
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
     opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
@@ -504,12 +488,23 @@ def update_penalties(penalties, size_summary, mean_sizes, rho=1.0e-4):
     return penalties
 
 
-def aggregate_submodel_results(reopt_inputs, ub_results, obj, min_charge_adder):
-    sub_results_dict = {}
-    for i in range(1, 13):
-        sub_results_dict[i] = ub_results[i-1]
-    results = julia.Main.aggregate_results(reopt_inputs, sub_results_dict)
-    results["lcc"] = obj
+def aggregate_submodel_results(reopt_inputs, ub_results, lcc, min_charge_adder):
+    """
+
+    :param reopt_inputs: dict
+    :param ub_results: list of dicts, length = 12
+    :param lcc: float
+    :param min_charge_adder:
+    :return:
+    """
+    from julia import Main
+    from julia import Pkg
+    run_uuid = ""  # TODO
+    user_uuid = ""  # TODO
+    activate_julia_env(os.environ.get("SOLVER"), Pkg, run_uuid, user_uuid)
+    Main.include("reo/src/reopt_decomposed.jl")
+    results = Main.aggregate_results(reopt_inputs, ub_results)
+    results["lcc"] = lcc
     results["total_min_charge_adder"] = min_charge_adder
     results["year_one_min_charge_adder"] = min_charge_adder / reopt_inputs["pwf_e"]
     return results
