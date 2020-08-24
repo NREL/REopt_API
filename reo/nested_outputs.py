@@ -333,7 +333,12 @@ nested_output_definitions = {
                   "type": float,
                   "description": "The distance from the weather resource station from the input site",
                   "units": "km"
-                }
+                },
+                "year_one_curtailed_production_series_kw": {
+                  "type": list_of_float,
+                  "description": "Year one PV power curtailed during outage time series",
+                  "units": "kW"
+                },
               },
 
               "Wind": {
@@ -379,7 +384,7 @@ nested_output_definitions = {
                 },
                 "year_one_curtailed_production_series_kw": {
                   "type": list_of_float,
-                  "description": "Year one PV power curtailed during outage time series",
+                  "description": "Year one Wind power curtailed during outage time series",
                   "units": "kW"
                 },
               },
