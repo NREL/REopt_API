@@ -167,9 +167,9 @@ def run_subproblems(request_or_dfm, data_or_exc, traceback=None):
     data = lb_result.result  # data gets replaced several times in this function, really hard to follow
     lb_result.forget()  # what does forget do? releases resources from a task
     # can we run lb_group and ub_group together? If so then they can be a part of the chain with checkgap ?
-    ub_group = ub_subproblems_group.s(data["lb_result_dicts"], data["solver"], dfm_bau["reopt_inputs"],
-                                      data["ub_result_dicts"], max_size, data["run_uuid"], data["user_uuid"])
-    ub_result = chord(ub_group())(store_ub_results.s(data))
+    ub_group = ub_subproblems_group.s(data["solver"], dfm_bau["reopt_inputs"], max_size, data["iter_size_summary"],
+                                      data["iter_mean_sizes"], data["run_uuid"], data["user_uuid"])
+    ub_result = chord(ub_group())(store_ub_results.s(data, dfm_bau["reopt_inputs"]))
     wait_for_group_results("ub", ub_result)  # blocking process
     data = ub_result.result
     ub_result.forget()
@@ -193,29 +193,24 @@ def checkgap(dfm_bau, data):
     if lb > data["lb"]:
         data["lb"] = lb
     ub_result_dicts = data["ub_result_dicts"]
-    ub, min_charge_adder, prod_incentives = get_objective_value(ub_result_dicts, dfm_bau['reopt_inputs'])
-    if ub < data["ub"]:
+
+    if data["iter_ub"] < data["ub"]:
         data["best_result_dicts"] = copy.deepcopy(ub_result_dicts)
-        data["min_charge_adder"] = min_charge_adder
-        data["ub"] = ub
+        data["min_charge_adder"] = data["iter_min_charge_adder"]
+        data["ub"] = data["iter_ub"]
     gap = abs((data["ub"] - data["lb"]) / data["lb"])
     logger.info("Gap: {}".format(gap))
     max_iters = data["max_iters"]
     elapsed_time = time.time() - data["start_timestamp"]
 
     if (gap >= 0. and gap <= opt_tolerance) or (iter >= max_iters) or (elapsed_time > time_limit):
-        tstart = time.time()
         results = aggregate_submodel_results(dfm_bau['reopt_inputs'], data["best_result_dicts"], data["ub"], data["min_charge_adder"])
-        tend = time.time()
         dfm = copy.deepcopy(dfm_bau)
         dfm["results"] = results
         return [dfm, dfm_bau]  # -> process_results
 
     else:  # kick off recursive run_subproblems
         data["iter"] += 1
-        size_summary = get_size_summary(lb_result_dicts)
-        mean_sizes = get_average_sizing_decisions(size_summary)
-        data["penalties"] = update_penalties(data["penalties"], size_summary, mean_sizes, 1.0e-4)
         raise CheckGapException(dfm_bau, data)  # -> callback.on_error -> run_subproblems
 
 
@@ -223,43 +218,57 @@ def checkgap(dfm_bau, data):
 def store_lb_results(results, data):
     """
     Call back for lb_subproblems_group
-    :param results:
-    :param data:
-    :return:
+    :param results:  list of dicts, length = 12
+    :param data:  dict
+    :return data:  dict updated with LB subproblem results as new key-val pairs
     """
     for i in range(12):
         data["lb_result_dicts"][i] = copy.deepcopy(results[i])
+    size_summary = get_size_summary(data["lb_result_dicts"])
+    mean_sizes = get_average_sizing_decisions(size_summary)
+    data["iter_size_summary"] = size_summary
+    data["iter_mean_sizes"] = mean_sizes
+    data["penalties"] = update_penalties(data["penalties"], size_summary, mean_sizes, 1.0e-4)
     return data
 
 
 @shared_task
-def store_ub_results(results, data):
+def store_ub_results(results, data, reopt_inputs):
     """
      Call back for ub_subproblems_group
-    :param results:
-    :param data:
-    :return:
+    :param results:  list of dicts, length = 12
+    :param data:  dict
+    :param reopt_inputs: dict of julia inputs
+    :return data: dict updated with UB subproblem results as new key-val pairs
     """
     for i in range(12):
         data["ub_result_dicts"][i] = copy.deepcopy(results[i])
+    ub, min_charge_adder, prod_incentives = get_objective_value(data["ub_result_dicts"], reopt_inputs)
+    data["iter_ub"] = ub
+    data["iter_min_charge_adder"] = min_charge_adder
+    data["iter_prod_incentives"] = prod_incentives
     return data
 
 
 @shared_task
-def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_size, run_uuid, user_uuid):
+def ub_subproblems_group(solver, reopt_inputs, max_size, size_summary, mean_sizes, run_uuid,
+                         user_uuid):
     """
-        Creates, builds and solves subproblems in Julia
-        :param solver: dictionary in which key=month (1=Jan, 12=Dec) and values are JuMP model objects
-        :param reopt_inputs: inputs dictionary from DataManger
-        :param sizes: system size to fix for upper bound (key=month index)
-        :param results: Boolean that is True if skipping the creation of output expressions, and False o.w.
-        :return: celery group
-        """
-    size_summary = get_size_summary(lb_result_dicts)
+    Creates, builds and solves subproblems in Julia
+    :param lb_result_dicts: string identifier of solver
+    :param solver: string identifier of solver
+    :param reopt_inputs: inputs dictionary from DataManger
+    :param max_size: Boolean that is True if using the max size of each system, and False if using average size
+    :param size_summary: list of dicts, length=12; contains system sizes and reset inventory levels
+    :param mean_sizes: dictionary containsin average size of each system
+    :param run_uuid:  String - run identifier
+    :param user_uuid: String - user identifier
+    :return: celery group in which the result of eah member is a Julia subproblem results dictionary
+    """
     if max_size:
         fixed_sizes = get_max_sizing_decisions(size_summary)
     else:
-        fixed_sizes = get_average_sizing_decisions(size_summary)
+        fixed_sizes = mean_sizes
     return group(solve_ub_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
@@ -268,8 +277,6 @@ def ub_subproblems_group(lb_result_dicts, solver, reopt_inputs, results, max_siz
         "power": fixed_sizes["storage_power"],
         "energy": fixed_sizes["storage_energy"],
         "inv": fixed_sizes["storage_inv"],
-        "lb_results": lb_result_dicts[mth-1],
-        "results": results[mth - 1],
         "run_uuid": run_uuid,
         "user_uuid": user_uuid
     }) for mth in range(1, 13))
@@ -331,9 +338,8 @@ def solve_ub_subproblem(sp_dict):
     activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
     Main.include("reo/src/reopt_decomposed.jl")
 
-    results = Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"],
-                                        sp_dict["sizes"], sp_dict["power"], sp_dict["energy"],
-                                        sp_dict["inv"])
+    results = Main.reopt_ub_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"], sp_dict["sizes"],
+                                       sp_dict["power"], sp_dict["energy"], sp_dict["inv"])
     sp_dict["results"] = results
     return results
 
@@ -368,9 +374,9 @@ def get_objective_value(ub_result_dicts, reopt_inputs):
 def get_added_peak_tou_costs(ub_result_dicts, reopt_inputs):
     """
     Calculated added TOU costs to according to peak lookback months.
-    :param ub_result_dicts:
-    :param reopt_inputs:
-    :return:
+    :param ub_result_dicts: list of dicts (length = 12) containing UB subproblem results
+    :param reopt_inputs: dict containing inputs to Julia models (used to populate Julai parameter)
+    :return added_obj: float indicating added objective value due to peak tou costs
     """
     added_obj = 0.
     max_lookback_val = ub_result_dicts[0]["peak_demand_for_month"] if 1 in reopt_inputs['DemandLookbackMonths'] else 0.0
