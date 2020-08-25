@@ -102,7 +102,46 @@ def run_decomposed_jump_model(dfm_bau, data):
     run_subproblems.s(dfm_bau, decomp_data)()
 
 
-@shared_task
+class RunSubproblemsTask(Task):
+    """
+    Used to define custom Error handling for celery task
+    """
+    name = 'run_subproblems'
+    max_retries = 0
+
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        """
+        log a bunch of stuff for debugging
+        save message: error and outputs: Scenario: status
+        :param exc: The exception raised by the task.
+        :param task_id: Unique id of the failed task. (not the run_uuid)
+        :param args: Original arguments for the task that failed.
+        :param kwargs: Original keyword arguments for the task that failed.
+        :param einfo: ExceptionInfo instance, containing the traceback.
+        :return: None, The return value of this handler is ignored.
+        """
+        if isinstance(exc, REoptError):
+            exc.save_to_db()
+            msg = exc.message
+        else:
+            msg = exc.args[0]
+        data = {
+            "messages": {"error": msg},
+            "outputs": {"Scenario": {"status": "An error occurred. See messages for more."}}
+        }
+        dd_or_exc = kwargs["dd_or_exc"]
+        if isinstance(dd_or_exc, dict):
+            run_uuid = dd_or_exc['run_uuid']
+        else:
+            run_uuid = dd_or_exc.data['run_uuid']
+        ModelManager.update_scenario_and_messages(data, run_uuid=run_uuid)
+
+        self.request.chain = None  # stop the chain
+        self.request.callback = None
+        self.request.chord = None  # this seems to stop the infinite chord_unlock call
+
+
+@shared_task(base=RunSubproblemsTask)
 def run_subproblems(request_or_dfm, dd_or_exc, traceback=None):
     """
     group(lb_problems) | store_lb_results | group(ub_problems) | store_ub_results | checkgap | process_results
@@ -114,7 +153,7 @@ def run_subproblems(request_or_dfm, dd_or_exc, traceback=None):
     logger.warn("run_subproblems traceback: {}".format(traceback))
     if not isinstance(dd_or_exc, dict):
         if not isinstance(dd_or_exc, CheckGapException):
-            raise dd_or_exc  # TODO not handled correctly, reuse on_failure from RunDecomposedJumpModelTask ?
+            raise dd_or_exc
         update_lb = True
         dfm_bau = dd_or_exc.dfm_bau
         dd = dd_or_exc.data
@@ -126,7 +165,7 @@ def run_subproblems(request_or_dfm, dd_or_exc, traceback=None):
         dfm_bau = request_or_dfm
         dd = dd_or_exc
         dd["start_timestamp"] = time.time()
-        dd["iter"] = 0
+        dd["iter"] = 0  # should this be 1 ?
         dd["penalties"] = [{} for _ in range(12)]
 
     max_size = (dd["iter"] == 1)
@@ -139,8 +178,15 @@ def run_subproblems(request_or_dfm, dd_or_exc, traceback=None):
 
     gapcheck = checkgap.s(dfm_bau)
 
-    chain(lb_group | lb_callback | ub_group | ub_callback | gapcheck.on_error(run_subproblems.s()) |
-          dd["post_process_signature"])()
+    try:
+        chain(lb_group | lb_callback | ub_group | ub_callback | gapcheck.on_error(run_subproblems.s()) |
+              dd["post_process_signature"])()
+    except Exception as e:
+        # TODO handle expected exceptions?
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        err = UnexpectedError(exc_type, exc_value.args[0], traceback.format_tb(exc_traceback), task='run_subproblems',
+                              run_uuid=dd["run_uuid"])
+        raise err  # handled in on_failure method
 
     return "subproblems running iteration {}".format(dd["iter"])
 
@@ -154,6 +200,7 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update, run_uuid, user
     :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: celery group
     """
+    raise Exception("adfadf")
     return group(solve_lb_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
@@ -266,6 +313,7 @@ def checkgap(dd, dfm_bau):
     elapsed_time = time.time() - dd["start_timestamp"]
 
     if (gap >= 0. and gap <= dd["opt_tolerance"]) or (dd["iter"] >= dd["max_iters"]) or (elapsed_time > dd["timeout_seconds"]):
+        # TODO raise OptimizationTimeout when elapsed_time > dd["timeout_seconds"] ?
         results = aggregate_submodel_results(dfm_bau['reopt_inputs'], dd["best_result_dicts"], dd["ub"], dd["min_charge_adder"])
         dfm = copy.deepcopy(dfm_bau)
         dfm["results"] = results
