@@ -267,6 +267,7 @@ class CheckGapException(Exception):
     def __init__(self, dfm_bau, data):
         self.dfm_bau = dfm_bau
         self.data = data
+        # TODO not using the following ?
         self.time_elapsed = time.time() - data["t_start"]
         self.maxtime = data['inputs']['Scenario']['timeout_seconds'] - 10  # minus 10 for setup
         CheckGapException.iter += 0.5
