@@ -1495,7 +1495,7 @@ nested_input_definitions = {
           "description": "TES thermal state of charge at first hour of optimization"
         },
         "installed_cost_us_dollars_per_gal": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 3.0,
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {
@@ -1543,7 +1543,7 @@ nested_input_definitions = {
           "description": "TES thermal state of charge at first hour of optimization"
         },
         "installed_cost_us_dollars_per_gal": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 3,
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {
