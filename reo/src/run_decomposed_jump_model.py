@@ -200,7 +200,6 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update, run_uuid, user
     :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: celery group
     """
-    #raise Exception("adfadf")
     return group(solve_lb_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
@@ -224,13 +223,6 @@ def solve_lb_subproblem(sp_dict):
     from julia import Main  # global Main does not work in celery tasks :(
     from julia import Pkg
     activate_julia_env(sp_dict["solver"], Pkg, sp_dict["run_uuid"], sp_dict["user_uuid"])
-    # why don't we need these if/else statements in solve_ub_subproblem? can we eliminate them here?
-    if sp_dict["solver"] == "xpress":
-        Main.include("reo/src/reopt_xpress_model.jl")
-    elif sp_dict["solver"] == "cbc":
-        Main.include("reo/src/reopt_cbc_model.jl")
-    elif sp_dict["solver"] == "scip":
-        Main.include("reo/src/reopt_scip_model.jl")
     Main.include("reo/src/reopt_decomposed.jl")
 
     results = Main.reopt_lb_subproblem(sp_dict["solver"], sp_dict["inputs"], sp_dict["month"], sp_dict["penalties"],
