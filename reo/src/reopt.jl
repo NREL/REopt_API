@@ -93,9 +93,13 @@ function add_export_expressions(m, p)
 				  for u in p.SalesTiers, t in p.TechsBySalesTier[u]
 			) for ts in p.TimeStep )
 		)
+		m[:CurtailedElecWIND] = @expression(m,
+			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
+				for t in m[:WindTechs], u in p.CurtailmentTiers, ts in p.TimeStep)
+		)
 		m[:ExportedElecWIND] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
-				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep)
+				for t in m[:WindTechs], u in p.SalesTiersByTech[t], ts in p.TimeStep) - m[:CurtailedElecWIND]
 		)
 		m[:ExportedElecGEN] = @expression(m,
 			p.TimeStepScaling * sum(m[:dvProductionToGrid][t,u,ts] 
@@ -110,6 +114,7 @@ function add_export_expressions(m, p)
 		)
 	else
 		m[:TotalExportBenefit] = 0
+		m[:CurtailedElecWIND] = 0
 		m[:ExportedElecWIND] = 0
 		m[:ExportedElecGEN] = 0
 		m[:ExportBenefitYr1] = 0
@@ -1059,6 +1064,7 @@ function add_util_results(m, p, r::Dict)
 						 "total_min_charge_adder" => round(value(m[:MinChargeAdder]) * m[:r_tax_fraction_offtaker], digits=2),
 						 "net_capital_costs_plus_om" => round(net_capital_costs_plus_om, digits=0),
 						 "average_annual_energy_exported_wind" => round(value(m[:ExportedElecWIND]), digits=0),
+						 "average_annual_energy_curtailed_wind" => round(value(m[:CurtailedElecWIND]), digits=0),
                          "average_annual_energy_exported_gen" => round(value(m[:ExportedElecGEN]), digits=0),
 						 "net_capital_costs" => round(value(m[:TotalTechCapCosts] + m[:TotalStorageCapCosts]), digits=2))...)
 
