@@ -881,20 +881,6 @@ function add_yearone_expressions(m, p)
     m[:Year1Bill] = m[:Year1EnergyCost] + m[:Year1DemandCost] + m[:Year1FixedCharges] + m[:Year1MinCharges]
 end
 
-function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
-	if m[:solver_name] == "Xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=0.03, OUTPUTLOG = 0))
-	elseif m[:solver_name] == "Cbc"
-		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=120, ratioGap=0.03))
-	elseif m[:solver_name] == "SCIP"
-		sub_model = Model(with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_time=120, limits_gap=0.03))
-	else
-		error("solver_name undefined or doesn't match existing base of REopt solvers.")
-	end
-	sub_model[:model_type] = model_type
-	sub_model[:month_idx] = mth
-	return sub_model
-end
 
 function create_subproblem_model(solver::String, model_type::String, mth::Int64)
     # TODO replace these hard coded optimizer parameters with input values ?
@@ -937,7 +923,6 @@ function reopt_build(m, p::Parameter)
 	else
 		add_subproblem_time_sets(m, p)
 	end
-	results["num_periods"] = length(m[:TimeStep])
 	results["julia_reopt_preamble_seconds"] = time() - t_start
 	t_start = time()
 
@@ -1692,7 +1677,7 @@ function reindex_time_series(m, results::Dict)
 
 	for key in keys(results)
 		if !(typeof(results[key]) in [Array{Float64,1}, String, Float64, Dict{Any, Any}, Int64]) && length(results[key]) == length(m[:TimeStep])
-			results[key] = JuMP.Containers.DenseAxisArray([results[key][idx] for idx in m[:TimeStep]], 1:results["num_periods"])
+			results[key] = JuMP.Containers.DenseAxisArray([results[key][idx] for idx in m[:TimeStep]], 1:length(m[:TimeStep]))
 		end
 	end
 	return results
