@@ -1225,13 +1225,16 @@ function add_wind_results(m, p, r::Dict)
 	@expression(m, WINDtoBatt[ts in p.TimeStep],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
 	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
+	@expression(m, WINDtoCurtail[ts in p.TimeStep],
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
+	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
-				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
+				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
 
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
-					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
+					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
 	r["WINDtoLoad"] = round.(value.(WINDtoLoad), digits=3)
 	m[:Year1WindProd] = @expression(m,
 		p.TimeStepScaling * sum(m[:dvRatedProduction][t,ts] * p.ProductionFactor[t, ts]
@@ -1264,14 +1267,18 @@ function add_pv_results(m, p, r::Dict)
 				PVtoBatt = @expression(m, [ts in p.TimeStep], 0.0)
             end
 			r[string(PVclass, "toBatt")] = round.(value.(PVtoBatt), digits=3)
-
+			
+			PVtoCurtail = @expression(m, [ts in p.TimeStep],
+					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.CurtailmentTiers))
+    	    r[string(PVclass, "toCurtail")] = round.(value.(PVtoCurtail), digits=3)
+			
 			PVtoGrid = @expression(m, [ts in p.TimeStep],
-					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]))
+					sum(m[:dvProductionToGrid][t,u,ts] for t in PVtechs_in_class, u in p.SalesTiersByTech[t]) - PVtoCurtail[ts])
     	    r[string(PVclass, "toGrid")] = round.(value.(PVtoGrid), digits=3)
 
 			PVtoLoad = @expression(m, [ts in p.TimeStep],
-				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class)
-				- PVtoGrid[ts] - PVtoBatt[ts]
+				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t] for t in PVtechs_in_class) 
+				- PVtoGrid[ts] - PVtoBatt[ts] - PVtoCurtail[ts]
 				)
             r[string(PVclass, "toLoad")] = round.(value.(PVtoLoad), digits=3)
 
