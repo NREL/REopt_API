@@ -200,13 +200,14 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update, run_uuid, user
     :param update: Boolean that is True if skipping the creation of output expressions, and False o.w.
     :return: celery group
     """
-    raise Exception("adfadf")
+    #raise Exception("adfadf")
     return group(solve_lb_subproblem.s({
         "solver": solver,
         "inputs": reopt_inputs,
         "month": mth,
         "penalties": penalties[mth - 1],
         "update": update,
+        "run_uuid": run_uuid,
         "run_uuid": run_uuid,
         "user_uuid": user_uuid
     }) for mth in range(1, 13))
@@ -252,17 +253,19 @@ def store_lb_results(results, dd):
     dd["iter_mean_sizes"] = mean_sizes
     dd["iter_max_sizes"] = max_sizes
     dd["penalties"] = update_penalties(dd["penalties"], size_summary, mean_sizes, 1.0e-4)
-    return dd  # -> group(solve_ub_subproblem's)
+    dds = [copy.deepcopy(dd) for _ in range(12)]  #make copies of dd so that each subproblem updates a separate dictionary
+    return dds # -> group(solve_ub_subproblem's)
 
 
 @shared_task
-def solve_ub_subproblem(dd, max_size, month, reopt_inputs):
+def solve_ub_subproblem(dds, max_size, month, reopt_inputs):
     """
     Run reopt_ub_subproblem Julia method from reopt_decomposed.jl
     Run in group after store_lb_results
     :param dd: updated decomp_params dict from store_lb_results
     :return: updated decomp_params dict with ub problem results
     """
+    dd = dds[month-1]
     if max_size:
         fixed_sizes = dd["iter_max_sizes"]
     else:
@@ -273,7 +276,6 @@ def solve_ub_subproblem(dd, max_size, month, reopt_inputs):
     from julia import Pkg
     activate_julia_env(dd["solver"], Pkg, dd["run_uuid"], dd["user_uuid"])
     Main.include("reo/src/reopt_decomposed.jl")
-
     results = Main.reopt_ub_subproblem(dd["solver"], reopt_inputs, month, fixed_sizes["system_sizes"],
                                        fixed_sizes["storage_power"], fixed_sizes["storage_energy"], fixed_sizes["storage_inv"])
     dd["ubresults"] = results
@@ -288,8 +290,8 @@ def store_ub_results(dds, reopt_inputs):
     :param reopt_inputs: dict of julia inputs
     :return dd: dict updated with UB subproblem results as new key-val pairs
     """
-    dd = dds[0]
-    dd["ub_result_dicts"] = [dds[month]["ubresults"] for month in range(12)]
+    dd = dds[0]  #starts with only the first dictionary which carries everything from lb_results
+    dd["ub_result_dicts"] = [dds[month-1]["ubresults"] for month in range(12)]
     ub, min_charge_adder, prod_incentives = get_objective_value(dd["ub_result_dicts"], reopt_inputs)
     dd["iter_ub"] = ub
     dd["iter_min_charge_adder"] = min_charge_adder
@@ -478,24 +480,25 @@ def aggregate_submodel_results(reopt_inputs, ub_results, lcc, min_charge_adder):
     """
     nonPV_size_keys = ["chp_kw","batt_kwh","batt_kw","hot_tes_size_mmbtu","cold_tes_size_kwht",
                        "wind_kw","generator_kw","absorpchl_kw"]
-    results = ub_results[0]
+    all_results = ub_results[0]
     for key in ["obj_no_annuals", "min_charge_adder_comp", "sub_incentive", "peak_demand_for_month", "peak_ratchets",
                 "total_min_charge"]:  # delete unnecessary values
-        results.pop(key, None)
-    for mth in range(1,12):
-        for key in results.keys():
-            if isinstance(results[key], (float, int)):
+        all_results.pop(key, None)
+    for mth in range(1, 12):
+        to_copy = ub_results[mth]
+        for key in all_results.keys():
+            if isinstance(all_results[key], (float, int)):
                 if not key in nonPV_size_keys:
                     if (not "pv" in key) or ((not "PV" in key) and (not "kw" in key)):
-                        results[key] += ub_results[mth][key]
-            elif isinstance(results[key], list):
+                        all_results[key] += to_copy[key]
+            elif isinstance(all_results[key], list):
                 if len(ub_results[mth][key]) >= 672:  # 28 * 24
-                    results[key] += ub_results[mth][key]
+                    all_results[key] += to_copy[key]
 
-    results["lcc"] = lcc
-    results["total_min_charge_adder"] = min_charge_adder
-    results["year_one_min_charge_adder"] = min_charge_adder / reopt_inputs["pwf_e"]
-    return results
+    all_results["lcc"] = lcc
+    all_results["total_min_charge_adder"] = min_charge_adder
+    all_results["year_one_min_charge_adder"] = min_charge_adder / reopt_inputs["pwf_e"]
+    return all_results
 
 
 def init_julia():
