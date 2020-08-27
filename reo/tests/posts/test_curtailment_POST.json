@@ -1,0 +1,30 @@
+{"Scenario": { 
+            "Site": {
+                "latitude": 41.140240,
+                "longitude": -104.818802,
+
+                "LoadProfile": {
+                    "doe_reference_name": "Hospital",
+                    "annual_kwh":500000,
+                    "outage_start_hour":2441,
+                    "outage_end_hour":2541,
+                    "critical_load_pct":0.25
+                },
+
+                "ElectricTariff": {
+                    "urdb_label": "5cb745785457a3b40a9b6ec2" 
+
+                },
+				
+				"PV": {
+					"min_kw": 1000,
+					"max_kw": 1000
+				},
+				
+				"Wind": {
+					"min_kw": 1000,
+                    "max_kw": 1000
+                }
+            }
+        }
+        }
