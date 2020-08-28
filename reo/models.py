@@ -209,7 +209,6 @@ class LoadProfileModel(models.Model):
     outage_is_major_event = models.BooleanField(default=True)
 
     #Outputs
-    year_one_electric_load_series_kw_bau = ArrayField(models.FloatField(null=True, blank=True), default=list, null=True)
     year_one_electric_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     critical_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), default=list)
     annual_calculated_kwh = models.FloatField(null=True, blank=True)
