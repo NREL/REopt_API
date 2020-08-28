@@ -261,11 +261,11 @@ nested_input_definitions = {
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
         },
         "percent_share": {
-         "type": "list_of_float",
+          "type": ["float", "list_of_float"],
           "min": 1.0,
           "max": 100.0,
-          "default": [100.0],
-         "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
+          "default": 100.0,
+          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
         "year": {
           "type": "int",
@@ -362,8 +362,8 @@ nested_input_definitions = {
         },
         "annual_fraction": {
           "type": "float",
-          "min": 0.0, 
-          "max": 1.0, 
+          "min": 0.0,
+          "max": 1.0,
           "description": "Annual electric chiller electric consumption used to scale simulated building load profile",
         },
         "monthly_fraction": {
@@ -1495,7 +1495,7 @@ nested_input_definitions = {
           "description": "TES thermal state of charge at first hour of optimization"
         },
         "installed_cost_us_dollars_per_gal": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 3.0,
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {
@@ -1543,7 +1543,7 @@ nested_input_definitions = {
           "description": "TES thermal state of charge at first hour of optimization"
         },
         "installed_cost_us_dollars_per_gal": {
-          "type": "float", "min": 0.0, "max": 1000.0, "default": 3,
+          "type": "float", "min": 0.0, "max": 1000.0, "default": 1.50,
           "description": "Thermal energy-based cost of TES (e.g. volume of the tank)"
         },
         "thermal_decay_rate_fraction": {

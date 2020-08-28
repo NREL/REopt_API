@@ -843,6 +843,9 @@ class ValidateNestedInput:
                                    "Site", "outdoor_air_temp_degF", self.input_dict['Scenario']['time_steps_per_hour'])
 
         if object_name_path[-1] == "PV":
+            if real_values.get("prod_factor_series_kw") == []:
+                del real_values["prod_factor_series_kw"]
+
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
                     if real_values.get("prod_factor_series_kw"):
@@ -852,6 +855,9 @@ class ValidateNestedInput:
         if object_name_path[-1] == "Wind":
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
+
+                    if real_values.get("prod_factor_series_kw") == []:
+                        del real_values["prod_factor_series_kw"]
 
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
@@ -898,7 +904,7 @@ class ValidateNestedInput:
                                 for i in range(len(doe_reference_name_list)):
                                     self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = doe_reference_name_list[i]
                                     if type(self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']) != list:
-                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']] 
+                                        self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name'] = [self.input_dict['Scenario']['Site']['LoadProfile']['doe_reference_name']]
                                     b = LoadProfile(dfm = None, latitude=self.input_dict['Scenario']['Site']['latitude'],
                                                        longitude=self.input_dict['Scenario']['Site']['longitude'],
                                                        **self.input_dict['Scenario']['Site']['LoadProfile']
@@ -1049,6 +1055,13 @@ class ValidateNestedInput:
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
                         self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                if type(real_values.get('percent_share')) in [float, int]:
+                    if real_values.get('percent_share') == 100:
+                        real_values['percent_share'] = [100]
+                        self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
+                    else:
+                        self.input_data_errors.append(
+                        'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
                 for lp in ['critical_loads_kw', 'loads_kw']:
                     if real_values.get(lp) not in [None, []]:
                         self.validate_8760(real_values.get(lp), "LoadProfile", lp, self.input_dict['Scenario']['time_steps_per_hour'],
