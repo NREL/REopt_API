@@ -150,7 +150,6 @@ def run_subproblems(request_or_dfm, dd_or_exc, traceback=None):
     :param traceback: None on first call, traceback from .on_error thereafter
     :return: "subproblems running iteration {}".format(dd["iter"])
     """
-    logger.warn("run_subproblems traceback: {}".format(traceback))
     if not isinstance(dd_or_exc, dict):
         if not isinstance(dd_or_exc, CheckGapException):
             raise dd_or_exc
@@ -206,7 +205,6 @@ def lb_subproblems_group(solver, reopt_inputs, penalties, update, run_uuid, user
         "month": mth,
         "penalties": penalties[mth - 1],
         "update": update,
-        "run_uuid": run_uuid,
         "run_uuid": run_uuid,
         "user_uuid": user_uuid
     }) for mth in range(1, 13))
