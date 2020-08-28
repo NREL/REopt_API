@@ -64,8 +64,8 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         d_expected['lcc'] = 5908025
         d_expected['npv'] = -4961719
-        d_expected['average_annual_energy_curtailed_pv'] = 996406
-        d_expected['average_annual_energy_curtailed_wind'] = 2380486
+        d_expected['average_annual_energy_curtailed_pv'] = 1015235
+        d_expected['average_annual_energy_curtailed_wind'] = 2422069
         resp = self.get_response(data=test_post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
