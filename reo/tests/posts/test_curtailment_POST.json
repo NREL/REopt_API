@@ -32,7 +32,7 @@
                 "ElectricTariff": {
                     "urdb_label": "5cb745785457a3b40a9b6ec2",
 					"net_metering_limit_kw": 0.0,
-					"interconnection_limit_kw": 1.0e10,
+					"interconnection_limit_kw": 1.0e9,
 					"wholesale_rate_us_dollars_per_kwh": 0.0,
 					"wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0
                 },
