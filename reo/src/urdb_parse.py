@@ -572,25 +572,42 @@ class UrdbParse:
             self.prepare_demand_tiers(current_rate, n_tou, False)
             self.prepare_tou_demand(current_rate)
 
-        self.prepare_demand_ratchets(current_rate)
+        self.prepare_demand_lookback(current_rate)
         self.prepare_demand_rate_summary()
 
-    def prepare_demand_ratchets(self, current_rate):
+    def prepare_demand_lookback(self, current_rate):
+        """
+        URDB lookback fields:
+            lookbackMonths	
+            Type: array
+            Array of 12 booleans, true or false, indicating months in which lookbackPercent applies. 
+                If any of these is true, lookbackRange should be zero.
+            
+            lookbackPercent	
+            Type: decimal
+            Lookback percentage. Applies to either lookbackMonths with value=1, or a lookbackRange.
+            
+            lookbackRange	
+            Type: integer
+            Number of months for which lookbackPercent applies. If not 0, lookbackMonths values should all be 0.
+        """
+        if current_rate.lookbackPercent in [None, 0, []]:
+            reopt_lookback_months = []
+            lookback_percentage = 0
+            lookback_range = 0
+        else:
+            lookback_percentage = current_rate.lookbackPercent or 0.0
+            lookback_months = current_rate.lookbackMonths  # defaults to empty list
+            lookback_range = current_rate.lookbackRange or 0
+            reopt_lookback_months = []
+            if lookback_range != 0 and len(lookback_months) == 12:
+                for month in range(1, 13):
+                    if lookback_months[month] == 1:
+                        reopt_lookback_months.append(month)
 
-        demand_lookback_months = list()
-        demand_ratchet_percentages = 12 * [0]
-        if len(current_rate.demandratchetpercentage) == 12:
-            demand_ratchet_percentages = current_rate.demandratchetpercentage
-        demand_lookback_percentage = 0
-
-        # REopt currently only supports one lookback percentage, so use the last one
-        for month in range(0, 12):
-            if (demand_ratchet_percentages[month] > 0):
-                demand_lookback_months.append(month + 1)
-                demand_lookback_percentage = demand_ratchet_percentages[month]
-
-        self.reopt_args.demand_lookback_months = demand_lookback_months
-        self.reopt_args.demand_lookback_percent = float(demand_lookback_percentage)
+        self.reopt_args.demand_lookback_months = reopt_lookback_months
+        self.reopt_args.demand_lookback_percent = float(lookback_percentage)
+        self.reopt_args.demand_lookback_range = lookback_range
 
     def prepare_demand_tiers(self, current_rate, n_periods, monthly):
 
