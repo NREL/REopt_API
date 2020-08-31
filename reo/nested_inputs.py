@@ -342,7 +342,7 @@ nested_input_definitions = {
         "critical_load_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 2.0,
           "default": 0.5,
           "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
         },
