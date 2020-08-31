@@ -198,7 +198,7 @@ class DataManager:
             if eval('self.' + tech) is not None:
 
 
-                if tech not in ['util', 'generator']:
+                if tech not in ['generator']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -248,7 +248,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util']:
+            if eval('self.' + tech) is not None:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -568,12 +568,11 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        :return: tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
         """
         production_factor = list()
-        tech_to_load = list()
         tech_to_location = list()
         derate = list()
         electric_derate = list()
@@ -607,16 +606,6 @@ class DataManager:
                     eta_storage_in.append(self.storage.rectifier_efficiency_pct *
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
-                    if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-                        tech_to_load.append(1)
-                    else:
-                        tech_to_load.append(0)
-
-                    # By default, util can serve storage load.
-                    # However, if storage is being modeled it can override grid-charging
-                    if tech == 'util' and load == 'storage' and self.storage is not None:
-                        tech_to_load[-1] = int(self.storage.canGridCharge)
-
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -635,24 +624,22 @@ class DataManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        return tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, electric_derate
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
-                reopt_techs.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                reopt_techs.append(tech.upper())
 
         return reopt_techs
 
     def _get_REopt_tech_classes(self, techs, bau):
         """
 
-        :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
+        :param techs: list of strings, eg. ['pv1', 'pvnm1']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
         if len(techs) == 0:
@@ -690,7 +677,7 @@ class DataManager:
             for tech in techs:
                 if eval('self.' + tech) is not None:
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
-                        class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                        class_list.append(tech.upper())
             techs_in_class.append(class_list)
 
         return tech_class_min_size, tech_to_tech_class, techs_in_class
@@ -814,10 +801,10 @@ class DataManager:
         tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
             discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
