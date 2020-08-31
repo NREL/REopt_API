@@ -455,6 +455,10 @@ class UrdbParse:
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
 
+        if sum(negative_wholesale_rate_costs) == 0:
+            # no export to grid benefit, so force excess energy into curtailment
+            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
+
         # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
         # FuelAvail: array(Tech, FuelBin)
