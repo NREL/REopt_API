@@ -50,7 +50,7 @@ class DataManager:
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
 
-    def __init__(self, run_id, n_timesteps=8760):
+    def __init__(self, run_id, user_id=None, n_timesteps=8760):
         self.pvs = []
         self.pvnms = []
         self.pv1 = None
@@ -79,6 +79,7 @@ class DataManager:
         self.fuel_burning_techs = ['GENERATOR']
 
         self.run_id = run_id
+        self.user_id = user_id
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
 
