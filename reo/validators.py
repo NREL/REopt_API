@@ -1133,7 +1133,7 @@ class ValidateNestedInput:
                 if rate.urdb_dict is None:
                     self.urdb_errors.append(
                         "Unable to download {} from URDB. Please check the input value for 'urdb_label'."
-                            .format(electric_tariff.get('urdb_label'))
+                        .format(electric_tariff.get('urdb_label'))
                     )
                 else:
                     electric_tariff['urdb_response'] = rate.urdb_dict
@@ -1145,7 +1145,7 @@ class ValidateNestedInput:
                 if rate.urdb_dict is None:
                     self.urdb_errors.append(
                         "Unable to download {} from URDB. Please check the input values for 'urdb_utility_name' and 'urdb_rate_name'."
-                            .format(electric_tariff.get('urdb_rate_name'))
+                        .format(electric_tariff.get('urdb_rate_name'))
                     )
                 else:
                     electric_tariff['urdb_response'] = rate.urdb_dict
