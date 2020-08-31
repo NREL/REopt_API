@@ -198,7 +198,7 @@ class DataManager:
             if eval('self.' + tech) is not None:
 
 
-                if tech not in ['util', 'generator']:
+                if tech not in ['generator']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -631,17 +631,15 @@ class DataManager:
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
-                reopt_techs.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                reopt_techs.append(tech.upper())
 
         return reopt_techs
 
     def _get_REopt_tech_classes(self, techs, bau):
         """
 
-        :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
+        :param techs: list of strings, eg. ['pv1', 'pvnm1']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
         if len(techs) == 0:
@@ -679,7 +677,7 @@ class DataManager:
             for tech in techs:
                 if eval('self.' + tech) is not None:
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
-                        class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                        class_list.append(tech.upper())
             techs_in_class.append(class_list)
 
         return tech_class_min_size, tech_to_tech_class, techs_in_class
