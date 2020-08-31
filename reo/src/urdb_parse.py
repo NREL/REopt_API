@@ -444,22 +444,20 @@ class UrdbParse:
 
         negative_energy_costs = [cost * -0.999 for cost in
                                  energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
-        positive_energy_costs = [cost * 0.999 for cost in
-                                 energy_costs[tier_with_lowest_energy_cost*self.ts_per_year:(tier_with_lowest_energy_cost+1)*self.ts_per_year]]
 
         # wholesale and excess rates can be either scalar (floats or ints) or lists of floats
         if len(self.wholesale_rate) == 1:
             negative_wholesale_rate_costs = self.ts_per_year * [-1.0 * self.wholesale_rate[0]]
-            wholesale_rate_costs = self.ts_per_year * [1.0 * self.wholesale_rate[0]]
         else:
             negative_wholesale_rate_costs = [-1.0 * x for x in self.wholesale_rate]
-            wholesale_rate_costs = [1.0 * x for x in self.wholesale_rate]
         if len(self.excess_rate) == 1:
             negative_excess_rate_costs = self.ts_per_year * [-1.0 * self.excess_rate[0]]
-            excess_rate_costs = self.ts_per_year * [1.0 * self.excess_rate[0]]
         else:
             negative_excess_rate_costs = [-1.0 * x for x in self.excess_rate]
-            excess_rate_costs = [1.0 * x for x in self.excess_rate]
+
+        if sum(negative_wholesale_rate_costs) == 0:
+            # no export to grid benefit, so force excess energy into curtailment
+            negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
 
         # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
         energy_rates = []
@@ -488,28 +486,38 @@ class UrdbParse:
                         energy_rates = operator.add(energy_rates, self.zero_array)
                         energy_avail.append(0.0)
 
-        # ExportRate is the value of exporting a Tech to the grid under a certain Load bin
-        # If there is net metering and no wholesale rate, appears to be zeros for all but 'PV' at '1W'
         grid_export_rates = list()
-        rates_by_tech = list()
+        rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
+        num_sales_tiers = 0
+        techs_by_rate = []  # TechsBySalesTier, list of lists, with inner lists containing strings for techs
+                            # corresponding to rate tiers (outer index)
+        """
+        Sales tiers:
+        1. NEM
+        2. Wholesale
+        3. Curtailment
+        TODO is it an issue that techs cannot take advantave of both NEM and Wholsale rates? 
+            Do users expect this behavior?
+        """
         if len(techs) > 0:
             num_sales_tiers = 3
             techs_by_rate = [list(), list(), list()]
             grid_export_rates = operator.add(grid_export_rates, negative_energy_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_wholesale_rate_costs)
             grid_export_rates = operator.add(grid_export_rates, negative_excess_rate_costs)
-        else: 
-            num_sales_tiers = 0
-            techs_by_rate = []
-        for tech in techs:
-            if self.net_metering and not tech.lower().endswith('nm'):
-                rates_by_tech.append([1,3])
-                techs_by_rate[0].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
-            else:     
-                rates_by_tech.append([2,3])
-                techs_by_rate[1].append(tech.upper())
-                techs_by_rate[2].append(tech.upper())
+
+            for tech in techs:
+                if self.net_metering and not tech.lower().endswith('nm'):
+                    # techs that end with 'nm' are the option to install capacity beyond the net metering capacity limit
+                    # these techs can access NEM and curtailment rates
+                    rates_by_tech.append([1, 3])  # 1, 3 correspond to the 0, 2 entries in techs_by_rate
+                    techs_by_rate[0].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
+                else:
+                    # these techs can access wholesale and curtailment rates
+                    rates_by_tech.append([2, 3])  # 2, 3 correspond to the 1, 2 entries in techs_by_rate
+                    techs_by_rate[1].append(tech.upper())
+                    techs_by_rate[2].append(tech.upper())
 
         # FuelBurnRateM = array(Tech,Load,FuelBin)
         energy_burn_rate = []
