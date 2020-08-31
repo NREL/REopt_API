@@ -52,7 +52,7 @@ class WindTests(ResourceTestCaseMixin, TestCase):
     def get_response(self, data):
         return self.api_client.post(self.reopt_base, format='json', data=data)
 
-    def test_pv_curtailment(self):
+    def test_curtailment(self):
         """
         Validation run for wind scenario with updated WindToolkit data
         Note no tax, no ITC, no MACRS.
@@ -64,8 +64,10 @@ class WindTests(ResourceTestCaseMixin, TestCase):
         d_expected = dict()
         d_expected['lcc'] = 5908025
         d_expected['npv'] = -4961719
-        d_expected['average_annual_energy_curtailed_pv'] = 1015235
-        d_expected['average_annual_energy_curtailed_wind'] = 2422069
+        d_expected['average_annual_energy_curtailed_pv'] = 1091859
+        d_expected['average_annual_energy_curtailed_wind'] = 2841781
+        d_expected['total_pv_export'] = 0
+        d_expected['total_wind_export'] = 0
         resp = self.get_response(data=test_post)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -79,9 +81,11 @@ class WindTests(ResourceTestCaseMixin, TestCase):
             c = nested_to_flat(d['outputs'])
             print(d['outputs']['Scenario']['Site'].keys())
             c['average_annual_energy_curtailed_pv'] = sum(d['outputs']['Scenario']['Site']['PV'][
-                                                               'year_one_curtailed_production_series_kw'])
+                                                              'year_one_curtailed_production_series_kw'])
             c['average_annual_energy_curtailed_wind'] = sum(d['outputs']['Scenario']['Site']['Wind'][
-                                                               'year_one_curtailed_production_series_kw'])
+                                                                'year_one_curtailed_production_series_kw'])
+            c['total_pv_export'] = sum(d['outputs']['Scenario']['Site']['PV']['year_one_to_grid_series_kw'])
+            c['total_wind_export'] = sum(d['outputs']['Scenario']['Site']['Wind']['year_one_to_grid_series_kw'])
             try:
                 check_common_outputs(self, c, d_expected)
             except:
