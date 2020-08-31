@@ -346,10 +346,9 @@ nested_input_definitions = {
           "description": "Typical boiler fuel load for all hours in one year."
         },
         "percent_share": {
-         "type": "list_of_float",
+         "type": ["float", "list_of_float"],
           "min": 1.0,
           "max": 100.0,
-          "default": [100.0],
          "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
       },
@@ -372,13 +371,12 @@ nested_input_definitions = {
         },
         "loads_fraction": {
           "type": "list_of_float",
-          "description": "Typical electric chiller load (electric kw units!) for all hours in one year."
+          "description": "Typical electric chiller load proporion of electric load series (unit is a percent) for all time steps in one year."
         },
         "percent_share": {
-           "type": "list_of_float",
+           "type": ["float", "list_of_float"],
             "min": 1.0,
             "max": 100.0,
-            "default": [100.0],
            "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
           },
       },
