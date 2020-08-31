@@ -22,7 +22,7 @@ function add_continuous_variables(m, p)
 	    dvProdIncent[p.Tech] >= 0   # X^{pi}_{t}: Production incentive collected for technology [$]
 		dvPeakDemandE[p.Ratchets, p.DemandBin] >= 0  # X^{de}_{re}:  Peak electrical power demand allocated to tier e during ratchet r [kW]
 		dvPeakDemandEMonth[p.Month, p.DemandMonthsBin] >= 0  #  X^{dn}_{mn}: Peak electrical power demand allocated to tier n during month m [kW]
-		dvPeakDemandELookback >= 0  # X^{lp}: Peak electric demand look back [kW]
+		dvPeakDemandELookback[p.Month] >= 0  # X^{lp}: Peak electric demand look back [kW]
         MinChargeAdder >= 0   #to be removed
 		#UtilityMinChargeAdder[p.Month] >= 0   #X^{mc}_m: Annual utility minimum charge adder in month m [\$]
 		#CHP and Fuel-burning variables
@@ -709,16 +709,48 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
 
-	##Constraint (12e): Peak demand used in percent lookback calculation
-	@constraint(m, [mth in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
-	)
+	if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
 
-	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.Ratchets],
-		sum( m[:dvPeakDemandE][r,e] for e in p.DemandBin ) >=
-		p.DemandLookbackPercent * m[:dvPeakDemandELookback]
-	)
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		for mth in p.Month
+			if p.Month > p.DemandLookbackRange
+				@constraint(m, [lm in 1:p.DemandLookbackRange],
+					m[:dvPeakDemandELookback][mth] >=
+					sum(m[:dvPeakDemandEMonth][mth - lm, n] for n in p.DemandMonthsBin)
+				)
+			else  # need to handle rollover months
+				for lm in 1:p.DemandLookbackRange
+					lkbkmonth = mth - lm
+					if lkbkmonth ≤ 0
+						lkbkmonth += 12
+					end
+					@constraint(m,
+						m[:dvPeakDemandELookback][mth] >=
+						sum(m[:dvPeakDemandEMonth][lkbkmonth, n] for n in p.DemandMonthsBin)
+					)
+				end
+			end
+		end
+
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][mth]
+		)
+
+	else  # dvPeakDemandELookback does not vary by month
+
+		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
+		@constraint(m, [lm in p.DemandLookbackMonths],
+			m[:dvPeakDemandELookback][1] >= sum(m[:dvPeakDemandEMonth][lm, n] for n in p.DemandMonthsBin)
+		)
+
+		##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
+		@constraint(m, [mth in p.Month],
+			sum( m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin ) >=
+			p.DemandLookbackPercent * m[:dvPeakDemandELookback][1]
+		)
+	end
 
 	if !isempty(p.DemandRates)
 		m[:DemandTOUCharges] = @expression(m, p.pwf_e * sum( p.DemandRates[r,e] * m[:dvPeakDemandE][r,e] for r in p.Ratchets, e in p.DemandBin) )
@@ -754,17 +786,17 @@ function add_chp_hourly_opex_charges(m, p)
 					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] -
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * (1-m[:binTechIsOnInTS][t,ts])
 					   <= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 	#Constraint CHP-hourly-om-b: om per hour, per time step <= per_unit_size_cost * size for each hour
 	@constraint(m, CHPHourlyOMBySizeB[t in p.CHPTechs, ts in p.TimeStep],
-					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t] 
+					p.OMcostPerUnitHourPerSize[t] * m[:dvSize][t]
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 	#Constraint CHP-hourly-om-c: om per hour, per time step <= zero when off, <= per_unit_size_cost*max_size
 	@constraint(m, CHPHourlyOMBySizeC[t in p.CHPTechs, ts in p.TimeStep],
 					m[:NewMaxSize][t] * p.OMcostPerUnitHourPerSize[t] * m[:binTechIsOnInTS][t,ts]
 					   >= m[:dvOMByHourBySizeCHP][t, ts]
-					)		
+					)
 end
 
 function add_cost_function(m, p)

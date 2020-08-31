@@ -57,8 +57,9 @@ Base.@kwdef struct Parameter
 	 TimeStepRatchetsMonth::Array{Array{Int64,1},1}   #  H_m: Time steps in month m
 	 TimeStepRatchets::Array{Array{Int64,1},1}   #  H_r: Time steps in ratchet r
      TimeStepsWithGrid::Array{Int64,1}  # H_g: Time steps with grid connection
-     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection
-	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: Look back months considered for peak pricing
+     TimeStepsWithoutGrid::Array{Int64,1}	 # H \setminus H_g: Time steps without grid connection 
+	 DemandLookbackMonths::Array{Any,1}   # M^{lb}: fixed Look back months considered for peak pricing
+	 DemandLookbackRange::Int   # number of Look back months considered for peak pricing
 	 SegByTechSubdivision::AxisArray # S_{kt}: System size segments from segmentation k applied to technology t
 	 TechsInClass::AxisArray # T_c \subset T: Technologies that are in class c
 	 TechsByFuelType::AxisArray # T_f \subset T: Technologies that burn fuel type f
