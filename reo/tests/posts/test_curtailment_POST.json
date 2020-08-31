@@ -1,0 +1,100 @@
+{"Scenario": { 
+            "Site": {
+                "latitude": 41.140240,
+                "longitude": -104.818802,
+				
+				"Financial": {
+					"om_cost_escalation_pct": 0.025,
+					"escalation_pct": 0.023,
+					"offtaker_tax_pct": 0.26,
+					"offtaker_discount_pct": 0.083,
+					"two_party_ownership": false,
+					"owner_tax_pct": 0.26,
+					"owner_discount_pct": 0.083,
+					"analysis_years": 25,
+					"value_of_lost_load_us_dollars_per_kwh": 100.0,
+					"microgrid_upgrade_cost_pct": 0.3
+				},
+
+                "LoadProfile": {
+                    "doe_reference_name": "Hospital",
+                    "annual_kwh":500000,
+					"percent_share": 100.0,
+					"year": 2019,
+					"loads_kw_is_net": true,
+					"critical_loads_kw_is_net": false,
+                    "outage_start_hour":2441,
+                    "outage_end_hour":2541,
+                    "critical_load_pct":0.25,
+					"outage_is_major_event": true
+                },
+
+                "ElectricTariff": {
+                    "urdb_label": "5cb745785457a3b40a9b6ec2",
+					"net_metering_limit_kw": 0.0,
+					"interconnection_limit_kw": 1.0e9,
+					"wholesale_rate_us_dollars_per_kwh": 0.0,
+					"wholesale_rate_above_site_load_us_dollars_per_kwh": 0.0
+                },
+				
+				"PV": {
+					"existing_kw": 0,
+					"min_kw": 1000,
+					"max_kw": 1000,
+					"installed_cost_us_dollars_per_kw": 1600.0,
+					"om_cost_us_dollars_per_kw": 16.0,
+					"macrs_option_years": 5,
+					"macrs_bonus_pct": 1,
+					"macrs_itc_reduction": 0.5,
+					"federal_itc_pct": 0.26,
+					"state_ibi_pct": 0.0,
+					"state_ibi_max_us_dollars": 1.0e10,
+					"utility_ibi_pct": 0.0,
+					"utility_ibi_max_us_dollars": 1.0e10,
+					"federal_rebate_us_dollars_per_kw": 0.0,
+					"state_rebate_us_dollars_per_kw": 0.0,
+					"state_rebate_max_us_dollars": 1.0e10,
+					"utility_rebate_us_dollars_per_kw": 0.0,
+					"utility_rebate_max_us_dollars": 1.0e10,
+					"pbi_us_dollars_per_kwh": 0.0,
+					"pbi_max_us_dollars": 1.0e9,
+					"pbi_years": 1,
+					"pbi_system_max_kw": 1.0e9,
+					"degradation_pct": 0.005,
+					"azimuth": 180,
+					"losses": 0.14,
+					"array_type": 1,
+					"module_type": 0,
+					"gcr": 0.4,
+					"dc_ac_ratio": 1.2,
+					"inv_eff": 0.96,
+					"radius": 0.0,
+					"tilt": 0.537
+				},
+				
+				"Wind": {
+					"min_kw": 1000,
+                    "max_kw": 1000,
+					"installed_cost_us_dollars_per_kw": 3013.0,
+					"om_cost_us_dollars_per_kw": 40.0,
+					"macrs_option_years": 5,
+					"macrs_bonus_pct": 0.0,
+					"macrs_itc_reduction": 0.5,
+					"federal_itc_pct": 0.26,
+					"state_ibi_pct": 0.0,
+					"state_ibi_max_us_dollars": 1.0e10,
+					"utility_ibi_pct": 0.0,
+					"utility_ibi_max_us_dollars": 1.0e10,
+					"federal_rebate_us_dollars_per_kw": 0.0,
+					"state_rebate_us_dollars_per_kw": 0.0,
+					"state_rebate_max_us_dollars": 1.0e10,
+					"utility_rebate_us_dollars_per_kw": 0.0,
+					"utility_rebate_max_us_dollars": 1.0e10,
+					"pbi_us_dollars_per_kwh": 0.0,
+					"pbi_max_us_dollars": 1.0e9,
+					"pbi_years": 1,
+					"pbi_system_max_kw": 1.0e9
+                }
+            }
+        }
+	}
