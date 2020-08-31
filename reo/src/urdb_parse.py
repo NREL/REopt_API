@@ -61,6 +61,7 @@ class REoptArgs:
         self.demand_month_max_in_tiers = 1 * [big_number]
         self.demand_lookback_months = []
         self.demand_lookback_percent = 0.0
+        self.demand_lookback_range = 0
         self.demand_min = 0
 
         self.energy_rates = []
@@ -123,9 +124,12 @@ class RateData:
             'demandunits',
             'demandweekdayschedule',
             'demandweekendschedule',
-            'demandratchetpercentage',
             'demandwindow',
             'demandreactivepowercharge',
+            # lookback demand charges
+            'lookbackMonths',
+            'lookbackPercent',
+            'lookbackRange',
             # coincident rates
             'coincidentrateunit',
             'coincidentratestructure',
