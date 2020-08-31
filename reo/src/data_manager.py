@@ -345,11 +345,30 @@ class DataManager:
                         tech_incentives[region]['rebate'] = 0.0
                         tech_incentives[region]['rebate_max'] = 0.0
 
-                        # Intermediate Cost curve
+                # Intermediate Cost curve
+                # New input of tech_size_for_cost_curve to be associated with tech_cost with same type and length
+                if hasattr(eval('self.' + tech), '.tech_size_for_cost_curve'):
+                    if eval('self.' + tech + '.tech_size_for_cost_curve') is not None:
+                        tech_size = eval('self.' + tech + '.tech_size_for_cost_curve')
+                    else:
+                        tech_size = []
+                else:
+                    tech_size = float(big_number)
+
                 xp_array_incent = dict()
-                xp_array_incent['utility'] = [0.0, tech_to_size]  #kW
+                if isinstance(tech_size, list):
+                    xp_array_incent['utility'] = [0]  # Start with y-intercept (x = 0)
+                    xp_array_incent['utility'] += tech_size  # Append list of sizes for cost curve [kW]
+                else:
+                    xp_array_incent['utility'] = [0.0, float(big_number)]
+
                 yp_array_incent = dict()
-                yp_array_incent['utility'] = [0.0, tech_to_size * tech_cost]  #$
+                if isinstance(tech_cost, list):
+                    yp_array_incent['utility'] = [tech_cost[0]]  # Tech cost can be non-zero for size = 0 kW (y-intercept)
+                    yp_array_incent['utility'] += [tech_size[i] * tech_cost[i] for i in range(1, len(tech_cost) - 1)]  # [$]
+                    yp_array_incent['utility'] += [float(big_number) * tech_cost[-1]]  # Last cost assumed for big_number size
+                else:
+                    yp_array_incent['utility'] = [0.0, float(big_number) * tech_cost]  # [$]
 
                 # Final cost curve
                 cost_curve_bp_x = [0.0]

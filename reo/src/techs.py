@@ -781,6 +781,7 @@ class CHP(Tech):
 
         self.prime_mover = kwargs.get('prime_mover')
         self.size_class = kwargs.get('size_class')
+        self.tech_size_for_cost_curve = kwargs.get('tech_size_for_cost_curve')
         self.existing_boiler_production_type_steam_or_hw = existing_boiler_production_type_steam_or_hw
         self.reopt_class = 'CHP'
         self.is_chp = True
