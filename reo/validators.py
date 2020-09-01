@@ -1246,17 +1246,23 @@ class ValidateNestedInput:
                     real_values['doe_reference_name'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                     'doe_reference_name')
 
-                if not no_values_given and real_values.get('percent_share') is None:
-                    self.update_attribute_value(object_name_path, number, 'percent_share',
-                                                self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                    'percent_share'))
+                if type(real_values.get('percent_share')) in [float, int]:
+                    if real_values.get('percent_share') == 100:
+                        real_values['percent_share'] = [100]
+                        self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
+                    else:
+                        self.input_data_errors.append(
+                        'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
+                if type(real_values.get('percent_share')) in [list]:
+                    if len(real_values.get('percent_share')) > 0:
+                        percent_share_sum = sum(real_values['percent_share'])
+                        if percent_share_sum != 100.0:
+                            self.input_data_errors.append(
+                            'The sum of elements of percent share list for hybrid chiller electric load profile should be 100.')
+                if real_values.get('percent_share') is None:
                     real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                    'percent_share')
-
-                if len(real_values.get('percent_share')) > 0:
-                    percent_share_sum = sum(real_values['percent_share'])
-                    if percent_share_sum != 100.0:
-                        self.input_data_errors.append('The sum of elements of percent share list for hybrid chiller electric load profile should be 100.')
+                                                'percent_share')
+                    self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
 
                 if real_values.get('doe_reference_name') is not None:
                     if type(real_values['doe_reference_name']) is not list:
@@ -1301,10 +1307,23 @@ class ValidateNestedInput:
                                             self.input_dict['Scenario']['Site']['LoadProfile'].get(
                                                 'doe_reference_name'))
 
-            if not no_values_given and real_values.get('percent_share') is None:
-                self.update_attribute_value(object_name_path, number, 'percent_share',
-                                            self.input_dict['Scenario']['Site']['LoadProfile'].get(
-                                                'percent_share'))
+            if type(real_values.get('percent_share')) in [float, int]:
+                if real_values.get('percent_share') == 100:
+                    real_values['percent_share'] = [100]
+                    self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
+                else:
+                    self.input_data_errors.append(
+                    'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
+            if type(real_values.get('percent_share')) in [list]:
+                if len(real_values.get('percent_share')) > 0:
+                    percent_share_sum = sum(real_values['percent_share'])
+                    if percent_share_sum != 100.0:
+                        self.input_data_errors.append(
+                        'The sum of elements of percent share list for hybrid boiler fuel load profile should be 100.')
+            if real_values.get('percent_share') is None:
+                real_values['percent_share'] = self.input_dict['Scenario']['Site']['LoadProfile'].get(
+                                            'percent_share')
+                self.update_attribute_value(object_name_path, number, 'percent_share', real_values['percent_share'])
 
             # Validate a user supplied energy series
             if not no_values_given and real_values.get('loads_mmbtu_per_hour') not in [None, []]:
