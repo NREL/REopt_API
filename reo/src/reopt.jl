@@ -645,13 +645,13 @@ function add_tou_demand_charge_constraints(m, p)
 	)
 	
 	##Constraint (12e): Peak demand used in percent lookback calculation 
-	@constraint(m, [m in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][m, n] for n in p.DemandMonthsBin)
+	@constraint(m, [mth in p.DemandLookbackMonths],
+		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
 	)
 	
 	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.DemandLookbackMonths],
-		sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
+	@constraint(m, [mth in p.DemandLookbackMonths],
+		sum( m[:dvPeakDemandEMonth][mth,e] for e in p.DemandBin ) >= 
 		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
 	)
 
