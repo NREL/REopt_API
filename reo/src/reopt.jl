@@ -628,11 +628,26 @@ end
 
 
 function add_nem_constraint(m, p)
+	# NEM is SalesTier 1
+	# dvStorageToGrid is always fixed at 0.0, remove it?
 	@constraint(m, GridSalesLimit,
 		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  +
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling *
-		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep)
+		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
+end
+
+
+function add_no_grid_export_constraint(m, p)
+	for ts in p.TimeStepsWithoutGrid
+		for u in p.SalesTiers
+			if !(u in p.CurtailmentTiers)
+				for t in p.TechsBySalesTier[u]
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end
+		end
+	end
 end
 
 
@@ -879,6 +894,7 @@ function reopt_run(m, p::Parameter)
 	## Temporary workaround for outages TimeStepsWithoutGrid
 	if !isempty(p.TimeStepsWithoutGrid)
 		add_no_grid_constraints(m, p)
+		add_no_grid_export_constraint(m, p)
 	end
 
 	#don't allow curtailment or sales of stroage
@@ -1219,6 +1235,7 @@ function add_wind_results(m, p, r::Dict)
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiers))
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] )
