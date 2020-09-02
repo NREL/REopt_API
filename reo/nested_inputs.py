@@ -268,10 +268,10 @@ nested_input_definitions = {
           "description": "Annual energy consumption used to scale simulated building load profile, if <b><small>monthly_totals_kwh</b></small> is not provided."
         },
         "percent_share": {
-                 "type": "list_of_float",
+                 "type": ["float", "list_of_float"],
                   "min": 1.0,
                   "max": 100.0,
-                  "default": [100.0],
+                  "default": 100.0,
                  "description": "Percentage share of the types of building for creating hybrid simulated building and campus profiles."
         },
         "year": {
@@ -323,7 +323,7 @@ nested_input_definitions = {
         "critical_load_pct": {
           "type": "float",
           "min": 0.0,
-          "max": 1.0,
+          "max": 2.0,
           "default": 0.5,
           "description": "Critical load factor is multiplied by the typical load to determine the critical load that must be met during an outage. Value must be between zero and one, inclusive."
         },

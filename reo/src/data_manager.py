@@ -51,7 +51,7 @@ class DataManager:
     Creates input dicts for reopt.jl and manages data transfer between Celery tasks
     """
 
-    def __init__(self, run_id, n_timesteps=8760):
+    def __init__(self, run_id, user_id=None, n_timesteps=8760):
         self.pvs = []
         self.pvnms = []
         self.pv1 = None
@@ -80,6 +80,7 @@ class DataManager:
         self.fuel_burning_techs = ['GENERATOR']
 
         self.run_id = run_id
+        self.user_id = user_id
         self.n_timesteps = n_timesteps
         self.pwf_e = 0  # used in results.py -> outage_costs.py to escalate & discount avoided outage costs
 
@@ -198,7 +199,7 @@ class DataManager:
             if eval('self.' + tech) is not None:
 
 
-                if tech not in ['util', 'generator']:
+                if tech not in ['generator']:
 
                     # prod incentives don't need escalation
                     if tech.startswith("pv"):  # PV has degradation
@@ -248,7 +249,7 @@ class DataManager:
 
         for tech in techs:
 
-            if eval('self.' + tech) is not None and tech not in ['util']:
+            if eval('self.' + tech) is not None:
 
                 existing_kw = 0.0
                 if hasattr(eval('self.' + tech), 'existing_kw'):
@@ -568,12 +569,11 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        :return: tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
         """
         production_factor = list()
-        tech_to_load = list()
         tech_to_location = list()
         derate = list()
         electric_derate = list()
@@ -618,16 +618,6 @@ class DataManager:
                     eta_storage_in.append(self.storage.rectifier_efficiency_pct *
                                           self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
 
-                    if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-                        tech_to_load.append(1)
-                    else:
-                        tech_to_load.append(0)
-
-                    # By default, util can serve storage load.
-                    # However, if storage is being modeled it can override grid-charging
-                    if tech == 'util' and load == 'storage' and self.storage is not None:
-                        tech_to_load[-1] = int(self.storage.canGridCharge)
-
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -646,24 +636,22 @@ class DataManager:
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        return tech_to_location, derate, eta_storage_in, eta_storage_out, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, electric_derate, emissions_factors
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
         for tech in techs:
-
             if eval('self.' + tech) is not None:
-
-                reopt_techs.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                reopt_techs.append(tech.upper())
 
         return reopt_techs
 
     def _get_REopt_tech_classes(self, techs, bau):
         """
 
-        :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
+        :param techs: list of strings, eg. ['pv1', 'pvnm1']
         :return: tech_classes, tech_class_min_size, tech_to_tech_class
         """
         if len(techs) == 0:
@@ -701,7 +689,7 @@ class DataManager:
             for tech in techs:
                 if eval('self.' + tech) is not None:
                     if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
-                        class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
+                        class_list.append(tech.upper())
             techs_in_class.append(class_list)
 
         return tech_class_min_size, tech_to_tech_class, techs_in_class
@@ -870,10 +858,10 @@ class DataManager:
         tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
             discharge_efficiency, electric_derate, emissions_factors = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_load_bau, tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, electric_derate_bau, emissions_factors_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
@@ -1141,7 +1129,11 @@ class DataManager:
             "MaxPercentEmissionsReduction": self.site.emissions_reduction_max_pct,
             "REAccountingMethod": self.site.renewable_generation_accounting_method,
             "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method,
-            "BAUYr1Emissions": bau_emissions
+            "BAUYr1Emissions": bau_emissions,
+            'TechsBySalesTier': tariff_args.techs_by_rate,
+            'CurtailmentTiers': curtailment_tiers,
+            'ElectricDerate': electric_derate,
+            'TechsByNMILRegime': TechsByNMILRegime
             }
 
         self.reopt_inputs_bau = {
@@ -1196,7 +1188,6 @@ class DataManager:
             'NMILLimits': NMILLimits_bau,
             'TechToNMILMapping': TechToNMILMapping_bau,
             'CapCostSegCount': n_segments_bau,
-            # new parameters for reformulation
             'StorageCostPerKW': StorageCostPerKW,
 	        'StorageCostPerKWH': StorageCostPerKWH,
 	        'FuelCost': tariff_args.fuel_costs_bau,
@@ -1212,32 +1203,31 @@ class DataManager:
 	        'ChargeEfficiency': charge_efficiency_bau,
 	        'GridChargeEfficiency': grid_charge_efficiency,
 	        'DischargeEfficiency': discharge_efficiency_bau,
-	        'StorageMinSizeEnergy':0,
-	        'StorageMaxSizeEnergy':0,
-	        'StorageMinSizePower':0,
-	        'StorageMaxSizePower':0,
-	        'StorageMinSOC':self.storage.soc_min_pct,
-	        'StorageInitSOC':self.storage.soc_init_pct,
+	        'StorageMinSizeEnergy': 0,
+	        'StorageMaxSizeEnergy': 0,
+	        'StorageMinSizePower': 0,
+	        'StorageMaxSizePower': 0,
+	        'StorageMinSOC': self.storage.soc_min_pct,
+	        'StorageInitSOC': self.storage.soc_init_pct,
             'StorageCanGridCharge': self.storage.canGridCharge,
-            'SegmentMinSize':segment_min_size_bau,
-            'SegmentMaxSize':segment_max_size_bau,
-            # Sets that need to be populated
-            'Storage':['Elec'],
-            'FuelType':fuel_type_bau,
-            'Subdivision':subdivisions,
-            'PricingTierCount':tariff_args.energy_tiers_num,
-            'ElecStorage':[],
-            'SegByTechSubdivision':seg_by_tech_subdivision_bau,
-            'TechsInClass':techs_in_class_bau,
-            'TechsByFuelType':techs_by_fuel_type_bau,
-            'ElectricTechs':electric_techs_bau,
-            'FuelBurningTechs':fb_techs_bau,
-            'TechsNoTurndown':techs_no_turndown_bau,
-            'SalesTierCount':tariff_args.num_sales_tiers_bau,
-            'StorageSalesTiers':storage_sales_tiers_bau,
-            'NonStorageSalesTiers':non_storage_sales_tiers_bau,
-            'TimeStepsWithGrid':time_steps_with_grid,
-            'TimeStepsWithoutGrid':time_steps_without_grid,
+            'SegmentMinSize': segment_min_size_bau,
+            'SegmentMaxSize': segment_max_size_bau,
+            'Storage': ['Elec'],
+            'FuelType': fuel_type_bau,
+            'Subdivision': subdivisions,
+            'PricingTierCount': tariff_args.energy_tiers_num,
+            'ElecStorage': [],
+            'SegByTechSubdivision': seg_by_tech_subdivision_bau,
+            'TechsInClass': techs_in_class_bau,
+            'TechsByFuelType': techs_by_fuel_type_bau,
+            'ElectricTechs': electric_techs_bau,
+            'FuelBurningTechs': fb_techs_bau,
+            'TechsNoTurndown': techs_no_turndown_bau,
+            'SalesTierCount': tariff_args.num_sales_tiers_bau,
+            'StorageSalesTiers': storage_sales_tiers_bau,
+            'NonStorageSalesTiers': non_storage_sales_tiers_bau,
+            'TimeStepsWithGrid': time_steps_with_grid,
+            'TimeStepsWithoutGrid': time_steps_without_grid,
             'SalesTiersByTech': tariff_args.rates_by_tech_bau,
             'TechsBySalesTier':tariff_args.techs_by_rate_bau,
             'CurtailmentTiers':curtailment_tiers_bau,
@@ -1245,10 +1235,15 @@ class DataManager:
             'TechsByNMILRegime':TechsByNMILRegime_bau,
             "GridEmissionsFactor": grid_emissions_factor,
             "TechEmissionsFactors": emissions_factors_bau, 
-            "MinAnnualPercentRE": self.site.renewable_generation_min_pct,
-            "MaxAnnualPercentRE": self.site.renewable_generation_max_pct,
-            "MinPercentEmissionsReduction": self.site.emissions_reduction_min_pct,
-            "MaxPercentEmissionsReduction": self.site.emissions_reduction_max_pct,
+            "MinAnnualPercentRE": 0,
+            "MaxAnnualPercentRE": 1,
+            "MinPercentEmissionsReduction": 0,
+            "MaxPercentEmissionsReduction": 0,
             "REAccountingMethod": self.site.renewable_generation_accounting_method,
-            "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method
+            "EmissionsAccountingMethod": self.site.emissions_reduction_accounting_method,
+            "BAUYr1Emissions": bau_emissions,
+            'TechsBySalesTier': tariff_args.techs_by_rate_bau,
+            'CurtailmentTiers': curtailment_tiers_bau,
+            'ElectricDerate': electric_derate_bau,
+            'TechsByNMILRegime': TechsByNMILRegime_bau
         }
