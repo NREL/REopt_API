@@ -657,16 +657,6 @@ class DataManager:
                     else:
                         TechToNMILMapping.append(0)
 
-#        for regime in self.NMILRegime:
-#            tech_nmil_reg = list()
-#            for tech in techs:
-#                if eval('self.' + tech) is not None:
-#                    tech_regime = eval('self.' + tech + '.nmil_regime')
-#                    if regime == tech_regime:
-#                        TechsByNMILRegime.append(tech)
-#
-#            TechsByNMILRegime.append(tech_nmil_reg)
-
         return TechToNMILMapping, TechsByNMILRegime, NMIL_regime
 
     def _get_REopt_array_tech_load(self, techs):
@@ -777,13 +767,12 @@ class DataManager:
     def _get_REopt_tech_classes(self, techs, bau):
         """
 
-        :param techs: list of strings, eg. ['pv1', 'pvnm1', 'util']
-        :return: tech_classes, tech_class_min_size, tech_to_tech_class
+        :param techs: list of strings, eg. ['pv1', 'pvnm1']
+        :return: tech_classes, tech_class_min_size
         """
         if len(techs) == 0:
-            return [0.0 for _ in self.available_tech_classes], [], [[] for _ in self.available_tech_classes]
+            return [0.0 for _ in self.available_tech_classes], [[] for _ in self.available_tech_classes]
         tech_class_min_size = list()  # array(TechClass)
-        tech_to_tech_class = list()  # array(Tech, TechClass)
         techs_in_class = list()  # array(TechClass)
         for tc in self.available_tech_classes:
             min_sizes = [0.0]
@@ -801,17 +790,6 @@ class DataManager:
 
             tech_class_min_size.append(max(min_sizes))
 
-        for tech in techs:
-
-            if eval('self.' + tech) is not None:
-
-                for tc in self.available_tech_classes:
-
-                    if eval('self.' + tech + '.reopt_class').upper() == tc.upper():
-                        tech_to_tech_class.append(1)
-                    else:
-                        tech_to_tech_class.append(0)
-
         for tc in self.available_tech_classes:
             class_list = list()
             for tech in techs:
@@ -820,7 +798,7 @@ class DataManager:
                         class_list.append(tech.upper() if tech is not 'util' else tech.upper() + '1')
             techs_in_class.append(class_list)
 
-        return tech_class_min_size, tech_to_tech_class, techs_in_class
+        return tech_class_min_size, techs_in_class
 
 
     def _get_REopt_tech_max_sizes_min_turn_down(self, techs, bau=False):
@@ -978,7 +956,7 @@ class DataManager:
                                                          self.storage.incentives.macrs_bonus_pct,
                                                          self.storage.incentives.macrs_itc_reduction)
         StorageCostPerKWH -= self.storage.incentives.rebate_kwh
-        
+
         storage_power_cost.append(StorageCostPerKW)
         storage_energy_cost.append(StorageCostPerKWH)
         if self.hot_tes != None:
@@ -1043,8 +1021,8 @@ class DataManager:
         reopt_techs = self._get_REopt_techs(self.available_techs)
         reopt_techs_bau = self._get_REopt_techs(self.bau_techs)
 
-        tech_class_min_size, tech_to_tech_class, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
-        tech_class_min_size_bau, tech_to_tech_class_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
+        tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
+        tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
         tech_to_load, tech_to_location, derate, om_cost_us_dollars_per_kw, \
                om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
