@@ -644,7 +644,7 @@ function add_tou_demand_charge_constraints(m, p)
 		sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 	)
 	
-	if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
+  if p.DemandLookbackRange != 0  # then the dvPeakDemandELookback varies by month
 		
 		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
 		for mth in p.Month
