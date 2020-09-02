@@ -573,11 +573,26 @@ end
 
 
 function add_nem_constraint(m, p)
+	# NEM is SalesTier 1
+	# dvStorageToGrid is always fixed at 0.0, remove it?
 	@constraint(m, GridSalesLimit, 
 		p.TimeStepScaling * sum(m[:dvProductionToGrid][t,1,ts] for t in p.TechsBySalesTier[1], ts in p.TimeStep)  + 
-		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) <= p.TimeStepScaling * 
-		sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
+		sum(m[:dvStorageToGrid][u,ts] for u in p.StorageSalesTiers, ts in p.TimeStep) 
+		<= p.TimeStepScaling * sum(m[:dvGridPurchase][u,ts] for u in p.PricingTier, ts in p.TimeStep)
 	)
+end
+
+
+function add_no_grid_export_constraint(m, p)
+	for ts in p.TimeStepsWithoutGrid
+		for u in p.SalesTiers 
+			if !(u in p.CurtailmentTiers)
+				for t in p.TechsBySalesTier[u]
+					fix(m[:dvProductionToGrid][t, u, ts], 0.0, force=true)
+				end
+			end
+		end
+	end
 end
 
 
@@ -645,13 +660,13 @@ function add_tou_demand_charge_constraints(m, p)
 	)
 	
 	##Constraint (12e): Peak demand used in percent lookback calculation 
-	@constraint(m, [m in p.DemandLookbackMonths],
-		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][m, n] for n in p.DemandMonthsBin)
+	@constraint(m, [mth in p.DemandLookbackMonths],
+		m[:dvPeakDemandELookback] >= sum(m[:dvPeakDemandEMonth][mth, n] for n in p.DemandMonthsBin)
 	)
 	
 	##Constraint (12f): Ratchet peak demand charge is bounded below by lookback
-	@constraint(m, [r in p.DemandLookbackMonths],
-		sum( m[:dvPeakDemandEMonth][r,e] for e in p.DemandBin ) >= 
+	@constraint(m, [mth in p.DemandLookbackMonths],
+		sum( m[:dvPeakDemandEMonth][mth,e] for e in p.DemandBin ) >= 
 		p.DemandLookbackPercent * m[:dvPeakDemandELookback] 
 	)
 
@@ -757,6 +772,7 @@ function reopt_run(m, p::Parameter)
 	## Temporary workaround for outages TimeStepsWithoutGrid
 	if !isempty(p.TimeStepsWithoutGrid)
 		add_no_grid_constraints(m, p)
+		add_no_grid_export_constraint(m, p)
 	end
 
 	#don't allow curtailment or sales of stroage 
@@ -967,12 +983,17 @@ function add_wind_results(m, p, r::Dict)
 	@expression(m, WINDtoBatt[ts in p.TimeStep],
 	            sum(sum(m[:dvProductionToStorage][b, t, ts] for t in m[:WindTechs]) for b in p.ElecStorage))
 	r["WINDtoBatt"] = round.(value.(WINDtoBatt), digits=3)
+	
 	@expression(m, WINDtoCurtail[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.CurtailmentTiers))
+				
 	r["WINDtoCurtail"] = round.(value.(WINDtoCurtail), digits=3)
+	
 	@expression(m, WINDtoGrid[ts in p.TimeStep],
 				sum(m[:dvProductionToGrid][t,u,ts] for t in m[:WindTechs], u in p.SalesTiersByTech[t]) - WINDtoCurtail[ts])
+				
 	r["WINDtoGrid"] = round.(value.(WINDtoGrid), digits=3)
+	
 	@expression(m, WINDtoLoad[ts in p.TimeStep],
 				sum(m[:dvRatedProduction][t, ts] * p.ProductionFactor[t, ts] * p.LevelizationFactor[t]
 					for t in m[:WindTechs]) - WINDtoGrid[ts] - WINDtoBatt[ts] - WINDtoCurtail[ts] )
