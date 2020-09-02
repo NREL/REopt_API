@@ -627,10 +627,10 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
             
-            print("AA")
             #Parse Emissions Results
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_pct"] = self.results_dict.get("AnnualREpercent")
             self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_kwh"] = self.results_dict.get("AnnualREkWh")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_C02"] = self.results_dict.get("year1_emissions_lbsCO2e")
             self.nested_outputs["Scenario"]["Site"]["year_one_emissions_reduction_pct"] = self.results_dict.get("year1_emissionsreductionpercent")
             self.nested_outputs["Scenario"]["Site"]["year_one_scope1_emissions_series_lb_C02"] = self.results_dict.get("emissions_profile_scope1")
             self.nested_outputs["Scenario"]["Site"]["year_one_scope2_emissions_series_lb_C02"] = self.results_dict.get("emissions_profile_scope2")
