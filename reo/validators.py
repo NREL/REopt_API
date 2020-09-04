@@ -994,6 +994,8 @@ class ValidateNestedInput:
                         if not ascending_sizes:
                             self.input_data_errors.append(
                                 'The sizes corresponding to installed cost are not in ascending order')
+                    else:
+                        self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
                 # otherwise, check if the user intended to run CHP and supplied sufficient info
                 else:
@@ -1037,11 +1039,21 @@ class ValidateNestedInput:
                         if filtered_values['min_allowable_kw'] or 0 > filtered_values['max_kw'] or 0:
                             self.input_data_errors.append('The CHP min_allowable_kw cannot be greater than its max_kw')
 
+                        # Cost curve
                         if len(filtered_values['installed_cost_us_dollars_per_kw']) > 1:
                             if len(filtered_values['installed_cost_us_dollars_per_kw']) != len(
                                     filtered_values['tech_size_for_cost_curve']):
                                 self.input_data_errors.append(
                                     'The number of installed cost points does not equal the number sizes corresponding to those costs')
+                            ascending_sizes = True
+                            for i, size in enumerate(filtered_values['tech_size_for_cost_curve'][1:], 1):
+                                if size <= filtered_values['tech_size_for_cost_curve'][i - 1]:
+                                    ascending_sizes = False
+                            if not ascending_sizes:
+                                self.input_data_errors.append(
+                                    'The sizes corresponding to installed cost are not in ascending order')
+                        else:
+                            self.update_attribute_value(object_name_path, number, 'tech_size_for_cost_curve', [])
 
                     # otherwise assume user did not want to run CHP and set it's max_kw to 0 to deactivate it
                     else:

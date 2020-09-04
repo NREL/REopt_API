@@ -311,7 +311,7 @@ def calculate_simple_payback_and_irr(data):
                         if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
                             capital_costs += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * cost_list[s+1]
             else:
-                capital_costs = (cost_list or 0) * (chp_size or 0)
+                capital_costs = (cost_list[0] or 0) * (chp_size or 0)
             annual_om = (-1 * total_kw * chp['om_cost_us_dollars_per_kw']) + \
                 (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
                 (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
@@ -674,7 +674,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                         (size_list[s+1] - size_list[s])
                                 upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
                 else:
-                    upfront_capex += (cost_list or 0) * (chp_size or 0)
+                    upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
 
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
