@@ -670,7 +670,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     else:
                         for s in range(1, len(size_list)-1):
                             if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
-                                upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * cost_list[s+1]
+                                slope = (cost_list[s+1] * size_list[s+1] - cost_list[s] * size_list[s]) / \
+                                        (size_list[s+1] - size_list[s])
+                                upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
                 else:
                     upfront_capex += (cost_list or 0) * (chp_size or 0)
 
