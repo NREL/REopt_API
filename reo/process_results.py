@@ -673,7 +673,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                 slope = (cost_list[s+1] * size_list[s+1] - cost_list[s] * size_list[s]) / \
                                         (size_list[s+1] - size_list[s])
                                 upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
-                else:
+                elif len(cost_list) == 1:
                     upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
 
             # storage capacity
