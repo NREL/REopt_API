@@ -649,9 +649,9 @@ function add_tou_demand_charge_constraints(m, p)
 		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
 		for mth in p.Month
 			if mth > p.DemandLookbackRange
-				@constraint(m, [lm in 1:p.DemandLookbackRange],
-					m[:dvPeakDemandELookback][mth] >= 
-					sum(m[:dvPeakDemandEMonth][mth - lm, n] for n in p.DemandMonthsBin)
+				@constraint(m, [lm in 1:p.DemandLookbackRange, ts in p.TimeStepRatchetsMonth[mth - lm]],
+					m[:dvPeakDemandELookback][mth]
+					≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 				)
 			else  # need to handle rollover months
 				for lm in 1:p.DemandLookbackRange
@@ -659,9 +659,9 @@ function add_tou_demand_charge_constraints(m, p)
 					if lkbkmonth ≤ 0
 						lkbkmonth += 12
 					end
-					@constraint(m,
-						m[:dvPeakDemandELookback][mth] >= 
-						sum(m[:dvPeakDemandEMonth][lkbkmonth, n] for n in p.DemandMonthsBin)
+					@constraint(m, [ts in p.TimeStepRatchetsMonth[lkbkmonth]],
+						m[:dvPeakDemandELookback][mth]
+						≥ sum( m[:dvGridPurchase][u, ts] for u in p.PricingTier )
 					)
 				end
 			end
