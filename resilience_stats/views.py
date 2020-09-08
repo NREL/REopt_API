@@ -93,12 +93,13 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
         try:  # catch specific exception
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
         except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
-            msg = "Outage sim results are not ready. "
-            msg += (
-                "If you have already submitted an outagesimjob, please try again later. If not, please first submit an outagesimjob by sending a POST request to /outagesimjob/ with the run_uuid and bau data to generate the" \
-                " outage simulation results before GET-ing the results from /resilience_stats endpoint. ")
-            sample_payload = {"run_uuid": "6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf", "bau": False}
-            msg += "Sample body data for POST-ing to /outagesimjob/: " + json.dumps(sample_payload)
+            msg = ('Outage sim results are not ready. '
+                'If you have already submitted an outagesimjob, please try again later. '
+                'If not, please first submit an outagesimjob by sending a POST request to '
+                'v1/outagesimjob/ with run_uuid and bau parameters. This will generate'
+                ' outage simulation results that you can access from a GET request to the '
+                'v1/job/<run uuid>/resilience_stats endpoint. ')
+            msg += 'Sample body data for POST-ing to /outagesimjob/: {"run_uuid\": \"6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf\", \"bau\": false}' 
             return JsonResponse({"Error": msg}, content_type='application/json', status=404)
 
         else:  # ResilienceModel does exist
@@ -118,7 +119,10 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
                 results = filtered_dict
 
         results.update({
-            "help_text": "The present_worth_factor and avg_critical_load are provided such that one can calculate an avoided outage cost in dollars by multiplying a value of load load ($/kWh) times the avg_critical_load, resilience_hours_avg, and present_worth_factor. Note that if the outage event is 'major', i.e. only occurs once, then the present_worth_factor is 1."
+            "help_text": ("The present_worth_factor and avg_critical_load are provided such"
+                " that one can calculate an avoided outage cost in dollars by multiplying a value "
+                "of load load ($/kWh) by the avg_critical_load, resilience_hours_avg, and present_worth_factor."
+                " Note that if the outage event is 'major' (i.e. only occurs once), then the present_worth_factor is 1.")
         })
         response = JsonResponse({"outage_sim_results": results}, content_type='application/json', status=200)
         return response

@@ -141,6 +141,13 @@ class SiteModel(models.Model):
     emissions_reduction_accounting_method = models.IntegerField(null=True, blank=True)
     renewable_generation_accounting_method = models.IntegerField(null=True, blank=True)
 
+    year_one_renewable_generation_pct = models.FloatField(null=True, blank=True)
+    year_one_renewable_generation_kwh = models.FloatField(null=True, blank=True)
+    year_one_emissions_reduction_pct = models.FloatField(null=True, blank=True)
+    year_one_scope1_emissions_series_lb_C02 = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    year_one_scope2_emissions_series_lb_C02 = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    year_one_nonscope_emissions_series_lb_C02 = ArrayField(models.FloatField(null=True, blank=True), default=list)
+    
     @classmethod
     def create(cls, **kwargs):
         obj = cls(**kwargs)
@@ -389,6 +396,7 @@ class WindModel(models.Model):
     year_one_to_load_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     year_one_to_grid_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
     lcoe_us_dollars_per_kwh = models.FloatField(null=True, blank=True)
+    year_one_curtailed_production_series_kw = ArrayField(models.FloatField(null=True, blank=True), null=True, blank=True)
 
     @classmethod
     def create(cls, **kwargs):

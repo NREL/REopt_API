@@ -38,6 +38,7 @@ import logging
 log = logging.getLogger(__name__)
 import geopandas as gpd
 from shapely import geometry as g
+from reo.exceptions import LoadProfileError
 
 
 class BuiltInProfile(object):
@@ -514,18 +515,25 @@ class LoadProfile(BuiltInProfile):
         self.n_timesteps = self.time_steps_per_hour*8760
         self.percent_share_list = kwargs.get("percent_share")
         # "pop"ing the following two values to replace them before calling BuiltInProfile (super class)
-        doe_reference_name_list = kwargs.pop("doe_reference_name", None)
-        self.annual_kwh_list = kwargs.pop("annual_kwh", None)
-
+        doe_reference_name_list = kwargs.pop("doe_reference_name", [])
+        self.annual_kwh_list = kwargs.pop("annual_kwh", [])
+        
         if user_profile:
             self.load_list = user_profile
             self.unmodified_load_list = copy.copy(self.load_list)
             self.bau_load_list = copy.copy(self.load_list)
 
         else:  # building type and (annual_kwh OR monthly_totals_kwh) defined by user
+            if len(doe_reference_name_list) == 0:
+                message = ("Invalid LoadProfile inputs. At a minimum, please supply a loads_kw or doe_reference_name.")
+                log.error("Scenario.py raising error: " + message)
+                lp_error = LoadProfileError(task='reo.src.load_profile.py', run_uuid=dfm.run_id, user_uuid=dfm.user_id, message=message)
+                lp_error.save_to_db()
+                raise lp_error
+
             if len(doe_reference_name_list) == 1:
                 kwargs["doe_reference_name"] = doe_reference_name_list[0]
-                if self.annual_kwh_list is not None:
+                if len(self.annual_kwh_list) == 1:
                     kwargs["annual_kwh"] = self.annual_kwh_list[0]
                 super(LoadProfile, self).__init__(**kwargs)
 

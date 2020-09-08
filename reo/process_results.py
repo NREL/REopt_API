@@ -626,6 +626,16 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
             """
             # TODO: move the filling in of outputs to reopt.jl
             self.nested_outputs["Scenario"]["status"] = self.results_dict["status"]
+            
+            #Parse Emissions Results
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_pct"] = self.results_dict.get("AnnualREpercent")
+            self.nested_outputs["Scenario"]["Site"]["year_one_renewable_generation_kwh"] = self.results_dict.get("AnnualREkWh")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_lb_C02"] = self.results_dict.get("year1_emissions_lbsCO2e")
+            self.nested_outputs["Scenario"]["Site"]["year_one_emissions_reduction_pct"] = self.results_dict.get("year1_emissionsreductionpercent")
+            self.nested_outputs["Scenario"]["Site"]["year_one_scope1_emissions_series_lb_C02"] = self.results_dict.get("emissions_profile_scope1")
+            self.nested_outputs["Scenario"]["Site"]["year_one_scope2_emissions_series_lb_C02"] = self.results_dict.get("emissions_profile_scope2")
+            self.nested_outputs["Scenario"]["Site"]["year_one_nonscope_emissions_series_lb_C02"] = self.results_dict.get("emissions_profile_nonscope")
+
             financials = FinancialModel.objects.filter(run_uuid=meta['run_uuid']).first() #getting financial inputs for wind and pv lcoe calculations
             for name, d in nested_output_definitions["outputs"]["Scenario"]["Site"].items():
                 if name == "LoadProfile":
@@ -664,6 +674,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                         pv["year_one_to_battery_series_kw"] = self.results_dict.get("PV{}toBatt".format(i))
                         pv["year_one_to_load_series_kw"] = self.results_dict.get("PV{}toLoad".format(i))
                         pv["year_one_to_grid_series_kw"] = self.results_dict.get("PV{}toGrid".format(i))
+                        pv['year_one_curtailed_production_series_kw'] = self.results_dict.get("PV{}toCurtail".format(i))
                         pv["year_one_power_production_series_kw"] = pv.get("year_one_to_grid_series_kw")
                         if not pv.get("year_one_to_battery_series_kw") is None:
                             if pv["year_one_power_production_series_kw"] is None:
@@ -699,6 +710,8 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_to_grid_series_kw"] = self.results_dict.get("WINDtoGrid")
                     self.nested_outputs["Scenario"]["Site"][name][
+                        "year_one_curtailed_production_series_kw"] = self.results_dict.get("WINDtoCurtail")
+                    self.nested_outputs["Scenario"]["Site"][name][
                         "year_one_power_production_series_kw"] = self.compute_total_power(name)
                     if self.nested_outputs["Scenario"]["Site"][name]["size_kw"] > 0: #setting up
                         wind_model = WindModel.objects.get(run_uuid=meta['run_uuid'])
@@ -711,9 +724,9 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                     self.nested_outputs["Scenario"]["Site"][name]["size_kw"] = self.results_dict.get("batt_kw", 0)
                     self.nested_outputs["Scenario"]["Site"][name]["size_kwh"] = self.results_dict.get("batt_kwh", 0)
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_load_series_kw"] = self.results_dict.get("ElecFromStore")
+                        "year_one_to_load_series_kw"] = self.results_dict.get("ElecFromBatt")
                     self.nested_outputs["Scenario"]["Site"][name][
-                        "year_one_to_grid_series_kw"] = None
+                        "year_one_to_grid_series_kw"] = self.results_dict.get("ElecFromBattExport")
                     self.nested_outputs["Scenario"]["Site"][name]["year_one_soc_series_pct"] = \
                         self.results_dict.get("year_one_soc_series_pct")
                 elif name == "ElectricTariff":
@@ -872,22 +885,6 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                                  dm=dfm_list[0], inputs=data['inputs']['Scenario']['Site'])
         results = results_object.get_output()
         
-        # Move PV exported to grid during an outage to the curtailed PV series, doing this here so we have access to input data
-        # Get outage start and end hour
-        outage_start_hour= data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_start_hour')
-        outage_end_hour = data['inputs']['Scenario']['Site']['LoadProfile'].get('outage_end_hour')
-        for pv in results['Scenario']['Site']['PV']:
-            # If there is an outage move the PV exported to the grid to the curtailment series
-            if len(pv["year_one_to_grid_series_kw"] or [])>0:
-                pv['year_one_curtailed_production_series_kw'] = [0.0] * len(pv["year_one_to_grid_series_kw"])
-                if (outage_start_hour is not None) and (outage_end_hour is not None):
-                    outage_start_time_step = outage_start_hour * data['inputs']['Scenario']['time_steps_per_hour']
-                    outage_end_time_step = outage_end_hour * data['inputs']['Scenario']['time_steps_per_hour']
-                    pv['year_one_curtailed_production_series_kw'][outage_start_time_step : outage_end_time_step] = \
-                        pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step]
-                    pv["year_one_to_grid_series_kw"][outage_start_time_step : outage_end_time_step] = \
-                        [0.0] * (outage_end_time_step - outage_start_time_step)
-
         data['outputs'].update(results)
         data['outputs']['Scenario'].update(meta)  # run_uuid and api_version
         

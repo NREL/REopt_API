@@ -825,6 +825,9 @@ class ValidateNestedInput:
                             err_msg = "Site address must not include special characters. Restricted to 0-9, a-z, A-Z, periods, and spaces.")
         
         if object_name_path[-1] == "PV":
+            if real_values.get("prod_factor_series_kw") == []:
+                del real_values["prod_factor_series_kw"]
+
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
                     if real_values.get("prod_factor_series_kw"):
@@ -834,6 +837,9 @@ class ValidateNestedInput:
         if object_name_path[-1] == "Wind":
             if any((isinstance(real_values['max_kw'], x) for x in [float, int])):
                 if real_values['max_kw'] > 0:
+
+                    if real_values.get("prod_factor_series_kw") == []:
+                        del real_values["prod_factor_series_kw"]
 
                     if real_values.get("prod_factor_series_kw"):
                         self.validate_8760(real_values.get("prod_factor_series_kw"),
@@ -938,6 +944,13 @@ class ValidateNestedInput:
                 if real_values.get('outage_start_hour') is not None and real_values.get('outage_end_hour') is not None:
                     if real_values.get('outage_start_hour') == real_values.get('outage_end_hour'):
                         self.input_data_errors.append('LoadProfile outage_start_hour and outage_end_hour cannot be the same')
+                if type(real_values.get('percent_share')) in [float, int]:
+                    if real_values.get('percent_share') == 100:
+                        real_values['percent_share'] = [100]
+                        self.update_attribute_value(object_name_path, number, 'percent_share', [100.0])
+                    else:
+                        self.input_data_errors.append(
+                        'The percent_share input for a load profile must be be 100 or a list of numbers that sums to 100.')
 
                 if len(real_values.get('percent_share')) > 0:
                     percent_share_sum = sum(real_values['percent_share'])
