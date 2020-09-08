@@ -648,7 +648,7 @@ function add_tou_demand_charge_constraints(m, p)
 		
 		##Constraint (12e): dvPeakDemandELookback is the highest peak demand in DemandLookbackMonths
 		for mth in p.Month
-			if p.Month > p.DemandLookbackRange
+			if mth > p.DemandLookbackRange
 				@constraint(m, [lm in 1:p.DemandLookbackRange],
 					m[:dvPeakDemandELookback][mth] >= 
 					sum(m[:dvPeakDemandEMonth][mth - lm, n] for n in p.DemandMonthsBin)
