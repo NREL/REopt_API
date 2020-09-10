@@ -84,23 +84,25 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
 
     if scenario.status == "Optimizing...":
         return JsonResponse({"Error": "The scenario is still optimizing. Please try again later."},
-                            content_type='application/json', status=500)
+                            content_type='application/json', status=404)
     elif "error" in scenario.status.lower():
         return JsonResponse(
             {"Error": "An error occurred in the scenario. Please check the messages from your results."},
             content_type='application/json', status=500)
     try:  # catch all exceptions
         try:  # catch specific exception
-            rm = ResilienceModel.objects.get(scenariomodel=scenario)
-        except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
-            msg = ('Outage sim results are not ready. '
+            not_ready_msg = ('Outage sim results are not ready. '
                 'If you have already submitted an outagesimjob, please try again later. '
                 'If not, please first submit an outagesimjob by sending a POST request to '
                 'v1/outagesimjob/ with run_uuid and bau parameters. This will generate'
                 ' outage simulation results that you can access from a GET request to the '
                 'v1/job/<run uuid>/resilience_stats endpoint. ')
-            msg += 'Sample body data for POST-ing to /outagesimjob/: {"run_uuid\": \"6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf\", \"bau\": false}' 
-            return JsonResponse({"Error": msg}, content_type='application/json', status=404)
+            not_ready_msg += 'Sample body data for POST-ing to /outagesimjob/: {"run_uuid\": \"6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf\", \"bau\": false}' 
+            rm = ResilienceModel.objects.get(scenariomodel=scenario)
+            if rm['resilience_by_timestep'] is None:
+                return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
+        except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
+            return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
 
         else:  # ResilienceModel does exist
             results = model_to_dict(rm)
