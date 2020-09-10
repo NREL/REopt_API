@@ -137,6 +137,7 @@ USE_TZ = True
 # Results backend
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_WORKER_MAX_MEMORY_PER_CHILD = 4000000 # 6 GB
+CELERY_WORKER_CONCURRENCY = 4
 
 
 # celery task registration
