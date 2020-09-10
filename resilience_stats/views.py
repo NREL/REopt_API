@@ -99,7 +99,9 @@ def resilience_stats(request: Union[Dict, HttpRequest], run_uuid=None):
                 'v1/job/<run uuid>/resilience_stats endpoint. ')
             not_ready_msg += 'Sample body data for POST-ing to /outagesimjob/: {"run_uuid\": \"6ea30f0f-3723-4fd1-8a3f-bebf8a3e4dbf\", \"bau\": false}' 
             rm = ResilienceModel.objects.get(scenariomodel=scenario)
-            if rm['resilience_by_timestep'] is None:
+            if rm.resilience_by_timestep is None:
+                from IPython import embed
+                embed()
                 return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
         except ResilienceModel.DoesNotExist:  # case for no resilience_stats generated yet
             return JsonResponse({"Error": not_ready_msg}, content_type='application/json', status=404)
