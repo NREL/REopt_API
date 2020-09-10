@@ -58,6 +58,9 @@ def proforma(request, run_uuid):
         if scenario.status.lower() == "optimizing...":
             return HttpResponse("Problem is still solving. Please try again later.", status=425)  # too early status
 
+        if 'error' in scenario.status.lower():
+            return HttpResponse("The optimization task encountered an error. Cannot create a proforma spreadsheet.", status=404)  # problem errored out and cannot create a proforma
+
         try:  # see if Proforma already created
             pf = ProForma.objects.get(scenariomodel=scenario)
         except:
