@@ -1,4 +1,5 @@
 {
+    "DemandLookbackRange": 0,
     "StorageCanGridCharge": false,
     "Tech": [] ,
     "TechToLocation": [] ,
