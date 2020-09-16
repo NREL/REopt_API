@@ -191,6 +191,18 @@ Base.@kwdef struct Parameter
      TechToLocation::AxisArray
      MaxSizesLocation::Array{Float64, 1}
      Location::UnitRange
+
+    # Annual RE & emissions parameters
+    REAccountingMethod::Int64
+    EmissionsAccountingMethod::Int64
+    MinAnnualPercentRE::Float64
+    MaxAnnualPercentRE::Float64
+    MinPercentEmissionsReduction::Float64
+    MaxPercentEmissionsReduction::Float64
+    BAUYr1Emissions::Float64
+    GridEmissionsFactor::Array{Float64,1}
+    TechEmissionsFactors::Array{Float64,1}
+    
 end
 
 
