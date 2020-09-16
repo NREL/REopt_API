@@ -78,6 +78,7 @@ class Rate(object):
         self.util = util
         self.rate = rate  # rate name string
 
+        self.errors = []
         self.urdb_dict = self.get_rate() # can return None
 
     def get_rate(self):
@@ -93,12 +94,6 @@ class Rate(object):
                 # self.add_rate_to_cache(rate_dict, rate_cache)
         else:
             return None
-
-        try:
-            if rate_dict['energyratestructure'] is None:
-                rate_dict = None
-        except KeyError:
-            rate_dict = None
 
         return rate_dict
 
