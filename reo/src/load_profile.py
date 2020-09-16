@@ -608,7 +608,7 @@ class LoadProfile(BuiltInProfile):
             i = -1
 
             if gen_existing_kw == 0 and existing_pv_kw_list in [None, []]:
-                return False, 0
+                return False, 0, 0
 
             elif gen_existing_kw > 0:
                 if existing_pv_kw_list in [None, []]:
