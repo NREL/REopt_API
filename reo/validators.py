@@ -126,7 +126,7 @@ class URDB_RateValidator:
             if self.isNotNone(f):
                 self.isNotEmptyList(f)
 
-        for key in list(set(dir(self))) :
+        for key in dir(self) :
             v = 'validate_' + key
             if hasattr(self, v):
                 getattr(self, v)()
@@ -501,11 +501,11 @@ class ValidateNestedInput:
             output["input_errors"] = self.input_data_errors
 
         if self.urdb_errors and self.input_data_errors:
-            output["input_errors"] += ['URDB Rate: ' + x for x in self.urdb_errors]
+            output["input_errors"] += ['URDB Rate: ' + ' '.join(self.urdb_errors)]
 
         elif self.urdb_errors:
             output["error"] = "Invalid inputs. See 'input_errors'."
-            output["input_errors"] = ['URDB Rate: ' + x for x in self.urdb_errors]
+            output["input_errors"] = ['URDB Rate: ' + ' '.join(self.urdb_errors)]
 
         return output
 

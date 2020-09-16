@@ -78,7 +78,6 @@ class Rate(object):
         self.util = util
         self.rate = rate  # rate name string
 
-        self.errors = []
         self.urdb_dict = self.get_rate() # can return None
 
     def get_rate(self):
