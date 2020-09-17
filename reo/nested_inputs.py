@@ -111,14 +111,14 @@ nested_input_definitions = {
     },
 	"optimality_tolerance_bau": {
       "type": "float",
-      "min": 0.000,
+      "min": 1.0e-5,
       "max": 10.0,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
     },
 	"optimality_tolerance_techs": {
       "type": "float",
-      "min": 0.0,
+      "min": 1.0e-5,
       "max": 10.0,
       "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
@@ -130,7 +130,7 @@ nested_input_definitions = {
     },
 	"optimality_tolerance_decomp_subproblem": {
       "type": "float",
-      "min": 0.0,
+      "min": 1.0e-5,
       "max": 10.0,
       "default": 0.02,
       "description": "The threshold for the difference between the decomposition subproblem solution's objective value and the best possible value at which the solver terminates"
