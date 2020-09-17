@@ -116,7 +116,10 @@ class ScenarioModel(models.Model):
     timeout_seconds = models.IntegerField(default=295)
     time_steps_per_hour = models.IntegerField(default=8760)
     created = models.DateTimeField(auto_now_add=True)
-    optimality_tolerance = models.FloatField(null=True, blank=True)
+    optimality_tolerance_bau = models.FloatField(null=True, blank=True)
+    optimality_tolerance_techs = models.FloatField(null=True, blank=True)
+    use_decomposition_model = models.BooleanField(default=False)
+    optimality_tolerance_decomp_subproblem = models.FloatField(null=True, blank=True)
 
     lower_bound = models.FloatField(null=True, blank=True)
     optimality_gap = models.FloatField(null=True, blank=True)

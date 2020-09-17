@@ -109,12 +109,31 @@ nested_input_definitions = {
       "type": "str",
       "description": "The unique ID of a scenario created by the REopt Lite Webtool. Note that this ID can be shared by several REopt Lite API Scenarios (for example when users select a 'Resilience' analysis more than one REopt API Scenario is created)."
     },
-	"optimality_tolerance": {
+	"optimality_tolerance_bau": {
+      "type": "float",
+      "min": 0.000,
+      "max": 10.0,
+      "default": 0.001,
+      "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+	"optimality_tolerance_techs": {
       "type": "float",
       "min": 0.0,
       "max": 10.0,
-      "default": 1.0e-3,
+      "default": 0.001,
       "description": "The threshold for the difference between the solution's objective value and the best possible value at which the solver terminates"
+    },
+	"use_decomposition_model": {
+      "type": "bool",
+      "default": False,
+      "description": "Toggle to use the decomposition model/algorithm"
+    },
+	"optimality_tolerance_decomp_subproblem": {
+      "type": "float",
+      "min": 0.0,
+      "max": 10.0,
+      "default": 0.02,
+      "description": "The threshold for the difference between the decomposition subproblem solution's objective value and the best possible value at which the solver terminates"
     },
 
     "Site": {
