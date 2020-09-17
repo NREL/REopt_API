@@ -1,5 +1,6 @@
 {
   "Scenario": {
+    "optimality_tolerance_techs": 0.07,
     "Site": {
       "latitude": 37.78 ,
       "longitude": -122.45 ,
