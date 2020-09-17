@@ -331,6 +331,9 @@ def setup_scenario(self, run_uuid, data, raw_post):
                     outage_end_hour=inputs_dict['Site']['LoadProfile'].get("outage_end_hour"),
                     )
 
+        # Assign decomposition subproblem optimality tolerance - only used if decomposition is selected
+        dfm.optimality_tolerance_decomp_subproblem = inputs_dict['optimality_tolerance_decomp_subproblem']
+
         dfm.finalize()
         dfm_dict = vars(dfm)  # serialize for celery
 

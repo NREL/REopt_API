@@ -883,7 +883,7 @@ end
 
 function add_decomp_model(m, p::Parameter, model_type::String, mth::Int64)
 	if m[:solver_name] == "Xpress"
-		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=0.03, OUTPUTLOG = 0))
+		sub_model = direct_model(Xpress.Optimizer(MAXTIME=-120, MIPRELSTOP=p.DecompOptTol, OUTPUTLOG = 0))
 	elseif m[:solver_name] == "Cbc"
 		sub_model = Model(with_optimizer(Cbc.Optimizer, logLevel=0, seconds=120, ratioGap=0.03))
 	elseif m[:solver_name] == "SCIP"
