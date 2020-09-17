@@ -134,8 +134,12 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 Main.include("reo/src/reopt_xpress_model.jl")
 
             t_start = time.time()
-            model = Main.reopt_model(data["inputs"]["Scenario"]["timeout_seconds"],
-                                     data["inputs"]["Scenario"]["optimality_tolerance"])
+            if bau:
+                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
+            else:
+                model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
+                                         float(data["inputs"]["Scenario"]["optimality_tolerance_techs"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "cbc":
@@ -149,7 +153,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
             t_start = time.time()
             model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance"]))
+                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         elif os.environ.get("SOLVER") == "scip":
@@ -163,7 +167,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 
             t_start = time.time()
             model = Main.reopt_model(float(data["inputs"]["Scenario"]["timeout_seconds"]),
-                                     float(data["inputs"]["Scenario"]["optimality_tolerance"]))
+                                     float(data["inputs"]["Scenario"]["optimality_tolerance_bau"]))
             time_dict["pyjulia_make_model_seconds"] = time.time() - t_start
 
         else:
@@ -171,7 +175,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
                 run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
-        if len(reopt_inputs["CHPTechs"]) == 0:
+        if not bau and not data["inputs"]["Scenario"]["use_decomposition_model"]:
             t_start = time.time()
             Main.include("reo/src/reopt.jl")
             time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
@@ -233,7 +237,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
 def run_decomposed_model(data, model, reopt_inputs,
                          lb_iters=1, max_iters=100):
     time_limit = data["inputs"]["Scenario"]["timeout_seconds"]
-    opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance"]
+    opt_tolerance = data["inputs"]["Scenario"]["optimality_tolerance_techs"]
     reopt_param = julia.Main.Parameter(reopt_inputs)
     lb_models = {}
     ub_models = {}
