@@ -175,7 +175,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
                 message="The environment variable SOLVER must be set to one of [xpress, cbc, scip].",
                 run_uuid=self.run_uuid, user_uuid=self.user_uuid)
 
-        if not bau and not data["inputs"]["Scenario"]["use_decomposition_model"]:
+        if bau or not data["inputs"]["Scenario"]["use_decomposition_model"]:
             t_start = time.time()
             Main.include("reo/src/reopt.jl")
             time_dict["pyjulia_include_reopt_seconds"] = time.time() - t_start
