@@ -892,7 +892,7 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
         simple_payback, irr = calculate_simple_payback_and_irr(data)  
         data['outputs']['Scenario']['Site']['Financial']['simple_payback_years'] = simple_payback
         data['outputs']['Scenario']['Site']['Financial']['irr_pct'] = irr
-        data = EmissionsCalculator.add_to_data(data)
+        #data = EmissionsCalculator.add_to_data(data)
 
         pv_watts_station_check = data['outputs']['Scenario']['Site']['PV'][0].get('station_distance_km') or 0
         if pv_watts_station_check > 322:
