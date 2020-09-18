@@ -65,7 +65,6 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         """
         Validation to ensure that:
          1) CHP capital cost curve handling is correct
-         2)
 
         :return:
         """
@@ -88,6 +87,8 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["Site"]["CHP"]["macrs_bonus_pct"] = 0
         nested_data["Scenario"]["Site"]["CHP"]["macrs_itc_reduction"] = 0.0
 
+        # init_capex = 600 * 2700 + (800 - 600) * slope, where
+        # slope = (1140 * 2370 - 600 * 2700) / (1140 - 600)
         init_capex_chp_expected = 2020666.67
         net_capex_chp_expected = init_capex_chp_expected - np.npv(0.083, [0, init_capex_chp_expected * 0.1])
 
