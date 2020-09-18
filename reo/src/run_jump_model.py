@@ -211,12 +211,7 @@ def run_jump_model(self, dfm, data, run_uuid, bau=False):
         else:
             dfm['results'] = results
 
-        if status.strip().lower() == 'timed-out':
-            msg = "Optimization exceeded timeout: {} seconds.".format(data["inputs"]["Scenario"]["timeout_seconds"])
-            logger.info(msg)
-            raise OptimizationTimeout(task=name, message=msg, run_uuid=self.run_uuid, user_uuid=self.user_uuid)
-
-        if status.strip().lower() != 'optimal':
+        if status.strip().lower() not in ['optimal', 'timed-out']:
             logger.error("REopt status not optimal. Raising NotOptimal Exception.")
             raise NotOptimal(task=name, run_uuid=self.run_uuid, status=status.strip(), user_uuid=self.user_uuid)
 
