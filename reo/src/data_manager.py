@@ -663,12 +663,11 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: tech_to_load, tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        :return: tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
         """
         production_factor = list()
-        tech_to_load = list()
         tech_to_location = list()
         derate = list()
         electric_derate = list()
@@ -717,21 +716,6 @@ class DataManager:
                     om_cost_us_dollars_per_kwh.append(0.0)
                     om_cost_us_dollars_per_hr_per_kw_rated.append(0.0)
 
-                for load in self.available_loads:
-
-                    if eval('self.' + tech + '.can_serve(' + '"' + load + '"' + ')'):
-
-                        tech_to_load.append(1)
-
-                    else:
-
-                        tech_to_load.append(0)
-
-                    # By default, util can serve storage load.
-                    # However, if storage is being modeled it can override grid-charging
-                    if tech == 'util' and load == 'storage' and self.storage is not None:
-                        tech_to_load[-1] = int(self.storage.canGridCharge)
-
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -741,18 +725,14 @@ class DataManager:
                     else:
                         tech_to_location.append(0)
 
-        # eta_storage_out is array(Load) of real
         discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
         # Current TES efficiency input is just charging/in efficiency, so eta_tes_out is 1.
         discharge_efficiency.append(1.0)
         discharge_efficiency.append(1.0)
 
-        # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
-        return tech_to_load, tech_to_location, derate, \
-               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, \
-               production_factor, charge_efficiency, discharge_efficiency, \
-               electric_derate, chp_thermal_prod_factor
-
+        return tech_to_location, derate, \
+               om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
+               discharge_efficiency, electric_derate
 
     def _get_REopt_techs(self, techs):
         reopt_techs = list()
@@ -1024,14 +1004,12 @@ class DataManager:
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_load, tech_to_location, derate, om_cost_us_dollars_per_kw, \
-               om_cost_us_dollars_per_kwh, om_cost_us_dollars_per_hr_per_kw_rated, production_factor, \
-               charge_efficiency, discharge_efficiency, \
-               electric_derate, chp_thermal_prod_factor = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_load_bau, tech_to_location_bau, derate_bau, om_cost_us_dollars_per_kw_bau, \
-               om_cost_us_dollars_per_kwh_bau, om_cost_us_dollars_per_hr_per_kw_rated_bau, production_factor_bau, \
-               charge_efficiency_bau, discharge_efficiency_bau, \
-               electric_derate_bau, chp_thermal_prod_factor_bau  = self._get_REopt_array_tech_load(self.bau_techs)
+        tech_to_location, derate, om_cost_us_dollars_per_kw,\
+            om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
+            discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
+        tech_to_location_bau, derate_bau, \
+            om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
+            discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
         max_sizes, min_turn_down, max_sizes_location, min_allowable_size = self._get_REopt_tech_max_sizes_min_turn_down(self.available_techs)
         max_sizes_bau, min_turn_down_bau, max_sizes_location_bau, min_allowable_size_bau = self._get_REopt_tech_max_sizes_min_turn_down(self.bau_techs, bau=True)
