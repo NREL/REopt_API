@@ -75,10 +75,6 @@ class REoptArgs:
         self.fuel_burn_rate_bau = []
         self.fuel_burn_intercept = []
         self.fuel_burn_intercept_bau = []
-        self.fuel_burn_rate = []
-        self.fuel_burn_rate_bau = []
-        self.fuel_burn_intercept = []
-        self.fuel_burn_intercept_bau = []
 
         self.fixed_monthly_charge = 0
         self.annual_min_charge = 0
