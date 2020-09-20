@@ -813,9 +813,9 @@ class DataManager:
         StorageCostPerKWH -= self.storage.incentives.rebate_kwh
         
         parser = UrdbParse(big_number=big_number, elec_tariff=self.elec_tariff,
-                          techs=get_techs_not_none(self.available_techs, self),
+                           techs=get_techs_not_none(self.available_techs, self),
                            bau_techs=get_techs_not_none(self.bau_techs, self),
-                           loads=self.available_loads, gen=self.generator)
+                           gen=self.generator)
         tariff_args = parser.parse_rate(self.elec_tariff.utility_name, self.elec_tariff.rate_name)
         TechToNMILMapping, TechsByNMILRegime, NMIL_regime = self._get_REopt_techToNMILMapping(self.available_techs)
         TechToNMILMapping_bau, TechsByNMILRegime_bau, NMIL_regime_bau = self._get_REopt_techToNMILMapping(self.bau_techs)
