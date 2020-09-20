@@ -558,7 +558,7 @@ class DataManager:
         """
         Many arrays are built from Tech and Load. As many as possible are defined here to reduce for-loop iterations
         :param techs: list of strings, eg. ['pv', 'pvnm']
-        :return: tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        :return: tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, techs_charging_storage, electric_derate
         """
@@ -566,8 +566,6 @@ class DataManager:
         tech_to_location = list()
         derate = list()
         electric_derate = list()
-        eta_storage_in = list()
-        eta_storage_out = list()
         om_cost_us_dollars_per_kw = list()
         om_cost_us_dollars_per_kwh = list()
 
@@ -591,11 +589,6 @@ class DataManager:
                 else:
                     om_cost_us_dollars_per_kwh.append(0.0)
 
-                for load in self.available_loads:
-
-                    eta_storage_in.append(self.storage.rectifier_efficiency_pct *
-                                          self.storage.internal_efficiency_pct**0.5 if load == 'storage' else float(1))
-
                 for location in ['roof', 'ground', 'both']:
                     if tech.startswith('pv'):
                         if eval('self.' + tech + '.location') == location:
@@ -605,16 +598,11 @@ class DataManager:
                     else:
                         tech_to_location.append(0)
 
-        for load in self.available_loads:
-            # eta_storage_out is array(Load) of real
-            eta_storage_out.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5
-                                   if load == 'storage' else 1.0)
-
         discharge_efficiency.append(self.storage.inverter_efficiency_pct * self.storage.internal_efficiency_pct**0.5)
 
         # In BAU case, storage.dat must be filled out for REopt initializations, but max size is set to zero
 
-        return tech_to_location, derate, eta_storage_in, eta_storage_out, \
+        return tech_to_location, derate, \
                om_cost_us_dollars_per_kw, om_cost_us_dollars_per_kwh, production_factor, charge_efficiency, \
                discharge_efficiency, electric_derate
 
@@ -779,10 +767,10 @@ class DataManager:
         tech_class_min_size, techs_in_class = self._get_REopt_tech_classes(self.available_techs, False)
         tech_class_min_size_bau, techs_in_class_bau = self._get_REopt_tech_classes(self.bau_techs, True)
 
-        tech_to_location, derate, eta_storage_in, eta_storage_out, om_cost_us_dollars_per_kw,\
+        tech_to_location, derate, om_cost_us_dollars_per_kw,\
             om_cost_us_dollars_per_kwh, production_factor, charge_efficiency,  \
             discharge_efficiency, electric_derate = self._get_REopt_array_tech_load(self.available_techs)
-        tech_to_location_bau, derate_bau, eta_storage_in_bau, eta_storage_out_bau, \
+        tech_to_location_bau, derate_bau, \
             om_dollars_per_kw_bau, om_dollars_per_kwh_bau, production_factor_bau, charge_efficiency_bau,  \
             discharge_efficiency_bau, electric_derate_bau = self._get_REopt_array_tech_load(self.bau_techs)
 
