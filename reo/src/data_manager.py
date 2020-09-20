@@ -73,7 +73,6 @@ class DataManager:
 
         self.available_techs = ['pv1', 'pv1nm', 'wind', 'windnm', 'generator']  # order is critical for REopt! Note these are passed to reopt.jl as uppercase
         self.available_tech_classes = ['PV1', 'WIND', 'GENERATOR']  # this is a REopt 'class', not a python class
-        self.available_loads = ['retail', 'wholesale', 'export', 'storage']  # order is critical for REopt!
         self.bau_techs = []
         self.NMILRegime = ['BelowNM', 'NMtoIL', 'AboveIL']
         self.fuel_burning_techs = ['GENERATOR']
