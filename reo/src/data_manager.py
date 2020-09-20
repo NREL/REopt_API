@@ -745,6 +745,27 @@ class DataManager:
                 time_steps_without_grid.append(i+1)
         return time_steps_with_grid, time_steps_without_grid
 
+
+    def _get_fuel_burning_tech_params(self, techs):
+        """
+        In the Julia model we have:
+         - FuelCost = AxisArray(d["FuelCost"], d["FuelType"])
+         - FuelLimit: AxisArray(d["FuelLimit"], d["FuelType"])
+         - FuelType: Array{String,1}
+         - TechsByFuelType: AxisArray(d["TechsByFuelType"], d["FuelType"])
+        :return: fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type (all lists)
+        """
+        fuel_costs = list()
+        fuel_limit = list()
+        fuel_types = list()
+        techs_by_fuel_type = [list()]
+        if "GENERATOR" in techs:
+            fuel_costs = [self.generator.diesel_fuel_cost_us_dollars_per_gallon]
+            fuel_limit = [self.generator.fuel_avail]
+            fuel_types = ["DIESEL"]
+            techs_by_fuel_type = [['GENERATOR']]
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type
+
     def finalize(self):
         """
         necessary for writing out parameters that depend on which Techs are defined
@@ -825,8 +846,6 @@ class DataManager:
 
 
         subdivisions = ['CapCost']
-        fuel_type = ['DIESEL'] if 'GENERATOR' in reopt_techs else []
-        fuel_type_bau = ['DIESEL'] if 'GENERATOR' in reopt_techs_bau else []
 
         # There are no cost curves yet, but incentive size limits and existing techs require cost curve segments
         # TODO: create this array in _get_REopt_cost_curve?
@@ -838,25 +857,9 @@ class DataManager:
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
 
-        if len(reopt_techs) == 0:
-            techs_by_fuel_type = []
-        else:
-            techs_by_fuel_type = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type]
-        if len(reopt_techs_bau) == 0:
-            techs_by_fuel_type_bau = []
-        else:
-            techs_by_fuel_type_bau = [['GENERATOR'] if ft == 'DIESEL' else [] for ft in fuel_type_bau]
-
-        fuel_limit = [0.0 for _ in fuel_type]
-        fuel_limit_bau = [0.0 for _ in fuel_type_bau]
-        for f in range(len(fuel_type)):
-            for t in techs_by_fuel_type[f]:
-                tech_idx = reopt_techs.index(t)
-                fuel_limit[f] += tariff_args.energy_avail[tech_idx]
-        for f in range(len(fuel_type_bau)):
-            for t in techs_by_fuel_type_bau[f]:
-                tech_idx = reopt_techs_bau.index(t)
-                fuel_limit_bau[f] += tariff_args.energy_avail_bau[tech_idx]
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type = self._get_fuel_burning_tech_params(reopt_techs)
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau = \
+            self._get_fuel_burning_tech_params(reopt_techs_bau)
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -971,7 +974,7 @@ class DataManager:
             'TechToNMILMapping': TechToNMILMapping,
             'CapCostSegCount': n_segments,
             # new parameters for reformulation
-            'FuelCost': tariff_args.fuel_costs,
+            'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
             'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
             'FuelBurnSlope': tariff_args.fuel_burn_rate,
@@ -995,7 +998,7 @@ class DataManager:
             'SegmentMaxSize': segment_max_size,
             # Sets that need to be populated
             'Storage': ['Elec'],
-            'FuelType': fuel_type,
+            'FuelType': fuel_types,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': ['Elec'],
@@ -1069,7 +1072,7 @@ class DataManager:
             'CapCostSegCount': n_segments_bau,
             'StorageCostPerKW': StorageCostPerKW,
             'StorageCostPerKWH': StorageCostPerKWH,
-            'FuelCost': tariff_args.fuel_costs_bau,
+            'FuelCost': fuel_costs_bau,
             'ElecRate': tariff_args.energy_costs_bau,
             'GridExportRates': tariff_args.grid_export_rates_bau,
             'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
@@ -1092,7 +1095,7 @@ class DataManager:
             'SegmentMinSize': segment_min_size_bau,
             'SegmentMaxSize': segment_max_size_bau,
             'Storage': ['Elec'],
-            'FuelType': fuel_type_bau,
+            'FuelType': fuel_types_bau,
             'Subdivision': subdivisions,
             'PricingTierCount': tariff_args.energy_tiers_num,
             'ElecStorage': [],

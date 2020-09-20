@@ -64,17 +64,11 @@ class REoptArgs:
         self.demand_lookback_range = 0
         self.demand_min = 0
 
-        self.energy_rates = []
-        self.energy_rates_bau = []
         self.energy_tiers_num = 1
         self.energy_max_in_tiers = 1 * [big_number]
-        self.energy_avail = []
-        self.energy_avail_bau = []
 
         self.energy_costs = []
         self.energy_costs_bau = []
-        self.fuel_costs = []
-        self.fuel_costs_bau = []
         self.grid_export_rates = []
         self.grid_export_rates_bau = []
         self.fuel_burn_rate = []
@@ -85,8 +79,6 @@ class REoptArgs:
         self.fuel_burn_rate_bau = []
         self.fuel_burn_intercept = []
         self.fuel_burn_intercept_bau = []
-        self.fuel_limit = []
-        self.fuel_limit_bau = []
 
         self.fixed_monthly_charge = 0
         self.annual_min_charge = 0
@@ -174,9 +166,8 @@ class RateData:
 class UrdbParse:
     """
     Sub-function of DataManager.
-    Makes all REopt args for dat files in Inputs/Utility directory
 
-    Note: (diesel) generator parameters for mosel are defined here because they depend on number of energy tiers in
+    Note: (diesel) generator parameters are defined here because they depend on number of energy tiers in
     utility rate.
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
@@ -246,27 +237,19 @@ class UrdbParse:
             self.prepare_energy_costs(current_rate)
             self.prepare_fixed_charges(current_rate)
 
-        self.reopt_args.energy_rates, \
-        self.reopt_args.energy_avail,  \
         self.reopt_args.energy_costs, \
-        self.reopt_args.fuel_costs, \
         self.reopt_args.grid_export_rates, \
         self.reopt_args.fuel_burn_rate, \
         self.reopt_args.fuel_burn_intercept, \
-        self.reopt_args.fuel_limit,   \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
         self.reopt_args.num_sales_tiers  \
         = self.prepare_techs_and_loads(self.techs)
 
-        self.reopt_args.energy_rates_bau, \
-        self.reopt_args.energy_avail_bau, \
         self.reopt_args.energy_costs_bau, \
-        self.reopt_args.fuel_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
         self.reopt_args.fuel_burn_rate_bau, \
         self.reopt_args.fuel_burn_intercept_bau, \
-        self.reopt_args.fuel_limit_bau,   \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
         self.reopt_args.num_sales_tiers_bau  \
@@ -454,33 +437,6 @@ class UrdbParse:
             # no export to grid benefit, so force excess energy into curtailment
             negative_wholesale_rate_costs = [1000.0 for x in self.wholesale_rate]
 
-        # FuelRate = array(Tech, FuelBin, TimeStep) is the cost of electricity from each Tech, so 0's for PV, PVNM
-        energy_rates = []
-        # FuelAvail: array(Tech, FuelBin)
-        energy_avail = []
-        # FuelCost(FuelType)
-        fuel_costs = []
-        fuel_limit = []
-
-        for tech in techs:
-            if tech.lower() == 'util':
-                energy_rates += energy_costs
-                energy_avail += [self.big_number] * self.reopt_args.energy_tiers_num
-            else:
-                # have to rubber stamp other tech values for each energy tier so that array is filled appropriately
-                for _ in range(self.reopt_args.energy_tiers_num):
-                    if tech.lower() == 'generator':
-                        # generator fuel is not free anymore since generator is also a design variable
-                        energy_rates = operator.add(energy_rates, self.diesel_cost_array)
-                        energy_avail.append(self.generator_fuel_avail)
-                        # TODO figure out how to populate fuel costs for all fb techs
-                        fuel_costs.append(self.diesel_fuel_cost_us_dollars_per_gallon)
-                        fuel_limit.append(self.generator_fuel_avail)
-                    else:
-                        # all other techs (PV, PVNM, wind, windnm) have zero fuel and zero fuel cost
-                        energy_rates = operator.add(energy_rates, self.zero_array)
-                        energy_avail.append(0.0)
-
         grid_export_rates = list()
         rates_by_tech = list()  # SalesTiersByTech, list of lists, becomes indexed on techs in julia
         num_sales_tiers = 0
@@ -528,8 +484,7 @@ class UrdbParse:
                 fuel_burn_rate.append(0.0)
                 fuel_burn_intercept.append(0.0)
 
-        return energy_rates, energy_avail, \
-                energy_costs, fuel_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, fuel_limit, \
+        return energy_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, \
                 rates_by_tech, techs_by_rate, num_sales_tiers
 
     def prepare_demand_periods(self, current_rate):

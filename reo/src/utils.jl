@@ -288,6 +288,9 @@ function Parameter(d::Dict)
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
+    if isempty(d["FuelType"])
+        d["TechsByFuelType"] = []  # array of arrays is not empty, but needs to be for AxisArray conversion
+    end
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
