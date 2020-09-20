@@ -187,7 +187,6 @@ class DataManager:
     def _get_REopt_production_incentives(self, techs):
         sf = self.site.financial
         pwf_prod_incent = list()
-        prod_incent_rate = list()
         max_prod_incent = list()
         max_size_for_prod_incent = list()
 
@@ -216,10 +215,6 @@ class DataManager:
                     max_size_for_prod_incent.append(
                         eval('self.' + tech + '.incentives.production_based.max_kw')
                     )
-                    for load in self.available_loads:
-                        prod_incent_rate.append(
-                            eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
-                        )
 
                     production_incentive_rate.append(
                         eval('self.' + tech + '.incentives.production_based.us_dollars_per_kw')
@@ -231,10 +226,7 @@ class DataManager:
                     max_size_for_prod_incent.append(0.0)
                     production_incentive_rate.append(0.0)
 
-                    for load in self.available_loads:
-                        prod_incent_rate.append(0.0)
-
-        return pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
+        return pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate
 
     def _get_REopt_cost_curve(self, techs):
         regions = ['utility', 'state', 'federal', 'combined']
@@ -780,9 +772,9 @@ class DataManager:
         levelization_factor, pwf_e, pwf_om, two_party_factor = self._get_REopt_pwfs(self.available_techs)
         levelization_factor_bau, pwf_e_bau, pwf_om_bau, two_party_factor_bau = self._get_REopt_pwfs(self.bau_techs)
         
-        pwf_prod_incent, prod_incent_rate, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
+        pwf_prod_incent, max_prod_incent, max_size_for_prod_incent, production_incentive_rate  \
             = self._get_REopt_production_incentives(self.available_techs)
-        pwf_prod_incent_bau, prod_incent_rate_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
+        pwf_prod_incent_bau, max_prod_incent_bau, max_size_for_prod_incent_bau, production_incentive_rate_bau \
             = self._get_REopt_production_incentives(self.bau_techs)
 
         cap_cost_slope, cap_cost_x, cap_cost_yint, n_segments = self._get_REopt_cost_curve(self.available_techs)
