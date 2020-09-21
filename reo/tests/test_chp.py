@@ -40,6 +40,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.07
         nested_data["Scenario"]["use_decomposition_model"] = True
         nested_data["Scenario"]["optimality_tolerance_decomp_subproblem"] = 0.03
+        nested_data["Scenario"]["timeout_decomp_subproblem_seconds"] = 120
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
