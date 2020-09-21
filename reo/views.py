@@ -594,6 +594,7 @@ def chp_defaults(request):
              "size_class": size_class,
              "default_inputs": prime_mover_defaults,
              "chp_size_based_on_avg_heating_load_kw": chp_elec_size_heuristic_kw,
+             "size_class_bounds": CHP.class_bounds
              }
         )
         return response

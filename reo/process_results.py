@@ -297,7 +297,21 @@ def calculate_simple_payback_and_irr(data):
             total_kw = chp.get('size_kw') or 0
             total_kwh = chp.get('year_one_electric_energy_produced_kwh') or 0
             total_runtime = sum(np.array(chp.get('year_one_electric_production_series_kw') or []) > 0) / float(time_steps_per_hour)
-            capital_costs = total_kw * chp['installed_cost_us_dollars_per_kw']        
+            # Calculate capital cost from cost curve list
+            cost_list = chp.get("installed_cost_us_dollars_per_kw") or []
+            size_list = chp.get("tech_size_for_cost_curve") or []
+            chp_size = total_kw
+            if len(cost_list) > 1:
+                if chp_size <= size_list[1]:
+                    capital_costs = cost_list[0] + chp_size * cost_list[1]
+                elif chp_size > size_list[-1]:
+                    capital_costs = chp_size * cost_list[-1]
+                else:
+                    for s in range(1, len(size_list)-1):
+                        if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
+                            capital_costs += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * cost_list[s+1]
+            else:
+                capital_costs = (cost_list[0] or 0) * (chp_size or 0)
             annual_om = (-1 * total_kw * chp['om_cost_us_dollars_per_kw']) + \
                 (-1 * total_kwh * chp['om_cost_us_dollars_per_kwh']) + \
                 (-1 * total_runtime * total_kw * chp['om_cost_us_dollars_per_hr_per_kw_rated'])
@@ -640,9 +654,28 @@ def process_results(self, dfm_list, data, meta, saveToDB=True):
                 upfront_capex += max(pv["installed_cost_us_dollars_per_kw"]
                                  * (self.nested_outputs["Scenario"]["Site"]["PV"][pv["pv_number"]-1]["size_kw"]
                                  - pv["existing_kw"]), 0)
-            for tech in ["Storage", "Wind", "CHP"]:
+            for tech in ["Storage", "Wind"]:
                 upfront_capex += (self.inputs[tech].get("installed_cost_us_dollars_per_kw") or 0) * \
                                  (self.nested_outputs["Scenario"]["Site"][tech].get("size_kw") or 0)
+            # CHP.installed_cost_us_dollars_per_kw is now a list with potentially > 1 elements
+            for tech in ["CHP"]:
+                cost_list = self.inputs[tech].get("installed_cost_us_dollars_per_kw") or []
+                size_list = self.inputs[tech].get("tech_size_for_cost_curve") or []
+                chp_size = self.nested_outputs["Scenario"]["Site"][tech].get("size_kw")
+                if len(cost_list) > 1:
+                    if chp_size <= size_list[1]:
+                        upfront_capex += cost_list[0] + chp_size * cost_list[1]
+                    elif chp_size > size_list[-1]:
+                        upfront_capex += chp_size * cost_list[-1]
+                    else:
+                        for s in range(1, len(size_list)-1):
+                            if (chp_size > size_list[s]) and (chp_size <= size_list[s+1]):
+                                slope = (cost_list[s+1] * size_list[s+1] - cost_list[s] * size_list[s]) / \
+                                        (size_list[s+1] - size_list[s])
+                                upfront_capex += cost_list[s] * size_list[s] + (chp_size - size_list[s]) * slope
+                elif len(cost_list) == 1:
+                    upfront_capex += (cost_list[0] or 0) * (chp_size or 0)
+
             # storage capacity
             upfront_capex += (self.inputs["Storage"].get("installed_cost_us_dollars_per_kwh") or 0) * \
                              (self.nested_outputs["Scenario"]["Site"]["Storage"].get("size_kwh") or 0)
