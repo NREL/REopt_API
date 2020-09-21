@@ -61672,5 +61672,7 @@
       0.0 ,
       0.004 ,
       0.004
-    ]
+    ] ,
+    "DecompOptTol": 0.03,
+    "DecompTimeOut": 120
   }
