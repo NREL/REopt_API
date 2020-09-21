@@ -269,8 +269,8 @@ function Parameter(d::Dict)
     d["FuelCost"] = AxisArray(d["FuelCost"], d["FuelType"])
     d["ElecRate"] = transpose(reshape(d["ElecRate"], d["TimeStepCount"], d["PricingTierCount"]))
     d["GridExportRates"] = transpose(reshape(d["GridExportRates"], d["TimeStepCount"], d["SalesTierCount"]))
-    d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["Tech"])
-    d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["Tech"])
+    d["FuelBurnSlope"] = AxisArray(d["FuelBurnSlope"], d["FuelBurningTechs"])
+    d["FuelBurnYInt"] = AxisArray(d["FuelBurnYInt"], d["FuelBurningTechs"])
     d["ProductionFactor"] = vector_to_axisarray(d["ProductionFactor"], d["Tech"], d[:TimeStep])
     d["ProductionIncentiveRate"] = AxisArray(d["ProductionIncentiveRate"], d["Tech"])
     d["FuelLimit"] = AxisArray(d["FuelLimit"], d["FuelType"])
@@ -288,6 +288,9 @@ function Parameter(d::Dict)
     d["MaxGridSales"] = [d["MaxGridSales"]]
 
     # Indexed Sets
+    if isempty(d["FuelType"])
+        d["TechsByFuelType"] = []  # array of arrays is not empty, but needs to be for AxisArray conversion
+    end
     d["SegByTechSubdivision"] = vector_to_axisarray(d["SegByTechSubdivision"], d["Subdivision"], d["Tech"])
     d["TechsByFuelType"] = AxisArray(d["TechsByFuelType"], d["FuelType"])
     d["TechsInClass"] = AxisArray(d["TechsInClass"], d["TechClass"])
