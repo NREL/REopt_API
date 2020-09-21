@@ -71,10 +71,6 @@ class REoptArgs:
         self.energy_costs_bau = []
         self.grid_export_rates = []
         self.grid_export_rates_bau = []
-        self.fuel_burn_rate = []
-        self.fuel_burn_rate_bau = []
-        self.fuel_burn_intercept = []
-        self.fuel_burn_intercept_bau = []
 
         self.fixed_monthly_charge = 0
         self.annual_min_charge = 0
@@ -235,8 +231,6 @@ class UrdbParse:
 
         self.reopt_args.energy_costs, \
         self.reopt_args.grid_export_rates, \
-        self.reopt_args.fuel_burn_rate, \
-        self.reopt_args.fuel_burn_intercept, \
         self.reopt_args.rates_by_tech,   \
         self.reopt_args.techs_by_rate,   \
         self.reopt_args.num_sales_tiers  \
@@ -244,8 +238,6 @@ class UrdbParse:
 
         self.reopt_args.energy_costs_bau, \
         self.reopt_args.grid_export_rates_bau, \
-        self.reopt_args.fuel_burn_rate_bau, \
-        self.reopt_args.fuel_burn_intercept_bau, \
         self.reopt_args.rates_by_tech_bau,   \
         self.reopt_args.techs_by_rate_bau,   \
         self.reopt_args.num_sales_tiers_bau  \
@@ -466,21 +458,7 @@ class UrdbParse:
                     techs_by_rate[1].append(tech.upper())
                     techs_by_rate[2].append(tech.upper())
 
-        # FuelBurnRateM = array(Tech,Load,FuelBin)
-        fuel_burn_rate = []
-        fuel_burn_intercept = []
-        for tech in techs:
-            if tech.lower() == 'util':
-                fuel_burn_rate.append(1.0)
-                fuel_burn_intercept.append(0.0)
-            elif tech.lower() == 'generator':
-                fuel_burn_rate.append(self.generator_fuel_slope)
-                fuel_burn_intercept.append(self.generator_fuel_intercept)
-            else:
-                fuel_burn_rate.append(0.0)
-                fuel_burn_intercept.append(0.0)
-
-        return energy_costs, grid_export_rates, fuel_burn_rate, fuel_burn_intercept, \
+        return energy_costs, grid_export_rates, \
                 rates_by_tech, techs_by_rate, num_sales_tiers
 
     def prepare_demand_periods(self, current_rate):

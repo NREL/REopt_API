@@ -759,12 +759,17 @@ class DataManager:
         fuel_limit = list()
         fuel_types = list()
         techs_by_fuel_type = [list()]
+        fuel_burn_rate = list()
+        fuel_burn_intercept = list()
+
         if "GENERATOR" in techs:
             fuel_costs = [self.generator.diesel_fuel_cost_us_dollars_per_gallon]
             fuel_limit = [self.generator.fuel_avail]
             fuel_types = ["DIESEL"]
             techs_by_fuel_type = [['GENERATOR']]
-        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type
+            fuel_burn_rate.append(self.generator.fuel_slope)
+            fuel_burn_intercept.append(self.generator.fuel_intercept)
+        return fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept
 
     def finalize(self):
         """
@@ -857,9 +862,10 @@ class DataManager:
             for  _ in reopt_techs_bau:
                 seg_by_tech_subdivision_bau.append(n_segments_bau)
 
-        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type = self._get_fuel_burning_tech_params(reopt_techs)
-        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau = \
-            self._get_fuel_burning_tech_params(reopt_techs_bau)
+        fuel_costs, fuel_limit, fuel_types, techs_by_fuel_type, fuel_burn_rate, fuel_burn_intercept \
+            = self._get_fuel_burning_tech_params(reopt_techs)
+        fuel_costs_bau, fuel_limit_bau, fuel_types_bau, techs_by_fuel_type_bau, fuel_burn_rate_bau, \
+            fuel_burn_intercept_bau =  self._get_fuel_burning_tech_params(reopt_techs_bau)
 
         # TODO: switch back to cap_cost_x input since we are just repeating its values?
         segment_min_size = []
@@ -977,8 +983,8 @@ class DataManager:
             'FuelCost': fuel_costs,
             'ElecRate': tariff_args.energy_costs,
             'GridExportRates': tariff_args.grid_export_rates, # seems like the wrong size
-            'FuelBurnSlope': tariff_args.fuel_burn_rate,
-            'FuelBurnYInt': tariff_args.fuel_burn_intercept,
+            'FuelBurnSlope': fuel_burn_rate,
+            'FuelBurnYInt': fuel_burn_intercept,
             'MaxGridSales': max_grid_sales,
             'ProductionIncentiveRate': production_incentive_rate,
             'ProductionFactor': production_factor,
@@ -1075,8 +1081,8 @@ class DataManager:
             'FuelCost': fuel_costs_bau,
             'ElecRate': tariff_args.energy_costs_bau,
             'GridExportRates': tariff_args.grid_export_rates_bau,
-            'FuelBurnSlope': tariff_args.fuel_burn_rate_bau,
-            'FuelBurnYInt': tariff_args.fuel_burn_intercept_bau,
+            'FuelBurnSlope': fuel_burn_rate_bau,
+            'FuelBurnYInt': fuel_burn_intercept_bau,
             'MaxGridSales': max_grid_sales_bau,
             'ProductionIncentiveRate': production_incentive_rate_bau,
             'ProductionFactor': production_factor_bau,
