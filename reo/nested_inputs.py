@@ -1271,10 +1271,16 @@ nested_input_definitions = {
           "description": "Minimum CHP size (based on electric) that still allows the model to choose zero (e.g. no CHP system)"
         },
         "installed_cost_us_dollars_per_kw": {
-          "type": "float",
+          "type": ["float", "list_of_float"],
           "min": 0.0,
           "max": 1.0e5,
           "description": "Installed CHP system cost in $/kW (based on rated electric power)"
+        },
+        "tech_size_for_cost_curve": {
+          "type": ["float", "list_of_float"],
+          "min": 0.0,
+          "max": 1.0e5,
+          "description": "Size of CHP systems corresponding to installed cost input points"
         },
         "om_cost_us_dollars_per_kw": {
           "type": "float",
