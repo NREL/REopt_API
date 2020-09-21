@@ -135,6 +135,13 @@ nested_input_definitions = {
       "default": 0.02,
       "description": "The threshold for the difference between the decomposition subproblem solution's objective value and the best possible value at which the solver terminates"
     },
+    "timeout_decomp_subproblem_seconds": {
+      "type": "int",
+      "min": 1,
+      "max": 10000,
+      "default": 120,
+      "description": "The number of seconds allowed before the decomposition subproblem optimization times out"
+    },
 
     "Site": {
       "latitude": {
