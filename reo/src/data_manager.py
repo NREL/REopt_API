@@ -74,6 +74,8 @@ class DataManager:
         self.cooling_load = None
         self.reopt_inputs = None
         self.reopt_inputs_bau = None
+        self.optimality_tolerance_decomp_subproblem = None
+        self.timeout_decomp_subproblem_seconds = None
 
         # following attributes used to pass data to process_results.py
         self.LoadProfile = {}
@@ -1343,7 +1345,9 @@ class DataManager:
             'CHPThermalProdFactor': chp_thermal_prod_factor,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
-            'StorageDecayRate': storage_decay_rate
+            'StorageDecayRate': storage_decay_rate,
+            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
             }
 
         self.reopt_inputs_bau = {
@@ -1466,5 +1470,7 @@ class DataManager:
             'CHPThermalProdFactor': chp_thermal_prod_factor_bau,
             'CHPDoesNotReduceDemandCharges': tariff_args.chp_does_not_reduce_demand_charges,
             'CHPStandbyCharge': tariff_args.chp_standby_rate_us_dollars_per_kw_per_month,
-            'StorageDecayRate': storage_decay_rate
+            'StorageDecayRate': storage_decay_rate,
+            'DecompOptTol': self.optimality_tolerance_decomp_subproblem,
+            'DecompTimeOut': self.timeout_decomp_subproblem_seconds
         }
