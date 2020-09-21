@@ -158,9 +158,6 @@ class RateData:
 class UrdbParse:
     """
     Sub-function of DataManager.
-
-    Note: (diesel) generator parameters are defined here because they depend on number of energy tiers in
-    utility rate.
     """
     days_in_month = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
 
