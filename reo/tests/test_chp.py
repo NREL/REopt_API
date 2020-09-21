@@ -84,8 +84,7 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data["Scenario"]["timeout_seconds"] = 420
         nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
         nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
-        nested_data["Scenario"]["use_decomposition_model"] = False
-        nested_data["Scenario"]["optimality_tolerance_decomp_subproblem"] = 0.03
+
         resp = self.get_response(data=nested_data)
         self.assertHttpCreated(resp)
         r = json.loads(resp.content)
@@ -124,6 +123,9 @@ class CHPTest(ResourceTestCaseMixin, TestCase):
         nested_data = json.load(open(self.test_post, 'rb'))
         # CHP
         nested_data["Scenario"]["Site"]["CHP"] = {}
+        nested_data["Scenario"]["timeout_seconds"] = 420
+        nested_data["Scenario"]["optimality_tolerance_bau"] = 0.001
+        nested_data["Scenario"]["optimality_tolerance_techs"] = 0.01
         nested_data["Scenario"]["Site"]["CHP"]["prime_mover"] = "recip_engine"
         nested_data["Scenario"]["Site"]["CHP"]["size_class"] = 2
         nested_data["Scenario"]["Site"]["CHP"]["min_kw"] = 800
